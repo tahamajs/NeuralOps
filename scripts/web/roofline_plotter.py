@@ -27,9 +27,9 @@ except ImportError:
 
 
 def generate_roofline_html(
-    device_name: str = "NVIDIA RTX 4070 / H100",
-    peak_tflops: float = 312.0,
-    peak_bandwidth_gb_s: float = 900.0,
+    device_name: str = "NVIDIA GeForce RTX 4070 (Ada Lovelace, AD104)",
+    peak_tflops: float = 160.2,
+    peak_bandwidth_gb_s: float = 504.0,
     output_path: str = "docs/roofline_interactive.html",
 ) -> str:
     """Generate interactive Plotly roofline chart HTML."""
@@ -106,8 +106,8 @@ def main() -> None:
     """Execute main routine."""
     parser = argparse.ArgumentParser(description="NeuralOps Roofline Interactive Plotter")
     parser.add_argument("--out", type=str, default="docs/roofline_interactive.html", help="Output HTML path")
-    parser.add_argument("--device", type=str, default="NVIDIA RTX 4070 (8GB)", help="Device name")
-    parser.add_argument("--tflops", type=float, default=312.0, help="Peak TFLOPS")
+    parser.add_argument("--device", type=str, default="NVIDIA GeForce RTX 4070 (Ada Lovelace, AD104)", help="Device name")
+    parser.add_argument("--tflops", type=float, default=160.2, help="Peak TFLOPS")
     parser.add_argument("--bandwidth", type=float, default=504.0, help="Peak Bandwidth GB/s")
     args = parser.parse_args()
 

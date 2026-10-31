@@ -67,11 +67,24 @@ nav:
       - 3D Attention Lab & Atlas: visualizer/index.html
       - 3D Latent Manifold Geometry: visualizer/latent_manifold.html
       - Ada Roofline Interactive: roofline_interactive.html
+  - Architecture:
+      - Overview: codebase_architecture/README.md
+      - Registry & Lazy Discovery: codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY.md
+      - 3-Level Fallback Dispatch: codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY.md
+      - CUDA Native Kernel Suite: codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE.md
+      - Triton JIT & Autotuning: codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING.md
+      - In-Place Model Surgery: codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT.md
+      - HNC-SVD & Streaming Whitening: codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING.md
+      - 6-Pillar Knowledge Distillation: codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION.md
+      - Realtime Serving & PagedKV: codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE.md
+      - Hardware Telemetry & Roofline: codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE.md
+      - Benchmark Suite & Reproducibility: codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY.md
   - API Reference:
       - Attentions: api/attentions.md
       - Compression: api/compression.md
       - Kernels: api/kernels.md
       - Serving Integrations: api/integrations.md
+      - Results Ledger & Provenance: api/results_ledger.md
   - Tutorials:
       - 01 Quickstart: tutorials/01_quickstart.md
       - 02 Roofline Analysis: tutorials/02_roofline.md

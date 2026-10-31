@@ -12,21 +12,25 @@ Hardware Kernel Dispatch and Fallback Management
 from __future__ import annotations
 
 from neuralops.ops.cuda._fallback import (
+    FORCE_PYTORCH_FALLBACK,
     dispatch,
     force_kernel_backend,
     get_dispatch_stats,
     reset_dispatch_stats,
     get_last_dispatch_backend,
+    get_last_dispatch_error,
     is_kernel_available,
     register_kernel,
 )
 
 __all__ = [
+    "FORCE_PYTORCH_FALLBACK",
     "dispatch",
     "force_kernel_backend",
     "get_dispatch_stats",
     "reset_dispatch_stats",
     "get_last_dispatch_backend",
+    "get_last_dispatch_error",
     "is_kernel_available",
     "register_kernel",
 ]

@@ -213,14 +213,14 @@ class UniversalDispatcher:
             try:
                 return native_fn(*args, **kwargs)
             except Exception as e:
-                logger.debug("Tier 1 Native kernel for '%s' unavailable/failed (%s), trying Tier 2...", op_name, e)
+                logger.warning("Tier 1 Native kernel for '%s' unavailable/failed (%s), trying Tier 2...", op_name, e)
 
         if topo.supports_triton_jit and triton_fn is not None:
             try:
                 import triton  # noqa: F401
                 return triton_fn(*args, **kwargs)
             except Exception as e:
-                logger.debug("Tier 2 Triton JIT for '%s' failed (%s), falling back to Tier 3 Universal PyTorch...", op_name, e)
+                logger.warning("Tier 2 Triton JIT for '%s' failed (%s), falling back to Tier 3 Universal PyTorch...", op_name, e)
 
         if pytorch_fallback_fn is not None:
             return pytorch_fallback_fn(*args, **kwargs)

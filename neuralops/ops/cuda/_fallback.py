@@ -361,6 +361,34 @@ def dispatch(
     return pytorch_fn(*args, **kwargs)
 
 
+_CUSTOM_KERNEL_REGISTRY: dict[tuple[str, str], Callable[..., Any]] = {}
+
+
+def register_kernel(kernel_name: str, fn: Callable[..., Any], backend: str = "cuda") -> None:
+    """Register or override a custom kernel function for dispatch."""
+    _CUSTOM_KERNEL_REGISTRY[(backend, kernel_name)] = fn
+
+
+def is_kernel_available(kernel_name: str, backend: str = "cuda") -> bool:
+    """Check whether a kernel is available on the specified backend."""
+    if (backend, kernel_name) in _CUSTOM_KERNEL_REGISTRY:
+        return True
+    if backend == "cuda":
+        if not torch.cuda.is_available():
+            return False
+        from neuralops.ops.cuda import list_cuda_kernels
+        return kernel_name in list_cuda_kernels("modules") or kernel_name in list_cuda_kernels("operators")
+    elif backend == "triton":
+        try:
+            import triton  # noqa: F401
+            return True
+        except ImportError:
+            return False
+    elif backend in ("pytorch", "cpu"):
+        return True
+    return False
+
+
 __all__ = [
     "FORCE_PYTORCH_FALLBACK",
     "dispatch",
@@ -369,4 +397,6 @@ __all__ = [
     "reset_dispatch_stats",
     "get_last_dispatch_backend",
     "get_last_dispatch_error",
+    "is_kernel_available",
+    "register_kernel",
 ]

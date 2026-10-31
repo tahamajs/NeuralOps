@@ -86,8 +86,8 @@ __global__ void w4a16_gemm_bwd_tiled_kernel(
     const int K,
     const int group_size
 ) {
-    __shared__ float DO_smem[32][32];
-    __shared__ float WT_smem[32][32];
+    __shared__ float DO_smem[32][33];
+    __shared__ float WT_smem[32][33];
 
     const int tx = threadIdx.x;
     const int ty = threadIdx.y;

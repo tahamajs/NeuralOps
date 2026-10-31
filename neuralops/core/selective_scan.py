@@ -247,7 +247,7 @@ def selective_scan(
             from neuralops.core.triton_kernels.selective_scan import selective_scan_fn as _triton_scan_fn
             return _triton_scan_fn(u, delta, A, B, C, D=D, delta_softplus=delta_softplus)
         except Exception as e:
-            logger.debug("Triton selective_scan_fn failed, falling back to chunked PyTorch: %s", e)
+            logger.warning("Triton selective_scan_fn failed, falling back to chunked PyTorch: %s", e)
 
     return selective_scan_chunked(
         u=u,

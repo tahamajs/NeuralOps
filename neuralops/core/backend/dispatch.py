@@ -152,14 +152,15 @@ def dispatch(op_name: str, *args: Any, backend: Optional[str] = None, **kwargs: 
                 from neuralops.attentions.linear.gla_attention import _chunked_gla_forward
                 return _chunked_gla_forward(*args, **kwargs)
             except Exception as e:
-                logger.debug("Triton chunk_gla failed (%s), falling back to Universal CPU/MPS...", e)
+                logger.warning("[chunk_gla] Triton/CUDA accelerated path failed (%s). Falling back to Universal CPU/MPS.", e)
         return chunk_gla_cpu(*args, **kwargs)
 
     elif op_name == "fused_linear_cross_entropy":
         try:
             from neuralops.core.fused import fused_linear_cross_entropy
             return fused_linear_cross_entropy(*args, **kwargs)
-        except Exception:
+        except Exception as e:
+            logger.warning("[fused_linear_cross_entropy] Accelerated path failed (%s). Falling back to PyTorch reference.", e)
             logits = torch.matmul(args[0], args[1].t()) if len(args) >= 2 else kwargs.get("logits")
             target = args[2] if len(args) >= 3 else kwargs.get("target")
             return torch.nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), target.view(-1))
@@ -168,7 +169,8 @@ def dispatch(op_name: str, *args: Any, backend: Optional[str] = None, **kwargs: 
         try:
             from neuralops.core.fused import fused_linear_kl_divergence
             return fused_linear_kl_divergence(*args, **kwargs)
-        except Exception:
+        except Exception as e:
+            logger.warning("[fused_linear_kl_divergence] Accelerated path failed (%s). Falling back to PyTorch reference.", e)
             p = args[0] if len(args) >= 1 else kwargs.get("p")
             q = args[1] if len(args) >= 2 else kwargs.get("q")
             return torch.nn.functional.kl_div(p.log(), q, reduction="batchmean")

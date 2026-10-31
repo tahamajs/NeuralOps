@@ -493,7 +493,12 @@ class Registry:
             try:
                 package = importlib.import_module("neuralops.compression")
                 for subpackage in package._SUBPACKAGES:
-                    importlib.import_module(f"neuralops.compression.{subpackage}")
+                    sub_mod = importlib.import_module(f"neuralops.compression.{subpackage}")
+                    for mod_path in getattr(sub_mod, "_FAMILY_MODULES", {}).values():
+                        try:
+                            importlib.import_module(mod_path)
+                        except Exception:
+                            pass
                 self._loaded = True
             except Exception as e:
                 import os
@@ -505,7 +510,12 @@ class Registry:
             try:
                 package = importlib.import_module("neuralops.layers")
                 for subpackage in package._SUBPACKAGES:
-                    importlib.import_module(f"neuralops.layers.{subpackage}")
+                    sub_mod = importlib.import_module(f"neuralops.layers.{subpackage}")
+                    for mod_path in getattr(sub_mod, "_FAMILY_MODULES", {}).values():
+                        try:
+                            importlib.import_module(mod_path)
+                        except Exception:
+                            pass
                 try:
                     import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
                 except Exception:

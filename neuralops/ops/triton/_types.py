@@ -57,7 +57,7 @@ def log_fallback_reason(kernel_name: str, reason: str) -> None:
     key = f"{kernel_name}:{reason}"
     if key not in _WARNED_REASONS:
         _WARNED_REASONS.add(key)
-        logger.info("Triton kernel '%s' using PyTorch fallback: %s", kernel_name, reason)
+        logger.warning("Triton kernel '%s' using PyTorch fallback: %s", kernel_name, reason)
 
 
 FORWARD_ONLY_KERNELS: set[str] = {

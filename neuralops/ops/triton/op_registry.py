@@ -115,7 +115,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
                 try:
                     return gdn_scan_triton(q, k, v, beta, alpha)
                 except (RuntimeError, ValueError) as e:
-                    logger.debug("gdn_scan_triton failed: %s", e)
+                    logger.warning("gdn_scan_triton failed: %s. Falling back to PyTorch.", e)
             from neuralops.ops.triton.gdn_scan import gdn_scan_torch
             return gdn_scan_torch(q, k, v, beta, alpha)
 
@@ -130,7 +130,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
                 try:
                     return gla_scan_triton(q, k, v, g)
                 except (RuntimeError, ValueError) as e:
-                    logger.debug("gla_scan_triton failed: %s", e)
+                    logger.warning("gla_scan_triton failed: %s. Falling back to PyTorch.", e)
             from neuralops.ops.triton.gla_scan import gla_scan_torch
             return gla_scan_torch(q, k, v, g)
 
@@ -145,7 +145,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
                 try:
                     return hgrn2_scan_triton(f, iv, res_clip=res_clip)
                 except (RuntimeError, ValueError) as e:
-                    logger.debug("hgrn2_scan_triton failed: %s", e)
+                    logger.warning("hgrn2_scan_triton failed: %s. Falling back to PyTorch.", e)
             from neuralops.ops.triton.hgrn2_scan import hgrn2_scan_pytorch
             return hgrn2_scan_pytorch(f, iv, res_clip=res_clip)
 
@@ -170,7 +170,7 @@ if _HAS_TORCH_LIBRARY_CUSTOM_OP:
                 try:
                     return softplus_fwd(x)
                 except (RuntimeError, ValueError) as e:
-                    logger.debug("softplus_fwd failed: %s", e)
+                    logger.warning("softplus_fwd failed: %s. Falling back to PyTorch.", e)
             return F.softplus(x)
 
         @_op_softplus.register_fake

@@ -37,8 +37,8 @@
     },
     {
       "name": "aegis_spectron_fp8",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -93,15 +93,15 @@
     },
     {
       "name": "asvd_attention",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "bam_umoe",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -114,15 +114,15 @@
     },
     {
       "name": "chela_slay",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "chela_slay_attention",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -170,15 +170,15 @@
     },
     {
       "name": "decay_linear_attention",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "decay_linear_attn",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -191,43 +191,43 @@
     },
     {
       "name": "eat",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "eat_attention",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "expert_choice_moe",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "factorised_matrix_state",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "flash_attention3",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": true,
       "requires_cuda": true
     },
     {
       "name": "flash_attention3_fp8",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -268,8 +268,8 @@
     },
     {
       "name": "gated_delta_net",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -282,29 +282,29 @@
     },
     {
       "name": "gated_linear_attention",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "gated_linear_attn",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "gla_attention",
-      "supports_causal": false,
+      "supports_causal": true,
       "supports_gqa": false,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "goldfinch_ahn",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -394,22 +394,22 @@
     },
     {
       "name": "hymba_transx",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "jamba",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "jamba_info",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -464,8 +464,8 @@
     },
     {
       "name": "mamba_svd_flash",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -506,8 +506,8 @@
     },
     {
       "name": "moe_deltakv_paged",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -548,29 +548,29 @@
     },
     {
       "name": "nsa_attention",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "nystrom_attention",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "optimized_hybrid_attention",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "orion",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -583,8 +583,8 @@
     },
     {
       "name": "performer_attention",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -688,7 +688,7 @@
     },
     {
       "name": "samba_m3",
-      "supports_causal": false,
+      "supports_causal": true,
       "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
@@ -744,8 +744,8 @@
     },
     {
       "name": "spectron_fp8",
-      "supports_causal": false,
-      "supports_gqa": false,
+      "supports_causal": true,
+      "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
@@ -758,7 +758,7 @@
     },
     {
       "name": "svd_compressed",
-      "supports_causal": false,
+      "supports_causal": true,
       "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
@@ -814,14 +814,14 @@
     },
     {
       "name": "svd_projection_attention",
-      "supports_causal": false,
+      "supports_causal": true,
       "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "svd_seq",
-      "supports_causal": false,
+      "supports_causal": true,
       "supports_gqa": true,
       "supports_rope": false,
       "requires_cuda": false
@@ -849,14 +849,14 @@
     },
     {
       "name": "triton_cosformer",
-      "supports_causal": false,
+      "supports_causal": true,
       "supports_gqa": false,
       "supports_rope": false,
       "requires_cuda": false
     },
     {
       "name": "triton_svd_linear_attention",
-      "supports_causal": false,
+      "supports_causal": true,
       "supports_gqa": false,
       "supports_rope": false,
       "requires_cuda": false

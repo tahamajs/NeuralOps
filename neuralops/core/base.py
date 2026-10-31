@@ -129,7 +129,12 @@ class BaseAttention(nn.Module):
             past_cache = state
             step_idx = 0
 
-        res = self.forward(x, past_key_values=past_cache, use_cache=True, **kwargs)
+        fwd_kwargs = dict(kwargs)
+        if "past_key_value" not in fwd_kwargs:
+            fwd_kwargs["past_key_value"] = past_cache
+        if "past_key_values" not in fwd_kwargs:
+            fwd_kwargs["past_key_values"] = past_cache
+        res = self.forward(x, use_cache=True, **fwd_kwargs)
 
         next_cache = past_cache
         if isinstance(res, tuple):

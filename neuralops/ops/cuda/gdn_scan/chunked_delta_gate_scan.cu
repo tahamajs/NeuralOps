@@ -35,7 +35,7 @@ __global__ void chunked_delta_gate_scan_fwd_kernel(
     const int tid = threadIdx.x;
     const int num_threads = blockDim.x;
 
-    __shared__ float s_state[MAX_DV][MAX_DK];
+    __shared__ float s_state[MAX_DV][MAX_DK + 1];
     __shared__ float s_k[MAX_DK];
     __shared__ float s_q[MAX_DK];
     __shared__ float s_v[MAX_DV];
