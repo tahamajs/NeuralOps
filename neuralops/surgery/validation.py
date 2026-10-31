@@ -43,6 +43,11 @@ class ValidationReport:
     warnings: list[str] = field(default_factory=list)
     recommendations: list[str] = field(default_factory=list)
 
+    @property
+    def errors(self) -> list[str]:
+        """Aggregate error messages from all failed validation checks."""
+        return [c.details for c in self.checks if not c.passed]
+
 
 def validate_before_surgery(
     model: Any,
@@ -101,7 +106,7 @@ def validate_before_surgery(
     for op in recipe.ops:
         meta = SURGERY_REGISTRY.get(op.name)
         cat = meta.category if meta else "unknown"
-        if cat in categories_seen and cat not in ("attention", "recovery", "unknown"):
+        if cat in categories_seen and cat not in ("recovery", "unknown"):
             recipe_passed = False
             recipe_details.append(f"Multiple operations modify the same category: '{cat}'")
         categories_seen.add(cat)
