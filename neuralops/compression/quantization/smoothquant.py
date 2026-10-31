@@ -9,6 +9,11 @@
 SmoothQuant: Accurate 8-Bit Weight and Activation Quantization
 
 Smooths activation outliers by mathematically migrating scale difficulty from activations to weights via per-channel scaling factors.
+
+Note on kernel naming: `triton_fused_act_scale_quant_gemm` applies per-channel activation
+outlier smoothing ($X' = X \cdot \operatorname{diag}(s)^{-1}$, $W' = W \cdot \operatorname{diag}(s)$)
+prior to downstream low-precision quantization, resolving the misnomer where 'quant' in the
+kernel name designates the pre-quantization scale-smoothing transform.
 """
 
 from __future__ import annotations
@@ -23,7 +28,12 @@ __all__ = ["smoothquant_layer", "smoothquant_model", "SmoothQuantLinear", "Smoot
 
 
 class SmoothQuantLinear(nn.Module):
-    """Linear layer applying in-SRAM SmoothQuant activation scaling and GEMM."""
+    """Linear layer applying in-SRAM SmoothQuant activation scaling and GEMM.
+
+    Applies per-channel activation outlier smoothing ($X' = X \cdot \operatorname{diag}(s)^{-1}$,
+    $W' = W \cdot \operatorname{diag}(s)$) via `triton_fused_act_scale_quant_gemm` prior to
+    downstream low-precision quantization.
+    """
     def __init__(
         self,
         in_features: int,
@@ -44,6 +54,7 @@ class SmoothQuantLinear(nn.Module):
             self.register_parameter("bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Applies fused activation outlier smoothing ($X' = X \cdot \operatorname{diag}(s)^{-1}$) and GEMM prior to downstream quantization."""
         from neuralops.ops.triton.fused_norm_linear import triton_fused_act_scale_quant_gemm
         return triton_fused_act_scale_quant_gemm(x, self.s_inv, self.weight, bias=self.bias)
 
@@ -60,6 +71,10 @@ def smoothquant_layer(
       s = (a_max^alpha) / (w_max^(1-alpha))
       W' = W * diag(s)
       X' = X * diag(s)^-1
+
+    The runtime hook executes `triton_fused_act_scale_quant_gemm`, which applies per-channel
+    activation outlier smoothing ($X' = X \cdot \operatorname{diag}(s)^{-1}$, $W' = W \cdot \operatorname{diag}(s)$)
+    prior to downstream low-precision quantization, resolving the kernel misnomer.
 
     Returns:
         Tuple of (modified module, scale factor s).

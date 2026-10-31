@@ -118,7 +118,7 @@ def find_nested_attention_modules(
 def _set_nested_module(root: nn.Module, path: str, new_module: nn.Module) -> None:
     """
     Sets a submodule at a dotted path, correctly resolving and updating
-    nn.Sequential, nn.ModuleList, or standard attribute containers.
+    nn.Sequential, nn.ModuleList, nn.ModuleDict, or standard attribute containers.
     """
     parts = path.split(".")
     curr: Any = root
@@ -126,12 +126,20 @@ def _set_nested_module(root: nn.Module, path: str, new_module: nn.Module) -> Non
     for part in parts[:-1]:
         if isinstance(curr, (nn.Sequential, nn.ModuleList)) and part.isdigit():
             curr = curr[int(part)]
+        elif isinstance(curr, (nn.ModuleDict, dict)) and part in curr:
+            curr = curr[part]
+        elif hasattr(curr, part):
+            curr = getattr(curr, part)
+        elif isinstance(curr, (nn.ModuleDict, dict)):
+            curr = curr[part]
         else:
             curr = getattr(curr, part)
 
     last_part = parts[-1]
     if isinstance(curr, (nn.Sequential, nn.ModuleList)) and last_part.isdigit():
         curr[int(last_part)] = new_module
+    elif isinstance(curr, (nn.ModuleDict, dict)):
+        curr[last_part] = new_module
     else:
         setattr(curr, last_part, new_module)
 
