@@ -588,17 +588,11 @@ class RPCAttention(BaseAttention):
         proj_k = self.proj_k.to(dtype=k.dtype, device=k.device)
 
         from neuralops.ops.triton.low_rank import (
-            fused_rpc_sketch_attention_triton,
             fused_rpc_sketch_attention_pytorch,
         )
-        try:
-            scores = fused_rpc_sketch_attention_triton(
-                q, k, proj_q, proj_k, self.sketch_scale
-            )
-        except Exception:
-            scores = fused_rpc_sketch_attention_pytorch(
-                q, k, proj_q, proj_k, self.sketch_scale
-            )
+        scores = fused_rpc_sketch_attention_pytorch(
+            q, k, proj_q, proj_k, self.sketch_scale
+        )
 
         if self.is_decoder and not is_cross:
             diag = 1 + max(0, L_kv - L)

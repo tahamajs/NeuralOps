@@ -655,8 +655,8 @@ class NEXUSAttention(BaseAttention):
 
             if F1.is_cuda and V_prev.is_cuda:
                 try:
-                    from neuralops.ops.triton.low_rank import fused_nystrom_landmark_pinv_step_triton
-                    out_cross = fused_nystrom_landmark_pinv_step_triton(F1, F2_pinv, F3, V_prev)
+                    from neuralops.ops.triton.low_rank import fused_nystrom_landmark_pinv_step_pytorch
+                    out_cross = fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V_prev)
                 except Exception:
                     step1 = torch.matmul(F3, V_prev)
                     step2 = torch.matmul(F2_pinv, step1)
