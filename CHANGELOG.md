@@ -5,6 +5,24 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-10-31
+
+### Fixed
+- **Pseudo-Triton Function Honesty**: Renamed 4 functions in `neuralops.ops.triton.low_rank` that execute via PyTorch matmuls to use explicit `_pytorch` suffixes (`fused_nystrom_landmark_pinv_step_pytorch`, `fused_rpc_sketch_attention_pytorch`, `fused_primal_dual_landmark_pytorch`, `fused_svd_mamba_proj_pytorch`). Deprecated legacy `_triton` names with `DeprecationWarning` delegation.
+- **Silent Exception Swallowing Remediation**: Replaced unannotated bare `except Exception: pass` swallows in data paths (`neuralops/core/registry.py`, `neuralops/core/metrics.py`, `neuralops/layers/experimental/template_attention.py`) with explicit diagnostics and structured `logger.warning`/sentinels. Annotated permissible cleanups with `# allowed-swallow: <reason>`.
+- **Version Fallback Normalization**: Synchronized `neuralops.api.get_version()` fallback string from stale `"1.4.3"` to `"1.7.1"`.
+
+### Changed
+- **README CUDA Count Normalization**: Unified all disparate CUDA package and implementation references across `README.md` to strictly declare **112 CUDA kernel packages** (housing 114 native implementations), eliminating legacy 108, 110, and 113 contradictions.
+- **Academic Source Path Realignment**: Corrected academic source references in documentation to point to canonical repository locations (`academic/paper/`, `academic/thesis/`, `academic/slides/`).
+- **Strategic Roadmap & Security Synchronization**: Updated `ROADMAP.md` and `SECURITY.md` to reflect v1.7.0 delivery status, mark v1.7.x as Active Supported, and establish v1.8.0 as the active development frontier.
+- **Linter & Runtime Environment Alignment**: Harmonized `target-version` in `pyproject.toml` and `ruff.toml` to `"py310"`, strictly aligning with package specification `requires-python = ">=3.10"`.
+- **Documentation Navigation Validation**: Corrected `mkdocs.yml` navigation links, ensuring full alignment with physically present documentation assets.
+- **Planned FLA Integration Disclosure**: Disclosed Flash Linear Attention (FLA) in the framework integration matrix as an upcoming optional backend planned for v1.8.0 (`neuralops[fla]`).
+
+### Deprecated
+- **Legacy Pseudo-Triton Names**: Deprecated `fused_nystrom_landmark_pinv_step_triton`, `fused_rpc_sketch_attention_triton`, `fused_primal_dual_landmark_triton`, and `fused_svd_mamba_proj_triton` in `neuralops.ops.triton.low_rank`. These remain available as backwards-compatibility aliases but emit `DeprecationWarning`.
+
 ## [1.7.0] - 2026-10-31
 
 ### Added

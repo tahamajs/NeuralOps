@@ -6,10 +6,10 @@ Only the latest production release receives active security patches:
 
 | Version | Supported |
 | :--- | :--- |
-| **1.4.x** | :white_check_mark: Active |
-| 1.3.x | :x: End of Life |
-| 1.2.x | :x: End of Life |
-| 1.1.x | :x: End of Life |
+| **1.7.x** | :white_check_mark: Active |
+| 1.6.x | :warning: Security fixes only |
+| 1.5.x | :warning: Security fixes only |
+| $\le$ 1.4.x | :x: End of Life |
 
 ---
 

@@ -242,7 +242,7 @@ NeuralOps v1.7.0 retains the complete **27-notebook master suite** (00–25 plus
 | **02** | [`02_roofline_and_triton_kernels.ipynb`](notebooks/02_roofline_and_triton_kernels.ipynb) | 23 | **Hardware Roofline & Arithmetic Intensity**<br>Interactive empirical roofline modeling across Ada Lovelace SM 8.9 compute units. | • Hardware roofline plots: Arithmetic Intensity vs. Bandwidth<br>• DRAM saturation analysis (up to 256 GB/s GDDR6)<br>• Tensor Core FP16 throughput profiling (up to 30 TFLOPS) |
 | **03** | [`03_custom_plugins_and_extensibility.ipynb`](notebooks/03_custom_plugins_and_extensibility.ipynb) | 23 | **Custom Plugins & Extensibility Guide**<br>Developer tutorial for registering custom attention mechanisms, compressors, and composable pipelines. | • Step-by-step `@register_custom_attention` walkthrough<br>• Contract validation harness verifying forward & backward shapes<br>• Composable 4-stage pipeline builder ($P \to \phi \to M \to E$) |
 | **04** | [`04_end_to_end_3level_benchmarking.ipynb`](notebooks/04_end_to_end_3level_benchmarking.ipynb) | 23 | **End-to-End 3-Level Benchmarking**<br>Empirical latency, memory footprint, and throughput profiling across Level 1 $\to$ Level 2 $\to$ Level 3 fallback. | • Real-time dispatch switching via `force_kernel_backend`<br>• Subprocess-isolated memory profiling avoiding GPU leak artifacts<br>• Latency speedup and VRAM reduction tables |
-| **05A** | [`05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb`](notebooks/05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb) | 23 | **Master 108 CUDA C++ & 26 Triton Benchmark**<br>Complete isolated benchmark sweep of all 108 native CUDA C++ and 26 Triton hardware kernels. | • Micro-benchmarking all 108 CUDA extensions via NVCC<br>• High-resolution timing via CUDA Events (`torch.cuda.Event`)<br>• Numerical parity verification ($\Delta_{\max} < 0.01$) vs. PyTorch |
+| **05A** | [`05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb`](notebooks/05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb) | 23 | **Master 114 native CUDA C++ & 26 Triton Benchmark**<br>Complete isolated benchmark sweep of all 114 native CUDA C++ and 26 Triton hardware kernels. | • Micro-benchmarking all 114 native CUDA extensions via NVCC<br>• High-resolution timing via CUDA Events (`torch.cuda.Event`)<br>• Numerical parity verification ($\Delta_{\max} < 0.01$) vs. PyTorch |
 | **05B** | [`05_paper_empirical_results_master.ipynb`](notebooks/05_paper_empirical_results_master.ipynb) | 22 | **Paper Empirical Results Master Notebook**<br>Reproducibility master generating publication figures, Pareto frontiers, and LaTeX booktabs tables. | • Direct ingestion of 2,432 empirical benchmark records<br>• Pareto frontier generation (PPL vs. Compression, VRAM vs. Speed)<br>• Camera-ready vector graphics (.pdf, .svg, .png) export |
 | **06** | [`06_master_all_131_attention_mechanisms_interactive.ipynb`](notebooks/06_master_all_131_attention_mechanisms_interactive.ipynb) | 45 | **Master Attention Zoo Interactive Showcase**<br>Interactive deep-dive across all 131 canonical subquadratic attention mechanisms. | • Architectural categorization across 8 distinct families<br>• FP16 / BF16 / FP32 precision & backward autograd check<br>• Constant-memory autoregressive state cache demonstration |
 | **07** | [`07_master_all_72_compression_engines_quant_and_svd.ipynb`](notebooks/07_master_all_72_compression_engines_quant_and_svd.ipynb) | 45 | **Master 72 Compression Engines Suite**<br>Comprehensive evaluation of SVD, Tensor-Train, quantization (FP8, INT4, KMeans), and dynamic pruning. | • Parameter reduction profiling (up to 256x via KMeans)<br>• Reconstruction Frobenius error quantification<br>• Activation-aware SVD (ASVD, SVD-LLM v2, Fisher SVD) |
@@ -269,7 +269,7 @@ NeuralOps v1.7.0 retains the complete **27-notebook master suite** (00–25 plus
 
 ## 2. CUDA Kernel Packages & 3-Level Fallback Dispatch
 
-NeuralOps includes **113 CUDA kernel package directories** containing 229 `.cu`/`.cpp` source files. These are available to the Level-1 dispatcher when their contracts and compiled extensions are compatible; source presence is not treated as a performance certification.
+NeuralOps includes **112 CUDA kernel package directories** containing 229 `.cu`/`.cpp` source files. These are available to the Level-1 dispatcher when their contracts and compiled extensions are compatible; source presence is not treated as a performance certification.
 
 ```mermaid
 flowchart TD
@@ -299,7 +299,7 @@ flowchart TD
 
 ### Production-Certified Native CUDA C++ Acceleration & 3-Level Fallback
 
-In accordance with strict systems engineering protocol, all 114 native CUDA C++ kernels across 110 modular packages are rigorously integrated into NeuralOps' zero-overhead 3-level fallback hierarchy. Production-certified operators execute directly via native CUDA C++ machine code on NVIDIA GPUs (SM $\ge$ 7.0), achieving up to **13.33x** speedup over standard PyTorch references, with zero-overhead dispatch caching and automatic, seamless fallback to autotuned Triton JIT or vectorized PyTorch references where required.
+In accordance with strict systems engineering protocol, all 114 native CUDA C++ kernels across 112 modular packages are rigorously integrated into NeuralOps' zero-overhead 3-level fallback hierarchy. Production-certified operators execute directly via native CUDA C++ machine code on NVIDIA GPUs (SM $\ge$ 7.0), achieving up to **13.33x** speedup over standard PyTorch references, with zero-overhead dispatch caching and automatic, seamless fallback to autotuned Triton JIT or vectorized PyTorch references where required.
 
 #### The 16 Production-Certified Native CUDA C++ Kernels
 
@@ -972,7 +972,7 @@ flowchart TD
 
     subgraph Layer4 ["4. Execution & Hardware Dispatch"]
         BackendCheck{"Hardware Backend Detection"}
-        CUDACPP["113 CUDA Package Directories (NVCC when available)"]
+        CUDACPP["112 CUDA Package Directories (NVCC when available)"]
         Triton["26 Categorized Triton Modules (62 Unified Operators)"]
         Fallback["Vectorized Native PyTorch Fallbacks (Apple MPS / CPU)"]
     end
@@ -1073,6 +1073,7 @@ To maintain engineering transparency and forensic integrity, NeuralOps categoriz
 | **SGLang** | Radix Cache | ⚠️ No PR | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/sglang.py` | Roadmap v2.0 (requires GPU) |
 | **TensorRT-LLM** | Scaffold | ❌ None | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/tensorrt_llm.py` | Roadmap v2.0 (requires GPU and TensorRT SDK) |
 | **TGI** | Request Simulator | ⚠️ No PR | ⚠️ Stub | ❌ **Roadmap v2.0** | `neuralops/integrations/tgi.py` | Roadmap v2.0 (requires GPU) |
+| **FLA (Flash Linear Attention)** | Optional Backend | `fla-linear-attention` (v1.8) | ⏳ In Progress | ⏳ Deferred | ⚠️ v1.8.0 | N/A in worktree | Planned for v1.8.0; fail-closed when not installed |
 | **GGUF** | Quantized Export | ❌ None | ❌ None | ❌ **Not Implemented** | N/A | Not implemented |
 
 ---
@@ -1681,7 +1682,7 @@ $REMOTE_PYTHON -m neuralops.benchmarks --category all --dynamic
 # 5. Run 3-level execution hierarchy benchmark (CUDA vs Triton vs PyTorch)
 $REMOTE_PYTHON -m neuralops.benchmarks --category all --dynamic
 
-# 6. Run isolated benchmark sweep across all 108 native CUDA C++ kernels
+# 6. Run isolated benchmark sweep across all 114 native CUDA C++ kernels
 $REMOTE_PYTHON -m neuralops.benchmarks --category cuda --dynamic
 ```
 
