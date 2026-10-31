@@ -22,6 +22,8 @@ __all__ = [
     "info",
     "list_cmd",
     "serve_cmd",
+    "surgery_cli",
+    "surgery_cmd",
     "test_cmd",
     "train_cmd",
     "terminal_ui",

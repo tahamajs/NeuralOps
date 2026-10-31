@@ -79,6 +79,7 @@ from neuralops.surgery.healing import (
     heal_replaced_model,
 )
 
+from neuralops.surgery.model_surgery import ModelSurgery
 from neuralops.surgery.registry import (
     SURGERY_REGISTRY,
     SurgeryMetadata,
@@ -179,4 +180,5 @@ __all__ = [
     "transplant_attention",
     "heal_replaced_model",
     "calibrate_attention_subspace",
+    "ModelSurgery",
 ]

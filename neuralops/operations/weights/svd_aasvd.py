@@ -180,6 +180,7 @@ class WeightsCompressAASVDOperation(Operation):
                 in_features=d_in,
                 out_features=d_out,
                 rank=r,
+                lora_rank=0,
                 bias=(bias is not None),
                 dtype=weight.dtype,
                 device=weight.device,
