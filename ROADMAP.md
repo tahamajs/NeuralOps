@@ -4,9 +4,14 @@ This document outlines the architectural roadmap, development milestones, and re
 
 ---
 
-## Current Release: v1.6.0 (October 2026) — CPU Stability & Modern Tier Architecture
+## Current Release: v1.8.1 (October 2026) — Fail-Closed Extensibility & Reality-Hardening
 
-The v1.6.0 release completes the structural tier modernization, PEP 562 lazy loading, and CPU-safe execution architecture:
+The v1.8.1 release consolidates ecosystem stability following the v1.7.0 partial delivery (36.7% across 6 work packages) and v1.8.0 Flash Linear Attention (`fla`) integration:
+
+- **v1.8.1**: Post-audit stabilization — renamed pseudo-Triton operations to `*_pytorch` with deprecated aliases, eliminated silent exception swallows across data paths, normalized CUDA kernel counts (112 packages / 114 native implementations), and removed stale telemetry artifacts.
+- **v1.8.0**: Integrated upstream Flash Linear Attention (`fla`) via optional, fail-closed extension bridge (`neuralops.integrations.fla`) with strict return-arity negotiation, isolated extension registry, and zero disruption to canonical invariants.
+- **v1.7.0**: Partial delivery (36.7%) — advanced low-rank kernels, cache bridge primitives, and initial serving shims.
+- **v1.6.0**: Tier modernization, PEP 562 lazy loading, and CPU-safe execution architecture.
 
 - **131 Attention Mechanisms** physically migrated to `neuralops.layers` across 12 mathematical families.
 - **72 Model Compression Engines** physically migrated to `neuralops.compression` spanning SVD, low-rank, pruning, and quantization.

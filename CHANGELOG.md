@@ -5,6 +5,23 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-10-31
+
+### Fixed
+- Renamed four pseudo-Triton functions in `low_rank.py` to `*_pytorch`; old names remain as deprecated aliases emitting `DeprecationWarning`.
+- Replaced `except Exception: pass` in `core/registry.py`, `core/metrics.py`, and `layers/experimental/template_attention.py` with explicit `logger.warning` or `raise` per AGENTS.md §6.3.
+- Normalized CUDA package counts in `README.md` to 112 packages / 114 native implementations.
+- Updated `api.py` version fallback (removed stale `1.4.3` default).
+- Aligned `pyproject.toml` and `ruff.toml` Python targets to `py310`.
+
+### Changed
+- `ROADMAP.md`, `SECURITY.md`, `CITATION.cff` `date-released` updated to reflect current release state.
+- `mkdocs.yml` navigation entry for `docs/README.md` corrected to `docs/index.md`.
+- Academic artifact paths in README updated from `paper/` / `thesis_final/` to `academic/paper/` / `academic/thesis/`.
+
+### Removed
+- `texput.log` from repository root.
+
 ## [1.8.0] - 2026-10-31
 
 ### Added
