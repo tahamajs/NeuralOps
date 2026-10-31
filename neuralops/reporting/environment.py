@@ -11,8 +11,8 @@ Environment and Hardware Telemetry Capture for Reproducibility.
 
 from __future__ import annotations
 
-import os
 import platform
+import socket
 import subprocess
 import sys
 from typing import Any, Dict, Optional
@@ -34,14 +34,48 @@ def _get_git_commit() -> str:
         )
         if res.returncode == 0:
             return res.stdout.strip()
-    except Exception:
+    except Exception:  # allowed-swallow: git detection failure fallback
         pass
     return "unknown"
 
 
 def capture_environment(seed: Optional[int] = None) -> Dict[str, Any]:
-    """Capture snapshot of software, hardware, and runtime environment."""
-    env = {
+    """Capture snapshot of software, hardware, and runtime environment.
+
+    Schema:
+    - neuralops: str
+    - torch: str
+    - transformers: Optional[str]
+    - cuda: Optional[str]
+    - gpu: Optional[str]
+    - hostname: str
+    - git_sha: str
+    """
+    transformers_version: Optional[str] = None
+    try:
+        import transformers  # type: ignore
+
+        transformers_version = getattr(transformers, "__version__", None)
+    except ImportError:
+        transformers_version = None
+
+    git_sha = _get_git_commit()
+    hostname = socket.gethostname()
+
+    cuda_avail = torch.cuda.is_available()
+    cuda_version: Optional[str] = torch.version.cuda if cuda_avail else None
+    gpu_name: Optional[str] = torch.cuda.get_device_name(0) if cuda_avail else None
+
+    env: Dict[str, Any] = {
+        # Top-level required keys per frozen Phase 3 Evidence Schema
+        "neuralops": getattr(neuralops, "__version__", "1.9.0"),
+        "torch": torch.__version__,
+        "transformers": transformers_version,
+        "cuda": cuda_version,
+        "gpu": gpu_name,
+        "hostname": hostname,
+        "git_sha": git_sha,
+        # Detailed diagnostics
         "platform": {
             "system": platform.system(),
             "release": platform.release(),
@@ -52,26 +86,16 @@ def capture_environment(seed: Optional[int] = None) -> Dict[str, Any]:
             "version": platform.python_version(),
             "executable": sys.executable,
         },
-        "torch": {
-            "version": torch.__version__,
-            "cuda_available": torch.cuda.is_available(),
-            "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
-            "device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
-            "device_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu",
-        },
-        "neuralops": {
-            "version": getattr(neuralops, "__version__", "1.9.0"),
-            "git_commit": _get_git_commit(),
-        },
         "seed": seed,
     }
 
-    # Triton version check
+    # Triton optional version check
     try:
-        import triton
-        env["triton"] = {"version": triton.__version__}
+        import triton  # type: ignore
+
+        env["triton"] = getattr(triton, "__version__", None)
     except ImportError:
-        env["triton"] = {"version": None}
+        env["triton"] = None
 
     return env
 

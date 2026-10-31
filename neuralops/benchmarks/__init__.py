@@ -61,9 +61,11 @@ __all__ = [
     "OPS_REGISTRY",
     "verify_op",
     "DynamicBenchmarkOrchestrator",
+    "run_recipe_benchmark",
 ]
 
 _LAZY_BENCHMARK_SYMBOLS: dict[str, tuple[str, str]] = {
+    "run_recipe_benchmark": ("neuralops.benchmarks.recipe_benchmark", "run_recipe_benchmark"),
     "Runner": ("neuralops.benchmarks.api", "Runner"),
     "benchmark": ("neuralops.benchmarks.api", "benchmark"),
     "main": ("neuralops.benchmarks.cli", "main"),

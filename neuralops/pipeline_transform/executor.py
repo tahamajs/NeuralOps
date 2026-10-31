@@ -107,6 +107,7 @@ def execute_plan(
 
         snapshot = capture(model, state_paths=state_paths)
         mem_before = _get_memory_bytes(model)
+        params_before = sum(p.numel() for p in model.parameters())
 
         # 4. Apply operation
         t_stage_start = time.perf_counter()
@@ -131,11 +132,13 @@ def execute_plan(
 
         # 5. Run validation gates (model before vs model after)
         val_profile = plan.validation_spec.get("profile", "structural") if isinstance(plan.validation_spec, dict) else getattr(plan.validation_spec, "profile", "structural")
+        stage_val_ctx = dict(stage.config)
+        stage_val_ctx.setdefault("baseline_parameters", params_before)
         val_result = run_validation_gates(
             model_before=model,
             model_after=new_model,
             profile=val_profile,
-            context=stage.config,
+            context=stage_val_ctx,
         )
 
         # 6. Verify gate results

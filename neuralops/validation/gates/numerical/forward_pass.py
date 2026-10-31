@@ -23,10 +23,20 @@ from neuralops.validation.base import Gate, GateResult, GateSeverity
 def _get_dummy_input(model: nn.Module, batch_size: int = 2, seq_len: int = 16) -> Any:
     device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
     vocab_size = getattr(getattr(model, "config", None), "vocab_size", None)
-    hidden_size = getattr(getattr(model, "config", None), "hidden_size", 64)
+    hidden_size = getattr(getattr(model, "config", None), "hidden_size", None)
 
     if vocab_size is not None:
         return torch.randint(0, vocab_size, (batch_size, seq_len), device=device)
+
+    if hidden_size is None:
+        # Check first layer for in_features if config is absent
+        for m in model.modules():
+            if m is not model and hasattr(m, "in_features") and isinstance(getattr(m, "in_features", None), int):
+                hidden_size = m.in_features
+                break
+        if hidden_size is None:
+            hidden_size = 64
+
     return torch.randn(batch_size, seq_len, hidden_size, device=device)
 
 

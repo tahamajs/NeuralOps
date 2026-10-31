@@ -48,9 +48,14 @@ class ParameterCountGate(Gate):
             )
 
         test_params = sum(p.numel() for p in active_model.parameters())
+        base_params = None
+        if context:
+            base_params = context.get("baseline_parameters") or context.get("base_params")
 
-        if base_model is not None:
+        if base_params is None and base_model is not None:
             base_params = sum(p.numel() for p in base_model.parameters())
+
+        if base_params is not None:
             ratio = test_params / max(1, base_params)
             target_ratio = float(context.get("target_ratio", 1.0)) if context else 1.0
             target_pattern = str(context.get("target", "*")) if context else "*"
