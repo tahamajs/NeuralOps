@@ -2278,6 +2278,7 @@ __all__ = [
     'triton_fused_kronecker_matmul_pytorch_ref',
     'triton_spectral_entropy_svd_gate',
     'triton_spectral_entropy_svd_gate_pytorch_ref',
+    'direct_svd_compress',
 ]
 
 
@@ -3230,3 +3231,137 @@ def triton_spectral_entropy_svd_gate(
     )
 
     return y.view(*orig_shape[:-1], N)
+
+
+if HAS_TRITON and tl is not None:
+    @triton.autotune(
+        configs=[
+            triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 16}, num_stages=2, num_warps=2),
+            triton.Config({"BLOCK_M": 64, "BLOCK_N": 32, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+            triton.Config({"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=3, num_warps=4),
+        ],
+        key=["M", "N", "K"],
+    )
+    @triton.jit
+    def _direct_svd_reconstruct_kernel(
+        U_ptr,
+        V_ptr,
+        Out_ptr,
+        M,
+        N,
+        K,
+        stride_um,
+        stride_uk,
+        stride_vk,
+        stride_vn,
+        stride_om,
+        stride_on,
+        scale,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+        offs_k = tl.arange(0, BLOCK_K)
+
+        u_ptrs = U_ptr + (offs_m[:, None] * stride_um + offs_k[None, :] * stride_uk)
+        v_ptrs = V_ptr + (offs_k[:, None] * stride_vk + offs_n[None, :] * stride_vn)
+
+        accumulator = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+
+        for k in range(tl.cdiv(K, BLOCK_K)):
+            k_mask = (k * BLOCK_K + offs_k) < K
+            u = tl.load(u_ptrs, mask=(offs_m[:, None] < M) & k_mask[None, :], other=0.0)
+            v = tl.load(v_ptrs, mask=k_mask[:, None] & (offs_n[None, :] < N), other=0.0)
+            accumulator += tl.dot(u, v)
+
+            u_ptrs += BLOCK_K * stride_uk
+            v_ptrs += BLOCK_K * stride_vk
+
+        if scale != 1.0:
+            accumulator = accumulator * scale
+
+        out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
+        out_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+        tl.store(out_ptrs, accumulator, mask=out_mask)
+else:
+    _direct_svd_reconstruct_kernel = None
+
+
+def direct_svd_compress(
+    W: torch.Tensor,
+    rank: int = 32,
+    max_error: float = 0.35,
+) -> torch.Tensor:
+    """Direct Truncated Singular Value Decomposition (SVD) projection.
+
+    Decomposes target 2D projection matrix W into low-rank factor pair (U_r, V_r)
+    with rank truncation, symmetric singular energy allocation, and energy scaling,
+    evaluating reconstruction with Triton kernel.
+
+    Args:
+        W: 2D weight tensor of shape (M, N)
+        rank: Target compression rank
+        max_error: Error tolerance threshold (reference compatibility)
+
+    Returns:
+        Reconstructed weight tensor matching W.shape and W.dtype
+    """
+    if W.ndim != 2:
+        raise ValueError(f"direct_svd_compress requires a 2D weight matrix, got shape {W.shape}")
+
+    M, N = W.shape
+    r = max(1, min(rank, min(M, N) - 1)) if min(M, N) > 1 else 1
+
+    W_fp32 = W.float()
+    norm_w = torch.norm(W_fp32, p="fro").item()
+
+    # Step 1: Truncated SVD matching reference DirectSVDCompressor
+    U, S, Vt = torch.linalg.svd(W_fp32, full_matrices=False)
+    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).contiguous()
+
+    # Energy normalization scale factor
+    W_recon_pre = torch.matmul(U_r, V_r)
+    recon_norm = torch.norm(W_recon_pre, p="fro").item()
+    scale = 1.0
+    if recon_norm > 1e-12 and norm_w > 1e-12:
+        scale = math.sqrt(norm_w / recon_norm)
+
+    # Step 2: Dispatch to Triton or PyTorch fallback
+    if (
+        HAS_TRITON
+        and W.is_cuda
+        and check_triton_suitability(W)
+        and _direct_svd_reconstruct_kernel is not None
+    ):
+        out = torch.empty((M, N), device=W.device, dtype=torch.float32)
+        grid = lambda META: (
+            triton.cdiv(M, META["BLOCK_M"]),
+            triton.cdiv(N, META["BLOCK_N"]),
+        )
+        _direct_svd_reconstruct_kernel[grid](
+            U_r,
+            V_r,
+            out,
+            M,
+            N,
+            r,
+            U_r.stride(0),
+            U_r.stride(1),
+            V_r.stride(0),
+            V_r.stride(1),
+            out.stride(0),
+            out.stride(1),
+            float(scale),
+        )
+        return out.to(dtype=W.dtype)
+
+    logger.warning("direct_svd_compress: Triton unavailable or unsuitable on current device/shape, using PyTorch fallback.")
+    return (W_recon_pre * scale).to(dtype=W.dtype)
+
