@@ -211,3 +211,11 @@ __pycache__/
 *.so
 .DS_Store
 **/.DS_Store
+
+# LaTeX build artifacts
+*.log
+*.aux
+*.toc
+*.lof
+*.lot
+*.out
