@@ -292,6 +292,9 @@ def _build_parser() -> argparse.ArgumentParser:
     trans_p.add_argument("--calibration-text", "--calibration-dataset", "--dataset", dest="calibration_text", type=str, default=None, help="Text or dataset identifier used to create real tokenizer inputs for calibration/healing")
     trans_p.add_argument("--output-dir", "--save-dir", "--output", dest="output_dir", type=str, default="models/transplanted", help="Directory for the surgical model and manifest")
 
+    from neuralops.cli.surgery_cmd import add_surgery_subparser
+    add_surgery_subparser(subparsers)
+
     compose_p = subparsers.add_parser("compose", help="Declaratively build custom attention via ComposableAttention")
     compose_p.add_argument("--projection", type=str, default="dense", help="Projection type (dense, svd(rank=r), conv1d(k))")
     compose_p.add_argument("--positional", type=str, default="none", help="Positional encoding (none, rope, alibi)")
@@ -1239,6 +1242,9 @@ def _dispatch(args: argparse.Namespace) -> int:
         print("[+] Composable Attention Architecture:")
         print(attn.summary())
         return 0
+    elif args.subcommand in ("surgery-recipe", "recipe"):
+        from neuralops.cli.surgery_cmd import handle_surgery_command
+        return handle_surgery_command(args)
     elif args.subcommand == "recommend":
         print(f"[+] Querying NeuralOps Architecture Advisor (VRAM: {args.vram_gb}GB, Context: {args.context_len}, Task: {args.task})...")
         if args.context_len >= 8192 or args.vram_gb < 6.0:

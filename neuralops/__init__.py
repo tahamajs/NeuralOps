@@ -418,6 +418,19 @@ _LAZY_EXPORTS = {
     "CompressionPipeline": ("neuralops.core.compression_pipeline", "CompressionPipeline"),
     "CustomLoopTrainer": ("neuralops.trainer.custom_loop_trainer", "CustomLoopTrainer"),
     "FairnessEvaluator": ("neuralops.evaluation.fairness", "FairnessEvaluator"),
+    "Recipe": ("neuralops.recipe.schema", "Recipe"),
+    "load_recipe": ("neuralops.recipe.loader", "load_recipe"),
+    "loads_recipe": ("neuralops.recipe.loader", "loads_recipe"),
+    "save_recipe": ("neuralops.recipe.serializer", "save_recipe"),
+    "recipe_hash": ("neuralops.recipe.canonical", "recipe_hash"),
+    "ModelSurgery": ("neuralops.surgery.model_surgery", "ModelSurgery"),
+    "get_operation": ("neuralops.operations.registry", "get_operation"),
+    "list_operations": ("neuralops.operations.registry", "list_operations"),
+    "find_adapter": ("neuralops.adapters.registry", "find_adapter"),
+    "list_adapters": ("neuralops.adapters.registry", "list_adapters"),
+    "EvidenceRecord": ("neuralops.reporting.evidence", "EvidenceRecord"),
+    "build_evidence": ("neuralops.reporting.evidence", "build_evidence"),
+    "render_report": ("neuralops.reporting.report", "render_report"),
     "FairnessReport": ("neuralops.evaluation.fairness", "FairnessReport"),
     "HuggingFaceTrainer": ("neuralops.trainer.hf_trainer", "HuggingFaceTrainer"),
     "NeuralOpsTrainer": ("neuralops.trainer.neuralops_trainer", "NeuralOpsTrainer"),
@@ -552,6 +565,7 @@ _SUBPACKAGES = {
     "results_saver", "runners", "tests", "tracking", "trainer",
     "training", "utils", "main", "surgery", "export",
     "optimization", "adaptation",
+    "recipe", "operations", "adapters", "validator", "executor", "reporting",
 }
 
 
