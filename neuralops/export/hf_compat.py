@@ -161,11 +161,14 @@ def export_to_hf(
 
     # 2. Re-load and verify
     reloaded_model: Optional[nn.Module] = None
-    try:
-        from transformers import AutoModel
-        reloaded_model = AutoModel.from_pretrained(str(out_path), trust_remote_code=True, local_files_only=True)
-    except Exception as e_hf:
-        warnings.append(f"AutoModel.from_pretrained failed ({e_hf}); attempting architecture reload.")
+    if is_hf_pretrained:
+        try:
+            from transformers import AutoModel
+            reloaded_model = AutoModel.from_pretrained(str(out_path), trust_remote_code=True, local_files_only=True)
+        except Exception as e_hf:
+            warnings.append(f"AutoModel.from_pretrained failed ({e_hf}); attempting architecture reload.")
+
+    if reloaded_model is None:
         try:
             # Reconstruct model from class
             import copy
