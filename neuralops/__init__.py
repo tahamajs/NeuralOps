@@ -549,6 +549,7 @@ _SUBPACKAGES = {
     "inference", "integrations", "kernels", "models",
     "results_saver", "runners", "tests", "tracking", "trainer",
     "training", "utils", "main", "surgery", "export",
+    "optimization", "adaptation",
 }
 
 
