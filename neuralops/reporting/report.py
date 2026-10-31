@@ -24,9 +24,15 @@ def render_report(evidence: Dict[str, Any]) -> str:
     status_icon = "✓ PASS" if status == "SUCCESS" else ("⚠ PARTIAL" if status == "PARTIAL" else "✗ FAIL")
     recipe_hash = str(evidence.get("recipe_hash", "unknown"))
     short_hash = recipe_hash[:16] + "..." if len(recipe_hash) > 16 else recipe_hash
+    recipe_name = evidence.get("recipe_name")
+    header_title = (
+        f"# NeuralOps Transformation Report: {recipe_name}"
+        if recipe_name and recipe_name != "unnamed_recipe"
+        else "# NeuralOps Transformation Evidence Report"
+    )
 
     lines: List[str] = [
-        "# NeuralOps Transformation Evidence Report",
+        header_title,
         "",
         f"**Status:** {status_icon} | **Recipe Hash:** `{short_hash}` | **Total Time:** {evidence.get('total_time_seconds', 0.0):.2f}s",
         "",
@@ -35,10 +41,18 @@ def render_report(evidence: Dict[str, Any]) -> str:
     ]
 
     model_info = evidence.get("model", {})
+    metrics = evidence.get("metrics", {})
+    comp_ratio = metrics.get("compression_ratio")
+
     lines.extend([
         f"- **Source:** `{model_info.get('source', 'unknown')}`",
         f"- **Revision:** `{model_info.get('revision', 'main')}`",
         f"- **Final Parameter Count:** {model_info.get('final_parameter_count', 0):,}",
+    ])
+    if comp_ratio is not None:
+        lines.append(f"- **Final Compression Ratio:** {comp_ratio:.4f}")
+
+    lines.extend([
         "",
         "## Environment",
         "",
@@ -55,8 +69,8 @@ def render_report(evidence: Dict[str, Any]) -> str:
         "",
         "## Stages",
         "",
-        "| Stage ID | Operation | Status | Duration | Gates Passed |",
-        "| :--- | :--- | :---: | :---: | :--- |",
+        "| Stage ID | Operation | Status | Duration | Gates Passed | Metrics |",
+        "| :--- | :--- | :---: | :---: | :--- | :--- |",
     ])
 
     stages = evidence.get("stages", [])
@@ -69,7 +83,17 @@ def render_report(evidence: Dict[str, Any]) -> str:
         gates_str = "-"
         if isinstance(vr, dict) and "total_gates" in vr:
             gates_str = f"{vr.get('passed_gates', 0)}/{vr.get('total_gates', 0)}"
-        lines.append(f"| `{st_id}` | `{op_name}` | {ok} | {dur:.2f}s | {gates_str} |")
+
+        ev = s.get("evidence", {})
+        det = []
+        if isinstance(ev, dict):
+            if "compression_ratio" in ev:
+                det.append(f"ratio={float(ev['compression_ratio']):.4f}")
+            if "modules_compressed" in ev:
+                det.append(f"mods={ev['modules_compressed']}")
+        metrics_str = ", ".join(det) if det else "-"
+
+        lines.append(f"| `{st_id}` | `{op_name}` | {ok} | {dur:.2f}s | {gates_str} | {metrics_str} |")
 
     lines.extend([
         "",
