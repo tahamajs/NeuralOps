@@ -1,0 +1,1934 @@
+{
+    "attentions": [
+        {
+            "id": "adaptive_span_attention.md",
+            "title": "Adaptive Span Attention",
+            "path": "content/attentions/adaptive_span_attention.md"
+        },
+        {
+            "id": "adaptive_svd_attention.md",
+            "title": "Adaptive SVD Attention",
+            "path": "content/attentions/adaptive_svd_attention.md"
+        },
+        {
+            "id": "adasplash_attention.md",
+            "title": "AdaSplash Attention",
+            "path": "content/attentions/adasplash_attention.md"
+        },
+        {
+            "id": "aegis_v2.md",
+            "title": "Aegis-Attention V2",
+            "path": "content/attentions/aegis_v2.md"
+        },
+        {
+            "id": "aegis_v3.md",
+            "title": "AEGIS-Attention V3",
+            "path": "content/attentions/aegis_v3.md"
+        },
+        {
+            "id": "aegis_v4.md",
+            "title": "AEGIS-Attention V4",
+            "path": "content/attentions/aegis_v4.md"
+        },
+        {
+            "id": "aegis_v5.md",
+            "title": "AEGIS-Attention V5",
+            "path": "content/attentions/aegis_v5.md"
+        },
+        {
+            "id": "aegis_v6.md",
+            "title": "AEGIS-Attention V6",
+            "path": "content/attentions/aegis_v6.md"
+        },
+        {
+            "id": "aegis_hybrid.md",
+            "title": "Aegis-Hybrid Attention",
+            "path": "content/attentions/aegis_hybrid.md"
+        },
+        {
+            "id": "aegis_spectron_fp8.md",
+            "title": "Aegis-Spectron-FP8",
+            "path": "content/attentions/aegis_spectron_fp8.md"
+        },
+        {
+            "id": "asvd_attention.md",
+            "title": "ASVD Attention",
+            "path": "content/attentions/asvd_attention.md"
+        },
+        {
+            "id": "replace.md",
+            "title": "Attention Surgery Engine",
+            "path": "content/attentions/replace.md"
+        },
+        {
+            "id": "bam_umoe.md",
+            "title": "BAM-UMoE",
+            "path": "content/attentions/bam_umoe.md"
+        },
+        {
+            "id": "block_transformer_hiba.md",
+            "title": "Block Transformer HIBA",
+            "path": "content/attentions/block_transformer_hiba.md"
+        },
+        {
+            "id": "chela_slay.md",
+            "title": "CHELA-SLAY",
+            "path": "content/attentions/chela_slay.md"
+        },
+        {
+            "id": "cluster_attention.md",
+            "title": "ClusterFormer",
+            "path": "content/attentions/cluster_attention.md"
+        },
+        {
+            "id": "compressed_mha_attention.md",
+            "title": "Compressed Multi-Head Attention",
+            "path": "content/attentions/compressed_mha_attention.md"
+        },
+        {
+            "id": "compressed_attention.md",
+            "title": "Compressed Multi-Head Attention (SVD & Energy-Thresholded Low-Rank Approximations)",
+            "path": "content/attentions/compressed_attention.md"
+        },
+        {
+            "id": "eat.md",
+            "title": "EAT",
+            "path": "content/attentions/eat.md"
+        },
+        {
+            "id": "factorised_matrix_state.md",
+            "title": "Factorised Matrix State Attention",
+            "path": "content/attentions/factorised_matrix_state.md"
+        },
+        {
+            "id": "flash_attention3.md",
+            "title": "FlashAttention-3",
+            "path": "content/attentions/flash_attention3.md"
+        },
+        {
+            "id": "flash_attention3_fp8.md",
+            "title": "FlashAttention-3 FP8",
+            "path": "content/attentions/flash_attention3_fp8.md"
+        },
+        {
+            "id": "full_attention.md",
+            "title": "Full Attention",
+            "path": "content/attentions/full_attention.md"
+        },
+        {
+            "id": "fusion_attn.md",
+            "title": "Full Attention",
+            "path": "content/attentions/fusion_attn.md"
+        },
+        {
+            "id": "gated_delta_net.md",
+            "title": "Gated DeltaNet",
+            "path": "content/attentions/gated_delta_net.md"
+        },
+        {
+            "id": "gated_deltanet_block.md",
+            "title": "Gated DeltaNet Block",
+            "path": "content/attentions/gated_deltanet_block.md"
+        },
+        {
+            "id": "goldfinch_ahn.md",
+            "title": "GoldFinch-AHN",
+            "path": "content/attentions/goldfinch_ahn.md"
+        },
+        {
+            "id": "granite_hybrid.md",
+            "title": "Granite-Hybrid Attention",
+            "path": "content/attentions/granite_hybrid.md"
+        },
+        {
+            "id": "griffin_ssd.md",
+            "title": "Griffin SSD",
+            "path": "content/attentions/griffin_ssd.md"
+        },
+        {
+            "id": "gqa_attention.md",
+            "title": "Grouped-Query Attention (GQA)",
+            "path": "content/attentions/gqa_attention.md"
+        },
+        {
+            "id": "halo_regla.md",
+            "title": "HALO-ReGLA",
+            "path": "content/attentions/halo_regla.md"
+        },
+        {
+            "id": "hamming_attention.md",
+            "title": "Hamming Attention",
+            "path": "content/attentions/hamming_attention.md"
+        },
+        {
+            "id": "hgrn2_gated_deltanet.md",
+            "title": "HGRN-2 Gated DeltaNet",
+            "path": "content/attentions/hgrn2_gated_deltanet.md"
+        },
+        {
+            "id": "hgrn2_layer.md",
+            "title": "HGRN-2 Layer",
+            "path": "content/attentions/hgrn2_layer.md"
+        },
+        {
+            "id": "hgrn2_outer.md",
+            "title": "HGRN-2 Outer",
+            "path": "content/attentions/hgrn2_outer.md"
+        },
+        {
+            "id": "hla_attention.md",
+            "title": "HLA Attention",
+            "path": "content/attentions/hla_attention.md"
+        },
+        {
+            "id": "hymba_transx.md",
+            "title": "Hymba TransX",
+            "path": "content/attentions/hymba_transx.md"
+        },
+        {
+            "id": "infini_attention.md",
+            "title": "Infini-Attention",
+            "path": "content/attentions/infini_attention.md"
+        },
+        {
+            "id": "jamba2.md",
+            "title": "Jamba-2 Architecture",
+            "path": "content/attentions/jamba2.md"
+        },
+        {
+            "id": "jamba_info.md",
+            "title": "Jamba-Info",
+            "path": "content/attentions/jamba_info.md"
+        },
+        {
+            "id": "kda_attention.md",
+            "title": "KDA Attention",
+            "path": "content/attentions/kda_attention.md"
+        },
+        {
+            "id": "leka_v1.md",
+            "title": "LEKAv1",
+            "path": "content/attentions/leka_v1.md"
+        },
+        {
+            "id": "leka_v2.md",
+            "title": "LEKAv2",
+            "path": "content/attentions/leka_v2.md"
+        },
+        {
+            "id": "leka_v3.md",
+            "title": "LEKAv3",
+            "path": "content/attentions/leka_v3.md"
+        },
+        {
+            "id": "linformer_attention.md",
+            "title": "Linformer Attention",
+            "path": "content/attentions/linformer_attention.md"
+        },
+        {
+            "id": "lsh_attention.md",
+            "title": "Locality-Sensitive Hashing Attention",
+            "path": "content/attentions/lsh_attention.md"
+        },
+        {
+            "id": "lola_attention.md",
+            "title": "Lola Attention",
+            "path": "content/attentions/lola_attention.md"
+        },
+        {
+            "id": "lora_attention.md",
+            "title": "LoRA Attention",
+            "path": "content/attentions/lora_attention.md"
+        },
+        {
+            "id": "mamba.md",
+            "title": "Mamba",
+            "path": "content/attentions/mamba.md"
+        },
+        {
+            "id": "mamba_svd_flash.md",
+            "title": "MambaSVD-Flash",
+            "path": "content/attentions/mamba_svd_flash.md"
+        },
+        {
+            "id": "minimal_aurora.md",
+            "title": "MinimalAURORA Attention",
+            "path": "content/attentions/minimal_aurora.md"
+        },
+        {
+            "id": "minimal_nova.md",
+            "title": "MinimalNOVA Attention",
+            "path": "content/attentions/minimal_nova.md"
+        },
+        {
+            "id": "minimal_prism.md",
+            "title": "MinimalPRISM Attention",
+            "path": "content/attentions/minimal_prism.md"
+        },
+        {
+            "id": "minimal_svd.md",
+            "title": "MinimalSVD",
+            "path": "content/attentions/minimal_svd.md"
+        },
+        {
+            "id": "minimal_svd_v2.md",
+            "title": "MinimalSVD v2",
+            "path": "content/attentions/minimal_svd_v2.md"
+        },
+        {
+            "id": "mixattention_moska.md",
+            "title": "MixAttention-MoSKA",
+            "path": "content/attentions/mixattention_moska.md"
+        },
+        {
+            "id": "moba_attention.md",
+            "title": "MoBA Attention",
+            "path": "content/attentions/moba_attention.md"
+        },
+        {
+            "id": "moe_deltakv_paged.md",
+            "title": "MoE-DeltaKV-Paged",
+            "path": "content/attentions/moe_deltakv_paged.md"
+        },
+        {
+            "id": "mla_attention.md",
+            "title": "Multi-Head Latent Attention (MLA)",
+            "path": "content/attentions/mla_attention.md"
+        },
+        {
+            "id": "nasc_attention.md",
+            "title": "NASC",
+            "path": "content/attentions/nasc_attention.md"
+        },
+        {
+            "id": "nha_attention.md",
+            "title": "Native Hybrid Attention (NHA)",
+            "path": "content/attentions/nha_attention.md"
+        },
+        {
+            "id": "nsa_attention.md",
+            "title": "Native Sparse Attention",
+            "path": "content/attentions/nsa_attention.md"
+        },
+        {
+            "id": "nexus.md",
+            "title": "NEXUS",
+            "path": "content/attentions/nexus.md"
+        },
+        {
+            "id": "nha_compressor.md",
+            "title": "NHA Compressor",
+            "path": "content/attentions/nha_compressor.md"
+        },
+        {
+            "id": "nystrom_attention.md",
+            "title": "Nystr\u00f6m Attention",
+            "path": "content/attentions/nystrom_attention.md"
+        },
+        {
+            "id": "optimized_hybrid_attention.md",
+            "title": "Optimized Hybrid Attention (OHA)",
+            "path": "content/attentions/optimized_hybrid_attention.md"
+        },
+        {
+            "id": "orion.md",
+            "title": "ORION",
+            "path": "content/attentions/orion.md"
+        },
+        {
+            "id": "performer_attention.md",
+            "title": "Performer Attention (FAVOR+)",
+            "path": "content/attentions/performer_attention.md"
+        },
+        {
+            "id": "phantom.md",
+            "title": "PHANTOM",
+            "path": "content/attentions/phantom.md"
+        },
+        {
+            "id": "primal_attention.md",
+            "title": "Primal Attention",
+            "path": "content/attentions/primal_attention.md"
+        },
+        {
+            "id": "progressive_token_pruning.md",
+            "title": "Progressive Token Pruning",
+            "path": "content/attentions/progressive_token_pruning.md"
+        },
+        {
+            "id": "qcqa_attention.md",
+            "title": "Quality and Capacity-Aware Grouped Query Attention (QCQA)",
+            "path": "content/attentions/qcqa_attention.md"
+        },
+        {
+            "id": "rala_compressor.md",
+            "title": "RALA Compressor",
+            "path": "content/attentions/rala_compressor.md"
+        },
+        {
+            "id": "rala_attention.md",
+            "title": "Rank-Augmented Linear Attention (RALA)",
+            "path": "content/attentions/rala_attention.md"
+        },
+        {
+            "id": "regla_attention.md",
+            "title": "Refined Gated Linear Attention (ReGLA)",
+            "path": "content/attentions/regla_attention.md"
+        },
+        {
+            "id": "routing_attention.md",
+            "title": "Routing Attention",
+            "path": "content/attentions/routing_attention.md"
+        },
+        {
+            "id": "rpc_attention.md",
+            "title": "RPC Attention",
+            "path": "content/attentions/rpc_attention.md"
+        },
+        {
+            "id": "salt.md",
+            "title": "SALT Attention",
+            "path": "content/attentions/salt.md"
+        },
+        {
+            "id": "samba_m3.md",
+            "title": "SAMBA-M3",
+            "path": "content/attentions/samba_m3.md"
+        },
+        {
+            "id": "samba_moe.md",
+            "title": "SambaMoE",
+            "path": "content/attentions/samba_moe.md"
+        },
+        {
+            "id": "soa_attn.md",
+            "title": "Shared Orthogonal Attention (SOA)",
+            "path": "content/attentions/soa_attn.md"
+        },
+        {
+            "id": "simple_ssm.md",
+            "title": "Simple SSM",
+            "path": "content/attentions/simple_ssm.md"
+        },
+        {
+            "id": "weighted_ensemble.md",
+            "title": "Smart Weighted Ensemble",
+            "path": "content/attentions/weighted_ensemble.md"
+        },
+        {
+            "id": "SOAFusedAttention.md",
+            "title": "SOA Fused Attention",
+            "path": "content/attentions/SOAFusedAttention.md"
+        },
+        {
+            "id": "span_expanded_attention.md",
+            "title": "Span-Expanded Attention",
+            "path": "content/attentions/span_expanded_attention.md"
+        },
+        {
+            "id": "spectra_v2.md",
+            "title": "SPECTRA-v2",
+            "path": "content/attentions/spectra_v2.md"
+        },
+        {
+            "id": "spectron.md",
+            "title": "SpectronAttention",
+            "path": "content/attentions/spectron.md"
+        },
+        {
+            "id": "squeezing_heads_distill.md",
+            "title": "Squeezing Heads Distillation",
+            "path": "content/attentions/squeezing_heads_distill.md"
+        },
+        {
+            "id": "svd_attention.md",
+            "title": "SVD Attention",
+            "path": "content/attentions/svd_attention.md"
+        },
+        {
+            "id": "svd_linear_attention.md",
+            "title": "SVD Linear Attention",
+            "path": "content/attentions/svd_linear_attention.md"
+        },
+        {
+            "id": "svd_projection_attention.md",
+            "title": "SVD Projection Attention",
+            "path": "content/attentions/svd_projection_attention.md"
+        },
+        {
+            "id": "svd_compressed.md",
+            "title": "SVD-Compressed Attention",
+            "path": "content/attentions/svd_compressed.md"
+        },
+        {
+            "id": "svd_llm_v2_attention.md",
+            "title": "SVD-LLM V2 Attention",
+            "path": "content/attentions/svd_llm_v2_attention.md"
+        },
+        {
+            "id": "template_attention.md",
+            "title": "Template Attention",
+            "path": "content/attentions/template_attention.md"
+        },
+        {
+            "id": "token_compressed.md",
+            "title": "Token-Compressed Attention Wrapper",
+            "path": "content/attentions/token_compressed.md"
+        },
+        {
+            "id": "tt.md",
+            "title": "TokenCompressedAttention",
+            "path": "content/attentions/tt.md"
+        },
+        {
+            "id": "tpa_attention.md",
+            "title": "TPAttention",
+            "path": "content/attentions/tpa_attention.md"
+        },
+        {
+            "id": "unified_rope.md",
+            "title": "Universal Rotary Position Embedding (UnifiedRoPE)",
+            "path": "content/attentions/unified_rope.md"
+        },
+        {
+            "id": "upi_stuffed_mamba.md",
+            "title": "UPI-Stuffed Mamba",
+            "path": "content/attentions/upi_stuffed_mamba.md"
+        },
+        {
+            "id": "vig_attention.md",
+            "title": "ViG Attention",
+            "path": "content/attentions/vig_attention.md"
+        },
+        {
+            "id": "vspec.md",
+            "title": "VSpec++ Attention",
+            "path": "content/attentions/vspec.md"
+        },
+        {
+            "id": "wgqa_attention.md",
+            "title": "Weighted Grouped-Query Attention (WGQA)",
+            "path": "content/attentions/wgqa_attention.md"
+        },
+        {
+            "id": "xattention.md",
+            "title": "XAttention",
+            "path": "content/attentions/xattention.md"
+        },
+        {
+            "id": "template_compressor.md",
+            "title": "YourCustomCompressor",
+            "path": "content/attentions/template_compressor.md"
+        },
+        {
+            "id": "zeros_attention.md",
+            "title": "ZeroS Attention",
+            "path": "content/attentions/zeros_attention.md"
+        }
+    ],
+    "compressions": [
+        {
+            "id": "a3_compressor.md",
+            "title": "A3 Compression",
+            "path": "content/compressions/a3_compressor.md"
+        },
+        {
+            "id": "aa_svd_compressor.md",
+            "title": "AASVDCompressor",
+            "path": "content/compressions/aa_svd_compressor.md"
+        },
+        {
+            "id": "adaptive_compressor.md",
+            "title": "AdaptiveTransformerCompressor",
+            "path": "content/compressions/adaptive_compressor.md"
+        },
+        {
+            "id": "adaptive_ranks.md",
+            "title": "AdaptiveTransformerCompressor (Ranks)",
+            "path": "content/compressions/adaptive_ranks.md"
+        },
+        {
+            "id": "adasvd_compressor.md",
+            "title": "AdaSVDCompressor",
+            "path": "content/compressions/adasvd_compressor.md"
+        },
+        {
+            "id": "admm_compressor.md",
+            "title": "ADMM Compressor",
+            "path": "content/compressions/admm_compressor.md"
+        },
+        {
+            "id": "admm_pruner.md",
+            "title": "ADMM Pruner",
+            "path": "content/compressions/admm_pruner.md"
+        },
+        {
+            "id": "armor_pruner.md",
+            "title": "ARMOR Pruner",
+            "path": "content/compressions/armor_pruner.md"
+        },
+        {
+            "id": "ast_pruner.md",
+            "title": "AST Pruner",
+            "path": "content/compressions/ast_pruner.md"
+        },
+        {
+            "id": "astro_quantizer.md",
+            "title": "AstroQuantizer",
+            "path": "content/compressions/astro_quantizer.md"
+        },
+        {
+            "id": "bonsai_pruner.md",
+            "title": "Bonsai Pruner",
+            "path": "content/compressions/bonsai_pruner.md"
+        },
+        {
+            "id": "cachenotes_compressor.md",
+            "title": "CacheNotes Compressor",
+            "path": "content/compressions/cachenotes_compressor.md"
+        },
+        {
+            "id": "come.md",
+            "title": "CoMe",
+            "path": "content/compressions/come.md"
+        },
+        {
+            "id": "compot_compressor.md",
+            "title": "COMPOT",
+            "path": "content/compressions/compot_compressor.md"
+        },
+        {
+            "id": "coopq_quantizer.md",
+            "title": "CoopQ Quantizer",
+            "path": "content/compressions/coopq_quantizer.md"
+        },
+        {
+            "id": "cr_compressor.md",
+            "title": "CR Compressor",
+            "path": "content/compressions/cr_compressor.md"
+        },
+        {
+            "id": "cur_compressor.md",
+            "title": "CURCompressor",
+            "path": "content/compressions/cur_compressor.md"
+        },
+        {
+            "id": "cure.md",
+            "title": "CURE",
+            "path": "content/compressions/cure.md"
+        },
+        {
+            "id": "cur_linear.md",
+            "title": "CURLinear",
+            "path": "content/compressions/cur_linear.md"
+        },
+        {
+            "id": "cur_moe_compressor.md",
+            "title": "CURMoECompressor",
+            "path": "content/compressions/cur_moe_compressor.md"
+        },
+        {
+            "id": "delta_kv.md",
+            "title": "DeltaKV",
+            "path": "content/compressions/delta_kv.md"
+        },
+        {
+            "id": "dobi_svd.md",
+            "title": "DobiSVDLinearLayer & Compressor",
+            "path": "content/compressions/dobi_svd.md"
+        },
+        {
+            "id": "enlighten_compressor.md",
+            "title": "ENLighten",
+            "path": "content/compressions/enlighten_compressor.md"
+        },
+        {
+            "id": "entropy_budget_allocation.md",
+            "title": "EntropyBudgetAllocation",
+            "path": "content/compressions/entropy_budget_allocation.md"
+        },
+        {
+            "id": "erc_svd.md",
+            "title": "ERCCompressor",
+            "path": "content/compressions/erc_svd.md"
+        },
+        {
+            "id": "faq_quantizer.md",
+            "title": "FAQ Quantizer",
+            "path": "content/compressions/faq_quantizer.md"
+        },
+        {
+            "id": "flap.md",
+            "title": "FLAP",
+            "path": "content/compressions/flap.md"
+        },
+        {
+            "id": "flat_llm.md",
+            "title": "FLAT-LLM",
+            "path": "content/compressions/flat_llm.md"
+        },
+        {
+            "id": "frandi_compressor.md",
+            "title": "FRanDI",
+            "path": "content/compressions/frandi_compressor.md"
+        },
+        {
+            "id": "galerkin_attention.md",
+            "title": "Galerkin Transformer",
+            "path": "content/compressions/galerkin_attention.md"
+        },
+        {
+            "id": "gfws_d_compressor.md",
+            "title": "GFWSVD",
+            "path": "content/compressions/gfws_d_compressor.md"
+        },
+        {
+            "id": "grecodec_compressor.md",
+            "title": "GRECODeC",
+            "path": "content/compressions/grecodec_compressor.md"
+        },
+        {
+            "id": "hashed_linear.md",
+            "title": "Hashed Linear",
+            "path": "content/compressions/hashed_linear.md"
+        },
+        {
+            "id": "hashed_net_compressor.md",
+            "title": "HashedNet Compressor",
+            "path": "content/compressions/hashed_net_compressor.md"
+        },
+        {
+            "id": "huffman_coder.md",
+            "title": "Huffman Coder",
+            "path": "content/compressions/huffman_coder.md"
+        },
+        {
+            "id": "hybrid_svd_layer.md",
+            "title": "Hybrid SVD Layer",
+            "path": "content/compressions/hybrid_svd_layer.md"
+        },
+        {
+            "id": "hybridkv_compressor.md",
+            "title": "HybridKV Compressor",
+            "path": "content/compressions/hybridkv_compressor.md"
+        },
+        {
+            "id": "kmeans_quantize.md",
+            "title": "KMeans Quantizer",
+            "path": "content/compressions/kmeans_quantize.md"
+        },
+        {
+            "id": "kronecker_tt_lora.md",
+            "title": "Kronecker-TT-LoRA",
+            "path": "content/compressions/kronecker_tt_lora.md"
+        },
+        {
+            "id": "kronecker_compressor.md",
+            "title": "KroneckerCompressor",
+            "path": "content/compressions/kronecker_compressor.md"
+        },
+        {
+            "id": "kronecker_linear.md",
+            "title": "KroneckerLinear",
+            "path": "content/compressions/kronecker_linear.md"
+        },
+        {
+            "id": "kvtc_compressor.md",
+            "title": "KVTC Compressor",
+            "path": "content/compressions/kvtc_compressor.md"
+        },
+        {
+            "id": "liftr.md",
+            "title": "LIFTR \u2013 Linearized Function Trick Compressor",
+            "path": "content/compressions/liftr.md"
+        },
+        {
+            "id": "lillama_compressor.md",
+            "title": "LiLLaMA",
+            "path": "content/compressions/lillama_compressor.md"
+        },
+        {
+            "id": "lsc_compressor.md",
+            "title": "LSC Compressor",
+            "path": "content/compressions/lsc_compressor.md"
+        },
+        {
+            "id": "mamba_shedder.md",
+            "title": "Mamba-Shedder",
+            "path": "content/compressions/mamba_shedder.md"
+        },
+        {
+            "id": "mgie_svd.md",
+            "title": "MGIE-SVD",
+            "path": "content/compressions/mgie_svd.md"
+        },
+        {
+            "id": "mgie_svd_compressor.md",
+            "title": "MGIESVDBudgetCompressor",
+            "path": "content/compressions/mgie_svd_compressor.md"
+        },
+        {
+            "id": "mlorq_compressor.md",
+            "title": "MLoRQ Compressor",
+            "path": "content/compressions/mlorq_compressor.md"
+        },
+        {
+            "id": "modegpt_compressor.md",
+            "title": "MoDeGPT",
+            "path": "content/compressions/modegpt_compressor.md"
+        },
+        {
+            "id": "nli_softmax.md",
+            "title": "NLI Softmax Approximation",
+            "path": "content/compressions/nli_softmax.md"
+        },
+        {
+            "id": "nmf_compressor.md",
+            "title": "NMFCompressor",
+            "path": "content/compressions/nmf_compressor.md"
+        },
+        {
+            "id": "oats.md",
+            "title": "OATS",
+            "path": "content/compressions/oats.md"
+        },
+        {
+            "id": "padre_attention.md",
+            "title": "PADRe \u2013 Polynomial Attention with Dropout Regularization",
+            "path": "content/compressions/padre_attention.md"
+        },
+        {
+            "id": "proxsparse_pruner.md",
+            "title": "ProxSparse Pruner",
+            "path": "content/compressions/proxsparse_pruner.md"
+        },
+        {
+            "id": "replaceme_compressor.md",
+            "title": "ReplaceMe",
+            "path": "content/compressions/replaceme_compressor.md"
+        },
+        {
+            "id": "roast_hashed_linear.md",
+            "title": "ROAST",
+            "path": "content/compressions/roast_hashed_linear.md"
+        },
+        {
+            "id": "rotational_slicegpt_int4.md",
+            "title": "Rotational-SliceGPT-INT4",
+            "path": "content/compressions/rotational_slicegpt_int4.md"
+        },
+        {
+            "id": "rpc_attention.md",
+            "title": "RPC Attention",
+            "path": "content/compressions/rpc_attention.md"
+        },
+        {
+            "id": "rpca_compressor.md",
+            "title": "RPCACompressor",
+            "path": "content/compressions/rpca_compressor.md"
+        },
+        {
+            "id": "saes_svd_compressor.md",
+            "title": "SAESCompressor",
+            "path": "content/compressions/saes_svd_compressor.md"
+        },
+        {
+            "id": "saes_svd.md",
+            "title": "SAES\u2011SVD v2",
+            "path": "content/compressions/saes_svd.md"
+        },
+        {
+            "id": "salr.md",
+            "title": "SALR",
+            "path": "content/compressions/salr.md"
+        },
+        {
+            "id": "sdrm_compressor.md",
+            "title": "SDRM",
+            "path": "content/compressions/sdrm_compressor.md"
+        },
+        {
+            "id": "slicegpt.md",
+            "title": "SliceGPT",
+            "path": "content/compressions/slicegpt.md"
+        },
+        {
+            "id": "slicegpt_compressor.md",
+            "title": "SliceGPT PCA",
+            "path": "content/compressions/slicegpt_compressor.md"
+        },
+        {
+            "id": "slim_compressor.md",
+            "title": "SLiM",
+            "path": "content/compressions/slim_compressor.md"
+        },
+        {
+            "id": "soka_compressor.md",
+            "title": "SoKA (Kronecker Product) Compressor \u2013 Low\u2011Rank SVD Placeholder",
+            "path": "content/compressions/soka_compressor.md"
+        },
+        {
+            "id": "sparsegpt.md",
+            "title": "SparseGPT",
+            "path": "content/compressions/sparsegpt.md"
+        },
+        {
+            "id": "spectraformer_attention.md",
+            "title": "Spectraformer",
+            "path": "content/compressions/spectraformer_attention.md"
+        },
+        {
+            "id": "optimal_subspace_projection.md",
+            "title": "Subspace Projection",
+            "path": "content/compressions/optimal_subspace_projection.md"
+        },
+        {
+            "id": "svd_linear.md",
+            "title": "SVDLinearLayer",
+            "path": "content/compressions/svd_linear.md"
+        },
+        {
+            "id": "swift_svd_compressor.md",
+            "title": "SwiftSVDActivationCompressor",
+            "path": "content/compressions/swift_svd_compressor.md"
+        },
+        {
+            "id": "swift_svd.md",
+            "title": "Swift\u2011SVD",
+            "path": "content/compressions/swift_svd.md"
+        },
+        {
+            "id": "tlinformer_attention.md",
+            "title": "TLinFormer Attention",
+            "path": "content/compressions/tlinformer_attention.md"
+        },
+        {
+            "id": "tomoe_compressor.md",
+            "title": "ToMoE",
+            "path": "content/compressions/tomoe_compressor.md"
+        },
+        {
+            "id": "tt_compressor.md",
+            "title": "TTCompressor",
+            "path": "content/compressions/tt_compressor.md"
+        },
+        {
+            "id": "tt_linear.md",
+            "title": "TTLinearLayer",
+            "path": "content/compressions/tt_linear.md"
+        },
+        {
+            "id": "uniql_compressor.md",
+            "title": "UniQL",
+            "path": "content/compressions/uniql_compressor.md"
+        },
+        {
+            "id": "zerokv_neo_compressor.md",
+            "title": "ZeroKV-Neo",
+            "path": "content/compressions/zerokv_neo_compressor.md"
+        }
+    ],
+    "attentions_blog": [
+        {
+            "id": "adaptive_span_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/adaptive_span_attention_blog.md"
+        },
+        {
+            "id": "adaptive_svd_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/adaptive_svd_attention_blog.md"
+        },
+        {
+            "id": "adasplash_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/adasplash_attention_blog.md"
+        },
+        {
+            "id": "aegis_hybrid_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/aegis_hybrid_blog.md"
+        },
+        {
+            "id": "aegis_spectron_fp8_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/aegis_spectron_fp8_blog.md"
+        },
+        {
+            "id": "aegis_v2_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/aegis_v2_blog.md"
+        },
+        {
+            "id": "aegis_v3_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/aegis_v3_blog.md"
+        },
+        {
+            "id": "aegis_v4_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/aegis_v4_blog.md"
+        },
+        {
+            "id": "aegis_v5_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/aegis_v5_blog.md"
+        },
+        {
+            "id": "aegis_v6_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/aegis_v6_blog.md"
+        },
+        {
+            "id": "asvd_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/asvd_attention_blog.md"
+        },
+        {
+            "id": "bam_umoe_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/bam_umoe_blog.md"
+        },
+        {
+            "id": "block_transformer_hiba_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/block_transformer_hiba_blog.md"
+        },
+        {
+            "id": "chela_slay_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/chela_slay_blog.md"
+        },
+        {
+            "id": "cluster_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/cluster_attention_blog.md"
+        },
+        {
+            "id": "compressed_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/compressed_attention_blog.md"
+        },
+        {
+            "id": "compressed_mha_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/compressed_mha_attention_blog.md"
+        },
+        {
+            "id": "eat_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/eat_blog.md"
+        },
+        {
+            "id": "factorised_matrix_state_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/factorised_matrix_state_blog.md"
+        },
+        {
+            "id": "flash_attention3_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/flash_attention3_blog.md"
+        },
+        {
+            "id": "flash_attention3_fp8_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/flash_attention3_fp8_blog.md"
+        },
+        {
+            "id": "full_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/full_attention_blog.md"
+        },
+        {
+            "id": "fusion_attn_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/fusion_attn_blog.md"
+        },
+        {
+            "id": "gated_delta_net_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/gated_delta_net_blog.md"
+        },
+        {
+            "id": "gated_deltanet_block_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/gated_deltanet_block_blog.md"
+        },
+        {
+            "id": "goldfinch_ahn_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/goldfinch_ahn_blog.md"
+        },
+        {
+            "id": "gqa_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/gqa_attention_blog.md"
+        },
+        {
+            "id": "granite_hybrid_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/granite_hybrid_blog.md"
+        },
+        {
+            "id": "griffin_ssd_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/griffin_ssd_blog.md"
+        },
+        {
+            "id": "halo_regla_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/halo_regla_blog.md"
+        },
+        {
+            "id": "hamming_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/hamming_attention_blog.md"
+        },
+        {
+            "id": "hgrn2_gated_deltanet_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/hgrn2_gated_deltanet_blog.md"
+        },
+        {
+            "id": "hgrn2_layer_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/hgrn2_layer_blog.md"
+        },
+        {
+            "id": "hgrn2_outer_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/hgrn2_outer_blog.md"
+        },
+        {
+            "id": "hla_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/hla_attention_blog.md"
+        },
+        {
+            "id": "hymba_transx_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/hymba_transx_blog.md"
+        },
+        {
+            "id": "infini_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/infini_attention_blog.md"
+        },
+        {
+            "id": "jamba2_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/jamba2_blog.md"
+        },
+        {
+            "id": "jamba_info_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/jamba_info_blog.md"
+        },
+        {
+            "id": "kda_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/kda_attention_blog.md"
+        },
+        {
+            "id": "leka_v1_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/leka_v1_blog.md"
+        },
+        {
+            "id": "leka_v2_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/leka_v2_blog.md"
+        },
+        {
+            "id": "leka_v3_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/leka_v3_blog.md"
+        },
+        {
+            "id": "linformer_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/linformer_attention_blog.md"
+        },
+        {
+            "id": "lola_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/lola_attention_blog.md"
+        },
+        {
+            "id": "lora_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/lora_attention_blog.md"
+        },
+        {
+            "id": "lsh_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/lsh_attention_blog.md"
+        },
+        {
+            "id": "mamba_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/mamba_blog.md"
+        },
+        {
+            "id": "mamba_svd_flash_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/mamba_svd_flash_blog.md"
+        },
+        {
+            "id": "minimal_aurora_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/minimal_aurora_blog.md"
+        },
+        {
+            "id": "minimal_nova_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/minimal_nova_blog.md"
+        },
+        {
+            "id": "minimal_prism_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/minimal_prism_blog.md"
+        },
+        {
+            "id": "minimal_svd_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/minimal_svd_blog.md"
+        },
+        {
+            "id": "minimal_svd_v2_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/minimal_svd_v2_blog.md"
+        },
+        {
+            "id": "mixattention_moska_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/mixattention_moska_blog.md"
+        },
+        {
+            "id": "mla_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/mla_attention_blog.md"
+        },
+        {
+            "id": "moba_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/moba_attention_blog.md"
+        },
+        {
+            "id": "moe_deltakv_paged_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/moe_deltakv_paged_blog.md"
+        },
+        {
+            "id": "nasc_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/nasc_attention_blog.md"
+        },
+        {
+            "id": "nexus_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/nexus_blog.md"
+        },
+        {
+            "id": "nha_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/nha_attention_blog.md"
+        },
+        {
+            "id": "nha_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/nha_compressor_blog.md"
+        },
+        {
+            "id": "nsa_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/nsa_attention_blog.md"
+        },
+        {
+            "id": "nystrom_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/nystrom_attention_blog.md"
+        },
+        {
+            "id": "optimized_hybrid_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/optimized_hybrid_attention_blog.md"
+        },
+        {
+            "id": "orion_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/orion_blog.md"
+        },
+        {
+            "id": "performer_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/performer_attention_blog.md"
+        },
+        {
+            "id": "phantom_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/phantom_blog.md"
+        },
+        {
+            "id": "primal_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/primal_attention_blog.md"
+        },
+        {
+            "id": "progressive_token_pruning_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/progressive_token_pruning_blog.md"
+        },
+        {
+            "id": "qcqa_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/qcqa_attention_blog.md"
+        },
+        {
+            "id": "rala_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/rala_attention_blog.md"
+        },
+        {
+            "id": "rala_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/rala_compressor_blog.md"
+        },
+        {
+            "id": "regla_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/regla_attention_blog.md"
+        },
+        {
+            "id": "replace_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/replace_blog.md"
+        },
+        {
+            "id": "routing_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/routing_attention_blog.md"
+        },
+        {
+            "id": "rpc_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/rpc_attention_blog.md"
+        },
+        {
+            "id": "rwkv_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/rwkv_blog.md"
+        },
+        {
+            "id": "salt_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/salt_blog.md"
+        },
+        {
+            "id": "samba_m3_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/samba_m3_blog.md"
+        },
+        {
+            "id": "samba_moe_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/samba_moe_blog.md"
+        },
+        {
+            "id": "simple_ssm_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/simple_ssm_blog.md"
+        },
+        {
+            "id": "soa_attn_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/soa_attn_blog.md"
+        },
+        {
+            "id": "SOAFusedAttention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/SOAFusedAttention_blog.md"
+        },
+        {
+            "id": "span_expanded_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/span_expanded_attention_blog.md"
+        },
+        {
+            "id": "spectra_v2_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/spectra_v2_blog.md"
+        },
+        {
+            "id": "spectron_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/spectron_blog.md"
+        },
+        {
+            "id": "squeezing_heads_distill_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/squeezing_heads_distill_blog.md"
+        },
+        {
+            "id": "svd_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/svd_attention_blog.md"
+        },
+        {
+            "id": "svd_compressed_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/svd_compressed_blog.md"
+        },
+        {
+            "id": "svd_linear_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/svd_linear_attention_blog.md"
+        },
+        {
+            "id": "svd_llm_v2_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/svd_llm_v2_attention_blog.md"
+        },
+        {
+            "id": "svd_projection_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/svd_projection_attention_blog.md"
+        },
+        {
+            "id": "template_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/template_attention_blog.md"
+        },
+        {
+            "id": "template_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/template_compressor_blog.md"
+        },
+        {
+            "id": "token_compressed_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/token_compressed_blog.md"
+        },
+        {
+            "id": "tpa_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/tpa_attention_blog.md"
+        },
+        {
+            "id": "tt_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/tt_blog.md"
+        },
+        {
+            "id": "unified_rope_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/unified_rope_blog.md"
+        },
+        {
+            "id": "upi_stuffed_mamba_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/upi_stuffed_mamba_blog.md"
+        },
+        {
+            "id": "vig_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/vig_attention_blog.md"
+        },
+        {
+            "id": "vspec_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/vspec_blog.md"
+        },
+        {
+            "id": "weighted_ensemble_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/weighted_ensemble_blog.md"
+        },
+        {
+            "id": "wgqa_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/wgqa_attention_blog.md"
+        },
+        {
+            "id": "xattention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/xattention_blog.md"
+        },
+        {
+            "id": "zeros_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/zeros_attention_blog.md"
+        }
+    ],
+    "compressions_blog": [
+        {
+            "id": "a3_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/a3_compressor_blog.md"
+        },
+        {
+            "id": "aa_svd_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/aa_svd_compressor_blog.md"
+        },
+        {
+            "id": "aasvd_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/aasvd_compressor_blog.md"
+        },
+        {
+            "id": "adaptive_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/adaptive_compressor_blog.md"
+        },
+        {
+            "id": "adaptive_ranks_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/adaptive_ranks_blog.md"
+        },
+        {
+            "id": "adasvd_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/adasvd_compressor_blog.md"
+        },
+        {
+            "id": "admm_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/admm_compressor_blog.md"
+        },
+        {
+            "id": "admm_pruner_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/admm_pruner_blog.md"
+        },
+        {
+            "id": "armor_pruner_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/armor_pruner_blog.md"
+        },
+        {
+            "id": "ast_pruner_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/ast_pruner_blog.md"
+        },
+        {
+            "id": "astro_quantizer_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/astro_quantizer_blog.md"
+        },
+        {
+            "id": "asvd_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/asvd_compressor_blog.md"
+        },
+        {
+            "id": "awq_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/awq_blog.md"
+        },
+        {
+            "id": "bonsai_pruner_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/bonsai_pruner_blog.md"
+        },
+        {
+            "id": "cachenotes_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/cachenotes_compressor_blog.md"
+        },
+        {
+            "id": "come_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/come_blog.md"
+        },
+        {
+            "id": "compot_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/compot_compressor_blog.md"
+        },
+        {
+            "id": "coopq_quantizer_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/coopq_quantizer_blog.md"
+        },
+        {
+            "id": "cr_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/cr_compressor_blog.md"
+        },
+        {
+            "id": "cur_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/cur_compressor_blog.md"
+        },
+        {
+            "id": "cur_linear_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/cur_linear_blog.md"
+        },
+        {
+            "id": "cur_moe_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/cur_moe_compressor_blog.md"
+        },
+        {
+            "id": "cure_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/cure_blog.md"
+        },
+        {
+            "id": "delta_kv_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/delta_kv_blog.md"
+        },
+        {
+            "id": "dobi_svd_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/dobi_svd_blog.md"
+        },
+        {
+            "id": "enlighten_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/enlighten_compressor_blog.md"
+        },
+        {
+            "id": "entropy_budget_allocation_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/entropy_budget_allocation_blog.md"
+        },
+        {
+            "id": "erc_svd_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/erc_svd_blog.md"
+        },
+        {
+            "id": "faq_quantizer_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/faq_quantizer_blog.md"
+        },
+        {
+            "id": "flap_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/flap_blog.md"
+        },
+        {
+            "id": "flat_llm_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/flat_llm_blog.md"
+        },
+        {
+            "id": "frandi_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/frandi_compressor_blog.md"
+        },
+        {
+            "id": "galerkin_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/galerkin_attention_blog.md"
+        },
+        {
+            "id": "gfws_d_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/gfws_d_compressor_blog.md"
+        },
+        {
+            "id": "grecodec_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/grecodec_compressor_blog.md"
+        },
+        {
+            "id": "hashed_linear_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/hashed_linear_blog.md"
+        },
+        {
+            "id": "hashed_net_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/hashed_net_compressor_blog.md"
+        },
+        {
+            "id": "huffman_coder_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/huffman_coder_blog.md"
+        },
+        {
+            "id": "hybrid_svd_layer_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/hybrid_svd_layer_blog.md"
+        },
+        {
+            "id": "hybridkv_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/hybridkv_compressor_blog.md"
+        },
+        {
+            "id": "kmeans_quantize_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/kmeans_quantize_blog.md"
+        },
+        {
+            "id": "kronecker_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/kronecker_compressor_blog.md"
+        },
+        {
+            "id": "kronecker_linear_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/kronecker_linear_blog.md"
+        },
+        {
+            "id": "kronecker_tt_lora_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/kronecker_tt_lora_blog.md"
+        },
+        {
+            "id": "kvtc_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/kvtc_compressor_blog.md"
+        },
+        {
+            "id": "liftr_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/liftr_blog.md"
+        },
+        {
+            "id": "lillama_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/lillama_compressor_blog.md"
+        },
+        {
+            "id": "lsc_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/lsc_compressor_blog.md"
+        },
+        {
+            "id": "mamba_shedder_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/mamba_shedder_blog.md"
+        },
+        {
+            "id": "mgie_svd_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/mgie_svd_blog.md"
+        },
+        {
+            "id": "mgie_svd_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/mgie_svd_compressor_blog.md"
+        },
+        {
+            "id": "mlorq_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/mlorq_compressor_blog.md"
+        },
+        {
+            "id": "modegpt_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/modegpt_compressor_blog.md"
+        },
+        {
+            "id": "nli_softmax_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/nli_softmax_blog.md"
+        },
+        {
+            "id": "nmf_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/nmf_compressor_blog.md"
+        },
+        {
+            "id": "oats_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/oats_blog.md"
+        },
+        {
+            "id": "optimal_subspace_projection_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/optimal_subspace_projection_blog.md"
+        },
+        {
+            "id": "padre_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/padre_attention_blog.md"
+        },
+        {
+            "id": "proxsparse_pruner_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/proxsparse_pruner_blog.md"
+        },
+        {
+            "id": "replaceme_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/replaceme_compressor_blog.md"
+        },
+        {
+            "id": "roast_hashed_linear_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/roast_hashed_linear_blog.md"
+        },
+        {
+            "id": "rotational_slicegpt_int4_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/rotational_slicegpt_int4_blog.md"
+        },
+        {
+            "id": "rpc_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/rpc_attention_blog.md"
+        },
+        {
+            "id": "rpca_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/rpca_compressor_blog.md"
+        },
+        {
+            "id": "saes_svd_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/saes_svd_blog.md"
+        },
+        {
+            "id": "saes_svd_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/saes_svd_compressor_blog.md"
+        },
+        {
+            "id": "salr_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/salr_blog.md"
+        },
+        {
+            "id": "sdrm_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/sdrm_compressor_blog.md"
+        },
+        {
+            "id": "slicegpt_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/slicegpt_blog.md"
+        },
+        {
+            "id": "slicegpt_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/slicegpt_compressor_blog.md"
+        },
+        {
+            "id": "slim_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/slim_compressor_blog.md"
+        },
+        {
+            "id": "smoothquant_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/smoothquant_blog.md"
+        },
+        {
+            "id": "soka_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/soka_compressor_blog.md"
+        },
+        {
+            "id": "sparsegpt_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/sparsegpt_blog.md"
+        },
+        {
+            "id": "spectraformer_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/spectraformer_attention_blog.md"
+        },
+        {
+            "id": "svd_linear_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/svd_linear_blog.md"
+        },
+        {
+            "id": "swift_svd_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/swift_svd_blog.md"
+        },
+        {
+            "id": "swift_svd_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/swift_svd_compressor_blog.md"
+        },
+        {
+            "id": "tlinformer_attention_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/tlinformer_attention_blog.md"
+        },
+        {
+            "id": "tomoe_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/tomoe_compressor_blog.md"
+        },
+        {
+            "id": "tt_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/tt_compressor_blog.md"
+        },
+        {
+            "id": "tt_linear_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/tt_linear_blog.md"
+        },
+        {
+            "id": "uniql_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/uniql_compressor_blog.md"
+        },
+        {
+            "id": "zerokv_neo_compressor_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/zerokv_neo_compressor_blog.md"
+        }
+    ],
+    "blog_series": [
+        {
+            "id": "02_linear_kernel_recurrent_ssm_attentions.md",
+            "title": "\u26a1 Part 2",
+            "path": "blog/02_linear_kernel_recurrent_ssm_attentions.md"
+        },
+        {
+            "id": "03_sparse_multiscale_latent_paged_attentions.md",
+            "title": "\u26a1 Part 3",
+            "path": "blog/03_sparse_multiscale_latent_paged_attentions.md"
+        },
+        {
+            "id": "05_quantization_pruning_distillation_compressions.md",
+            "title": "\u26a1 Part 5",
+            "path": "blog/05_quantization_pruning_distillation_compressions.md"
+        },
+        {
+            "id": "01_spectral_svd_lowrank_attentions.md",
+            "title": "\ud83c\udf1f Part 1",
+            "path": "blog/01_spectral_svd_lowrank_attentions.md"
+        },
+        {
+            "id": "04_svd_lowrank_structural_compressions.md",
+            "title": "\ud83c\udf1f Part 4",
+            "path": "blog/04_svd_lowrank_structural_compressions.md"
+        },
+        {
+            "id": "README.md",
+            "title": "\ud83d\ude80 NeuralOps Masterclass Blog Series Compendium",
+            "path": "blog/README.md"
+        }
+    ],
+    "framework": [
+        {
+            "id": "NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md",
+            "title": "Next-Gen Master Compendium",
+            "path": "content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md"
+        },
+        {
+            "id": "MASTER_EMPIRICAL_BENCHMARK_REPORT.md",
+            "title": "Master Empirical Benchmark Report",
+            "path": "content/framework/MASTER_EMPIRICAL_BENCHMARK_REPORT.md"
+        },
+        {
+            "id": "README.md",
+            "title": "Framework Documentation",
+            "path": "content/framework/README.md"
+        }
+    ]
+}

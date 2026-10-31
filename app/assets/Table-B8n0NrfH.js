@@ -1,0 +1,1 @@
+import{j as s}from"./vendor-s3-nvtiw.js";import{bI as e}from"./index-ByzZJCq5.js";const a=({children:a,className:l})=>s.jsx("div",{className:"overflow-x-auto",children:s.jsx("table",{className:e("w-full text-xs",l),children:a})});export{a as T};
