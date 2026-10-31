@@ -26,7 +26,7 @@ try:
 except ImportError:
     CompressedAttentionLayer = None
 
-from neuralops.compression.aa_svd_compressor import SVDLinear
+from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors

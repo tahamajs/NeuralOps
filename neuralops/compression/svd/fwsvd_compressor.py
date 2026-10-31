@@ -21,7 +21,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.compression.aa_svd_compressor import SVDLinear
+from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
