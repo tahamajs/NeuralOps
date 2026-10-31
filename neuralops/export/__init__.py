@@ -22,8 +22,13 @@ _EXPORTS = {
     "SurgeryManifest": ("surgery_manifest", "SurgeryManifest"),
     "replay_surgery_manifest": ("surgery_manifest", "replay_surgery_manifest"),
     "merge_for_inference": ("surgery_manifest", "merge_for_inference"),
+    "export_to_hf": ("hf_compat", "export_to_hf"),
+    "ExportResult": ("hf_compat", "ExportResult"),
+    "check_compatibility": ("runtime_compat", "check_compatibility"),
+    "CompatibilityReport": ("runtime_compat", "CompatibilityReport"),
+    "EngineStatus": ("runtime_compat", "EngineStatus"),
 }
-_MODULES = {"exporter", "serving", "surgery_manifest"}
+_MODULES = {"exporter", "serving", "surgery_manifest", "hf_compat", "runtime_compat"}
 
 __all__ = [*_EXPORTS, *_MODULES]
 
