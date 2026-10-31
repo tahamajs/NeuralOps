@@ -5,6 +5,24 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Triton Batch 1 (10 Attention Modules)**:
+  - Added real `@triton.jit` autotuned forward kernels and PyTorch fallbacks with `logger.warning`:
+    - `linformer_triton.py`: Linformer low-rank key/value projection attention
+    - `cosformer_triton.py`: Cosformer causal linear attention with cosine reweighting
+    - `performer_triton.py`: Performer FAVOR+ positive orthogonal random feature linear attention
+    - `galerkin_triton.py`: Galerkin non-local continuous operator attention
+    - `spectra_triton.py`: Spectra V2 continuous spectral decay attention
+    - `tpa_triton.py`: Tensor-Product Attention Kronecker outer product expansion
+    - `nasc_triton.py`: Non-local Associative State Compression multi-branch gated stream fusion
+    - `adaptive_span_triton.py`: Adaptive Span attention with dynamic per-head span masking
+    - `cluster_triton.py`: Cluster attention with centroid token grouping
+    - `sink_attention_triton.py`: StreamingLLM sink attention with initial anchor + sliding window masking
+  - 10 GPU parity tests in `tests/triton_parity/` marked `@pytest.mark.gpu`
+  - Rebuilt `docs/KERNEL_GAP_AUDIT.md` across 203 canonical modules
+
 ## [1.9.0] - 2026-10-31
 
 ### Added
