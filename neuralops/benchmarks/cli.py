@@ -1119,7 +1119,8 @@ def handle_recipe(args: argparse.Namespace) -> int:
         plan = plan_recipe(rec)
         print(f"Recipe '{rec.metadata.name}' v{rec.metadata.version}: {len(plan.stages)} stage(s) planned.")
         for idx, stage in enumerate(plan.stages):
-            print(f"  [{idx}] {stage.operation_type}@{stage.version} (mutates={stage.declares_mutations})")
+            mutations = stage.contract.declares_mutations if stage.contract else []
+            print(f"  [{idx}] {stage.id} ({stage.operation_type}@{stage.version}, mutates={mutations})")
         return 0
     elif action == "execute":
         from neuralops.pipeline_transform.planner import plan_recipe
@@ -1135,16 +1136,18 @@ def handle_recipe(args: argparse.Namespace) -> int:
             print("\n" + render_report(res.evidence))
         return 0 if res.status.value == "SUCCESS" else 1
     elif action == "validate":
-        from neuralops.validator.static_rules import validate_recipe_static
+        from neuralops.validator.static import validate_recipe_static
         rec = load_recipe(args.file)
-        val_res = validate_recipe_static(rec)
-        if val_res.is_valid:
+        try:
+            warnings = validate_recipe_static(rec)
             print(f"✓ Recipe '{rec.metadata.name}' is valid (all 15 static well-formedness rules passed).")
+            if warnings:
+                print(f"  Warnings ({len(warnings)}):")
+                for w in warnings:
+                    print(f"   - {w}")
             return 0
-        else:
-            print(f"✗ Recipe validation failed ({len(val_res.violations)} violation(s)):")
-            for v in val_res.violations:
-                print(f"  [{v.rule_id}] {v.code}: {v.message}")
+        except Exception as e:
+            print(f"✗ Recipe validation failed: {e}")
             return 1
     elif action == "diff":
         rec1 = load_recipe(args.file1)

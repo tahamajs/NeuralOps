@@ -1,0 +1,20 @@
+apiVersion: neuralops/v1
+kind: Recipe
+metadata:
+  name: gpt2-chunk-gla-transform
+  version: 1.0.0
+  description: "GPT-2 attention replacement with chunk-GLA"
+model:
+  source: gpt2
+  family: gpt2
+  dtype: float32
+validation:
+  profile: structural
+operations:
+  - id: replace-attention-chunk-gla
+    type: attention.replace
+    version: 1.0.0
+    config:
+      target: "chunk_gla"
+      head_dim: 64
+      chunk_size: 64

@@ -1,0 +1,29 @@
+apiVersion: neuralops/v1
+kind: Recipe
+metadata:
+  name: distilbert-sst2-compression
+  version: 1.0.0
+  description: "DistilBERT AASVD compression recipe for SST-2 inference"
+model:
+  source: distilbert-base-uncased
+  family: distilbert
+  dtype: float32
+validation:
+  profile: structural
+operations:
+  - id: compress-layer-0
+    type: weights.compress
+    version: 1.0.0
+    config:
+      target: "transformer.layer.0.intermediate"
+      method: "svd"
+      target_ratio: 0.75
+  - id: compress-layer-1
+    type: weights.compress
+    version: 1.0.0
+    config:
+      target: "transformer.layer.1.intermediate"
+      method: "svd"
+      target_ratio: 0.75
+    depends_on:
+      - compress-layer-0
