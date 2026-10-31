@@ -123,7 +123,7 @@ def capture(
                         val = getattr(cfg, k)
                         if not callable(val):
                             config_attrs[k] = copy.deepcopy(val)
-                    except Exception:
+                    except Exception:  # allowed-swallow: ignore unreadable dynamic attributes
                         pass
 
     # Capture RNG state if requested
@@ -166,21 +166,22 @@ def restore(model: nn.Module, snapshot: Snapshot) -> None:
         device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
 
         # 1. Restore structural submodule mutations
-        for path, saved_mod in snapshot.submodules.items():
-            if path == "":
-                # Root replacement
-                model.load_state_dict(saved_mod.state_dict())
-                continue
-
-            try:
-                parent, attr = _get_parent_and_attr(model, path)
-                restored_mod = copy.deepcopy(saved_mod).to(device)
-                if attr.isdigit() and isinstance(parent, (nn.ModuleList, nn.Sequential, list)):
-                    parent[int(attr)] = restored_mod
-                else:
-                    setattr(parent, attr, restored_mod)
-            except Exception as exc:
-                logger.debug("Submodule reattachment failed for path '%s': %s", path, exc)
+        if "" in snapshot.submodules:
+            saved_root = snapshot.submodules[""]
+            for child_name, child_mod in saved_root.named_children():
+                setattr(model, child_name, copy.deepcopy(child_mod).to(device))
+            model.load_state_dict(saved_root.state_dict())
+        else:
+            for path, saved_mod in snapshot.submodules.items():
+                try:
+                    parent, attr = _get_parent_and_attr(model, path)
+                    restored_mod = copy.deepcopy(saved_mod).to(device)
+                    if attr.isdigit() and isinstance(parent, (nn.ModuleList, nn.Sequential, list)):
+                        parent[int(attr)] = restored_mod
+                    else:
+                        setattr(parent, attr, restored_mod)
+                except Exception as exc:
+                    logger.debug("Submodule reattachment failed for path '%s': %s", path, exc)
 
         # 2. Restore parameters
         for name, tensor in snapshot.params.items():
