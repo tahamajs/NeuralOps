@@ -1,0 +1,112 @@
+name: Publish to PyPI via OIDC & Sigstore Attestations
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Target repository to publish package"
+        required: true
+        default: "pypi"
+        type: choice
+        options:
+          - pypi
+          - testpypi
+
+jobs:
+  build:
+    name: Build Distribution & Attest Provenance
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write       # Required for Sigstore SLSA build provenance signing
+      attestations: write   # Required for GitHub Artifact Attestations API
+      contents: read        # Required for repository checkout
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install build and verification tools
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install --upgrade build twine
+
+      - name: Build sdist and binary wheel
+        run: python -m build
+
+      - name: Verify package metadata and long description
+        run: twine check --strict dist/*
+
+      - name: Attest build provenance (GitHub Artifact Attestations)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "dist/*"
+
+      - name: Store distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          retention-days: 7
+
+  publish-pypi:
+    name: Publish to PyPI (Production)
+    needs: build
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'pypi')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/neuralops/
+    permissions:
+      id-token: write       # MANDATORY: Required for PyPI OIDC token minting & PEP 740 Sigstore attestations
+      contents: read
+
+    steps:
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish package distributions to PyPI via OIDC
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+          print-hash: true
+
+  publish-testpypi:
+    name: Publish to TestPyPI (Staging)
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/neuralops/
+    permissions:
+      id-token: write       # MANDATORY: Required for TestPyPI OIDC token minting
+      contents: read
+
+    steps:
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish package distributions to TestPyPI via OIDC
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          print-hash: true
