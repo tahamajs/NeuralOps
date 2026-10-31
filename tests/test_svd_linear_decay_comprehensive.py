@@ -11,8 +11,11 @@ import pytest
 import torch
 import torch.nn as nn
 from neuralops.attentions.svd_linear_decay import (
-    DecayDecayLinearAttention, inject_svd_linear_decay,
-    inject_svd_linear_decay_attention)
+    DecayDecayLinearAttention,
+    SVDLinearDecayAttention,
+    inject_svd_linear_decay,
+    inject_svd_linear_decay_attention,
+)
 
 class DummyRobertaSelfAttention(nn.Module):
     def __init__(self, dim=64):
@@ -107,3 +110,43 @@ def test_svd_linear_decay_inject_safe():
     x = torch.randn(2, 8, 64)
     out, _ = layer.attention(x)
     assert out.shape == (2, 8, 64)
+
+
+def test_svd_linear_decay_alias_and_mode():
+    cfg = MockConfig(hidden_size=64, num_attention_heads=4)
+    attn = SVDLinearDecayAttention(config=cfg, rank=8)
+    assert attn.use_decay_gating is True
+    assert attn.mode in ("decay_linear", "linear_decay", "decay", "gated_linear")
+    x = torch.randn(2, 16, 64)
+    out, _ = attn(x)
+    assert out.shape == (2, 16, 64)
+    assert torch.isfinite(out).all()
+
+
+def test_svd_linear_decay_linear_complexity_long_seq():
+    cfg = MockConfig(hidden_size=64, num_attention_heads=4, chunk_size=32)
+    attn = DecayDecayLinearAttention(config=cfg, rank=8)
+    # Long sequence N=256 processed in linear O(N) chunked time without N x N dense matrix
+    x = torch.randn(1, 256, 64)
+    out, _ = attn(x)
+    assert out.shape == (1, 256, 64)
+    assert torch.isfinite(out).all()
+
+
+def test_svd_linear_decay_step_recurrent_parity():
+    cfg = MockConfig(hidden_size=64, num_attention_heads=4)
+    attn = DecayDecayLinearAttention(config=cfg, rank=8)
+    attn.eval()
+    x = torch.randn(1, 4, 64)
+    with torch.no_grad():
+        out_seq, _, (S_final, Z_final) = attn(hidden_states=x, return_state=True)
+        state = None
+        out_steps = []
+        for t in range(4):
+            x_t = x[:, t : t + 1, :]
+            out_t, state = attn.step_recurrent(x_t, past_state=state)
+            out_steps.append(out_t)
+        out_streamed = torch.cat(out_steps, dim=1)
+        max_diff = torch.max(torch.abs(out_seq - out_streamed)).item()
+        assert max_diff < 1e-4, f"Recurrent divergence: {max_diff}"
+

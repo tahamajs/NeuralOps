@@ -543,7 +543,8 @@ class FactorisedMatrixState(BaseAttention):
             k_f = k_f.flip(dims=[2])
             v_f = v_f.flip(dims=[2])
 
-        if chunk_size >= L:
+        effective_chunk = min(max(16, chunk_size), 64)
+        if effective_chunk >= L and L <= 64:
             log_decay = torch.log(decay_f)
             idx = torch.arange(L, device=q.device, dtype=torch.float32)
             dist = idx.unsqueeze(1) - idx.unsqueeze(0)

@@ -1055,16 +1055,7 @@ class SVDLinearAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         updated_state: tuple[torch.Tensor, torch.Tensor] | None = None
 
-        if self.mode == "exact":
-            context, attn_probs = self._forward_exact_softmax(
-                q,
-                k,
-                v,
-                eff_mask,
-                is_cross=is_cross,
-                output_attentions=bool(output_attentions),
-            )
-        elif self.use_decay_gating or self.mode in (
+        if self.use_decay_gating or self.mode in (
             "decay_linear",
             "linear_decay",
             "decay",
@@ -1079,6 +1070,15 @@ class SVDLinearAttention(BaseAttention):
                 past_state=past_state,
             )
             attn_probs = None
+        elif self.mode == "exact":
+            context, attn_probs = self._forward_exact_softmax(
+                q,
+                k,
+                v,
+                eff_mask,
+                is_cross=is_cross,
+                output_attentions=bool(output_attentions),
+            )
         else:
             context = self._forward_linear_kernel(q, k, v, eff_mask)
             attn_probs = None

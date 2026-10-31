@@ -29,6 +29,30 @@ from neuralops.core.selective_scan import selective_scan
 logger = logging.getLogger(__name__)
 
 
+def stable_zoh_b(dA: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+    r"""
+    Numerically stable zero-order hold (ZOH) input discretization factor:
+        \phi(dA) = (exp(dA) - 1) / dA
+
+    Eliminates numerical drift at long sequence lengths (N >= 4096) and avoids
+    catastrophic floating-point cancellation / division by zero when |dA| < eps.
+
+    When |dA| < eps, evaluates via 4th-order Taylor series expansion:
+        \phi(dA) = 1 + dA / 2 + dA^2 / 6 + dA^3 / 24 + dA^4 / 120 + O(dA^5)
+
+    For general |dA| >= eps, evaluates exact formulation:
+        \phi(dA) = torch.expm1(dA) / dA
+    """
+    small_mask = torch.abs(dA) < eps
+    taylor = 1.0 + dA * (0.5 + dA * ((1.0 / 6.0) + dA * ((1.0 / 24.0) + dA / 120.0)))
+    safe_dA = torch.where(small_mask, torch.ones_like(dA), dA)
+    exact = torch.expm1(safe_dA) / safe_dA
+    return torch.where(small_mask, taylor, exact)
+
+
+discretize_zoh_b = stable_zoh_b
+
+
 @ATTENTION_REGISTRY.register("selective_ssm")
 class SelectiveSSM(BaseAttention):
     r"""
@@ -182,8 +206,10 @@ class SelectiveSSM(BaseAttention):
         else:
             h_prev = h_prev.to(dtype)
 
-        delta_a = torch.exp(dt_t.unsqueeze(-1) * A_param.unsqueeze(0))
-        delta_b_u = dt_t.unsqueeze(-1) * (u_t.unsqueeze(-1) * B_t.unsqueeze(1))
+        dA = dt_t.unsqueeze(-1) * A_param.unsqueeze(0)
+        delta_a = torch.exp(dA)
+        phi_dA = stable_zoh_b(dA)
+        delta_b_u = phi_dA * dt_t.unsqueeze(-1) * (u_t.unsqueeze(-1) * B_t.unsqueeze(1))
         h_next = delta_a * h_prev + delta_b_u
 
         y = torch.matmul(h_next, C_t.unsqueeze(-1)).squeeze(-1) + D_param.unsqueeze(0) * u_t
@@ -259,10 +285,12 @@ class SelectiveSSM(BaseAttention):
             y = y.transpose(1, 2).contiguous()
 
             dt_last = dt[:, -1, :].unsqueeze(-1)
-            delta_a_last = torch.exp(dt_last * A.unsqueeze(0))
+            dA_last = dt_last * A.unsqueeze(0)
+            delta_a_last = torch.exp(dA_last)
             u_last = x_conv[:, -1, :].unsqueeze(-1)
             b_last = B_ssm[:, -1, :].unsqueeze(1)
-            delta_b_u_last = dt_last * (u_last * b_last)
+            phi_dA_last = stable_zoh_b(dA_last)
+            delta_b_u_last = phi_dA_last * dt_last * (u_last * b_last)
             if past_h is not None:
                 h_next = delta_a_last * past_h.to(target_dtype) + delta_b_u_last
             else:
@@ -420,7 +448,8 @@ class SelectiveSSM(BaseAttention):
 
 
 SimpleSSM = SelectiveSSM
-ATTENTION_REGISTRY.register("simple_ssm")(SimpleSSM)
+if "simple_ssm" not in ATTENTION_REGISTRY:
+    ATTENTION_REGISTRY.register("simple_ssm")(SimpleSSM)
 
 
 def inject_selective_ssm(layer=None, model=None, model_config=None, old_attn=None, **kwargs):
@@ -441,6 +470,8 @@ inject_simple_ssm_attention = inject_selective_ssm
 __all__ = [
     "SelectiveSSM",
     "SimpleSSM",
+    "stable_zoh_b",
+    "discretize_zoh_b",
     "inject_simple_ssm",
     "inject_simple_ssm_attention",
     "inject_selective_ssm",

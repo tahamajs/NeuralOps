@@ -17,7 +17,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.layers.svd_linear_attention import (
+from neuralops.layers.svd.svd_linear_attention import (
     SVDLinear,
     SVDLinearAttention,
     inject_svd_linear_attention,
@@ -29,13 +29,28 @@ logger = logging.getLogger(__name__)
 
 @ATTENTION_REGISTRY.register("svd_linear_decay")
 class DecayDecayLinearAttention(SVDLinearAttention):
-    r"""Decay Gated SVD Linear Attention."""
+    r"""
+    Decay Gated SVD Linear Attention.
+
+    Combines low-rank singular value decomposition factorization with an exponential
+    temporal recency decay kernel. Implements linear-time O(N) recurrence:
+        S_t = \lambda S_{t-1} + K_t^\top V_t
+        O_t = Q_t S_t
+    and chunk-wise cumulative decay prefix-scans, strictly avoiding dense N x N matrix
+    materialization.
+    """
 
     is_custom_attention: bool = True
+    supports_causal: bool = True
 
     def __init__(self, *args, **kwargs):
         kwargs["use_decay_gating"] = True
+        if "mode" not in kwargs:
+            kwargs["mode"] = "decay_linear"
         super().__init__(*args, **kwargs)
+
+
+SVDLinearDecayAttention = DecayDecayLinearAttention
 
 
 def inject_svd_linear_decay(
@@ -179,6 +194,7 @@ inject_svd_linear_decay_attention = inject_svd_linear_decay
 
 __all__ = [
     "DecayDecayLinearAttention",
+    "SVDLinearDecayAttention",
     "SVDLinearAttention",
     "SVDLinear",
     "inject_svd_linear_decay",

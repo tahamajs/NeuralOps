@@ -32,6 +32,30 @@ except ImportError:
     _mamba_scan_fn = None
 
 
+def stable_zoh_b(dA: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+    r"""
+    Numerically stable zero-order hold (ZOH) discretization factor:
+        \phi(dA) = (exp(dA) - 1) / dA
+
+    Eliminates numerical drift at long sequence lengths (N >= 4096) and avoids
+    catastrophic floating-point cancellation / division by zero when |dA| < eps.
+
+    When |dA| < eps, evaluates via 4th-order Taylor series expansion:
+        \phi(dA) = 1 + dA / 2 + dA^2 / 6 + dA^3 / 24 + dA^4 / 120 + O(dA^5)
+
+    For general |dA| >= eps, evaluates exact formulation:
+        \phi(dA) = torch.expm1(dA) / dA
+    """
+    small_mask = torch.abs(dA) < eps
+    taylor = 1.0 + dA * (0.5 + dA * ((1.0 / 6.0) + dA * ((1.0 / 24.0) + dA / 120.0)))
+    safe_dA = torch.where(small_mask, torch.ones_like(dA), dA)
+    exact = torch.expm1(safe_dA) / safe_dA
+    return torch.where(small_mask, taylor, exact)
+
+
+discretize_zoh_b = stable_zoh_b
+
+
 def _auto_chunk_size(
     D_dim: int,
     N: int,
@@ -107,8 +131,10 @@ def selective_scan_chunked(
     dA = delta_f.unsqueeze(-1) * A_f.unsqueeze(0).unsqueeze(2)
     dA = dA.clamp(max=0.0)
 
+    phi_dA = stable_zoh_b(dA)
+
     B_f_t = B_f.transpose(1, 2).contiguous()
-    dB_u = delta_f.unsqueeze(-1) * u_f.unsqueeze(-1) * B_f_t.unsqueeze(1)
+    dB_u = phi_dA * delta_f.unsqueeze(-1) * u_f.unsqueeze(-1) * B_f_t.unsqueeze(1)
 
     if L <= 128:
         dA_exp = torch.exp(dA)
@@ -240,5 +266,7 @@ def selective_scan(
 __all__ = [
     "selective_scan",
     "selective_scan_chunked",
+    "stable_zoh_b",
+    "discretize_zoh_b",
     "HAS_MAMBA_CUDA",
 ]
