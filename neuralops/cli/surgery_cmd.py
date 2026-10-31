@@ -28,7 +28,6 @@ def add_surgery_subparser(subparsers: argparse._SubParsersAction) -> None:
     """Add 'surgery' subcommand parser for declarative recipes."""
     parser = subparsers.add_parser(
         "surgery-recipe",
-        aliases=["recipe"],
         help="Plan, validate, and execute declarative NeuralOps transformation recipes",
     )
     cmd_subparsers = parser.add_subparsers(dest="surgery_action", help="Action to execute")

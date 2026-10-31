@@ -66,7 +66,8 @@ def generate_completion_script(shell: str) -> str:
         "search", "compress", "generate", "niah", "benchmark-fused", "transplant",
         "surgery", "compose", "roofline", "recommend", "calibrate", "inspect",
         "ui", "validate", "scaffold", "results", "ledger", "train", "eval",
-        "evaluate", "serve", "monitor", "distill", "export", "test"
+        "evaluate", "serve", "monitor", "distill", "export", "test",
+        "recipe", "evidence", "ops", "compat"
     ]
     cmds_str = " ".join(commands)
     if shell == "bash":
@@ -440,6 +441,44 @@ def _build_parser() -> argparse.ArgumentParser:
     dist_p.add_argument("--batch-size", type=int, default=16, help="Batch size per GPU")
     dist_p.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
     dist_p.add_argument("--output-dir", type=str, default="distilled_student", help="Destination directory for distilled model")
+
+    # Recipe Language & Transformation Platform Subcommands (v1.9.0)
+    recipe_p = subparsers.add_parser("recipe", help="Declarative Recipe transformation commands (plan, execute, validate, diff, evidence)")
+    recipe_sub = recipe_p.add_subparsers(dest="recipe_action", help="Recipe subcommands")
+    rec_plan_p = recipe_sub.add_parser("plan", help="Dry-run and print transformation execution plan")
+    rec_plan_p.add_argument("file", help="Path to recipe YAML file")
+
+    rec_exec_p = recipe_sub.add_parser("execute", help="Execute recipe transformation with per-stage validation and rollback")
+    rec_exec_p.add_argument("file", help="Path to recipe YAML file")
+    rec_exec_p.add_argument("--device", default="auto", help="Execution device (cuda/mps/cpu/auto)")
+    rec_exec_p.add_argument("--stop-on-error", action="store_true", default=True, help="Halt and rollback on validation gate failure")
+
+    rec_val_p = recipe_sub.add_parser("validate", help="Validate recipe schema and well-formedness rules (W1-W15)")
+    rec_val_p.add_argument("file", help="Path to recipe YAML file")
+
+    rec_diff_p = recipe_sub.add_parser("diff", help="Compare two recipes structurally")
+    rec_diff_p.add_argument("file1", help="First recipe YAML file")
+    rec_diff_p.add_argument("file2", help="Second recipe YAML file")
+
+    rec_ev_p = recipe_sub.add_parser("evidence", help="Inspect evidence for recipe transformation")
+    rec_ev_p.add_argument("file", help="Path to evidence JSON file")
+
+    # Evidence commands
+    ev_p = subparsers.add_parser("evidence", help="Inspect and display transformation evidence records")
+    ev_sub = ev_p.add_subparsers(dest="evidence_action", help="Evidence subcommands")
+    ev_show_p = ev_sub.add_parser("show", help="Pretty-print evidence record")
+    ev_show_p.add_argument("file", help="Path to evidence JSON file")
+
+    # Operations commands
+    ops_p = subparsers.add_parser("ops", help="List and inspect versioned operation contracts")
+    ops_sub = ops_p.add_subparsers(dest="ops_action", help="Operation subcommands")
+    ops_sub.add_parser("list", help="List all registered operation contracts in 'name@version' format")
+
+    # Compatibility commands
+    compat_p = subparsers.add_parser("compat", help="Verify serving runtime compatibility (vLLM, SGLang, HF, etc.)")
+    compat_sub = compat_p.add_subparsers(dest="compat_action", help="Compatibility subcommands")
+    compat_chk_p = compat_sub.add_parser("check", help="Check serving compatibility for an exported model path")
+    compat_chk_p.add_argument("path", help="Path to exported model directory")
 
     return parser
 
@@ -1066,8 +1105,118 @@ def handle_test(args: argparse.Namespace) -> int:
 
 
 
+def handle_recipe(args: argparse.Namespace) -> int:
+    """Dispatches declarative recipe pipeline commands."""
+    action = getattr(args, "recipe_action", None)
+    if not action:
+        print("Usage: nops recipe {plan,execute,validate,diff,evidence} ...")
+        return 1
+
+    from neuralops.recipe.loader import load_recipe
+    if action == "plan":
+        from neuralops.pipeline_transform.planner import plan_recipe
+        rec = load_recipe(args.file)
+        plan = plan_recipe(rec)
+        print(f"Recipe '{rec.metadata.name}' v{rec.metadata.version}: {len(plan.stages)} stage(s) planned.")
+        for idx, stage in enumerate(plan.stages):
+            print(f"  [{idx}] {stage.operation_type}@{stage.version} (mutates={stage.declares_mutations})")
+        return 0
+    elif action == "execute":
+        from neuralops.pipeline_transform.planner import plan_recipe
+        from neuralops.pipeline_transform.executor import execute_plan
+        from neuralops.reporting.report import render_report
+        rec = load_recipe(args.file)
+        plan = plan_recipe(rec)
+        device = getattr(args, "device", "auto")
+        stop_on_error = getattr(args, "stop_on_error", True)
+        res = execute_plan(plan, device=device, stop_on_error=stop_on_error)
+        print(f"Transformation status: {res.status.value} (Stages: {len(res.stages)}, Elapsed: {res.total_time_seconds:.2f}s)")
+        if hasattr(res, "evidence") and res.evidence is not None:
+            print("\n" + render_report(res.evidence))
+        return 0 if res.status.value == "SUCCESS" else 1
+    elif action == "validate":
+        from neuralops.validator.static_rules import validate_recipe_static
+        rec = load_recipe(args.file)
+        val_res = validate_recipe_static(rec)
+        if val_res.is_valid:
+            print(f"✓ Recipe '{rec.metadata.name}' is valid (all 15 static well-formedness rules passed).")
+            return 0
+        else:
+            print(f"✗ Recipe validation failed ({len(val_res.violations)} violation(s)):")
+            for v in val_res.violations:
+                print(f"  [{v.rule_id}] {v.code}: {v.message}")
+            return 1
+    elif action == "diff":
+        rec1 = load_recipe(args.file1)
+        rec2 = load_recipe(args.file2)
+        print(f"Structural Diff: '{rec1.metadata.name}' vs '{rec2.metadata.name}'")
+        print(f"  Operations: {len(rec1.operations)} -> {len(rec2.operations)}")
+        op_types1 = [o.type for o in rec1.operations]
+        op_types2 = [o.type for o in rec2.operations]
+        print(f"  Stages in recipe 1: {op_types1}")
+        print(f"  Stages in recipe 2: {op_types2}")
+        return 0
+    elif action == "evidence":
+        from neuralops.reporting.evidence import load_evidence
+        from neuralops.reporting.report import render_report
+        ev = load_evidence(args.file)
+        print(render_report(ev))
+        return 0
+    return 0
+
+
+def handle_evidence(args: argparse.Namespace) -> int:
+    """Dispatches evidence inspection commands."""
+    action = getattr(args, "evidence_action", None)
+    if action == "show":
+        from neuralops.reporting.evidence import load_evidence
+        from neuralops.reporting.report import render_report
+        ev = load_evidence(args.file)
+        print(render_report(ev))
+        return 0
+    print("Usage: nops evidence show <evidence.json>")
+    return 1
+
+
+def handle_ops(args: argparse.Namespace) -> int:
+    """Dispatches operation contract registry inspection."""
+    action = getattr(args, "ops_action", None)
+    if action == "list" or action is None:
+        from neuralops.operations.registry import list_operations
+        ops = list_operations()
+        print(f"Registered Operations ({len(ops)}):")
+        for op in ops:
+            print(f"  - {op}")
+        return 0
+    return 0
+
+
+def handle_compat(args: argparse.Namespace) -> int:
+    """Dispatches serving runtime compatibility check."""
+    action = getattr(args, "compat_action", None)
+    if action == "check":
+        from neuralops.export.runtime_compat import check_compatibility
+        rep = check_compatibility(args.path)
+        print(f"Serving Runtime Compatibility for '{rep.export_path}':")
+        for eng, status in rep.summary.items():
+            st_str = f"[{status}]"
+            msg = rep.results[eng].message
+            print(f"  {eng:<14} {st_str:<16} {msg}")
+        return 0
+    print("Usage: nops compat check <path>")
+    return 1
+
+
 def _dispatch(args: argparse.Namespace) -> int:
-    if args.subcommand == "ui":
+    if args.subcommand == "recipe":
+        return handle_recipe(args)
+    elif args.subcommand == "evidence":
+        return handle_evidence(args)
+    elif args.subcommand == "ops":
+        return handle_ops(args)
+    elif args.subcommand == "compat":
+        return handle_compat(args)
+    elif args.subcommand == "ui":
         from neuralops.cli.terminal_ui import run_interactive_ui
         run_interactive_ui(inspect_target=getattr(args, "inspect", None), snapshot=getattr(args, "snapshot", False))
         return 0

@@ -108,6 +108,54 @@ result = pipe("Deep learning hardware acceleration requires", max_new_tokens=50,
 print(result)
 ```
 
+### 🧬 NeuralOps 1.9.0 Transformation Platform & Recipe Language
+
+NeuralOps 1.9.0 introduces a declarative, typed, versioned, validated, and reproducible transformation platform:
+
+1. **Declarative Recipe Language (`neuralops.recipe`)**: Define end-to-end model transformations as versioned YAML specifications with canonical SHA-256 content hashing.
+2. **Operation Contracts (`neuralops.operations`)**: 15 versioned operations with typed inputs, preconditions, postconditions, and declared mutations.
+3. **Multi-Level Validation (`neuralops.validation`)**: 4 levels of validation gates:
+   - **L1 Structural**: Shape matching, dtype compatibility, module connectivity.
+   - **L2 Numerical**: Forward pass execution, strict NaN/Inf guards.
+   - **L3 Behavioral**: Logit KL divergence, cosine output similarity, perplexity drift.
+   - **L4 Empirical**: Real accuracy evaluation, latency microbenchmarking, throughput, peak VRAM, needle-in-a-haystack retrieval.
+4. **Pre-Execution Conflict Engine (`neuralops.pipeline_transform.dependencies`)**: Graph-based dependency resolution detecting ordering violations and incompatible mutations before loading weights or allocating GPU resources.
+5. **Hardware-Aware Planner & Auto-Configurator (`neuralops.pipeline_transform.hardware_planner`, `auto_config`)**: Analytical VRAM and latency estimation across target hardware profiles (RTX 4090, A100, H100, T4) with constraint-driven parameter search.
+6. **Transactional Transformation (`neuralops.pipeline_transform.executor`)**: Two-phase execution with selective mutation snapshots and automatic rollback upon any gate failure.
+7. **Verified Deployment & Export (`neuralops.export`)**: Round-trip verified HuggingFace export with numerical parity checks and fail-closed runtime compatibility verification for vLLM, SGLang, TensorRT-LLM, GGUF, and ONNX.
+
+```yaml
+# Example: recipe.yaml
+apiVersion: neuralops/v1
+kind: Recipe
+metadata:
+  name: distilbert-svd-compression
+  version: 1.0.0
+  description: Activation-Aware SVD compression with quality verification
+model:
+  source: distilbert-base-uncased
+  dtype: float32
+operations:
+  - id: compress_weights
+    type: weights.compress
+    version: 1.0.0
+    config:
+      method: aasvd
+      target_ratio: 0.5
+validation:
+  profile: standard
+```
+
+```bash
+# Plan, validate, and execute recipes via CLI
+nops recipe plan recipe.yaml
+nops recipe validate recipe.yaml
+nops recipe execute recipe.yaml --device auto
+nops ops list
+nops compat check ./exported_model
+```
+
+
 ### Unified Training API
 
 `NeuralOpsTrainer` is the single Hugging Face-compatible entry point for standard fine-tuning, LoRA, PiSSA, DoRA, knowledge distillation, and hybrid LoRA+KD training. It freezes the base model for PEFT modes, keeps optimizer state focused on trainable adapters, and works on CPU when CUDA is unavailable:

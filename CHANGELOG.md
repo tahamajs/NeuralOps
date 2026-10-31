@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.9.0] - 2026-10-31
 
 ### Added
+- **NeuralOps Model Transformation Platform & Recipe Language v1.0.0**:
+  - Declarative YAML Recipe Language (`neuralops.recipe`) with canonical SHA-256 hashing and static validation rules (W1-W15).
+  - Versioned Operation Contract Registry (`neuralops.operations`) with typed preconditions, postconditions, and declared mutations.
+  - Model Family Architecture Adapters (`neuralops.adapters`) covering LLaMA, BERT/DistilBERT, GPT-2, and Qwen.
+  - Transactional Execution Pipeline (`neuralops.pipeline_transform`) featuring pre-execution planning, selective state snapshots, and automatic rollback.
+  - 4-Tier Validation Gate Framework (`neuralops.validation`): L1 Structural, L2 Numerical (NoNaN/Inf), L3 Behavioral (Logit KL, Cosine, Perplexity), and L4 Empirical (Accuracy, Latency, VRAM, NIAH).
+  - Pre-Execution Dependency Graph and Conflict Detection Engine (`neuralops.pipeline_transform.dependencies`).
+  - Hardware-Aware Resource Planner (`neuralops.pipeline_transform.hardware_planner`) with analytical VRAM/latency profiles for NVIDIA GPUs (RTX 4090, A100, H100, T4).
+  - Hardware-Constrained Recipe Auto-Configurator (`neuralops.pipeline_transform.auto_config`).
+  - Verified Deployment & Export System (`neuralops.export.hf_compat`, `neuralops.export.runtime_compat`) with round-trip verification and fail-closed runtime checks (vLLM, SGLang, TRT-LLM, GGUF, ONNX).
 - **Model Surgery Framework**:
   - `SURGERY_REGISTRY` with `@register_surgery` decorator for validated model transformations.
   - `SurgeryRecipe` and `SurgeryOp` for composable, multi-stage surgery pipelines with automatic rollback on failure.

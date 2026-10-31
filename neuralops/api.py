@@ -42,6 +42,7 @@ def replace_attention(
     copy_weights: bool = True,
     layers: Optional[List[int]] = None,
     attention_type: Optional[str] = None,
+    validation_level: Optional[str] = None,
     **kwargs: Any,
 ) -> nn.Module:
     """Drop-in replace attention layers in any PyTorch / HuggingFace model.
@@ -165,6 +166,7 @@ def compress(
     method: str = "svd",
     rank: int = 32,
     layers: Optional[List[int]] = None,
+    validation_level: Optional[str] = None,
     **kwargs: Any,
 ) -> nn.Module:
     """Compress model weights using SVD, low-rank factorization, or pruning.
@@ -239,6 +241,7 @@ def transplant_attention(
     layers: Optional[List[int]] = None,
     attention_type: Optional[str] = None,
     target_attention: Optional[str] = None,
+    validation_level: Optional[str] = None,
     **kwargs: Any,
 ) -> nn.Module:
     """Canonical alias for replace_attention."""
@@ -249,6 +252,7 @@ def transplant_attention(
         rank=rank,
         copy_weights=copy_weights,
         layers=layers,
+        validation_level=validation_level,
         **kwargs,
     )
 
@@ -286,6 +290,7 @@ def export_model(
     model: nn.Module,
     output_dir: Union[str, Path],
     format: str = "safetensors",
+    validation_level: Optional[str] = None,
     **kwargs: Any,
 ) -> Path:
     """Export a NeuralOps-modified or compressed model to a production artifact format.
