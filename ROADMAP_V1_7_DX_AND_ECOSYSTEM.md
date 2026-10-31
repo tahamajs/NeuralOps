@@ -1,3 +1,8 @@
+> **Status as of v1.8.1 (2026-10-31):**
+> - **Delivered:** One-line APIs (transplant, compress, export), pipeline, CLI ergonomics, HuggingFace model zoo hooks (100% delivered).
+> - **Deferred to v2.0:** None.
+> - See `audit/PROJECT_STATUS_AUDIT_2026-10-31.md` for the full delivery audit.
+
 # NeuralOps Developer Experience (DX), Scalability, Usability & Ecosystem Expansion Strategy
 
 **Target Release:** NeuralOps v1.7.0 & Ecosystem Expansion  

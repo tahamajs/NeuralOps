@@ -1,3 +1,8 @@
+> **Status as of v1.8.1 (2026-10-31):**
+> - **Delivered:** Initial serving and telemetry pipeline hooks.
+> - **Deferred to v2.0:** vLLM native backend, SGLang radix recurrent, FSDP2, Megatron hooks, Pareto sweeper, unified export engine.
+> - See `audit/PROJECT_STATUS_AUDIT_2026-10-31.md` for the full delivery audit.
+
 # NeuralOps v1.7 Systems, Surgery & Deployment Roadmap
 
 **Authoritative Engineering Specification & Technical Blueprints**  

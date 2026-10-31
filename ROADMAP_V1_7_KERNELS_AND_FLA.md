@@ -1,3 +1,8 @@
+> **Status as of v1.8.1 (2026-10-31):**
+> - **Delivered:** 4 Triton scan kernels (gla, retnet, gdn, hgrn2).
+> - **Deferred to v2.0:** based_scan.py, rwkv6_scan.py, lightning_scan.py, 6 CUDA FLA extensions (gla_chunk_attn, retnet_chunk_retention, gated_deltanet, based_taylor_attention, rwkv6_state_scan, lightning_attention), fused_lowrank_gemm, Hopper TMA header, Blackwell TMEM header, Ascend 910B ops.
+> - See `audit/PROJECT_STATUS_AUDIT_2026-10-31.md` for the full delivery audit.
+
 <!--
 Copyright (c) 2024-2026, Taha Majlesi
 
