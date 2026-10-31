@@ -38,6 +38,9 @@ class GateResult:
     message: str = ""
     duration_seconds: float = 0.0
     details: Dict[str, Any] = field(default_factory=dict)
+    skipped: bool = False
+    evidence_dict: Dict[str, Any] = field(default_factory=dict)
+    error_code: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -49,22 +52,45 @@ class GateResult:
             "message": self.message,
             "duration_seconds": self.duration_seconds,
             "details": self.details,
+            "skipped": self.skipped,
+            "evidence_dict": self.evidence_dict,
+            "error_code": self.error_code,
         }
 
 
 class Gate(ABC):
     """Abstract Base Class for a transformation validation gate."""
 
-    name: str
+    name: str = "base_gate"
     severity: GateSeverity = GateSeverity.ERROR
     level: str = "L1"
+    required: bool = True
+    config: Dict[str, Any] = field(default_factory=dict)
+
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        level: Optional[str] = None,
+        required: bool = True,
+        config: Optional[Dict[str, Any]] = None,
+        severity: GateSeverity = GateSeverity.ERROR,
+    ) -> None:
+        if name:
+            self.name = name
+        if level:
+            self.level = level
+        self.required = required
+        self.config = config or {}
+        self.severity = severity
 
     @abstractmethod
     def run(
         self,
-        model: nn.Module,
+        model: Optional[nn.Module] = None,
         baseline_model: Optional[nn.Module] = None,
         context: Optional[Dict[str, Any]] = None,
+        model_before: Optional[nn.Module] = None,
+        model_after: Optional[nn.Module] = None,
     ) -> GateResult:
         """Execute validation gate on model."""
         raise NotImplementedError

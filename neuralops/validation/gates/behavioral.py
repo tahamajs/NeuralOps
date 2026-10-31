@@ -34,12 +34,27 @@ class OutputSimilarityGate(Gate):
 
     def run(
         self,
-        model: nn.Module,
+        model: Optional[nn.Module] = None,
         baseline_model: Optional[nn.Module] = None,
         context: Optional[Dict[str, Any]] = None,
+        model_before: Optional[nn.Module] = None,
+        model_after: Optional[nn.Module] = None,
+        **kwargs: Any,
     ) -> GateResult:
         t0 = time.perf_counter()
-        if baseline_model is None:
+        active_model = model_after or model
+        base_model = model_before or baseline_model
+
+        if active_model is None:
+            return GateResult(
+                gate_name=self.name,
+                passed=False,
+                severity=self.severity,
+                message="No model provided to output_similarity gate",
+                duration_seconds=time.perf_counter() - t0,
+            )
+
+        if base_model is None:
             return GateResult(
                 gate_name=self.name,
                 passed=True,
@@ -50,14 +65,14 @@ class OutputSimilarityGate(Gate):
 
         threshold = float(context.get("min_similarity", self.min_similarity)) if context else self.min_similarity
 
-        model.eval()
-        baseline_model.eval()
-        dummy_in = _get_dummy_input(model, batch_size=4, seq_len=32)
+        active_model.eval()
+        base_model.eval()
+        dummy_in = _get_dummy_input(active_model, batch_size=4, seq_len=32)
 
         try:
             with torch.no_grad():
-                out_base = baseline_model(dummy_in)
-                out_test = model(dummy_in)
+                out_base = base_model(dummy_in)
+                out_test = active_model(dummy_in)
 
             tb = out_base[0] if isinstance(out_base, (tuple, list)) else getattr(out_base, "logits", out_base)
             tt = out_test[0] if isinstance(out_test, (tuple, list)) else getattr(out_test, "logits", out_test)
@@ -107,12 +122,27 @@ class PerplexityDeltaGate(Gate):
 
     def run(
         self,
-        model: nn.Module,
+        model: Optional[nn.Module] = None,
         baseline_model: Optional[nn.Module] = None,
         context: Optional[Dict[str, Any]] = None,
+        model_before: Optional[nn.Module] = None,
+        model_after: Optional[nn.Module] = None,
+        **kwargs: Any,
     ) -> GateResult:
         t0 = time.perf_counter()
-        if baseline_model is None:
+        active_model = model_after or model
+        base_model = model_before or baseline_model
+
+        if active_model is None:
+            return GateResult(
+                gate_name=self.name,
+                passed=False,
+                severity=self.severity,
+                message="No model provided to perplexity_delta gate",
+                duration_seconds=time.perf_counter() - t0,
+            )
+
+        if base_model is None:
             return GateResult(
                 gate_name=self.name,
                 passed=True,
@@ -123,9 +153,9 @@ class PerplexityDeltaGate(Gate):
 
         threshold = float(context.get("max_perplexity_increase", self.max_relative_increase)) if context else self.max_relative_increase
 
-        model.eval()
-        baseline_model.eval()
-        vocab_size = getattr(getattr(model, "config", None), "vocab_size", None)
+        active_model.eval()
+        base_model.eval()
+        vocab_size = getattr(getattr(active_model, "config", None), "vocab_size", None)
         if vocab_size is None:
             return GateResult(
                 gate_name=self.name,
@@ -135,15 +165,15 @@ class PerplexityDeltaGate(Gate):
                 duration_seconds=time.perf_counter() - t0,
             )
 
-        device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
+        device = next(active_model.parameters()).device if list(active_model.parameters()) else torch.device("cpu")
         tokens = torch.randint(0, vocab_size, (2, 32), device=device)
         targets = tokens[:, 1:].contiguous()
         inputs = tokens[:, :-1].contiguous()
 
         try:
             with torch.no_grad():
-                out_base = baseline_model(inputs)
-                out_test = model(inputs)
+                out_base = base_model(inputs)
+                out_test = active_model(inputs)
 
             logits_b = out_base[0] if isinstance(out_base, (tuple, list)) else getattr(out_base, "logits", out_base)
             logits_t = out_test[0] if isinstance(out_test, (tuple, list)) else getattr(out_test, "logits", out_test)
