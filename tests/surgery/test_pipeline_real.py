@@ -72,7 +72,7 @@ def test_full_recipe_on_gpt2(gpt2_model, gpt2_tokenizer, gpt2_inputs):
     assert gen.shape[1] == input_ids.shape[1] + 5
     text = gpt2_tokenizer.decode(gen[0], skip_special_tokens=True)
     assert len(text) > 0
-    print(f"\n[BENCHMARK] Recipe applied successfully:")
+    print("\n[BENCHMARK] Recipe applied successfully:")
     print(f"  Params: {before_params:,} -> {after_params:,} ({reduction:.2f}% reduction)")
     print(f"  Generation: '{text}'")
 
