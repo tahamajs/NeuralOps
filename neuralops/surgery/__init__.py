@@ -9,6 +9,8 @@
 NeuralOps Surgery Subpackage.
 """
 
+from typing import Any
+
 from neuralops.surgery.scanner import (
     AttentionTargetSpec,
     Conv1DLinearAdapter,
@@ -77,7 +79,64 @@ from neuralops.surgery.healing import (
     heal_replaced_model,
 )
 
+from neuralops.surgery.registry import (
+    SURGERY_REGISTRY,
+    SurgeryMetadata,
+    get_surgery,
+    get_surgeries_for_model,
+    list_surgeries,
+    register_surgery,
+)
+from neuralops.surgery.pipeline import (
+    ApplyReport,
+    SurgeryOp,
+    SurgeryRecipe,
+)
+from neuralops.surgery.validation import (
+    CheckResult,
+    ValidationReport,
+    validate_before_surgery,
+)
+from neuralops.surgery.recipe import (
+    load_recipe,
+    save_recipe,
+    save_recipe_to_hub,
+    validate_recipe_schema,
+)
+from neuralops.surgery.attention.replace import replace_attention
+from neuralops.surgery.mlp.shrink import shrink_mlp
+from neuralops.surgery.layers.prune import prune_layers
+from neuralops.surgery.weights.quantize import quantize_int4
+from neuralops.surgery.recovery.distill import distill_from_teacher
+
+def apply_recipe(model: Any, recipe: SurgeryRecipe, **kwargs: Any) -> tuple[Any, ApplyReport]:
+    """Execute a validated surgery recipe onto target model."""
+    return recipe.apply(model, **kwargs)
+
+
 __all__ = [
+    "apply_recipe",
+    "SURGERY_REGISTRY",
+    "SurgeryMetadata",
+    "register_surgery",
+    "list_surgeries",
+    "get_surgery",
+    "get_surgeries_for_model",
+    "SurgeryOp",
+    "SurgeryRecipe",
+    "ApplyReport",
+    "CheckResult",
+    "ValidationReport",
+    "validate_before_surgery",
+    "load_recipe",
+    "save_recipe",
+    "save_recipe_to_hub",
+    "validate_recipe_schema",
+    "replace_attention",
+    "shrink_mlp",
+    "prune_layers",
+    "quantize_int4",
+    "distill_from_teacher",
     "AttentionTargetSpec",
     "Conv1DLinearAdapter",
     "UniversalArchitectureScanner",

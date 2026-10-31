@@ -5,6 +5,23 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-10-31
+
+### Added
+- **Model Surgery Framework**:
+  - `SURGERY_REGISTRY` with `@register_surgery` decorator for validated model transformations.
+  - `SurgeryRecipe` and `SurgeryOp` for composable, multi-stage surgery pipelines with automatic rollback on failure.
+  - Pre-surgery validation gates (architecture compatibility, recipe compatibility, forward pass, output sanity, quality probe).
+  - YAML/JSON serialization via `save_recipe` and `load_recipe` with HuggingFace Hub support.
+  - 5 unified model surgery operators:
+    - `replace_attention` (STABLE): subquadratic attention layer replacement.
+    - `shrink_mlp` (EXPERIMENTAL): intermediate hidden dimension shrinkage for SwiGLU and GELU blocks.
+    - `prune_layers` (EXPERIMENTAL): depth reduction and redundant block shedding.
+    - `quantize_int4` (EXPERIMENTAL): unified INT4 AWQ and GPTQ weight quantization.
+    - `distill_from_teacher` (EXPERIMENTAL): 6-pillar knowledge distillation recovery.
+- **Architectural Reorganization**:
+  - Created subpackages `neuralops.surgery`, `neuralops.optimization`, and `neuralops.adaptation`.
+
 ## [1.8.1] - 2026-10-31
 
 ### Fixed

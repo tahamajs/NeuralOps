@@ -157,6 +157,11 @@ class NeuralOpsForCausalLMvLLM(nn.Module):
         )
 
 
+def vllm_is_available() -> bool:
+    """Return True if vLLM package is available."""
+    return HAS_VLLM
+
+
 def register_neuralops_vllm_plugin() -> bool:
     """Report whether the optional vLLM integration is safe to register."""
     warnings.warn(
@@ -181,5 +186,6 @@ __all__ = [
     "NeuralOpsvLLMAttentionBackend",
     "NeuralOpsForCausalLMvLLM",
     "register_neuralops_vllm_plugin",
+    "vllm_is_available",
     "HAS_VLLM",
 ]
