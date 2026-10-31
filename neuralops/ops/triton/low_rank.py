@@ -2283,7 +2283,9 @@ __all__ = [
     'asvd_compress',
     'asvd_compress_pytorch',
     'fwsvd_compress',
+    'fwsvd_compress_pytorch',
     'hnc_svd_compress',
+    'hnc_svd_compress_pytorch',
 ]
 
 
@@ -3766,6 +3768,69 @@ def fwsvd_compress(
     return torch.matmul(U_r, V_r).to(dtype=W.dtype)
 
 
+def fwsvd_compress_pytorch(
+    W: torch.Tensor,
+    fisher_diag: Optional[torch.Tensor] = None,
+    fisher_matrix: Optional[torch.Tensor] = None,
+    rank: int = 32,
+    damping: float = 1e-4,
+    max_error: float = 1.0,
+) -> torch.Tensor:
+    """Pure PyTorch reference implementation of Fisher-Weighted SVD compression."""
+    if W.ndim != 2:
+        raise ValueError(f"fwsvd_compress_pytorch requires a 2D weight matrix, got shape {W.shape}")
+
+    M, N = W.shape
+    r = max(1, min(rank, min(M, N) - 1)) if min(M, N) > 1 else 1
+    W_fp32 = W.float()
+
+    F_mat = fisher_matrix
+    if F_mat is None and fisher_diag is not None and fisher_diag.ndim == 2:
+        F_mat = fisher_diag
+
+    if F_mat is not None and F_mat.shape == (N, N):
+        F_dev = F_mat.to(device=W.device, dtype=torch.float32)
+        F_sym = 0.5 * (F_dev + F_dev.t())
+        tr_F = torch.trace(F_sym).item()
+        damp_val = max(1e-7, float(damping * tr_F / max(1, N)))
+        F_damped = F_sym + damp_val * torch.eye(N, device=F_dev.device, dtype=torch.float32)
+
+        try:
+            eigvals, eigvecs = torch.linalg.eigh(F_damped)
+            eigvals_clamped = torch.clamp(eigvals, min=damp_val)
+            sqrt_eig = torch.sqrt(eigvals_clamped)
+            inv_sqrt_eig = 1.0 / sqrt_eig
+            F_sqrt = eigvecs @ torch.diag(sqrt_eig) @ eigvecs.t()
+            F_inv_sqrt = eigvecs @ torch.diag(inv_sqrt_eig) @ eigvecs.t()
+
+            W_weighted = torch.matmul(W_fp32, F_sqrt)
+            U, S, Vt = torch.linalg.svd(W_weighted, full_matrices=False)
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+            V_r = torch.matmul(sqrt_S.unsqueeze(1) * Vt[:r, :], F_inv_sqrt).contiguous()
+        except Exception:
+            U, S, Vt = torch.linalg.svd(W_fp32, full_matrices=False)
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).contiguous()
+    elif fisher_diag is not None and fisher_diag.shape == (N,):
+        f_clamped = fisher_diag.to(device=W.device, dtype=torch.float32).clamp(min=1e-8)
+        sqrt_f = torch.sqrt(f_clamped)
+        inv_sqrt_f = 1.0 / sqrt_f
+        W_weighted = W_fp32 * sqrt_f.unsqueeze(0)
+        U, S, Vt = torch.linalg.svd(W_weighted, full_matrices=False)
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+        V_r = ((sqrt_S.unsqueeze(1) * Vt[:r, :]) * inv_sqrt_f.unsqueeze(0)).contiguous()
+    else:
+        U, S, Vt = torch.linalg.svd(W_fp32, full_matrices=False)
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
+        V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).contiguous()
+
+    return torch.matmul(U_r, V_r).to(dtype=W.dtype)
+
+
 if HAS_TRITON and tl is not None:
     @triton.autotune(
         configs=[
@@ -3901,6 +3966,46 @@ def hnc_svd_compress(
         return out.to(dtype=W.dtype)
 
     logger.warning("hnc_svd_compress: Triton unavailable or unsuitable, using PyTorch fallback.")
+    return torch.matmul(A_r, B_r).to(dtype=W.dtype)
+
+
+def hnc_svd_compress_pytorch(
+    W: torch.Tensor,
+    cov: Optional[torch.Tensor] = None,
+    rank: int = 32,
+    max_error: float = 0.35,
+) -> torch.Tensor:
+    """Pure PyTorch reference implementation of HNC-SVD compression."""
+    if W.ndim != 2:
+        raise ValueError(f"hnc_svd_compress_pytorch requires a 2D weight matrix, got shape {W.shape}")
+
+    M, N = W.shape
+    r = max(1, min(rank, min(M, N) - 1)) if min(M, N) > 1 else 1
+    W_fp32 = W.float()
+
+    if cov is not None and cov.shape == (N, N):
+        Hx = cov.to(device=W.device, dtype=torch.float32)
+        try:
+            reg = 1e-3 * (torch.trace(Hx) / float(N)).item() + 1e-6
+            Sx = Hx + reg * torch.eye(N, device=W.device, dtype=torch.float32)
+            L = torch.linalg.cholesky(Sx)
+            W_whitened = torch.matmul(W_fp32, L)
+            U, S, Vh = torch.linalg.svd(W_whitened, full_matrices=False)
+            U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
+            V_unwhitened = torch.linalg.solve_triangular(
+                L.t(), (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).t(), upper=True
+            ).t()
+            A_r = U_r.contiguous()
+            B_r = V_unwhitened.contiguous()
+        except Exception:
+            U, S, Vh = torch.linalg.svd(W_fp32, full_matrices=False)
+            A_r = (U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).contiguous()
+            B_r = (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).contiguous()
+    else:
+        U, S, Vh = torch.linalg.svd(W_fp32, full_matrices=False)
+        A_r = (U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).contiguous()
+        B_r = (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).contiguous()
+
     return torch.matmul(A_r, B_r).to(dtype=W.dtype)
 
 
