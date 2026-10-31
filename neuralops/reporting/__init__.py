@@ -6,16 +6,18 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Evidence Collection and Reporting Subsystem.
+NeuralOps Reporting and Evidence Module.
 """
 
 from neuralops.reporting.environment import capture_environment
-from neuralops.reporting.evidence import EvidenceRecord, build_evidence
-from neuralops.reporting.report import render_report
+from neuralops.reporting.evidence import build_evidence, load_evidence, save_evidence
+from neuralops.reporting.report import render_report, save_report
 
 __all__ = [
-    "EvidenceRecord",
     "build_evidence",
     "capture_environment",
+    "load_evidence",
     "render_report",
+    "save_evidence",
+    "save_report",
 ]
