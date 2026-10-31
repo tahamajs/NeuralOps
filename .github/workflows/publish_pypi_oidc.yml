@@ -7,6 +7,9 @@ concurrency:
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       target:
@@ -63,7 +66,7 @@ jobs:
   publish-pypi:
     name: Publish to PyPI (Production)
     needs: build
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'pypi')
+    if: github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'pypi')
     runs-on: ubuntu-latest
     environment:
       name: pypi
