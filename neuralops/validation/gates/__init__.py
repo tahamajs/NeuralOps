@@ -10,14 +10,25 @@ Validation Gates Catalog.
 """
 
 from neuralops.validation.gates.behavioral import (
+    AttentionPatternsGate,
+    LogitKLGate,
     OutputSimilarityGate,
     PerplexityDeltaGate,
+    PerplexityGate,
+)
+from neuralops.validation.gates.empirical import (
+    AccuracyGate,
+    LatencyGate,
+    NeedleInAHaystackGate,
+    ThroughputGate,
+    VRAMGate,
 )
 from neuralops.validation.gates.numerical import (
     ForwardPassRunsGate,
     NoNanInfGate,
 )
 from neuralops.validation.gates.structural import (
+    ConnectivityGate,
     DtypesMatchGate,
     NoOrphanModulesGate,
     ParameterCountGate,
@@ -25,12 +36,21 @@ from neuralops.validation.gates.structural import (
 )
 
 __all__ = [
+    "AccuracyGate",
+    "AttentionPatternsGate",
+    "ConnectivityGate",
     "DtypesMatchGate",
     "ForwardPassRunsGate",
+    "LatencyGate",
+    "LogitKLGate",
+    "NeedleInAHaystackGate",
     "NoNanInfGate",
     "NoOrphanModulesGate",
     "OutputSimilarityGate",
     "ParameterCountGate",
     "PerplexityDeltaGate",
+    "PerplexityGate",
     "ShapesMatchGate",
+    "ThroughputGate",
+    "VRAMGate",
 ]
