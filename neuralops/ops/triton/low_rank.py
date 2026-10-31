@@ -3329,12 +3329,12 @@ def direct_svd_compress(
     U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
     V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).contiguous()
 
-    # Energy normalization scale factor
+    # Energy normalization scale factor (matching DirectSVDCompressor energy_scale^2)
     W_recon_pre = torch.matmul(U_r, V_r)
     recon_norm = torch.norm(W_recon_pre, p="fro").item()
     scale = 1.0
     if recon_norm > 1e-12 and norm_w > 1e-12:
-        scale = math.sqrt(norm_w / recon_norm)
+        scale = norm_w / recon_norm
 
     # Step 2: Dispatch to Triton or PyTorch fallback
     if (
