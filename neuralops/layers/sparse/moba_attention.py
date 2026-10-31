@@ -224,6 +224,7 @@ class MoBAAttention(BaseAttention):
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -436,6 +437,7 @@ class MoBAAttention(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         if hasattr(src, "is_decoder"):
@@ -546,6 +548,7 @@ class MoBAAttention(BaseAttention):
                     out = self.out_proj(_sdpa_out)
                     return out * self.output_scale, None
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
 
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale

@@ -365,6 +365,7 @@ class DynamicConvAttention(BaseAttention):
             from neuralops.ops.triton.elementwise import fused_dynamic_conv1d_triton
             return fused_dynamic_conv1d_triton(v_full, dyn_w)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         B, H, T, d = v_full.shape

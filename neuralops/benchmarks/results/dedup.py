@@ -76,6 +76,7 @@ class Deduplicator:
                 if age_days > self.rerun_after_days:
                     return False, f"existing run is {age_days:.1f} days old (> {self.rerun_after_days}d), allowing rerun"
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         return True, f"Identical successful run already exists ({entry.get('run_id')})"

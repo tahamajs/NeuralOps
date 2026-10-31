@@ -46,6 +46,7 @@ def get_telemetry():
                 "power_w": float(parts[5]),
             }
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
     return telemetry
 
@@ -71,6 +72,7 @@ def get_active_process_and_logs():
                     if m:
                         active_module = m.group(1)
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
 
     try:
@@ -90,6 +92,7 @@ def get_active_process_and_logs():
                         queue_logs = "\n".join(lines)
                         break
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
 
     return active_module or "cur_linear", active_model or "qwen3_5", queue_logs

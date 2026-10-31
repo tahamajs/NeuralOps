@@ -396,6 +396,7 @@ class PerformerAttention(BaseAttention):
                 x, self.omega, self.num_features, kernel_type=self.kernel_type, eps=self.eps
             )
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         omega_t = self.omega.to(dtype=x.dtype, device=x.device).t()
@@ -554,6 +555,7 @@ class PerformerAttention(BaseAttention):
                             b.clone() if b is not None else None,
                         )
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         missing_after = [

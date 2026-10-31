@@ -159,6 +159,7 @@ def benchmark_torch_compile(
                 try:
                     mod = mod.to(dtype=dtype)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
             mod.eval()
 

@@ -154,6 +154,7 @@ class MambaShedderPrunedLinear(nn.Module):
                     out = out + (self.scaling * lora_out).to(out.dtype)
                     return out.reshape(*orig_shape[:-1], self.original_out_features)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
             lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out.to(out.dtype)

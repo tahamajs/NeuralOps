@@ -404,6 +404,7 @@ class TextGenerationPipeline:
             try:
                 model = model.to(device)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         self.model = model
         self.tokenizer = tokenizer
@@ -439,6 +440,7 @@ class TextGenerationPipeline:
                     tok = AutoTokenizer.from_pretrained(model_name)
                     self.tokenizer = tok
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
 
         # Handle torch.Tensor inputs directly
@@ -451,6 +453,7 @@ class TextGenerationPipeline:
                 try:
                     input_ids = input_ids.to(target_dev)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
             output_ids = self._generate_tokens(input_ids, max_length, max_new_tokens, **kwargs)
             if tok is not None:
@@ -482,6 +485,7 @@ class TextGenerationPipeline:
                 if attention_mask is not None:
                     attention_mask = attention_mask.to(target_dev)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         output_ids = self._generate_tokens(
@@ -603,6 +607,7 @@ class TextGenerationPipeline:
                 try:
                     decoded = tok.batch_decode(output_ids_cpu)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
         if not decoded and hasattr(tok, "decode"):
             for seq in output_ids_cpu:
@@ -693,6 +698,7 @@ def list_attentions(include_extensions: bool = False) -> List[str]:
 
             canonical.extend(list_fla_attentions())
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return canonical
 

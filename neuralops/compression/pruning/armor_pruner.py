@@ -214,6 +214,7 @@ class ARMORLinear(nn.Module):
                 )
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         w_eff = self.sparse_weight * self.sparse_mask

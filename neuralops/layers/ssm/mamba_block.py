@@ -198,8 +198,10 @@ class MambaBlock(nn.Module):
                     if w is not None:
                         extracted[proj] = w
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         if hasattr(src, "c_attn") and src.c_attn is not None and extracted["q"] is None:

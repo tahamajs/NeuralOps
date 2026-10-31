@@ -575,7 +575,8 @@ class YourCustomAttention(BaseAttention):
                 try:
                     from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
                     output = self.out_proj(context)
-                except Exception:
+                except Exception as e:
+                    logger.warning("Optional fused output projection failed: %s", e)
                     output = self.out_proj(context)
             else:
                 output = self.out_proj(context)

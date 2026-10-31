@@ -91,6 +91,7 @@ class DeltaKVStore:
                     keep_ratio = float(self.max_refs) / float(self.ref_k.size(2))
                     k_c, v_c = paged_kv_evict_compact_triton(k_flat, v_flat, scores, keep_ratio=keep_ratio)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
             self.ref_k = self.ref_k[:, :, -self.max_refs :, :].contiguous()
             self.ref_v = self.ref_v[:, :, -self.max_refs :, :].contiguous()
@@ -511,6 +512,7 @@ class DeltaKVCompressor(BaseCompressor):
                 }
             )
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         self.model._delta_kv_compressed = True

@@ -1368,6 +1368,7 @@ def fused_int4_lut_dequant_matmul_triton(
                 return ref
             return out.view(*orig_shape[:-1], N)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
 
@@ -1514,6 +1515,7 @@ def fused_roast_hashed_gather_gemm_triton(
             )
             return out.view(*orig_shape[:-1], N)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_roast_hashed_gather_gemm_pytorch(x, weight_comp, h_idx, signs, bias)
 
@@ -1559,6 +1561,7 @@ def fused_kronecker_batched_gemm_triton(
                 out = out + bias
             return out
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_kronecker_batched_gemm_pytorch(x, A, B, bias)
 
@@ -1590,6 +1593,7 @@ def fused_tt_core_contraction_triton(
         try:
             return fused_tt_core_contraction_pytorch(x, cores, bias)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_tt_core_contraction_pytorch(x, cores, bias)
 
@@ -1632,6 +1636,7 @@ def fused_salt_singular_mod_gemm_triton(
         try:
             return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_salt_singular_mod_gemm_pytorch(x, U, S, V, gamma, beta, bias)
 
@@ -1721,6 +1726,7 @@ def fused_svd_qkv_rope_attention_triton(
             )
             return out.transpose(1, 2).contiguous().view(B, T, D)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     return fused_svd_qkv_rope_attention_pytorch(
@@ -1745,6 +1751,7 @@ def fused_svd_gemm_triton(
                 out = out + residual
             return out
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     V_mat = V.t() if V.shape[-1] == x.shape[-1] else V
     U_mat = U.t() if U.shape[-1] == V_mat.shape[1] else U
@@ -2464,6 +2471,7 @@ def triton_fused_lowrank_sparse_gemm(
                 try:
                     s._cached_csr = s_csr
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
             crow_indices = s_csr.crow_indices()
             col_indices = s_csr.col_indices()

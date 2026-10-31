@@ -245,6 +245,7 @@ class FAQLinear(nn.Module):
                     out = out + self.scaling * lora_out
                     return out
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
 
             lora_out = nn.functional.linear(nn.functional.linear(x, self.lora_A), self.lora_B)

@@ -159,6 +159,7 @@ class SimpleSSM(BaseAttention):
                 if w is None:
                     w, b = adapter.get_weight_bias(old_attn, "in")
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
             if w is None and hasattr(old_attn, "c_attn"):

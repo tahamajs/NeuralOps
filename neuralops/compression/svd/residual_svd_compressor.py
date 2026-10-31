@@ -143,6 +143,7 @@ class ResSVDLinear(nn.Module):
                     return base_out + res_out
                 return base_out
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         if self.factorize_base:

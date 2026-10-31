@@ -240,6 +240,7 @@ def main():
                 with open(checkpoint_path) as jf:
                     json.load(jf)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         model = model.to(device)

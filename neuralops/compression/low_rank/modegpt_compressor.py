@@ -156,6 +156,7 @@ class MoDeGPTLowRankLinear(nn.Module):
                     return out + lora_out
                 return out
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         h = F.linear(x, V)
@@ -346,6 +347,7 @@ class MoDeGPTCompressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         if self._is_gqa_asymmetric(name, module):

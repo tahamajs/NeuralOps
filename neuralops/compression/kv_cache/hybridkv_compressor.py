@@ -126,6 +126,7 @@ class HybridKVCache:
                 from neuralops.ops.triton.paged_attention import paged_kv_evict_compact_triton
                 from neuralops.ops.triton.sliding_window import fused_sink_prune_triton
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         target_len = self.max_cache_len

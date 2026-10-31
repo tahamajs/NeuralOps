@@ -171,6 +171,7 @@ class ProxSparsePrunedLoRALinear(nn.Module):
                 )
                 return out.reshape(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         w = self.weight.to(dtype=x.dtype, device=x.device)

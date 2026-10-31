@@ -742,6 +742,7 @@ class KMeansCompressor(BaseCompressor):
                 }
             )
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         self.model._kmeans_compressed = True

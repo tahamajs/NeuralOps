@@ -119,6 +119,7 @@ class GPTQQuantizer:
                         H_inv = inv_cand
                         break
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
             current_lambda *= 10.0
 

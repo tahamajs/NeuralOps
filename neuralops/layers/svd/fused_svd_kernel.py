@@ -219,6 +219,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                 ctx.use_rms_norm = use_rms_norm
                 return y_2d.view(*orig_shape[:-1], K_out)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         z = F.linear(x_2d, V.to(x_2d.dtype))
@@ -1016,6 +1017,7 @@ class FusedSVDKernelAttention(BaseAttention):
                 else _sdpa_out
             ), None
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale

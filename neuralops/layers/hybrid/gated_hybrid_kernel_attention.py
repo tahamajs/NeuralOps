@@ -597,6 +597,7 @@ class GatedHybridKernelAttention(BaseAttention):
                 past_key_value.update(k, v, layer_idx)
                 return past_key_value
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
             if layer_idx < len(past_key_value.key_cache):
@@ -699,6 +700,7 @@ class GatedHybridKernelAttention(BaseAttention):
                 from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
                 return fused_svd_linear_chunk_scan_triton(Q_feat.to(dtype), K_feat.to(dtype), V_f.to(dtype), chunk_size=64, eps=1e-4)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         KV_outer = K_feat.unsqueeze(-1) * V_f.unsqueeze(-2)

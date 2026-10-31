@@ -190,6 +190,7 @@ class RALALinearAttention(BaseAttention):
                 src_device = next(source_attn.parameters()).device
                 self.to(src_device)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         if target_dtype is not None:

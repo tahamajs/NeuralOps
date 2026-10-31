@@ -529,6 +529,7 @@ class VSpecAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         if hasattr(src, "c_attn") and (

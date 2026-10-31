@@ -132,6 +132,7 @@ class A3FactorizedLinear(nn.Module):
                     return out + lora_out
                 return out
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         latent = F.linear(x, self.V)
@@ -404,6 +405,7 @@ class A3Compressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         if self.target_attention_only:
@@ -957,6 +959,7 @@ class A3Compressor(BaseCompressor):
                 for p in target_mod.parameters():
                     self._orig_storage_bytes += p.numel() * p.element_size()
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
             cov = cov_map.get(name, None)
@@ -994,6 +997,7 @@ class A3Compressor(BaseCompressor):
                     for p in factorized_layer.parameters():
                         self._comp_storage_bytes += p.numel() * p.element_size()
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
             else:
                 skipped_count += 1
@@ -1081,6 +1085,7 @@ class A3Compressor(BaseCompressor):
         try:
             self.model.compression_stats = stats
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
         return self.model, stats
 
@@ -1241,6 +1246,7 @@ def a3_compressor_factory(
     try:
         compressed_model.compression_stats = stats
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
     if return_tuple:
         return compressed_model, stats

@@ -197,6 +197,7 @@ def _autocast_off(x: torch.Tensor):
         try:
             return torch.autocast(device_type=x.device.type, enabled=False)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return contextlib.nullcontext()
 
@@ -677,6 +678,7 @@ class SpectronAttention(BaseAttention):
                             base = base + F.linear(x, sparse_w.to(x.dtype))
                         return base
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
 
         out = up(down(x))

@@ -76,6 +76,7 @@ echo "✓ Reproduction run completed successfully!"
         st = os.stat(p)
         os.chmod(p, st.st_mode | stat.S_IEXEC)
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
     return p
 

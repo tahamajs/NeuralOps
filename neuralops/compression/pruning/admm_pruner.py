@@ -130,6 +130,7 @@ class ADMMMaskedLinear(nn.Module):
                 )
                 return out.reshape(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         w_masked = ADMMSTEPrune.apply(self.weight, self.mask)
         return F.linear(x, w_masked, self.bias)

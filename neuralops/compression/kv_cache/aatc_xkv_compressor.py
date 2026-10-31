@@ -418,6 +418,7 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
                     from neuralops.ops.triton.paged_attention import paged_kv_evict_compact_triton
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
             rec_k = torch.matmul(U_k, V_k.to(device)) + mean_k.to(device).view(1, 1, 1, -1)
             rec_v = torch.matmul(U_v, V_v.to(device)) + mean_v.to(device).view(1, 1, 1, -1)

@@ -102,8 +102,8 @@ def compute_dataset_metrics(
                     float(f1_score(all_labels, all_preds, average=avg, zero_division=0)),
                     4,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("F1 score computation failed: %s", e)
 
     except Exception as e:
         logger.warning("Metric computation failed for dataset '%s': %s", dataset, e)

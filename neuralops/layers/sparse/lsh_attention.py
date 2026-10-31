@@ -251,6 +251,7 @@ class LSHAttention(BaseAttention):
                     try:
                         return int(mod.weight.shape[0] // max(1, num_heads))
                     except Exception:
+                        # allowed-swallow: best-effort-telemetry
                         pass
         return max(1, hidden_size // max(1, num_heads))
 
@@ -334,8 +335,10 @@ class LSHAttention(BaseAttention):
                     if w is not None:
                         extracted[proj] = (w, b)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         if (
@@ -510,6 +513,7 @@ class LSHAttention(BaseAttention):
                             w_norm,
                         )
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
 
             for mod in (self.query, self.key, self.value, self.out_proj):

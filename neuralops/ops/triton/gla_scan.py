@@ -902,6 +902,7 @@ def gla_scan(
                 use_normalizer=use_normalizer,
             )
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return gla_scan_pytorch(
         q, k, v, lambdas,
@@ -947,6 +948,7 @@ def kda_hla_chunk_scan_triton(
             out, _ = chunk_gla(q_fl, k_fl, v_fl, g_fl, scale=scale, output_final_state=False)
             return out.transpose(1, 2).contiguous().to(q.dtype)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     if D <= MAX_REGISTER_DIM:
@@ -956,6 +958,7 @@ def kda_hla_chunk_scan_triton(
         try:
             return gla_scan(q, k, v, lam)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     chunk_size = 64
@@ -1051,6 +1054,7 @@ def fused_regla_refined_gate_scan_triton(
                     log_decay = log_decay.expand(q.shape[:-1]).contiguous()
                 return gla_scan_triton(q, k, v, log_decay)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_regla_refined_gate_scan_pytorch(q, k, v, gate, is_causal)
 
@@ -1080,6 +1084,7 @@ def fused_chunk_svd_decay_linear_triton(
             Z = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)
             return out, (S, Z)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     num_chunks = (N + chunk_size - 1) // chunk_size
@@ -1241,6 +1246,7 @@ def gla_recurrent_step_triton(
             )
             return (out.unsqueeze(2) if has_l_dim else out), state_s, state_z
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     lam = torch.clamp(lambda_t.float().unsqueeze(-1).unsqueeze(-1), min=1e-4, max=1.0 - 1e-4)

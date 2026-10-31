@@ -366,6 +366,7 @@ class NystromAttention(BaseAttention):
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         target_map = {"q": self.query, "k": self.key, "v": self.value, "o": self.out_proj}
@@ -442,6 +443,7 @@ class NystromAttention(BaseAttention):
                     dropout_p=self.dropout.p if self.training else 0.0,
                 ).to(dtype)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale

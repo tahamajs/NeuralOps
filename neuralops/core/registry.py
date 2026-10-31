@@ -99,8 +99,8 @@ def _make_universal_attention_class(target_cls: type) -> type:
                         if resolved_heads:
                             config.num_attention_heads = resolved_heads
                             config.num_heads = resolved_heads
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning("Could not set dimension attributes on config: %s", e)
                 kwargs["config"] = config
                 kwargs["hidden_size"] = resolved_dim
                 kwargs["dim"] = resolved_dim
@@ -110,7 +110,11 @@ def _make_universal_attention_class(target_cls: type) -> type:
 
             try:
                 return super().__new__(cls)
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "UniversalAttentionWrapper.__new__ super failed (%s); allocating target_cls directly",
+                    e,
+                )
                 return target_cls.__new__(target_cls)
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -140,8 +144,8 @@ def _make_universal_attention_class(target_cls: type) -> type:
                         if resolved_heads:
                             config.num_attention_heads = resolved_heads
                             config.num_heads = resolved_heads
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning("Could not set dimension attributes on config: %s", e)
                 kwargs["config"] = config
                 kwargs["hidden_size"] = resolved_dim
                 kwargs["dim"] = resolved_dim
@@ -381,8 +385,8 @@ class Registry:
             if k == "ttt_linear_attention":
                 try:
                     import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to import ttt_linear_attention trainer: %s", e)
                 return
             canonical = _ATTENTION_FILE_MAP.get(k, k)
             try:
@@ -497,8 +501,8 @@ class Registry:
                     for mod_path in getattr(sub_mod, "_FAMILY_MODULES", {}).values():
                         try:
                             importlib.import_module(mod_path)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.warning("Failed to eagerly load compressor module %s: %s", mod_path, e)
                 self._loaded = True
             except Exception as e:
                 import os
@@ -514,12 +518,12 @@ class Registry:
                     for mod_path in getattr(sub_mod, "_FAMILY_MODULES", {}).values():
                         try:
                             importlib.import_module(mod_path)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.warning("Failed to eagerly load attention module %s: %s", mod_path, e)
                 try:
                     import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to eagerly import ttt_linear_attention: %s", e)
                 self._loaded = True
             except Exception as e:
                 import os

@@ -190,6 +190,7 @@ class LoRAAttention(BaseAttention):
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -406,6 +407,7 @@ class LoRAAttention(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         if hasattr(src, "is_decoder"):

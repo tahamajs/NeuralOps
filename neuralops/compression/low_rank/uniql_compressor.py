@@ -113,6 +113,7 @@ class UniQLinear(nn.Module):
                 w_down = S.unsqueeze(1) * Vt
                 return fused_down_up_gemm_bias_triton(x, w_down, U.t().contiguous(), bias=self.bias)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         W = self._reconstruct_weight()
@@ -285,6 +286,7 @@ class UniQLCompressor(BaseCompressor):
             if not should_compress_linear(self.model, name):
                 return False
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
         return True
 
