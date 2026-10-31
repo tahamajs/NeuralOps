@@ -7,6 +7,8 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Layer Pruning Surgery: Redundant Layer Shedding and Depth Truncation.
+
+Prune entire transformer layers. Note: Structural layer dropping without healing will degrade model perplexity. Post-surgery calibration and distillation healing require GPU hardware acceleration.
 """
 
 from __future__ import annotations
@@ -48,7 +50,10 @@ def prune_layers(
     drop_count: int | None = None,
     **kwargs: Any,
 ) -> Any:
-    """Shed or prune specific Transformer decoder blocks from model backbone."""
+    """Prune entire transformer layers. Note: Structural layer dropping without healing will degrade model perplexity. Post-surgery calibration and distillation healing require GPU hardware acceleration.
+
+    Shed or prune specific Transformer decoder blocks from model backbone.
+    """
     if not isinstance(model, nn.Module):
         return model
 
