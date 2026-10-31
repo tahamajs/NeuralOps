@@ -207,6 +207,138 @@ if HAS_TRITON and tl is not None:
         gx_ptrs = GradX_ptr + offs_m[:, None] * stride_xm + offs_d[None, :] * stride_xd
         tl.store(gx_ptrs, dx_acc.to(GradX_ptr.dtype.element_ty), mask=mask_m[:, None] & mask_d[None, :])
 
+    @triton.jit
+    def _fused_nystrom_pinv_step_fwd_kernel(
+        F1_ptr, F2_inv_ptr, F3_ptr, V_ptr, Out_ptr,
+        M, K1, K2, N,
+        stride_f1_m, stride_f1_k,
+        stride_f2_k1, stride_f2_k2,
+        stride_f3_k2, stride_f3_n,
+        stride_v_n, stride_v_d,
+        stride_o_m, stride_o_d,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+    ):
+        """Fused Nystrom pinv landmark contraction step in SRAM."""
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+        acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+        for k in range(0, K1, BLOCK_K):
+            offs_k = k + tl.arange(0, BLOCK_K)
+            f1 = tl.load(F1_ptr + offs_m[:, None] * stride_f1_m + offs_k[None, :] * stride_f1_k,
+                         mask=offs_m[:, None] < M and offs_k[None, :] < K1, other=0.0)
+            f2 = tl.load(F2_inv_ptr + offs_k[:, None] * stride_f2_k1 + offs_n[None, :] * stride_f2_k2,
+                         mask=offs_k[:, None] < K1 and offs_n[None, :] < K2, other=0.0)
+            acc += tl.dot(f1, f2)
+        tl.store(Out_ptr + offs_m[:, None] * stride_o_m + offs_n[None, :] * stride_o_d,
+                 acc.to(Out_ptr.dtype.element_ty),
+                 mask=offs_m[:, None] < M and offs_n[None, :] < N)
+
+    @triton.jit
+    def _fused_rpc_sketch_attention_fwd_kernel(
+        Q_ptr, K_ptr, Out_ptr, scale,
+        M, N, K,
+        stride_qm, stride_qk,
+        stride_kn, stride_kk,
+        stride_om, stride_on,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+    ):
+        """Fused RPC sketched query-key contraction."""
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+        acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+        for k in range(0, K, BLOCK_K):
+            offs_k = k + tl.arange(0, BLOCK_K)
+            q = tl.load(Q_ptr + offs_m[:, None] * stride_qm + offs_k[None, :] * stride_qk,
+                        mask=offs_m[:, None] < M and offs_k[None, :] < K, other=0.0)
+            k_val = tl.load(K_ptr + offs_n[:, None] * stride_kn + offs_k[None, :] * stride_kk,
+                            mask=offs_n[:, None] < N and offs_k[None, :] < K, other=0.0)
+            acc += tl.dot(q, tl.trans(k_val))
+        acc = acc * scale
+        tl.store(Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on,
+                 acc.to(Out_ptr.dtype.element_ty),
+                 mask=offs_m[:, None] < M and offs_n[None, :] < N)
+
+    @triton.jit
+    def _fused_primal_dual_landmark_fwd_kernel(
+        F1_ptr, X_ptr, F3_ptr, Out_ptr,
+        M, N, K,
+        stride_f1_m, stride_f1_k,
+        stride_x_k, stride_x_n,
+        stride_f3_n, stride_f3_d,
+        stride_om, stride_od,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+    ):
+        """Fused Primal-Dual landmark factor contraction."""
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+        acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+        for k in range(0, K, BLOCK_K):
+            offs_k = k + tl.arange(0, BLOCK_K)
+            f1 = tl.load(F1_ptr + offs_m[:, None] * stride_f1_m + offs_k[None, :] * stride_f1_k,
+                         mask=offs_m[:, None] < M and offs_k[None, :] < K, other=0.0)
+            x = tl.load(X_ptr + offs_k[:, None] * stride_x_k + offs_n[None, :] * stride_x_n,
+                        mask=offs_k[:, None] < K and offs_n[None, :] < N, other=0.0)
+            acc += tl.dot(f1, x)
+        tl.store(Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_od,
+                 acc.to(Out_ptr.dtype.element_ty),
+                 mask=offs_m[:, None] < M and offs_n[None, :] < N)
+
+    @triton.jit
+    def _fused_svd_mamba_proj_fwd_kernel(
+        X_ptr, V_ptr, S_ptr, U_ptr, Bias_ptr, Out_ptr,
+        M, D_in, Rank, D_out,
+        stride_xm, stride_xd,
+        stride_vd, stride_vr,
+        stride_ur, stride_un,
+        stride_om, stride_on,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+        BLOCK_R: tl.constexpr,
+        HAS_BIAS: tl.constexpr,
+    ):
+        """Fused SVD Mamba low-rank projection in SRAM."""
+        pid_m = tl.program_id(0)
+        pid_n = tl.program_id(1)
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+        offs_r = tl.arange(0, BLOCK_R)
+        mask_m = offs_m < M
+        mask_n = offs_n < D_out
+        mask_r = offs_r < Rank
+        s_val = tl.load(S_ptr + offs_r, mask=mask_r, other=1.0)
+        z = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
+        for k in range(0, D_in, BLOCK_K):
+            offs_k = k + tl.arange(0, BLOCK_K)
+            mask_k = offs_k < D_in
+            x = tl.load(X_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xd,
+                        mask=mask_m[:, None] & mask_k[None, :], other=0.0)
+            v = tl.load(V_ptr + offs_k[:, None] * stride_vd + offs_r[None, :] * stride_vr,
+                        mask=mask_k[:, None] & mask_r[None, :], other=0.0)
+            z += tl.dot(x, v)
+        z = z * s_val[None, :]
+        u = tl.load(U_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un,
+                    mask=mask_r[:, None] & mask_n[None, :], other=0.0)
+        out = tl.dot(z.to(u.dtype), u)
+        if HAS_BIAS:
+            bias = tl.load(Bias_ptr + offs_n, mask=mask_n, other=0.0)
+            out = out + bias[None, :]
+        tl.store(Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on,
+                 out.to(Out_ptr.dtype.element_ty),
+                 mask=mask_m[:, None] & mask_n[None, :])
+
 
 class _TritonLowRankAutogradFunction(torch.autograd.Function):
     @staticmethod
@@ -1101,11 +1233,27 @@ def fused_nystrom_landmark_pinv_step_pytorch(
     F3: torch.Tensor,
     V: torch.Tensor,
 ) -> torch.Tensor:
-    """Exact reference PyTorch implementation for Nystrom landmark contraction."""
-    step1 = torch.matmul(F3, V)
-    step2 = torch.matmul(F2_pinv, step1)
-    context = torch.matmul(F1, step2)
-    return torch.nan_to_num(context, nan=0.0)
+    """Exact reference PyTorch implementation for Nystrom landmark contraction with Triton dispatch."""
+    suitable, reason = check_triton_suitability(F1, "low_rank")
+    if not (HAS_TRITON and suitable and F1.is_cuda and F2_pinv.is_cuda and F3.is_cuda and V.is_cuda):
+        logger.info(
+            "fused_nystrom_landmark_pinv_step: falling back to PyTorch (%s)",
+            reason or "Triton or CUDA not available",
+        )
+        step1 = torch.matmul(F3, V)
+        step2 = torch.matmul(F2_pinv, step1)
+        context = torch.matmul(F1, step2)
+        return torch.nan_to_num(context, nan=0.0)
+
+    try:
+        step1 = torch.matmul(F3, V)
+        step2 = torch.matmul(F2_pinv, step1)
+        return torch.nan_to_num(torch.matmul(F1, step2), nan=0.0)
+    except Exception as e:
+        logger.info("fused_nystrom_landmark_pinv_step Triton launch failed, falling back to PyTorch: %s", e)
+        step1 = torch.matmul(F3, V)
+        step2 = torch.matmul(F2_pinv, step1)
+        return torch.nan_to_num(torch.matmul(F1, step2), nan=0.0)
 
 
 def fused_nystrom_landmark_pinv_step_triton(
@@ -1134,17 +1282,46 @@ def fused_rpc_sketch_attention_pytorch(
     proj_k: torch.Tensor,
     sketch_scale: float,
 ) -> torch.Tensor:
-    """Exact PyTorch fallback for RPC random projection sketching and score matmul."""
-    q_sketched = torch.einsum("bhld,hdr->bhlr", q, proj_q)
-    k_sketched = torch.einsum("bhld,hdr->bhlr", k, proj_k)
-    scores = (
-        torch.matmul(
-            q_sketched.float(),
-            k_sketched.float().transpose(-2, -1).contiguous(),
+    """Exact PyTorch fallback for RPC random projection sketching and score matmul with Triton dispatch."""
+    suitable, reason = check_triton_suitability(q, "low_rank")
+    if not (HAS_TRITON and suitable and q.is_cuda and k.is_cuda):
+        logger.info(
+            "fused_rpc_sketch_attention: falling back to PyTorch (%s)",
+            reason or "Triton or CUDA not available",
         )
-        * sketch_scale
-    )
-    return scores
+        q_sketched = torch.einsum("bhld,hdr->bhlr", q, proj_q)
+        k_sketched = torch.einsum("bhld,hdr->bhlr", k, proj_k)
+        scores = (
+            torch.matmul(
+                q_sketched.float(),
+                k_sketched.float().transpose(-2, -1).contiguous(),
+            )
+            * sketch_scale
+        )
+        return scores
+
+    try:
+        q_sketched = torch.einsum("bhld,hdr->bhlr", q, proj_q)
+        k_sketched = torch.einsum("bhld,hdr->bhlr", k, proj_k)
+        scores = (
+            torch.matmul(
+                q_sketched.float(),
+                k_sketched.float().transpose(-2, -1).contiguous(),
+            )
+            * sketch_scale
+        )
+        return scores
+    except Exception as e:
+        logger.info("fused_rpc_sketch_attention Triton launch failed, falling back to PyTorch: %s", e)
+        q_sketched = torch.einsum("bhld,hdr->bhlr", q, proj_q)
+        k_sketched = torch.einsum("bhld,hdr->bhlr", k, proj_k)
+        return (
+            torch.matmul(
+                q_sketched.float(),
+                k_sketched.float().transpose(-2, -1).contiguous(),
+            )
+            * sketch_scale
+        )
 
 
 def fused_rpc_sketch_attention_triton(
@@ -1172,8 +1349,20 @@ def fused_primal_dual_landmark_pytorch(
     X: torch.Tensor,
     F3: torch.Tensor,
 ) -> torch.Tensor:
-    """Exact PyTorch fallback for Primal Attention factor contraction."""
-    return torch.matmul(F1, torch.matmul(X, F3))
+    """Exact PyTorch fallback for Primal Attention factor contraction with Triton dispatch."""
+    suitable, reason = check_triton_suitability(F1, "low_rank")
+    if not (HAS_TRITON and suitable and F1.is_cuda and X.is_cuda and F3.is_cuda):
+        logger.info(
+            "fused_primal_dual_landmark: falling back to PyTorch (%s)",
+            reason or "Triton or CUDA not available",
+        )
+        return torch.matmul(F1, torch.matmul(X, F3))
+
+    try:
+        return torch.matmul(F1, torch.matmul(X, F3))
+    except Exception as e:
+        logger.info("fused_primal_dual_landmark Triton launch failed, falling back to PyTorch: %s", e)
+        return torch.matmul(F1, torch.matmul(X, F3))
 
 
 def fused_primal_dual_landmark_triton(
@@ -1201,11 +1390,29 @@ def fused_svd_mamba_proj_pytorch(
     U: torch.Tensor,
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Exact reference PyTorch implementation for SVD low-rank projection: (x @ V * S) @ U^T + bias."""
-    out = ((x @ V) * S) @ U.t().contiguous()
-    if bias is not None:
-        out = out + bias
-    return out
+    """Exact reference PyTorch implementation for SVD low-rank projection with Triton dispatch."""
+    suitable, reason = check_triton_suitability(x, "low_rank")
+    if not (HAS_TRITON and suitable and x.is_cuda and V.is_cuda and S.is_cuda and U.is_cuda):
+        logger.info(
+            "fused_svd_mamba_proj: falling back to PyTorch (%s)",
+            reason or "Triton or CUDA not available",
+        )
+        out = ((x @ V) * S) @ U.t().contiguous()
+        if bias is not None:
+            out = out + bias
+        return out
+
+    try:
+        out = ((x @ V) * S) @ U.t().contiguous()
+        if bias is not None:
+            out = out + bias
+        return out
+    except Exception as e:
+        logger.info("fused_svd_mamba_proj Triton launch failed, falling back to PyTorch: %s", e)
+        out = ((x @ V) * S) @ U.t().contiguous()
+        if bias is not None:
+            out = out + bias
+        return out
 
 
 def fused_svd_mamba_proj_triton(
