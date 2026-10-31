@@ -5,6 +5,20 @@ All notable changes to the **NeuralOps** library (`SVD_linear_Attention`) will b
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-11-01
+
+### Major Release
+- **NeuralOps 2.0.0 Architecture & Transformation Platform**:
+  - Full production release of the Declarative Transformation Platform and Recipe Language.
+  - End-to-end multi-stage pipeline transformation with transactional rollback and state snapshot safety.
+  - Public unified API surface: `Recipe`, `load_recipe`, `save_recipe`, `plan_recipe`, `execute_plan`, `PipelineResult`, `PipelineError`, `ValidationFailure`, `analyze_recipe`, `estimate_resources`, `suggest_config`, `export_to_hf`, `check_compatibility`.
+  - CLI commands wired and verified: `nops recipe plan|execute|validate|diff|evidence`, `nops ops list`, `nops compat check`.
+  - 15 canonical operation contracts across architecture, attention, weights, adaptation, and verification.
+  - 4-tier validation gates (L1 structural, L2 numerical stability, L3 behavioral invariance, L4 empirical telemetry).
+  - Resolved Triton SVD compressor suitability signature checks across direct_svd, asvd, fwsvd, and hnc_svd.
+  - Resolved Autograd bridge dispatcher scoping and torch shadowing in fallback dispatcher.
+  - Tier-1 Triton compressor implementations: AWQ and FP8 with interpreter parity verification.
+
 ## [1.9.0] - 2026-10-31
 
 ### Added
