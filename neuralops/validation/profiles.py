@@ -90,8 +90,9 @@ def get_gates_for_profile(profile: Union[str, ValidationProfile]) -> List[Gate]:
     if norm == "none":
         return []
 
-    # STRUCTURAL: L1 only (NO L2 gates)
-    if norm in ("structural", "quick"):
+    # STRUCTURAL: L1 only (NO L2 gates) per Phase 2 spec:
+    # "run_validation_gates with profile=STRUCTURAL runs only L1 gates (not L2)"
+    if norm == "structural":
         return [
             ShapesMatchGate(),
             DtypesMatchGate(),
@@ -99,8 +100,18 @@ def get_gates_for_profile(profile: Union[str, ValidationProfile]) -> List[Gate]:
             ParameterCountGate(),
         ]
 
-    # NUMERICAL: L1 + L2
-    if norm in ("numerical", "standard"):
+    # QUICK: L1 + ForwardPassRunsGate per Category 5 conformance
+    if norm == "quick":
+        return [
+            ShapesMatchGate(),
+            DtypesMatchGate(),
+            ConnectivityGate(),
+            ParameterCountGate(),
+            ForwardPassRunsGate(),
+        ]
+
+    # NUMERICAL: L1 + L2 per Phase 2 spec
+    if norm == "numerical":
         return [
             ShapesMatchGate(),
             DtypesMatchGate(),
@@ -108,6 +119,18 @@ def get_gates_for_profile(profile: Union[str, ValidationProfile]) -> List[Gate]:
             ParameterCountGate(),
             ForwardPassRunsGate(),
             NoNanInfGate(),
+        ]
+
+    # STANDARD: L1 + L2 + OutputSimilarity per Category 5 conformance
+    if norm == "standard":
+        return [
+            ShapesMatchGate(),
+            DtypesMatchGate(),
+            ConnectivityGate(),
+            ParameterCountGate(),
+            ForwardPassRunsGate(),
+            NoNanInfGate(),
+            OutputSimilarityGate(min_similarity=0.80),
         ]
 
     # BEHAVIORAL: L1 + L2 + L3
