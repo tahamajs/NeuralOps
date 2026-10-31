@@ -92,8 +92,12 @@ if HAS_TRITON and triton is not None and tl is not None:
 
 def _kmeans_pytorch(W: torch.Tensor, num_clusters: int = 256) -> torch.Tensor:
     """Pure PyTorch fallback matching fast_kmeans_1d."""
-    centroids, idx = fast_kmeans_1d(W, n_clusters=num_clusters)
-    deq = centroids[idx.long()].reshape(W.shape)
+    centroids, _ = fast_kmeans_1d(W, n_clusters=num_clusters)
+    W_flat = W.reshape(-1, 1).float()
+    c_flat = centroids.reshape(1, -1).float()
+    dists = torch.abs(W_flat - c_flat)
+    best_idx = torch.argmin(dists, dim=1)
+    deq = centroids[best_idx].reshape(W.shape)
     return deq.to(dtype=W.dtype)
 
 
@@ -141,4 +145,6 @@ def kmeans_quantize_compress(
     return out.reshape(W.shape).to(dtype=W.dtype)
 
 
-__all__ = ["kmeans_quantize_compress"]
+kmeans_quantize_compress_pytorch = _kmeans_pytorch
+
+__all__ = ["kmeans_quantize_compress", "kmeans_quantize_compress_pytorch"]

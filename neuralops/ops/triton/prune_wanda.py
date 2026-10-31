@@ -197,4 +197,6 @@ def wanda_compress(
     return out.to(dtype=W.dtype)
 
 
-__all__ = ["wanda_compress", "_wanda_pytorch"]
+wanda_compress_pytorch = _wanda_pytorch
+
+__all__ = ["wanda_compress", "wanda_compress_pytorch", "_wanda_pytorch"]
