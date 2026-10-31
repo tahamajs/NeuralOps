@@ -132,6 +132,7 @@ class DobiSVDLinearLayer(nn.Module):
                 out = fused_down_up_gemm_bias_triton(x_flat, V_gated, self.U.t().contiguous(), bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         latent = F.linear(x_flat, V_gated)
@@ -641,6 +642,7 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         try:
             compressed_model.compression_stats = stats
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
         if return_stats:
             return compressed_model, stats

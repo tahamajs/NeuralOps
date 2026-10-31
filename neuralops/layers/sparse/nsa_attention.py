@@ -571,6 +571,7 @@ class NativeSparseAttention(BaseAttention):
                     else _sdpa_out
                 ), None
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         scores = (

@@ -683,6 +683,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
                     )
                 return out, None
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale

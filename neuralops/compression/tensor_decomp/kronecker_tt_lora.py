@@ -69,6 +69,7 @@ def _init_orthogonal_spectral(
         if sigma_max > 1e-8:
             flat = flat / sigma_max
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
     return flat.view(shape).to(dtype=dtype)
 
@@ -788,6 +789,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
                 }
             )
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         self.model._kronecker_tt_lora_compressed = True

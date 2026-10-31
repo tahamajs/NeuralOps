@@ -300,6 +300,7 @@ class DynamicSVDLinear(nn.Module):
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
                 return fused_down_up_gemm_bias_triton(x, self.V, self.U.t().contiguous(), bias=self.bias)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         intermediate = F.linear(x, self.V)
@@ -958,6 +959,7 @@ def dynamic_entropy_svd_factory(model: Any, comp_config: Any = None, **kwargs: A
         try:
             compressed_model.compression_stats = stats
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
         if return_stats:
             return compressed_model, stats

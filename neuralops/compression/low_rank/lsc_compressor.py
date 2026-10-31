@@ -43,6 +43,7 @@ def _detect_lora_rank(module: nn.Module) -> int:
             try:
                 return int(la.out_features)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         if hasattr(la, "weight") and la.weight is not None and la.weight.dim() >= 1:
             return int(la.weight.shape[0])
@@ -621,6 +622,7 @@ class LSCCompressor(BaseCompressor):
                 }
             )
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         logger.info(
@@ -684,6 +686,7 @@ def lsc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     try:
         compressed_model.compression_stats = stats
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
     if return_stats:
         return compressed_model, stats

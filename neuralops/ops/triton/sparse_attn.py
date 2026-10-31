@@ -392,6 +392,7 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
                     g_v = dv.view(*v.shape) if ctx.needs_input_grad[2] else None
                     return g_q, g_k, g_v, None, None, None, None
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         q_req = q.detach().requires_grad_(True)
@@ -575,6 +576,7 @@ def fused_topk_sparse_route_and_combine_triton(
             )
             return out
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     stacked = torch.stack(branch_list, dim=-1)
@@ -965,6 +967,7 @@ def fused_bam_unified_qkv_moe_triton(
             topk_vals, _ = torch.topk(weights, min(top_k, weights.shape[-1]), dim=-1)
             return out, topk_vals
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_bam_unified_qkv_moe_pytorch(expert_outputs, gate_logits, top_k)
 

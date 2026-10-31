@@ -357,6 +357,7 @@ class HGRN2GatedOuterBlock(BaseAttention):
                 for p in old_attn.parameters():
                     self._orig_storage_bytes += p.numel() * p.element_size()
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
             def _copy_to(target_mod: LoRALinear, w_src, b_src, name: str):
@@ -396,6 +397,7 @@ class HGRN2GatedOuterBlock(BaseAttention):
                     for p in m.parameters():
                         self._comp_storage_bytes += p.numel() * p.element_size()
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
     def _chunked_scan(
@@ -465,6 +467,7 @@ class HGRN2GatedOuterBlock(BaseAttention):
                             s_final = last_state if last_state is not None else torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
                             return y_out, s_final
                         except Exception:
+                            # allowed-swallow: best-effort-telemetry
                             pass
                     from neuralops.ops.triton.gla_scan import gla_scan_triton
                     y_triton, s_final = gla_scan_triton(

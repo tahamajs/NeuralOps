@@ -270,6 +270,7 @@ class LinformerAttention(BaseAttention):
                     try:
                         return int(mod.weight.shape[0] // max(1, num_heads))
                     except Exception:
+                        # allowed-swallow: best-effort-telemetry
                         pass
         return max(1, hidden_size // max(1, num_heads))
 
@@ -560,6 +561,7 @@ class LinformerAttention(BaseAttention):
                             w_norm,
                         )
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
 
             for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):

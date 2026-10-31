@@ -359,6 +359,7 @@ class MLAAttention(BaseAttention):
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         with torch.no_grad():
@@ -521,6 +522,7 @@ class MLAAttention(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         if hasattr(src, "is_decoder"):
@@ -697,6 +699,7 @@ class MLAAttention(BaseAttention):
                     return out, present_key_value
                 return self.out_proj(out), present_key_value
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale

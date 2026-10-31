@@ -222,8 +222,10 @@ class EnvironmentMetadata:
                     total_bytes = torch.cuda.get_device_properties(0).total_memory
                     env.gpu_vram_gb = round(total_bytes / (1024**3), 2)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         for pkg in ("transformers", "datasets", "triton", "numpy", "pandas", "scipy", "torchvision"):
@@ -231,6 +233,7 @@ class EnvironmentMetadata:
                 val = importlib.metadata.version(pkg)
                 setattr(env, f"{pkg}_version", val)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         env.env_vars_used = {

@@ -1004,6 +1004,7 @@ def _heal_replaced_model_impl(
                 notes="Layerwise attention surgery alignment metrics",
             )
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     return out_stats

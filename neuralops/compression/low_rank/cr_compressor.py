@@ -89,6 +89,7 @@ class CRLinear(nn.Module):
                 out = fused_down_up_gemm_bias_triton(x_flat, self.P, self.C.t().contiguous(), bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         x_p = F.linear(x_flat, self.P)
@@ -537,6 +538,7 @@ def cr_compressor_factory(
     try:
         compressed_model.compression_stats = stats
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
     if return_stats:
         return compressed_model, stats

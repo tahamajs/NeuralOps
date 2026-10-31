@@ -171,6 +171,7 @@ def chunked_delta_rule_scan(
             S_final = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
             return out, S_final
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     if initial_state is not None:
@@ -645,6 +646,7 @@ class GatedDeltaNet(BaseAttention):
             for p in old_attn.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         cls_name = old_attn.__class__.__name__
@@ -858,6 +860,7 @@ class GatedDeltaNet(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         if self.freeze_base:

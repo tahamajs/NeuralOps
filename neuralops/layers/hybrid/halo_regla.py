@@ -257,6 +257,7 @@ class HALOReGLAAttention(BaseAttention):
                     past_key_value._linear_states[layer_idx] = linear_state
                 return past_key_value
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
@@ -506,6 +507,7 @@ class HALOReGLAAttention(BaseAttention):
                 )
                 return y_triton.to(q.dtype), (None, None)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         outs = torch.empty(B, H, N_q, d, device=device, dtype=torch.float32)

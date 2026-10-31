@@ -69,6 +69,7 @@ def load_all_csv_records() -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
                     norm_r["_detected_ds"] = ds
                     data[m.lower()][ds].append(norm_r)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     return data

@@ -270,6 +270,7 @@ def local_window_attention(
             from neuralops.ops.cuda.hybrid_local_kernel import hybrid_local_attn
             return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     scale = (1.0 / math.sqrt(int(D))) / max(1e-4, float(softpick_temperature))

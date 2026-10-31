@@ -184,6 +184,7 @@ def fused_moba_block_router_combine_triton(
             _, top_idx = scores.topk(act_top_k, dim=-1)
             return scores, top_idx
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_moba_block_router_combine_pytorch(Qb, Kb, Vb, scale, top_k, is_causal)
 

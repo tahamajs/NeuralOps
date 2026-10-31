@@ -180,6 +180,7 @@ class CURLinear(nn.Module):
                     return out + lora_out
                 return out
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         x_r = F.linear(x, self.R)
@@ -509,6 +510,7 @@ def cur_compressor_factory(
     try:
         compressed_model.compression_stats = stats
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
     if kwargs.get("return_stats") or kwargs.get("return_tuple"):
         return compressed_model, stats

@@ -518,12 +518,14 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
                 if torch.compiler.is_compiling():
                     return torch.ops.neuralops.linear_attn(args[0], args[1], args[2])
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         elif kernel_name == "low_rank" and hasattr(torch.ops, "neuralops") and hasattr(torch.ops.neuralops, "low_rank"):
             try:
                 if torch.compiler.is_compiling() and len(args) == 3:
                     return torch.ops.neuralops.low_rank(args[0], args[1], args[2])
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
     if kernel_name in _RUNTIME_FALLBACK_CACHE:

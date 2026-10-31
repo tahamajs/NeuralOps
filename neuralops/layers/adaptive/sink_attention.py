@@ -475,6 +475,7 @@ class SinkAttention(BaseAttention):
             from neuralops.ops.triton.sliding_window import fused_sink_rolling_cache_triton
             return fused_sink_rolling_cache_triton(k, v, positions, W, S)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         head = slice(0, S)

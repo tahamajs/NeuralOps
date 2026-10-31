@@ -684,6 +684,7 @@ def fused_jamba_hybrid_ssm_attn_gate_triton(
                 attn_out, ssm_out, alpha_raw, moe_out if has_moe else None
             )
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_jamba_hybrid_ssm_attn_gate_pytorch(attn_out, ssm_out, alpha_raw, moe_out)
 
@@ -769,6 +770,7 @@ def fused_rglru_ssd_scan_triton(
         try:
             return fused_rglru_ssd_scan_pytorch(q, k, v, decay, chunk_size)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_rglru_ssd_scan_pytorch(q, k, v, decay, chunk_size)
 

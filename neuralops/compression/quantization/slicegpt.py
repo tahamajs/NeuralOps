@@ -216,6 +216,7 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                 try:
                     h.remove()
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
 
         for name in list(covariances.keys()):

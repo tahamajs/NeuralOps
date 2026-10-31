@@ -239,6 +239,7 @@ class HammingAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):

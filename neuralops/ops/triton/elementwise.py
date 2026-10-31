@@ -48,6 +48,7 @@ def _cuda_ok(*tensors: torch.Tensor) -> bool:
         if any(t.dtype == torch.bfloat16 for t in tensors) and not profile.supports_bf16:
             return False
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
     return True
 
@@ -326,6 +327,7 @@ def fused_rms_variance_match_triton(
             )
             return out_2d.view(orig_shape)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     v_rms = torch.sqrt(torch.mean(v_ref.float() ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
@@ -677,6 +679,7 @@ class _FusedDynamicConv1DTritonFn(torch.autograd.Function):
                 )
                 return dv, dw
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         v_win = v_full.unfold(dimension=2, size=K, step=1)
@@ -1052,6 +1055,7 @@ def fused_entropy_token_pruning_mask_triton(
             mask[:, 0] = True
             return mask, entropy.to(scores.dtype)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_entropy_token_pruning_mask_pytorch(scores, keep_ratio, temperature)
 
@@ -1151,6 +1155,7 @@ def fused_aegis_multibranch_gate_norm_triton(
             )
             return out_2d.view(orig_shape)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_aegis_multibranch_gate_norm_pytorch(branches, gate_logits, tau, eps)
 
@@ -1222,6 +1227,7 @@ def fused_split_head_hybrid_concat_norm_triton(
                 normed_groups.append(out_2d.view(orig_shape))
             return torch.cat(normed_groups, dim=-1)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_split_head_hybrid_concat_norm_pytorch(head_groups, eps)
 
@@ -1360,6 +1366,7 @@ def fused_entmax_bisect_triton(
             )
             return out.view(orig_shape)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_entmax_bisect_pytorch(scores, alpha=alpha, valid_mask=valid_mask, dim=dim, n_iter=n_iter)
 

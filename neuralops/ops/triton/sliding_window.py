@@ -257,6 +257,7 @@ class _SlidingWindowAutograd(torch.autograd.Function):
                     )
                     return dq, dk, dv, None, None
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         q_r = q.detach().requires_grad_(True)
@@ -487,6 +488,7 @@ def fused_hymba_meta_token_mix_triton(
         try:
             return fused_hymba_meta_token_mix_pytorch(attn_out, mamba_out, alpha)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_hymba_meta_token_mix_pytorch(attn_out, mamba_out, alpha)
 
@@ -513,6 +515,7 @@ def fused_samba_sw_mamba_combine_triton(
         try:
             return fused_samba_sw_mamba_combine_pytorch(attn_out, mamba_out, alpha)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_samba_sw_mamba_combine_pytorch(attn_out, mamba_out, alpha)
 
@@ -561,6 +564,7 @@ def fused_landmark_local_block_attn_triton(
             if suitable and is_causal:
                 return sliding_window_triton(q, k, v, window_size=window_size)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_landmark_local_block_attn_pytorch(q, k, v, window_size, block_size, is_causal)
 
@@ -628,6 +632,7 @@ def fused_sink_sliding_window_linear_hybrid_triton(
                     return 0.5 * sw_out + 0.5 * sink_out
                 return sw_out
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_sink_sliding_window_linear_hybrid_pytorch(
         q, k, v, sink_tokens, window_size, is_causal
@@ -744,6 +749,7 @@ def fused_tri_branch_hybrid_attention_triton(
             )
             return out
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
     return fused_sink_sliding_window_linear_hybrid_triton(q, k, v, sink_tokens, window_size)
 

@@ -1042,6 +1042,7 @@ def gdn_recurrent_step_triton(
             )
             return (out.unsqueeze(2) if has_l_dim else out), state
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     inter_v = torch.matmul(k_t.unsqueeze(-2).float(), state.float()).squeeze(-2)

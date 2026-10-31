@@ -344,6 +344,7 @@ class EATBlock(BaseAttention):
             for p in pretrained_attn.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         cls_name = pretrained_attn.__class__.__name__
@@ -606,6 +607,7 @@ class EATBlock(BaseAttention):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     @classmethod

@@ -286,6 +286,7 @@ class _ModuleAliasFinder(MetaPathFinder):
                 sys.modules[fullname] = mod
                 return getattr(mod, "__spec__", None)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         if fullname in self._ALIASES:
             canonical = self._ALIASES[fullname]
@@ -294,6 +295,7 @@ class _ModuleAliasFinder(MetaPathFinder):
                 sys.modules[fullname] = mod
                 return getattr(mod, "__spec__", None)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         return None
 
@@ -367,6 +369,7 @@ def _patch_pascal_svd_if_needed():
             torch.linalg.svd = _safe_pascal_linalg_svd
             torch.linalg._pascal_patched = True
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
 _patch_pascal_svd_if_needed()

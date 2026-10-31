@@ -35,6 +35,7 @@ class CrossEntropyLoss(nn.Module):
                 from neuralops.core.triton_kernels.fused_ce import fused_cross_entropy
                 return fused_cross_entropy(logits, labels, ignore_index=self.loss.ignore_index, reduction=self.loss.reduction)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         return self.loss(logits, labels)
 

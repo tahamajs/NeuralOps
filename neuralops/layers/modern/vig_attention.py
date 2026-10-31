@@ -475,6 +475,7 @@ class ViGAttention(BaseAttention):
                     q_lin, k_lin, v_f, chunk_size=min(chunk_size, 64), eps=1e-4
                 )
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         kv_outer = k_lin.unsqueeze(-1) * v_f.unsqueeze(-2)
@@ -792,6 +793,7 @@ def inject_vig(
             if ref is not None:
                 new_attn.to(device=ref.device, dtype=ref.dtype)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         spliced = False

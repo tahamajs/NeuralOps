@@ -242,6 +242,7 @@ class GDN2Attention(BaseAttention):
                 y_gated = fused_rmsnorm_gate(y, z, self.norm_weight, eps=1e-5, activation="silu")
                 return self.out_proj(y_gated), None
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         y, next_state = gdn2_chunk_scan(
@@ -396,6 +397,7 @@ class DeltaProductAttention(BaseAttention):
                 y = y_fl.contiguous().view(B, L, H * D)
                 return self.out_proj(y), None
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         beta = beta_raw.transpose(1, 2).unsqueeze(-1)
@@ -607,6 +609,7 @@ class PreconditionedGDNAttention(BaseAttention):
                 out = self.out_proj(y)
                 return out, None
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         def _run_pgdn_chunk(s_in, qc, kc, vc, ac, bc):

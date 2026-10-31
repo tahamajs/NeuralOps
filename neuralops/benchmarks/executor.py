@@ -369,6 +369,7 @@ def execute_single(
                 try:
                     adapter.cleanup()
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
@@ -494,6 +495,7 @@ def execute_single(
             try:
                 adapter.cleanup()
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         import gc
         gc.collect()

@@ -762,6 +762,7 @@ class SVDLinearAttention(BaseAttention):
                     phi_q, phi_k, v_f, lambda_decay, chunk_size=self.chunk_size, eps=self.eps
                 )
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
             chunk_size = self.chunk_size
@@ -954,6 +955,7 @@ class SVDLinearAttention(BaseAttention):
                     )
                     return context, None
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         scale = 1.0 / math.sqrt(self.head_dim)

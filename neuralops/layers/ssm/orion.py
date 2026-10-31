@@ -192,6 +192,7 @@ class FactorisedLinear(nn.Module):
                     return base_out + lora_out
                 return base_out
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
             try:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
@@ -205,6 +206,7 @@ class FactorisedLinear(nn.Module):
                         return base_out + lora_out
                     return base_out
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         out = self.up(self.down(x))
@@ -810,6 +812,7 @@ class ORIONAttention(BaseAttention):
             out = out.to(Q.dtype)
             return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale

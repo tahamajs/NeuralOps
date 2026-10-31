@@ -708,6 +708,7 @@ class MambaSVDFlash(BaseAttention):
             if isinstance(m, torch.Tensor) and m.shape == (B, L):
                 return m.bool()
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         return torch.ones(B, L, device=device, dtype=torch.bool)

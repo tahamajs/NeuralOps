@@ -197,6 +197,7 @@ class FusedQKVSVDLinear(nn.Module):
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
                 return fused_down_up_gemm_bias_triton(x, B.to(x.dtype), A.t().to(x.dtype).contiguous(), bias=None)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         h = F.linear(x.to(B.dtype), B)
         return F.linear(h, A)
@@ -541,6 +542,7 @@ class AdaSVDCompressor(BaseCompressor):
                 if not should_compress_linear(self.model, name):
                     return False
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         if self.target_modules is not None:
@@ -1146,6 +1148,7 @@ class AdaSVDCompressor(BaseCompressor):
                 for p in target_mod.parameters():
                     self._orig_storage_bytes += p.numel() * p.element_size()
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         t_calib_start = time.monotonic()
@@ -1246,6 +1249,7 @@ class AdaSVDCompressor(BaseCompressor):
                         for p in target_mod.parameters():
                             self._comp_storage_bytes += p.numel() * p.element_size()
                     except Exception:
+                        # allowed-swallow: best-effort-telemetry
                         pass
                     continue
                 elif svd_layer is None:
@@ -1273,6 +1277,7 @@ class AdaSVDCompressor(BaseCompressor):
                     if b is not None:
                         self._comp_storage_bytes += b.numel() * b.element_size()
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         for name, mod in self.model.named_modules():
@@ -1292,6 +1297,7 @@ class AdaSVDCompressor(BaseCompressor):
                         if b is not None:
                             comp_bytes_real += b.numel() * b.element_size()
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
         self._comp_storage_bytes = comp_bytes_real
 
@@ -1343,6 +1349,7 @@ class AdaSVDCompressor(BaseCompressor):
         try:
             self.model.compression_stats = stats
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         logger.info(

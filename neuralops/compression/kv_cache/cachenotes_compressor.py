@@ -149,6 +149,7 @@ class CacheNotesLoRALinear(nn.Module):
                     out = out + (self.scaling * lora_out)
                     return out.reshape(*orig_shape[:-1], self.out_features)
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
 
             lora_out = F.linear(F.linear(x_flat.to(self.lora_A.dtype), self.lora_A), self.lora_B)

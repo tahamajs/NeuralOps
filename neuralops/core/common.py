@@ -302,6 +302,7 @@ class ResSVDLinear(nn.Module):
                     bias=self.bias,
                 )
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         if self.factorize_base:

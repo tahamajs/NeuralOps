@@ -156,6 +156,7 @@ def _prepare_layer_config(
                         try:
                             setattr(old_attn, a, existing_mod)
                         except Exception:
+                            # allowed-swallow: best-effort-telemetry
                             pass
             elif adapter is not None:
                 w, b = adapter.get_weight_bias(old_attn, proj_key)
@@ -175,6 +176,7 @@ def _prepare_layer_config(
                             try:
                                 setattr(old_attn, a, proxy)
                             except Exception:
+                                # allowed-swallow: best-effort-telemetry
                                 pass
         except Exception as ex:
             logger.debug("Failed to set projection aliases for %s: %s", proj_key, ex)

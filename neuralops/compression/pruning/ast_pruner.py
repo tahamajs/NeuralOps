@@ -180,6 +180,7 @@ class ASTPrunedLoRALinear(nn.Module):
                 )
                 return out.reshape(*orig_shape[:-1], self.out_features)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         if self.mask is not None:

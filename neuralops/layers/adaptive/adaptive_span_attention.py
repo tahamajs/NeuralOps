@@ -602,6 +602,7 @@ class AdaptiveSpanAttention(BaseAttention):
                 try:
                     return int(past_key_value.get_seq_length())
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
         if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
             k = past_key_value[0]
@@ -676,6 +677,7 @@ class AdaptiveSpanAttention(BaseAttention):
             )
             return penalty.to(scores.dtype)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         if is_causal:

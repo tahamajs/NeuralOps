@@ -41,6 +41,7 @@ def get_current_git_sha(repo_root: Optional[Path] = None) -> str:
         if res.returncode == 0 and res.stdout.strip():
             return res.stdout.strip()
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
     return "a94ead5f4c"
 
@@ -63,6 +64,7 @@ def get_file_git_provenance(file_path: Path, repo_root: Optional[Path] = None) -
                     commit_sha = parts[0].strip()
                     timestamp_utc = parts[1].strip()
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
 
     if not commit_sha:

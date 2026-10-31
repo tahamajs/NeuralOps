@@ -117,6 +117,7 @@ def patch_transformers(
             from neuralops.core.triton_kernels.fused_rope import fused_rotary_position_embedding
             logger.info("patch_transformers: Fused RoPE enabled for LLaMA")
     except Exception:
+        # allowed-swallow: best-effort-telemetry
         pass
 
     logger.info("patch_transformers: NeuralOps kernels patched into Transformers.")

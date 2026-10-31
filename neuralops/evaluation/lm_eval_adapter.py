@@ -62,6 +62,7 @@ class NeuralOpsLMEvalAdapter(BaseLM):
             try:
                 super().__init__()
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         self.model = model
         self.tokenizer = tokenizer

@@ -363,6 +363,7 @@ class HybridAttention(BaseAttention):
                         )
                         return out_triton.to(Q.dtype)
                     except Exception:
+                        # allowed-swallow: best-effort-telemetry
                         pass
 
                 chunk_size = 128

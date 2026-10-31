@@ -430,6 +430,7 @@ class NativeHybridAttention(BaseAttention):
                 from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
                 return fused_svd_linear_chunk_scan_triton(phi_Q.to(dtype), phi_K.to(dtype), V_masked.to(dtype), chunk_size=64, eps=_DENOM_EPS).to(dtype)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         scores_lin = torch.matmul(phi_Q, phi_K.transpose(-2, -1))

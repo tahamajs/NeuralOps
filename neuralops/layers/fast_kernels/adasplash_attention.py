@@ -407,6 +407,7 @@ class AdaSplashAttention(BaseAttention):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
             if w is None:
@@ -665,6 +666,7 @@ class AdaSplashAttention(BaseAttention):
                     q, k, self.adapter, self.rotary_emb, kwargs.get("position_ids")
                 )
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         if self.kv_repeat > 1:

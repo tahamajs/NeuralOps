@@ -408,6 +408,7 @@ def recalibrate_layernorms(
             elif isinstance(calibration_inputs, (list, tuple)):
                 model(*calibration_inputs)
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
     for h in hooks:

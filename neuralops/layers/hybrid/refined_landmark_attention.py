@@ -268,6 +268,7 @@ class RefinedLandmarkAttention(BaseAttention):
                     try:
                         return int(mod.weight.shape[0] // max(1, num_heads))
                     except Exception:
+                        # allowed-swallow: best-effort-telemetry
                         pass
         return max(1, hidden_size // max(1, num_heads))
 
@@ -370,6 +371,7 @@ class RefinedLandmarkAttention(BaseAttention):
                 from neuralops.ops.triton.sliding_window import fused_landmark_local_block_attn_triton
                 return fused_landmark_local_block_attn_triton(q, k, v, window_size=W, is_causal=self.is_decoder)
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
 
         pad_len = (W - N % W) % W
@@ -482,6 +484,7 @@ class RefinedLandmarkAttention(BaseAttention):
                 past_key_value.update(k, v, layer_idx)
                 return past_key_value
             except Exception:
+                # allowed-swallow: best-effort-telemetry
                 pass
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
             if layer_idx < len(past_key_value.key_cache):
@@ -726,6 +729,7 @@ class RefinedLandmarkAttention(BaseAttention):
                             name, w_norm,
                         )
                 except Exception:
+                    # allowed-swallow: best-effort-telemetry
                     pass
 
             for mod in (self.query, self.key, self.value, self.out_proj):

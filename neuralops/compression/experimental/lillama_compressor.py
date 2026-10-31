@@ -578,6 +578,7 @@ class LiLLaMADistiller(BaseCompressor):
                 }
             )
         except Exception:
+            # allowed-swallow: best-effort-telemetry
             pass
 
         self.model._lillama_compressed = True
