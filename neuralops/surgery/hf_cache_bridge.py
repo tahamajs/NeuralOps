@@ -23,7 +23,7 @@ try:
     from transformers.cache_utils import Cache, DynamicCache
     _HF_CACHE_BASE = DynamicCache
 
-except Exception:
+except (ImportError, AttributeError):
     class Cache:
         pass
     class DynamicCache:
@@ -115,6 +115,7 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
             # double increment across Transformers versions.
             self._seen_tokens = seen_before_update + key_states.shape[-2]
 
+        self._sync_base_layers()
         return updated_key, updated_value
 
     def update_recurrent_state(self, layer_idx: int, state: Any, num_tokens: int = 1) -> Any:
@@ -327,7 +328,10 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
         def _patched_prep(input_ids: torch.Tensor, **kwargs: Any) -> Dict[str, Any]:
             model_inputs = orig_prep(input_ids, **kwargs)
             if model_inputs.get("past_key_values", None) is None and kwargs.get("use_cache", True):
-                if not isinstance(kwargs.get("past_key_values"), NeuralOpsHybridHFCache):
+                past = kwargs.get("past_key_values")
+                if isinstance(past, NeuralOpsHybridHFCache):
+                    model_inputs["past_key_values"] = past
+                else:
                     model_inputs["past_key_values"] = NeuralOpsHybridHFCache()
             return model_inputs
 

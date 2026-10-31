@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import inspect
 import logging
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -220,6 +220,9 @@ def transfer_pretrained_qkv_weights(
             ),
         ),
     )
+    target_fused = getattr(
+        new_module, "qkv", getattr(new_module, "query_key_value", getattr(new_module, "in_proj", None))
+    )
 
     missing: list[str] = []
 
@@ -237,27 +240,69 @@ def transfer_pretrained_qkv_weights(
                 if strict:
                     raise ValueError(
                         f"Projection {name} shape mismatch for {spec.module_path!r}: "
-                        f"target={tuple(tgt_w.shape)}, source={tuple(W.shape)}"
+                        f"target={tuple(tgt_w.shape)}, source={tuple(W.shape)}. "
+                        "To allow padded/isometric weight transfer across different projection widths, pass strict=False."
                     )
-                if getattr(target_linear, "nf", None) == tgt_w.shape[1]:
-                    min_in = min(tgt_w.shape[0], W.shape[1])
-                    min_out = min(tgt_w.shape[1], W.shape[0])
-                    tgt_w[:min_in, :min_out].copy_(
-                        W[:min_out, :min_in].t().to(device=tgt_w.device, dtype=tgt_w.dtype)
+                # Explicit shape verification and isometric projection
+                is_conv1d_tgt = getattr(target_linear, "nf", None) == tgt_w.shape[1]
+                if is_conv1d_tgt:
+                    src_w = W.t()
+                    src_in, src_out = src_w.shape
+                    tgt_in, tgt_out = tgt_w.shape
+                else:
+                    src_w = W
+                    src_out, src_in = src_w.shape
+                    tgt_out, tgt_in = tgt_w.shape
+
+                truncated_out = max(0, src_out - tgt_out)
+                truncated_in = max(0, src_in - tgt_in)
+                expanded_out = max(0, tgt_out - src_out)
+                expanded_in = max(0, tgt_in - src_in)
+
+                if truncated_out > 0 or truncated_in > 0:
+                    logger.warning(
+                        "DIMENSIONAL CONTRACTION in %s at %s: source %s -> target %s. "
+                        "Truncating %d output dims and %d input dims; representation loss may occur. "
+                        "Consider post-surgery calibration healing.",
+                        name,
+                        spec.module_path,
+                        tuple(src_w.shape),
+                        tuple(tgt_w.shape),
+                        truncated_out,
+                        truncated_in,
+                    )
+                elif expanded_out > 0 or expanded_in > 0:
+                    logger.warning(
+                        "DIMENSIONAL EXPANSION in %s at %s: source %s -> target %s. "
+                        "Applying padded isometric zero-extension for %d output dims and %d input dims.",
+                        name,
+                        spec.module_path,
+                        tuple(src_w.shape),
+                        tuple(tgt_w.shape),
+                        expanded_out,
+                        expanded_in,
                     )
                 else:
-                    min_out = min(tgt_w.shape[0], W.shape[0])
-                    min_in = min(tgt_w.shape[1], W.shape[1])
-                    tgt_w[:min_out, :min_in].copy_(
-                        W[:min_out, :min_in].to(device=tgt_w.device, dtype=tgt_w.dtype)
+                    logger.warning(
+                        "Isometric projection for %s at %s: source %s -> target %s.",
+                        name,
+                        spec.module_path,
+                        tuple(src_w.shape),
+                        tuple(tgt_w.shape),
                     )
-                logger.warning(
-                    "Copied overlapping weights for %s at %s: source %s, target %s",
-                    name,
-                    spec.module_path,
-                    tuple(W.shape),
-                    tuple(tgt_w.shape),
-                )
+
+                copy_out = min(tgt_out, src_out)
+                copy_in = min(tgt_in, src_in)
+                if expanded_out > 0 or expanded_in > 0:
+                    tgt_w.zero_()
+                if is_conv1d_tgt:
+                    tgt_w[:copy_in, :copy_out].copy_(
+                        src_w[:copy_in, :copy_out].to(device=tgt_w.device, dtype=tgt_w.dtype)
+                    )
+                else:
+                    tgt_w[:copy_out, :copy_in].copy_(
+                        src_w[:copy_out, :copy_in].to(device=tgt_w.device, dtype=tgt_w.dtype)
+                    )
             else:
                 raise ValueError(
                     f"Unsupported projection shape for {name} at {spec.module_path!r}: "
@@ -273,18 +318,45 @@ def transfer_pretrained_qkv_weights(
                     if strict:
                         raise ValueError(
                             f"Bias shape mismatch for {name} at {spec.module_path!r}: "
-                            f"target={tuple(tgt_b.shape)}, source={tuple(b.shape)}"
+                            f"target={tuple(tgt_b.shape)}, source={tuple(b.shape)}. "
+                            "Pass strict=False to allow padded/isometric transfer."
                         )
                     min_b = min(tgt_b.shape[0], b.shape[0])
+                    if tgt_b.shape[0] > b.shape[0]:
+                        tgt_b.zero_()
+                        logger.warning(
+                            "Zero-extending bias for %s at %s: source %s padded to target %s",
+                            name,
+                            spec.module_path,
+                            tuple(b.shape),
+                            tuple(tgt_b.shape),
+                        )
+                    else:
+                        logger.warning(
+                            "Truncating bias for %s at %s: source %s truncated to target %s",
+                            name,
+                            spec.module_path,
+                            tuple(b.shape),
+                            tuple(tgt_b.shape),
+                        )
                     tgt_b[:min_b].copy_(b[:min_b].to(device=tgt_b.device, dtype=tgt_b.dtype))
             elif b is None and target_bias is not None:
                 target_bias.zero_()
             elif strict and b is not None and target_bias is None:
                 raise ValueError(f"Target projection {name} has no bias but source projection does")
 
-    _copy_param("query", target_q, W_q, b_q)
-    _copy_param("key", target_k, W_k, b_k)
-    _copy_param("value", target_v, W_v, b_v)
+    if target_fused is not None and (target_q is None or target_k is None or target_v is None):
+        W_fused = torch.cat([W_q, W_k, W_v], dim=0)
+        b_fused = (
+            torch.cat([b_q, b_k, b_v], dim=0)
+            if (b_q is not None and b_k is not None and b_v is not None)
+            else None
+        )
+        _copy_param("qkv", target_fused, W_fused, b_fused)
+    else:
+        _copy_param("query", target_q, W_q, b_q)
+        _copy_param("key", target_k, W_k, b_k)
+        _copy_param("value", target_v, W_v, b_v)
     _copy_param("output", target_o, W_o, b_o)
     if strict and missing:
         raise ValueError(
@@ -317,6 +389,39 @@ class UniversalAttentionBridge(nn.Module):
         self.embed_dim = spec.embed_dim
         self.num_heads = spec.num_heads
 
+        # Unwrap base layer if orig_module is a PEFT/LoRA wrapper
+        self.base_module: nn.Module = getattr(orig_module, "base_layer", orig_module)
+
+        # Preserve PEFT / LoRA adapter references if present
+        self.lora_adapters: Dict[str, Any] = {}
+        if spec.extra_metadata and "lora_adapters" in spec.extra_metadata:
+            self.lora_adapters.update(spec.extra_metadata["lora_adapters"])
+        if hasattr(orig_module, "lora_A"):
+            self.lora_A = orig_module.lora_A
+            self.lora_adapters["lora_A"] = orig_module.lora_A
+        if hasattr(orig_module, "lora_B"):
+            self.lora_B = orig_module.lora_B
+            self.lora_adapters["lora_B"] = orig_module.lora_B
+        if hasattr(orig_module, "scaling"):
+            self.scaling = orig_module.scaling
+        if hasattr(orig_module, "peft_config"):
+            self.peft_config = orig_module.peft_config
+
+        for proj_attr in ("q_proj", "k_proj", "v_proj", "o_proj", "q", "k", "v", "o", "query", "key", "value", "c_attn", "c_proj"):
+            proj = getattr(orig_module, proj_attr, None)
+            if proj is not None and hasattr(proj, "lora_A") and hasattr(proj, "lora_B"):
+                self.lora_adapters[f"{proj_attr}_lora_A"] = proj.lora_A
+                self.lora_adapters[f"{proj_attr}_lora_B"] = proj.lora_B
+                if hasattr(proj, "scaling"):
+                    self.lora_adapters[f"{proj_attr}_scaling"] = proj.scaling
+
+        if self.lora_adapters:
+            logger.info(
+                "Preserved %d LoRA/PEFT adapter reference(s) during surgery on %s",
+                len(self.lora_adapters),
+                spec.module_path,
+            )
+
         self._orig_sig = inspect.signature(orig_module.forward)
 
         if inherit_weights:
@@ -333,13 +438,14 @@ class UniversalAttentionBridge(nn.Module):
         self.stage: str = "stage3_end_to_end"
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
+        kwargs_clean = dict(kwargs)
         if len(args) > 0:
             hidden_states = args[0]
             rest_args = args[1:]
         else:
-            hidden_states = kwargs.get(
+            hidden_states = kwargs_clean.pop(
                 "hidden_states",
-                kwargs.get("x", kwargs.get("input_tensor", kwargs.get("query", None))),
+                kwargs_clean.pop("x", kwargs_clean.pop("input_tensor", kwargs_clean.pop("query", None))),
             )
             rest_args = ()
 
@@ -350,7 +456,7 @@ class UniversalAttentionBridge(nn.Module):
             hidden_states, _ = self.sidecar(hidden_states)
 
         assert callable(self.new_attention), f"{type(self).__name__}.new_attention is not callable"
-        attn_out = self.new_attention(hidden_states, *rest_args, **kwargs)
+        attn_out = self.new_attention(hidden_states, *rest_args, **kwargs_clean)
 
         if isinstance(attn_out, tuple):
             core_tensor = attn_out[0]
@@ -373,6 +479,8 @@ class UniversalAttentionBridge(nn.Module):
             return tuple(ret)
 
         if self.pattern_type == "split_4proj":
+            if len(extra_outputs) > 1:
+                return (core_tensor, *extra_outputs)
             attn_weights = extra_outputs[0] if len(extra_outputs) > 0 else None
             return (core_tensor, attn_weights)
 
@@ -380,6 +488,15 @@ class UniversalAttentionBridge(nn.Module):
             return (core_tensor, *extra_outputs)
 
         return core_tensor
+
+    @property
+    def has_lora_adapters(self) -> bool:
+        """Returns True if this bridge preserves PEFT/LoRA adapter references."""
+        return bool(self.lora_adapters or hasattr(self, "lora_A"))
+
+    def get_lora_adapters(self) -> Dict[str, Any]:
+        """Returns all preserved LoRA/PEFT adapter references."""
+        return dict(self.lora_adapters)
 
 
 __all__ = [

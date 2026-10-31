@@ -310,3 +310,28 @@ def test_arch5_custom_cross_attention_and_shadow_twin():
     out_final = finalized(q_x)
     core_final = out_final[0] if isinstance(out_final, tuple) else out_final
     assert core_final.shape == (2, 8, 64)
+
+
+def test_replace_attention_in_moduledict():
+    """Verify replace_attention works seamlessly when layers are inside an nn.ModuleDict container."""
+    class ModelWithModuleDict(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.layers = nn.ModuleDict({
+                "layer_0": nn.ModuleDict({
+                    "self_attn": nn.MultiheadAttention(embed_dim=64, num_heads=4),
+                }),
+                "layer_1": nn.ModuleDict({
+                    "self_attn": nn.MultiheadAttention(embed_dim=64, num_heads=4),
+                }),
+            })
+
+        def forward(self, x):
+            return x
+
+    model = ModelWithModuleDict()
+    from neuralops.surgery.layer_replacement import _set_nested_module
+    new_attn = nn.Linear(64, 64)
+    # Test intermediate and leaf setting on ModuleDict
+    _set_nested_module(model, "layers.layer_0.self_attn", new_attn)
+    assert model.layers["layer_0"]["self_attn"] is new_attn

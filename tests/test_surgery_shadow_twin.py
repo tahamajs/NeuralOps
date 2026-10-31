@@ -71,4 +71,42 @@ def test_shadow_twin_distillation_and_finalization():
 
     finalize_surgery(bridge)
     assert bridge.teacher_branch is None
+    assert getattr(bridge, "orig_module", None) is None
     assert bridge.alpha == 1.0
+
+
+def test_linear_cka_loss_zero_input_gradient_stability():
+    """Verify compute_linear_cka_loss does not produce NaN gradients on zero/constant inputs."""
+    teacher = torch.zeros(2, 4, 16)
+    student = torch.zeros(2, 4, 16, requires_grad=True)
+    loss = compute_linear_cka_loss(teacher, student)
+    assert not torch.isnan(loss)
+    loss.backward()
+    assert student.grad is not None
+    assert not torch.isnan(student.grad).any()
+
+
+def test_check_surgery_divergence():
+    """Verify check_surgery_divergence scans bridges and flags numerical divergence."""
+    host_block = MockSelfAttentionBlock(d=64)
+    specs = UniversalArchitectureScanner.scan(host_block)
+    spec = specs[0]
+
+    cosformer = CosformerAttention(hidden_size=64, num_heads=4)
+    bridge = UniversalAttentionBridge(
+        orig_module=host_block,
+        spec=spec,
+        new_attention=cosformer,
+        inherit_weights=False,
+    )
+
+    enable_shadow_twin(bridge)
+    patch_bridge_for_shadow_twin(bridge)
+
+    x = torch.randn(2, 8, 64, requires_grad=True)
+    bridge(x)
+
+    from neuralops.surgery.shadow_twin import check_surgery_divergence
+    diag = check_surgery_divergence(bridge, max_divergence_loss=100.0)
+    assert diag["num_bridges"] == 1
+    assert diag["has_nan"] is False

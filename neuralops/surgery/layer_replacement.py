@@ -64,6 +64,10 @@ def _is_default_attention_target(name: str, module: nn.Module) -> bool:
     cls_name = module.__class__.__name__
     if cls_name.endswith("Wrapper") or "Container" in cls_name:
         return False
+    # If module is BertAttention (contains self and output), do not replace parent container;
+    # allow recursive traversal to target 'self' so BertSelfOutput residual is preserved.
+    if hasattr(module, "self") and hasattr(module, "output"):
+        return False
     leaf = name.split(".")[-1].lower() if name else ""
     if leaf in DEFAULT_ATTN_LEAVES:
         return True
@@ -130,8 +134,6 @@ def _set_nested_module(root: nn.Module, path: str, new_module: nn.Module) -> Non
             curr = curr[part]
         elif hasattr(curr, part):
             curr = getattr(curr, part)
-        elif isinstance(curr, (nn.ModuleDict, dict)):
-            curr = curr[part]
         else:
             curr = getattr(curr, part)
 

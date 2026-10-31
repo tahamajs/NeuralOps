@@ -29,6 +29,7 @@ from neuralops.surgery.topology_router import (
 )
 
 from neuralops.surgery.shadow_twin import (
+    check_surgery_divergence,
     collect_surgery_distillation_loss,
     compute_linear_cka_loss,
     compute_operator_cloning_loss,
@@ -91,6 +92,7 @@ __all__ = [
     "collect_surgery_distillation_loss",
     "finalize_surgery",
     "patch_bridge_for_shadow_twin",
+    "check_surgery_divergence",
     "NeuralOpsHybridHFCache",
     "wrap_model_for_generation",
     "UniversalActivationCalibrator",

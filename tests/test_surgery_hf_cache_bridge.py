@@ -33,3 +33,26 @@ def test_hybrid_hf_cache_recurrent_and_kv():
     v0_next = torch.randn(B, H, 1, D)
     cache.update(k0_next, v0_next, layer_idx=0)
     assert cache.get_seq_length() == 9
+
+
+def test_wrap_model_for_generation_preserves_hybrid_cache():
+    from neuralops.surgery.hf_cache_bridge import wrap_model_for_generation
+
+    class MockGenModel(torch.nn.Module):
+        def generate(self):
+            return None
+
+        def prepare_inputs_for_generation(self, input_ids, **kwargs):
+            return {"input_ids": input_ids}
+
+    mod = MockGenModel()
+    wrapped = wrap_model_for_generation(mod)
+
+    # When kwargs has past_key_values as NeuralOpsHybridHFCache, it must be forwarded
+    cache = NeuralOpsHybridHFCache()
+    inputs = wrapped.prepare_inputs_for_generation(torch.tensor([[1, 2]]), past_key_values=cache, use_cache=True)
+    assert inputs.get("past_key_values") is cache
+
+    # When kwargs has no past_key_values, a fresh cache is initialized
+    inputs_fresh = wrapped.prepare_inputs_for_generation(torch.tensor([[1, 2]]), use_cache=True)
+    assert isinstance(inputs_fresh.get("past_key_values"), NeuralOpsHybridHFCache)

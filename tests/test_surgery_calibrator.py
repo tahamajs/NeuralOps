@@ -41,6 +41,9 @@ def test_streaming_activation_calibrator():
     assert "channel_scale" in results["fc1"]
     assert results["fc1"]["hessian"].shape == (32, 32)
     assert results["fc1"]["channel_scale"].shape == (32,)
+    # Verify channel scale is positive and finite
+    assert torch.all(results["fc1"]["channel_scale"] > 0)
+    assert not torch.isnan(results["fc1"]["channel_scale"]).any()
 
 
 def test_compress_model_universal():

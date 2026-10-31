@@ -82,13 +82,11 @@ class UniversalActivationCalibrator:
                         self.hessian_dict[mod_name] += gram
                         self.sample_count_dict[mod_name] += num_samples
 
-                    channel_rms = torch.sqrt((x_mat ** 2).mean(dim=0) + 1e-6)
+                    sq_sum = (x_mat ** 2).sum(dim=0)
                     if mod_name not in self.channel_scale_dict:
-                        self.channel_scale_dict[mod_name] = channel_rms
+                        self.channel_scale_dict[mod_name] = sq_sum
                     else:
-                        self.channel_scale_dict[mod_name] = torch.maximum(
-                            self.channel_scale_dict[mod_name], channel_rms
-                        )
+                        self.channel_scale_dict[mod_name] += sq_sum
 
                 return _hook
 
@@ -224,8 +222,11 @@ class UniversalActivationCalibrator:
             n = max(1, self.sample_count_dict.get(name, 1))
             h_norm = gram / n
             d = h_norm.shape[0]
-            h_reg = h_norm + self.damping * torch.eye(d, device=h_norm.device, dtype=h_norm.dtype)
-            scale = self.channel_scale_dict.get(name, torch.ones(d, device=gram.device))
+            tr = torch.trace(h_norm)
+            adaptive_damping = (tr / d) * self.damping if tr > 0 else self.damping
+            h_reg = h_norm + adaptive_damping * torch.eye(d, device=h_norm.device, dtype=h_norm.dtype)
+            sq_sum = self.channel_scale_dict.get(name, torch.ones(d, device=gram.device) * n)
+            scale = torch.sqrt(sq_sum / n + 1e-6)
 
             results[name] = {
                 "hessian": h_reg,

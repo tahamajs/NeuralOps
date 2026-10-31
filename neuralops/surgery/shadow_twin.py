@@ -51,7 +51,7 @@ def compute_linear_cka_loss(
     dot_xx = torch.norm(torch.matmul(X.t(), X), p="fro") ** 2
     dot_yy = torch.norm(torch.matmul(Y.t(), Y), p="fro") ** 2
 
-    denom = torch.sqrt(dot_xx * dot_yy) + eps
+    denom = torch.sqrt(dot_xx * dot_yy + eps)
     cka = dot_xy / denom
     return 1.0 - cka.clamp(min=0.0, max=1.0)
 
@@ -145,6 +145,12 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
             if m.teacher_branch is not None:
                 del m.teacher_branch
                 m.teacher_branch = None
+            if hasattr(m, "orig_module") and m.orig_module is not None:
+                del m.orig_module
+                m.orig_module = None
+            if hasattr(m, "base_module") and m.base_module is not None:
+                del m.base_module
+                m.base_module = None
             m.alpha = 1.0
             if hasattr(m, "_last_twin_loss"):
                 m._last_twin_loss = None
@@ -203,6 +209,43 @@ def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
     bridge._is_shadow_twin_patched = True
 
 
+def check_surgery_divergence(
+    model: nn.Module,
+    max_divergence_loss: float = 100.0,
+) -> Dict[str, Any]:
+    """
+    Inspects all UniversalAttentionBridge modules to detect numerical divergence,
+    loss spikes, or NaN/Inf states in recent shadow-twin forward passes.
+    """
+    status: Dict[str, Any] = {
+        "num_bridges": 0,
+        "diverged_bridges": [],
+        "has_nan": False,
+        "max_loss": 0.0,
+    }
+    for name, m in model.named_modules():
+        if isinstance(m, UniversalAttentionBridge):
+            status["num_bridges"] += 1
+            last_loss = getattr(m, "_last_twin_loss", None)
+            if last_loss is not None:
+                val = float(last_loss.detach().item())
+                if torch.isnan(last_loss) or torch.isinf(last_loss):
+                    status["has_nan"] = True
+                    status["diverged_bridges"].append((name, val))
+                    logger.warning("Numerical instability detected in %s: loss is NaN/Inf", name)
+                elif val > max_divergence_loss:
+                    status["diverged_bridges"].append((name, val))
+                    logger.warning(
+                        "Divergence detected in %s: distillation loss %.4f exceeds threshold %.4f",
+                        name,
+                        val,
+                        max_divergence_loss,
+                    )
+                status["max_loss"] = max(status["max_loss"], val)
+
+    return status
+
+
 __all__ = [
     "compute_operator_cloning_loss",
     "compute_linear_cka_loss",
@@ -212,4 +255,5 @@ __all__ = [
     "collect_surgery_distillation_loss",
     "finalize_surgery",
     "patch_bridge_for_shadow_twin",
+    "check_surgery_divergence",
 ]
