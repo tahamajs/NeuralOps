@@ -13,11 +13,14 @@ Chunked causal linear attention computation with associative prefix scans and bi
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Optional
 
 import torch
 import torch.nn.functional as F
+
+logger = logging.getLogger(__name__)
 
 from neuralops.ops.triton._types import (
     HAS_TRITON,
@@ -516,8 +519,8 @@ def fused_rala_augmented_scan_triton(
             aug_num = torch.einsum("bhnd,hde->bhne", q_p, rank_mat)
             aug_out = torch.nan_to_num(aug_num / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
             return lin_out, aug_out
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Fused RALA augmented scan accelerated path failed (%s); falling back to PyTorch reference.", e)
 
     return fused_rala_augmented_scan_pytorch(q, k, v, lora_U, lora_V, is_causal=is_causal)
 

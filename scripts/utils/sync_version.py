@@ -41,13 +41,46 @@ def sync_citation_cff(version: str) -> bool:
     return False
 
 
+def sync_pyproject_toml(version: str) -> bool:
+    pyproject_path = ROOT_DIR / "pyproject.toml"
+    if not pyproject_path.exists():
+        return False
+    content = pyproject_path.read_text(encoding="utf-8")
+    new_content = re.sub(r'^version\s*=\s*["\'][^"\']+["\']', f'version = "{version}"', content, count=1, flags=re.M)
+    if new_content != content:
+        pyproject_path.write_text(new_content, encoding="utf-8")
+        return True
+    return False
+
+
+def sync_readme(version: str) -> bool:
+    readme_path = ROOT_DIR / "README.md"
+    if not readme_path.exists():
+        return False
+    content = readme_path.read_text(encoding="utf-8")
+    new_content = re.sub(r"v\d+\.\d+\.\d+", f"v{version}", content)
+    if new_content != content:
+        readme_path.write_text(new_content, encoding="utf-8")
+        return True
+    return False
+
+
 def main() -> None:
     version = get_canonical_version()
     print(f"Canonical version: {version}")
+    updated = False
     if sync_citation_cff(version):
         print(f"Updated CITATION.cff -> {version}")
-    else:
-        print("CITATION.cff is already up to date.")
+        updated = True
+    if sync_pyproject_toml(version):
+        print(f"Updated pyproject.toml -> {version}")
+        updated = True
+    if sync_readme(version):
+        print(f"Updated README.md -> {version}")
+        updated = True
+    if not updated:
+        print("All downstream version files are already up to date.")
+
 
 
 if __name__ == "__main__":

@@ -130,41 +130,109 @@ class UniversalAttentionWrapper(nn.Module):
         output_attentions = kwargs.pop("output_attentions", False)
 
         out = None
-        call_attempts = [
-            lambda: self._wrapped_attention(
-                hidden_states,
-                attention_mask=attention_mask,
-                head_mask=head_mask,
-                output_attentions=output_attentions,
-                **kwargs,
-            ),
-            lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask, **kwargs),
-            lambda: self._wrapped_attention(hidden_states, mask=attention_mask, **kwargs),
-            lambda: self._wrapped_attention(hidden_states, **kwargs),
-            lambda: self._wrapped_attention(
-                query=hidden_states,
-                key=hidden_states,
-                value=hidden_states,
-                mask=attention_mask,
-                **kwargs,
-            ),
-            lambda: self._wrapped_attention(
-                hidden_states,
-                **{k: v for k, v in kwargs.items() if k in ("position_embeddings", "past_key_value", "past_key_values", "use_cache", "cache_position")}
-            ),
-            lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask),
-            lambda: self._wrapped_attention(hidden_states),
-        ]
-
-        last_err = None
-        for attempt in call_attempts:
+        # Fast-path cached call to bypass closure allocation and exception handling
+        cached_mode = getattr(self, "_cached_dispatch_mode", None)
+        if cached_mode is not None:
             try:
-                out = attempt()
-                break
-            except TypeError as e:
-                last_err = e
-                continue
+                if cached_mode == 0:
+                    out = self._wrapped_attention(
+                        hidden_states,
+                        attention_mask=attention_mask,
+                        head_mask=head_mask,
+                        output_attentions=output_attentions,
+                        **kwargs,
+                    )
+                elif cached_mode == 1:
+                    out = self._wrapped_attention(hidden_states, attention_mask=attention_mask, **kwargs)
+                elif cached_mode == 2:
+                    out = self._wrapped_attention(hidden_states, mask=attention_mask, **kwargs)
+                elif cached_mode == 3:
+                    out = self._wrapped_attention(hidden_states, **kwargs)
+                elif cached_mode == 4:
+                    out = self._wrapped_attention(
+                        query=hidden_states,
+                        key=hidden_states,
+                        value=hidden_states,
+                        mask=attention_mask,
+                        **kwargs,
+                    )
+                elif cached_mode == 5:
+                    filtered = {
+                        k: v
+                        for k, v in kwargs.items()
+                        if k in (
+                            "position_embeddings",
+                            "past_key_value",
+                            "past_key_values",
+                            "use_cache",
+                            "cache_position",
+                        )
+                    }
+                    out = self._wrapped_attention(hidden_states, **filtered)
+                elif cached_mode == 6:
+                    out = self._wrapped_attention(hidden_states, attention_mask=attention_mask)
+                elif cached_mode == 7:
+                    out = self._wrapped_attention(hidden_states)
+            except TypeError:
+                self._cached_dispatch_mode = None
+                out = None
 
+        if out is None:
+            call_attempts = [
+                (
+                    0,
+                    lambda: self._wrapped_attention(
+                        hidden_states,
+                        attention_mask=attention_mask,
+                        head_mask=head_mask,
+                        output_attentions=output_attentions,
+                        **kwargs,
+                    ),
+                ),
+                (1, lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask, **kwargs)),
+                (2, lambda: self._wrapped_attention(hidden_states, mask=attention_mask, **kwargs)),
+                (3, lambda: self._wrapped_attention(hidden_states, **kwargs)),
+                (
+                    4,
+                    lambda: self._wrapped_attention(
+                        query=hidden_states,
+                        key=hidden_states,
+                        value=hidden_states,
+                        mask=attention_mask,
+                        **kwargs,
+                    ),
+                ),
+                (
+                    5,
+                    lambda: self._wrapped_attention(
+                        hidden_states,
+                        **{
+                            k: v
+                            for k, v in kwargs.items()
+                            if k
+                            in (
+                                "position_embeddings",
+                                "past_key_value",
+                                "past_key_values",
+                                "use_cache",
+                                "cache_position",
+                            )
+                        },
+                    ),
+                ),
+                (6, lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask)),
+                (7, lambda: self._wrapped_attention(hidden_states)),
+            ]
+
+            last_err = None
+            for mode_idx, attempt in call_attempts:
+                try:
+                    out = attempt()
+                    self._cached_dispatch_mode = mode_idx
+                    break
+                except TypeError as e:
+                    last_err = e
+                    continue
 
         if out is None:
             if last_err is not None:

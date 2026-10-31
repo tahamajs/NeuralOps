@@ -442,4 +442,12 @@ if (fs.existsSync(spatialDataPath)) {
   }
 }
 
+// 7. Synchronize Taxonomy, Benchmarks, Math, Params, and Routing Matrix
+try {
+  const { syncVisualizerData } = require('./sync_visualizer_data.js');
+  syncVisualizerData();
+} catch (e) {
+  console.warn(`[Sync] Could not run syncVisualizerData:`, e);
+}
+
 console.log('[Sync] Master module catalog synchronization complete!');

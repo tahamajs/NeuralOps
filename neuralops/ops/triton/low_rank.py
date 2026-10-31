@@ -13,12 +13,15 @@ Computes low-rank matrix bottleneck projections with fused bias addition and gra
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional, Tuple
 import math
 import warnings
 
 import torch
 import torch.nn.functional as F
+
+logger = logging.getLogger(__name__)
 
 from neuralops.ops.triton._types import (
     HAS_TRITON,
@@ -550,8 +553,8 @@ def quantize_to_fp8_dynamic(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor
                     BLOCK_K=BLOCK_K,
                 )
                 return x_fp8.view(orig_shape), scale
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Dynamic FP8 quantization kernel failed (%s); delegating to reference path.", e)
 
     amax = torch.max(torch.abs(x_2d.float()), dim=1, keepdim=True).values.clamp_min(1e-8)
     scale = (amax / 448.0).squeeze(-1)
@@ -559,8 +562,8 @@ def quantize_to_fp8_dynamic(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor
     if hasattr(torch, "float8_e4m3fn"):
         try:
             return scaled.to(torch.float8_e4m3fn).view(orig_shape), scale
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Cast to float8_e4m3fn failed (%s); keeping original dtype.", e)
     return scaled.to(x.dtype).view(orig_shape), scale
 
 

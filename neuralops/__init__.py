@@ -56,6 +56,9 @@ if TYPE_CHECKING:
         surgical_transplant_and_heal_pipeline,  # noqa: F401
         train,
         transplant_attention,
+        transplant,
+        export_model,
+        export,
         validate,
     )
     from neuralops.core.exceptions import (
@@ -68,7 +71,7 @@ if TYPE_CHECKING:
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY  # noqa: F401
     from neuralops.kernels import list_cuda_kernels, list_triton_kernels  # noqa: F401
 
-__version__ = "1.6.0"
+__version__ = "1.7.0"
 
 _TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__"})
 try:
@@ -458,7 +461,9 @@ def compress(*args: Any, **kwargs: Any) -> Any:
 _API_EXPORTS = {
     "load_model": "neuralops.api",
     "transplant_attention": "neuralops.api",
+    "transplant": "neuralops.api",
     "export_model": "neuralops.api",
+    "export": "neuralops.api",
     "compile_to_so": "neuralops.api",
     "push_to_hub": "neuralops.api",
     "load_exported_model": "neuralops.api",
@@ -676,9 +681,11 @@ __all__ = [
     "load_model",
     "replace_attention",
     "transplant_attention",
+    "transplant",
     "compress",
     "create_compressor",
     "export_model",
+    "export",
     "compile_to_so",
     "push_to_hub",
     "load_exported_model",

@@ -2,7 +2,7 @@
 
 <img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />
 
-# 🧬 NeuralOps v1.6.0
+# 🧬 NeuralOps v1.7.0
 
 ### **A correctness-gated platform for attention surgery, compression, and hardware-aware benchmarking**
 
@@ -11,7 +11,7 @@
 > **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
 
 [![PyPI version](https://badge.fury.io/py/neuralops.svg)](https://pypi.org/project/neuralops/)
-[![Release](https://img.shields.io/badge/release-v1.6.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.6.0)
+[![Release](https://img.shields.io/badge/release-v1.7.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.7.0)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -128,9 +128,9 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 
 ---
 
-## 🚀 Key Capabilities in v1.6.0
+## 🚀 Key Capabilities in v1.7.0
 
-NeuralOps v1.6.0 introduces a modernized 3-tier module architecture, PEP 562 lazy loading, and CPU-safe verification:
+NeuralOps v1.7.0 introduces a modernized 3-tier module architecture, PEP 562 lazy loading, and CPU-safe verification:
 
 | Capability | Architecture Scope | Technical Implementation |
 | :--- | :--- | :--- |
@@ -145,7 +145,7 @@ NeuralOps v1.6.0 introduces a modernized 3-tier module architecture, PEP 562 laz
 
 ## 📖 Table of Contents
 
-0. [Key Capabilities in v1.6.0](#-key-capabilities-in-v160)
+0. [Key Capabilities in v1.7.0](#-key-capabilities-in-v160)
 
 1. [Notebook Workflows](#1-notebook-workflows)
 2. [CUDA Kernel Packages & 3-Level Fallback Dispatch](#2-cuda-kernel-packages--3-level-fallback-dispatch)
@@ -180,7 +180,7 @@ NeuralOps v1.6.0 introduces a modernized 3-tier module architecture, PEP 562 laz
 
 ## 1. Notebook Workflows
 
-NeuralOps v1.6.0 retains the complete **27-notebook master suite** (00–25 plus the paper empirical master) and includes 2 additional integration notebooks, for 29 notebook files currently present in [`notebooks/`](notebooks/). Notebook count and execution status are reported separately from the 203-row benchmark gate; no notebook is treated as benchmark evidence unless its result is explicitly recorded:
+NeuralOps v1.7.0 retains the complete **27-notebook master suite** (00–25 plus the paper empirical master) and includes 2 additional integration notebooks, for 29 notebook files currently present in [`notebooks/`](notebooks/). Notebook count and execution status are reported separately from the 203-row benchmark gate; no notebook is treated as benchmark evidence unless its result is explicitly recorded:
 
 | # | Notebook File | Cells | Core Focus & Methodology | Primary Deliverables & Key Outputs |
 | :-: | :--- | :---: | :--- | :--- |
@@ -355,7 +355,7 @@ Measured on physical **NVIDIA GeForce RTX 4070 Laptop GPU** (Ada Lovelace SM 8.9
 
 ## 4. Production Serving & Speculative Decoding Engine
 
-NeuralOps v1.6.0 includes serving components for modern LLM deployment workloads. Their implementation is available, but historical savings and throughput figures are not part of the current 203-row release-gate evidence:
+NeuralOps v1.7.0 includes serving components for modern LLM deployment workloads. Their implementation is available, but historical savings and throughput figures are not part of the current 203-row release-gate evidence:
 
 ### 4.1 PagedKVCache: Non-Contiguous Virtual Memory Paging
 Traditional inference servers allocate contiguous memory buffers sized for maximum context length ($T_{\max} = 8192$), causing **60% to 80% memory fragmentation**. NeuralOps `PagedKVCache` resolves this via OS-inspired virtual memory paging:
@@ -496,7 +496,7 @@ APIs without PyTorch raises an actionable error that names the runtime extras.
 
 ### 6.2 Executed Notebook Quickstart
 
-The repository includes small, executed workflows for the main v1.6.0 paths:
+The repository includes small, executed workflows for the main v1.7.0 paths:
 
 - [`01_attention_surgery_and_lora.ipynb`](notebooks/01_attention_surgery_and_lora.ipynb) — attention surgery, LoRA, KD, and save/reload.
 - [`02_unified_training.ipynb`](notebooks/02_unified_training.ipynb) — standard, LoRA, KD, and hybrid `NeuralOpsTrainer` modes.
@@ -970,7 +970,7 @@ flowchart TD
 
 ## 9. Web Dashboard, Real-Time Monitoring & Roofline Visualizer
 
-NeuralOps v1.6.0 bundles an integrated Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
+NeuralOps v1.7.0 bundles an integrated Web Monitor and Telemetry Studio powered by FastAPI, Uvicorn, Server-Sent Events (SSE), and interactive Three.js WebGL:
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -1546,7 +1546,7 @@ NeuralOps is engineered specifically for subquadratic attention transplantation,
 
 1. **Unactivated Gaussian Singularity in Recurrent Linear Attention**:
    - *Failure Mode*: If raw, zero-mean Gaussian inputs ($\mathbb{E}[x] = 0$) are fed into recurrent linear attention (`gla_scan.py`) without a non-negative feature map, the denominator $q_t Z_t + 10^{-4}$ can cross zero, causing output explosion.
-   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.6.0, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
+   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v1.7.0, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
 2. **Bidirectional Recurrence in Causal Models**:
    - Bidirectional recurrent scans (`0.5 * (y_fwd + y_bwd)`) are valid only for encoder backbones (BERT, RoBERTa). Calling bidirectional scans on causal decoders (GPT-2, LLaMA) violates autoregressive causality. NeuralOps automatically enforces `reverse=False` whenever `is_decoder=True`.
 3. **Small Batch GEMM Launch Overhead**:
@@ -1647,7 +1647,7 @@ All benchmark tables published in this document are generated from committed, ti
 | 72 Compression Engines Sweep | [`results/triton_all_72_compressors_benchmark.json`](results/triton_all_72_compressors_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | GPT-2 End-to-End Speedup | [`results/triton_e2e_gpt2_benchmark.json`](results/triton_e2e_gpt2_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | SST-2 Knowledge Distillation | [`results/sst2_kd_v2/sst2_kd_benchmark_v2.csv`](results/sst2_kd_v2/sst2_kd_benchmark_v2.csv) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| Comprehensive Release Report | NeuralOps v1.6.0 Release Verification ([Section 16](#16-honest-performance-claims--fused-kernel-spectrum)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| Comprehensive Release Report | NeuralOps v1.7.0 Release Verification ([Section 16](#16-honest-performance-claims--fused-kernel-spectrum)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 
 ---
 
@@ -1683,7 +1683,7 @@ The complete directory and model synchronization utilities are documented in [`s
 
 The `neuralops` package is verified against strict packaging standards prior to every release:
 
-   - [x] **Package Distribution**: Published on PyPI as [`neuralops v1.6.0`](https://pypi.org/project/neuralops/).
+   - [x] **Package Distribution**: Published on PyPI as [`neuralops v1.7.0`](https://pypi.org/project/neuralops/).
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
 - [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-py3-none-any.whl`, size ~1.2 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
 - [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation.
@@ -1695,10 +1695,10 @@ The `neuralops` package is verified against strict packaging standards prior to 
 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
-| **v1.6.0** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
-| **v1.4.2** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
-| **v1.3.7** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
-| **v1.3.0** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |
+| **v1.7.0** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.7.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v1.7.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |
+| **v1.7.0** | `3.9`, `3.10`, `3.11` | `2.0.0` – `2.2.0` | `2.1.0` – `2.2.0` | `11.7`, `11.8`, `12.0` | Linux, macOS 12+ |
 
 ---
 

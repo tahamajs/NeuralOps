@@ -9,6 +9,7 @@
 """
 
 from dataclasses import dataclass
+import math
 
 import numpy as np
 from scipy import stats
@@ -44,10 +45,17 @@ class ABTester:
             a = np.array(results_a[metric])
             b = np.array(results_b[metric])
             t_stat, p_val = stats.ttest_ind(a, b, equal_var=False)
-            mean_a, mean_b = np.mean(a), np.mean(b)
+            mean_a, mean_b = float(np.mean(a)), float(np.mean(b))
             diff = mean_b - mean_a
-            se = np.sqrt(np.var(a) / len(a) + np.var(b) / len(b))
-            ci = (diff - 1.96 * se, diff + 1.96 * se)
+            n1, n2 = len(a), len(b)
+            v1 = float(np.var(a, ddof=1)) if n1 > 1 else float(np.var(a))
+            v2 = float(np.var(b, ddof=1)) if n2 > 1 else float(np.var(b))
+            se = math.sqrt(v1 / n1 + v2 / n2) if (n1 > 0 and n2 > 0) else 0.0
+            num = (v1 / n1 + v2 / n2) ** 2
+            den = ((v1 / n1) ** 2) / (n1 - 1) + ((v2 / n2) ** 2) / (n2 - 1) if (n1 > 1 and n2 > 1) else 1.0
+            df = num / den if den > 0 else float(n1 + n2 - 2)
+            t_crit = float(stats.t.ppf(1.0 - self.alpha / 2.0, df=df)) if df > 0 else 1.96
+            ci = (float(diff - t_crit * se), float(diff + t_crit * se))
             outcomes.append(
                 ABTestResult(
                     metric=metric,

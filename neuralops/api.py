@@ -237,6 +237,11 @@ def transplant_attention(
     )
 
 
+# v1.7.0 High-Level Public Ergonomics Aliases
+transplant = transplant_attention
+
+
+
 def collect_surgery_distillation_loss(model: nn.Module) -> torch.Tensor:
     """Collect shadow twin distillation loss across all transplanted attention layers."""
     from neuralops.surgery.shadow_twin import collect_surgery_distillation_loss as _collect
@@ -281,6 +286,11 @@ def export_model(
         Path to output directory or exported artifact file.
     """
     return _export_model(model=model, output_dir=output_dir, format=format, **kwargs)
+
+
+# v1.7.0 High-Level Public Ergonomics Alias
+export = export_model
+
 
 
 def push_to_hub(
@@ -1071,8 +1081,10 @@ __all__ = [
     "load_model",
     "replace_attention",
     "transplant_attention",
+    "transplant",
     "compress",
     "export_model",
+    "export",
     "push_to_hub",
     "load_exported_model",
     "collect_surgery_distillation_loss",

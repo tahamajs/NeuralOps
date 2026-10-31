@@ -1,7 +1,8 @@
 site_name: NeuralOps
 site_description: Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression
-site_author: Taha Majlesi
+site_author: Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)
 site_url: https://tahamajs.github.io/NeuralOps/
+copyright: "Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License."
 
 repo_name: tahamajs/NeuralOps
 repo_url: https://github.com/tahamajs/NeuralOps
@@ -27,6 +28,9 @@ theme:
     - navigation.tabs
     - navigation.sections
     - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
     - content.code.copy
 
 plugins:
@@ -55,6 +59,13 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
 
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/tahamajs/NeuralOps
+    - icon: fontawesome/solid/database
+      link: https://huggingface.co/datasets/Hooshaai/neuralops-results
+
 exclude_docs: |
   README.md
   visualizer/README.md
@@ -62,6 +73,12 @@ exclude_docs: |
 nav:
   - Home: index.md
   - Quickstart: QUICKSTART.md
+  - Guides:
+      - Getting Started: guides/getting_started.md
+      - Attention Surgery: guides/attention_surgery.md
+      - Model Compression: guides/model_compression.md
+      - Kernel Dispatch: guides/kernel_dispatch.md
+      - Production Serving: guides/production_serving.md
   - Visualizer & Dashboards:
       - Architecture & Telemetry Dashboard: dashboard.html
       - 3D Attention Lab & Atlas: visualizer/index.html
@@ -80,9 +97,9 @@ nav:
       - Hardware Telemetry & Roofline: codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE.md
       - Benchmark Suite & Reproducibility: codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY.md
   - API Reference:
-      - Attentions: api/attentions.md
-      - Compression: api/compression.md
-      - Kernels: api/kernels.md
+      - 131 Attention Mechanisms: api/attentions.md
+      - 72 Compression Engines: api/compression.md
+      - Kernels & 3-Level Dispatch: api/kernels.md
       - Serving Integrations: api/integrations.md
       - Results Ledger & Provenance: api/results_ledger.md
   - Tutorials:
@@ -102,5 +119,9 @@ nav:
       - Paper/Thesis Consistency: reports/PAPER_THESIS_CONSISTENCY_REPORT.md
       - Benchmark Reconciliation: reports/BENCHMARK_RECONCILIATION.md
       - HNC-SVD Decision: reports/HNC_SVD_STATUS_DECISION.md
+  - Roadmap:
+      - Strategic Roadmap Overview: ROADMAP.md
+      - High-Throughput FLA Kernels & Microarchitecture: ROADMAP_V1_7_KERNELS_AND_FLA.md
+      - Systems, Surgery & Serving Ergonomics: ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT.md
   - Changelog: changelog.md
   - Security: security.md

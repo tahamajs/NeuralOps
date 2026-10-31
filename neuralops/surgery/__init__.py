@@ -71,6 +71,10 @@ from neuralops.api import (
     replace_attention,
     transplant_attention,
 )
+from neuralops.surgery.healing import (
+    calibrate_attention_subspace,
+    heal_replaced_model,
+)
 
 __all__ = [
     "AttentionTargetSpec",
@@ -112,4 +116,6 @@ __all__ = [
     "load_surgical_checkpoint",
     "replace_attention",
     "transplant_attention",
+    "heal_replaced_model",
+    "calibrate_attention_subspace",
 ]

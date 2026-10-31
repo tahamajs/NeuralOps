@@ -11,7 +11,11 @@ Statistical Hypothesis Testing
 Non-parametric and paired statistical significance tests for benchmark model comparisons and ablations.
 """
 
+from __future__ import annotations
+
 import logging
+import math
+from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
@@ -665,3 +669,65 @@ def run_full_statistical_analysis(
         result["bergmann_hommel"] = bergmann_hommel_posthoc(avg_ranks, n, k, alpha)
 
     return result
+
+
+def welch_two_sample_ttest(
+    sample_a: np.ndarray | Sequence[float],
+    sample_b: np.ndarray | Sequence[float],
+    alpha: float = 0.05,
+) -> dict[str, Any]:
+    """Computes two-sample Welch's t-test with exact Welch-Satterthwaite degrees of freedom.
+
+    Calculates Student's t confidence interval of the difference and standardized Cohen's d.
+
+    Args:
+        sample_a: First observation sample (e.g. proposed model metrics across seeds).
+        sample_b: Second observation sample (e.g. baseline model metrics across seeds).
+        alpha: Significance level (default: 0.05).
+
+    Returns:
+        Dictionary containing t_statistic, degrees_of_freedom, p_value, significant, ci_95, cohens_d.
+    """
+    a = np.asarray(sample_a, dtype=np.float64)
+    b = np.asarray(sample_b, dtype=np.float64)
+    n1, n2 = len(a), len(b)
+    if n1 < 2 or n2 < 2:
+        raise ValueError("Welch's t-test requires at least 2 observations per sample.")
+
+    m1, m2 = float(np.mean(a)), float(np.mean(b))
+    v1, v2 = float(np.var(a, ddof=1)), float(np.var(b, ddof=1))
+    diff = m1 - m2
+    se_diff = math.sqrt(v1 / n1 + v2 / n2)
+
+    # Welch-Satterthwaite effective degrees of freedom
+    num = (v1 / n1 + v2 / n2) ** 2
+    den = ((v1 / n1) ** 2) / (n1 - 1) + ((v2 / n2) ** 2) / (n2 - 1)
+    df = num / den if den > 0 else float(n1 + n2 - 2)
+
+    t_stat = diff / se_diff if se_diff > 0 else 0.0
+    p_value = 2.0 * (1.0 - stats.t.cdf(abs(t_stat), df=df))
+
+    # Student's t critical confidence interval
+    t_crit = stats.t.ppf(1.0 - alpha / 2.0, df=df)
+    ci_lower = diff - t_crit * se_diff
+    ci_upper = diff + t_crit * se_diff
+
+    # Standardized Cohen's d
+    s_pooled = math.sqrt(((n1 - 1) * v1 + (n2 - 1) * v2) / (n1 + n2 - 2))
+    cohen_d = diff / s_pooled if s_pooled > 0 else 0.0
+
+    return {
+        "method": "Welch's two-sample t-test",
+        "mean_a": m1,
+        "mean_b": m2,
+        "difference": diff,
+        "t_statistic": float(t_stat),
+        "degrees_of_freedom": float(df),
+        "p_value": float(p_value),
+        "significant": bool(p_value < 0.01),
+        "ci_95": (float(ci_lower), float(ci_upper)),
+        "cohens_d": float(cohen_d),
+        "n_a": n1,
+        "n_b": n2,
+    }
+

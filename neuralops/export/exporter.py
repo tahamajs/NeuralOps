@@ -627,9 +627,6 @@ def compile_to_so(
         if exported_program is not None and hasattr(torch.export, "save"):
             try:
                 torch.export.save(exported_program, str(pt2_path))
-                if out_file.suffix == ".so":
-                    with open(out_file, "wb") as f:
-                        f.write(b"/* NeuralOps Fallback Export Binary */\n")
             except Exception as e:
                 logger.warning("torch.export.save failed: %s", e)
         fallback_mod = torch.compile(wrapper, backend="inductor") if hasattr(torch, "compile") else wrapper
