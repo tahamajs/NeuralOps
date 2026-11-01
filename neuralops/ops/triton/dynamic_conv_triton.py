@@ -195,4 +195,29 @@ def dynamic_conv_attention_forward(
     return out
 
 
-__all__ = ["dynamic_conv_attention_forward", "_dynamic_conv_pytorch"]
+def dynamic_conv_attention_forward_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor | None = None,
+    v: torch.Tensor | None = None,
+    kernel_size: int = 4,
+    weights: torch.Tensor | None = None,
+    **kwargs: Any,
+) -> torch.Tensor:
+    """Pure PyTorch reference implementation of dynamic convolution attention."""
+    if v is None:
+        v = q
+    B, H, N, D = v.shape
+    device = v.device
+    dtype = v.dtype
+    K = kernel_size
+
+    if weights is None:
+        logits = q.mean(dim=-1, keepdim=True).expand(-1, -1, -1, K)
+        weights = F.softmax(logits.float(), dim=-1).to(dtype)
+
+    pad = torch.zeros((B, H, K - 1, D), dtype=dtype, device=device)
+    v_full = torch.cat([pad, v], dim=2)
+    return _dynamic_conv_pytorch(v_full, weights)
+
+
+__all__ = ["dynamic_conv_attention_forward", "_dynamic_conv_pytorch", "dynamic_conv_attention_forward_pytorch"]

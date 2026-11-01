@@ -265,4 +265,6 @@ def token_compressed_attention_forward(
     return out
 
 
-__all__ = ["token_compressed_attention_forward", "_token_compressed_attention_pytorch"]
+token_compressed_attention_forward_pytorch = _token_compressed_attention_pytorch
+
+__all__ = ["token_compressed_attention_forward", "_token_compressed_attention_pytorch", "token_compressed_attention_forward_pytorch"]

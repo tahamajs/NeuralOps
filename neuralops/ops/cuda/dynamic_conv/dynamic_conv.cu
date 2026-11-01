@@ -1,0 +1,111 @@
+// Copyright (c) 2024-2026, Taha Majlesi
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+// For a list of all contributors, visit:
+//   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
+#include <torch/extension.h>
+#include <cuda_runtime.h>
+#include <c10/cuda/CUDAStream.h>
+#include <cmath>
+
+__device__ inline void dynamic_conv_kernel_impl(
+    const float* __restrict__ v,
+    const float* __restrict__ weights,
+    float* __restrict__ out,
+    int BH,
+    int L,
+    int D,
+    int K
+) {
+    int bh = blockIdx.y;
+    int l = blockIdx.x * blockDim.x + threadIdx.x;
+    if (bh >= BH || l >= L) return;
+
+    int out_offset = (bh * L + l) * D;
+    int w_offset = (bh * L + l) * K;
+    float* out_ptr = out + out_offset;
+
+    float acc[512];
+    #pragma unroll 4
+    for (int d = 0; d < D; ++d) {
+        acc[d] = 0.0f;
+    }
+
+    for (int k = 0; k < K; ++k) {
+        float w = weights[w_offset + k];
+        int in_l = l + k - (K - 1);
+        if (in_l >= 0 && in_l < L) {
+            const float* v_k = v + (bh * L + in_l) * D;
+            #pragma unroll 4
+            for (int d = 0; d < D; ++d) {
+                acc[d] += w * v_k[d];
+            }
+        }
+    }
+
+    #pragma unroll 4
+    for (int d = 0; d < D; ++d) {
+        out_ptr[d] = acc[d];
+    }
+}
+
+__global__ void dynamic_conv_fwd(
+    const float* __restrict__ v,
+    const float* __restrict__ weights,
+    float* __restrict__ out,
+    int BH,
+    int L,
+    int D,
+    int K
+) {
+    dynamic_conv_kernel_impl(v, weights, out, BH, L, D, K);
+}
+
+__global__ void dynamic_conv_causal_fwd(
+    const float* __restrict__ v,
+    const float* __restrict__ weights,
+    float* __restrict__ out,
+    int BH,
+    int L,
+    int D,
+    int K
+) {
+    dynamic_conv_kernel_impl(v, weights, out, BH, L, D, K);
+}
+
+torch::Tensor dynamic_conv_attention_forward_cuda(
+    const torch::Tensor& q,
+    const torch::Tensor& v,
+    const torch::Tensor& weights,
+    int64_t kernel_size
+) {
+    TORCH_CHECK(q.is_cuda() && v.is_cuda() && weights.is_cuda(), "Tensors must be CUDA");
+    TORCH_CHECK(q.is_contiguous() && v.is_contiguous() && weights.is_contiguous(), "Tensors must be contiguous");
+
+    int B = v.size(0);
+    int H = v.size(1);
+    int L = v.size(2);
+    int D = v.size(3);
+    int K = static_cast<int>(kernel_size);
+    int BH = B * H;
+
+    auto out = torch::empty({B, H, L, D}, v.options());
+
+    const int threads = 128;
+    const dim3 blocks((L + threads - 1) / threads, BH);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream();
+
+    dynamic_conv_fwd<<<blocks, threads, 0, stream>>>(
+        v.data_ptr<float>(),
+        weights.data_ptr<float>(),
+        out.data_ptr<float>(),
+        BH,
+        L,
+        D,
+        K
+    );
+
+    return out;
+}
