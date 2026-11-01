@@ -192,6 +192,8 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["fla", "pytorch", "cuda", "triton"],
         help="Compare benchmark execution and numerical parity against an alternate backend (e.g. 'fla')",
     )
+    run_p.add_argument("recipe_cmd", nargs="?", default=None, help="Optional subcommand, e.g. 'recipe'")
+    run_p.add_argument("recipe_file", nargs="?", default=None, help="Recipe file when recipe_cmd is 'recipe'")
 
     res_p = subparsers.add_parser("resume", help="Resume interrupted sweep")
     res_p.add_argument("--output-dir", type=str, default="results", help="Output directory of interrupted run")
@@ -462,6 +464,14 @@ def _build_parser() -> argparse.ArgumentParser:
 
     rec_ev_p = recipe_sub.add_parser("evidence", help="Inspect evidence for recipe transformation")
     rec_ev_p.add_argument("file", help="Path to evidence JSON file")
+
+    rec_bench_p = recipe_sub.add_parser("benchmark", help="Benchmark baseline vs transformed recipe pipeline")
+    rec_bench_p.add_argument("file", help="Path to recipe YAML file")
+    rec_bench_p.add_argument("--device", default="auto", help="Execution device (cuda/mps/cpu/auto)")
+    rec_bench_p.add_argument("--parallel", action="store_true", default=False, help="Use DataParallelBenchmark across available GPUs")
+    rec_bench_p.add_argument("--batch-size", type=int, default=32, help="Evaluation batch size")
+    rec_bench_p.add_argument("--seq-len", type=int, default=16, help="Sequence length")
+    rec_bench_p.add_argument("--repeats", type=int, default=3, help="Benchmark repeat iterations")
 
     # Evidence commands
     ev_p = subparsers.add_parser("evidence", help="Inspect and display transformation evidence records")
@@ -1165,6 +1175,39 @@ def handle_recipe(args: argparse.Namespace) -> int:
         ev = load_evidence(args.file)
         print(render_report(ev))
         return 0
+    elif action == "benchmark":
+        import json
+        import torch
+        from neuralops.benchmarks.recipe_benchmark import run_recipe_benchmark
+        from neuralops.distributed.context import DistributedContext
+        from neuralops.benchmarks.parallel_benchmark import DataParallelBenchmark
+
+        parallel_flag = bool(getattr(args, "parallel", False))
+        parallel_bench = None
+        if parallel_flag:
+            ctx = DistributedContext()
+            parallel_bench = DataParallelBenchmark(ctx)
+            print(f"DataParallelBenchmark enabled: world_size={parallel_bench.world_size}, is_distributed={parallel_bench.context.is_distributed()}")
+
+        device = getattr(args, "device", "auto")
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        repeats = getattr(args, "repeats", 3)
+        batch_size = getattr(args, "batch_size", 2)
+        seq_len = getattr(args, "seq_len", 16)
+
+        results = run_recipe_benchmark(
+            recipe=args.file,
+            device=device,
+            repeats=repeats,
+            batch_size=batch_size,
+            seq_len=seq_len,
+            parallel_benchmark=parallel_bench,
+        )
+        print(f"Recipe Benchmark '{results['recipe_name']}' completed (device={results['device']}, speedup={results['comparison']['speedup']:.2f}x):")
+        print(json.dumps(results, indent=2))
+        return 0
     return 0
 
 
@@ -1254,7 +1297,11 @@ def _dispatch(args: argparse.Namespace) -> int:
     elif args.subcommand == "verify":
         handle_verify(args)
 
-    elif args.subcommand == "run":
+    elif args.subcommand in ("run", "benchmark"):
+        if getattr(args, "recipe_cmd", None) == "recipe":
+            args.recipe_action = "benchmark"
+            args.file = getattr(args, "recipe_file", None)
+            return handle_recipe(args)
         handle_run(args)
     elif args.subcommand == "export":
         handle_export(args)

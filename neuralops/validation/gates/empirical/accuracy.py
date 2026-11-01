@@ -56,11 +56,13 @@ class AccuracyGate(Gate):
         self,
         min_accuracy: Optional[float] = None,
         max_accuracy_drop: Optional[float] = None,
+        parallel_benchmark: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(name=self.name, level=self.level, **kwargs)
         self.min_accuracy = min_accuracy
         self.max_accuracy_drop = max_accuracy_drop
+        self.parallel_benchmark = parallel_benchmark
 
     def run(
         self,
@@ -99,10 +101,25 @@ class AccuracyGate(Gate):
                 duration_seconds=time.perf_counter() - t0,
             )
 
+        bench = ctx.get("parallel_benchmark", self.parallel_benchmark)
+        use_parallel = (
+            bench is not None
+            and hasattr(bench, "run")
+            and getattr(bench, "context", None) is not None
+            and (bench.context.is_distributed() or getattr(bench.context, "available_gpus", 0) > 1)
+        )
+
         try:
             if eval_fn is not None:
                 acc = float(eval_fn(active_model))
                 base_acc = float(eval_fn(base_model)) if base_model is not None else None
+            elif use_parallel and dataset is not None:
+                def _acc_metric(m: nn.Module, d: Any) -> float:
+                    return _evaluate_accuracy(m, d)
+
+                res = bench.run(active_model, dataset, _acc_metric)
+                acc = float(res.metric_value)
+                base_acc = float(bench.run(base_model, dataset, _acc_metric).metric_value) if base_model is not None else None
             else:
                 acc = _evaluate_accuracy(active_model, dataset)
                 base_acc = _evaluate_accuracy(base_model, dataset) if base_model is not None else None

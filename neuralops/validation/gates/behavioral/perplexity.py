@@ -28,9 +28,15 @@ class PerplexityGate(Gate):
     level = "L3"
     severity = GateSeverity.ERROR
 
-    def __init__(self, max_relative_increase: float = 0.05, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        max_relative_increase: float = 0.05,
+        parallel_benchmark: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(name=self.name, level=self.level, **kwargs)
         self.max_relative_increase = max_relative_increase
+        self.parallel_benchmark = parallel_benchmark
 
     def run(
         self,

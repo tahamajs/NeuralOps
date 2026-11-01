@@ -12,6 +12,7 @@ L4 Empirical Validation Gates.
 from neuralops.validation.gates.empirical.accuracy import AccuracyGate
 from neuralops.validation.gates.empirical.latency import LatencyGate
 from neuralops.validation.gates.empirical.niah import NeedleInAHaystackGate
+from neuralops.validation.gates.empirical.perplexity import PerplexityGate
 from neuralops.validation.gates.empirical.throughput import ThroughputGate
 from neuralops.validation.gates.empirical.vram import VRAMGate
 
@@ -19,6 +20,7 @@ __all__ = [
     "AccuracyGate",
     "LatencyGate",
     "NeedleInAHaystackGate",
+    "PerplexityGate",
     "ThroughputGate",
     "VRAMGate",
 ]

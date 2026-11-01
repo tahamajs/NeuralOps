@@ -129,6 +129,7 @@ def run_recipe_benchmark(
     dataset: Optional[Any] = None,
     batch_size: int = 2,
     seq_len: int = 16,
+    parallel_benchmark: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """Run an end-to-end recipe benchmark measuring latency, throughput, VRAM, and accuracy.
 
@@ -200,8 +201,20 @@ def run_recipe_benchmark(
     trans_accuracy: Dict[str, Any]
     if dataset is not None:
         try:
-            acc = _evaluate_accuracy(transformed_model, dataset)
-            trans_accuracy = {"skipped": False, "accuracy": acc}
+            if parallel_benchmark is not None and getattr(parallel_benchmark, "world_size", 1) > 1:
+                def _acc_fn(m: nn.Module, d: Any) -> float:
+                    return _evaluate_accuracy(m, d)
+
+                res = parallel_benchmark.run(transformed_model, dataset, _acc_fn)
+                trans_accuracy = {
+                    "skipped": False,
+                    "accuracy": float(res.metric_value),
+                    "is_distributed": res.is_distributed,
+                    "throughput_samples_per_sec": res.throughput_samples_per_sec,
+                }
+            else:
+                acc = _evaluate_accuracy(transformed_model, dataset)
+                trans_accuracy = {"skipped": False, "accuracy": acc}
         except Exception as e:
             trans_accuracy = {"skipped": True, "reason": str(e), "accuracy": None}
     else:
