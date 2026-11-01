@@ -41,7 +41,7 @@ _EXPORTS = {
 }
 _MODULES = {
     "compressed_tensors", "distributed_compile", "hf_automodel", "serving",
-    "sglang", "sglang_backend", "tensorrt_llm", "tgi", "vllm", "vllm_backend", "vllm_plugin",
+    "sglang", "sglang_backend", "tensorrt_llm", "tensorrt_llm_plugin", "tgi", "vllm", "vllm_backend", "vllm_plugin",
 }
 
 __all__ = [*_EXPORTS, *_MODULES]
