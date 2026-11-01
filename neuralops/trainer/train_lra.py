@@ -20,12 +20,6 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import AutoConfig, AutoModelForSequenceClassification
 
-_cur_dir = Path(__file__).resolve().parent
-_codes_dir = _cur_dir.parent
-if str(_codes_dir) not in sys.path:
-    sys.path.insert(0, str(_codes_dir))
-if str(_cur_dir) not in sys.path:
-    sys.path.insert(0, str(_cur_dir))
 
 try:
     from lra_datasets import IMDbByteDataset, ListOpsDataset
