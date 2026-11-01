@@ -187,6 +187,8 @@ def _adaptive_sparse_attention_pytorch(
     **kwargs: Any,
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation matching AdaptiveSparseAttention."""
+    if "sparsity" in kwargs:
+        sparsity_ratio = float(kwargs["sparsity"])
     B, H, L_q, D = q.shape
     L_kv = k.shape[-2]
     dtype = q.dtype
@@ -324,4 +326,6 @@ def adaptive_sparse_attention_forward(
     return out
 
 
-__all__ = ["adaptive_sparse_attention_forward", "_adaptive_sparse_attention_pytorch"]
+adaptive_sparse_attention_forward_pytorch = _adaptive_sparse_attention_pytorch
+
+__all__ = ["adaptive_sparse_attention_forward", "_adaptive_sparse_attention_pytorch", "adaptive_sparse_attention_forward_pytorch"]

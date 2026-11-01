@@ -262,4 +262,6 @@ def cross_attention_forward(
     return out
 
 
-__all__ = ["cross_attention_forward", "_cross_attention_pytorch"]
+cross_attention_forward_pytorch = _cross_attention_pytorch
+
+__all__ = ["cross_attention_forward", "_cross_attention_pytorch", "cross_attention_forward_pytorch"]

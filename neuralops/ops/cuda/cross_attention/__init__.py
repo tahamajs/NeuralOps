@@ -6,17 +6,17 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Cross Attention Hardware Operators.
+Cross Attention CUDA operator.
 """
 
-from neuralops.ops.cuda.cross_attention.cross_attn_autograd import (
-    cross_attention,
-    cross_attention_pytorch_ref,
-    cross_attention_bwd,
+from __future__ import annotations
+
+from neuralops.ops.cuda.cross_attention.autograd import (
+    CrossAttentionFunction,
+    cross_attention_forward,
 )
 
 __all__ = [
-    "cross_attention",
-    "cross_attention_pytorch_ref",
-    "cross_attention_bwd",
+    "CrossAttentionFunction",
+    "cross_attention_forward",
 ]

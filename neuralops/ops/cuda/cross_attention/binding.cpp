@@ -6,17 +6,22 @@
 //   https://github.com/tahamajs/NeuralOps/graphs/contributors
 
 #include <torch/extension.h>
-#include <vector>
 
-torch::Tensor cross_attention_fwd(
+torch::Tensor cross_attention_forward_cuda(
     const torch::Tensor& q,
     const torch::Tensor& k,
-    const torch::Tensor& v
+    const torch::Tensor& v,
+    double scale
 );
 
-std::vector<torch::Tensor> cross_attention_bwd(
-    const torch::Tensor& grad_out,
-    const torch::Tensor& q,
-    const torch::Tensor& k,
-    const torch::Tensor& v
-);
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def(
+        "cross_attention_forward",
+        &cross_attention_forward_cuda,
+        "Cross Attention forward (CUDA)",
+        py::arg("q"),
+        py::arg("k"),
+        py::arg("v"),
+        py::arg("scale")
+    );
+}
