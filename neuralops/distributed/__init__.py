@@ -10,6 +10,13 @@ NeuralOps Distributed Subpackage.
 
 from __future__ import annotations
 
+from neuralops.distributed.context import DistributedContext
+from neuralops.distributed.errors import (
+    DistributedError,
+    E_DIST_INIT_FAILED,
+    E_DIST_NOT_INITIALIZED,
+    E_DIST_COMM_FAILED,
+)
 from neuralops.distributed.tensor_parallel import (
     SimulatedTPGroup,
     ColumnParallelLinear,
@@ -31,6 +38,11 @@ from neuralops.distributed.context_parallel import (
 )
 
 __all__ = [
+    "DistributedContext",
+    "DistributedError",
+    "E_DIST_INIT_FAILED",
+    "E_DIST_NOT_INITIALIZED",
+    "E_DIST_COMM_FAILED",
     "SimulatedTPGroup",
     "ColumnParallelLinear",
     "RowParallelLinear",
