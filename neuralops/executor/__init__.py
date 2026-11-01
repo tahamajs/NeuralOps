@@ -10,6 +10,7 @@ NeuralOps Transformation Executor and Planner Subsystem.
 """
 
 from neuralops.executor.executor import execute_plan, execute_recipe
+from neuralops.executor.layer_parallel import LayerParallelExecutor
 from neuralops.executor.plan import ExecutionPlan, Stage
 from neuralops.executor.planner import plan_recipe
 from neuralops.executor.result import PipelineResult, StageRecord
@@ -17,6 +18,7 @@ from neuralops.executor.snapshot import ModelSnapshot
 
 __all__ = [
     "ExecutionPlan",
+    "LayerParallelExecutor",
     "ModelSnapshot",
     "PipelineResult",
     "Stage",

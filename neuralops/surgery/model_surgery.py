@@ -112,9 +112,28 @@ class ModelSurgery:
         self,
         operation_or_recipe: Optional[Union[str, Recipe]] = None,
         version: str = "1.0.0",
+        layer_parallel: bool = False,
         **config: Any,
     ) -> ModelSurgery:
         """Apply an operation or execute a full recipe in place."""
+        if layer_parallel:
+            from neuralops.distributed.context import DistributedContext
+            from neuralops.executor.layer_parallel import LayerParallelExecutor
+
+            ctx = DistributedContext()
+            if ctx.is_distributed() or ctx.available_gpus > 1:
+                lexec = LayerParallelExecutor(ctx)
+                if isinstance(operation_or_recipe, str):
+                    op_lower = operation_or_recipe.lower()
+                    if "attention" in op_lower or "transplant" in op_lower:
+                        target_att = config.get("target_attention", config.get("attention", "full_attention"))
+                        self.model = lexec.transplant(self.model, target_attention=target_att, **config)
+                        return self
+                    elif "compress" in op_lower or "svd" in op_lower:
+                        method = config.get("method", "svd")
+                        target_ratio = config.get("target_ratio", config.get("ratio", 0.5))
+                        self.model = lexec.compress(self.model, method=method, target_ratio=target_ratio, **config)
+                        return self
         if operation_or_recipe is None and self.recipe is not None:
             # Execute attached recipe
             pipeline_result = execute_recipe(
