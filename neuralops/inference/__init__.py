@@ -23,8 +23,9 @@ _EXPORTS = {
     "SpeculativeDecodeStats": ("speculative_decoding", "SpeculativeDecodeStats"),
     "gamma_sweep_harness": ("speculative_decoding", "gamma_sweep_harness"),
     "CUDAGraphDecodeRunner": ("neuralops.models.cuda_graph", "CUDAGraphDecodeRunner"),
+    "PipelineParallelInference": ("pipeline_parallel", "PipelineParallelInference"),
 }
-_MODULES = {"engine", "paged_cache", "speculative_decoding"}
+_MODULES = {"engine", "paged_cache", "speculative_decoding", "pipeline_parallel"}
 
 __all__ = [*_EXPORTS, *_MODULES]
 
