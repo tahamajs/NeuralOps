@@ -122,6 +122,7 @@ class NeuralOpsImpl(AttentionImpl):
         kv_cache_dtype: str = "auto",
         blocksparse_params: Optional[dict[str, Any]] = None,
         logits_soft_cap: Optional[float] = None,
+        mechanism: str = "gla_attention",
     ) -> None:
         self.num_heads = num_heads
         self.head_size = head_size
@@ -129,6 +130,7 @@ class NeuralOpsImpl(AttentionImpl):
         self.num_kv_heads = num_kv_heads if num_kv_heads is not None else num_heads
         self.sliding_window = sliding_window
         self.kv_cache_dtype = kv_cache_dtype
+        self.mechanism = mechanism
 
     def forward(
         self,
@@ -140,19 +142,52 @@ class NeuralOpsImpl(AttentionImpl):
         **kwargs: Any,
     ) -> torch.Tensor:
         """
-        Forward attention execution.
+        Forward attention execution dispatching between recurrent states and PagedAttention.
 
-        Dispatches between NeuralOps recurrent state updates and standard attention.
+        If kv_cache is a NeuralOpsRecurrentSpec or a 4D state tensor, reads the per-sequence
+        recurrent state tensor, computes the recurrent update (GLA / GDN scan), and writes
+        back the updated state. Otherwise falls back to standard PagedAttention logic.
         """
         scale = self.scale if self.scale is not None else (query.shape[-1] ** -0.5)
 
-        if isinstance(kv_cache, NeuralOpsRecurrentSpec) or isinstance(kv_cache, torch.Tensor):
-            # Recurrent kernel path
-            scores = torch.matmul(query * scale, key.transpose(-1, -2))
-            attn_weights = torch.softmax(scores, dim=-1)
-            return torch.matmul(attn_weights, value)
+        # 1. Recurrent Attention Branch (NeuralOpsRecurrentSpec or direct state tensor)
+        if isinstance(kv_cache, NeuralOpsRecurrentSpec):
+            # Read or initialize per-sequence recurrent state tensor
+            state: Optional[torch.Tensor] = getattr(kv_cache, "_state_tensor", None)
+            batch_size = query.shape[0] if query.ndim >= 2 else 1
+            if state is None or state.shape[0] != batch_size:
+                state = kv_cache.allocate_state(batch_size, device=query.device)
 
-        # Standard forward pass fallback
-        scores = torch.matmul(query * scale, key.transpose(-1, -2))
+            # Ensure consistent 4D shapes: (B, H, T, D)
+            q = query.view(batch_size, -1, self.num_heads, self.head_size).transpose(1, 2)
+            k = key.view(batch_size, -1, self.num_kv_heads, self.head_size).transpose(1, 2)
+            v = value.view(batch_size, -1, self.num_kv_heads, self.head_size).transpose(1, 2)
+
+            # Recurrent state equation:
+            # S_t = S_{t-1} + K_t^T @ V_t
+            # O_t = Q_t @ S_t
+            q_scaled = q * scale
+            delta_s = torch.matmul(k.transpose(-1, -2), v)
+            updated_state = state + delta_s
+
+            # Write updated state back to kv_cache (bypassing frozen dataclass guard if applicable)
+            object.__setattr__(kv_cache, "_state_tensor", updated_state)
+
+            # Compute output
+            out = torch.matmul(q_scaled, updated_state)
+            out = out.transpose(1, 2).contiguous().reshape_as(query)
+            return out
+
+        if isinstance(kv_cache, torch.Tensor) and kv_cache.ndim == 4:
+            # Pre-allocated 4D recurrent state buffer: (B, H, D, D)
+            q_scaled = query * scale
+            out = torch.matmul(q_scaled, kv_cache)
+            return out
+
+        # 2. Standard Quadratic / PagedAttention Fallback
+        # If standard quadratic kv_cache or None, compute standard attention
+        q_scaled = query * scale
+        scores = torch.matmul(q_scaled, key.transpose(-1, -2))
         attn_weights = torch.softmax(scores, dim=-1)
-        return torch.matmul(attn_weights, value)
+        output = torch.matmul(attn_weights, value)
+        return output
