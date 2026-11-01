@@ -356,4 +356,6 @@ def chela_slay_forward(
     return out
 
 
-__all__ = ["chela_slay_forward", "_chela_slay_pytorch"]
+chela_slay_attention_forward_pytorch = _chela_slay_pytorch
+
+__all__ = ["chela_slay_forward", "_chela_slay_pytorch", "chela_slay_attention_forward_pytorch"]

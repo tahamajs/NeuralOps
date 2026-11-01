@@ -254,4 +254,6 @@ def rala_attention_forward(
     return out
 
 
-__all__ = ["rala_attention_forward", "_rala_attention_pytorch"]
+rala_attention_forward_pytorch = _rala_attention_pytorch
+
+__all__ = ["rala_attention_forward", "_rala_attention_pytorch", "rala_attention_forward_pytorch"]
