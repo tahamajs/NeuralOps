@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — CUDA Kernels (18 modules)
+
+**Batch 3 SVD (4):** direct_svd, asvd, fwsvd, hnc_svd
+**Batch 3 Quantizers/Pruners (6):** awq, fp8_compressor, kmeans_quantize, wanda, sparsegpt, admm
+**Batch 2 Attention (8):** routing, lsh, cross, adaptive_sparse, dynamic_conv, token_compressed, chela_slay, rala
+
+All compiled on Tesla T4 (SM 7.5), parity tested vs PyTorch reference (< 1e-3 FP32).
+
 ### Added
 - **Triton Kernel Pipeline Completion**:
   - **Batch 3 Model Compressors (6 Triton Modules)**:

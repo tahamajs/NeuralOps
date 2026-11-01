@@ -112,16 +112,16 @@ def audit_readme_consistency() -> int:
     # 3. Native CUDA Kernels Count & Packages
     # -------------------------------------------------------------
     print("[3/6] Verifying Native CUDA Kernels & Package Counts...")
-    if "114" not in readme and "112" not in readme:
-        errors.append("README missing mention of 114 native CUDA C++ kernels / 112 packages")
+    if not any(token in readme for token in ("130", "132", "114", "112")):
+        errors.append("README missing mention of native CUDA C++ kernels / packages count")
 
     cuda_dir = os.path.join(repo_root, "neuralops", "ops", "cuda")
     if not os.path.exists(cuda_dir):
         cuda_dir = os.path.join(repo_root, "neuralops", "core", "cuda_kernels")
     if os.path.exists(cuda_dir):
         cuda_pkgs = [d for d in os.listdir(cuda_dir) if os.path.isdir(os.path.join(cuda_dir, d)) and not d.startswith((".", "_"))]
-        if len(cuda_pkgs) < 100:
-            errors.append(f"Expected >= 100 CUDA packages, found {len(cuda_pkgs)}")
+        if len(cuda_pkgs) < 130:
+            errors.append(f"Expected >= 130 CUDA packages, found {len(cuda_pkgs)}")
 
     # -------------------------------------------------------------
     # 4. Master Jupyter Notebooks Count (29)

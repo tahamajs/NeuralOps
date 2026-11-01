@@ -414,6 +414,316 @@ def is_kernel_available(kernel_name: str, backend: str = "cuda") -> bool:
     return False
 
 
+# ---------------------------------------------------------------------------
+# Three-Level Dispatch Implementations for Batch 2 & 3 CUDA Kernels (18 Modules)
+# ---------------------------------------------------------------------------
+
+def _direct_svd_cuda_available() -> bool:
+    return is_kernel_available("direct_svd", backend="cuda")
+
+def dispatch_direct_svd(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _direct_svd_cuda_available():
+        try:
+            from neuralops.ops.cuda.direct_svd import direct_svd_compress
+            return direct_svd_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"direct_svd CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.low_rank import direct_svd_compress as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _asvd_cuda_available() -> bool:
+    return is_kernel_available("asvd", backend="cuda")
+
+def dispatch_asvd(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _asvd_cuda_available():
+        try:
+            from neuralops.ops.cuda.asvd import asvd_compress
+            return asvd_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"asvd CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.low_rank import asvd_compress as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _fwsvd_cuda_available() -> bool:
+    return is_kernel_available("fwsvd", backend="cuda")
+
+def dispatch_fwsvd(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _fwsvd_cuda_available():
+        try:
+            from neuralops.ops.cuda.fwsvd import fwsvd_compress
+            return fwsvd_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"fwsvd CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.low_rank import fwsvd_compress as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _hnc_svd_cuda_available() -> bool:
+    return is_kernel_available("hnc_svd", backend="cuda")
+
+def dispatch_hnc_svd(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _hnc_svd_cuda_available():
+        try:
+            from neuralops.ops.cuda.hnc_svd import hnc_svd_compress
+            return hnc_svd_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"hnc_svd CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.low_rank import hnc_svd_compress as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _awq_cuda_available() -> bool:
+    return is_kernel_available("awq", backend="cuda")
+
+def dispatch_awq(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _awq_cuda_available():
+        try:
+            from neuralops.ops.cuda.awq import awq_compress
+            return awq_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"awq CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.quantize_awq import awq_compress as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _fp8_compressor_cuda_available() -> bool:
+    return is_kernel_available("fp8_compressor", backend="cuda")
+
+def dispatch_fp8_compressor(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _fp8_compressor_cuda_available():
+        try:
+            from neuralops.ops.cuda.fp8_compressor import fp8_compressor_compress
+            return fp8_compressor_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"fp8_compressor CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.quantize_fp8 import fp8_compress as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _kmeans_quantize_cuda_available() -> bool:
+    return is_kernel_available("kmeans_quantize", backend="cuda")
+
+def dispatch_kmeans_quantize(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _kmeans_quantize_cuda_available():
+        try:
+            from neuralops.ops.cuda.kmeans_quantize import kmeans_quantize_compress
+            return kmeans_quantize_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"kmeans_quantize CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.quantize_kmeans import kmeans_quantize_compress as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _wanda_cuda_available() -> bool:
+    return is_kernel_available("wanda", backend="cuda")
+
+def dispatch_wanda(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _wanda_cuda_available():
+        try:
+            from neuralops.ops.cuda.wanda import wanda_compress
+            return wanda_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"wanda CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.prune_wanda import wanda_compress as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _sparsegpt_cuda_available() -> bool:
+    return is_kernel_available("sparsegpt", backend="cuda")
+
+def dispatch_sparsegpt(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _sparsegpt_cuda_available():
+        try:
+            from neuralops.ops.cuda.sparsegpt import sparsegpt_compress
+            return sparsegpt_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"sparsegpt CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.prune_sparsegpt import sparsegpt_compress as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _admm_cuda_available() -> bool:
+    return is_kernel_available("admm", backend="cuda")
+
+def dispatch_admm(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _admm_cuda_available():
+        try:
+            from neuralops.ops.cuda.admm import admm_pruner_compress
+            return admm_pruner_compress(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"admm CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.prune_admm import admm_prune as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _routing_attention_cuda_available() -> bool:
+    return is_kernel_available("routing_attention", backend="cuda")
+
+def dispatch_routing_attention(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _routing_attention_cuda_available():
+        try:
+            from neuralops.ops.cuda.routing_attention import routing_attention_forward
+            return routing_attention_forward(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"routing_attention CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.routing_attention_triton import routing_attention_forward as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _lsh_attention_cuda_available() -> bool:
+    return is_kernel_available("lsh_attention", backend="cuda")
+
+def dispatch_lsh_attention(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _lsh_attention_cuda_available():
+        try:
+            from neuralops.ops.cuda.lsh_attention import lsh_attention_forward
+            return lsh_attention_forward(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"lsh_attention CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.lsh_attention_triton import lsh_attention_forward as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _cross_attention_cuda_available() -> bool:
+    return is_kernel_available("cross_attention", backend="cuda")
+
+def dispatch_cross_attention(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _cross_attention_cuda_available():
+        try:
+            from neuralops.ops.cuda.cross_attention import cross_attention_forward
+            return cross_attention_forward(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"cross_attention CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.cross_attention_triton import cross_attention_forward as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _adaptive_sparse_cuda_available() -> bool:
+    return is_kernel_available("adaptive_sparse", backend="cuda")
+
+def dispatch_adaptive_sparse(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _adaptive_sparse_cuda_available():
+        try:
+            from neuralops.ops.cuda.adaptive_sparse import adaptive_sparse_attention_forward
+            return adaptive_sparse_attention_forward(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"adaptive_sparse CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.adaptive_sparse_triton import adaptive_sparse_attention_forward as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _dynamic_conv_cuda_available() -> bool:
+    return is_kernel_available("dynamic_conv", backend="cuda")
+
+def dispatch_dynamic_conv(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _dynamic_conv_cuda_available():
+        try:
+            from neuralops.ops.cuda.dynamic_conv import dynamic_conv_attention_forward
+            return dynamic_conv_attention_forward(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"dynamic_conv CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.dynamic_conv_triton import dynamic_conv_attention_forward as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _token_compressed_cuda_available() -> bool:
+    return is_kernel_available("token_compressed", backend="cuda")
+
+def dispatch_token_compressed(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _token_compressed_cuda_available():
+        try:
+            from neuralops.ops.cuda.token_compressed import token_compressed_attention_forward
+            return token_compressed_attention_forward(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"token_compressed CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.token_compressed_triton import token_compressed_attention_forward as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _chela_slay_cuda_available() -> bool:
+    return is_kernel_available("chela_slay", backend="cuda")
+
+def dispatch_chela_slay(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _chela_slay_cuda_available():
+        try:
+            from neuralops.ops.cuda.chela_slay import chela_slay_attention_forward
+            return chela_slay_attention_forward(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"chela_slay CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.chela_slay_triton import chela_slay_forward as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
+def _rala_cuda_available() -> bool:
+    return is_kernel_available("rala", backend="cuda")
+
+def dispatch_rala(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
+    if backend == "auto":
+        backend = _FORCED_BACKEND.get()
+    if backend == "cuda" and _rala_cuda_available():
+        try:
+            from neuralops.ops.cuda.rala import rala_attention_forward
+            return rala_attention_forward(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"rala CUDA failed: {e}. Falling back to Triton.")
+            # fall through to Triton
+    from neuralops.ops.triton.rala_attention_triton import rala_attention_forward as _triton_fwd
+    return _triton_fwd(*args, **kwargs)
+
+
 __all__ = [
     "FORCE_PYTORCH_FALLBACK",
     "dispatch",
@@ -424,4 +734,22 @@ __all__ = [
     "get_last_dispatch_error",
     "is_kernel_available",
     "register_kernel",
+    "dispatch_direct_svd",
+    "dispatch_asvd",
+    "dispatch_fwsvd",
+    "dispatch_hnc_svd",
+    "dispatch_awq",
+    "dispatch_fp8_compressor",
+    "dispatch_kmeans_quantize",
+    "dispatch_wanda",
+    "dispatch_sparsegpt",
+    "dispatch_admm",
+    "dispatch_routing_attention",
+    "dispatch_lsh_attention",
+    "dispatch_cross_attention",
+    "dispatch_adaptive_sparse",
+    "dispatch_dynamic_conv",
+    "dispatch_token_compressed",
+    "dispatch_chela_slay",
+    "dispatch_rala",
 ]
