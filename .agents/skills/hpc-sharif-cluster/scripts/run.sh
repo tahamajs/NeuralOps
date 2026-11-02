@@ -1,68 +1,92 @@
 #!/bin/bash
-# ==============================================================
-# NeuralOps GPU verification job — Sharif HPC Cluster
-# Canonical template. Copy to ~/NeuralOps/run.sh and adjust
-# `#PBS -q` to match current queue availability (qstat -Q).
-# ==============================================================
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+#
+# PBS Torque batch script template for Sharif University HPC Cluster
+#
+# Usage:
+#   qsub run.sh
+#   qstat -u tahamajlesi.ut
+#   qdel <JOB_ID>
 
-#PBS -N neuralops_gpu_verify
+# =============================================================================
+# PBS DIRECTIVES
+# =============================================================================
+# Job name
+#PBS -N neuralops_gpu_job
+
+# Notification: email on abort (a), begin (b), end (e)
 #PBS -m abe
 #PBS -M tahamajlesi@ut.ac.ir
-#PBS -l nodes=1:ppn=4:gpus=1
+
+# Resource requests:
+# nodes=1:ppn=2:gpus=1 -> 1 node, 2 CPU cores, 1 GPU
+#PBS -l nodes=1:ppn=2:gpus=1
+
+# Memory request:
 #PBS -l mem=16G
-#PBS -q cuda7
 
-# --- Environment ---
-# Adjust conda path if needed (anaconda3.8, anaconda3.11)
-source /share/apps/Anaconda/anaconda3.8/bin/activate neuralops
+# Walltime limit (HH:MM:SS):
+#PBS -l walltime=02:00:00
 
-cd $PBS_O_WORKDIR
+# Target Queue (adjust based on cluster status, e.g. cuda9, cuda7, DP, DDP):
+#PBS -q cuda9
 
-# --- Diagnostics ---
-echo "=== Job metadata ==="
-hostname
-date
-echo "PBS_JOBID=$PBS_JOBID"
-echo "PBS_O_WORKDIR=$PBS_O_WORKDIR"
+# =============================================================================
+# JOB EXECUTION
+# =============================================================================
+set -e
 
-echo "=== Python ==="
-which python
-python --version
+echo "=== Job Started ==="
+echo "Date: $(date)"
+echo "Host: $(hostname)"
+echo "Job ID: $PBS_JOBID"
+echo "Queue: $PBS_QUEUE"
+echo "Working directory: $PBS_O_WORKDIR"
 
-echo "=== CUDA / torch ==="
+# Move to submission directory
+cd "$PBS_O_WORKDIR"
+
+# Activate NeuralOps conda environment
+CENTRAL_ANACONDA="/share/apps/Anaconda/anaconda3.8"
+source "$CENTRAL_ANACONDA/bin/activate" "$HOME/.conda/envs/neuralops"
+
+echo "=== Python Environment ==="
+echo "Python: $(which python)"
+echo "Python Version: $(python --version)"
+
+# Check CUDA and GPU availability
+echo "=== GPU Environment Check ==="
+if command -v nvidia-smi &> /dev/null; then
+    nvidia-smi
+else
+    echo "nvidia-smi not in PATH; proceeding with PyTorch CUDA check"
+fi
+
+echo "=== Strict CUDA verification ==="
 python - <<'PYEOF'
+import sys
 import torch
-print(f"torch: {torch.__version__}")
-print(f"cuda available: {torch.cuda.is_available()}")
-if torch.cuda.is_available():
-    print(f"device: {torch.cuda.get_device_name(0)}")
-    print(f"vram: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+if torch.version.cuda is None:
+    print("FATAL: torch was built without CUDA support (torch.version.cuda is None)")
+    print("Reinstall with: pip install torch --index-url https://download.pytorch.org/whl/cu121")
+    sys.exit(2)
+print(f"torch.version.cuda = {torch.version.cuda}")
+if not torch.cuda.is_available():
+    print("FATAL: torch.cuda.is_available() is False inside a qsub job")
+    print("This means the job was not allocated a GPU, or the driver is broken.")
+    sys.exit(3)
+print(f"GPU: {torch.cuda.get_device_name(0)}")
+print("CUDA SUPPORT VERIFIED")
 PYEOF
 
-echo "=== Triton ==="
-python -c "import triton; print(triton.__version__)" 2>&1 || echo "triton not importable"
+# Execute NeuralOps test suite / benchmark runner
+echo "=== Running NeuralOps GPU Verification Suite ==="
+python -m pytest tests/conformance/ tests/validator/ -v --tb=short
 
-# --- Test suites ---
-echo "=== Triton parity tests ==="
-python -m pytest tests/triton_parity/ -v --tb=short
-TRITON_EXIT=$?
-
-echo "=== E2E DoD tests ==="
-python -m pytest tests/e2e/test_v01_dod_distilbert.py -v --tb=short
-E2E_EXIT=$?
-
-echo "=== L4 empirical gates ==="
-python -m pytest tests/validation/test_l4_empirical_gates.py -v --tb=short
-L4_EXIT=$?
-
-echo "=== Summary ==="
-echo "triton_parity exit: $TRITON_EXIT"
-echo "e2e_dod exit: $E2E_EXIT"
-echo "l4_empirical exit: $L4_EXIT"
-date
-
-# Exit with non-zero if any test failed
-if [ $TRITON_EXIT -ne 0 ] || [ $E2E_EXIT -ne 0 ] || [ $L4_EXIT -ne 0 ]; then
-  exit 1
-fi
-exit 0
+echo "=== Job Completed Successfully ==="
+echo "Date: $(date)"
