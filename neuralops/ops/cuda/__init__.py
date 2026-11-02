@@ -17,6 +17,7 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
+import neuralops.ops.cuda._bindings  # noqa: F401
 from neuralops.ops.cuda._map import (
     CUDA_KERNEL_CATALOG,
     _KERNEL_SYMBOL_MAP,

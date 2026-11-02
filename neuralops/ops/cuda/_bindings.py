@@ -41,6 +41,11 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+home_bin = os.path.expanduser("~/bin")
+os.environ["PATH"] = f"{home_bin}:{os.environ.get('PATH', '')}"
+os.environ["LDFLAGS"] = f"-B{home_bin} {os.environ.get('LDFLAGS', '')}".strip()
+os.environ["COMPILER_PATH"] = f"{home_bin}:{os.environ.get('COMPILER_PATH', '')}"
+
 if os.path.exists("/usr/local/cuda"):
     if not os.environ.get("CUDA_HOME") or os.environ.get("CUDA_HOME") == "/usr/local":
         os.environ["CUDA_HOME"] = "/usr/local/cuda"
@@ -53,7 +58,6 @@ if os.path.exists("/share/apps/gcc/gcc-8.2.0/bin/g++"):
     os.environ["CXX"] = "/share/apps/gcc/gcc-8.2.0/bin/g++"
     os.environ["CC"] = "/share/apps/gcc/gcc-8.2.0/bin/gcc"
     gcc_bin = "/share/apps/gcc/gcc-8.2.0/bin"
-    home_bin = os.path.expanduser("~/bin")
     curr_path = os.environ.get("PATH", "")
     prefix_paths = [p for p in (home_bin, gcc_bin) if os.path.exists(p) and p not in curr_path]
     if prefix_paths:
@@ -61,7 +65,31 @@ if os.path.exists("/share/apps/gcc/gcc-8.2.0/bin/g++"):
 
 import torch
 import torch.utils.cpp_extension as _cpp_ext
-from torch.utils.cpp_extension import load_inline
+
+def _enforce_build_env(kwargs: dict[str, Any]) -> None:
+    hb = os.path.expanduser("~/bin")
+    os.environ["PATH"] = f"{hb}:{os.environ.get('PATH', '')}"
+    os.environ["LDFLAGS"] = f"-B{hb} {os.environ.get('LDFLAGS', '')}".strip()
+    os.environ["COMPILER_PATH"] = f"{hb}:{os.environ.get('COMPILER_PATH', '')}"
+    if os.path.exists(hb):
+        extra_ldflags = kwargs.get("extra_ldflags") or []
+        b_flag = f"-B{hb}"
+        if b_flag not in extra_ldflags:
+            kwargs["extra_ldflags"] = list(extra_ldflags) + [b_flag]
+
+_orig_load_inline = _cpp_ext.load_inline
+def load_inline(*args: Any, **kwargs: Any) -> Any:
+    _enforce_build_env(kwargs)
+    return _orig_load_inline(*args, **kwargs)
+
+_cpp_ext.load_inline = load_inline
+
+_orig_load = _cpp_ext.load
+def load(*args: Any, **kwargs: Any) -> Any:
+    _enforce_build_env(kwargs)
+    return _orig_load(*args, **kwargs)
+
+_cpp_ext.load = load
 
 if os.path.exists("/usr/local/cuda"):
     _cpp_ext.CUDA_HOME = "/usr/local/cuda"
