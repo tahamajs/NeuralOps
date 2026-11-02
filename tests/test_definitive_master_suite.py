@@ -37,8 +37,9 @@ from neuralops.trainer.ttt.test_time_trainer import TTTLinearAttentionLayer
 @pytest.mark.parametrize("dim", [64, 128, 256])
 def test_all_131_attentions_multi_dim_forward_and_backward(dim):
     """Verify all 131 attention classes support direct instantiation cls(dim, num_heads) and compute clean gradients."""
-    names = list(ATTENTION_REGISTRY.keys())
-    assert len(names) >= 131, f"Expected >= 131 registered attentions, got {len(names)}"
+    ATTENTION_REGISTRY._load_all()
+    names = list(ATTENTION_REGISTRY._dict.keys())
+    assert len(names) == 131, f"Expected 131 registered attentions, got {len(names)}"
     heads = 4 if dim >= 64 else 2
 
     for name in names:
