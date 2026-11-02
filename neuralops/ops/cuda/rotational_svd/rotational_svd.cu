@@ -18,7 +18,7 @@ namespace neuralops {
 namespace cuda {
 
 template <typename scalar_t>
-__global__ void __launch_bounds__(128, 2) wmma_matmul_16x16_kernel(
+__global__ void __launch_bounds__(32, 4) wmma_matmul_16x16_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ A,
     const scalar_t* __restrict__ B,
@@ -28,14 +28,12 @@ __global__ void __launch_bounds__(128, 2) wmma_matmul_16x16_kernel(
     const bool a_trans,
     const bool b_trans
 ) {
-    const int warp_id = threadIdx.x / 32;
-    const int lane_id = threadIdx.x % 32;
+    const int lane_id = threadIdx.x;
 
     const int block_row = blockIdx.y * 16;
     const int block_col = blockIdx.x * 16;
 
     if (block_row >= M || block_col >= N) return;
-    if (warp_id > 0) return;
 
     __shared__ half s_A[16][16];
     __shared__ half s_B[16][16];
@@ -91,7 +89,7 @@ void run_wmma_gemm(
     bool a_trans, bool b_trans,
     cudaStream_t stream
 ) {
-    dim3 block(128);
+    dim3 block(32);
     dim3 grid((N + 15) / 16, (M + 15) / 16);
     wmma_matmul_16x16_kernel<scalar_t><<<grid, block, 0, stream>>>(
         out, A, B, M, N, K, a_trans, b_trans
