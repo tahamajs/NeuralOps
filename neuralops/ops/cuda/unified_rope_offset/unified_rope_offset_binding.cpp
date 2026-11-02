@@ -15,4 +15,6 @@ torch::Tensor unified_rope_offset_fwd(
     int offset
 );
 
-
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("forward", &unified_rope_offset_fwd, "Unified RoPE Offset forward (CUDA)");
+}
