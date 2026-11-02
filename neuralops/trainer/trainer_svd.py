@@ -18,7 +18,7 @@ import numpy as np
 import psutil
 import torch
 import torch.nn as nn
-from sklearn.metrics import accuracy_score
+from neuralops.trainer.metrics import accuracy_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 

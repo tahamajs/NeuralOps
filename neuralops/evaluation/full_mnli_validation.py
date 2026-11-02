@@ -31,7 +31,7 @@ from pathlib import Path
 
 import torch
 from datasets import load_dataset, load_from_disk
-from sklearn.metrics import (
+from neuralops.trainer.metrics import (
     f1_score,
     precision_recall_fscore_support,
     precision_score,

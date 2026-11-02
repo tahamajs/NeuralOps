@@ -19,7 +19,10 @@ from .callbacks import (
 )
 from .custom_loop_trainer import CustomLoopTrainer
 
-from .hf_trainer import HuggingFaceTrainer
+try:
+    from .hf_trainer import HuggingFaceTrainer  # requires datasets + transformers.Trainer
+except (ImportError, RuntimeError):
+    HuggingFaceTrainer = None  # type: ignore[assignment,misc]
 from .neuralops_trainer import NeuralOpsTrainer
 from .hyperopt import (
     HyperparameterOptimizer,

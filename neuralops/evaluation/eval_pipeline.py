@@ -33,7 +33,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.stats import pearsonr, spearmanr
-from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
+from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
 from torch.profiler import ProfilerActivity, profile
 
 from neuralops.evaluation.eval_data import (

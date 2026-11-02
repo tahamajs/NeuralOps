@@ -15,14 +15,121 @@ from typing import Any
 
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
-from sklearn.metrics import (
-    accuracy_score,
-    f1_score,
-    matthews_corrcoef,
-    mean_absolute_error,
-    mean_squared_error,
-    precision_recall_fscore_support,
-)
+
+# Pure-numpy replacements for sklearn.metrics — avoids OpenMP/TLS conflicts on
+# CentOS 6 (kernel 2.6.32) when torch and sklearn are loaded in the same process.
+# sklearn is NOT imported here; all implementations are equivalent for our usage.
+
+
+def _confusion(y_true: np.ndarray, y_pred: np.ndarray, label: Any):
+    """Return (TP, FP, FN) for a single label."""
+    tp = int(np.sum((y_pred == label) & (y_true == label)))
+    fp = int(np.sum((y_pred == label) & (y_true != label)))
+    fn = int(np.sum((y_pred != label) & (y_true == label)))
+    return tp, fp, fn
+
+
+def accuracy_score(y_true, y_pred) -> float:  # type: ignore[misc]
+    """Fraction of correctly classified samples."""
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    return float(np.mean(y_true == y_pred))
+
+
+def mean_squared_error(y_true, y_pred) -> float:  # type: ignore[misc]
+    """Mean squared error."""
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    return float(np.mean((y_true - y_pred) ** 2))
+
+
+def mean_absolute_error(y_true, y_pred) -> float:  # type: ignore[misc]
+    """Mean absolute error."""
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    return float(np.mean(np.abs(y_true - y_pred)))
+
+
+def f1_score(y_true, y_pred, average: str = "weighted", zero_division: int = 0) -> Any:  # type: ignore[misc]
+    """F1 score (macro / weighted / micro / None)."""
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    labels = np.unique(np.concatenate([y_true, y_pred]))
+    f1s, weights = [], []
+    for lbl in labels:
+        tp, fp, fn = _confusion(y_true, y_pred, lbl)
+        denom = 2 * tp + fp + fn
+        f1 = (2 * tp / denom) if denom > 0 else float(zero_division)
+        f1s.append(f1)
+        weights.append(int(np.sum(y_true == lbl)))
+    f1s_arr = np.array(f1s, dtype=float)
+    w_arr = np.array(weights, dtype=float)
+    if average == "macro":
+        return float(np.mean(f1s_arr))
+    if average == "weighted":
+        return float(np.average(f1s_arr, weights=w_arr)) if w_arr.sum() > 0 else float(zero_division)
+    if average == "micro":
+        tps = sum(_confusion(y_true, y_pred, lbl)[0] for lbl in labels)
+        fps = sum(_confusion(y_true, y_pred, lbl)[1] for lbl in labels)
+        fns = sum(_confusion(y_true, y_pred, lbl)[2] for lbl in labels)
+        d = 2 * tps + fps + fns
+        return float(2 * tps / d) if d > 0 else float(zero_division)
+    return f1s_arr.tolist()
+
+
+def matthews_corrcoef(y_true, y_pred) -> float:  # type: ignore[misc]
+    """Matthews correlation coefficient (binary classification)."""
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    tp = np.sum((y_pred == 1) & (y_true == 1))
+    tn = np.sum((y_pred == 0) & (y_true == 0))
+    fp = np.sum((y_pred == 1) & (y_true == 0))
+    fn = np.sum((y_pred == 0) & (y_true == 1))
+    denom = float(np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)))
+    return float((tp * tn - fp * fn) / denom) if denom > 0 else 0.0
+
+
+def precision_recall_fscore_support(  # type: ignore[misc]
+    y_true, y_pred, average: str = "weighted", zero_division: int = 0
+) -> tuple:
+    """Precision, recall, F-score, and support."""
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    labels = np.unique(y_true)
+    ps, rs, f1s, supports = [], [], [], []
+    for lbl in labels:
+        tp, fp, fn = _confusion(y_true, y_pred, lbl)
+        p = tp / (tp + fp) if (tp + fp) > 0 else float(zero_division)
+        r = tp / (tp + fn) if (tp + fn) > 0 else float(zero_division)
+        d = 2 * tp + fp + fn
+        f = (2 * tp / d) if d > 0 else float(zero_division)
+        ps.append(p)
+        rs.append(r)
+        f1s.append(f)
+        supports.append(tp + fn)
+    ps_arr = np.array(ps, dtype=float)
+    rs_arr = np.array(rs, dtype=float)
+    f1s_arr = np.array(f1s, dtype=float)
+    sup_arr = np.array(supports, dtype=float)
+    if average == "weighted":
+        w = sup_arr
+        return (
+            float(np.average(ps_arr, weights=w)) if w.sum() > 0 else float(zero_division),
+            float(np.average(rs_arr, weights=w)) if w.sum() > 0 else float(zero_division),
+            float(np.average(f1s_arr, weights=w)) if w.sum() > 0 else float(zero_division),
+            None,
+        )
+    if average == "macro":
+        return float(np.mean(ps_arr)), float(np.mean(rs_arr)), float(np.mean(f1s_arr)), None
+    return ps_arr.tolist(), rs_arr.tolist(), f1s_arr.tolist(), sup_arr.tolist()
+
+
+def precision_score(y_true, y_pred, average: str = "weighted", zero_division: int = 0) -> float:  # type: ignore[misc]
+    """Weighted/macro precision score."""
+    p, _, _, _ = precision_recall_fscore_support(y_true, y_pred, average=average, zero_division=zero_division)
+    return float(p)
+
+
+def recall_score(y_true, y_pred, average: str = "weighted", zero_division: int = 0) -> float:  # type: ignore[misc]
+    """Weighted/macro recall score."""
+    _, r, _, _ = precision_recall_fscore_support(y_true, y_pred, average=average, zero_division=zero_division)
+    return float(r)
 
 
 def compute_accuracy(predictions, labels) -> Any:

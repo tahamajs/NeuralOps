@@ -27,7 +27,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
-from sklearn.metrics import accuracy_score
+from neuralops.trainer.metrics import accuracy_score
 from torch.amp import autocast, GradScaler
 from torch.optim import AdamW
 from torch.utils.data import DataLoader

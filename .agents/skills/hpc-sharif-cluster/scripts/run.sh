@@ -53,6 +53,10 @@ cd "$PBS_O_WORKDIR"
 CENTRAL_ANACONDA="/share/apps/Anaconda/anaconda3.8"
 source "$CENTRAL_ANACONDA/bin/activate" "$HOME/.conda/envs/neuralops"
 
+# Offline HuggingFace execution to prevent timeout on cluster nodes
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+
 echo "=== Python Environment ==="
 echo "Python: $(which python)"
 echo "Python Version: $(python --version)"

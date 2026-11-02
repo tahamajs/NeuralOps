@@ -22,7 +22,11 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.cluster import KMeans, MiniBatchKMeans
+try:
+    from sklearn.cluster import KMeans, MiniBatchKMeans
+except ImportError:
+    KMeans = None  # type: ignore[assignment,misc]
+    MiniBatchKMeans = None  # type: ignore[assignment,misc]
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -121,7 +125,7 @@ class ToMoELinear(nn.Module):
         W_fp32 = orig_w.detach().float().cpu().numpy()
         assignments = None
 
-        if self.num_experts > 1:
+        if self.num_experts > 1 and KMeans is not None:
             try:
                 sig = inspect.signature(KMeans.__init__).parameters
                 n_init_val = "auto" if "n_init" in sig else 10

@@ -65,7 +65,7 @@ def compute_dataset_metrics(
 
     try:
         from scipy.stats import pearsonr, spearmanr
-        from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
+        from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
     except ImportError as e:
         logger.warning("sklearn/scipy not available: %s", e)
         return metrics

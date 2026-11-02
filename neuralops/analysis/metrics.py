@@ -31,7 +31,7 @@ def compute_metrics(
         raise ValueError(f"Unsupported task type: {task}")
 
     from scipy.stats import pearsonr, spearmanr
-    from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
+    from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
 
     metrics = {}
     if task in ("regression", "stsb"):

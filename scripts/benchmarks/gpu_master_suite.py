@@ -363,7 +363,10 @@ def main() -> int:
     print("=" * 70)
 
     if args.export and results:
-        from scripts.benchmarks.results_exporter import export_benchmark_results
+        try:
+            from scripts.benchmarks.results_exporter import export_benchmark_results
+        except ModuleNotFoundError:
+            from results_exporter import export_benchmark_results
         output_dir = Path(__file__).resolve().parent.parent.parent / "results"
         paths = export_benchmark_results(results, device=device, output_dir=output_dir)
         print("  ✓ Exported results to:")

@@ -38,14 +38,15 @@ class Metric:
 @register_metric("classification")
 class ClassificationMetrics(Metric):
     def compute(self, preds: Any, targets: Any) -> Dict[str, float]:
-        from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+        from neuralops.trainer.metrics import accuracy_score, f1_score, precision_recall_fscore_support
         y_pred = np.array(preds)
         y_true = np.array(targets)
+        p, r, _, _ = precision_recall_fscore_support(y_true, y_pred, average="weighted", zero_division=0)
         return {
             "accuracy": float(accuracy_score(y_true, y_pred)),
             "f1": float(f1_score(y_true, y_pred, average="weighted", zero_division=0)),
-            "precision": float(precision_score(y_true, y_pred, average="weighted", zero_division=0)),
-            "recall": float(recall_score(y_true, y_pred, average="weighted", zero_division=0)),
+            "precision": float(p),
+            "recall": float(r),
         }
 
 

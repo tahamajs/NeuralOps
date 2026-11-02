@@ -302,9 +302,118 @@ class _ModuleAliasFinder(MetaPathFinder):
 if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
     sys.meta_path.insert(0, _ModuleAliasFinder())
 
+def _patch_torch_compat():
+    """Install PyTorch 1.12 backward compatibility polyfills (SDPA, torch.compile, torch.amp)."""
+    if "torch" in sys.modules or _TORCH_AVAILABLE:
+        try:
+            import contextlib
+            import math
+            import torch
+            import torch.nn.functional as F
+
+            # 1. Polyfill F.scaled_dot_product_attention if missing (PyTorch < 2.0)
+            if not hasattr(F, "scaled_dot_product_attention"):
+                def _scaled_dot_product_attention(
+                    query: Any,
+                    key: Any,
+                    value: Any,
+                    attn_mask: Any = None,
+                    dropout_p: float = 0.0,
+                    is_causal: bool = False,
+                    scale: float | None = None,
+                ) -> Any:
+                    scale_factor = 1.0 / math.sqrt(query.size(-1)) if scale is None else scale
+                    q_len, k_len = query.size(-2), key.size(-2)
+                    attn_bias = torch.zeros(q_len, k_len, dtype=query.dtype, device=query.device)
+                    if is_causal:
+                        temp_mask = torch.ones(q_len, k_len, dtype=torch.bool, device=query.device).tril(diagonal=0)
+                        attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
+                    if attn_mask is not None:
+                        if attn_mask.dtype == torch.bool:
+                            attn_bias.masked_fill_(attn_mask.logical_not(), float("-inf"))
+                        else:
+                            attn_bias = attn_bias + attn_mask
+                    scores = (query @ key.transpose(-2, -1)) * scale_factor + attn_bias
+                    probs = torch.softmax(scores, dim=-1)
+                    if dropout_p > 0.0:
+                        probs = torch.dropout(probs, dropout_p, train=True)
+                    return probs @ value
+
+                F.scaled_dot_product_attention = _scaled_dot_product_attention
+
+            # 2. Polyfill torch.compile if missing (PyTorch < 2.0)
+            if not hasattr(torch, "compile"):
+                def _dummy_compile(fn: Any = None, *args: Any, **kwargs: Any) -> Any:
+                    if fn is not None:
+                        return fn
+                    def decorator(func: Any) -> Any:
+                        return func
+                    return decorator
+
+                torch.compile = _dummy_compile
+
+            # 3. Polyfill torch.compiler if missing (PyTorch < 2.0)
+            if not hasattr(torch, "compiler"):
+                class _CompilerCompat:
+                    @staticmethod
+                    def is_compiling() -> bool:
+                        return False
+                    @staticmethod
+                    def cudagraph_mark_step_begin() -> None:
+                        pass
+                torch.compiler = _CompilerCompat
+
+            # 4. Polyfill torch.amp if missing (PyTorch < 2.0)
+            if not hasattr(torch, "amp"):
+                class _AmpCompat:
+                    @staticmethod
+                    def autocast(
+                        device_type: str = "cuda",
+                        dtype: Any = None,
+                        enabled: bool = True,
+                        cache_enabled: Any = None,
+                    ) -> Any:
+                        if device_type == "cuda" and torch.cuda.is_available():
+                            kwargs: dict[str, Any] = {"enabled": enabled}
+                            if dtype is not None:
+                                kwargs["dtype"] = dtype
+                            if cache_enabled is not None:
+                                kwargs["cache_enabled"] = cache_enabled
+                            return torch.cuda.amp.autocast(**kwargs)
+                        elif hasattr(torch, "cpu") and hasattr(torch.cpu, "amp") and hasattr(torch.cpu.amp, "autocast"):
+                            kwargs = {"enabled": enabled}
+                            if dtype is not None:
+                                kwargs["dtype"] = dtype
+                            return torch.cpu.amp.autocast(**kwargs)
+                        return contextlib.nullcontext()
+
+                    GradScaler = getattr(torch.cuda.amp, "GradScaler", None)
+
+                torch.amp = _AmpCompat
+
+            # 5. Fix torch.is_autocast_enabled to safely accept optional device_type
+            if hasattr(torch, "is_autocast_enabled"):
+                _orig_is_autocast_enabled = torch.is_autocast_enabled
+                def _safe_is_autocast_enabled(device_type: str | None = None) -> bool:
+                    try:
+                        if device_type is not None:
+                            return _orig_is_autocast_enabled(device_type)
+                        return _orig_is_autocast_enabled()
+                    except TypeError:
+                        if device_type == "cpu" and hasattr(torch, "is_autocast_cpu_enabled"):
+                            return torch.is_autocast_cpu_enabled()
+                        return _orig_is_autocast_enabled()
+
+                torch.is_autocast_enabled = _safe_is_autocast_enabled
+
+        except Exception:
+            # allowed-swallow: best-effort-telemetry
+            pass
+
+
 def _patch_pascal_svd_if_needed():
     """Install a lazy SVD compatibility shim without probing CUDA at import time."""
-    if "torch" in sys.modules:
+    if "torch" in sys.modules or _TORCH_AVAILABLE:
         try:
             import torch
 
@@ -371,6 +480,7 @@ def _patch_pascal_svd_if_needed():
             # allowed-swallow: best-effort-telemetry
             pass
 
+_patch_torch_compat()
 _patch_pascal_svd_if_needed()
 
 
