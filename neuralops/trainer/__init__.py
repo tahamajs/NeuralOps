@@ -52,6 +52,11 @@ from .utils import (
     save_training_history,
     train_model,
 )
+from .smart_gpu_trainer import (
+    AsyncDataPrefetcher,
+    AutoMaxGPUTrainer,
+    GPUMemoryManager,
+)
 
 __all__ = [
     "BaseTrainer",
@@ -84,6 +89,9 @@ __all__ = [
     "HuggingFaceTrainer",
     "NeuralOpsTrainer",
     "CustomLoopTrainer",
+    "AutoMaxGPUTrainer",
+    "GPUMemoryManager",
+    "AsyncDataPrefetcher",
     "InfiniteContextFoundationPretrainer",
     "OPTIMIZER_REGISTRY",
     "RiemannianStiefelOptimizer",

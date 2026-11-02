@@ -16,8 +16,12 @@ from typing import Any
 from neuralops.core.registry import Registry
 
 from .hf_trainer import HuggingFaceTrainer
+from .smart_gpu_trainer import AutoMaxGPUTrainer
 
 TRAINER_FACTORY_REGISTRY = Registry("trainer_factories")
+TRAINER_FACTORY_REGISTRY.register("hf")(HuggingFaceTrainer)
+TRAINER_FACTORY_REGISTRY.register("automax_gpu")(AutoMaxGPUTrainer)
+TRAINER_FACTORY_REGISTRY.register("smart_gpu")(AutoMaxGPUTrainer)
 
 
 def get_trainer(key: str = "hf") -> Any:
