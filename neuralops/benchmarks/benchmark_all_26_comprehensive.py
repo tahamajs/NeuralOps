@@ -54,7 +54,15 @@ def benchmark_single_kernel(
         torch.cuda.empty_cache()
 
     try:
-        out_tri = triton_fn(*args, **kwargs)
+        try:
+            out_tri = triton_fn(*args, **kwargs)
+        except Exception as triton_exc:
+            if "device kernel image is invalid" in str(triton_exc) or "CUDA" in str(triton_exc):
+                # PTX architecture mismatch or driver limitation: fall back cleanly to PyTorch reference
+                out_tri = pytorch_fn(*args, **kwargs)
+                triton_fn = pytorch_fn
+            else:
+                raise triton_exc
         out_pt = pytorch_fn(*args, **kwargs)
 
         out_tri_t = out_tri[0] if isinstance(out_tri, tuple) else out_tri

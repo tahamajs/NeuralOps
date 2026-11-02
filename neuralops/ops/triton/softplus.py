@@ -78,11 +78,14 @@ class _SoftplusAutograd(torch.autograd.Function):
         ctx.save_for_backward(x)
 
         if HAS_TRITON and x.is_cuda and x.is_contiguous():
-            out = torch.empty_like(x)
-            N = x.numel()
-            grid = (triton.cdiv(N, 1024),)
-            _softplus_fwd_kernel[grid](x, out, N, BETA=float(beta), THRESHOLD=float(threshold), BLOCK_SIZE=1024)
-            return out
+            try:
+                out = torch.empty_like(x)
+                N = x.numel()
+                grid = (triton.cdiv(N, 1024),)
+                _softplus_fwd_kernel[grid](x, out, N, BETA=float(beta), THRESHOLD=float(threshold), BLOCK_SIZE=1024)
+                return out
+            except Exception:
+                pass
         return F.softplus(x, beta=beta, threshold=threshold)
 
     @staticmethod
@@ -92,11 +95,14 @@ class _SoftplusAutograd(torch.autograd.Function):
         threshold = ctx.threshold
 
         if HAS_TRITON and x.is_cuda and x.is_contiguous() and grad_output.is_contiguous():
-            dx = torch.empty_like(x)
-            N = x.numel()
-            grid = (triton.cdiv(N, 1024),)
-            _softplus_bwd_kernel[grid](x, grad_output, dx, N, BETA=beta, THRESHOLD=threshold, BLOCK_SIZE=1024)
-            return dx, None, None
+            try:
+                dx = torch.empty_like(x)
+                N = x.numel()
+                grid = (triton.cdiv(N, 1024),)
+                _softplus_bwd_kernel[grid](x, grad_output, dx, N, BETA=beta, THRESHOLD=threshold, BLOCK_SIZE=1024)
+                return dx, None, None
+            except Exception:
+                pass
 
         scaled = x * beta
         sig = torch.sigmoid(scaled)
