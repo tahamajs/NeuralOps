@@ -23,6 +23,15 @@ repository root after installing the package:
 | `06_export_and_push.py` | Local export and safe Hub-upload handoff | `python examples/06_export_and_push.py` | Local artifact path; upload is opt-in |
 | `07_custom_attention.py` | Custom attention registration and construction | `python examples/07_custom_attention.py` | Finite output from the registered module |
 | `08_grpo_reasoning.py` | Preparing a reasoning model and optional TRL/GRPO path | `python examples/08_grpo_reasoning.py` | Model prepared; TRL status reported honestly |
+| `run_recipe.py` | Declarative YAML recipe execution via CLI | `python examples/run_recipe.py examples/recipes/gpt2-fast.yaml` | Executed surgery pipeline from recipe |
+
+---
+
+## Complete Feature Audit & 20-Example Expansion Roadmap
+
+For an exhaustive subsystem-by-subsystem audit across all 131 attention mechanisms, 72 compression engines, 6-pillar distillation, distributed parallelism, serving integrations (vLLM, SGLang, TensorRT-LLM), and specifications for expanded examples `09_` through `20_`, refer to:
+
+👉 **[EXAMPLES_COMPREHENSIVE_AUDIT_AND_ROADMAP.md](EXAMPLES_COMPREHENSIVE_AUDIT_AND_ROADMAP.md)**
 
 Heavy integrations remain optional. Install `trl`, `datasets`, ONNX, or Hub
 dependencies only for the corresponding workflow. The examples deliberately
