@@ -212,6 +212,36 @@ def fused_mqa_bias_scale_pytorch(
     return scaled
 
 
+if HAS_TRITON and tl is not None:
+
+    @triton.jit
+    def _fused_mqa_bias_scale_kernel(
+        Scores_ptr, Out_ptr,
+        scale,
+        past_len,
+        N_q, N_k,
+        stride_b, stride_h, stride_q, stride_k,
+        IS_CAUSAL: tl.constexpr,
+        BLOCK_K: tl.constexpr,
+    ):
+        pid_bh = tl.program_id(0)
+        pid_q = tl.program_id(1)
+        pid_k_blk = tl.program_id(2)
+
+        offs_k = pid_k_blk * BLOCK_K + tl.arange(0, BLOCK_K)
+        mask_k = offs_k < N_k
+
+        offset = pid_bh * stride_h + pid_q * stride_q + offs_k * stride_k
+        val = tl.load(Scores_ptr + offset, mask=mask_k, other=0.0).to(tl.float32)
+        val = val * scale
+
+        if IS_CAUSAL:
+            curr_q = pid_q + past_len
+            val = tl.where(offs_k > curr_q, -1e4, val)
+
+        tl.store(Out_ptr + offset, val.to(Out_ptr.dtype.element_ty), mask=mask_k)
+
+
 def fused_mqa_bias_scale_triton(
     scores: torch.Tensor,
     scale: float,
@@ -221,19 +251,25 @@ def fused_mqa_bias_scale_triton(
     """Fused MQA score scaling and causal masking kernel in GPU SRAM."""
     from neuralops.ops.triton._types import check_triton_suitability, HAS_TRITON
 
-    if not (HAS_TRITON and scores.is_cuda):
+    if not (HAS_TRITON and scores.is_cuda and scores.is_contiguous()):
         return fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=past_len)
 
     try:
-        scaled = scores * scale
-        if is_causal:
-            B, H, N_q, N_k = scores.shape
-            device = scores.device
-            q_idx = torch.arange(N_q, device=device).unsqueeze(1) + past_len
-            k_idx = torch.arange(N_k, device=device).unsqueeze(0)
-            causal_mask = (k_idx > q_idx).unsqueeze(0).unsqueeze(0)
-            scaled = scaled.masked_fill(causal_mask, -1e4)
-        return scaled
+        B, H, N_q, N_k = scores.shape
+        out = torch.empty_like(scores)
+        BLOCK_K = 256 if N_k >= 256 else triton.next_power_of_2(N_k)
+        grid = (B * H, N_q, triton.cdiv(N_k, BLOCK_K))
+        _fused_mqa_bias_scale_kernel[grid](
+            scores, out,
+            float(scale),
+            int(past_len),
+            N_q, N_k,
+            scores.stride(0) * H, scores.stride(1), scores.stride(2), scores.stride(3),
+            IS_CAUSAL=bool(is_causal),
+            BLOCK_K=BLOCK_K,
+            num_warps=4,
+        )
+        return out
     except Exception:
         return fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=past_len)
 

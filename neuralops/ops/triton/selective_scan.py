@@ -679,7 +679,26 @@ def fused_jamba_hybrid_ssm_attn_gate_triton(
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and attn_out.is_cuda and attn_out.shape == ssm_out.shape:
         try:
+            total_elements = attn_out.numel()
             has_moe = moe_out is not None and moe_out.is_cuda
+            # High throughput fast-path when gradients are not required:
+            if not torch.is_grad_enabled() and not attn_out.requires_grad and not ssm_out.requires_grad and not alpha_raw.requires_grad:
+                out = torch.empty_like(attn_out)
+                BLOCK_SIZE = 2048
+                grid = (triton.cdiv(total_elements, BLOCK_SIZE),)
+                _fused_jamba_gate_kernel[grid](
+                    attn_out.contiguous(),
+                    ssm_out.contiguous(),
+                    alpha_raw.contiguous() if alpha_raw.numel() == total_elements else alpha_raw.expand_as(attn_out).contiguous(),
+                    moe_out.contiguous() if has_moe else attn_out,
+                    out,
+                    total_elements,
+                    HAS_MOE=has_moe,
+                    BLOCK_SIZE=BLOCK_SIZE,
+                    num_warps=4,
+                )
+                return out
+
             return _FusedJambaGateAutograd.apply(
                 attn_out, ssm_out, alpha_raw, moe_out if has_moe else None
             )

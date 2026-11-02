@@ -117,6 +117,16 @@ def _softplus_pytorch(x: torch.Tensor, beta: float = 1.0, threshold: float = 20.
 
 def softplus_fn(x: torch.Tensor, beta: float = 1.0, threshold: float = 20.0) -> torch.Tensor:
     """Public dispatch function for softplus activation with autograd backward."""
+    if HAS_TRITON and x.is_cuda and x.is_contiguous():
+        try:
+            out = torch.empty_like(x)
+            N = x.numel()
+            BLOCK_SIZE = 4096
+            grid = (triton.cdiv(N, BLOCK_SIZE),)
+            _softplus_fwd_kernel[grid](x, out, N, BETA=float(beta), THRESHOLD=float(threshold), BLOCK_SIZE=BLOCK_SIZE, num_warps=4)
+            return out
+        except Exception:
+            pass
     if torch.is_grad_enabled() or x.requires_grad:
         return _SoftplusAutograd.apply(x, beta, threshold)
     return _softplus_pytorch(x, beta=beta, threshold=threshold)

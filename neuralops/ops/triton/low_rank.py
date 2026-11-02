@@ -1788,16 +1788,7 @@ def fused_kronecker_batched_gemm_triton(
 
     if HAS_TRITON and x.is_cuda and tl is not None:
         try:
-            orig_shape = x.shape
-            p, q = A.shape
-            r, s = B.shape
-            x_reshaped = x.view(-1, q, s)
-            # Factorized two-pass contraction: preserves identical algebraic precision to PyTorch ref
-            y = torch.matmul(torch.matmul(B, x_reshaped.transpose(-2, -1)), A.t()).transpose(-2, -1)
-            out = y.reshape(*orig_shape[:-1], p * r)
-            if bias is not None:
-                out = out + bias
-            return out
+            return triton_fused_kronecker_matmul(x, A, B, bias)
         except Exception:
             # allowed-swallow: best-effort-telemetry
             pass

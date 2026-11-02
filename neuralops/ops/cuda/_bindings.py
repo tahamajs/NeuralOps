@@ -63,6 +63,19 @@ if os.path.exists("/share/apps/gcc/gcc-8.2.0/bin/g++"):
     if prefix_paths:
         os.environ["PATH"] = f"{':'.join(prefix_paths)}:{curr_path}"
 
+import sys
+import types
+try:
+    import pkg_resources  # noqa: F401
+except ImportError:
+    try:
+        import packaging
+        _pr = types.ModuleType("pkg_resources")
+        _pr.packaging = packaging
+        sys.modules["pkg_resources"] = _pr
+    except Exception:
+        pass
+
 import torch
 import torch.utils.cpp_extension as _cpp_ext
 
