@@ -139,6 +139,13 @@ class DirectSVDCompressor(BaseCompressor):
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
 
+        if rank is not None and int(rank) < 4:
+            raise ValueError(
+                f"DirectSVDCompressor: rank {rank} is mathematically invalid (rank < 4). "
+                "Truncating weight matrices to rank < 4 causes total spectral energy collapse "
+                "and perplexity divergence. Use rank >= 8 or Whitened SVD (HNC-SVD)."
+            )
+
         self.rank = rank
         self.min_rank = max(1, int(min_rank))
         if self.rank is not None and self.rank < self.min_rank:
@@ -146,6 +153,12 @@ class DirectSVDCompressor(BaseCompressor):
                 "DirectSVDCompressor: target rank %d is below min_rank %d. "
                 "If explicit low-rank decomposition is required, pass min_rank=%d.",
                 self.rank, self.min_rank, self.rank
+            )
+        if self.rank is not None and self.rank < 8:
+            logger.warning(
+                "Rank %d < 8 retains < 15%% spectral energy on transformer layers; "
+                "accuracy collapse is mathematically guaranteed. Use rank >= 16 or Whitened SVD.",
+                self.rank,
             )
         self.rank_ratio = float(rank_ratio) if rank_ratio is not None else None
         if max_error is None:
