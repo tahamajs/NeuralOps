@@ -25,3 +25,8 @@ std::vector<torch::Tensor> rotational_svd_bwd(
     const torch::Tensor& x_rot,
     const torch::Tensor& z
 );
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("forward", &rotational_svd_fwd, "Rotational SVD forward (CUDA)");
+    m.def("backward", &rotational_svd_bwd, "Rotational SVD backward (CUDA)");
+}
