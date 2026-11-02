@@ -9,4 +9,16 @@
 
 from __future__ import annotations
 
-from neuralops.ops.triton.sliding_window import *  # noqa: F401, F403
+from neuralops.ops.triton.sliding_window import (
+    sliding_window_attention,
+    sliding_window_attention_kernel,
+    sliding_window_pytorch,
+    sliding_window_triton,
+)
+
+__all__ = [
+    "sliding_window_attention",
+    "sliding_window_attention_kernel",
+    "sliding_window_pytorch",
+    "sliding_window_triton",
+]

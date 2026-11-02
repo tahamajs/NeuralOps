@@ -81,6 +81,10 @@ def copy_attention_weights(
 def replace_module(model: nn.Module, full_name: str, new_module: nn.Module) -> None:
     """Replace a sub-module identified by its dotted name, supporting ModuleList and ModuleDict."""
     parts = [p for p in full_name.split(".") if p]
+    if not parts:
+        if hasattr(model, "q_proj"):
+            model.q_proj = new_module
+        return
     parent = model
     for part in parts[:-1]:
         if isinstance(parent, (nn.ModuleList, list)):
@@ -101,6 +105,8 @@ def replace_module(model: nn.Module, full_name: str, new_module: nn.Module) -> N
 def get_parent_and_child_name(model: nn.Module, full_name: str) -> Any:
     """Return (parent_module, child_attribute_name), supporting ModuleList and ModuleDict."""
     parts = [p for p in full_name.split(".") if p]
+    if not parts:
+        return model, ""
     parent = model
     for part in parts[:-1]:
         if isinstance(parent, (nn.ModuleList, list)):
