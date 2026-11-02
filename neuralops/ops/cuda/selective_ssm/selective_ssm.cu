@@ -33,7 +33,7 @@ __global__ void __launch_bounds__(128) selective_ssm_fwd_kernel(
 
     for (int t = 0; t < N; ++t) {
         const int idx = b * N * D + t * D + d;
-        const float delta = fmaxf(to_float(dt[idx]), 1e-6f);
+        const float delta = fminf(fmaxf(to_float(dt[idx]), 1e-6f), 88.0f);
         const float x_val = to_float(x[idx]);
         const float b_val = to_float(B_vec[idx]);
         const float c_val = to_float(C_vec[idx]);
