@@ -20,6 +20,13 @@ import sys
 import time
 from pathlib import Path
 
+# Running this file by path places ``neuralops/benchmarks`` before the standard
+# library on ``sys.path``; remove that entry before importing torch so the local
+# benchmarks/logging.py cannot shadow Python's logging module.
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if sys.path and Path(sys.path[0] or ".").resolve() == _SCRIPT_DIR:
+    sys.path.pop(0)
+
 import torch
 import torch.nn.functional as F
 
