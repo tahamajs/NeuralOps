@@ -38,14 +38,23 @@ __global__ void __launch_bounds__(256) paged_recurrent_step_kernel(
     const int page_stride = H * D * D;
     const int head_stride = D * D;
 
+    // Vectorized read of q, k into shared memory buffer
+    __shared__ float s_q[256];
+    __shared__ float s_k[256];
+    if (threadIdx.x < D) {
+        s_q[threadIdx.x] = to_float(q[(b * H + h) * D + threadIdx.x]);
+        s_k[threadIdx.x] = to_float(k[(b * H + h) * D + threadIdx.x]);
+    }
+    __syncthreads();
+
     float out_val = 0.0f;
     const float v_val = to_float(v[(b * H + h) * D + d2]);
 
     for (int d1 = 0; d1 < D; ++d1) {
         const int s_idx = phys_page * page_stride + h * head_stride + d1 * D + d2;
         const float s_old = to_float(page_pool[s_idx]);
-        const float k_val = to_float(k[(b * H + h) * D + d1]);
-        const float q_val = to_float(q[(b * H + h) * D + d1]);
+        const float k_val = s_k[d1];
+        const float q_val = s_q[d1];
 
         const float s_new = decay * s_old + k_val * v_val;
         page_pool[s_idx] = from_float<scalar_t>(s_new);
