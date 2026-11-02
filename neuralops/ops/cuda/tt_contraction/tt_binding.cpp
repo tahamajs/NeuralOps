@@ -27,3 +27,9 @@ torch::Tensor tt_linear_fwd(
     const int q1,
     const c10::optional<torch::Tensor>& bias
 );
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("tt_contraction_fwd", &tt_contraction_fwd, "TT Contraction forward (CUDA)");
+    m.def("tt_linear_fwd", &tt_linear_fwd, "TT Linear forward (CUDA)");
+    m.def("forward", &tt_linear_fwd, "TT Linear forward (CUDA)");
+}

@@ -29,25 +29,28 @@ __global__ void tt_contraction_kernel(
     const int d3
 ) {
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= N * K) return;
+    const int stride = blockDim.x * gridDim.x;
+    const int total = N * K;
 
-    const int n = idx / K;
-    const int k = idx % K;
+    for (int cur_idx = idx; cur_idx < total; cur_idx += stride) {
+        const int n = cur_idx / K;
+        const int k = cur_idx % K;
 
-    const int i1 = n / d3;
-    const int i3 = n % d3;
+        const int i1 = n / d3;
+        const int i3 = n % d3;
 
-    const int i0 = k / d2;
-    const int i2 = k % d2;
+        const int i0 = k / d2;
+        const int i2 = k % d2;
 
-    float acc = 0.0f;
-    for (int r = 0; r < R; ++r) {
-        const int c0_idx = i0 * (d1 * R) + i1 * R + r;
-        const int c1_idx = r * (d2 * d3) + i2 * d3 + i3;
-        acc += to_float(c0[c0_idx]) * to_float(c1[c1_idx]);
+        float acc = 0.0f;
+        for (int r = 0; r < R; ++r) {
+            const int c0_idx = i0 * (d1 * R) + i1 * R + r;
+            const int c1_idx = r * (d2 * d3) + i2 * d3 + i3;
+            acc += to_float(c0[c0_idx]) * to_float(c1[c1_idx]);
+        }
+
+        W[cur_idx] = from_float<scalar_t>(acc);
     }
-
-    W[idx] = from_float<scalar_t>(acc);
 }
 
 }
@@ -81,7 +84,7 @@ torch::Tensor tt_contraction_fwd(
 
     const int total = N * K;
     const int threads = 256;
-    const int blocks = (total + threads - 1) / threads;
+    const int blocks = std::min(65535, (total + threads - 1) / threads);
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
