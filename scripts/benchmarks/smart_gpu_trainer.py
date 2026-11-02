@@ -81,7 +81,15 @@ class SmartGPUTrainer:
         else:
             self.amp_dtype = torch.bfloat16 if self.device.type == "mps" else torch.float32
 
-        self.scaler = torch.cuda.amp.GradScaler(enabled=(self.amp_dtype == torch.float16 and self.device.type == "cuda"))
+        if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler"):
+            self.scaler = torch.amp.GradScaler(
+                "cuda",
+                enabled=(self.amp_dtype == torch.float16 and self.device.type == "cuda"),
+            )
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(
+                enabled=(self.amp_dtype == torch.float16 and self.device.type == "cuda")
+            )
 
         # Optional torch.compile
         if use_compile and hasattr(torch, "compile"):

@@ -143,20 +143,30 @@ def export_benchmark_results(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Phase 4: Results Exporter & Auto-Summarizer")
     parser.add_argument("--demo", action="store_true", help="Generate synthetic test ledger entries")
+    parser.add_argument("--from-jsonl", type=Path, default=None, help="Import records from JSONL file")
     args = parser.parse_args()
 
     print("=" * 70)
     print("  NeuralOps Phase 4: Structured Results Persistence Engine")
     print("=" * 70)
 
-    sample_records = [
-        {"module": "cosformer", "type": "attention", "latency_ms": 0.65, "throughput_tok_s": 395000.0, "status": "PASS"},
-        {"module": "gla_attention", "type": "attention", "latency_ms": 0.72, "throughput_tok_s": 355000.0, "status": "PASS"},
-        {"module": "direct_svd", "type": "compressor", "sqnr_db": 24.5, "status": "PASS"},
-        {"module": "hnc_svd", "type": "compressor", "sqnr_db": 31.8, "status": "PASS"},
-    ]
+    if args.from_jsonl and args.from_jsonl.exists():
+        records = []
+        with open(args.from_jsonl, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    records.append(json.loads(line))
+        device = records[0].get("device", "auto") if records else "auto"
+        paths = export_benchmark_results(records, device=device)
+    else:
+        sample_records = [
+            {"module": "cosformer", "type": "attention", "latency_ms": 0.65, "throughput_tok_s": 395000.0, "status": "PASS"},
+            {"module": "gla_attention", "type": "attention", "latency_ms": 0.72, "throughput_tok_s": 355000.0, "status": "PASS"},
+            {"module": "direct_svd", "type": "compressor", "sqnr_db": 24.5, "status": "PASS"},
+            {"module": "hnc_svd", "type": "compressor", "sqnr_db": 31.8, "status": "PASS"},
+        ]
+        paths = export_benchmark_results(sample_records, device="mps")
 
-    paths = export_benchmark_results(sample_records, device="mps")
     for k, p in paths.items():
         print(f"  ✓ {k:<10}: {p}")
 

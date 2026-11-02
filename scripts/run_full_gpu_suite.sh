@@ -60,7 +60,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         -h|--help)
-            echo "Usage: bash scripts/run_full_gpu_suite.sh [--quick] [--device <cuda|mps|cpu|auto>] [--limit <N>] [--steps <N>]"
+            echo "Usage: bash scripts/run_full_gpu_suite.sh [--quick] [--device <cuda|mps|cpu|auto>] [--limit <N>] [--steps <N>] [--batch-size <N>]"
             exit 0
             ;;
         *)
@@ -90,7 +90,7 @@ echo ">>> [1/4] Hardware Pre-Flight & VRAM Auto-Tuning..."
 # Phase 2: Master Benchmark Sweep (Attentions, Compressors & Kernel Fallbacks)
 echo ""
 echo ">>> [2/4] Executing Benchmark Suite (Attentions, Compressors & Kernels)..."
-"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_master_suite.py" --device "${DEVICE}" ${LIMIT}
+"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_master_suite.py" --device "${DEVICE}" ${LIMIT} --export
 
 # Phase 3: Smart GPU-Maximizing Trainer Engine
 echo ""
@@ -101,10 +101,10 @@ if [ "${BATCH_SIZE}" != "auto" ]; then
 fi
 "${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/smart_gpu_trainer.py" "${TRAIN_ARGS[@]}"
 
-# Phase 4: Structured Telemetry & Auto-Summary Persistence
+# Phase 4: Structured Telemetry & Auto-Summary Persistence Verification
 echo ""
 echo ">>> [4/4] Writing Telemetry Ledger & Executive Summaries..."
-"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/results_exporter.py" --demo
+"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/results_exporter.py" --from-jsonl "${REPO_ROOT}/results/benchmarks_latest.jsonl"
 
 echo ""
 echo "======================================================================"

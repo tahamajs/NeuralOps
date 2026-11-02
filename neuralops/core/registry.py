@@ -547,13 +547,16 @@ class Registry:
 
     def items(self) -> Any:
         """Return registered key-value pairs."""
+        self._load_all()
         return self._dict.items()
 
     def values(self) -> Any:
         """Return registered values."""
+        self._load_all()
         return self._dict.values()
 
     def __iter__(self):
+        self._load_all()
         return iter(self._dict)
 
     def __getitem__(self, key: str) -> Callable:

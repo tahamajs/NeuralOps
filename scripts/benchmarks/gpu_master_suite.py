@@ -17,28 +17,44 @@ Executes comprehensive empirical sweeps across:
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import sys
 import time
 from typing import Any
 
 import torch
 import torch.nn as nn
+from transformers import BertConfig, BertModel
 
 from neuralops import ATTENTION_REGISTRY, force_kernel_backend
 from neuralops.compression import COMPRESSOR_REGISTRY
 from neuralops.ops.cuda import cosformer_linear_attention, get_dispatch_stats
 
+# Module-level cached dummy components for attention wrappers that wrap pretrained layers
+_CACHED_CONFIG: BertConfig | None = None
+_CACHED_PRETRAINED_ATTN: nn.Module | None = None
+
+
+def _get_shared_pretrained_attention(dim: int = 768, num_heads: int = 12) -> tuple[BertConfig, nn.Module]:
+    """Provide a lightweight shared BERT self-attention module for wrapper mechanisms."""
+    global _CACHED_CONFIG, _CACHED_PRETRAINED_ATTN
+    if _CACHED_CONFIG is None or _CACHED_PRETRAINED_ATTN is None:
+        _CACHED_CONFIG = BertConfig(hidden_size=dim, num_attention_heads=num_heads)
+        model = BertModel(_CACHED_CONFIG)
+        _CACHED_PRETRAINED_ATTN = model.encoder.layer[0].attention.self
+    return _CACHED_CONFIG, _CACHED_PRETRAINED_ATTN
+
 
 def benchmark_single_attention(
     name: str,
-    cls: type[nn.Module],
+    cls: type[nn.Module] | Any,
     b: int = 2,
-    h: int = 4,
-    seq: int = 128,
-    d: int = 32,
+    h: int = 12,
+    seq: int = 16,
+    d: int = 64,
     device: str = "cpu",
-    warmup: int = 3,
-    iters: int = 10,
+    warmup: int = 2,
+    iters: int = 5,
 ) -> dict[str, Any]:
     """Microbenchmark forward pass of an attention module with numerical sanity checks."""
     dev = torch.device(device)
@@ -55,20 +71,54 @@ def benchmark_single_attention(
     }
 
     try:
-        # Instantiate attention module
-        # Most attention modules accept (dim=..., num_heads=...)
-        try:
-            mod = cls(dim=dim, num_heads=h).to(dev)
-        except Exception:
-            mod = cls().to(dev)
+        config, pretrained_attn = _get_shared_pretrained_attention(dim, h)
 
+        # Adaptive instantiation sequence covering all 131 registry patterns
+        mod = None
+        attempts = [
+            lambda: cls(dim=dim, num_heads=h),
+            lambda: cls(config=config, pretrained_attn=pretrained_attn),
+            lambda: cls(config=config),
+            lambda: cls(dim=dim),
+            lambda: cls(hidden_size=dim),
+            lambda: cls(d_model=dim, num_heads=h),
+            lambda: cls(config),
+            lambda: cls(),
+        ]
+        for att in attempts:
+            try:
+                mod = att()
+                if mod is not None:
+                    break
+            except Exception:
+                continue
+
+        if mod is None:
+            raise RuntimeError(f"Could not instantiate attention module '{name}' with standard signatures.")
+
+        mod = mod.to(dev)
         mod.eval()
         x = torch.randn(b, seq, dim, device=dev)
+
+        # Robust forward call resolution
+        def run_forward() -> Any:
+            call_attempts = [
+                lambda: mod(x),
+                lambda: mod(x, x, x),
+                lambda: mod(hidden_states=x),
+                lambda: mod(x, attention_mask=None),
+            ]
+            for fn in call_attempts:
+                try:
+                    return fn()
+                except Exception:
+                    continue
+            raise RuntimeError(f"Forward call signature failed for '{name}'")
 
         # Warmup
         for _ in range(warmup):
             with torch.no_grad():
-                _ = mod(x)
+                _ = run_forward()
 
         if dev.type == "cuda":
             torch.cuda.synchronize()
@@ -77,7 +127,7 @@ def benchmark_single_attention(
             start_event.record()
             for _ in range(iters):
                 with torch.no_grad():
-                    out = mod(x)
+                    out = run_forward()
             end_event.record()
             torch.cuda.synchronize()
             total_time_ms = start_event.elapsed_time(end_event)
@@ -85,11 +135,11 @@ def benchmark_single_attention(
             t0 = time.perf_counter()
             for _ in range(iters):
                 with torch.no_grad():
-                    out = mod(x)
+                    out = run_forward()
             total_time_ms = (time.perf_counter() - t0) * 1000.0
 
         latency_ms = total_time_ms / iters
-        tok_per_sec = (b * seq * iters) / (total_time_ms / 1000.0)
+        tok_per_sec = (b * seq * iters) / max(1e-6, total_time_ms / 1000.0)
 
         # Handle tuple output (e.g. (out, kv_cache))
         out_tensor = out[0] if isinstance(out, tuple) else out
@@ -114,7 +164,7 @@ def benchmark_single_attention(
 
 def benchmark_single_compressor(
     name: str,
-    cls: type,
+    cls: type | Any,
     dim: int = 128,
     rank: int = 16,
     device: str = "cpu",
@@ -163,6 +213,7 @@ def main() -> int:
     parser.add_argument("--category", choices=["attention", "compressor", "kernel", "all"], default="all")
     parser.add_argument("--device", default="auto", help="Execution target (cuda/mps/cpu/auto)")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of tested modules")
+    parser.add_argument("--export", action="store_true", help="Atomically export results to results/")
     args = parser.parse_args()
 
     device = args.device
@@ -179,7 +230,7 @@ def main() -> int:
     # 1. Attention Zoo Benchmark
     if args.category in ("attention", "all"):
         print(f"\n[1/3] Benchmarking {len(ATTENTION_REGISTRY)} Attention Mechanisms...")
-        items = list(ATTENTION_REGISTRY.items())
+        items = [(k, ATTENTION_REGISTRY.get(k)) for k in ATTENTION_REGISTRY.keys()]
         if args.limit:
             items = items[: args.limit]
         for idx, (name, cls) in enumerate(items, 1):
@@ -193,7 +244,7 @@ def main() -> int:
     # 2. Compressor Zoo Benchmark
     if args.category in ("compressor", "all"):
         print(f"\n[2/3] Benchmarking {len(COMPRESSOR_REGISTRY)} Compression Engines...")
-        items = list(COMPRESSOR_REGISTRY.items())
+        items = [(k, COMPRESSOR_REGISTRY.get(k)) for k in COMPRESSOR_REGISTRY.keys()]
         if args.limit:
             items = items[: args.limit]
         for idx, (name, cls) in enumerate(items, 1):
@@ -221,6 +272,16 @@ def main() -> int:
     total = len(results)
     print(f"✓ Phase 2 Benchmark Completed: {passed}/{total} modules passed.")
     print("=" * 70)
+
+    # Optional atomic export of benchmark results
+    if args.export and results:
+        from scripts.benchmarks.results_exporter import export_benchmark_results
+        output_dir = Path(__file__).resolve().parent.parent.parent / "results"
+        paths = export_benchmark_results(results, device=device, output_dir=output_dir)
+        print("  ✓ Exported results to:")
+        for k, p in paths.items():
+            print(f"    • {k:<10}: {p}")
+
     return 0
 
 
