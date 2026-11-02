@@ -895,12 +895,14 @@ def get_attention(name: str) -> type:
     return cls
 
 
-def get_compressor(name: str) -> type:
-    """Retrieve a compressor class by registered name."""
+def get_compressor(name: str, **kwargs: Any) -> Any:
+    """Retrieve a compressor class by registered name, or instantiate if kwargs provided."""
     cls = COMPRESSOR_REGISTRY.get(name)
     if cls is None:
         from neuralops.core.errors import CompressorNotRegisteredError
         raise CompressorNotRegisteredError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
+    if kwargs:
+        return cls(**kwargs)
     return cls
 
 
