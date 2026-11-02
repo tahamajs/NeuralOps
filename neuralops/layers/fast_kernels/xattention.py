@@ -14,6 +14,7 @@ High-throughput accelerated attention kernel utilizing block-sparse tiling and h
 from __future__ import annotations
 from neuralops.core.common import _cfg_get
 
+from neuralops.core.utils.rope import _rotate_half
 from neuralops.core.attention_utils import (
     apply_rotary_pos_emb,
     LoRALinear,
