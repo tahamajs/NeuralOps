@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-11-02
+
+### Fixed
+- 5 crashing CUDA kernels now export PYBIND11_MODULE (WP1):
+  aegis_gate_norm, entropy_gate, favor_plus, gla_unnormalized_scan,
+  unified_rope_offset
+- 7 numeric-failure kernels now clamp intermediate values (WP2):
+  rfa_attention (FP16 accumulator), selective_ssm (dt/dA clamp),
+  paged_recurrent_step (shared memory + FP32), phantom (fast-math sigmoid),
+  spectra_v2 (boundary tolerance), state_update (FP32 state),
+  vspec (state clamp)
+- 7 timeout kernels now complete within 120s (WP3):
+  rotational_svd (warp block fix), rpca_sparse_svd (dense-only),
+  tt_contraction (2D grid), entropy_pruning (fixed block size),
+  logcumsumexp (__activemask), samba_moe (grid cap),
+  sparse_attention (zero-active early exit)
+- `state_update` kernel now uses FP32 state accumulation (verified fix
+  for FP16 truncation)
+
+### Changed
+- 7 sub-optimal kernels now route to PyTorch via dispatch predicate (WP4):
+  fused_norm_linear, fp8_gemm, fused_cross_entropy, w4a16_gemm,
+  speculative_verify, fused_lowrank_gated_gemm, fused_favor_plus
+- Benchmark tolerance is now dtype-aware (WP5): FP16/BF16 uses atol=1e-2,
+  FP32 uses atol=1e-4. Adds PASS_HIGH_DIFF status for legitimate FP16 drift.
+- Benchmark mock models now include attention projections for compressor
+  verification (WP5): MockTransformerBlock replaces generic MLP for
+  attention-category compressors.
+- CLI accepts --seq-lens, --batch-sizes, --seed, --dtype, --device,
+  --tolerance flags (WP7). All benchmark scripts now respect these.
+- Direct SVD now requires rank >= 4 (raises) or >= 8 (warns) to prevent
+  accuracy collapse (WP10).
+- Compressors requiring calibration now fail fast with a clear error if
+  calibration_data is not provided (WP10).
+- Legacy script entrypoints (run_attention_sweep.py, benchmark_all_cuda.py,
+  triton_leaderboard.py, batch_validate_all_compressors.py, run_quality_sweep.py)
+  now redirect to `neuralops.benchmarks.cli` (WP9).
+
+### Deprecated
+- Pseudo-Triton functions in low_rank.py have updated docstrings explaining
+  why PyTorch/cuBLAS is optimal (WP6). Deprecation warnings remain.
+
+### Removed
+- 46 orphan benchmark CSVs/JSONs archived to `results/_archive/legacy_pre_purge_2026_10/`
+  (WP8). The `results/` root now only contains fresh, reproducible outputs.
+
+### Known limitations (preserved)
+- vLLM backend: runs but is 4x slower than PyTorch on T4
+- SGLang backend: requires SM90+, not compatible with T4
+- TensorRT-LLM: requires Python 3.10/3.12 (no Python 3.13 wheel)
+- Direct SVD with rank < 4: accuracy collapse (raises; mathematical)
+- Uncalibrated aa_svd / adasvd: PPL divergence (raises; documented)
+
 ### Added — CUDA Kernels (18 modules)
 
 **Batch 3 SVD (4):** direct_svd, asvd, fwsvd, hnc_svd
