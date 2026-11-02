@@ -47,6 +47,7 @@ def clean_dispatch_state():
 
 def test_force_pytorch_backend():
     """Verify force_kernel_backend('pytorch') routes to PyTorch reference."""
+    reset_dispatch_stats()
     x = torch.randn(4, 4)
     with force_kernel_backend("pytorch"):
         out = dispatch(
@@ -65,6 +66,7 @@ def test_force_pytorch_backend():
 
 def test_force_triton_backend_success():
     """Verify force_kernel_backend('triton') routes to Triton kernel."""
+    reset_dispatch_stats()
     x = torch.randn(4, 4)
     with force_kernel_backend("triton"):
         out = dispatch(
@@ -82,6 +84,7 @@ def test_force_triton_backend_success():
 
 def test_force_triton_backend_fail_closed():
     """Verify force_kernel_backend('triton') fails closed when triton_fn is None."""
+    reset_dispatch_stats()
     x = torch.randn(4, 4)
     with force_kernel_backend("triton"):
         with pytest.raises(RuntimeError) as exc_info:
@@ -100,6 +103,7 @@ def test_force_triton_backend_fail_closed():
 
 def test_force_cuda_backend_success():
     """Verify force_kernel_backend('cuda') routes to CUDA C++ kernel."""
+    reset_dispatch_stats()
     x = torch.randn(4, 4)
     with force_kernel_backend("cuda"):
         out = dispatch(
@@ -117,6 +121,7 @@ def test_force_cuda_backend_success():
 
 def test_force_cuda_backend_missing_fail_closed():
     """Verify force_kernel_backend('cuda') fails closed when cuda_fn is None."""
+    reset_dispatch_stats()
     x = torch.randn(4, 4)
     with force_kernel_backend("cuda"):
         with pytest.raises(RuntimeError) as exc_info:
@@ -135,6 +140,7 @@ def test_force_cuda_backend_missing_fail_closed():
 
 def test_force_cuda_execution_failure_fail_closed():
     """Verify that when a CUDA kernel crashes, forced backend raises RuntimeError rather than falling back to CPU."""
+    reset_dispatch_stats()
     def broken_cuda_kernel(x):
         raise RuntimeError("CUDA out of memory or device side assert")
 
@@ -156,6 +162,7 @@ def test_force_cuda_execution_failure_fail_closed():
 
 def test_force_cuda_simulated_unavailable():
     """Simulate torch.cuda.is_available()=False and verify that forcing cuda does not silently use PyTorch."""
+    reset_dispatch_stats()
     def cuda_only_kernel(x):
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA is not available on this platform.")
@@ -178,3 +185,22 @@ def test_force_cuda_simulated_unavailable():
     stats = get_dispatch_stats()
     assert stats["cuda_failures"] == 1
     assert stats["pytorch"] == 0
+
+
+if __name__ == "__main__":
+    reset_dispatch_stats()
+    test_force_pytorch_backend()
+    print("✓ test_force_pytorch_backend passed")
+    test_force_triton_backend_success()
+    print("✓ test_force_triton_backend_success passed")
+    test_force_triton_backend_fail_closed()
+    print("✓ test_force_triton_backend_fail_closed passed")
+    test_force_cuda_backend_success()
+    print("✓ test_force_cuda_backend_success passed")
+    test_force_cuda_backend_missing_fail_closed()
+    print("✓ test_force_cuda_backend_missing_fail_closed passed")
+    test_force_cuda_execution_failure_fail_closed()
+    print("✓ test_force_cuda_execution_failure_fail_closed passed")
+    test_force_cuda_simulated_unavailable()
+    print("✓ test_force_cuda_simulated_unavailable passed")
+    print("\nALL 7 DISPATCH FORCING AND FAIL-CLOSED TESTS PASSED PERFECTLY!")

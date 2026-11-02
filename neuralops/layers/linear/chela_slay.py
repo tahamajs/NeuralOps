@@ -182,9 +182,9 @@ class _ChelaLinearWithLoRA(nn.Module):
 
 @triton.autotune(
     configs=[
-        triton.Config({"BLOCK_C": 32}, num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_C": 64}, num_warps=4, num_stages=2),
-        triton.Config({"BLOCK_C": 64}, num_warps=8, num_stages=2),
+        triton.Config({"BLOCK_C": 32}, num_warps=4, num_stages=1),
+        triton.Config({"BLOCK_C": 64}, num_warps=4, num_stages=1),
+        triton.Config({"BLOCK_C": 64}, num_warps=8, num_stages=1),
     ],
     key=["L", "FEAT_2F", "D_V"],
 )
