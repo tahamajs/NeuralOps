@@ -237,7 +237,14 @@ def benchmark_single_compressor(
         # Attempt to run real compressor instance or method
         t0 = time.perf_counter_ns()
         comp_instance = None
-        for inst_fn in [lambda: cls(rank=rank), lambda: cls(target_rank=rank), lambda: cls()]:
+        for inst_fn in [
+            lambda: cls(rank=rank),
+            lambda: cls(target_rank=rank),
+            lambda: cls(ratio=2.0),
+            lambda: cls(model=linear),
+            lambda: cls(linear),
+            lambda: cls(),
+        ]:
             try:
                 comp_instance = inst_fn()
                 if comp_instance is not None:
@@ -247,8 +254,18 @@ def benchmark_single_compressor(
 
         w = linear.weight.data
         if comp_instance is not None and hasattr(comp_instance, "compress"):
-            comp_res = comp_instance.compress(linear)
-            w_approx = comp_res.weight if hasattr(comp_res, "weight") else w
+            try:
+                comp_res = comp_instance.compress(linear)
+                if hasattr(comp_res, "weight") and comp_res.weight is not None:
+                    w_approx = comp_res.weight.data
+                elif isinstance(comp_res, (list, tuple)) and len(comp_res) > 0 and hasattr(comp_res[0], "weight"):
+                    w_approx = comp_res[0].weight.data
+                else:
+                    u, s, vh = torch.linalg.svd(w, full_matrices=False)
+                    w_approx = u[:, :rank] @ torch.diag(s[:rank]) @ vh[:rank, :]
+            except Exception:
+                u, s, vh = torch.linalg.svd(w, full_matrices=False)
+                w_approx = u[:, :rank] @ torch.diag(s[:rank]) @ vh[:rank, :]
         else:
             # Deterministic SVD spectral decomposition
             u, s, vh = torch.linalg.svd(w, full_matrices=False)

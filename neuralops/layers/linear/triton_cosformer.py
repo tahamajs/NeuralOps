@@ -749,9 +749,14 @@ class TritonCosformerAttention(BaseAttention):
                 k = k * mask
                 v = v * mask
 
-        out = _TritonCosformerAutogradFunction.apply(
-            q, k, v, self.is_decoder, self.eps, self.max_length
-        )
+        try:
+            out = _TritonCosformerAutogradFunction.apply(
+                q, k, v, self.is_decoder, self.eps, self.max_length
+            )
+        except Exception:
+            from neuralops.ops.cuda.cosformer.cosformer_autograd import cosformer_linear_attention_pytorch_ref
+
+            out = cosformer_linear_attention_pytorch_ref(q, k, v, is_causal=self.is_decoder)
 
         out = out.transpose(1, 2).contiguous().view(B, N, C)
         out = self.out_proj(out)

@@ -77,13 +77,20 @@ class SmartGPUTrainer:
         self.consecutive_nan_count = 0
 
         # Fused optimizer when available
-        fused = self.device.type == "cuda" and hasattr(torch.optim.AdamW, "supports_fused")
-        self.optimizer = torch.optim.AdamW(
-            [p for p in self.student.parameters() if p.requires_grad],
-            lr=self.max_lr,
-            weight_decay=weight_decay,
-            fused=fused if self.device.type == "cuda" else False,
-        )
+        opt_kwargs: dict[str, Any] = {"lr": self.max_lr, "weight_decay": weight_decay}
+        if self.device.type == "cuda" and hasattr(torch.optim.AdamW, "supports_fused"):
+            opt_kwargs["fused"] = True
+        try:
+            self.optimizer = torch.optim.AdamW(
+                [p for p in self.student.parameters() if p.requires_grad],
+                **opt_kwargs,
+            )
+        except TypeError:
+            opt_kwargs.pop("fused", None)
+            self.optimizer = torch.optim.AdamW(
+                [p for p in self.student.parameters() if p.requires_grad],
+                **opt_kwargs,
+            )
 
         self.use_amp = self.device.type in ("cuda", "mps")
         if self.device.type == "cuda":

@@ -406,6 +406,23 @@ def _patch_torch_compat():
 
                 torch.is_autocast_enabled = _safe_is_autocast_enabled
 
+            # 6. Polyfill torch.nn.RMSNorm for PyTorch < 2.4
+            if not hasattr(torch.nn, "RMSNorm"):
+                class RMSNorm(torch.nn.Module):
+                    def __init__(self, normalized_shape: int | tuple[int, ...] | list[int], eps: float = 1e-6) -> None:
+                        super().__init__()
+                        if isinstance(normalized_shape, int):
+                            normalized_shape = (normalized_shape,)
+                        self.weight = torch.nn.Parameter(torch.ones(normalized_shape))
+                        self.eps = eps
+
+                    def forward(self, x: torch.Tensor) -> torch.Tensor:
+                        variance = x.pow(2).mean(-1, keepdim=True)
+                        x_normed = x * torch.rsqrt(variance + self.eps)
+                        return self.weight * x_normed
+
+                torch.nn.RMSNorm = RMSNorm
+
         except Exception:
             # allowed-swallow: best-effort-telemetry
             pass
@@ -423,6 +440,18 @@ def _patch_pascal_svd_if_needed():
             original_svd = torch.linalg.svd
             capability_cache: dict[int, tuple[int, int]] = {}
 
+            def _call_orig_svd(mat: Any, full: bool, drv: str | None, ot: Any) -> Any:
+                if drv is not None:
+                    try:
+                        if ot is not None:
+                            return original_svd(mat, full_matrices=full, driver=drv, out=ot)
+                        return original_svd(mat, full_matrices=full, driver=drv)
+                    except TypeError:
+                        pass
+                if ot is not None:
+                    return original_svd(mat, full_matrices=full, out=ot)
+                return original_svd(mat, full_matrices=full)
+
             def _safe_pascal_linalg_svd(
                 matrix: Any,
                 full_matrices: bool = True,
@@ -438,19 +467,14 @@ def _patch_pascal_svd_if_needed():
                         try:
                             capability = torch.cuda.get_device_capability(matrix.device)
                         except Exception:
-                            return original_svd(
-                                matrix,
-                                full_matrices=full_matrices,
-                                driver=driver,
-                                out=out,
-                            )
+                            return _call_orig_svd(matrix, full_matrices, driver, out)
                         capability_cache[device_index] = capability
 
                     if capability < (7, 0):
                         device = matrix.device
                         cpu_matrix = matrix.detach().cpu().float()
-                        u_cpu, s_cpu, vh_cpu = original_svd(
-                            cpu_matrix, full_matrices=full_matrices
+                        u_cpu, s_cpu, vh_cpu = _call_orig_svd(
+                            cpu_matrix, full_matrices, driver, None
                         )
                         result_dtype = (
                             matrix.dtype
@@ -467,12 +491,7 @@ def _patch_pascal_svd_if_needed():
                             return out
                         return u, s, vh
 
-                return original_svd(
-                    matrix,
-                    full_matrices=full_matrices,
-                    driver=driver,
-                    out=out,
-                )
+                return _call_orig_svd(matrix, full_matrices, driver, out)
 
             torch.linalg.svd = _safe_pascal_linalg_svd
             torch.linalg._pascal_patched = True
