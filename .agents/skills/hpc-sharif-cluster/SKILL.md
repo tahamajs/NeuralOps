@@ -37,14 +37,16 @@ tags: ["neuralops", "hpc", "sharif", "cluster", "gpu", "verification"]
 
 Run `qstat -Q` **before** submitting to know which queues are enabled right now. Queues change state daily.
 
-| Queue | GPU | VRAM | Typical use |
+> **CRITICAL**: For complete operational instructions, zero-drop SSH configuration, and environment setup, read `HPC_GPU_MASTER_GUIDE.md` in the repository root.
+
+| Queue | GPU | VRAM | Status / Typical use |
 |---|---|---|---|
-| `cuda7` | Tesla K80 | 12 GB | Triton parity, E2E DoD (verified) |
-| `cuda9` | GTX 1080 Ti | 11 GB | Small models |
-| `SP` | RTX 2070 Super | 8 GB | Small model benchmarks |
-| `DP` | Titan RTX | 24 GB | **Preferred** for DoD when available |
-| `DDP` | Quadro RTX 8000 | 48 GB | Largest models (LLaMA-3-8B full) |
-| `test-gpu` | Unknown | — | Sanity check |
+| **`N3090`** | **NVIDIA RTX 3090** | **24 GB** | **ACTIVE PRIMARY**. Compute capability 8.6, 350W TDP. Request: `#PBS -l nodes=1:ppn=1` (do NOT use `:gpus=1`) |
+| `SP` | RTX 2070 Super | 8 GB | Active secondary for lightweight models |
+| `cuda7` | Tesla C2075 | 5 GB | Disabled / Deprecated |
+| `cuda9` | GTX 1080 Ti | 11 GB | Disabled by HPC admin |
+| `DP` | Titan RTX | 24 GB | Disabled by HPC admin |
+| `DDP` | Quadro RTX 8000 | 48 GB | Disabled by HPC admin |
 
 `qstat -Q` output columns: `Max | Tot | Ena | Str | Que | Run | Hld | Wat | Trn | Ext | T`
 - `Ena=yes` and `T=@` (or `E`) means the queue accepts jobs.
