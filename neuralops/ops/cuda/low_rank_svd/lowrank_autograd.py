@@ -9,15 +9,26 @@
 Low-Rank SVD Gated GEMM Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Performance Notes:
+    The custom fused_lowrank_gated_gemm CUDA kernel achieves ~0.65x speedup (1.5x slower than PyTorch)
+    due to separate intermediate allocation in device global memory rather than single-pass SRAM fusion.
+    When backend='auto', PyTorch/cuBLAS reference is recommended and used.
 """
 
 from __future__ import annotations
+
+import logging
 from pathlib import Path
 from typing import Any
+
 import torch
 
+from neuralops.ops.cuda import _fallback
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -154,6 +165,13 @@ def fused_lowrank_gated_gemm(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """3-Level Dispatched Fused Low-Rank Gated GEMM."""
+    backend = getattr(_fallback, "_FORCED_BACKEND", None)
+    backend_val = backend.get() if backend is not None else "auto"
+    if backend_val == "auto":
+        logger.warning(
+            "fused_lowrank_gated_gemm is 1.5x slower (0.65x speedup) than PyTorch reference at the tested shape. "
+            "Setting backend='auto' will use PyTorch. To force the custom kernel, use backend='cuda'."
+        )
     needs_grad = torch.is_grad_enabled() and any(
         t.requires_grad for t in (x, V, U, alpha, bias) if isinstance(t, torch.Tensor)
     )

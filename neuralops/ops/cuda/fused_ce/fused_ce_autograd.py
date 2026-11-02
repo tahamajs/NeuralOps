@@ -9,18 +9,28 @@
 Fused Cross-Entropy Loss Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Performance Notes:
+    The custom CUDA fused cross-entropy kernel achieves ~0.31x speedup (3.2x slower than cuDNN/PyTorch)
+    because vocabulary-dimension reductions are memory bandwidth bound, where PyTorch's ATen/cuDNN kernels
+    saturate 90% DRAM roofline.
+    When backend='auto', PyTorch reference is recommended and used.
 """
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
 import torch
 import torch.nn.functional as F
 
+from neuralops.ops.cuda import _fallback
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -118,6 +128,13 @@ def fused_cross_entropy(
     reduction: str = "mean",
 ) -> torch.Tensor:
     """3-Level Dispatched Fused Cross-Entropy Loss."""
+    backend = getattr(_fallback, "_FORCED_BACKEND", None)
+    backend_val = backend.get() if backend is not None else "auto"
+    if backend_val == "auto":
+        logger.warning(
+            "fused_cross_entropy is 3.2x slower (0.31x speedup) than PyTorch reference at the tested shape. "
+            "Setting backend='auto' will use PyTorch. To force the custom kernel, use backend='cuda'."
+        )
     def cuda_fn(logits, targets, ignore_index=-100, reduction="mean"):
         if (not logits.requires_grad) or (not torch.is_grad_enabled()):
             orig_shape = logits.shape

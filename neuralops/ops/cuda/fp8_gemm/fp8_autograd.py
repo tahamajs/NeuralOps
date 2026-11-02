@@ -9,14 +9,26 @@
 FP8 Quantized GEMM Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Performance Notes:
+    The custom software-decoded CUDA FP8 GEMM kernel achieves ~0.15x speedup (6.7x slower than cuBLAS)
+    due to ALU software unpacking overhead compared to native Tensor Core MMA or PyTorch reference.
+    When backend='auto', PyTorch/cuBLAS reference is recommended and used.
 """
 
 from __future__ import annotations
+
+import logging
 from pathlib import Path
 from typing import Optional
+
 import torch
+
+from neuralops.ops.cuda import _fallback
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -67,6 +79,13 @@ def fp8_gemm(
     bias: Optional[torch.Tensor] = None,
     out_dtype: torch.dtype = torch.float16,
 ) -> torch.Tensor:
+    backend = getattr(_fallback, "_FORCED_BACKEND", None)
+    backend_val = backend.get() if backend is not None else "auto"
+    if backend_val == "auto":
+        logger.warning(
+            "fp8_gemm is 6.7x slower (0.15x speedup) than PyTorch reference at the tested shape. "
+            "Setting backend='auto' will use PyTorch. To force the custom kernel, use backend='cuda'."
+        )
     # The native kernel consumes packed uint8 FP8 payloads.  The public API
     # and existing model paths pass ordinary floating-point matrices; sending
     # those bytes to the FP8 decoder produces NaNs and invalid results.  Keep

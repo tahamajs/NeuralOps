@@ -9,6 +9,11 @@
 Fused Normalization Linear Projection Autograd Interface
 
 Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+
+Performance Notes:
+    The custom CUDA kernel is ~244x slower than PyTorch cuBLAS across standard hidden dimensions
+    (D=512-4096) due to uncoalesced global strided memory accesses and lack of shared-memory tiling.
+    When backend='auto', PyTorch/cuBLAS reference is recommended and used.
 """
 
 from __future__ import annotations
@@ -20,6 +25,7 @@ from typing import Any
 import torch
 import torch.nn.functional as F
 
+from neuralops.ops.cuda import _fallback
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
@@ -126,6 +132,13 @@ def fused_norm_linear(
     Routing: TRITON (Level 2) → PYTORCH (Level 3). CUDA kernel is EXPERIMENTAL
     and MUST NOT be dispatched until rewritten with shared-memory tiling.
     """
+    backend = getattr(_fallback, "_FORCED_BACKEND", None)
+    backend_val = backend.get() if backend is not None else "auto"
+    if backend_val == "auto":
+        logger.warning(
+            "fused_norm_linear is 244x slower than PyTorch reference at the tested shape. "
+            "Setting backend='auto' will use PyTorch. To force the custom kernel, use backend='cuda'."
+        )
     triton_fn = _get_triton_impl()
     if triton_fn is not None:
         try:
