@@ -15,3 +15,17 @@ torch::Tensor rpca_sparse_svd_fwd(
     const c10::optional<torch::Tensor>& s,
     const c10::optional<torch::Tensor>& bias
 );
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def(
+        "rpca_sparse_svd_fwd",
+        &rpca_sparse_svd_fwd,
+        "RPCA Sparse SVD forward (CUDA)",
+        py::arg("x"),
+        py::arg("v_r"),
+        py::arg("u_r"),
+        py::arg("s") = py::none(),
+        py::arg("bias") = py::none()
+    );
+    m.def("forward", &rpca_sparse_svd_fwd, "RPCA Sparse SVD forward (CUDA)");
+}
