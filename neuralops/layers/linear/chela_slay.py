@@ -348,14 +348,9 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
             except Exception:
                 sm_supported = False
 
-        use_triton = (
-            HAS_TRITON
-            and os.environ.get("FORCE_PYTORCH_FALLBACK", "0").lower() not in ("1", "true", "yes")
-            and q_feat.is_cuda
-            and sm_supported
-            and feat_2f in (16, 32, 64, 128, 256, 512)
-            and D_v in (16, 32, 64, 128, 256)
-        )
+        # Note: Fused causal Triton kernel triggers MLIR OptimizeThreadLocalityPass assertion
+        # failure on Ampere/Triton 2.x for multi-layout dot in loop. Fallback to vectorized PyTorch on GPU.
+        use_triton = False
 
         if use_triton:
             try:
