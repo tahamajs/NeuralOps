@@ -73,6 +73,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+case "${DEVICE}" in
+    auto|cuda|cuda:*) ;;
+    *)
+        echo "The full GPU suite requires a CUDA device; received '${DEVICE}'." >&2
+        exit 2
+        ;;
+esac
+
 echo "======================================================================"
 echo "  🚀 NeuralOps Universal Autonomous Execution Suite"
 echo "======================================================================"
@@ -95,10 +103,11 @@ echo ""
 echo ">>> [2/6] Executing High-Precision Benchmark Suite..."
 "${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_master_suite.py" --device "${DEVICE}" ${LIMIT} ${BACKWARD_FLAG} --export
 
-# Phase 2.5: Triton / CUDA Kernel Leaderboard
+# Phase 2.5: Canonical 26-Kernel Triton / CUDA Benchmark
 echo ""
 echo ">>> [2.5/6] Probing 3-Level Fallback Kernel Leaderboard..."
-"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/triton_leaderboard.py" --device "${DEVICE}" --limit 5
+"${PYTHON_BIN}" "${REPO_ROOT}/neuralops/benchmarks/benchmark_all_26_comprehensive.py" \
+    --device "${DEVICE}" --quick
 
 # Phase 3: Smart GPU-Maximizing Trainer Engine
 echo ""

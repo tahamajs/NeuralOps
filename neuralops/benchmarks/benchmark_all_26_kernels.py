@@ -33,7 +33,14 @@ def run_all_26_kernels(
     selected_kernels=None,
 ):
     """Execute direct 26 Triton kernel benchmarks against PyTorch references."""
-    device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
+    device = torch.device(device_str)
+    if device.type != "cuda":
+        raise RuntimeError(
+            "The 26-kernel benchmark is GPU-only. Pass --device cuda:0 on a CUDA host; "
+            "CPU fallback would invalidate the timing results."
+        )
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
     if device.type == "cuda":
         torch.cuda.set_device(device.index if device.index is not None else 0)
 
@@ -45,7 +52,10 @@ def run_all_26_kernels(
         "bfloat16": torch.bfloat16,
         "bf16": torch.bfloat16,
     }
-    dtype = dtype_map.get(dtype_str.lower(), torch.float16)
+    try:
+        dtype = dtype_map[dtype_str.lower()]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported dtype '{dtype_str}'. Choose float16, float32, or bfloat16.") from exc
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
     print(f"Running Direct Kernel Benchmark on: {device} ({gpu_name}) | Precision: {dtype_str} | Warmup: {warmup} | Reps: {repeat}")
@@ -88,8 +98,16 @@ def run_all_26_kernels(
             if isinstance(out_p, tuple):
                 out_p = out_p[0]
 
+            has_nonfinite = not bool(torch.isfinite(out_t).all().item()) or not bool(torch.isfinite(out_p).all().item())
             max_diff = (out_t.float() - out_p.float()).abs().max().item()
+            tolerance = 1e-4 if out_p.dtype == torch.float32 else 1e-3
             sp = round(t_pt / max(t_tri, 1e-6), 2)
+            if has_nonfinite:
+                status = "FAIL_NAN"
+            elif max_diff > tolerance:
+                status = "FAIL_NUMERICS"
+            else:
+                status = "OK"
             entry = {
                 "kernel": name,
                 "shape": shape_str,
@@ -97,7 +115,7 @@ def run_all_26_kernels(
                 "pytorch_ms": round(t_pt, 3),
                 "speedup": sp,
                 "max_diff": round(max_diff, 6),
-                "status": "OK",
+                "status": status,
             }
             results.append(entry)
             print(f"  {name:36s} {shape_str:20s}: Tri={t_tri:6.3f}ms, PT={t_pt:6.3f}ms, Speedup={sp:5.2f}x, Diff={max_diff:.2e}")
@@ -416,7 +434,7 @@ def main():
     parser = argparse.ArgumentParser(description="Direct Triton vs PyTorch 26 Kernels Benchmark")
     parser.add_argument("--output", type=str, default="results/triton_all_26_kernels_benchmark.csv", help="Path to save CSV output")
     parser.add_argument("--output-json", type=str, default="results/triton_all_26_kernels_benchmark.json", help="Path to save JSON output")
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
+    parser.add_argument("--device", type=str, default="cuda:0", help="CUDA device to execute benchmark")
     parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"], help="Precision")
     parser.add_argument("--warmup", type=int, default=5, help="Warmup iterations")
     parser.add_argument("--repeat", type=int, default=30, help="Measurement repetitions")

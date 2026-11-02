@@ -53,8 +53,10 @@ def benchmark_single_kernel(
         out_tri_t = out_tri[0] if isinstance(out_tri, tuple) else out_tri
         out_pt_t = out_pt[0] if isinstance(out_pt, tuple) else out_pt
 
-        has_nan_tri = torch.isnan(out_tri_t).any().item()
-        has_inf_tri = torch.isinf(out_tri_t).any().item()
+        has_nan_tri = bool(torch.isnan(out_tri_t).any().item())
+        has_inf_tri = bool(torch.isinf(out_tri_t).any().item())
+        has_nan_ref = bool(torch.isnan(out_pt_t).any().item())
+        has_inf_ref = bool(torch.isinf(out_pt_t).any().item())
 
         ref_f = out_pt_t.float().reshape(-1)
         tri_f = out_tri_t.float().reshape(-1)
@@ -126,7 +128,13 @@ def benchmark_single_kernel(
         pytorch_gpu_ms = (t1 - t0) / reps * 1000.0
 
     speedup = pytorch_gpu_ms / max(triton_gpu_ms, 1e-6)
-    status = "PASS" if not has_nan_tri and not has_inf_tri else "FAIL"
+    tolerance = 1e-4 if out_pt_t.dtype == torch.float32 else 1e-3
+    if has_nan_ref or has_inf_ref or has_nan_tri or has_inf_tri:
+        status = "FAIL_NAN"
+    elif max_diff >= tolerance:
+        status = "FAIL_NUMERICS"
+    else:
+        status = "PASS"
 
     entry = {
         "kernel": name,
@@ -140,6 +148,7 @@ def benchmark_single_kernel(
         "max_diff": round(max_diff, 6),
         "has_nan": has_nan_tri,
         "has_inf": has_inf_tri,
+        "reference_finite": not has_nan_ref and not has_inf_ref,
         "status": status,
     }
 
@@ -162,7 +171,16 @@ def run_all_26_comprehensive(
     import triton
     import triton.language as tl
 
-    device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
+    if device_str == "auto":
+        device_str = "cuda:0"
+    device = torch.device(device_str)
+    if device.type != "cuda":
+        raise RuntimeError(
+            "The 26-kernel benchmark is GPU-only. Pass --device cuda:0 on a CUDA host; "
+            "CPU fallback would invalidate the timing results."
+        )
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
     if device.type == "cuda":
         torch.cuda.set_device(device.index if device.index is not None else 0)
 
@@ -174,7 +192,10 @@ def run_all_26_comprehensive(
         "bfloat16": torch.bfloat16,
         "bf16": torch.bfloat16,
     }
-    dtype = dtype_map.get(dtype_str.lower(), torch.float16)
+    try:
+        dtype = dtype_map[dtype_str.lower()]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported dtype '{dtype_str}'. Choose float16, float32, or bfloat16.") from exc
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
     print("=" * 85)
@@ -595,7 +616,7 @@ def run_all_26_comprehensive(
             writer = csv.DictWriter(f, fieldnames=[
                 "kernel", "category", "shape", "pytorch_ms", "triton_ms",
                 "launch_overhead_ms", "speedup", "cosine_sim", "max_diff",
-                "has_nan", "has_inf", "status"
+                "has_nan", "has_inf", "reference_finite", "status"
             ])
             writer.writeheader()
             for r in results:
@@ -611,10 +632,10 @@ def run_all_26_comprehensive(
         lines = [
             "# Triton 26 Flagship Hardware Kernels: Comprehensive Hardware Benchmark",
             "",
-            f"**Hardware Platform**: {gpu_name} (SM 8.9 Ada Lovelace)",
+            f"**Hardware Platform**: {gpu_name}",
             f"**Standard Realistic Dimensions**: Batch Size `B={B}`, Num Heads `H={H}`, Sequence Length `N={N}`, Head Dim `D={D}`",
             f"**Benchmark Timing Protocol**: {warmup} Warmup iterations, {repeat} Synchronized Measurement passes using `torch.cuda.Event`",
-            f"**Summary**: **{faster_count}/{len(results)}** kernels achieve speedup >= 1.0x vs PyTorch | Mean Speedup: **{avg_speedup:.2f}x** | Zero NaNs, Zero Infs certified.",
+            f"**Summary**: **{faster_count}/{len(results)}** kernels achieve speedup >= 1.0x vs PyTorch | Mean Speedup: **{avg_speedup:.2f}x** | Results are classified by finite-output and numerical-parity gates.",
             "",
             "## Benchmark Summary Table",
             "",
@@ -640,18 +661,18 @@ def run_all_26_comprehensive(
     return results
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Comprehensive 26 Triton Hardware Kernels Benchmark")
     parser.add_argument("--output", type=str, default="results/triton_26_kernels_comprehensive_benchmark.csv", help="Path to save CSV output")
     parser.add_argument("--output-json", type=str, default="results/triton_26_kernels_comprehensive_benchmark.json", help="Path to save JSON output")
     parser.add_argument("--report-md", type=str, default="docs/reports/TRITON_26_KERNELS_COMPREHENSIVE_REPORT.md", help="Path to save markdown report")
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to run benchmarks")
+    parser.add_argument("--device", type=str, default="cuda:0", help="CUDA device to run benchmarks")
     parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16", "fp16", "fp32", "bf16"], help="Precision")
     parser.add_argument("--warmup", type=int, default=10, help="Warmup iterations")
     parser.add_argument("--repeat", type=int, default=50, help="Measurement repetitions")
     parser.add_argument("--quick", action="store_true", help="Quick verification pass (warmup=2, repeat=5)")
     parser.add_argument("--kernels", type=str, default=None, help="Comma-separated kernel names to filter sweep")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     warmup = 2 if args.quick else args.warmup
     repeat = 5 if args.quick else args.repeat

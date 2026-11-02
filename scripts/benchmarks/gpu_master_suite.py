@@ -38,6 +38,14 @@ _CACHED_CONFIG: BertConfig | None = None
 _CACHED_PRETRAINED_ATTN: nn.Module | None = None
 
 
+def _resolve_requested_device(requested: str) -> str:
+    """Resolve a device request without silently downgrading CUDA to CPU."""
+    device = "cuda" if requested == "auto" else requested
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    return device
+
+
 def _get_shared_pretrained_attention(dim: int = 768, num_heads: int = 12) -> tuple[BertConfig, nn.Module]:
     """Provide a lightweight shared BERT self-attention module for wrapper mechanisms."""
     global _CACHED_CONFIG, _CACHED_PRETRAINED_ATTN
@@ -89,16 +97,20 @@ def benchmark_single_attention(
             lambda: cls(config),
             lambda: cls(),
         ]
+        instantiation_errors: list[str] = []
         for att in attempts:
             try:
                 mod = att()
                 if mod is not None:
                     break
-            except Exception:
-                continue
+            except Exception as exc:
+                instantiation_errors.append(f"{type(exc).__name__}: {exc}")
 
         if mod is None:
-            raise RuntimeError(f"Could not instantiate attention module '{name}' with standard signatures.")
+            raise RuntimeError(
+                f"Could not instantiate attention module '{name}' with standard signatures. "
+                f"Attempts: {' | '.join(instantiation_errors)}"
+            )
 
         mod = mod.to(dev)
         mod.eval()
@@ -111,12 +123,16 @@ def benchmark_single_attention(
                 lambda: mod(hidden_states=input_tensor),
                 lambda: mod(input_tensor, attention_mask=None),
             ]
+            call_errors: list[str] = []
             for fn in call_attempts:
                 try:
                     return fn()
-                except Exception:
-                    continue
-            raise RuntimeError(f"Forward call signature failed for '{name}'")
+                except Exception as exc:
+                    call_errors.append(f"{type(exc).__name__}: {exc}")
+            raise RuntimeError(
+                f"Forward call signature failed for '{name}'. "
+                f"Attempts: {' | '.join(call_errors)}"
+            )
 
         # Warmup
         for _ in range(warmup):
@@ -178,13 +194,14 @@ def benchmark_single_attention(
                     torch.cuda.synchronize()
                 tb1 = time.perf_counter_ns()
                 backward_ms = round((tb1 - tb0) / 1_000_000.0, 3)
+                gradients = [xb.grad] + [p.grad for p in mod.parameters() if p.requires_grad]
                 backward_passed = bool(
-                    (xb.grad is not None and torch.isfinite(xb.grad).all().item())
-                    or any(p.grad is not None and torch.isfinite(p.grad).all().item() for p in mod.parameters())
-                    or True
+                    gradients
+                    and all(gradient is not None and torch.isfinite(gradient).all().item() for gradient in gradients)
                 )
-            except Exception:
+            except Exception as exc:
                 backward_passed = False
+                record["backward_error"] = f"{type(exc).__name__}: {exc}"
 
         status = "PASS" if is_finite and not has_nan and (backward_passed is not False) else "FAIL_NUMERICAL"
 
@@ -229,14 +246,12 @@ def benchmark_single_compressor(
 
     try:
         linear = nn.Linear(dim, dim, bias=False).to(dev)
-        orig_params = dim * dim
-        compressed_params = rank * (dim + dim)
-        compression_ratio = round(orig_params / max(1, compressed_params), 2)
-        param_reduction = round((1.0 - compressed_params / orig_params) * 100.0, 2)
-
         # Attempt to run real compressor instance or method
+        if dev.type == "cuda":
+            torch.cuda.synchronize(dev)
         t0 = time.perf_counter_ns()
         comp_instance = None
+        instantiation_errors: list[str] = []
         for inst_fn in [
             lambda: cls(rank=rank),
             lambda: cls(target_rank=rank),
@@ -249,28 +264,46 @@ def benchmark_single_compressor(
                 comp_instance = inst_fn()
                 if comp_instance is not None:
                     break
-            except Exception:
-                continue
+            except Exception as exc:
+                instantiation_errors.append(f"{type(exc).__name__}: {exc}")
 
-        w = linear.weight.data
-        if comp_instance is not None and hasattr(comp_instance, "compress"):
-            try:
-                comp_res = comp_instance.compress(linear)
-                if hasattr(comp_res, "weight") and comp_res.weight is not None:
-                    w_approx = comp_res.weight.data
-                elif isinstance(comp_res, (list, tuple)) and len(comp_res) > 0 and hasattr(comp_res[0], "weight"):
-                    w_approx = comp_res[0].weight.data
-                else:
-                    u, s, vh = torch.linalg.svd(w, full_matrices=False)
-                    w_approx = u[:, :rank] @ torch.diag(s[:rank]) @ vh[:rank, :]
-            except Exception:
-                u, s, vh = torch.linalg.svd(w, full_matrices=False)
-                w_approx = u[:, :rank] @ torch.diag(s[:rank]) @ vh[:rank, :]
-        else:
-            # Deterministic SVD spectral decomposition
-            u, s, vh = torch.linalg.svd(w, full_matrices=False)
-            w_approx = u[:, :rank] @ torch.diag(s[:rank]) @ vh[:rank, :]
+        if comp_instance is None or not hasattr(comp_instance, "compress"):
+            raise RuntimeError(
+                f"Compressor '{name}' has no usable compress() implementation. "
+                f"Attempts: {' | '.join(instantiation_errors)}"
+            )
 
+        comp_res = comp_instance.compress(linear)
+        compressed_model = comp_res
+        if isinstance(comp_res, (list, tuple)):
+            if not comp_res or not hasattr(comp_res[0], "parameters"):
+                raise RuntimeError(f"Compressor '{name}' returned no model-like result.")
+            compressed_model = comp_res[0]
+        if not hasattr(compressed_model, "parameters"):
+            raise RuntimeError(f"Compressor '{name}' returned a non-module result: {type(comp_res).__name__}.")
+
+        original_params = sum(parameter.numel() for parameter in linear.parameters())
+        compressed_params = sum(parameter.numel() for parameter in compressed_model.parameters())
+        if compressed_params <= 0:
+            raise RuntimeError(f"Compressor '{name}' returned a model with no parameters.")
+        compression_ratio = round(original_params / compressed_params, 2)
+        param_reduction = round((1.0 - compressed_params / original_params) * 100.0, 2)
+        if param_reduction <= 0.0:
+            raise RuntimeError(
+                f"Compressor '{name}' did not reduce parameters: "
+                f"{original_params} -> {compressed_params}"
+            )
+
+        w = linear.weight.detach()
+        compressed_weight = getattr(compressed_model, "weight", None)
+        if compressed_weight is None or compressed_weight.shape != w.shape:
+            raise RuntimeError(
+                f"Compressor '{name}' did not expose a reconstructed weight with shape {tuple(w.shape)}."
+            )
+        w_approx = compressed_weight.detach().to(device=dev, dtype=w.dtype)
+
+        if dev.type == "cuda":
+            torch.cuda.synchronize(dev)
         t1 = time.perf_counter_ns()
         compress_latency_ms = round((t1 - t0) / 1_000_000.0, 3)
 
@@ -304,9 +337,7 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Execute a fast validation check limiting modules to 2 per category")
     args = parser.parse_args()
 
-    device = args.device
-    if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = _resolve_requested_device(args.device)
 
     effective_limit = 2 if args.dry_run and args.limit is None else args.limit
     workers = args.parallel_workers or (1 if device in ("cuda", "mps") else min(4, os.cpu_count() or 1))

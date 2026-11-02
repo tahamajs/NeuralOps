@@ -285,8 +285,9 @@ Allowed only when:
 ## 8. Repository Invariants & Non-Core Directories
 
 - **Canonical Counts Invariant**:
-  - `ATTENTION_REGISTRY` must contain exactly **131** attention mechanisms.
-  - `COMPRESSOR_REGISTRY` must contain exactly **72** model compression engines.
+  - `ATTENTION_REGISTRY` must contain exactly **131** logical attention keys.
+  - `COMPRESSOR_REGISTRY` must contain exactly **72** logical compression keys.
+  - These are registry-key counts, not source-file counts: one implementation file may register multiple keys, aliases are excluded from canonical totals, and compatibility mirrors are separate from the canonical package. In this checkout, the measured non-`__init__.py` source-file counts are 128 under `neuralops/layers/` and 89 under `neuralops/compression/`; those values are expected to differ from 131/72. The checked-in `neuralops/benchmarks/static_catalog.json` is the static 131/72 catalog.
   - `neuralops/core/triton_kernels/` must contain exactly **26** canonical Triton kernel modules (housing 62 unified operators across 4 tiers) + 24 extension modules in `neuralops/ops/triton/`.
   - `neuralops/core/cuda_kernels/` contains **130** native CUDA C++ kernel packages (housing 132 native kernel implementations).
   - `notebooks/` contains **29** Jupyter notebooks.
@@ -414,6 +415,7 @@ When updating this file, append an entry here. Version number follows `major.min
 
 - **v1.1.0** — Added §0 (Core Operating Principles), §4 (Verification Contract), §5 (Scope Discipline), §6 (Silent Failure Policy), §10 (Blocker Escalation & Honest Reporting). Expanded §3 with user authorization exception (§3.2) and tool discovery protocol (§3.3). Added regression test requirement (§5.4). Added report format (§10.2). Added quality gate checklist to §11.
 - **v1.0.0** — Initial agent guidelines.
+- **v1.3.1** — Clarified that the 131/72 invariants count canonical registry keys rather than implementation files, and recorded the current source-file counts.
 
 ---
 ## 14. Versioning, Releases & Changelog
