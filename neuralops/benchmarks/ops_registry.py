@@ -18,6 +18,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 
 TensorFactory = Callable[[dict[str, Any]], tuple[tuple[Any, ...], dict[str, Any]]]
 Operation = Callable[..., Any]
@@ -124,9 +128,11 @@ def _triton_norm_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str
 
     device = spec["device"]
     dtype = spec["dtype"]
-    x = torch.randn(4, 64, 512, device=device, dtype=dtype)
-    weight = torch.randn(512, 512, device=device, dtype=dtype)
-    bias = torch.randn(512, device=device, dtype=dtype)
+    shape = spec.get("shape", (4, 64, 512))
+    batch, seq_len, hidden = shape[0], shape[1], shape[2]
+    x = torch.randn(batch, seq_len, hidden, device=device, dtype=dtype)
+    weight = torch.randn(hidden, hidden, device=device, dtype=dtype)
+    bias = torch.randn(hidden, device=device, dtype=dtype)
     return (x, weight, bias), {"eps": 1e-6}
 
 
@@ -142,35 +148,72 @@ def _compressor_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str,
     ), {}
 
 
+class MockAttentionBlock(nn.Module):
+    """Mock transformer attention block with standard linear projections."""
+
+    def __init__(self, dim: int):
+        super().__init__()
+        self.q_proj = nn.Linear(dim, dim)
+        self.k_proj = nn.Linear(dim, dim)
+        self.v_proj = nn.Linear(dim, dim)
+        self.o_proj = nn.Linear(dim, dim)
+
+    def forward(self, h: torch.Tensor) -> torch.Tensor:
+        import torch.nn.functional as F
+        return self.o_proj(F.gelu(self.q_proj(h) + self.k_proj(h) + self.v_proj(h)))
+
+
+class MockKVBlock(nn.Module):
+    """Mock KV-cache block supporting cache inspection and kv-pruning contracts."""
+
+    def __init__(self, dim: int):
+        super().__init__()
+        self.q_proj = nn.Linear(dim, dim)
+        self.k_proj = nn.Linear(dim, dim)
+        self.v_proj = nn.Linear(dim, dim)
+        self.o_proj = nn.Linear(dim, dim)
+        self.cache: dict[str, torch.Tensor] = {}
+
+    def forward(self, h: torch.Tensor) -> torch.Tensor:
+        import torch.nn.functional as F
+        self.cache["k"] = self.k_proj(h)
+        self.cache["v"] = self.v_proj(h)
+        return self.o_proj(F.gelu(self.q_proj(h) + self.cache["k"] + self.cache["v"]))
+
+
+def _make_mock_for_compressor(compressor_name: str, hidden_size: int = 128) -> nn.Module:
+    """Factory creating specialized mock modules tailored to compressor requirements."""
+    name_lower = compressor_name.lower()
+    kv_compressors = {
+        "cachenotes", "delta_kv", "hybridkv", "kvtc", "zerokv",
+        "aatc_xkv", "kv_compressor", "snapkv", "streaming_llm", "h2o",
+    }
+    attn_compressors = {
+        "heavy_hitter", "rotational_slicegpt", "slicegpt", "head_pruner",
+    }
+    if any(k in name_lower for k in kv_compressors):
+        return MockKVBlock(hidden_size)
+    if any(k in name_lower for k in attn_compressors):
+        return MockAttentionBlock(hidden_size)
+    return nn.Sequential(
+        nn.Linear(hidden_size, hidden_size),
+        nn.GELU(),
+        nn.Linear(hidden_size, hidden_size),
+    )
+
+
 def _compressor_operation(name: str, *, compressed: bool, state: dict[str, Any]) -> Operation:
     """Run a registered compressor against a real model-level contract."""
     import copy
     import inspect
     import torch
     import torch.nn as nn
-    import torch.nn.functional as F
     from neuralops.core.registry import create_compressor
 
     def invoke(x: Any) -> Any:
         if "base" not in state:
             hidden = int(x.shape[-1])
-            # For attention-aware or KV-cache compressors, mock must expose attention projections
-            attn_compressors = {"h2o", "streaming_llm", "snapkv", "heavy_hitter", "kv_compressor", "cachenotes"}
-            if any(k in name.lower() for k in attn_compressors):
-                class MockAttentionModule(nn.Module):
-                    def __init__(self, dim: int):
-                        super().__init__()
-                        self.q_proj = nn.Linear(dim, dim)
-                        self.k_proj = nn.Linear(dim, dim)
-                        self.v_proj = nn.Linear(dim, dim)
-                        self.o_proj = nn.Linear(dim, dim)
-                    def forward(self, h: torch.Tensor) -> torch.Tensor:
-                        return self.o_proj(F.gelu(self.q_proj(h) + self.k_proj(h) + self.v_proj(h)))
-                state["base"] = MockAttentionModule(hidden).to(device=x.device, dtype=torch.float32)
-            else:
-                state["base"] = nn.Sequential(
-                    nn.Linear(hidden, hidden), nn.GELU(), nn.Linear(hidden, hidden)
-                ).to(device=x.device, dtype=torch.float32)
+            state["base"] = _make_mock_for_compressor(name, hidden).to(device=x.device, dtype=torch.float32)
         if not compressed:
             return state["base"](x.float())
         if "compressed" not in state:
