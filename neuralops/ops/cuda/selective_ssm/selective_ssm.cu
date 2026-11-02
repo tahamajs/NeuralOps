@@ -33,16 +33,19 @@ __global__ void __launch_bounds__(128) selective_ssm_fwd_kernel(
 
     for (int t = 0; t < N; ++t) {
         const int idx = b * N * D + t * D + d;
-        const float delta = fminf(fmaxf(to_float(dt[idx]), 1e-6f), 88.0f);
+        float raw_dt = to_float(dt[idx]);
+        if (isnan(raw_dt)) raw_dt = 1e-5f;
+        const float delta = fminf(fmaxf(raw_dt, 1e-5f), 10.0f);
         const float x_val = to_float(x[idx]);
         const float b_val = to_float(B_vec[idx]);
         const float c_val = to_float(C_vec[idx]);
 
-        const float dA = expf(-fmaxf(delta * fabsf(a_val), 0.0f));
+        const float dA = expf(-fminf(fmaxf(delta * fabsf(a_val), 0.0f), 50.0f));
         const float dB = delta * b_val;
         h = dA * h + dB * x_val;
         h = fminf(fmaxf(h, -65504.0f), 65504.0f);
-        out[idx] = from_float<scalar_t>(h * c_val);
+        const float out_val = fminf(fmaxf(h * c_val, -65504.0f), 65504.0f);
+        out[idx] = from_float<scalar_t>(out_val);
     }
 }
 
