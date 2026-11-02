@@ -79,16 +79,7 @@ TENSOR_CORE_DOT_KERNELS: set[str] = {
     "block_sparse",
 }
 
-PTX73_UNSUPPORTED_TRITON_KERNELS: set[str] = {
-    "fused_hnc_nullspace_step",
-    "gdn_scan",
-    "fused_kd",
-    "sliding_window",
-    "fused_rope",
-    "fused_recurrent_linear_step",
-    "hybrid_local_attn",
-    "hybrid_two_branch_blend",
-}
+PTX73_UNSUPPORTED_TRITON_KERNELS: set[str] = set()
 
 SIZE_THRESHOLDS: dict[str, dict[str, int]] = {}
 

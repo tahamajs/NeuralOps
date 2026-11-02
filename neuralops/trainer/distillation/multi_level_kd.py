@@ -212,8 +212,8 @@ class MiniLMValueRelationKDLoss(nn.Module):
         Bs, Hs, N, Ds = v_student.shape
         Bt, Ht, _, Dt = v_teacher.shape
 
-        vs = v_student.view(Bs * Hs, N, Ds)
-        vt = v_teacher.view(Bt * Ht, N, Dt)
+        vs = v_student.contiguous().view(Bs * Hs, N, Ds)
+        vt = v_teacher.contiguous().view(Bt * Ht, N, Dt)
 
         rel_s = F.softmax(torch.bmm(vs, vs.transpose(1, 2)) / math.sqrt(Ds), dim=-1)
         rel_t = F.softmax(torch.bmm(vt, vt.transpose(1, 2)) / math.sqrt(Dt), dim=-1)
