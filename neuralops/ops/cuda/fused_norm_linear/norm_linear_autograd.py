@@ -123,7 +123,13 @@ def fused_norm_linear(
     Root cause: serial `for(k)` loop with uncoalesced `weight[n*K+k]` access
     and redundant `x_norm` recomputation per (m, n) pair.
 
-    Routing: Always route to PyTorch / cuBLAS by default (WP4.1).
+    Routing: TRITON (Level 2) → PYTORCH (Level 3). CUDA kernel is EXPERIMENTAL
+    and MUST NOT be dispatched until rewritten with shared-memory tiling.
     """
-    logger.info("fused_norm_linear routes to PyTorch because cuBLAS is 244x faster on current tile sizes")
+    triton_fn = _get_triton_impl()
+    if triton_fn is not None:
+        try:
+            return triton_fn(x, weight, bias=bias, eps=eps)
+        except (RuntimeError, MemoryError, AssertionError, ValueError) as exc:
+            logger.warning("Triton execution failed for fused_norm_linear, falling back to PyTorch", exc_info=True)
     return fused_norm_linear_pytorch_ref(x, weight, bias=bias, eps=eps)

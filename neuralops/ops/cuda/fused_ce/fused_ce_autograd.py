@@ -13,7 +13,6 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import Any
 
@@ -22,8 +21,6 @@ import torch.nn.functional as F
 
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
-
-logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -120,10 +117,34 @@ def fused_cross_entropy(
     ignore_index: int = -100,
     reduction: str = "mean",
 ) -> torch.Tensor:
-    """3-Level Dispatched Fused Cross-Entropy Loss (WP4.3).
+    """3-Level Dispatched Fused Cross-Entropy Loss."""
+    def cuda_fn(logits, targets, ignore_index=-100, reduction="mean"):
+        if (not logits.requires_grad) or (not torch.is_grad_enabled()):
+            orig_shape = logits.shape
+            logits_flat = logits.reshape(-1, logits.shape[-1]).contiguous()
+            targets_flat = targets.reshape(-1).contiguous()
+            mod = _get_module()
+            loss = mod.fused_ce_fwd(logits_flat, targets_flat, ignore_index)
+            if reduction == "mean":
+                if ignore_index < 0:
+                    return loss.mean()
+                valid = (targets_flat != ignore_index).sum().clamp(min=1)
+                return loss.sum() / valid
+            elif reduction == "sum":
+                return loss.sum()
+            else:
+                return loss.view(orig_shape[:-1])
+        return _FusedCrossEntropyFunction.apply(logits, targets, ignore_index, reduction)
 
-    Cross entropy on vocabulary dimension is memory bandwidth bound.
-    PyTorch's cuDNN/ATen F.cross_entropy achieves 90% DRAM roofline.
-    """
-    logger.info("fused_cross_entropy: routing to PyTorch F.cross_entropy (cuDNN optimized)")
-    return fused_cross_entropy_pytorch_ref(logits, targets, ignore_index=ignore_index, reduction=reduction)
+    triton_fn = _get_triton_impl()
+
+    return dispatch(
+        cuda_fn,
+        triton_fn,
+        fused_cross_entropy_pytorch_ref,
+        logits,
+        targets,
+        ignore_index=ignore_index,
+        reduction=reduction,
+        kernel_name="fused_cross_entropy",
+    )

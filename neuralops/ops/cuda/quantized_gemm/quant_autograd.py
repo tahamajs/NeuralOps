@@ -156,13 +156,10 @@ def w4a16_gemm(
     zeros: torch.Tensor,
     group_size: int = 128,
 ) -> torch.Tensor:
-    """W4A16 GEMM with autograd backward support and 3-level fallback.
-
-    TODO: Switch to Marlin/AWQ when integrated.
-    Currently routing to PyTorch FP16 reference (WP4.4) for high-precision throughput.
-    """
-    logger.info("w4a16_gemm: routing to PyTorch FP16 reference (TODO: switch to Marlin/AWQ when integrated)")
-    return w4a16_gemm_pytorch_ref(A, W_q, scales, zeros, group_size)
+    """W4A16 GEMM with autograd backward support and 3-level fallback."""
+    if A.requires_grad:
+        return _W4A16GemmFunction.apply(A, W_q, scales, zeros, group_size)
+    return _w4a16_forward_dispatch(A, W_q, scales, zeros, group_size)
 
 
 def fp8_gemm_pytorch_ref(
