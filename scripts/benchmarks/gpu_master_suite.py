@@ -394,7 +394,7 @@ def main() -> int:
         paths = export_benchmark_results(results, device=device, output_dir=output_dir)
         print("  [OK] Exported results to:")
         for k, p in paths.items():
-            print(f"    • {k:<10}: {p}")
+            print(f"    * {k:<10}: {p}")
 
     return 0
 
