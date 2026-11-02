@@ -392,4 +392,5 @@ __all__ = [
     "compilable_sparse_attn",
     "compilable_low_rank",
     "register_custom_op_meta_shape",
+    "_CUSTOM_OPS_REGISTERED",
 ]
