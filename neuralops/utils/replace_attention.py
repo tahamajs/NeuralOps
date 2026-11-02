@@ -64,7 +64,11 @@ class UniversalAttentionWrapper(nn.Module):
         hidden_states: torch.Tensor | None = None
         if len(args) > 0 and isinstance(args[0], tuple):
             args = (args[0][0],) + args[1:]
-        if len(args) > 0 and isinstance(args[0], torch.Tensor):
+        if len(args) >= 3 and all(isinstance(a, torch.Tensor) for a in args[:3]):
+            # PyTorch MultiheadAttention signature: forward(query, key, value, ...)
+            hidden_states = args[0]
+            args = args[3:]
+        elif len(args) > 0 and isinstance(args[0], torch.Tensor):
             hidden_states = args[0]
             args = args[1:]
         elif "hidden_states" in kwargs:

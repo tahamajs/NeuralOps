@@ -177,12 +177,16 @@ def admm_pruner_compress(
             BLOCK_GROUPS=block_groups,
         )
     else:
-        grid = lambda meta: (triton.cdiv(total_groups, meta["BLOCK_GROUPS"]),)
-        _admm_24_kernel_autotuned[grid](
-            W_float,
-            out,
-            total_groups=total_groups,
-        )
+        try:
+            grid = lambda meta: (triton.cdiv(total_groups, meta["BLOCK_GROUPS"]),)
+            _admm_24_kernel_autotuned[grid](
+                W_float,
+                out,
+                total_groups=total_groups,
+            )
+        except Exception as exc:
+            logger.warning("admm_pruner Triton launch failed: %s. Using PyTorch reference.", exc)
+            return _admm_pytorch(W, dim=dim)
 
     return out.to(dtype=W.dtype)
 
