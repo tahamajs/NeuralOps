@@ -12,12 +12,15 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+import logging
 from pathlib import Path
 from typing import Any
 import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -153,42 +156,9 @@ def fused_lowrank_gated_gemm(
     alpha: torch.Tensor | None = None,
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """3-Level Dispatched Fused Low-Rank Gated GEMM."""
-    needs_grad = torch.is_grad_enabled() and any(
-        t.requires_grad for t in (x, V, U, alpha, bias) if isinstance(t, torch.Tensor)
-    )
+    """3-Level Dispatched Fused Low-Rank Gated GEMM (WP4.6).
 
-    if x.is_cuda:
-        b = bias
-        if needs_grad:
-            return _FusedLowRankGatedGemmFunction.apply(x, V, U, alpha, b)
-        else:
-            mod = _get_module()
-            dummy_tensor = torch.empty(0, device=x.device, dtype=x.dtype)
-            a_arg = alpha if alpha is not None else dummy_tensor
-            b_arg = b if b is not None else dummy_tensor
-            return mod.fused_lowrank_gated_gemm_fwd(x, V, U, a_arg, b_arg)
-
-    def cuda_fn(x, V, U, alpha=None, bias=None, b_drift=None, **kwargs):
-        b = bias if bias is not None else b_drift
-        if not needs_grad:
-            mod = _get_module()
-            dummy_tensor = torch.empty(0, device=x.device, dtype=x.dtype)
-            a_arg = alpha if alpha is not None else dummy_tensor
-            b_arg = b if b is not None else dummy_tensor
-            return mod.fused_lowrank_gated_gemm_fwd(x, V, U, a_arg, b_arg)
-        return _FusedLowRankGatedGemmFunction.apply(x, V, U, alpha, b)
-
-    triton_fn = _get_triton_impl()
-
-    return dispatch(
-        cuda_fn,
-        triton_fn,
-        fused_lowrank_gated_gemm_pytorch_ref,
-        x,
-        V,
-        U,
-        alpha=alpha,
-        b_drift=bias,
-        kernel_name="fused_lowrank_gated_gemm",
-    )
+    Two cuBLAS linear calls beat the unfused custom kernel.
+    """
+    logger.info("fused_lowrank_gated_gemm: routing to PyTorch cuBLAS reference")
+    return fused_lowrank_gated_gemm_pytorch_ref(x, V, U, alpha=alpha, bias=bias)

@@ -158,6 +158,11 @@ def check_triton_suitability(
                 f"kernel '{kernel_name}' is forward-only but gradient computation is enabled",
             )
 
+    if kernel_name == "favor_plus":
+        if tensor.dim() >= 2:
+            if tensor.shape[-1] < 512 or tensor.shape[-2] <= 64:
+                return False, "small shape, PyTorch cuBLAS faster"
+
     return True, None
 
 

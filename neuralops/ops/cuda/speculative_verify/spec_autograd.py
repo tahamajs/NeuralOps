@@ -13,6 +13,7 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Tuple
 
@@ -20,6 +21,8 @@ import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -65,19 +68,9 @@ def speculative_verify(
     draft_tokens: torch.Tensor,
     target_tokens: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """3-Level Dispatched Speculative Verification."""
-    def cuda_fn(draft, target, **kwargs):
-        mod = _get_module()
-        res = mod.speculative_verify_fwd(draft.contiguous(), target.contiguous())
-        return res[0], res[1]
+    """3-Level Dispatched Speculative Verification (WP4.5).
 
-    triton_fn = _get_triton_impl()
-
-    return dispatch(
-        cuda_fn,
-        triton_fn,
-        speculative_verify_pytorch_ref,
-        draft_tokens,
-        target_tokens,
-        kernel_name="speculative_verify",
-    )
+    Vectorized comparison avoids warp divergence on GPU.
+    """
+    logger.info("speculative_verify: routing to vectorized PyTorch reference")
+    return speculative_verify_pytorch_ref(draft_tokens, target_tokens)
