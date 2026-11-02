@@ -869,6 +869,11 @@ class RefinedLandmarkAttention(BaseAttention):
                 q, K_full, V_full, past_len, valid_mask
             )
 
+        if self.is_decoder and N == N_kv:
+            # Landmark selection is global and can change when future tokens
+            # change. Keep causal outputs independent of future-token routing.
+            context_land = torch.zeros_like(context_local)
+
         gate_val = (
             torch.sigmoid(self.lora_gate)
             .view(1, H, 1, 1)

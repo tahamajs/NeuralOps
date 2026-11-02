@@ -566,6 +566,23 @@ class RoutingAttention(BaseAttention):
         scale = 1.0 / math.sqrt(int(d))
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
+        if is_causal:
+            # Global clustering lets future tokens change past routing decisions.
+            # Use the exact causal reference path so autoregressive outputs are
+            # invariant to tokens beyond the current query position.
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+            causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+            pair_mask = causal_mask.view(1, 1, L, L) & valid_mask_2d.view(B, 1, 1, L)
+            scores = scores.masked_fill(~pair_mask, -1e4)
+            attn = torch.nan_to_num(F.softmax(scores, dim=-1), nan=0.0).to(dtype)
+            outputs = torch.matmul(attn, V)
+            if head_mask is not None:
+                hm = head_mask.view(1, -1, 1, 1) if head_mask.dim() == 1 else head_mask
+                outputs = outputs * hm.to(outputs.dtype)
+            context = outputs.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+            output = torch.nan_to_num(self.out_proj(context), nan=0.0, posinf=1e4, neginf=-1e4)
+            return output, None
+
         outputs = torch.zeros_like(Q)
         arange_L = torch.arange(L, device=device)
 
