@@ -18,8 +18,8 @@ template <typename scalar_t, int MAX_DK>
 __launch_bounds__(128)
 __global__ void recurrent_linear_step_vectorized_kernel(
     scalar_t* __restrict__ out,
-    scalar_t* __restrict__ kv_state,
-    scalar_t* __restrict__ z_state,
+    float* __restrict__ kv_state,
+    float* __restrict__ z_state,
     const scalar_t* __restrict__ q_t,
     const scalar_t* __restrict__ k_t,
     const scalar_t* __restrict__ v_t,
@@ -45,9 +45,9 @@ __global__ void recurrent_linear_step_vectorized_kernel(
         s_q[k] = to_float(q_t[qk_offset + k]);
         const float kval = to_float(k_t[qk_offset + k]);
         s_k[k] = kval;
-        const float z_new = to_float(z_state[z_offset + k]) + kval;
+        const float z_new = z_state[z_offset + k] + kval;
         s_z[k] = z_new;
-        z_state[z_offset + k] = from_float<scalar_t>(z_new);
+        z_state[z_offset + k] = z_new;
     }
     __syncthreads();
 
@@ -76,8 +76,8 @@ __global__ void recurrent_linear_step_vectorized_kernel(
         #pragma unroll 4
         for (int k = 0; k < Dk && k < MAX_DK; ++k) {
             const int idx = kv_offset + k * Dv + v;
-            const float kv_val = fmaf(s_k[k], v_val, to_float(kv_state[idx]));
-            kv_state[idx] = from_float<scalar_t>(kv_val);
+            const float kv_val = fmaf(s_k[k], v_val, kv_state[idx]);
+            kv_state[idx] = kv_val;
             num_acc = fmaf(s_q[k], kv_val, num_acc);
         }
 
@@ -99,6 +99,10 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
     TORCH_CHECK(q_t.is_cuda(), "q_t must be a CUDA tensor");
     TORCH_CHECK(k_t.is_cuda(), "k_t must be a CUDA tensor");
     TORCH_CHECK(v_t.is_cuda(), "v_t must be a CUDA tensor");
+    TORCH_CHECK(kv_state.is_cuda(), "kv_state must be a CUDA tensor");
+    TORCH_CHECK(z_state.is_cuda(), "z_state must be a CUDA tensor");
+    TORCH_CHECK(kv_state.scalar_type() == at::ScalarType::Float, "kv_state must be float32");
+    TORCH_CHECK(z_state.scalar_type() == at::ScalarType::Float, "z_state must be float32");
 
     const int B = q_t.size(0);
     const int H = q_t.size(1);
@@ -122,8 +126,8 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
             if (Dk <= 64) {
                 neuralops::cuda::recurrent_linear_step_vectorized_kernel<scalar_t, 64><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
-                    kv_state.data_ptr<scalar_t>(),
-                    z_state.data_ptr<scalar_t>(),
+                    kv_state.data_ptr<float>(),
+                    z_state.data_ptr<float>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
                     v_c.data_ptr<scalar_t>(),
@@ -132,8 +136,8 @@ std::vector<torch::Tensor> recurrent_linear_step_fwd(
             } else {
                 neuralops::cuda::recurrent_linear_step_vectorized_kernel<scalar_t, 128><<<grid, threads, 0, stream>>>(
                     out.data_ptr<scalar_t>(),
-                    kv_state.data_ptr<scalar_t>(),
-                    z_state.data_ptr<scalar_t>(),
+                    kv_state.data_ptr<float>(),
+                    z_state.data_ptr<float>(),
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
                     v_c.data_ptr<scalar_t>(),

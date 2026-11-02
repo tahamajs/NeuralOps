@@ -86,31 +86,14 @@ def _recurrent_linear_step_fwd_dispatch(
     """3-Level Dispatched Recurrent Linear Step Forward."""
     def cuda_fn(q, k, v, kv, z, **kwargs):
         mod = _get_module()
-        kv_copy = kv.clone()
-        z_copy = z.clone()
+        kv_copy = kv.float().clone()
+        z_copy = z.float().clone()
         res = mod.recurrent_linear_step_fwd(
             q.contiguous(), k.contiguous(), v.contiguous(), kv_copy, z_copy, eps
         )
-        return res[0], res[1], res[2]
+        return res[0], res[1].to(kv.dtype), res[2].to(z.dtype)
 
     triton_fn = _get_triton_impl()
-
-    # The native half/bfloat16 path quantizes recurrent state in place and
-    # exceeds the parity budget. Route those dtypes through the exact reference
-    # until an FP32-state native implementation is available.
-    if q_t.dtype in (torch.float16, torch.bfloat16):
-        return dispatch(
-            None,
-            None,
-            recurrent_linear_step_pytorch_ref,
-            q_t,
-            k_t,
-            v_t,
-            kv_state,
-            z_state,
-            eps=eps,
-            kernel_name="recurrent_linear_step",
-        )
 
     return dispatch(
         cuda_fn,
