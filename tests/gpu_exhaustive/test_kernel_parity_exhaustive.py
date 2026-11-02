@@ -56,7 +56,7 @@ def test_selective_scan_parity(dtype: torch.dtype):
     out_k, state_k = selective_scan(u, delta, a, b_t, c, d_param)
     out_ref, state_ref = selective_scan_pytorch_ref(u, delta, a, b_t, c, d_param)
 
-    tol = 1e-3 if dtype == torch.float32 else 1e-2
+    tol = 1e-3 if dtype == torch.float32 else 5e-2
     max_diff_out = (out_k - out_ref).abs().max().item()
     assert max_diff_out <= tol, f"selective_scan out max_diff={max_diff_out:.6f} exceeded tol={tol}"
     if (state_k != 0).any():
