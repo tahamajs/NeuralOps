@@ -372,6 +372,9 @@ __all__ = [
     "fast_linear_attention",
     "LinearAttentionTriton",
     "triton_block_sparse_attention",
+    "delta_net_scan",
+    "retnet_scan",
+    "chunked_gla_scan",
 ]
 
 from neuralops.ops.triton.low_rank import (
@@ -499,6 +502,8 @@ from neuralops.ops.triton import softplus
 from neuralops.ops.triton import differential_attention
 from neuralops.ops.triton import hydra_attention
 from neuralops.ops.triton import retnet_retention
+from neuralops.ops.triton import retnet_scan
+from neuralops.ops.triton import delta_net_scan
 from neuralops.ops.triton import dynamic_sparse_attention
 from neuralops.ops.triton import cur_linear
 from neuralops.ops.triton import varlen_attention

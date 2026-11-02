@@ -13,9 +13,12 @@ Computes temperature-scaled Kullback-Leibler divergence between student and teac
 
 from __future__ import annotations
 
+import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+logger = logging.getLogger(__name__)
 
 try:
     import triton
@@ -238,26 +241,38 @@ class _FusedKDFunction(torch.autograd.Function):
         t_flat = teacher_logits.reshape(-1, teacher_logits.shape[-1]).contiguous()
         N_tokens, V = s_flat.shape
 
+        use_triton = False
         if TRITON_AVAILABLE and student_logits.is_cuda:
-            loss_per_token = torch.empty((N_tokens,), device=s_flat.device, dtype=torch.float32)
-            BLOCK_SIZE = min(2048, triton.next_power_of_2(min(V, 2048)))
-            _fused_kd_fwd_kernel[(N_tokens,)](
-                s_flat,
-                t_flat,
-                loss_per_token,
-                s_flat.stride(0),
-                s_flat.stride(1),
-                t_flat.stride(0),
-                t_flat.stride(1),
-                loss_per_token.stride(0),
-                V=V,
-                INV_T=float(1.0 / temperature),
-                T2=float(temperature * temperature),
-                BLOCK_SIZE=BLOCK_SIZE,
-                num_warps=4 if BLOCK_SIZE <= 1024 else 8,
-                num_stages=3,
-            )
-        else:
+            from neuralops.ops.triton._types import check_triton_suitability
+            suitable, reason = check_triton_suitability(student_logits, "fused_kd", allow_fp32=True)
+            if suitable:
+                try:
+                    loss_per_token = torch.empty((N_tokens,), device=s_flat.device, dtype=torch.float32)
+                    BLOCK_SIZE = min(2048, triton.next_power_of_2(min(V, 2048)))
+                    _fused_kd_fwd_kernel[(N_tokens,)](
+                        s_flat,
+                        t_flat,
+                        loss_per_token,
+                        s_flat.stride(0),
+                        s_flat.stride(1),
+                        t_flat.stride(0),
+                        t_flat.stride(1),
+                        loss_per_token.stride(0),
+                        V=V,
+                        INV_T=float(1.0 / temperature),
+                        T2=float(temperature * temperature),
+                        BLOCK_SIZE=BLOCK_SIZE,
+                        num_warps=4 if BLOCK_SIZE <= 1024 else 8,
+                        num_stages=3,
+                    )
+                    use_triton = True
+                except Exception as exc:
+                    logger.warning("Triton kernel 'fused_kd' forward failed (%s); using PyTorch reference", exc)
+                    use_triton = False
+            else:
+                logger.warning("Triton kernel 'fused_kd' using PyTorch fallback: %s", reason)
+
+        if not use_triton:
             p_s = F.log_softmax(s_flat / temperature, dim=-1)
             p_t = F.softmax(t_flat / temperature, dim=-1)
             loss_per_token = (p_t * (p_t.log() - p_s)).sum(dim=-1) * (temperature * temperature)
@@ -294,27 +309,39 @@ class _FusedKDFunction(torch.autograd.Function):
             grad_per_token = grad_output.reshape(-1)
 
         grad_s = torch.empty_like(s_flat)
+        use_triton_bwd = False
         if TRITON_AVAILABLE and s_flat.is_cuda:
-            BLOCK_SIZE = min(2048, triton.next_power_of_2(min(V, 2048)))
-            _fused_kd_bwd_kernel[(N_tokens,)](
-                s_flat,
-                t_flat,
-                grad_per_token.contiguous(),
-                grad_s,
-                s_flat.stride(0),
-                s_flat.stride(1),
-                t_flat.stride(0),
-                t_flat.stride(1),
-                grad_s.stride(0),
-                grad_s.stride(1),
-                V=V,
-                INV_T=float(1.0 / temperature),
-                T_VAL=float(temperature),
-                BLOCK_SIZE=BLOCK_SIZE,
-                num_warps=4 if BLOCK_SIZE <= 1024 else 8,
-                num_stages=3,
-            )
-        else:
+            from neuralops.ops.triton._types import check_triton_suitability
+            suitable, reason = check_triton_suitability(s_flat, "fused_kd", allow_fp32=True)
+            if suitable:
+                try:
+                    BLOCK_SIZE = min(2048, triton.next_power_of_2(min(V, 2048)))
+                    _fused_kd_bwd_kernel[(N_tokens,)](
+                        s_flat,
+                        t_flat,
+                        grad_per_token.contiguous(),
+                        grad_s,
+                        s_flat.stride(0),
+                        s_flat.stride(1),
+                        t_flat.stride(0),
+                        t_flat.stride(1),
+                        grad_s.stride(0),
+                        grad_s.stride(1),
+                        V=V,
+                        INV_T=float(1.0 / temperature),
+                        T_VAL=float(temperature),
+                        BLOCK_SIZE=BLOCK_SIZE,
+                        num_warps=4 if BLOCK_SIZE <= 1024 else 8,
+                        num_stages=3,
+                    )
+                    use_triton_bwd = True
+                except Exception as exc:
+                    logger.warning("Triton kernel 'fused_kd' backward failed (%s); using PyTorch reference", exc)
+                    use_triton_bwd = False
+            else:
+                logger.warning("Triton kernel 'fused_kd' bwd using PyTorch fallback: %s", reason)
+
+        if not use_triton_bwd:
             p_s = F.softmax(s_flat / temperature, dim=-1)
             p_t = F.softmax(t_flat / temperature, dim=-1)
             grad_s = (p_s - p_t) * (grad_per_token.unsqueeze(-1) * temperature)

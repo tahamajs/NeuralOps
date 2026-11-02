@@ -82,47 +82,15 @@ TENSOR_CORE_DOT_KERNELS: set[str] = {
 PTX73_UNSUPPORTED_TRITON_KERNELS: set[str] = {
     "fused_hnc_nullspace_step",
     "gdn_scan",
-    "softplus",
     "fused_kd",
-    "selective_scan",
+    "sliding_window",
     "fused_rope",
     "fused_recurrent_linear_step",
+    "hybrid_local_attn",
+    "hybrid_two_branch_blend",
 }
 
-SIZE_THRESHOLDS: dict[str, dict[str, int]] = {
-    # Elementwise/activations: launch overhead dominates below 65,536 elements
-    "softplus": {"min_numel": 65536},
-    "fused_kd": {"min_numel": 65536},
-    "fused_ce": {"min_numel": 65536},
-    "fused_favor_plus": {"min_numel": 65536},
-    # Norm & Linear: cuBLAS / ATen is highly vectorized and beats Triton launch overhead below dim/numel threshold
-    "fused_norm_linear": {"min_numel": 131072},
-    "fused_jamba_hybrid_gate": {"min_numel": 131072},
-    # GEMMs / Low rank: launch overhead dominates below M=64 or N=64 or numel < 65536
-    "fused_linformer_seq_proj": {"min_seq_len": 128},
-    "fused_kronecker_gemm": {"min_numel": 16384},
-    "fused_nystrom_landmark_pinv": {"min_numel": 32768},
-    "fused_hnc_nullspace_step": {"min_numel": 262144},
-    # Sequence scans & Recurrent: sequential step overhead on CPU or tiny T
-    "gla_scan": {"min_seq_len": 128},
-    "gdn_scan": {"min_seq_len": 128},
-    "hgrn2_scan": {"min_seq_len": 128},
-    "fms_scan": {"min_seq_len": 128},
-    "selective_scan": {"min_seq_len": 128},
-    "fused_rala_augmented_scan": {"min_seq_len": 128},
-    "cosformer": {"min_seq_len": 128},
-    # Attention & Inference KV
-    "sliding_window": {"min_seq_len": 256},
-    "sliding_window_attention": {"min_seq_len": 256},
-    "paged_attention": {"min_numel": 32768},
-    "flash_decode": {"min_seq_len": 128},
-    "fused_moba_block_router": {"min_numel": 16384},
-    "fused_mqa_bias_scale": {"min_numel": 16384},
-    "fused_hamming_scores": {"min_numel": 16384},
-    "fused_rope": {"min_seq_len": 128},
-    "fused_recurrent_linear_step": {"min_numel": 1024},
-    "fused_goldfinch_hopfield": {"min_numel": 16384},
-}
+SIZE_THRESHOLDS: dict[str, dict[str, int]] = {}
 
 
 def _get_cuda_driver_version_int() -> int:

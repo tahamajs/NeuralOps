@@ -13,10 +13,13 @@ Computes recurrent state updates for SSM and RWKV architectures with fused hidde
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any
 
 import torch
+
+logger = logging.getLogger(__name__)
 
 from neuralops.ops.triton._types import (
     HAS_TRITON,
@@ -405,23 +408,26 @@ def fused_recurrent_linear_step(
     """
     B, H, Dk = q_t.shape
     Dv = v_t.shape[-1]
-    suitable, _ = check_triton_suitability(q_t, "state_update")
+    suitable, reason = check_triton_suitability(q_t, "fused_recurrent_linear_step")
 
     if suitable and HAS_TRITON and Dk in (16, 32, 64, 128) and Dv in (16, 32, 64, 128):
-        out = torch.empty((B, H, Dv), dtype=q_t.dtype, device=q_t.device)
-        grid = (B, H)
-        _triton_recurrent_linear_step_kernel[grid](
-            q_t, k_t, v_t, kv_state, z_state, out,
-            B, H, Dk, Dv,
-            q_t.stride(0), q_t.stride(1), q_t.stride(2),
-            k_t.stride(0), k_t.stride(1), k_t.stride(2),
-            v_t.stride(0), v_t.stride(1), v_t.stride(2),
-            kv_state.stride(0), kv_state.stride(1), kv_state.stride(2), kv_state.stride(3),
-            z_state.stride(0), z_state.stride(1), z_state.stride(2),
-            out.stride(0), out.stride(1), out.stride(2),
-            eps,
-        )
-        return out, kv_state, z_state
+        try:
+            out = torch.empty((B, H, Dv), dtype=q_t.dtype, device=q_t.device)
+            grid = (B, H)
+            _triton_recurrent_linear_step_kernel[grid](
+                q_t, k_t, v_t, kv_state, z_state, out,
+                B, H, Dk, Dv,
+                q_t.stride(0), q_t.stride(1), q_t.stride(2),
+                k_t.stride(0), k_t.stride(1), k_t.stride(2),
+                v_t.stride(0), v_t.stride(1), v_t.stride(2),
+                kv_state.stride(0), kv_state.stride(1), kv_state.stride(2), kv_state.stride(3),
+                z_state.stride(0), z_state.stride(1), z_state.stride(2),
+                out.stride(0), out.stride(1), out.stride(2),
+                eps,
+            )
+            return out, kv_state, z_state
+        except Exception as exc:
+            logger.warning("Triton kernel 'fused_recurrent_linear_step' failed (%s); using PyTorch fallback", exc)
 
     kv_state = kv_state + torch.einsum("bhk,bhv->bhkv", k_t.float(), v_t.float()).to(kv_state.dtype)
     z_state = z_state + k_t

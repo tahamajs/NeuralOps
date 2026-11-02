@@ -20,7 +20,7 @@ import torch.nn.functional as F
 
 from typing import Any
 
-from neuralops.ops.triton._common import tl, triton
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
 MAX_REGISTER_DIM = 64
 
@@ -1261,6 +1261,131 @@ def gla_recurrent_step_triton(
     return (y.unsqueeze(2) if has_l_dim else y), state_s, state_z
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _chunked_gla_fwd_kernel(
+        q_ptr, k_ptr, v_ptr, lam_ptr, o_ptr,
+        B, H, L,
+        D: tl.constexpr,
+        CHUNK_SIZE: tl.constexpr,
+        stride_qb, stride_qh, stride_ql, stride_qd,
+        stride_kb, stride_kh, stride_kl, stride_kd,
+        stride_vb, stride_vh, stride_vl, stride_vd,
+        stride_lb, stride_lh, stride_ll,
+        stride_ob, stride_oh, stride_ol, stride_od,
+    ):
+        pid_b = tl.program_id(0)
+        pid_h = tl.program_id(1)
+
+        offs_d = tl.arange(0, D)
+        S = tl.zeros((D, D), dtype=tl.float32)
+
+        num_chunks = tl.cdiv(L, CHUNK_SIZE)
+        for c in range(num_chunks):
+            c_start = c * CHUNK_SIZE
+            c_end = tl.minimum(c_start + CHUNK_SIZE, L)
+
+            for t in range(c_start, c_end):
+                q_ptrs = q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd
+                k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd
+                v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd
+                lam_ptrs = lam_ptr + pid_b * stride_lb + pid_h * stride_lh + t * stride_ll
+
+                q_t = tl.load(q_ptrs).to(tl.float32)
+                k_t = tl.load(k_ptrs).to(tl.float32)
+                v_t = tl.load(v_ptrs).to(tl.float32)
+                lam_t = tl.load(lam_ptrs).to(tl.float32)
+
+                S = lam_t * S + (k_t[:, None] * v_t[None, :])
+                o_t = tl.sum(q_t[:, None] * S, axis=0)
+
+                o_ptrs = o_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_d * stride_od
+                tl.store(o_ptrs, o_t.to(q_ptr.dtype.element_ty))
+else:
+    _chunked_gla_fwd_kernel = None
+
+
+def chunked_gla_scan_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    lambdas: torch.Tensor | None = None,
+    chunk_size: int = 64,
+) -> torch.Tensor:
+    """Pure PyTorch fallback reference implementation for Chunked GLA."""
+    B, H, L, D = q.shape
+    if lambdas is None:
+        lambdas = torch.sigmoid(q.mean(dim=-1))
+
+    device = q.device
+    dtype = q.dtype
+    S = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
+    outputs = []
+
+    for t in range(L):
+        q_t = q[:, :, t, :].float()
+        k_t = k[:, :, t, :].float()
+        v_t = v[:, :, t, :].float()
+        lam_t = lambdas[:, :, t].float().clamp(1e-4, 1.0 - 1e-4)
+
+        kv = torch.matmul(k_t.unsqueeze(-1), v_t.unsqueeze(-2))
+        S = lam_t.unsqueeze(-1).unsqueeze(-1) * S + kv
+
+        o_t = torch.matmul(q_t.unsqueeze(-2), S).squeeze(-2)
+        outputs.append(o_t)
+
+    return torch.stack(outputs, dim=2).to(dtype)
+
+
+def chunked_gla_scan_triton(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    lambdas: torch.Tensor | None = None,
+    chunk_size: int = 64,
+) -> torch.Tensor:
+    """Triton-accelerated Chunked Gated Linear Attention scan with fail-closed PyTorch fallback."""
+    B, H, L, D = q.shape
+    if lambdas is None:
+        lambdas = torch.sigmoid(q.mean(dim=-1))
+
+    from neuralops.ops.triton._types import check_triton_suitability
+    is_suitable, reason = check_triton_suitability(q, "gla_scan", head_dim=D, seq_len=L, allow_fp32=True)
+    if not is_suitable or not HAS_TRITON or D not in (16, 32, 64, 128):
+        if not is_suitable:
+            import logging
+            logging.getLogger(__name__).warning("Triton kernel 'chunked_gla_scan' using PyTorch fallback: %s", reason)
+        return chunked_gla_scan_pytorch(q, k, v, lambdas=lambdas, chunk_size=chunk_size)
+
+    q_c = q.contiguous()
+    k_c = k.contiguous()
+    v_c = v.contiguous()
+    lam_c = lambdas.contiguous().to(torch.float32)
+    out = torch.empty_like(v_c)
+
+    grid = (B, H)
+    try:
+        _chunked_gla_fwd_kernel[grid](
+            q_c, k_c, v_c, lam_c, out,
+            B, H, L,
+            D=D,
+            CHUNK_SIZE=chunk_size,
+            stride_qb=q_c.stride(0), stride_qh=q_c.stride(1), stride_ql=q_c.stride(2), stride_qd=q_c.stride(3),
+            stride_kb=k_c.stride(0), stride_kh=k_c.stride(1), stride_kl=k_c.stride(2), stride_kd=k_c.stride(3),
+            stride_vb=v_c.stride(0), stride_vh=v_c.stride(1), stride_vl=v_c.stride(2), stride_vd=v_c.stride(3),
+            stride_lb=lam_c.stride(0), stride_lh=lam_c.stride(1), stride_ll=lam_c.stride(2),
+            stride_ob=out.stride(0), stride_oh=out.stride(1), stride_ol=out.stride(2), stride_od=out.stride(3),
+        )
+        return out
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Triton kernel 'chunked_gla_scan' failed (%s); using PyTorch fallback.", exc)
+        return chunked_gla_scan_pytorch(q, k, v, lambdas=lambdas, chunk_size=chunk_size)
+
+
+chunked_gla_scan = chunked_gla_scan_triton
+
+
 from neuralops.ops.triton.gdn_scan import (
     triton_chunked_delta_gate_scan,
     triton_chunked_delta_gate_scan_pytorch_ref,
@@ -1270,6 +1395,9 @@ __all__ = [
     'gla_scan_triton',
     'gla_scan_pytorch',
     'gla_scan',
+    'chunked_gla_scan',
+    'chunked_gla_scan_triton',
+    'chunked_gla_scan_pytorch',
     'gla_recurrent_step_triton',
     'kda_hla_chunk_scan_triton',
     'fused_regla_refined_gate_scan_triton',

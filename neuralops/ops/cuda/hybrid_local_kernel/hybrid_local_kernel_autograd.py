@@ -98,10 +98,14 @@ def hybrid_local_attn(
 
     def triton_fn(q, k, v, radius=32, is_causal=False):
         try:
+            from neuralops.ops.triton._types import check_triton_suitability
+            suitable, _ = check_triton_suitability(q, "hybrid_local_attn")
+            if not suitable:
+                return None
             from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_local_attn_triton
             return hybrid_local_attn_triton(q, k, v, radius=radius, is_causal=is_causal)
         except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
-            logger.warning("Failed in Triton hybrid_local_attn: %s", exc, exc_info=True)
+            logger.warning("Failed in Triton hybrid_local_attn: %s", exc)
             return None
 
     if q.shape[-1] > 256:
@@ -138,10 +142,14 @@ def hybrid_two_branch_blend(
 
     def triton_fn(b0, b1, alpha):
         try:
+            from neuralops.ops.triton._types import check_triton_suitability
+            suitable, _ = check_triton_suitability(b0, "hybrid_two_branch_blend")
+            if not suitable:
+                return None
             from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_two_branch_blend_triton
             return hybrid_two_branch_blend_triton(b0, b1, alpha)
         except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
-            logger.warning("Failed in Triton hybrid_two_branch_blend: %s", exc, exc_info=True)
+            logger.warning("Failed in Triton hybrid_two_branch_blend: %s", exc)
             return None
 
     return dispatch(

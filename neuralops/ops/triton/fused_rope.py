@@ -131,10 +131,12 @@ def fused_rope_embedding_kernel(
     if torch.is_grad_enabled() or q.requires_grad or k.requires_grad:
         return _FusedRoPEFunction.apply(q, k, cos, sin)
 
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    suitable, _ = check_triton_suitability(q, "fused_rope")
     if (
         HAS_TRITON
         and not FORCE_PYTORCH_FALLBACK
+        and suitable
         and q.is_cuda
         and k.is_cuda
         and q.shape[-1] in (32, 64, 128, 256)

@@ -259,18 +259,22 @@ def triton_multi_scale_retention(
 
     grid = lambda META: (triton.cdiv(L, META["BLOCK_M"]), B * H)
 
-    _retnet_fwd_kernel[grid](
-        q_c, k_c, v_c, g_c, out_4d,
-        q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-        k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
-        v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
-        out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
-        B, H, L,
-        D=D,
-    )
+    try:
+        _retnet_fwd_kernel[grid](
+            q_c, k_c, v_c, g_c, out_4d,
+            q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
+            k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
+            v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
+            out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
+            B, H, L,
+            D=D,
+        )
+        return out_4d.view(orig_shape)
+    except Exception as exc:
+        return triton_multi_scale_retention_pytorch_ref(q_4d, k_4d, v_4d, g_vec).view(orig_shape)
 
-    return out_4d.view(orig_shape)
 
+from neuralops.ops.triton.retnet_scan import retnet_scan, retnet_scan_triton, retnet_scan_pytorch
 
 triton_retnet_retention = triton_multi_scale_retention
 triton_retnet_retention_pytorch_ref = triton_multi_scale_retention_pytorch_ref
@@ -281,4 +285,7 @@ __all__ = [
     "triton_multi_scale_retention_pytorch_ref",
     "triton_retnet_retention_pytorch_ref",
     "TritonRetNetRetentionFunction",
+    "retnet_scan",
+    "retnet_scan_triton",
+    "retnet_scan_pytorch",
 ]

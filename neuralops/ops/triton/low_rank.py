@@ -2138,8 +2138,9 @@ class _FusedHNCNullSpaceStepFn(torch.autograd.Function):
         ctx.alpha = alpha
         ctx.has_restore = restore_grad is not None
 
-        is_suitable, _ = check_triton_suitability(w, kernel_name="low_rank", allow_fp32=True)
+        is_suitable, reason = check_triton_suitability(w, kernel_name="fused_hnc_nullspace_step", allow_fp32=True)
         if not is_suitable or not HAS_TRITON:
+            logger.warning("Triton kernel 'fused_hnc_nullspace_step' using PyTorch fallback: %s", reason)
             return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
 
         d_out, d_in = w.shape
@@ -2159,32 +2160,36 @@ class _FusedHNCNullSpaceStepFn(torch.autograd.Function):
             triton.cdiv(d_in, BLOCK_N),
         )
 
-        _fused_hnc_nullspace_spectral_step_fwd_kernel[grid](
-            w_contig,
-            gp_contig,
-            res_contig,
-            rg_contig if rg_contig is not None else w_contig,
-            out,
-            d_out,
-            d_in,
-            w_contig.stride(0),
-            w_contig.stride(1),
-            gp_contig.stride(0),
-            gp_contig.stride(1),
-            res_contig.stride(0),
-            res_contig.stride(1),
-            rg_contig.stride(0) if rg_contig is not None else 0,
-            rg_contig.stride(1) if rg_contig is not None else 0,
-            out.stride(0),
-            out.stride(1),
-            float(eta),
-            float(alpha),
-            HAS_RESTORE=bool(restore_grad is not None),
-            BLOCK_M=BLOCK_M,
-            BLOCK_N=BLOCK_N,
-            BLOCK_K=BLOCK_K,
-        )
-        return out
+        try:
+            _fused_hnc_nullspace_spectral_step_fwd_kernel[grid](
+                w_contig,
+                gp_contig,
+                res_contig,
+                rg_contig if rg_contig is not None else w_contig,
+                out,
+                d_out,
+                d_in,
+                w_contig.stride(0),
+                w_contig.stride(1),
+                gp_contig.stride(0),
+                gp_contig.stride(1),
+                res_contig.stride(0),
+                res_contig.stride(1),
+                rg_contig.stride(0) if rg_contig is not None else 0,
+                rg_contig.stride(1) if rg_contig is not None else 0,
+                out.stride(0),
+                out.stride(1),
+                float(eta),
+                float(alpha),
+                HAS_RESTORE=bool(restore_grad is not None),
+                BLOCK_M=BLOCK_M,
+                BLOCK_N=BLOCK_N,
+                BLOCK_K=BLOCK_K,
+            )
+            return out
+        except Exception as exc:
+            logger.warning("Triton kernel 'fused_hnc_nullspace_step' failed (%s); using PyTorch fallback", exc)
+            return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
 
     @staticmethod
     def backward(ctx: Any, grad_output: Any) -> tuple[Any, ...]:
@@ -2207,10 +2212,15 @@ def fused_hnc_nullspace_step_triton(
     """Execute fused HNC null-space step with automated Pascal SM < 7.0 fallback."""
     if not w.is_cuda or not HAS_TRITON:
         return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
-    is_suitable, _ = check_triton_suitability(w, kernel_name="low_rank", allow_fp32=True)
+    is_suitable, reason = check_triton_suitability(w, kernel_name="fused_hnc_nullspace_step", allow_fp32=True)
     if not is_suitable:
+        logger.warning("Triton kernel 'fused_hnc_nullspace_step' using PyTorch fallback: %s", reason)
         return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
-    return _FusedHNCNullSpaceStepFn.apply(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
+    try:
+        return _FusedHNCNullSpaceStepFn.apply(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
+    except Exception as exc:
+        logger.warning("Triton kernel 'fused_hnc_nullspace_step' failed (%s); using PyTorch fallback", exc)
+        return fused_hnc_nullspace_step_pytorch(w, grad_phi, inv_null_proj, eta, restore_grad, alpha)
 
 
 def block_diag_matmul_triton(
@@ -2997,8 +3007,8 @@ def _fused_kronecker_gemm_kernel(
             x_ptrs = x_ptr + curr_m * stride_xm + flat_offs_k * stride_xk
             x_slice = tl.load(x_ptrs)
 
-            t = tl.dot(x_slice.to(tl.float32), tl.trans(b_tile).to(tl.float32), allow_tf32=True)
-            y_slice = tl.dot(a_tile.to(tl.float32), t.to(tl.float32), allow_tf32=True)
+            t = tl.dot(x_slice.to(tl.float32), tl.trans(b_tile).to(tl.float32), allow_tf32=False)
+            y_slice = tl.dot(a_tile.to(tl.float32), t.to(tl.float32), allow_tf32=False)
 
             flat_offs_out = offs_m1[:, None] * M2 + offs_m2[None, :]
             y_ptrs = y_ptr + curr_m * stride_ym + flat_offs_out * stride_yn
@@ -3073,29 +3083,32 @@ def triton_fused_kronecker_matmul(
     A_c = A.contiguous()
     B_c = B.contiguous()
 
-    _fused_kronecker_gemm_kernel[grid](
-        x_c,
-        A_c,
-        B_c,
-        bias_t,
-        Y,
-        M,
-        M1=M1,
-        M2=M2,
-        N1=N1,
-        N2=N2,
-        stride_xm=x_c.stride(0),
-        stride_xk=x_c.stride(1),
-        stride_a_m=A_c.stride(0),
-        stride_a_n=A_c.stride(1),
-        stride_b_m=B_c.stride(0),
-        stride_b_n=B_c.stride(1),
-        stride_ym=Y.stride(0),
-        stride_yn=Y.stride(1),
-        HAS_BIAS=has_bias,
-    )
-
-    return Y.view(*orig_shape[:-1], out_features)
+    try:
+        _fused_kronecker_gemm_kernel[grid](
+            x_c,
+            A_c,
+            B_c,
+            bias_t,
+            Y,
+            M,
+            M1=M1,
+            M2=M2,
+            N1=N1,
+            N2=N2,
+            stride_xm=x_c.stride(0),
+            stride_xk=x_c.stride(1),
+            stride_a_m=A_c.stride(0),
+            stride_a_n=A_c.stride(1),
+            stride_b_m=B_c.stride(0),
+            stride_b_n=B_c.stride(1),
+            stride_ym=Y.stride(0),
+            stride_yn=Y.stride(1),
+            HAS_BIAS=has_bias,
+        )
+        return Y.view(*orig_shape[:-1], out_features)
+    except Exception as exc:
+        logger.warning("Triton kernel 'fused_kronecker_gemm' failed (%s); using PyTorch fallback", exc)
+        return triton_fused_kronecker_matmul_pytorch_ref(x, A, B, bias)
 
 
 @triton.autotune(

@@ -40,7 +40,12 @@ from __future__ import annotations
 
 import logging
 import math
+import os
 from typing import Any
+
+# Configure TRITON_PTXAS_PATH if local CUDA toolkit provides compatible ptxas
+if "TRITON_PTXAS_PATH" not in os.environ and os.path.exists("/usr/local/cuda-11.3/bin/ptxas"):
+    os.environ["TRITON_PTXAS_PATH"] = "/usr/local/cuda-11.3/bin/ptxas"
 
 import torch
 import torch.nn.functional as F
