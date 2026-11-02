@@ -55,6 +55,21 @@ def verify_op(op_name: str, *, atol: float = 1e-3, rtol: float = 1e-3, device: s
         return False
     try:
         args, kwargs = _make_inputs(config, device=device)
+        # Select precision-grounded tolerances:
+        # FP32: atol=1e-4, rtol=1e-4
+        # FP16: atol=1e-2, rtol=1e-2 (unit roundoff ~9.77e-4; 512-token reductions accumulate error beyond 1e-4)
+        # BF16: atol=2e-2, rtol=2e-2 (7-bit mantissa; epsilon ~3.91e-3)
+        sample_tensor = args[0] if (args and isinstance(args[0], torch.Tensor)) else None
+        if sample_tensor is not None:
+            if sample_tensor.dtype == torch.float16:
+                atol = max(atol, 1e-2)
+                rtol = max(rtol, 1e-2)
+            elif sample_tensor.dtype == torch.bfloat16:
+                atol = max(atol, 2e-2)
+                rtol = max(rtol, 2e-2)
+            elif sample_tensor.dtype == torch.float32:
+                atol = max(atol, 1e-4)
+                rtol = max(rtol, 1e-4)
         if config.category == "attention":
             atol = max(atol, 1e-2)
             rtol = max(rtol, 1e-2)
