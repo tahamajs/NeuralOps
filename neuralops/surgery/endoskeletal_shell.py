@@ -237,6 +237,49 @@ def transfer_pretrained_qkv_weights(
             elif tgt_w.ndim == 2 and W.ndim == 2 and tgt_w.t().shape == W.shape:
                 tgt_w.copy_(W.t().to(device=tgt_w.device, dtype=tgt_w.dtype))
             elif tgt_w.ndim == 2 and W.ndim == 2:
+                # GQA head broadcasting: when H_q != H_kv and target expects expanded heads
+                head_dim = getattr(spec, "head_dim", 64)
+                num_heads = getattr(spec, "num_heads", 1)
+                num_kv_heads = getattr(spec, "num_kv_heads", 1)
+
+                is_gqa_broadcast = (
+                    name in ("k_proj", "v_proj", "k", "v")
+                    and head_dim > 0
+                    and num_heads > num_kv_heads
+                    and num_heads % num_kv_heads == 0
+                    and W.shape[0] == num_kv_heads * head_dim
+                    and tgt_w.shape[0] == num_heads * head_dim
+                    and tgt_w.shape[1] == W.shape[1]
+                )
+                if is_gqa_broadcast:
+                    group_size = num_heads // num_kv_heads
+                    logger.info(
+                        "GQA head broadcasting for %s at %s: expanding %d KV heads to %d query heads (group_size=%d, head_dim=%d)",
+                        name,
+                        spec.module_path,
+                        num_kv_heads,
+                        num_heads,
+                        group_size,
+                        head_dim,
+                    )
+                    W_expanded = (
+                        W.view(num_kv_heads, head_dim, W.shape[1])
+                        .repeat_interleave(group_size, dim=0)
+                        .view(num_heads * head_dim, W.shape[1])
+                    )
+                    tgt_w.copy_(W_expanded.to(device=tgt_w.device, dtype=tgt_w.dtype))
+                    target_bias = getattr(target_linear, "bias", None)
+                    if b is not None and target_bias is not None:
+                        tgt_b = target_bias
+                        if b.shape[0] == num_kv_heads * head_dim and tgt_b.shape[0] == num_heads * head_dim:
+                            b_expanded = (
+                                b.view(num_kv_heads, head_dim)
+                                .repeat_interleave(group_size, dim=0)
+                                .view(num_heads * head_dim)
+                            )
+                            tgt_b.copy_(b_expanded.to(device=tgt_b.device, dtype=tgt_b.dtype))
+                    return
+
                 if strict:
                     raise ValueError(
                         f"Projection {name} shape mismatch for {spec.module_path!r}: "

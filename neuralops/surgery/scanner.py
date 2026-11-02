@@ -56,6 +56,22 @@ class AttentionTargetSpec:
     output_layernorm_module: Optional[nn.Module] = None
     extra_metadata: Optional[Dict[str, Any]] = None
 
+    def __post_init__(self) -> None:
+        if self.head_dim <= 0:
+            raise ValueError(f"AttentionTargetSpec requires positive head_dim, got {self.head_dim}")
+        if self.num_heads <= 0 or self.num_kv_heads <= 0:
+            raise ValueError(
+                f"AttentionTargetSpec requires positive head counts "
+                f"(num_heads={self.num_heads}, num_kv_heads={self.num_kv_heads})"
+            )
+        if self.head_dim % 2 != 0:
+            logger.warning(
+                "Odd head_dim=%d in AttentionTargetSpec (%s). "
+                "Rotary position embeddings (RoPE) require head_dim %% 2 == 0.",
+                self.head_dim,
+                self.module_path,
+            )
+
 
 class Conv1DLinearAdapter(nn.Module):
     """

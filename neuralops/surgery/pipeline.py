@@ -16,6 +16,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+from neuralops.executor.snapshot import ModelSnapshot
 from neuralops.surgery.registry import SURGERY_REGISTRY
 from neuralops.surgery.validation import ValidationReport, validate_before_surgery
 
@@ -94,11 +95,18 @@ class SurgeryRecipe:
         rollback_on_failure: bool = True,
     ) -> tuple[Any, ApplyReport]:
         """Apply each surgery in sequence, validating after each step."""
+        snapshot = None
         if rollback_on_failure:
             try:
                 original_model = copy.deepcopy(model)
-            except Exception:
+            except Exception as e:
+                logger.warning("Could not deepcopy model for rollback: %s", e)
                 original_model = model
+            if hasattr(model, "state_dict"):
+                try:
+                    snapshot = ModelSnapshot.capture(model)
+                except Exception as e_snap:
+                    logger.warning("Could not capture model snapshot for rollback: %s", e_snap)
         else:
             original_model = model
         applied: list[str] = []
@@ -137,6 +145,11 @@ class SurgeryRecipe:
                 msg = f"Failed to execute surgery '{op.name}': {exc}"
                 logger.error(msg)
                 if rollback_on_failure:
+                    if snapshot is not None and hasattr(model, "state_dict"):
+                        try:
+                            snapshot.restore(model)
+                        except Exception as e_res:
+                            logger.warning("Snapshot restore failed during rollback: %s", e_res)
                     return original_model, ApplyReport(
                         success=False,
                         applied_ops=applied,

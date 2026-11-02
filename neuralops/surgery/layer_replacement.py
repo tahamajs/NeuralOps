@@ -40,6 +40,7 @@ import logging
 import re
 from typing import Any, Callable, List, Optional, Tuple, Union
 
+import torch
 import torch.nn as nn
 
 logger = logging.getLogger("NeuralOps.Surgery.LayerReplacement")
@@ -144,6 +145,32 @@ def _set_nested_module(root: nn.Module, path: str, new_module: nn.Module) -> Non
         setattr(curr, last_part, new_module)
 
 
+def broadcast_gqa_heads(
+    w: torch.Tensor,
+    num_heads: int,
+    num_kv_heads: int,
+    head_dim: int,
+) -> torch.Tensor:
+    """Broadcasts KV projection weights from H_kv heads to H_q heads using repeat_interleave."""
+    if num_heads <= num_kv_heads or num_heads % num_kv_heads != 0 or head_dim <= 0:
+        return w
+    group_size = num_heads // num_kv_heads
+    in_dim = w.shape[1] if w.ndim > 1 else 1
+    if w.ndim == 2 and w.shape[0] == num_kv_heads * head_dim:
+        return (
+            w.view(num_kv_heads, head_dim, in_dim)
+            .repeat_interleave(group_size, dim=0)
+            .view(num_heads * head_dim, in_dim)
+        )
+    elif w.ndim == 1 and w.shape[0] == num_kv_heads * head_dim:
+        return (
+            w.view(num_kv_heads, head_dim)
+            .repeat_interleave(group_size, dim=0)
+            .view(num_heads * head_dim)
+        )
+    return w
+
+
 def _instantiate_replacement(
     target_module: nn.Module,
     attention_key: Optional[str] = None,
@@ -151,12 +178,42 @@ def _instantiate_replacement(
     **kwargs: Any,
 ) -> nn.Module:
     """Instantiates a replacement module from a class, callable factory, or attention registry."""
+    call_kwargs = dict(kwargs)
+
+    # Propagate architectural and GQA metadata from target_module if present
+    cfg = getattr(target_module, "config", None)
+    if "config" not in call_kwargs and cfg is not None:
+        call_kwargs["config"] = cfg
+
+    num_heads = getattr(target_module, "num_heads", getattr(target_module, "num_attention_heads", None))
+    num_kv_heads = getattr(target_module, "num_key_value_heads", getattr(target_module, "num_kv_heads", None))
+    head_dim = getattr(target_module, "head_dim", None)
+    hidden_size = getattr(target_module, "hidden_size", getattr(target_module, "d_model", None))
+
+    if num_heads is not None:
+        call_kwargs.setdefault("num_heads", num_heads)
+        call_kwargs.setdefault("num_attention_heads", num_heads)
+    if num_kv_heads is not None:
+        call_kwargs.setdefault("num_key_value_heads", num_kv_heads)
+        call_kwargs.setdefault("num_kv_heads", num_kv_heads)
+    if head_dim is not None:
+        call_kwargs.setdefault("head_dim", head_dim)
+        if head_dim > 0 and head_dim % 2 != 0:
+            logger.warning(
+                "Odd head_dim=%d detected in attention target '%s'. "
+                "Rotary position embeddings (RoPE) require head_dim %% 2 == 0.",
+                head_dim,
+                target_module.__class__.__name__,
+            )
+    if hidden_size is not None:
+        call_kwargs.setdefault("hidden_size", hidden_size)
+
     if new_attention_cls is not None:
         try:
-            return new_attention_cls(old_module=target_module, **kwargs)
+            return new_attention_cls(old_module=target_module, **call_kwargs)
         except TypeError:
             try:
-                return new_attention_cls(**kwargs)
+                return new_attention_cls(**call_kwargs)
             except TypeError:
                 return new_attention_cls()
 
@@ -166,10 +223,10 @@ def _instantiate_replacement(
         if fn is None:
             raise ValueError(f"Attention key '{attention_key}' not found in ATTENTION_REGISTRY.")
         try:
-            return fn(old_module=target_module, **kwargs)
+            return fn(old_module=target_module, **call_kwargs)
         except TypeError:
             try:
-                return fn(**kwargs)
+                return fn(**call_kwargs)
             except TypeError:
                 return fn()
 
@@ -187,6 +244,7 @@ def replace_attention_recursive(
     """
     Recursively discovers and surgically replaces attention modules located at arbitrary
     nesting depths, including inside nn.Sequential, nn.ModuleList, and custom blocks (P053).
+    Guarantees full transactional rollback if an exception occurs mid-transplant.
     """
     targets = find_nested_attention_modules(
         model, target_filter=target_filter, layer_indices=layer_indices
@@ -196,22 +254,36 @@ def replace_attention_recursive(
         logger.warning("No attention targets found to replace in model hierarchy.")
         return model
 
-    for path, old_mod in targets:
-        new_mod = _instantiate_replacement(
-            target_module=old_mod,
-            attention_key=attention_key,
-            new_attention_cls=new_attention_cls,
-            **kwargs,
+    replaced_so_far: List[Tuple[str, nn.Module]] = []
+    try:
+        for path, old_mod in targets:
+            new_mod = _instantiate_replacement(
+                target_module=old_mod,
+                attention_key=attention_key,
+                new_attention_cls=new_attention_cls,
+                **kwargs,
+            )
+
+            try:
+                p = next(old_mod.parameters())
+                new_mod.to(device=p.device, dtype=p.dtype)
+            except (StopIteration, RuntimeError):
+                pass
+
+            _set_nested_module(model, path, new_mod)
+            replaced_so_far.append((path, old_mod))
+            logger.debug("Replaced module at '%s' with %s", path, type(new_mod).__name__)
+    except Exception as err:
+        logger.error(
+            "Attention replacement failed mid-transplant at '%s': %s. "
+            "Rolling back %d replaced layer(s).",
+            path if "path" in locals() else "unknown",
+            err,
+            len(replaced_so_far),
         )
-
-        try:
-            p = next(old_mod.parameters())
-            new_mod.to(device=p.device, dtype=p.dtype)
-        except (StopIteration, RuntimeError):
-            pass
-
-        _set_nested_module(model, path, new_mod)
-        logger.debug("Replaced module at '%s' with %s", path, type(new_mod).__name__)
+        for r_path, orig_mod in reversed(replaced_so_far):
+            _set_nested_module(model, r_path, orig_mod)
+        raise
 
     if not hasattr(model, "_neuralops_metadata"):
         model._neuralops_metadata = []
@@ -233,4 +305,5 @@ __all__ = [
     "replace_attention_recursive",
     "replace_attention",
     "find_nested_attention_modules",
+    "broadcast_gqa_heads",
 ]

@@ -436,6 +436,8 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
             return state, state
         if layer_idx in self.sliding_window_cache:
             return self.sliding_window_cache[layer_idx]
+        if layer_idx >= len(self):
+            raise IndexError(f"Layer index {layer_idx} out of range for cache with length {len(self)}")
         return None, None
 
     def __len__(self) -> int:
@@ -494,10 +496,46 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         cls,
         past_key_values: Optional[Any] = None,
     ) -> NeuralOpsHybridHFCache:
-        """Construct a compatible cache from a legacy tuple of key/value tensors or recurrent states."""
+        """Construct a compatible cache from a legacy tuple of key/value tensors, DynamicCache, or recurrent states."""
         validate_cache_format(past_key_values)
+        if isinstance(past_key_values, cls):
+            return past_key_values
+
         cache = cls()
         if past_key_values is not None:
+            # Handle native transformers.DynamicCache objects gracefully
+            if isinstance(past_key_values, DynamicCache) or type(past_key_values).__name__ == "DynamicCache":
+                if hasattr(past_key_values, "key_cache") and hasattr(past_key_values, "value_cache"):
+                    for layer_idx in range(len(past_key_values.key_cache)):
+                        k = past_key_values.key_cache[layer_idx]
+                        v = past_key_values.value_cache[layer_idx]
+                        if k is not None and v is not None:
+                            cache.update(k, v, layer_idx)
+                elif hasattr(past_key_values, "layers"):
+                    for layer_idx, layer in enumerate(past_key_values.layers):
+                        k = getattr(layer, "keys", getattr(layer, "key", None))
+                        v = getattr(layer, "values", getattr(layer, "value", None))
+                        if k is not None and v is not None:
+                            cache.update(k, v, layer_idx)
+                else:
+                    try:
+                        for layer_idx, item in enumerate(past_key_values):
+                            if item is None:
+                                continue
+                            if isinstance(item, (tuple, list)) and len(item) >= 2:
+                                cache.update(item[0], item[1], layer_idx)
+                    except Exception as err:
+                        raise IntegrationNotImplementedError(
+                            f"DynamicCache extraction failed for type '{type(past_key_values).__name__}': {err}"
+                        ) from err
+                return cache
+
+            if not isinstance(past_key_values, (tuple, list)):
+                raise IntegrationNotImplementedError(
+                    f"Unsupported past_key_values format: '{type(past_key_values).__name__}'. "
+                    "Expected tuple, list, or transformers.DynamicCache."
+                )
+
             for layer_idx, item in enumerate(past_key_values):
                 if item is None:
                     continue
