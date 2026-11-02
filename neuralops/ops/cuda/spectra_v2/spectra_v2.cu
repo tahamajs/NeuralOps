@@ -33,7 +33,7 @@ __global__ void __launch_bounds__(256) spectra_v2_fwd_vectorized_kernel(
             #define EVAL_FILTER(x_v, offset, out_v) { \
                 const int d = (offset) % D; \
                 const float freq = to_float(freq_bands[d]); \
-                const float filter = (fabsf(freq) > threshold) ? 1.0f : 0.0f; \
+                const float filter = (fabsf(freq) >= (threshold - 1e-6f)) ? 1.0f : 0.0f; \
                 out_v = (x_v) * filter; \
             }
             EVAL_FILTER(x4.x, idx * 4 + 0, out4.x);
@@ -50,7 +50,7 @@ __global__ void __launch_bounds__(256) spectra_v2_fwd_vectorized_kernel(
                 const int d = elem_idx % D;
                 const float x_val = to_float(x[elem_idx]);
                 const float freq = to_float(freq_bands[d]);
-                const float filter = (fabsf(freq) > threshold) ? 1.0f : 0.0f;
+                const float filter = (fabsf(freq) >= (threshold - 1e-6f)) ? 1.0f : 0.0f;
                 out[elem_idx] = from_float<scalar_t>(x_val * filter);
             }
         }
@@ -61,7 +61,7 @@ __global__ void __launch_bounds__(256) spectra_v2_fwd_vectorized_kernel(
         const int d = idx % D;
         const float x_val = to_float(x[idx]);
         const float freq = to_float(freq_bands[d]);
-        const float filter = (fabsf(freq) > threshold) ? 1.0f : 0.0f;
+        const float filter = (fabsf(freq) >= (threshold - 1e-6f)) ? 1.0f : 0.0f;
         out[idx] = from_float<scalar_t>(x_val * filter);
     }
 }
