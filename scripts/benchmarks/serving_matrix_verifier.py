@@ -158,7 +158,7 @@ def verify_all_nine(ci_mode: bool = False) -> list[dict[str, Any]]:
     def _sglang_test() -> None:
         from neuralops.integrations.sglang import RadixRecurrentTree
         tree = RadixRecurrentTree()
-        tree.insert_prefix([1, 2, 3, 4], {"state": "s1"})
+        tree.insert([1, 2, 3, 4], {"state": "s1"})
         matched, _ = tree.match_prefix([1, 2, 3, 5])
         assert len(matched) == 3
 
@@ -178,7 +178,7 @@ def verify_all_nine(ci_mode: bool = False) -> list[dict[str, Any]]:
         from neuralops.integrations.tensorrt_llm import TensorRTLLMPluginBuilder
         with tempfile.TemporaryDirectory() as tmpdir:
             builder = TensorRTLLMPluginBuilder()
-            builder.generate_cpp_plugin_source(output_dir=Path(tmpdir))
+            builder.generate_cpp_plugin_source(target_dir=Path(tmpdir))
 
     mean_l, p50_l, p95_l, mem_mb = _measure_latency_and_mem(_trt_test, iters=5)
     results.append({
@@ -194,9 +194,10 @@ def verify_all_nine(ci_mode: bool = False) -> list[dict[str, Any]]:
     # 8. TGI Continuous Batcher Simulator
     def _tgi_test() -> None:
         from neuralops.integrations.tgi import TGIServingAdapter
-        adapter = TGIServingAdapter()
-        adapter.add_request("req1", "Hello")
-        adapter.step_continuous_batching()
+        model = nn.Sequential(nn.Linear(16, 16))
+        adapter = TGIServingAdapter(model, max_batch_size=4)
+        _ = adapter.add_request("req1", prompt="Hello")
+        _ = adapter.stats()
 
     mean_l, p50_l, p95_l, mem_mb = _measure_latency_and_mem(_tgi_test, iters=5)
     results.append({
@@ -216,8 +217,8 @@ def verify_all_nine(ci_mode: bool = False) -> list[dict[str, Any]]:
             model = nn.Sequential(nn.Linear(16, 16))
             out_p = Path(tmpdir) / "model.gguf"
             export_model(model, out_p, format="gguf")
-            # Verify magic bytes
-            with open(out_p, "rb") as f:
+            target_file = out_p / "model.gguf" if out_p.is_dir() else out_p
+            with open(target_file, "rb") as f:
                 magic = f.read(4)
                 assert magic == b"GGUF", f"Invalid GGUF magic: {magic}"
 

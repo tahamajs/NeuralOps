@@ -289,10 +289,10 @@ def main() -> int:
 
     device = args.device
     if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
     effective_limit = 2 if args.dry_run and args.limit is None else args.limit
-    workers = args.parallel_workers or (1 if device == "cuda" else min(4, os.cpu_count() or 1))
+    workers = args.parallel_workers or (1 if device in ("cuda", "mps") else min(4, os.cpu_count() or 1))
 
     print("=" * 70)
     print("  NeuralOps Master Benchmark Suite (High Precision & Parallel Sweep)")
