@@ -16,6 +16,8 @@ and post-surgery subspace micro-healing convergence on NVIDIA RTX 3090 hardware.
 from __future__ import annotations
 
 import copy
+import os
+from typing import Any
 import pytest
 import torch
 from transformers import AutoModel, AutoModelForCausalLM
@@ -24,25 +26,36 @@ from neuralops.api import transplant_attention
 from neuralops.surgery.healing import heal_replaced_model
 
 
+@pytest.fixture
+def gpu_device() -> torch.device:
+    if not torch.cuda.is_available():
+        pytest.skip("CUDA device required for GPU surgery tests")
+    return torch.device("cuda:0")
+
+
+def _load_qwen_model(causal: bool = False) -> Any:
+    candidates = [
+        os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots/060db6499f32faf8b98477b0a26969ef7d8b9987"),
+        os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B"),
+        "Qwen/Qwen2.5-0.5B",
+    ]
+    cls = AutoModelForCausalLM if causal else AutoModel
+    for path in candidates:
+        if os.path.exists(path) or path == "Qwen/Qwen2.5-0.5B":
+            try:
+                return cls.from_pretrained(path, torch_dtype=torch.float16, local_files_only=True)
+            except Exception:
+                continue
+    return cls.from_pretrained("Qwen/Qwen2.5-0.5B", torch_dtype=torch.float16)
+
+
 @pytest.mark.gpu
 def test_transplant_qwen_full_to_cosformer(gpu_device: torch.device) -> None:
     """
     Load Qwen2.5-0.5B, transplant full quadratic attention to linear Cosformer,
     and assert output tensor finiteness and structural dimensionality.
     """
-    model_id = "Qwen/Qwen2.5-0.5B"
-    try:
-        model = AutoModel.from_pretrained(
-            model_id,
-            torch_dtype=torch.float16,
-            local_files_only=True,
-        ).to(gpu_device)
-    except Exception:
-        model = AutoModel.from_pretrained(
-            model_id,
-            torch_dtype=torch.float16,
-        ).to(gpu_device)
-
+    model = _load_qwen_model(causal=False).to(gpu_device)
     hidden_size = model.config.hidden_size
     transplant_attention(model, attention="cosformer")
 
@@ -63,19 +76,7 @@ def test_transplant_qwen_preserves_gqa(gpu_device: torch.device) -> None:
     Verify that after transplant, the number of KV heads is preserved or correctly adapted
     without broadcasting or head dimensional corruption.
     """
-    model_id = "Qwen/Qwen2.5-0.5B"
-    try:
-        model = AutoModelForCausalLM.from_pretrained(
-            model_id,
-            torch_dtype=torch.float16,
-            local_files_only=True,
-        ).to(gpu_device)
-    except Exception:
-        model = AutoModelForCausalLM.from_pretrained(
-            model_id,
-            torch_dtype=torch.float16,
-        ).to(gpu_device)
-
+    model = _load_qwen_model(causal=True).to(gpu_device)
     orig_q_heads = getattr(model.config, "num_attention_heads", 14)
     orig_kv_heads = getattr(model.config, "num_key_value_heads", 2)
     assert orig_q_heads != orig_kv_heads, (
@@ -104,19 +105,7 @@ def test_heal_replaced_model_10_steps(gpu_device: torch.device) -> None:
     Execute 10 closed-loop post-surgery calibration and subspace micro-healing steps
     and verify that representation MSE loss decreases monotonically or improves.
     """
-    model_id = "Qwen/Qwen2.5-0.5B"
-    try:
-        model = AutoModel.from_pretrained(
-            model_id,
-            torch_dtype=torch.float16,
-            local_files_only=True,
-        ).to(gpu_device)
-    except Exception:
-        model = AutoModel.from_pretrained(
-            model_id,
-            torch_dtype=torch.float16,
-        ).to(gpu_device)
-
+    model = _load_qwen_model(causal=False).to(gpu_device)
     teacher_model = copy.deepcopy(model).to(gpu_device)
     transplant_attention(model, attention="cosformer")
 
