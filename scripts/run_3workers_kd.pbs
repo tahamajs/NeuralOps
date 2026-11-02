@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+#PBS -N kd_6pillar_3w
+#PBS -q N3090
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=24:00:00
+#PBS -j oe
+
+set -euo pipefail
+export PYTHONIOENCODING=utf-8
+export PYTHONPATH="/home/tahamajlesi.ut/venv_cu113/lib/python3.10/site-packages:/home/tahamajlesi.ut/NeuralOps:${PYTHONPATH:-}"
+export LD_LIBRARY_PATH="/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:/share/apps/gcc/gcc-8.2.0/lib64:/home/tahamajlesi.ut/venv_cu113/lib:${LD_LIBRARY_PATH:-}"
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+
+cd /home/tahamajlesi.ut/NeuralOps
+mkdir -p results/screen_logs results/csv
+
+PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops/bin/python
+
+echo "======================================================================"
+echo "  STARTING 3 CONCURRENT WORKERS (6-PILLAR KD BENCHMARK) ON GPU"
+echo "  Timestamp: $(date -u)"
+echo "  Node     : $(hostname)"
+echo "======================================================================"
+
+# Launch Worker 0 in background
+"$PYTHON_EXEC" -u scripts/benchmarks/benchmark_6pillar_kd_parallel.py \
+    --device cuda:0 \
+    --max-duration 120.0 \
+    --worker-id 0 \
+    --num-workers 3 \
+    --output-csv results/csv/kd_6pillar_worker0.csv \
+    > results/screen_logs/kd_worker0.log 2>&1 &
+PID0=$!
+
+# Launch Worker 1 in background
+"$PYTHON_EXEC" -u scripts/benchmarks/benchmark_6pillar_kd_parallel.py \
+    --device cuda:0 \
+    --max-duration 120.0 \
+    --worker-id 1 \
+    --num-workers 3 \
+    --output-csv results/csv/kd_6pillar_worker1.csv \
+    > results/screen_logs/kd_worker1.log 2>&1 &
+PID1=$!
+
+# Launch Worker 2 in background
+"$PYTHON_EXEC" -u scripts/benchmarks/benchmark_6pillar_kd_parallel.py \
+    --device cuda:0 \
+    --max-duration 120.0 \
+    --worker-id 2 \
+    --num-workers 3 \
+    --output-csv results/csv/kd_6pillar_worker2.csv \
+    > results/screen_logs/kd_worker2.log 2>&1 &
+PID2=$!
+
+echo "Worker 0 PID: $PID0"
+echo "Worker 1 PID: $PID1"
+echo "Worker 2 PID: $PID2"
+
+# Wait for all 3 workers to complete
+wait $PID0
+wait $PID1
+wait $PID2
+
+echo "All 3 workers finished. Consolidating results..."
+"$PYTHON_EXEC" -u scripts/benchmarks/consolidate_and_organize_benchmarks.py
+echo "======================================================================"
+echo "  6-PILLAR PARALLEL KD BENCHMARK COMPLETE: $(date -u)"
+echo "======================================================================"
