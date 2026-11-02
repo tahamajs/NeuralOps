@@ -107,8 +107,12 @@ def export_and_verify_onnx(
     temp_dir: Path,
 ) -> tuple[bool, int, str]:
     """Export to ONNX format if onnx and onnxruntime are installed, else skip."""
-    if skip_if_missing("onnx", "onnx package not installed") or skip_if_missing("onnxruntime", "onnxruntime not installed"):
-        return True, 0, "SKIPPED: onnx/onnxruntime missing"
+    if (
+        skip_if_missing("onnx", "onnx package not installed")
+        or skip_if_missing("onnxruntime", "onnxruntime not installed")
+        or skip_if_missing("onnxscript", "onnxscript not installed")
+    ):
+        return True, 0, "SKIPPED: onnx/onnxruntime/onnxscript missing"
 
     try:
         import onnxruntime as ort
