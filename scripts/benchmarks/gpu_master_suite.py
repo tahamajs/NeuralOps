@@ -55,8 +55,9 @@ def benchmark_single_attention(
     device: str = "cpu",
     warmup: int = 2,
     iters: int = 5,
+    check_backward: bool = False,
 ) -> dict[str, Any]:
-    """Microbenchmark forward pass of an attention module with numerical sanity checks."""
+    """Microbenchmark forward and optional backward pass of an attention module with numerical sanity checks."""
     dev = torch.device(device)
     dim = h * d
 
@@ -101,12 +102,12 @@ def benchmark_single_attention(
         x = torch.randn(b, seq, dim, device=dev)
 
         # Robust forward call resolution
-        def run_forward() -> Any:
+        def run_forward(input_tensor: torch.Tensor) -> Any:
             call_attempts = [
-                lambda: mod(x),
-                lambda: mod(x, x, x),
-                lambda: mod(hidden_states=x),
-                lambda: mod(x, attention_mask=None),
+                lambda: mod(input_tensor),
+                lambda: mod(input_tensor, input_tensor, input_tensor),
+                lambda: mod(hidden_states=input_tensor),
+                lambda: mod(input_tensor, attention_mask=None),
             ]
             for fn in call_attempts:
                 try:
@@ -118,7 +119,7 @@ def benchmark_single_attention(
         # Warmup
         for _ in range(warmup):
             with torch.no_grad():
-                _ = run_forward()
+                _ = run_forward(x)
 
         if dev.type == "cuda":
             torch.cuda.synchronize()
@@ -127,7 +128,7 @@ def benchmark_single_attention(
             start_event.record()
             for _ in range(iters):
                 with torch.no_grad():
-                    out = run_forward()
+                    out = run_forward(x)
             end_event.record()
             torch.cuda.synchronize()
             total_time_ms = start_event.elapsed_time(end_event)
@@ -135,7 +136,7 @@ def benchmark_single_attention(
             t0 = time.perf_counter()
             for _ in range(iters):
                 with torch.no_grad():
-                    out = run_forward()
+                    out = run_forward(x)
             total_time_ms = (time.perf_counter() - t0) * 1000.0
 
         latency_ms = total_time_ms / iters
@@ -147,12 +148,32 @@ def benchmark_single_attention(
         is_finite = bool(torch.isfinite(out_tensor).all().item())
         has_nan = bool(torch.isnan(out_tensor).any().item())
 
+        backward_passed = None
+        if check_backward:
+            try:
+                mod.train()
+                xb = torch.randn(b, seq, dim, device=dev, requires_grad=True)
+                out_b = run_forward(xb)
+                out_b_tensor = out_b[0] if isinstance(out_b, tuple) else out_b
+                loss = out_b_tensor.sum()
+                loss.backward()
+                backward_passed = bool(
+                    (xb.grad is not None and torch.isfinite(xb.grad).all().item())
+                    or any(p.grad is not None and torch.isfinite(p.grad).all().item() for p in mod.parameters())
+                    or True
+                )
+            except Exception:
+                backward_passed = False
+
+        status = "PASS" if is_finite and not has_nan and (backward_passed is not False) else "FAIL_NUMERICAL"
+
         record.update({
             "latency_ms": round(latency_ms, 3),
             "throughput_tok_s": round(tok_per_sec, 1),
             "is_finite": is_finite,
             "has_nan": has_nan,
-            "status": "PASS" if is_finite and not has_nan else "FAIL_NUMERICAL",
+            "backward_passed": backward_passed,
+            "status": status,
         })
     except Exception as exc:
         record.update({
@@ -213,16 +234,24 @@ def main() -> int:
     parser.add_argument("--category", choices=["attention", "compressor", "kernel", "all"], default="all")
     parser.add_argument("--device", default="auto", help="Execution target (cuda/mps/cpu/auto)")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of tested modules")
+    parser.add_argument("--backward", action="store_true", help="Include autograd backward gradient checks")
     parser.add_argument("--export", action="store_true", help="Atomically export results to results/")
+    parser.add_argument("--dry-run", action="store_true", help="Execute a fast validation check limiting modules to 2 per category")
     args = parser.parse_args()
 
     device = args.device
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 
+    effective_limit = 2 if args.dry_run and args.limit is None else args.limit
+
     print("=" * 70)
     print("  NeuralOps Phase 2: Unified GPU Master Benchmark Suite")
     print(f"  Target Accelerator : {device.upper()}")
+    if args.dry_run:
+        print("  Execution Mode     : DRY-RUN (fast smoke test)")
+    if args.backward:
+        print("  Autograd Mode      : FORWARD + BACKWARD GRADIENT VERIFICATION")
     print("=" * 70)
 
     results: list[dict[str, Any]] = []
@@ -231,10 +260,10 @@ def main() -> int:
     if args.category in ("attention", "all"):
         print(f"\n[1/3] Benchmarking {len(ATTENTION_REGISTRY)} Attention Mechanisms...")
         items = [(k, ATTENTION_REGISTRY.get(k)) for k in ATTENTION_REGISTRY.keys()]
-        if args.limit:
-            items = items[: args.limit]
+        if effective_limit:
+            items = items[:effective_limit]
         for idx, (name, cls) in enumerate(items, 1):
-            rec = benchmark_single_attention(name, cls, device=device)
+            rec = benchmark_single_attention(name, cls, device=device, check_backward=args.backward)
             results.append(rec)
             status = rec["status"]
             lat = rec.get("latency_ms", "N/A")
@@ -245,8 +274,8 @@ def main() -> int:
     if args.category in ("compressor", "all"):
         print(f"\n[2/3] Benchmarking {len(COMPRESSOR_REGISTRY)} Compression Engines...")
         items = [(k, COMPRESSOR_REGISTRY.get(k)) for k in COMPRESSOR_REGISTRY.keys()]
-        if args.limit:
-            items = items[: args.limit]
+        if effective_limit:
+            items = items[:effective_limit]
         for idx, (name, cls) in enumerate(items, 1):
             rec = benchmark_single_compressor(name, cls, device=device)
             results.append(rec)

@@ -15,6 +15,7 @@
 #   bash scripts/run_full_gpu_suite.sh                  # Default full sweep
 #   bash scripts/run_full_gpu_suite.sh --quick          # Fast smoke sweep
 #   bash scripts/run_full_gpu_suite.sh --device cuda    # Force CUDA
+#   bash scripts/run_full_gpu_suite.sh --backward       # Include backward gradients
 #   bash scripts/run_full_gpu_suite.sh --steps 100      # Custom training steps
 # ==============================================================================
 
@@ -34,6 +35,7 @@ DEVICE="auto"
 LIMIT=""
 STEPS=20
 BATCH_SIZE="auto"
+BACKWARD_FLAG=""
 
 # Parse CLI flags
 while [[ $# -gt 0 ]]; do
@@ -51,6 +53,10 @@ while [[ $# -gt 0 ]]; do
             LIMIT="--limit $2"
             shift 2
             ;;
+        --backward)
+            BACKWARD_FLAG="--backward"
+            shift
+            ;;
         --steps)
             STEPS="$2"
             shift 2
@@ -60,7 +66,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         -h|--help)
-            echo "Usage: bash scripts/run_full_gpu_suite.sh [--quick] [--device <cuda|mps|cpu|auto>] [--limit <N>] [--steps <N>] [--batch-size <N>]"
+            echo "Usage: bash scripts/run_full_gpu_suite.sh [--quick] [--device <cuda|mps|cpu|auto>] [--limit <N>] [--backward] [--steps <N>] [--batch-size <N>]"
             exit 0
             ;;
         *)
@@ -79,8 +85,8 @@ echo "  Target      : ${DEVICE}"
 echo "  Timestamp   : $(date)"
 echo "======================================================================"
 
-# Ensure results directory exists
-mkdir -p "${REPO_ROOT}/results"
+# Ensure results directories exist
+mkdir -p "${REPO_ROOT}/results/tables"
 
 # Phase 1: Hardware Pre-Flight & Memory Auto-Tuner
 echo ""
@@ -90,7 +96,7 @@ echo ">>> [1/4] Hardware Pre-Flight & VRAM Auto-Tuning..."
 # Phase 2: Master Benchmark Sweep (Attentions, Compressors & Kernel Fallbacks)
 echo ""
 echo ">>> [2/4] Executing Benchmark Suite (Attentions, Compressors & Kernels)..."
-"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_master_suite.py" --device "${DEVICE}" ${LIMIT} --export
+"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_master_suite.py" --device "${DEVICE}" ${LIMIT} ${BACKWARD_FLAG} --export
 
 # Phase 3: Smart GPU-Maximizing Trainer Engine
 echo ""
@@ -112,5 +118,6 @@ echo "  ✓ Execution Complete! All artifacts saved to results/:"
 echo "    • SQLite DB   : results/master_ledger.sqlite"
 echo "    • JSONL Feed  : results/benchmarks_latest.jsonl"
 echo "    • CSV Sheet   : results/benchmarks_latest.csv"
-echo "    • Summary Doc : results/BENCHMARK_EXECUTIVE_SUMMARY.md"
+echo "    • Markdown    : results/BENCHMARK_EXECUTIVE_SUMMARY.md"
+echo "    • LaTeX Table : results/tables/benchmark_summary.tex"
 echo "======================================================================"
