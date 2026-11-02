@@ -16,3 +16,7 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
     const c10::optional<torch::Tensor>& s_weights,
     const c10::optional<torch::Tensor>& bias
 );
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("forward", &spectral_entropy_svd_gate_fwd, "Spectral Entropy SVD Gate forward (CUDA)");
+}
