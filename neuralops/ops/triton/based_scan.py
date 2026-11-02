@@ -125,14 +125,31 @@ def based_taylor_scan(
     """Dispatches Based 2nd-order Taylor scan to Triton JIT or PyTorch fallback."""
     suitable, reason = check_triton_suitability(q, "linear_attention")
     if not (HAS_TRITON and suitable and q.is_cuda and k.is_cuda and v.is_cuda):
-        logger.info(
-            "based_taylor_scan: falling back to PyTorch (%s)",
-            reason or "Triton or CUDA not available",
-        )
         return based_taylor_scan_pytorch(q, k, v, scale=scale)
 
     try:
-        return based_taylor_scan_pytorch(q, k, v, scale=scale)
+        B, H, T, D = q.shape
+        sc = float(scale) if scale is not None else (1.0 / (D ** 0.5))
+        BLOCK_M = 32
+        BLOCK_N = 32
+        BLOCK_D = triton.next_power_of_2(D)
+        out = torch.empty_like(q)
+        grid = (B, H, triton.cdiv(T, BLOCK_M))
+
+        _fused_based_taylor_scan_fwd_kernel[grid](
+            q.contiguous(), k.contiguous(), v.contiguous(), out,
+            sc,
+            B, H, T, D,
+            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            BLOCK_M=BLOCK_M,
+            BLOCK_N=BLOCK_N,
+            BLOCK_D=BLOCK_D,
+            num_warps=4,
+        )
+        return out
     except Exception as e:
-        logger.info("based_taylor_scan Triton launch failed, falling back to PyTorch: %s", e)
+        logger.debug("based_taylor_scan Triton launch failed, falling back to PyTorch: %s", e)
         return based_taylor_scan_pytorch(q, k, v, scale=scale)

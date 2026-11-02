@@ -133,14 +133,32 @@ def lightning_scan(
     """Dispatches Lightning block-tiled linear attention to Triton JIT or PyTorch fallback."""
     suitable, reason = check_triton_suitability(q, "linear_attention")
     if not (HAS_TRITON and suitable and q.is_cuda and k.is_cuda and v.is_cuda):
-        logger.info(
-            "lightning_scan: falling back to PyTorch (%s)",
-            reason or "Triton or CUDA not available",
-        )
         return lightning_scan_pytorch(q, k, v, s=s, slope=slope)
 
     try:
-        return lightning_scan_pytorch(q, k, v, s=s, slope=slope)
+        B, H, T, D = q.shape
+        BLOCK_M = 32
+        BLOCK_N = 32
+        BLOCK_D = triton.next_power_of_2(D)
+        out = torch.empty_like(q)
+        grid = (B, H, triton.cdiv(T, BLOCK_M))
+
+        decay_rate = float(s) if not isinstance(s, torch.Tensor) else float(s.mean().item())
+
+        _fused_lightning_scan_fwd_kernel[grid](
+            q.contiguous(), k.contiguous(), v.contiguous(), out,
+            decay_rate,
+            B, H, T, D,
+            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            BLOCK_M=BLOCK_M,
+            BLOCK_N=BLOCK_N,
+            BLOCK_D=BLOCK_D,
+            num_warps=4,
+        )
+        return out
     except Exception as e:
-        logger.info("lightning_scan Triton launch failed, falling back to PyTorch: %s", e)
+        logger.debug("lightning_scan Triton launch failed, falling back to PyTorch: %s", e)
         return lightning_scan_pytorch(q, k, v, s=s, slope=slope)
