@@ -20,12 +20,12 @@ This document reports the empirical validation and cross-engine serving benchmar
 
 ## 2. Per-Engine Integration Status
 
-| Engine | Integration Status | Notes / Failure Diagnosis |
+| Backend | Status | Notes |
 |---|---|---|
-| **PyTorch (Baseline)** | **PASS** | Native HF model surgery using `replace_attention()`. Validated across `cosformer`, `gla_attention`, and `decay_linear_attention`. |
-| **vLLM** | **PASS** | Custom backend scaffold (`NeuralOpsAttentionBackend`) and recurrent KV cache spec (`NeuralOpsRecurrentSpec`) integrated. End-to-end generation operational under eager mode. |
-| **SGLang** | **FAIL** | Model registration (`LinearAttnModelSpec` with `uses_mamba_radix_cache=True`) and backend registry passed unit tests. Offline runtime engine failed due to `sgl_kernel` common_ops binary missing SM75 Turing support (`sm100/common_ops.abi3.so` PyTorch ABI symbol mismatch). |
-| **TensorRT-LLM** | **DEFERRED** | Decorator plugin (`@python_plugin("NeuralOpsAttention")`) implemented in `neuralops.integrations.tensorrt_llm_plugin` with full offline unit test coverage (4/4 passed). Engine execution deferred due to lack of Python 3.13 Linux wheels from NVIDIA. |
+| **PyTorch (Baseline)** | **AVAILABLE** | Native model surgery via `replace_attention()`. Validated across `cosformer`, `gla_attention`, and `decay_linear_attention`. Fast single-stream execution. |
+| **vLLM** | **AVAILABLE BUT SLOWER** | Runs on T4 but ~2x to 4.7x slower than PyTorch baseline. Scaffold code written and verified to run, but not production-ready for latency-sensitive serving on T4. |
+| **SGLang** | **NOT COMPATIBLE** | SM75 Turing binaries missing from `sgl_kernel 0.5.23` (`common_ops.abi3.so` symbol mismatch). Compatible only on Hopper (SM90) and Blackwell (SM100). |
+| **TensorRT-LLM** | **DEFERRED** | No Python 3.13 Linux wheel on PyPI. NVIDIA requires Python 3.10 or 3.12. Integration plugin unit tests pass offline, engine execution deferred. |
 
 ---
 
@@ -37,52 +37,84 @@ Empirical cold/warm-cache benchmarks conducted using `scripts/benchmark_serving.
 ===============================================================================================
                       NEURALOPS SERVING BENCHMARK RESULTS
 ===============================================================================================
-| Engine         | Attention        | Seq Len   | Latency (ms)   | Throughput (tok/s)   | Peak VRAM (MB)   | Status     |
-|----------------|------------------|-----------|----------------|----------------------|------------------|------------|
-| pytorch        | cosformer        | 512       | 124.39         | 4116.19              | 617.04           | PASS       |
-| pytorch        | gla_attention    | 512       | 90.08          | 5683.58              | 1191.25          | PASS       |
-| pytorch        | decay_linear_attention | 512 | 46.22          | 11078.12             | 1195.60          | PASS       |
-| vllm           | cosformer        | 512       | 209.09         | 2525.24              | 106.91           | PASS       |
-| vllm           | gla_attention    | 512       | 214.13         | 2465.82              | 106.91           | PASS       |
-| vllm           | decay_linear_attention | 512 | 220.59         | 2393.63              | 106.91           | PASS       |
-| sglang         | cosformer        | 512       | N/A            | N/A                  | N/A              | FAIL       |
-| sglang         | gla_attention    | 512       | N/A            | N/A                  | N/A              | FAIL       |
-| sglang         | decay_linear_attention | 512 | N/A            | N/A                  | N/A              | FAIL       |
-| tensorrt_llm   | cosformer        | 512       | N/A            | N/A                  | N/A              | DEFERRED   |
-| tensorrt_llm   | gla_attention    | 512       | N/A            | N/A                  | N/A              | DEFERRED   |
-| tensorrt_llm   | decay_linear_attention | 512 | N/A            | N/A                  | N/A              | DEFERRED   |
+| Engine         | Attention        | Seq Len   | Latency (ms)   | Throughput (tok/s)   | Peak VRAM (MB)   | Status               |
+|----------------|------------------|-----------|----------------|----------------------|------------------|----------------------|
+| pytorch        | cosformer        | 512       | 124.39         | 4116.19              | 617.04           | PASS                 |
+| pytorch        | gla_attention    | 512       | 90.08          | 5683.58              | 1191.25          | PASS                 |
+| pytorch        | decay_linear_attention | 512 | 46.22          | 11078.12             | 1195.60          | PASS                 |
+| vllm           | cosformer        | 512       | 209.09         | 2525.24              | 106.91           | AVAILABLE BUT SLOWER |
+| vllm           | gla_attention    | 512       | 214.13         | 2465.82              | 106.91           | AVAILABLE BUT SLOWER |
+| vllm           | decay_linear_attention | 512 | 220.59         | 2393.63              | 106.91           | AVAILABLE BUT SLOWER |
+| sglang         | cosformer        | 512       | N/A            | N/A                  | N/A              | NOT COMPATIBLE       |
+| sglang         | gla_attention    | 512       | N/A            | N/A                  | N/A              | NOT COMPATIBLE       |
+| sglang         | decay_linear_attention | 512 | N/A            | N/A                  | N/A              | NOT COMPATIBLE       |
+| tensorrt_llm   | cosformer        | 512       | N/A            | N/A                  | N/A              | DEFERRED             |
+| tensorrt_llm   | gla_attention    | 512       | N/A            | N/A                  | N/A              | DEFERRED             |
+| tensorrt_llm   | decay_linear_attention | 512 | N/A            | N/A                  | N/A              | DEFERRED             |
 ===============================================================================================
 ```
 
-### Analysis
-- **PyTorch Subquadratic Scaling**: `decay_linear_attention` achieved the highest raw throughput at **11,078 tokens/sec** with an average latency of **46.22 ms**, compared to 90.08 ms for `gla_attention` and 124.39 ms for `cosformer`.
-- **vLLM Continuous Batching Overhead vs. Robustness**: vLLM maintained steady generation latencies of ~209–220 ms across all three recurrent mechanisms with low host process activation overhead (106.91 MB).
+---
+
+## 4. Interpretation of Benchmark Results
+
+The benchmark numbers provide clear architectural takeaways regarding high-throughput serving runtimes:
+
+1. **vLLM Backend Execution vs. Latency**: The vLLM custom backend runs end-to-end and successfully generates tokens, but it is significantly slower than the PyTorch baseline on dual T4 GPUs:
+   - `cosformer`: 209.09 ms (vLLM) vs. 124.39 ms (PyTorch) — **1.7x slower**
+   - `gla_attention`: 214.13 ms (vLLM) vs. 90.08 ms (PyTorch) — **2.4x slower**
+   - `decay_linear_attention`: 220.59 ms (vLLM) vs. 46.22 ms (PyTorch) — **4.8x slower**
+2. **Root Cause Analysis**:
+   - `enforce_eager=True` was required on T4, which disables CUDA Graph capture and introduces kernel launch overhead per token.
+   - vLLM's PagedAttention and continuous batching scheduling engine incur non-trivial fixed infrastructure overhead per request. At short sequence lengths (512 tokens), this scheduling overhead completely dominates the kernel execution time.
+   - For long context windows ($\ge 4096$ tokens) or large batch sizes, vLLM's memory paging is expected to break even or outperform unpaged PyTorch allocations. However, current tests were scoped to 512 tokens on small models (`gpt2`).
+   - This is not a defect in vLLM; it is an expected architectural characteristic when deploying small models on older Turing hardware with eager execution.
+3. **Serving Recommendations**:
+   - For latency-critical production deployments of models $< 1\text{B}$ parameters on T4, **use the PyTorch baseline** with custom CUDA C++ / Triton kernels.
+   - On modern Hopper (SM90) or Blackwell (SM100) clusters, evaluate **SGLang** with precompiled native RadixAttention kernels.
+   - **Do NOT deploy the vLLM eager-mode backend on T4 GPUs** for small models.
 
 ---
 
-## 4. Commands to Reproduce on Kaggle
+## 5. Status of Engineering Phases
 
-All benchmarks can be reproduced by SSHing to the remote Kaggle host and running:
+- **Phases 1-4**: Code written and verified to run (scaffolding for `NeuralOpsAttentionBackend`, `NeuralOpsRecurrentSpec`, `LinearAttnModelSpec`, and TensorRT-LLM plugin).
+- **Phase 5**: Benchmark executed; results show vLLM is not faster than PyTorch on T4, SGLang lacks Turing binaries, and TensorRT-LLM requires a Python 3.12 environment.
 
-### 1. Verify GPUs
+---
+
+## 6. TensorRT-LLM Environment Prerequisites
+
+- **Python Version Constraint**: TensorRT-LLM requires Python 3.10 or 3.12. NVIDIA does not distribute precompiled wheels for Python 3.13 on PyPI.
+- **Kaggle Environment**: The default environment on Kaggle runs Python 3.13.15 (as of November 2026), preventing direct `pip install tensorrt_llm`.
+- **How to Test TRT-LLM**: Spin up a dedicated Docker container or virtual environment with **Python 3.12** and **CUDA 12.x / 13.x**:
+  ```bash
+  docker run --gpus all -it --rm nvcr.io/nvidia/tensorrt:24.05-py3
+  pip install tensorrt_llm -U --pre --extra-index-url https://pypi.nvidia.com
+  ```
+
+---
+
+## 7. Exact Reproduction Commands (Kaggle T4)
+
+To reproduce the benchmark figures directly on the Kaggle remote host:
+
+### 1. Host Inspection
 ```bash
-nvidia-smi
+ssh kaggle "nvidia-smi"
 ```
 
 ### 2. Run Single vLLM Benchmark
 ```bash
-cd /kaggle/working/NeuralOps
-python3 scripts/benchmark_serving.py --engine vllm --model gpt2 --attention cosformer --seq-len 512
+ssh kaggle "cd /kaggle/working/NeuralOps && python3 scripts/benchmark_serving.py --engine vllm --model gpt2 --attention cosformer --seq-len 512"
 ```
 
 ### 3. Run Comprehensive Cross-Engine Benchmark
 ```bash
-cd /kaggle/working/NeuralOps
-python3 scripts/benchmark_serving.py --engine all --model gpt2 --attention cosformer,gla_attention,decay_linear_attention --seq-len 512
+ssh kaggle "cd /kaggle/working/NeuralOps && python3 scripts/benchmark_serving.py --engine all --model gpt2 --attention cosformer,gla_attention,decay_linear_attention --seq-len 512"
 ```
 
-### 4. Run Integration Test Suite
+### 4. Run Integration Unit Test Suite
 ```bash
-cd /kaggle/working/NeuralOps
-pytest tests/integrations/test_tensorrt_llm_plugin.py tests/integrations/test_sglang_backend.py -v --tb=short
+ssh kaggle "cd /kaggle/working/NeuralOps && pytest tests/integrations/test_tensorrt_llm_plugin.py tests/integrations/test_sglang_backend.py -v --tb=short"
 ```
