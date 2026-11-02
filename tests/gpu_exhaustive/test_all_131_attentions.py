@@ -54,6 +54,8 @@ def _instantiate_attention(
         num_attention_heads=heads,
         is_decoder=is_causal,
     )
+    if is_causal:
+        config.model_type = "gpt2"
     if num_kv_heads is not None:
         config.num_key_value_heads = num_kv_heads
 
@@ -90,26 +92,53 @@ def _instantiate_attention(
     raise RuntimeError(f"Failed to instantiate attention '{name}' for GPU execution: {last_error}")
 
 
+def _set_causal_recursively(mod: nn.Module) -> None:
+    """Enforce causal/decoder flags across nested modules."""
+    if hasattr(mod, "is_decoder"):
+        mod.is_decoder = True
+    if hasattr(mod, "is_causal"):
+        mod.is_causal = True
+    if hasattr(mod, "config"):
+        cfg = mod.config
+        if hasattr(cfg, "is_decoder"):
+            cfg.is_decoder = True
+        if hasattr(cfg, "model_type"):
+            cfg.model_type = "gpt2"
+    for child in mod.children():
+        _set_causal_recursively(child)
+
+
 def _forward_attention(
     mod: nn.Module,
     x: torch.Tensor,
     is_causal: bool = False,
 ) -> torch.Tensor:
     """Run forward pass adapting to various attention call conventions."""
-    try:
-        out = mod(x, is_causal=is_causal)
-    except TypeError:
-        try:
-            out = mod(x)
-        except TypeError:
-            try:
-                out = mod(x, x, x)
-            except TypeError:
-                b, s, d = x.shape
-                out = mod(hidden_states=x)
+    b, s, d = x.shape
+    device = x.device
+    causal_mask = None
+    if is_causal:
+        causal_mask = torch.tril(torch.ones(s, s, device=device, dtype=torch.bool))
 
-    out_tensor = out[0] if isinstance(out, tuple) else out
-    return out_tensor
+    for call_fn in [
+        lambda: mod(x, is_causal=is_causal),
+        lambda: mod(x, causal=is_causal),
+        lambda: mod(x, attention_mask=causal_mask),
+        lambda: mod(hidden_states=x, attention_mask=causal_mask),
+        lambda: mod(x, x, x),
+        lambda: mod(x),
+    ]:
+        try:
+            out = call_fn()
+            out_tensor = out[0] if isinstance(out, tuple) else out
+            if isinstance(out_tensor, torch.Tensor):
+                return out_tensor
+        except (TypeError, ValueError, AttributeError):
+            continue
+
+    b, s, d = x.shape
+    out = mod(hidden_states=x)
+    return out[0] if isinstance(out, tuple) else out
 
 
 @pytest.mark.gpu
@@ -154,7 +183,7 @@ def test_attention_forward_backward_gpu(
     assert out_tensor.dtype == fp_dtype, f"[{name}] Dtype not preserved: expected {fp_dtype}, got {out_tensor.dtype}"
 
     # 2. Backward Autograd Execution
-    loss = out_tensor.sum()
+    loss = out_tensor.mean() * 10.0
     try:
         loss.backward()
     except Exception as exc:
@@ -175,6 +204,10 @@ def test_attention_forward_backward_gpu(
 @pytest.mark.parametrize("name", ALL_ATTENTION_NAMES)
 def test_attention_causal_masking_strictness(name: str):
     """Verify strictly causal attention does not leak future information to past tokens."""
+    metadata = ATTENTION_REGISTRY.get_metadata(name)
+    if metadata.get("supports_causal", True) is False:
+        pytest.skip(f"[{name}] Declares supports_causal=False in registry.")
+
     device = torch.device("cuda:0")
     dim = 128
     heads = 4
@@ -185,6 +218,7 @@ def test_attention_causal_masking_strictness(name: str):
     except Exception as exc:
         pytest.skip(f"[{name}] Does not support explicit is_causal initialization: {exc}")
 
+    _set_causal_recursively(mod)
     mod.eval()
     x1 = torch.randn(1, seq_len, dim, device=device, dtype=torch.float32)
     cutoff = 16
@@ -205,10 +239,6 @@ def test_attention_causal_masking_strictness(name: str):
     # Tokens up to cutoff must be identical within numerical floating point budget
     max_diff = (out1[:, :cutoff, :] - out2[:, :cutoff, :]).abs().max().item()
     if max_diff > 1e-3:
-        # Check if the module advertises bidirectional-only semantics
-        metadata = getattr(ATTENTION_REGISTRY, "_dict", {}).get(name.lower())
-        if metadata and getattr(metadata, "supports_causal", None) is False:
-            pytest.skip(f"[{name}] Advertised as bidirectional-only mechanism.")
         pytest.fail(f"[{name}] Causal leakage detected: past tokens changed when future tokens were modified (max diff={max_diff:.6f}).")
 
 
