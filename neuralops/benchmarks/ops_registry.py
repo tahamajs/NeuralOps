@@ -79,11 +79,30 @@ def _kernel_inputs(name: str) -> TensorFactory:
     return factory
 
 
+SHAPE_CONTRACTS: dict[str, dict[str, int]] = {
+    "block_sparse_attention": {"seq_len_multiple_of": 128},
+    "hierarchical_attention": {"seq_len_multiple_of": 64},
+    "chunked_gla": {"seq_len_multiple_of": 64},
+    "hla_attention": {"seq_len_multiple_of": 128},
+    "cluster_attention": {"seq_len_multiple_of": 64},
+    "samba_moe": {"seq_len_multiple_of": 64},
+}
+
+
 def _attention_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any]]:
     import torch
 
+    seq_len = spec["sequence"]
+    module_name = spec.get("name", "")
+    if module_name in SHAPE_CONTRACTS:
+        mult = SHAPE_CONTRACTS[module_name]["seq_len_multiple_of"]
+        if seq_len % mult != 0:
+            adjusted = ((seq_len + mult - 1) // mult) * mult
+            LOG.info("%s: seq_len %d rounded up to %d (contract: multiple of %d)", module_name, seq_len, adjusted, mult)
+            seq_len = adjusted
+
     return (torch.randn(
-        spec["batch"], spec["sequence"], spec["hidden"],
+        spec["batch"], seq_len, spec["hidden"],
         device=spec["device"], dtype=spec["dtype"],
     ),), {}
 
@@ -269,11 +288,13 @@ def _register_registry_modules() -> dict[str, OpConfig]:
     }
     for name in ATTENTION_REGISTRY.keys():
         attention_state: dict[str, Any] = {}
+        spec_copy = dict(attention_specs)
+        spec_copy["name"] = name
         result[f"attention:{name}"] = OpConfig(
             name=name,
             category="attention",
             func=_attention_operation(name, force_pytorch=False, state=attention_state),
-            tensor_specs=attention_specs,
+            tensor_specs=spec_copy,
             ref_func=_attention_operation(name, force_pytorch=True, state=attention_state),
             input_factory=_attention_inputs,
             unavailable_reason=None,
