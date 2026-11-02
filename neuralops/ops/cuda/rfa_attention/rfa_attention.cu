@@ -39,11 +39,11 @@ __global__ void __launch_bounds__(128) rfa_fwd_kernel(
         const int idx = head_offset + t * D;
         const float k_val = to_float(phi_k[idx]);
         const float v_val = to_float(v[idx]);
-        s = fmaf(k_val, v_val, s);
-        denom += k_val;
+        s = fminf(fmaxf(fmaf(k_val, v_val, s), -65504.0f), 65504.0f);
+        denom = fminf(fmaxf(denom + k_val, -65504.0f), 65504.0f);
 
         const float q_val = to_float(phi_q[idx]);
-        const float norm = fmaxf(fabsf(denom), 1e-5f);
+        const float norm = fmaxf(fabsf(denom), 1e-4f) * (denom >= 0.0f ? 1.0f : -1.0f);
         const float res = (q_val * s) / norm;
         out[idx] = from_float<scalar_t>(isnan(res) || isinf(res) ? 0.0f : res);
     }
