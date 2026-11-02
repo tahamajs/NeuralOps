@@ -49,6 +49,8 @@ class TinyClassifier(nn.Module):
             dim=dim,
             hidden_dim=hidden_dim,
             num_labels=num_labels,
+            attention_dropout=0.0,
+            dropout=0.0,
         )
         self.transformer = DistilBertForSequenceClassification(self.config)
 

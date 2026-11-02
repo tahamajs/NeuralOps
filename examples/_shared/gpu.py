@@ -30,11 +30,9 @@ def gpu_name() -> str:
 
 
 def get_backend_preference() -> str:
-    """Return the preferred device string ('cuda', 'mps', or 'cpu')."""
+    """Return the preferred device string ('cuda' or 'cpu')."""
     if torch.cuda.is_available():
         return "cuda"
-    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        return "mps"
     return "cpu"
 
 
