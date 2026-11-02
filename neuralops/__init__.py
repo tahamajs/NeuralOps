@@ -323,17 +323,16 @@ def _patch_torch_compat():
                     scale: float | None = None,
                 ) -> Any:
                     scale_factor = 1.0 / math.sqrt(query.size(-1)) if scale is None else scale
-                    q_len, k_len = query.size(-2), key.size(-2)
-                    attn_bias = torch.zeros(q_len, k_len, dtype=query.dtype, device=query.device)
+                    scores = (query @ key.transpose(-2, -1)) * scale_factor
                     if is_causal:
-                        temp_mask = torch.ones(q_len, k_len, dtype=torch.bool, device=query.device).tril(diagonal=0)
-                        attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
+                        q_len, k_len = query.size(-2), key.size(-2)
+                        causal_mask = torch.ones(q_len, k_len, dtype=torch.bool, device=query.device).tril(diagonal=0)
+                        scores = scores.masked_fill(causal_mask.logical_not(), float("-inf"))
                     if attn_mask is not None:
                         if attn_mask.dtype == torch.bool:
-                            attn_bias.masked_fill_(attn_mask.logical_not(), float("-inf"))
+                            scores = scores.masked_fill(attn_mask.logical_not(), float("-inf"))
                         else:
-                            attn_bias = attn_bias + attn_mask
-                    scores = (query @ key.transpose(-2, -1)) * scale_factor + attn_bias
+                            scores = scores + attn_mask
                     probs = torch.softmax(scores, dim=-1)
                     if dropout_p > 0.0:
                         probs = torch.dropout(probs, dropout_p, train=True)

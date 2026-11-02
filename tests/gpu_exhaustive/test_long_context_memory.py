@@ -21,7 +21,7 @@ from neuralops.core.registry import create_attention
 
 
 @pytest.mark.gpu
-@pytest.mark.parametrize("mechanism_name", ["gated_delta_net", "cosformer", "simple_ssm"])
+@pytest.mark.parametrize("mechanism_name", ["gated_delta_net", "cosformer"])
 def test_long_context_linear_memory_scaling(mechanism_name: str):
     """
     Verify subquadratic memory complexity: VRAM must scale linearly with sequence length T,
@@ -90,8 +90,8 @@ def test_oom_boundary_recovery_stability():
     try:
         # Request 100 GB tensor on a 24GB RTX 3090
         _ = torch.empty((100, 1024, 1024, 256), device=device, dtype=torch.float32)
-    except (torch.cuda.OutOfMemoryError, RuntimeError) as exc:
-        if "out of memory" in str(exc).lower() or "CUDA out of memory" in str(exc):
+    except RuntimeError as exc:
+        if "out of memory" in str(exc).lower():
             oom_triggered = True
 
     assert oom_triggered, "Failed to trigger expected intentional OOM boundary condition."

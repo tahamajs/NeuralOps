@@ -118,7 +118,7 @@ def paged_attention_pytorch(
         if slen == 0:
             continue
         num_blocks = (slen + block_size - 1) // block_size
-        blocks = block_tables[b, :num_blocks]
+        blocks = block_tables[b, :num_blocks].long()
 
         k_blocks = k_cache[blocks]
         v_blocks = v_cache[blocks]
