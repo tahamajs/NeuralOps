@@ -51,7 +51,7 @@ torch::Tensor samba_moe_combine_fwd(
     if (total == 0 || D == 0) return out;
 
     constexpr int THREADS = 256;
-    const int blocks = (total + THREADS - 1) / THREADS;
+    const int blocks = std::min(65535, (total + THREADS - 1) / THREADS);
 
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto e1_c = expert_out1.contiguous();

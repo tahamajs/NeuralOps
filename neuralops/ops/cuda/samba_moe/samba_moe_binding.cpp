@@ -7,3 +7,8 @@
 
 #include <torch/extension.h>
 torch::Tensor samba_moe_combine_fwd(const torch::Tensor& expert_out1, const torch::Tensor& expert_out2, const torch::Tensor& routing_weights);
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("samba_moe_combine_fwd", &samba_moe_combine_fwd, "Samba MoE Combine forward (CUDA)");
+    m.def("forward", &samba_moe_combine_fwd, "Samba MoE Combine forward (CUDA)");
+}
