@@ -95,7 +95,7 @@ if HAS_TRITON:
             b_vec = tl.load(b_ptrs).to(tl.float32)
             c_vec = tl.load(c_ptrs).to(tl.float32)
 
-            dA = tl.exp(delta_val * a_vec)
+            dA = tl.math.exp2(1.44269504 * (delta_val * a_vec))
             dB = delta_val * b_vec
 
             h = h * dA + u_val * dB
@@ -367,10 +367,10 @@ if HAS_TRITON:
 
         if IS_VECTOR_GATE:
             gk = tl.load(Gk_ptr + pid_b * stride_gkb + pid_h * stride_gkh + offs_k * stride_gkd).to(tl.float32)
-            decay = tl.exp(gk)
+            decay = tl.math.exp2(1.44269504 * (gk))
         else:
             g = tl.load(Gk_ptr + pid_b * stride_gkb + pid_h * stride_gkh).to(tl.float32)
-            decay = tl.exp(g)
+            decay = tl.math.exp2(1.44269504 * (g))
 
         kv_ptrs = KV_ptr + pid_b * stride_kvb + pid_h * stride_kvh + offs_k[:, None] * stride_kvk + offs_v[None, :] * stride_kvv
         kv = tl.load(kv_ptrs).to(tl.float32)

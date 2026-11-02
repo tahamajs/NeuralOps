@@ -123,32 +123,43 @@ if HAS_TRITON and tl is not None:
         stride_sb, stride_sh, stride_sn, stride_sk,
         H, nb, D, scale,
         IS_CAUSAL: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
-        """In-SRAM Fused MoBA Block Score Router Kernel."""
+        """In-SRAM Fused 2D MoBA Block Score Router Kernel: acc = tl.dot(q, k) * scale."""
         pid_m = tl.program_id(0)
-        pid_bh = tl.program_id(1)
+        pid_n = tl.program_id(1)
+        pid_bh = tl.program_id(2)
         i_b = pid_bh // H
         i_h = pid_bh % H
 
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
         offs_d = tl.arange(0, BLOCK_D)
+
+        mask_m = offs_m < nb
+        mask_n = offs_n < nb
         mask_d = offs_d < D
 
-        q_ptr = Q_mean_ptr + i_b * stride_qb + i_h * stride_qh + pid_m * stride_qn + offs_d * stride_qd
-        q_vec = tl.load(q_ptr, mask=mask_d, other=0.0).to(tl.float32)
+        q_ptrs = Q_mean_ptr + i_b * stride_qb + i_h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
+        k_ptrs = K_mean_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
 
-        for col in range(nb):
-            k_ptr = K_mean_ptr + i_b * stride_kb + i_h * stride_kh + col * stride_kn + offs_d * stride_kd
-            k_vec = tl.load(k_ptr, mask=mask_d, other=0.0).to(tl.float32)
+        q = tl.load(q_ptrs, mask=mask_m[:, None] & mask_d[None, :], other=0.0).to(tl.float32)
+        k = tl.load(k_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0).to(tl.float32)
 
-            score = tl.sum(q_vec * k_vec) * scale
-            if IS_CAUSAL and col > pid_m:
-                score = score - 1e4
-            elif not IS_CAUSAL and col == 0:
-                score += 1e4
+        # Vectorized GEMM accumulation entirely in SRAM/registers
+        acc = tl.dot(q, tl.trans(k)) * scale
 
-            s_ptr = Scores_ptr + i_b * stride_sb + i_h * stride_sh + pid_m * stride_sn + col * stride_sk
-            tl.store(s_ptr, score)
+        if IS_CAUSAL:
+            causal_mask = offs_m[:, None] < offs_n[None, :]
+            acc = tl.where(causal_mask, acc - 1e4, acc)
+        else:
+            first_col_mask = offs_n[None, :] == 0
+            acc = tl.where(first_col_mask, acc + 1e4, acc)
+
+        s_ptrs = Scores_ptr + i_b * stride_sb + i_h * stride_sh + offs_m[:, None] * stride_sn + offs_n[None, :] * stride_sk
+        tl.store(s_ptrs, acc, mask=mask_m[:, None] & mask_n[None, :])
 
 
 def fused_moba_block_router_combine_triton(
@@ -169,8 +180,10 @@ def fused_moba_block_router_combine_triton(
             K_mean = Kb.mean(dim=3).contiguous()
 
             scores = torch.empty((B, H, nb, nb), dtype=torch.float32, device=Qb.device)
+            BLOCK_M = min(32, triton.next_power_of_2(nb))
+            BLOCK_N = min(32, triton.next_power_of_2(nb))
             BLOCK_D = triton.next_power_of_2(D)
-            grid = (nb, B * H)
+            grid = (triton.cdiv(nb, BLOCK_M), triton.cdiv(nb, BLOCK_N), B * H)
             _fused_moba_block_router_kernel[grid](
                 Q_mean, K_mean, scores,
                 Q_mean.stride(0), Q_mean.stride(1), Q_mean.stride(2), Q_mean.stride(3),
@@ -178,6 +191,8 @@ def fused_moba_block_router_combine_triton(
                 scores.stride(0), scores.stride(1), scores.stride(2), scores.stride(3),
                 H, nb, D, scale,
                 IS_CAUSAL=is_causal,
+                BLOCK_M=BLOCK_M,
+                BLOCK_N=BLOCK_N,
                 BLOCK_D=BLOCK_D,
             )
             act_top_k = min(top_k, nb)
@@ -280,10 +295,10 @@ if HAS_TRITON and tl is not None:
                 s_tile = tl.where(mask_m[:, None] & mask_n[None, :], s_tile, float("-inf"))
 
                 m_ij = tl.maximum(m_i, tl.max(s_tile, axis=1))
-                p = tl.exp(s_tile - m_ij[:, None])
+                p = tl.math.exp2(1.44269504 * (s_tile - m_ij[:, None]))
                 l_ij = tl.sum(p, axis=1)
 
-                alpha = tl.exp(m_i - m_ij)
+                alpha = tl.math.exp2(1.44269504 * (m_i - m_ij))
                 l_i = l_i * alpha + l_ij
                 acc = acc * alpha[:, None] + tl.dot(p, v_tile, allow_tf32=True)
                 m_i = m_ij

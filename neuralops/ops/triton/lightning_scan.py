@@ -73,7 +73,7 @@ if HAS_TRITON and tl is not None:
 
             # Causal distance-based decay
             dist = offs_m[:, None] - offs_n[None, :]
-            decay = tl.exp(-decay_rate * tl.maximum(dist.to(tl.float32), 0.0))
+            decay = tl.math.exp2(1.44269504 * (-decay_rate * tl.maximum(dist.to(tl.float32), 0.0)))
             causal_mask = offs_m[:, None] >= offs_n[None, :]
 
             # Linear kernel weights

@@ -73,7 +73,7 @@ def _fused_cross_entropy_fwd_kernel(
     )
 
     m = tl.max(logits_row, axis=0)
-    exp_logits = tl.exp(logits_row - m)
+    exp_logits = tl.math.exp2(1.44269504 * (logits_row - m))
     sum_exp = tl.sum(exp_logits, axis=0)
     log_sum_exp = m + tl.log(sum_exp)
 
@@ -121,7 +121,7 @@ def _fused_cross_entropy_bwd_kernel(
     )
 
     m = tl.max(logits_row, axis=0)
-    exp_logits = tl.exp(logits_row - m)
+    exp_logits = tl.math.exp2(1.44269504 * (logits_row - m))
     sum_exp = tl.sum(exp_logits, axis=0)
 
     probs = exp_logits / sum_exp

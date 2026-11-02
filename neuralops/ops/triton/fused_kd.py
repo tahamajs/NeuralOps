@@ -107,8 +107,8 @@ def _fused_kd_fwd_kernel(
             other=-float("inf"),
         ) * INV_T
 
-        sum_exp_s += tl.sum(tl.where(mask, tl.exp(s_val - max_s), 0.0), axis=0)
-        sum_exp_t += tl.sum(tl.where(mask, tl.exp(t_val - max_t), 0.0), axis=0)
+        sum_exp_s += tl.sum(tl.where(mask, tl.math.exp2(1.44269504 * (s_val - max_s)), 0.0), axis=0)
+        sum_exp_t += tl.sum(tl.where(mask, tl.math.exp2(1.44269504 * (t_val - max_t)), 0.0), axis=0)
 
     lse_s = max_s + tl.log(sum_exp_s)
     lse_t = max_t + tl.log(sum_exp_t)
@@ -131,7 +131,7 @@ def _fused_kd_fwd_kernel(
 
         log_p_s = s_val - lse_s
         log_p_t = t_val - lse_t
-        p_t = tl.exp(log_p_t)
+        p_t = tl.math.exp2(1.44269504 * (log_p_t))
 
         kl_elem = p_t * (log_p_t - log_p_s)
         row_loss += tl.sum(tl.where(mask, kl_elem, 0.0), axis=0)
@@ -196,8 +196,8 @@ def _fused_kd_bwd_kernel(
             mask=mask,
             other=-float("inf"),
         ) * INV_T
-        sum_exp_s += tl.sum(tl.where(mask, tl.exp(s_val - max_s), 0.0), axis=0)
-        sum_exp_t += tl.sum(tl.where(mask, tl.exp(t_val - max_t), 0.0), axis=0)
+        sum_exp_s += tl.sum(tl.where(mask, tl.math.exp2(1.44269504 * (s_val - max_s)), 0.0), axis=0)
+        sum_exp_t += tl.sum(tl.where(mask, tl.math.exp2(1.44269504 * (t_val - max_t)), 0.0), axis=0)
 
     lse_s = max_s + tl.log(sum_exp_s)
     lse_t = max_t + tl.log(sum_exp_t)
@@ -217,8 +217,8 @@ def _fused_kd_bwd_kernel(
             other=-float("inf"),
         ) * INV_T
 
-        p_s = tl.exp(s_val - lse_s)
-        p_t = tl.exp(t_val - lse_t)
+        p_s = tl.math.exp2(1.44269504 * (s_val - lse_s))
+        p_t = tl.math.exp2(1.44269504 * (t_val - lse_t))
         grad_s = (p_s - p_t) * scale
         tl.store(
             grad_s_ptr + row_idx * stride_gs_row + col_offsets * stride_gs_col,

@@ -91,7 +91,7 @@ def _selective_scan_fwd_kernel(
         C_ptrs = C_ptr + pid_b * stride_cb + l * stride_cl + n_offsets * stride_cn
         c_val = tl.load(C_ptrs).to(tl.float32)
 
-        decay = tl.exp(delta_val * a_val)
+        decay = tl.math.exp2(1.44269504 * (delta_val * a_val))
         input_term = delta_val * u_val * b_val
         h_state = decay * h_state + input_term
 
@@ -226,7 +226,7 @@ def _selective_scan_bwd_kernel(
         du_p = du_ptr + pid_b * stride_ub + l * stride_ul + pid_d * stride_ud
         tl.store(du_p, du_val)
 
-        decay = tl.exp(delta_val * a_val)
+        decay = tl.math.exp2(1.44269504 * (delta_val * a_val))
         ddecay = dh_state * h_prev
 
         acc_dA += ddecay * decay * delta_val

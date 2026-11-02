@@ -89,7 +89,7 @@ if HAS_TRITON and triton is not None and tl is not None:
             if (dot < thresh) or (valid <= 0.0):
                 dot = -1e4
 
-            p = tl.exp(dot - max_score)
+            p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
             v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
             acc += p * v
@@ -163,7 +163,7 @@ if HAS_TRITON and triton is not None and tl is not None:
             if (dot < thresh) or (valid <= 0.0):
                 dot = -1e4
 
-            p = tl.exp(dot - max_score)
+            p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
             v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
             acc += p * v

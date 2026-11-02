@@ -69,7 +69,7 @@ if HAS_TRITON and tl is not None:
         g = tl.load(GATE + offs, mask=mask, other=0.0)
 
         g_f = g.to(tl.float32)
-        silu = g_f / (1.0 + tl.exp(-g_f))
+        silu = g_f / (1.0 + tl.math.exp2(1.44269504 * (-g_f)))
         out = (silu * x.to(tl.float32)).to(OUT.dtype.element_ty)
 
         tl.store(OUT + offs, out, mask=mask)
@@ -211,7 +211,7 @@ if HAS_TRITON:
         y_hat_im = x_re * w_im + x_im * w_re
 
         mag = tl.sqrt(y_hat_re * y_hat_re + y_hat_im * y_hat_im + 1e-8)
-        sig_tau = 1.0 / (1.0 + tl.exp(-tau))
+        sig_tau = 1.0 / (1.0 + tl.math.exp2(1.44269504 * (-tau)))
         diff = mag - sig_tau
         shrink = tl.maximum(diff, 0.0) / mag
 
@@ -901,7 +901,7 @@ if HAS_TRITON and tl is not None:
 
         diff = proj - diag_sq
         diff_clamped = tl.maximum(-20.0, tl.minimum(8.0, diff))
-        phi = tl.exp(diff_clamped) * norm_factor
+        phi = tl.math.exp2(1.44269504 * (diff_clamped)) * norm_factor
 
         tl.store(Out_ptr + pid * stride_on + offs_f * stride_of, phi.to(Out_ptr.dtype.element_ty), mask=mask)
 
@@ -974,7 +974,7 @@ if HAS_TRITON and tl is not None:
 
         s = tl.load(Scores_ptr + pid * stride_sb + offs_l * stride_sl, mask=mask, other=-1e4).to(tl.float32)
         m = tl.max(s, axis=0)
-        p = tl.exp(s - m)
+        p = tl.math.exp2(1.44269504 * (s - m))
         denom = tl.sum(p, axis=0)
         prob = p / tl.maximum(denom, 1e-8)
 

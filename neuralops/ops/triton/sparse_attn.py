@@ -114,8 +114,8 @@ if HAS_TRITON:
                     s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
 
                 m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
-                alpha = tl.exp(m_prev - m_curr)
-                p = tl.exp(s - m_curr[:, None])
+                alpha = tl.math.exp2(1.44269504 * (m_prev - m_curr))
+                p = tl.math.exp2(1.44269504 * (s - m_curr[:, None]))
 
                 l_curr = l_prev * alpha + tl.sum(p, axis=1)
                 acc = acc * alpha[:, None] + tl.dot(p.to(v.dtype), v)
@@ -205,8 +205,8 @@ if HAS_TRITON and tl is not None:
                     s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
 
                 m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
-                alpha = tl.exp(m_prev - m_curr)
-                p = tl.exp(s - m_curr[:, None])
+                alpha = tl.math.exp2(1.44269504 * (m_prev - m_curr))
+                p = tl.math.exp2(1.44269504 * (s - m_curr[:, None]))
                 l_curr = l_prev * alpha + tl.sum(p, axis=1)
                 m_prev = m_curr
                 l_prev = l_curr
@@ -234,7 +234,7 @@ if HAS_TRITON and tl is not None:
                 s = tl.dot(q, tl.trans(k)) * sm_scale
                 cond = (offs_q[:, None] >= offs_k[None, :]) if IS_CAUSAL else True
                 s = tl.where(cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
-                p = tl.exp(s - m_prev[:, None]) / denom
+                p = tl.math.exp2(1.44269504 * (s - m_prev[:, None])) / denom
                 p = tl.where(cond & mask_q[:, None] & mask_k[None, :], p, 0.0)
 
                 dv = tl.dot(tl.trans(p.to(do.dtype)), do)

@@ -76,8 +76,8 @@ if HAS_TRITON and tl is not None:
             scores = tl.where(mask_tok, scores, -1e4)
 
             m_curr = tl.maximum(m_i, tl.max(scores, axis=0))
-            alpha = tl.exp(m_i - m_curr)
-            p = tl.exp(scores - m_curr)
+            alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
+            p = tl.math.exp2(1.44269504 * (scores - m_curr))
             l_curr = l_i * alpha + tl.sum(p, axis=0)
             acc = acc * alpha
 

@@ -70,8 +70,8 @@ if HAS_TRITON and tl is not None:
             v = tl.load(v_ptrs, mask=mask_d, other=0.0)
             w = tl.load(w_ptrs, mask=mask_d, other=0.0)
 
-            decay = tl.exp(-tl.exp(w))
-            bonus = tl.exp(u)
+            decay = tl.math.exp2(1.44269504 * (-tl.math.exp2(1.44269504 * (w))))
+            bonus = tl.math.exp2(1.44269504 * (u))
 
             # Output computation
             out_val = r * (bonus * k * v + s)

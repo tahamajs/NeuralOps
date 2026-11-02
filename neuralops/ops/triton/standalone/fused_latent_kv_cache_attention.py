@@ -93,10 +93,10 @@ def _latent_kv_cache_attn_kernel(
         s_tile = tl.where(mask_m[:, None] & mask_n[None, :], s_tile, float("-inf"))
 
         m_ij = tl.maximum(m_i, tl.max(s_tile, axis=1))
-        p = tl.exp(s_tile - m_ij[:, None])
+        p = tl.math.exp2(1.44269504 * (s_tile - m_ij[:, None]))
         l_ij = tl.sum(p, axis=1)
 
-        alpha = tl.exp(m_i - m_ij)
+        alpha = tl.math.exp2(1.44269504 * (m_i - m_ij))
         l_i = l_i * alpha + l_ij
         acc_latent = acc_latent * alpha[:, None] + tl.dot(p, c_tile, allow_tf32=True)
         m_i = m_ij

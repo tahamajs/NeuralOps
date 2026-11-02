@@ -202,7 +202,7 @@ if HAS_TRITON and tl is not None:
         rstd = 1.0 / tl.sqrt(var + eps)
         x_norm = x * rstd * w
 
-        sig = 1.0 / (1.0 + tl.exp(-gate))
+        sig = 1.0 / (1.0 + tl.math.exp2(1.44269504 * (-gate)))
         gate_act = gate * sig
 
         out = x_norm * gate_act

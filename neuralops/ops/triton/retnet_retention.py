@@ -100,7 +100,7 @@ if HAS_TRITON:
 
             diff = offs_m[:, None] - offs_n[None, :]
             causal = (diff >= 0) & mask_m[:, None] & mask_n[None, :]
-            decay = tl.where(causal, tl.exp(diff * log_gamma), 0.0)
+            decay = tl.where(causal, tl.math.exp2(1.44269504 * (diff * log_gamma)), 0.0)
 
             decayed_scores = scores * decay
             acc += tl.dot(decayed_scores.to(v.dtype), v)

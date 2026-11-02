@@ -70,7 +70,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         for n in range(L_proj):
             k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
             dot = tl.sum(q * k) * scale
-            p = tl.exp(dot - max_score)
+            p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
             v = tl.load(V_comp_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
             acc += p * v
@@ -125,7 +125,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         for n in range(L_proj):
             k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
             dot = tl.sum(q * k) * scale
-            p = tl.exp(dot - max_score)
+            p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
             v = tl.load(V_comp_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
             acc += p * v

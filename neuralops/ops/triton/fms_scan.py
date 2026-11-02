@@ -97,8 +97,8 @@ def _fms_fwd_kernel(
             other=0.0,
         ).to(tl.float32)
 
-        q_f = tl.where(q_raw > 0.0, q_raw + 1.0, tl.exp(q_raw))
-        k_elu = tl.where(k_raw > 0.0, k_raw + 1.0, tl.exp(k_raw))
+        q_f = tl.where(q_raw > 0.0, q_raw + 1.0, tl.math.exp2(1.44269504 * (q_raw)))
+        k_elu = tl.where(k_raw > 0.0, k_raw + 1.0, tl.math.exp2(1.44269504 * (k_raw)))
         k_f = k_elu * inv_sqrt_d
         v_f = v_raw
 
@@ -242,8 +242,8 @@ def _fms_bwd_kernel(
             other=0.0,
         ).to(tl.float32)
 
-        q_f = tl.where(q_raw > 0.0, q_raw + 1.0, tl.exp(q_raw))
-        k_elu = tl.where(k_raw > 0.0, k_raw + 1.0, tl.exp(k_raw))
+        q_f = tl.where(q_raw > 0.0, q_raw + 1.0, tl.math.exp2(1.44269504 * (q_raw)))
+        k_elu = tl.where(k_raw > 0.0, k_raw + 1.0, tl.math.exp2(1.44269504 * (k_raw)))
         k_f = k_elu * inv_sqrt_d
         v_f = v_raw
 
@@ -284,7 +284,7 @@ def _fms_bwd_kernel(
         dq_from_den = Z_t * ddenom_t
         dq_f = dq_from_num + dq_from_den
 
-        dq_t = tl.where(q_raw > 0.0, dq_f, dq_f * tl.exp(q_raw))
+        dq_t = tl.where(q_raw > 0.0, dq_f, dq_f * tl.math.exp2(1.44269504 * (q_raw)))
         dq_t = tl.where(mask_d, dq_t, 0.0)
 
         dv_f = tl.sum(k_f[:, None] * dS, axis=0)
@@ -294,7 +294,7 @@ def _fms_bwd_kernel(
         dk_from_Z = dZ
         dk_f = (dk_from_S + dk_from_Z) * inv_sqrt_d
 
-        dk_t = tl.where(k_raw > 0.0, dk_f, dk_f * tl.exp(k_raw))
+        dk_t = tl.where(k_raw > 0.0, dk_f, dk_f * tl.math.exp2(1.44269504 * (k_raw)))
         dk_t = tl.where(mask_d, dk_t, 0.0)
 
         tl.store(

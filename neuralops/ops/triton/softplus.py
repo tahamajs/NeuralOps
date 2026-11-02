@@ -35,7 +35,7 @@ elif HAS_TRITON:
 
     @triton.jit
     def softplus(dt):
-        return tl.math.log1p(tl.exp(dt))
+        return tl.math.log1p(tl.math.exp2(1.44269504 * (dt)))
 
 else:
     def softplus(dt):
@@ -52,7 +52,7 @@ if HAS_TRITON and tl is not None:
         x = tl.load(X_ptr + offs, mask=mask, other=0.0)
         x_f = x.to(tl.float32)
         scaled_x = x_f * BETA
-        y_f = tl.where(scaled_x > THRESHOLD, x_f, tl.log(1.0 + tl.exp(scaled_x)) / BETA)
+        y_f = tl.where(scaled_x > THRESHOLD, x_f, tl.log(1.0 + tl.math.exp2(1.44269504 * (scaled_x))) / BETA)
         tl.store(Y_ptr + offs, y_f.to(Y_ptr.dtype.element_ty), mask=mask)
 
     @triton.jit
@@ -65,7 +65,7 @@ if HAS_TRITON and tl is not None:
         x_f = x.to(tl.float32)
         dy_f = dy.to(tl.float32)
         scaled_x = x_f * BETA
-        sig = 1.0 / (1.0 + tl.exp(-scaled_x))
+        sig = 1.0 / (1.0 + tl.math.exp2(1.44269504 * (-scaled_x)))
         dx_f = tl.where(scaled_x > THRESHOLD, dy_f, dy_f * sig)
         tl.store(DX_ptr + offs, dx_f.to(DX_ptr.dtype.element_ty), mask=mask)
 

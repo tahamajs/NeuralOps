@@ -24,7 +24,7 @@ from neuralops.ops.triton._base import triton, tl, HAS_TRITON
 @triton.jit
 def _elu_plus_one(x):
     """In-register ELU(x) + 1."""
-    return tl.where(x > 0.0, x + 1.0, tl.exp(x))
+    return tl.where(x > 0.0, x + 1.0, tl.math.exp2(1.44269504 * (x)))
 
 
 @triton.autotune(

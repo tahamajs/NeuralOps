@@ -113,8 +113,8 @@ if HAS_TRITON:
             s1 = tl.where(causal_mask & mask_m[:, None] & mask_n[None, :], s1, -float("inf"))
 
             m1_new = tl.maximum(m1, tl.max(s1, 1))
-            alpha1 = tl.exp(m1 - m1_new)
-            p1 = tl.exp(s1 - m1_new[:, None])
+            alpha1 = tl.math.exp2(1.44269504 * (m1 - m1_new))
+            p1 = tl.math.exp2(1.44269504 * (s1 - m1_new[:, None]))
             l1 = l1 * alpha1 + tl.sum(p1, 1)
             acc1 = acc1 * alpha1[:, None] + tl.dot(p1.to(v.dtype), v)
             m1 = m1_new
@@ -123,8 +123,8 @@ if HAS_TRITON:
             s2 = tl.where(causal_mask & mask_m[:, None] & mask_n[None, :], s2, -float("inf"))
 
             m2_new = tl.maximum(m2, tl.max(s2, 1))
-            alpha2 = tl.exp(m2 - m2_new)
-            p2 = tl.exp(s2 - m2_new[:, None])
+            alpha2 = tl.math.exp2(1.44269504 * (m2 - m2_new))
+            p2 = tl.math.exp2(1.44269504 * (s2 - m2_new[:, None]))
             l2 = l2 * alpha2 + tl.sum(p2, 1)
             acc2 = acc2 * alpha2[:, None] + tl.dot(p2.to(v.dtype), v)
             m2 = m2_new

@@ -402,7 +402,7 @@ def cosformer_triton_fwd(
 if HAS_TRITON and hasattr(tl, "constexpr"):
     @triton.jit
     def _elu_plus_one(x):
-        return tl.where(x > 0.0, x + 1.0, tl.exp(x))
+        return tl.where(x > 0.0, x + 1.0, tl.math.exp2(1.44269504 * (x)))
 
     @triton.autotune(
         configs=[

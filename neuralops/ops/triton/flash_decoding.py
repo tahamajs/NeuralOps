@@ -57,7 +57,7 @@ if HAS_TRITON and tl is not None:
         scores = tl.where(mask_n, scores, -1e4)
 
         m_c = tl.max(scores, axis=0)
-        p = tl.exp(scores - m_c)
+        p = tl.math.exp2(1.44269504 * (scores - m_c))
         l_c = tl.sum(p, axis=0)
 
         v_ptrs = V_ptr + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
@@ -143,14 +143,14 @@ if HAS_TRITON and tl is not None:
         lse_vals = tl.load(lse_ptrs, mask=mask_c, other=-1e4)
 
         max_lse = tl.max(lse_vals, axis=0)
-        p = tl.where(mask_c, tl.exp(lse_vals - max_lse), 0.0)
+        p = tl.where(mask_c, tl.math.exp2(1.44269504 * (lse_vals - max_lse)), 0.0)
         global_sum = tl.sum(p, axis=0)
         _alpha = p / tl.maximum(global_sum, 1e-6)
 
         acc = tl.zeros([BLOCK_D], dtype=tl.float32)
         for c in range(num_chunks):
             w_c = tl.load(MidLse_ptr + i_b * stride_lb + i_h * stride_lh + c * stride_lc)
-            weight = tl.exp(w_c - max_lse) / tl.maximum(global_sum, 1e-6)
+            weight = tl.math.exp2(1.44269504 * (w_c - max_lse)) / tl.maximum(global_sum, 1e-6)
 
             mid_ptrs = MidOut_ptr + i_b * stride_mb + i_h * stride_mh + c * stride_mc + offs_d * stride_md
             out_c = tl.load(mid_ptrs).to(tl.float32)

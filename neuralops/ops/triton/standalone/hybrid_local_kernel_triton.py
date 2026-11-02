@@ -73,8 +73,8 @@ if HAS_TRITON and tl is not None:
             scores = tl.where(mask_window, scores, -1e30)
 
             m_curr = tl.maximum(m_i, tl.max(scores, 1))
-            alpha = tl.exp(m_i - m_curr)
-            p = tl.where(mask_window, tl.exp(scores - m_curr[:, None]), 0.0)
+            alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
+            p = tl.where(mask_window, tl.math.exp2(1.44269504 * (scores - m_curr[:, None])), 0.0)
 
             l_i = l_i * alpha + tl.sum(p, 1)
             acc = acc * alpha[:, None]

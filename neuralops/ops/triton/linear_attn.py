@@ -93,8 +93,8 @@ if HAS_TRITON:
             if ACTIVATION_MODE == 0:
                 q_f = q_tile.to(tl.float32)
                 k_f = k_tile.to(tl.float32)
-                phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
-                phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
+                phi_q = tl.where(q_f > 0.0, q_f, tl.math.exp2(1.44269504 * (q_f)) - 1.0) + 1.0
+                phi_k = tl.where(k_f > 0.0, k_f, tl.math.exp2(1.44269504 * (k_f)) - 1.0) + 1.0
             elif ACTIVATION_MODE == 1:
                 phi_q = tl.maximum(q_tile.to(tl.float32), 0.0)
                 phi_k = tl.maximum(k_tile.to(tl.float32), 0.0)
@@ -187,7 +187,7 @@ if HAS_TRITON:
 
             if ACTIVATION_MODE == 0:
                 k_f = k_tile.to(tl.float32)
-                phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
+                phi_k = tl.where(k_f > 0.0, k_f, tl.math.exp2(1.44269504 * (k_f)) - 1.0) + 1.0
             elif ACTIVATION_MODE == 1:
                 phi_k = tl.maximum(k_tile.to(tl.float32), 0.0)
             else:
@@ -209,7 +209,7 @@ if HAS_TRITON:
 
             if ACTIVATION_MODE == 0:
                 q_f = q_tile.to(tl.float32)
-                phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
+                phi_q = tl.where(q_f > 0.0, q_f, tl.math.exp2(1.44269504 * (q_f)) - 1.0) + 1.0
             elif ACTIVATION_MODE == 1:
                 phi_q = tl.maximum(q_tile.to(tl.float32), 0.0)
             else:
@@ -713,8 +713,8 @@ if HAS_TRITON:
 
             q_f = q_tile.to(tl.float32)
             k_f = k_tile.to(tl.float32)
-            phi_q = tl.where(q_f > 0.0, q_f, tl.exp(q_f) - 1.0) + 1.0
-            phi_k = tl.where(k_f > 0.0, k_f, tl.exp(k_f) - 1.0) + 1.0
+            phi_q = tl.where(q_f > 0.0, q_f, tl.math.exp2(1.44269504 * (q_f)) - 1.0) + 1.0
+            phi_k = tl.where(k_f > 0.0, k_f, tl.math.exp2(1.44269504 * (k_f)) - 1.0) + 1.0
             phi_k = tl.where(mask_n[:, None], phi_k, 0.0)
             v_tile = tl.where(mask_n[:, None], v_tile.to(tl.float32), 0.0)
 
@@ -747,7 +747,7 @@ if HAS_TRITON:
             chunk_decay = 1.0
             if HAS_DECAY:
                 chunk_log_decay = tl.sum(tl.log(dec_tile))
-                chunk_decay = tl.exp(chunk_log_decay)
+                chunk_decay = tl.math.exp2(1.44269504 * (chunk_log_decay))
 
             state_S = state_S * chunk_decay + tl.dot(tl.trans(phi_k), v_tile)
             state_Z = state_Z * chunk_decay + tl.sum(phi_k, axis=0)
@@ -881,10 +881,10 @@ if HAS_TRITON:
             s_tile = tl.where(mask_m[:, None] & mask_n[None, :], s_tile, float("-inf"))
 
             m_ij = tl.maximum(m_i, tl.max(s_tile, axis=1))
-            p = tl.exp(s_tile - m_ij[:, None])
+            p = tl.math.exp2(1.44269504 * (s_tile - m_ij[:, None]))
             l_ij = tl.sum(p, axis=1)
 
-            alpha = tl.exp(m_i - m_ij)
+            alpha = tl.math.exp2(1.44269504 * (m_i - m_ij))
             l_i = l_i * alpha + l_ij
             acc_latent = acc_latent * alpha[:, None] + tl.dot(p, c_tile, allow_tf32=True)
             m_i = m_ij

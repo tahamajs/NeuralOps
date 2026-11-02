@@ -12,6 +12,7 @@ Local windowed self-attention restricting receptive field to local bands for lin
 """
 
 from __future__ import annotations
+import logging
 import math
 import torch
 import torch.nn.functional as F
@@ -20,7 +21,14 @@ from typing import Any
 
 from neuralops.ops.triton._common import HAS_TRITON, triton, tl
 
-__all__ = ["sliding_window_attention_kernel", "sliding_window_triton", "sliding_window_attention", "sliding_window_pytorch"]
+logger = logging.getLogger(__name__)
+
+__all__ = [
+    "sliding_window_attention_kernel",
+    "sliding_window_triton",
+    "sliding_window_attention",
+    "sliding_window_pytorch",
+]
 
 
 if HAS_TRITON and tl is not None:
@@ -71,8 +79,8 @@ if HAS_TRITON and tl is not None:
             scores = tl.where(mask_window, scores, -1e4)
 
             m_curr = tl.maximum(m_i, tl.max(scores, 1))
-            alpha = tl.exp(m_i - m_curr)
-            p = tl.exp(scores - m_curr[:, None])
+            alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
+            p = tl.math.exp2(1.44269504 * (scores - m_curr[:, None]))
 
             l_i = l_i * alpha + tl.sum(p, 1)
             acc = acc * alpha[:, None]
@@ -160,8 +168,8 @@ if HAS_TRITON and tl is not None:
             scores = tl.where(mask_window, scores, -1e4)
 
             m_curr = tl.maximum(m_i, tl.max(scores, 1))
-            alpha = tl.exp(m_i - m_curr)
-            p = tl.exp(scores - m_curr[:, None])
+            alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
+            p = tl.math.exp2(1.44269504 * (scores - m_curr[:, None]))
             l_i = l_i * alpha + tl.sum(p, 1)
             m_i = m_curr
 
@@ -178,7 +186,7 @@ if HAS_TRITON and tl is not None:
             dist = offs_m[:, None] - offs_n[None, :]
             mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
             scores = tl.where(mask_window, scores, -1e4)
-            p = tl.exp(scores - m_i[:, None]) / tl.maximum(l_i[:, None], 1e-6)
+            p = tl.math.exp2(1.44269504 * (scores - m_i[:, None])) / tl.maximum(l_i[:, None], 1e-6)
             p = tl.where(mask_window, p, 0.0)
 
             dp = tl.dot(do, tl.trans(v))
@@ -211,20 +219,23 @@ class _SlidingWindowAutograd(torch.autograd.Function):
             except Exception:
                 suitable = False
         if suitable:
-            B, H, N, D = q.shape
-            out = torch.empty_like(q)
-            grid = (triton.cdiv(N, 64), B * H)
-            sliding_window_attn_fwd_kernel[grid](
-                q, k, v, out,
-                q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                H, N, WINDOW=window_size,
-                BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
-                IS_CAUSAL=is_causal,
-            )
-            return out
+            try:
+                B, H, N, D = q.shape
+                out = torch.empty_like(q)
+                grid = (triton.cdiv(N, 64), B * H)
+                sliding_window_attn_fwd_kernel[grid](
+                    q, k, v, out,
+                    q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+                    k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+                    v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+                    out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+                    H, N, WINDOW=window_size,
+                    BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
+                    IS_CAUSAL=is_causal,
+                )
+                return out
+            except Exception as exc:
+                logger.warning("Sliding-window Triton forward failed; using PyTorch reference: %s", exc)
         return sliding_window_pytorch(q, k, v, window_size=window_size, is_causal=is_causal)
 
 
@@ -256,9 +267,8 @@ class _SlidingWindowAutograd(torch.autograd.Function):
                         BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
                     )
                     return dq, dk, dv, None, None
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except Exception as exc:
+                logger.warning("Sliding-window Triton backward failed; using PyTorch reference: %s", exc)
 
         q_r = q.detach().requires_grad_(True)
         k_r = k.detach().requires_grad_(True)
@@ -682,8 +692,8 @@ if HAS_TRITON and tl is not None:
 
             scores_sink = tl.dot(q, k_sink) * sm_scale
             m_curr = tl.maximum(m_i, tl.max(scores_sink, 1))
-            alpha = tl.exp(m_i - m_curr)
-            p_sink = tl.exp(scores_sink - m_curr[:, None])
+            alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
+            p_sink = tl.math.exp2(1.44269504 * (scores_sink - m_curr[:, None]))
 
             l_i = l_i * alpha + tl.sum(p_sink, 1)
             acc = acc * alpha[:, None] + tl.dot(p_sink.to(v_sink.dtype), v_sink)
@@ -704,8 +714,8 @@ if HAS_TRITON and tl is not None:
             scores = tl.where(mask_window, scores, -1e4)
 
             m_curr = tl.maximum(m_i, tl.max(scores, 1))
-            alpha = tl.exp(m_i - m_curr)
-            p = tl.exp(scores - m_curr[:, None])
+            alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
+            p = tl.math.exp2(1.44269504 * (scores - m_curr[:, None]))
 
             l_i = l_i * alpha + tl.sum(p, 1)
             acc = acc * alpha[:, None]

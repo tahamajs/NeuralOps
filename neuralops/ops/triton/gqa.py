@@ -331,8 +331,8 @@ if HAS_TRITON:
                 qk = tl.where(causal_mask, qk, float("-inf"))
 
             m_curr = tl.maximum(m_i, tl.max(qk, 1))
-            alpha = tl.exp(m_i - m_curr)
-            p = tl.exp(qk - m_curr[:, None])
+            alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
+            p = tl.math.exp2(1.44269504 * (qk - m_curr[:, None]))
 
             v_ptrs = V_ptr + b_id * stride_vb + h_kv * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
             v = tl.load(v_ptrs, mask=(mask_n[:, None] & mask_d[None, :]), other=0.0).to(tl.float32)

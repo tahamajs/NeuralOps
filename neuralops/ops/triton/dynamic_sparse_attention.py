@@ -99,8 +99,8 @@ if HAS_TRITON:
                 s = tl.where(mask_m[:, None] & mask_n[None, :], s, -float("inf"))
 
                 m_curr = tl.maximum(m_i, tl.max(s, 1))
-                alpha = tl.exp(m_i - m_curr)
-                p = tl.exp(s - m_curr[:, None])
+                alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
+                p = tl.math.exp2(1.44269504 * (s - m_curr[:, None]))
 
                 l_i = l_i * alpha + tl.sum(p, 1)
                 acc = acc * alpha[:, None] + tl.dot(p.to(v.dtype), v)
