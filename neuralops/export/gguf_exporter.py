@@ -19,7 +19,7 @@ import enum
 import io
 import struct
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, List, Tuple, Union
+from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
