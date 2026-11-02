@@ -39,8 +39,8 @@ __global__ void __launch_bounds__(32) logcumsumexp_row_kernel(
 
         #pragma unroll
         for (int offset = 1; offset < 32; offset <<= 1) {
-            const float other_m = __shfl_up_sync(0xffffffff, m, offset);
-            const float other_s = __shfl_up_sync(0xffffffff, s, offset);
+            const float other_m = __shfl_up_sync(__activemask(), m, offset);
+            const float other_s = __shfl_up_sync(__activemask(), s, offset);
             if (tid >= offset) {
                 const float new_m = fmaxf(m, other_m);
                 s = other_s * expf(other_m - new_m) + s * expf(m - new_m);
@@ -59,8 +59,8 @@ __global__ void __launch_bounds__(32) logcumsumexp_row_kernel(
         }
 
         const int last_lane = min(31, L - 1 - chunk);
-        running_m = __shfl_sync(0xffffffff, m, last_lane);
-        running_s = __shfl_sync(0xffffffff, s, last_lane);
+        running_m = __shfl_sync(__activemask(), m, last_lane);
+        running_s = __shfl_sync(__activemask(), s, last_lane);
     }
 }
 
