@@ -1025,7 +1025,10 @@ class AdaSVDCompressor(BaseCompressor):
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()
 
-        if self.rank is not None:
+        if rank is not None:
+            max_param_r = max(1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f))))
+            r = max(1, min(int(rank), in_f, out_f, max_param_r))
+        elif self.rank is not None:
             r = max(1, min(int(self.rank), in_f, out_f))
         else:
             max_param_r = max(1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f))))
