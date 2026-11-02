@@ -139,26 +139,26 @@ class DirectSVDCompressor(BaseCompressor):
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
 
-        if rank is not None and int(rank) < 4:
-            raise ValueError(
-                f"DirectSVDCompressor: rank {rank} is mathematically invalid (rank < 4). "
-                "Truncating weight matrices to rank < 4 causes total spectral energy collapse "
-                "and perplexity divergence. Use rank >= 8 or Whitened SVD (HNC-SVD)."
-            )
-
         self.rank = rank
+        if self.rank is not None:
+            if self.rank < 4:
+                raise ValueError(
+                    f"rank={self.rank} retains <4% spectral energy on 768-dim "
+                    f"transformer layers; accuracy collapse is mathematically guaranteed. "
+                    f"Use rank >= 16 or Whitened SVD."
+                )
+            if self.rank < 8:
+                logger.warning(
+                    f"rank={self.rank} retains <15% spectral energy. "
+                    f"Expect significant accuracy loss. Prefer rank >= 16 or Whitened SVD."
+                )
+
         self.min_rank = max(1, int(min_rank))
         if self.rank is not None and self.rank < self.min_rank:
             logger.warning(
                 "DirectSVDCompressor: target rank %d is below min_rank %d. "
                 "If explicit low-rank decomposition is required, pass min_rank=%d.",
                 self.rank, self.min_rank, self.rank
-            )
-        if self.rank is not None and self.rank < 8:
-            logger.warning(
-                "Rank %d < 8 retains < 15%% spectral energy on transformer layers; "
-                "accuracy collapse is mathematically guaranteed. Use rank >= 16 or Whitened SVD.",
-                self.rank,
             )
         self.rank_ratio = float(rank_ratio) if rank_ratio is not None else None
         if max_error is None:
@@ -836,7 +836,10 @@ class SVDLLMv2Compressor(BaseCompressor):
         return self.model, res
 
 
+DirectSVD = DirectSVDCompressor
+
 __all__ = [
+    "DirectSVD",
     "DirectSVDCompressor",
     "SVDLLMv2Compressor",
     "direct_svd_factory",
