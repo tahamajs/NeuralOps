@@ -45,7 +45,31 @@ All compiled on Tesla T4 (SM 7.5), parity tested vs PyTorch reference (< 1e-3 FP
   - CUDA C++ Level 1 backend mirrors are not implemented for these 14 modules (Level 2 Triton JIT + Level 3 PyTorch reference available).
   - Empirical downstream validation (SST-2, WikiText perplexity, physical GPU latency benchmarks) deferred to full hardware sweep.
 
-## [2.0.1] - 2026-11-01
+## [2.0.1] - 2026-11-02
+
+### Added
+- **Complete 20-Script Examples Suite (`examples/`)**:
+  - Expanded examples from 8 to 20 comprehensive demonstration scripts covering all subsystems of NeuralOps.
+  - Added shared test & benchmarking infrastructure (`examples/_shared/`): `mock_models.py`, `offline_data.py`, `benchmark.py`, `assertions.py`, `report.py`, and `device.py`.
+  - Added canonical template [`examples/_template.py`](examples/_template.py) for contributing new examples.
+  - Added new advanced and systems examples:
+    - `09_multi_stage_model_surgery.py`: Multi-stage chained transformations (attention surgery $\to$ low-rank SVD $\to$ MLP surgery) with accumulated manifest tracking.
+    - `10_advanced_compression_zoo.py`: Comparative benchmark across 4 SVD algorithms (Standard SVD, Whitened SVD, Fisher-Weighted SVD, HNC-SVD).
+    - `11_quantization_fp8_int4_mx.py`: Multi-precision quantization simulation covering FP8 E4M3/E5M2, INT4 uniform, and Microscaling (MX).
+    - `12_structured_pruning_and_token_shedding.py`: Structured channel pruning, 2:4 sparsity, and token shedding state inspection.
+    - `13_six_pillar_knowledge_distillation.py`: Comprehensive 6-pillar distillation framework (Logits, Hidden, Attention, Spectral, Embedding, Task losses).
+    - `14_advanced_optimizers_muon_stiefel.py`: Non-Euclidean optimization with Newton-Schulz matrix optimizer (Muon) and Stiefel manifold Riemannian Adam.
+    - `15_serving_vllm_sglang_trtllm.py`: Production serving integration contracts and interfaces for vLLM, SGLang, and TensorRT-LLM.
+    - `16_distributed_parallelism.py`: Megatron-style column/row Tensor Parallelism and Context Parallelism ring-exchange.
+    - `17_recipe_dsl_and_snapshot_rollback.py`: Declarative YAML recipe transformation with state snapshots and transactional rollback.
+    - `18_three_level_kernel_dispatch.py`: Comprehensive 3-level fallback hierarchy validation (CUDA C++ $\to$ Triton JIT $\to$ Vectorized PyTorch).
+    - `19_spectral_and_hessian_diagnostics.py`: Lanczos Hessian eigenspectrum estimation, top eigenvalue bounds, and stable rank computation.
+    - `20_long_context_niah_eval.py`: Synthetic Needle-in-a-Haystack (NIAH) retrieval evaluation across expanding context lengths.
+  - Updated all 8 existing examples (`01` through `08`) with 3-tier fallback and standardized offline CPU execution.
+- **Notebook Suite Standardization & v2.0 Updates (`notebooks/`)**:
+  - Standardized all 26+ Jupyter notebooks with `# Prerequisites & Hardware Requirements` guidance, environment checks, and offline fallbacks.
+  - Added missing v2.0 feature cells to relevant notebooks (NIAH, CKA, serving shims, Muon/Stiefel, 6-pillar KD, and Hessian diagnostics).
+  - Validated strict JSON formatting and reproducible cell execution across all 29 notebook files.
 
 ### Security & Hardening
 - Enforced `weights_only=True` on `torch.load` invocations across weight checkpoints and LoRA loaders (`asvd_compressor`, `cachenotes_compressor`, `svd_linear_attention`, `utils/lora.py`).

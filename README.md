@@ -250,11 +250,12 @@ NeuralOps v2.0.1 delivers declarative model transformation, transactional execut
 21. [Reproducibility Guide & Benchmark Methodology](#21-reproducibility-guide-benchmark-methodology)
 22. [Empirical Benchmark Data Sources & Telemetry](#22-empirical-benchmark-data-sources-telemetry)
 23. [Hugging Face Model Zoo Audit](#23-hugging-face-model-zoo-audit)
-24. [PyPI Package Quality Checklist](#24-pypi-package-quality-checklist)
-25. [Full Version Compatibility Matrix](#25-full-version-compatibility-matrix)
-26. [How to Contribute & Engineering Standards](#26-how-to-contribute-engineering-standards)
-27. [Citation & License](#27-citation--license)
-28. [Contributors & Community](#28-contributors--community)
+24. [Examples Suite (20 Scripts)](#24-examples-suite-20-scripts)
+25. [PyPI Package Quality Checklist](#25-pypi-package-quality-checklist)
+26. [Full Version Compatibility Matrix](#26-full-version-compatibility-matrix)
+27. [How to Contribute & Engineering Standards](#27-how-to-contribute-engineering-standards)
+28. [Citation & License](#28-citation--license)
+29. [Contributors & Community](#29-contributors--community)
 
 ---
 
@@ -1804,7 +1805,23 @@ The complete directory and model synchronization utilities are documented in [`s
 
 ---
 
-## 24. PyPI Package Quality Checklist
+## 24. Examples Suite (20 Scripts)
+
+NeuralOps provides 20 self-contained, offline-friendly, CPU/MPS/CUDA runnable demonstration scripts located in [`examples/`](examples/). Each script runs deterministically without network calls and demonstrates end-to-end functionality of a distinct subsystem:
+
+| Range | Subsystem Focus | Key Demonstrations |
+| :--- | :--- | :--- |
+| **01 – 04** | Architecture Surgery & Distillation | Attention replacement across 5 families, low-rank SVD compression, LoRA fine-tuning, and teacher-student distillation. |
+| **05 – 08** | Benchmarking, Export & RL | Cold-cache microbenchmarking, SafeTensors/ONNX/GGUF export, `@register_attention` plugin system, and GRPO reasoning training. |
+| **09 – 12** | Advanced Model Compression & Sparsity | Fluent multi-stage surgery pipelines, SVD compression zoo (Standard, Whitened, Fisher, HNC), multi-precision quantization (FP8, INT4, MX), and 2:4 structured pruning. |
+| **13 – 16** | Scaling, Optimizers & Serving | 6-pillar knowledge distillation, non-Euclidean optimizers (Muon & Riemannian Stiefel), production serving shims (vLLM, SGLang, TRT-LLM), and Megatron-style TP / Context Parallelism. |
+| **17 – 20** | Systems, Diagnostics & Evaluation | Declarative YAML recipe DSL with transactional state rollback, 3-level kernel dispatch verification, Lanczos Hessian eigenspectrum diagnostics, and Needle-in-a-Haystack (NIAH) context evaluation. |
+
+For detailed documentation, arguments, and templates, see [`examples/README.md`](examples/README.md).
+
+---
+
+## 25. PyPI Package Quality Checklist
 
 The `neuralops` package is verified against strict packaging standards prior to every release:
 

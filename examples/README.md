@@ -6,33 +6,61 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 #
-# NeuralOps examples
+# NeuralOps examples suite (v2.0.1)
 
-These examples are small, offline-friendly demonstrations of the public
-`neuralops` API. They use a randomly initialized tiny DistilBERT configuration,
-so they do not download a checkpoint or require credentials. Run them from the
-repository root after installing the package:
+# NeuralOps Examples Suite
 
-| Script | Demonstrates | Command | Expected result |
-|---|---|---|---|
-| `01_attention_surgery.py` | Replacing attention with Cosformer and GLA | `python examples/01_attention_surgery.py` | Finite logits for both replacements |
-| `02_model_compression.py` | SVD-LLM v2 compression and parameter accounting | `python examples/02_model_compression.py` | Compressed parameter count and reduction |
-| `03_lora_finetuning.py` | Attention surgery plus LoRA and backward pass | `python examples/03_lora_finetuning.py` | Finite loss and trainable adapter count |
-| `04_knowledge_distillation.py` | One teacher-student KD step | `python examples/04_knowledge_distillation.py` | Finite KL distillation loss |
-| `05_fla_style_benchmarking.py` | Public benchmark API for representative modules | `python examples/05_fla_style_benchmarking.py` | Per-module status or an explicit optional-dependency note |
-| `06_export_and_push.py` | Local export and safe Hub-upload handoff | `python examples/06_export_and_push.py` | Local artifact path; upload is opt-in |
-| `07_custom_attention.py` | Custom attention registration and construction | `python examples/07_custom_attention.py` | Finite output from the registered module |
-| `08_grpo_reasoning.py` | Preparing a reasoning model and optional TRL/GRPO path | `python examples/08_grpo_reasoning.py` | Model prepared; TRL status reported honestly |
-| `run_recipe.py` | Declarative YAML recipe execution via CLI | `python examples/run_recipe.py examples/recipes/gpt2-fast.yaml` | Executed surgery pipeline from recipe |
+The NeuralOps examples suite provides 20 self-contained, reproducible, offline-friendly demonstration scripts covering all subsystems of the framework: model surgery, low-rank compression, quantization, distillation, distributed training, high-throughput serving, kernel dispatch, and evaluation.
+
+All 20 examples are designed to execute reliably on CPU (macOS/Linux) without external network calls or GPU requirements, while dynamically exploiting Apple Silicon MPS or NVIDIA CUDA accelerators when available.
 
 ---
 
-## Complete Feature Audit & 20-Example Expansion Roadmap
+## Suite Summary Table (20 Examples)
 
-For an exhaustive subsystem-by-subsystem audit across all 131 attention mechanisms, 72 compression engines, 6-pillar distillation, distributed parallelism, serving integrations (vLLM, SGLang, TensorRT-LLM), and specifications for expanded examples `09_` through `20_`, refer to:
+| Script | Subsystem | Demonstrates | Target Device | Execution Command |
+|---|---|---|---|---|
+| [`01_attention_surgery.py`](01_attention_surgery.py) | Architecture Surgery | Attention replacement across 5 families (cosformer, gla, gdn, fla, transformer) | CPU / MPS / CUDA | `python examples/01_attention_surgery.py` |
+| [`02_model_compression.py`](02_model_compression.py) | Low-Rank SVD | SVD-LLM v2, Whitened SVD, HNC-SVD rank allocation, and parameter accounting | CPU / MPS / CUDA | `python examples/02_model_compression.py` |
+| [`03_lora_finetuning.py`](03_lora_finetuning.py) | Parameter-Efficient Tuning | LoRA adapter injection into post-surgery attention and MLP layers | CPU / MPS / CUDA | `python examples/03_lora_finetuning.py` |
+| [`04_knowledge_distillation.py`](04_knowledge_distillation.py) | Distillation Recovery | Teacher-student KL-divergence distillation and logits matching | CPU / MPS / CUDA | `python examples/04_knowledge_distillation.py` |
+| [`05_fla_style_benchmarking.py`](05_fla_style_benchmarking.py) | Microbenchmarking | Cold-cache latency benchmarking across attention mechanisms | CPU / MPS / CUDA | `python examples/05_fla_style_benchmarking.py` |
+| [`06_export_and_push.py`](06_export_and_push.py) | Model Serialization | SafeTensors, ONNX, and GGUF export with surgery manifest verification | CPU / MPS / CUDA | `python examples/06_export_and_push.py` |
+| [`07_custom_attention.py`](07_custom_attention.py) | Extensibility Engine | `@register_attention` registration of custom attention mechanisms | CPU / MPS / CUDA | `python examples/07_custom_attention.py` |
+| [`08_grpo_reasoning.py`](08_grpo_reasoning.py) | Post-Training RL | GRPO loss computation and group relative policy optimization | CPU / MPS / CUDA | `python examples/08_grpo_reasoning.py` |
+| [`09_multi_stage_model_surgery.py`](09_multi_stage_model_surgery.py) | Fluent Surgery DSL | Multi-stage pipeline: attention surgery -> SVD compression -> MLP surgery | CPU / MPS / CUDA | `python examples/09_multi_stage_model_surgery.py` |
+| [`10_advanced_compression_zoo.py`](10_advanced_compression_zoo.py) | SVD Compression Zoo | Comparative analysis of 4 SVD algorithms (Standard, Whitened, Fisher, HNC) | CPU / MPS / CUDA | `python examples/10_advanced_compression_zoo.py` |
+| [`11_quantization_fp8_int4_mx.py`](11_quantization_fp8_int4_mx.py) | Advanced Quantization | FP8 (E4M3/E5M2), INT4 uniform, and Microscaling (MX) simulation | CPU / MPS / CUDA | `python examples/11_quantization_fp8_int4_mx.py` |
+| [`12_structured_pruning_and_token_shedding.py`](12_structured_pruning_and_token_shedding.py) | Sparsity & Pruning | Structured channel pruning, 2:4 sparsity, and dynamic token shedding | CPU / MPS / CUDA | `python examples/12_structured_pruning_and_token_shedding.py` |
+| [`13_six_pillar_knowledge_distillation.py`](13_six_pillar_knowledge_distillation.py) | Multi-Pillar Distillation | 6-pillar distillation: Logits, Hidden, Attention, Spectral, Embedding, Task | CPU / MPS / CUDA | `python examples/13_six_pillar_knowledge_distillation.py` |
+| [`14_advanced_optimizers_muon_stiefel.py`](14_advanced_optimizers_muon_stiefel.py) | Non-Euclidean Optimizers | Newton-Schulz matrix optimizer (Muon) and Stiefel manifold Riemannian Adam | CPU / MPS / CUDA | `python examples/14_advanced_optimizers_muon_stiefel.py` |
+| [`15_serving_vllm_sglang_trtllm.py`](15_serving_vllm_sglang_trtllm.py) | Production Serving | vLLM PagedAttention, SGLang RadixAttention, and TRT-LLM plugin contract | CPU / MPS / CUDA | `python examples/15_serving_vllm_sglang_trtllm.py` |
+| [`16_distributed_parallelism.py`](16_distributed_parallelism.py) | Distributed Training | Tensor Parallelism (TP column/row) and Context Parallelism ring-exchange | CPU / MPS / CUDA | `python examples/16_distributed_parallelism.py` |
+| [`17_recipe_dsl_and_snapshot_rollback.py`](17_recipe_dsl_and_snapshot_rollback.py) | Surgery Recipes & Rollback | YAML recipe execution, state snapshot checkpointing, and instant rollback | CPU / MPS / CUDA | `python examples/17_recipe_dsl_and_snapshot_rollback.py` |
+| [`18_three_level_kernel_dispatch.py`](18_three_level_kernel_dispatch.py) | Kernel Dispatch Architecture | 3-level fallback hierarchy: CUDA C++ -> Triton JIT -> Vectorized PyTorch | CPU / MPS / CUDA | `python examples/18_three_level_kernel_dispatch.py` |
+| [`19_spectral_and_hessian_diagnostics.py`](19_spectral_and_hessian_diagnostics.py) | Landscape Diagnostics | Lanczos Hessian eigenspectrum estimation, top eigenvalue, and stable rank | CPU / MPS / CUDA | `python examples/19_spectral_and_hessian_diagnostics.py` |
+| [`20_long_context_niah_eval.py`](20_long_context_niah_eval.py) | Long-Context Evaluation | Needle-in-a-Haystack (NIAH) retrieval evaluation across context lengths | CPU / MPS / CUDA | `python examples/20_long_context_niah_eval.py` |
 
-👉 **[EXAMPLES_COMPREHENSIVE_AUDIT_AND_ROADMAP.md](EXAMPLES_COMPREHENSIVE_AUDIT_AND_ROADMAP.md)**
+---
 
-Heavy integrations remain optional. Install `trl`, `datasets`, ONNX, or Hub
-dependencies only for the corresponding workflow. The examples deliberately
-avoid pretending that an unavailable optional dependency produced a benchmark.
+## Shared Infrastructure: `examples/_shared/`
+
+To guarantee standard verification protocols and avoid code duplication across examples, all scripts utilize the `examples/_shared/` package:
+
+- **`mock_models.py`**: Provides `TinyClassifier` (a fast, deterministic transformer architecture with multi-head attention and MLPs), `tiny_inputs()` (synthetic token sequences), and reference logits.
+- **`offline_data.py`**: Deterministic synthetic token generators, calibration dataset loaders, and streaming batches without internet access or Hugging Face downloads.
+- **`benchmark.py`**: Robust CPU/GPU benchmarking functions, including `measure_latency()` with warmups, and `measure_vram_if_available()`.
+- **`assertions.py`**: Parity gates and assertions (`assert_parity`, `assert_shape`, `assert_finite`) enforcing tight numerical tolerances (`atol`, `rtol`).
+- **`report.py`**: Clean, formatted console reporting utilities (`section`, `table`, `kv`, `pass_fail`).
+- **`device.py`**: Accelerator preference resolver (`get_backend_preference()`, `has_cuda()`, `has_mps()`).
+
+## Authoring New Examples
+
+When contributing new examples, always follow the canonical template provided in:
+👉 [`examples/_template.py`](_template.py)
+
+Key authoring rules:
+1. Always inherit standard header license blocks referencing contributors.
+2. Ensure strict offline CPU execution fallback so the script runs cleanly on any developer machine.
+3. Use `examples._shared` helpers for models, metrics, and reporting.
+4. If an optional third-party library or accelerator is absent, skip gracefully with `skip_if_missing()` and exit 0.
