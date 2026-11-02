@@ -9,3 +9,7 @@
 #include <c10/util/Optional.h>
 
 torch::Tensor gla_unnormalized_scan_fwd(const torch::Tensor& q, const torch::Tensor& k, const torch::Tensor& v, const torch::Tensor& decay);
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("forward", &gla_unnormalized_scan_fwd, "GLA Unnormalized Scan forward (CUDA)");
+}
