@@ -12,6 +12,7 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+import logging
 from typing import Any
 """
 Gated Linear Attention (GLA) Scan Interface and 3-Level Fallback.
@@ -29,23 +30,27 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+_MODULE_ERROR: Exception | None = None
 
 
 def _get_module():
-    global _MODULE
+    global _MODULE, _MODULE_ERROR
+    if _MODULE_ERROR is not None:
+        return None
     if _MODULE is None:
-        curr_dir = Path(__file__).parent
-        with open(curr_dir / "gla_binding.cpp", "r", encoding="utf-8") as f:
-            cpp_src = f.read()
-        with open(curr_dir / "gla_scan.cu", "r", encoding="utf-8") as f:
-            cuda_src = f.read()
-
-        _MODULE = load_cuda_module(
-            name="cuda_gla_scan",
-            cpp_sources=cpp_src,
-            cuda_sources=cuda_src,
-            functions=["gla_scan_fwd"],
-        )
+        try:
+            curr_dir = Path(__file__).parent
+            with open(curr_dir / "gla_binding.cpp", "r", encoding="utf-8") as f:
+                cpp_src = f.read()
+            with open(curr_dir / "gla_scan.cu", "r", encoding="utf-8") as f:
+                cuda_src = f.read()
+            _MODULE = load_cuda_module(
+                name="cuda_gla_scan", cpp_sources=cpp_src, cuda_sources=cuda_src, functions=["gla_scan_fwd"]
+            )
+        except Exception as exc:
+            _MODULE_ERROR = exc
+            logging.getLogger(__name__).warning("GLA CUDA extension unavailable; using lower-level fallback: %s", exc)
+            return None
     return _MODULE
 
 
@@ -96,7 +101,13 @@ def _gla_scan_dispatch(
             alpha.contiguous() if alpha is not None else None,
         )
 
-    triton_fn = _get_triton_impl()
+    triton_impl = _get_triton_impl()
+
+    def triton_fn(q, k, v, alpha=None, **kwargs):
+        if triton_impl is None:
+            raise RuntimeError("GLA Triton implementation is unavailable")
+        return triton_impl(q, k, v, lambdas=alpha)
+
     if q.shape[-1] > 128:
         cuda_fn = None
 

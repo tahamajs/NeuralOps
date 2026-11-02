@@ -34,7 +34,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-@ATTENTION_REGISTRY.register("routing_attention")
+@ATTENTION_REGISTRY.register("routing_attention", supports_causal=False, supports_gqa=True)
 class RoutingAttention(BaseAttention):
     """RoutingAttention neural operator.
 
@@ -44,6 +44,8 @@ class RoutingAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+    supports_causal: bool = False
+    supports_gqa: bool = True
     is_custom_attention: bool = True
 
     def __init__(
@@ -660,7 +662,6 @@ class RoutingAttention(BaseAttention):
         return output, None
 
 
-@ATTENTION_REGISTRY.register("routing_attention")
 def inject_routing(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

@@ -352,6 +352,7 @@ class RefinedLandmarkAttention(BaseAttention):
         k: torch.Tensor,
         v: torch.Tensor,
         valid_mask: torch.Tensor | None = None,
+        is_causal: bool | None = None,
     ) -> torch.Tensor:
         """Block-wise sliding window attention.
 
@@ -365,11 +366,17 @@ class RefinedLandmarkAttention(BaseAttention):
                 f"block_local_attention requires N_q == N_k, got {N} vs {N_k}"
             )
 
+        causal = (
+            getattr(self, "is_decoder", False)
+            or getattr(self, "is_causal", False)
+            if is_causal is None
+            else bool(is_causal)
+        )
         W = max(1, int(self.local_window_size))
         if q.is_cuda and not self.training and valid_mask is None:
             try:
                 from neuralops.ops.triton.sliding_window import fused_landmark_local_block_attn_triton
-                return fused_landmark_local_block_attn_triton(q, k, v, window_size=W, is_causal=self.is_decoder)
+                return fused_landmark_local_block_attn_triton(q, k, v, window_size=W, is_causal=causal)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
@@ -392,7 +399,7 @@ class RefinedLandmarkAttention(BaseAttention):
         v_b = v_p.view(B, H, num_blocks, W, d)
 
         attn_intra = torch.matmul(q_b, k_b.transpose(-1, -2)) * scale
-        if self.is_decoder:
+        if causal:
             causal_mask = torch.tril(
                 torch.ones(W, W, device=q.device, dtype=torch.bool)
             )
@@ -848,7 +855,13 @@ class RefinedLandmarkAttention(BaseAttention):
             Q_features.float(), K_land.transpose(-2, -1).contiguous().float()
         )
 
-        if self.is_decoder:
+        is_causal = (
+            kwargs.get("is_causal", False)
+            or kwargs.get("causal", False)
+            or getattr(self, "is_causal", False)
+            or getattr(self, "is_decoder", False)
+        )
+        if is_causal:
             q_abs = (
                 torch.arange(past_len, past_len + N, device=device)
                 .view(1, 1, N, 1)
@@ -862,14 +875,14 @@ class RefinedLandmarkAttention(BaseAttention):
 
         if N == N_kv:
             context_local = self.block_local_attention(
-                q, K_full, V_full, valid_mask
+                q, K_full, V_full, valid_mask, is_causal=is_causal
             )
         else:
             context_local = self._exact_decode_local(
                 q, K_full, V_full, past_len, valid_mask
             )
 
-        if self.is_decoder and N == N_kv:
+        if is_causal and N == N_kv:
             # Landmark selection is global and can change when future tokens
             # change. Keep causal outputs independent of future-token routing.
             context_land = torch.zeros_like(context_local)

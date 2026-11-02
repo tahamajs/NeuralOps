@@ -12,6 +12,7 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+import logging
 from typing import Any
 """
 HGRN2 Bidirectional Scan Interface and 3-Level Fallback.
@@ -27,23 +28,28 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+_MODULE_ERROR: Exception | None = None
 
 
 def _get_module():
-    global _MODULE
+    global _MODULE, _MODULE_ERROR
+    if _MODULE_ERROR is not None:
+        return None
     if _MODULE is None:
-        curr_dir = Path(__file__).parent
-        with open(curr_dir / "hgrn2_binding.cpp", "r", encoding="utf-8") as f:
-            cpp_src = f.read()
-        with open(curr_dir / "hgrn2_scan.cu", "r", encoding="utf-8") as f:
-            cuda_src = f.read()
-
-        _MODULE = load_cuda_module(
-            name="cuda_hgrn2_scan",
-            cpp_sources=cpp_src,
-            cuda_sources=cuda_src,
-            functions=["hgrn2_bidirectional_scan_fwd"],
-        )
+        try:
+            curr_dir = Path(__file__).parent
+            with open(curr_dir / "hgrn2_binding.cpp", "r", encoding="utf-8") as f:
+                cpp_src = f.read()
+            with open(curr_dir / "hgrn2_scan.cu", "r", encoding="utf-8") as f:
+                cuda_src = f.read()
+            _MODULE = load_cuda_module(
+                name="cuda_hgrn2_scan", cpp_sources=cpp_src, cuda_sources=cuda_src,
+                functions=["hgrn2_bidirectional_scan_fwd"],
+            )
+        except Exception as exc:
+            _MODULE_ERROR = exc
+            logging.getLogger(__name__).warning("HGRN2 CUDA extension unavailable; using lower-level fallback: %s", exc)
+            return None
     return _MODULE
 
 

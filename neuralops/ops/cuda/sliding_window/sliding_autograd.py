@@ -26,23 +26,28 @@ from neuralops.ops.cuda._fallback import dispatch
 logger = logging.getLogger(__name__)
 
 _MODULE = None
+_MODULE_ERROR: Exception | None = None
 
 
 def _get_module():
-    global _MODULE
+    global _MODULE, _MODULE_ERROR
+    if _MODULE_ERROR is not None:
+        return None
     if _MODULE is None:
-        curr_dir = Path(__file__).parent
-        with open(curr_dir / "sliding_binding.cpp", "r", encoding="utf-8") as f:
-            cpp_src = f.read()
-        with open(curr_dir / "sliding_window.cu", "r", encoding="utf-8") as f:
-            cuda_src = f.read()
-
-        _MODULE = load_cuda_module(
-            name="cuda_sliding_window",
-            cpp_sources=cpp_src,
-            cuda_sources=cuda_src,
-            functions=["sliding_window_attn_fwd"],
-        )
+        try:
+            curr_dir = Path(__file__).parent
+            with open(curr_dir / "sliding_binding.cpp", "r", encoding="utf-8") as f:
+                cpp_src = f.read()
+            with open(curr_dir / "sliding_window.cu", "r", encoding="utf-8") as f:
+                cuda_src = f.read()
+            _MODULE = load_cuda_module(
+                name="cuda_sliding_window", cpp_sources=cpp_src, cuda_sources=cuda_src,
+                functions=["sliding_window_attn_fwd"],
+            )
+        except Exception as exc:
+            _MODULE_ERROR = exc
+            logger.warning("Sliding-window CUDA extension unavailable; using lower-level fallback: %s", exc)
+            return None
     return _MODULE
 
 
