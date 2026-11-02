@@ -1096,6 +1096,8 @@ class AdaSVDCompressor(BaseCompressor):
             out_features=out_f,
             rank=r,
             bias=has_bias,
+            lora_rank=getattr(self, "lora_rank", 0),
+            lora_alpha=getattr(self, "lora_alpha", 1.0),
             dtype=dtype,
             device=device,
         )
@@ -1109,7 +1111,8 @@ class AdaSVDCompressor(BaseCompressor):
                 b_base = bias_tensor.data.float().to(device)
             else:
                 b_base = torch.zeros(out_f, device=device, dtype=torch.float32)
-            new_bias = b_base + mean_shift if mean_shift is not None else b_base
+            bias_shift = (W.float() - (A @ B).float()) @ mu_x if mu_x is not None else None
+            new_bias = b_base + bias_shift if bias_shift is not None else b_base
             svd_layer.bias.data.copy_(new_bias.to(dtype=dtype, device=device))
 
         if mu_x is not None:

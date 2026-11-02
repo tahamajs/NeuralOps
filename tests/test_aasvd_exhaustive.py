@@ -39,11 +39,12 @@ class TestSVDLinearLayer:
         dense = nn.Linear(512, 512, bias=False)
         dense_params = sum(p.numel() for p in dense.parameters())
 
-        svd = SVDLinear(512, 512, rank=32, bias=False)
+        svd = SVDLinear(512, 512, rank=32, bias=False, lora_rank=0)
         svd_params = sum(p.numel() for p in svd.parameters())
 
         assert svd_params < dense_params
-        assert svd_params == 32768
+        # U (512x32) + S (32) + V (32x512) = 16384 + 32 + 16384 = 32800
+        assert svd_params == 32800
         assert dense_params == 262144
 
     def test_svd_linear_factor_assignment(self):

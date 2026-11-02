@@ -86,16 +86,19 @@ def test_factory_with_none_and_dict_config():
 def test_lora_and_conv1d_detection_and_preservation():
     """Verify LoRALinear wrappers are preserved and Conv1D weights transposed correctly."""
     model = DummyLoRAModel(64, 64, r=4)
-    model.query.lora_A.weight.data.fill_(0.7)
-    model.query.lora_B.weight.data.fill_(0.7)
-    orig_lora_a = model.query.lora_A.weight.clone()
+    lora_a_param = getattr(model.query.lora_A, "weight", model.query.lora_A)
+    lora_b_param = getattr(model.query.lora_B, "weight", model.query.lora_B)
+    lora_a_param.data.fill_(0.7)
+    lora_b_param.data.fill_(0.7)
+    orig_lora_a = lora_a_param.clone()
 
     comp = AdaSVDCompressor(model, rank=16, max_error=1.0, target_attention_only=False)
     comp.compress()
 
     assert isinstance(model.query, LoRALinear), f"Expected LoRALinear, got {type(model.query)}"
     assert isinstance(model.query.base_layer, SVDLinear), f"Expected SVDLinear in base_layer, got {type(model.query.base_layer)}"
-    assert torch.equal(model.query.lora_A.weight, orig_lora_a), "LoRA weights were altered!"
+    new_lora_a = getattr(model.query.lora_A, "weight", model.query.lora_A)
+    assert torch.equal(new_lora_a, orig_lora_a), "LoRA weights were altered!"
 
     assert isinstance(model.conv, SVDLinear), f"Expected Conv1D replaced by SVDLinear, got {type(model.conv)}"
 
