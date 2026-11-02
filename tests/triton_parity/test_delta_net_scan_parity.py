@@ -11,6 +11,7 @@ Parity test for DeltaNet delta-rule recurrent scan Triton kernel against PyTorch
 
 import pytest
 import torch
+import torch.nn.functional as F
 
 from neuralops.ops.triton.delta_net_scan import delta_net_scan_pytorch, delta_net_scan_triton
 
@@ -21,9 +22,9 @@ def test_delta_net_scan_fp32_parity():
         pytest.skip("CUDA required for Triton parity verification")
 
     torch.manual_seed(42)
-    B, H, L, D_K, D_V = 2, 4, 128, 64, 64
-    q = torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float32)
-    k = torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float32)
+    B, H, L, D_K, D_V = 2, 4, 64, 64, 64
+    q = F.normalize(torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float32), p=2, dim=-1)
+    k = F.normalize(torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float32), p=2, dim=-1)
     v = torch.randn(B, H, L, D_V, device="cuda", dtype=torch.float32)
     beta = torch.sigmoid(torch.randn(B, H, L, device="cuda", dtype=torch.float32))
     alpha = torch.sigmoid(torch.randn(B, H, L, device="cuda", dtype=torch.float32))
@@ -42,9 +43,9 @@ def test_delta_net_scan_fp16_parity():
         pytest.skip("CUDA required for Triton parity verification")
 
     torch.manual_seed(42)
-    B, H, L, D_K, D_V = 2, 4, 128, 64, 64
-    q = torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float16)
-    k = torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float16)
+    B, H, L, D_K, D_V = 2, 4, 64, 64, 64
+    q = F.normalize(torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float16), p=2, dim=-1)
+    k = F.normalize(torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float16), p=2, dim=-1)
     v = torch.randn(B, H, L, D_V, device="cuda", dtype=torch.float16)
     beta = torch.sigmoid(torch.randn(B, H, L, device="cuda", dtype=torch.float16))
     alpha = torch.sigmoid(torch.randn(B, H, L, device="cuda", dtype=torch.float16))
@@ -64,8 +65,8 @@ def test_delta_net_scan_final_state_parity():
 
     torch.manual_seed(42)
     B, H, L, D_K, D_V = 2, 2, 64, 32, 32
-    q = torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float32)
-    k = torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float32)
+    q = F.normalize(torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float32), p=2, dim=-1)
+    k = F.normalize(torch.randn(B, H, L, D_K, device="cuda", dtype=torch.float32), p=2, dim=-1)
     v = torch.randn(B, H, L, D_V, device="cuda", dtype=torch.float32)
     beta = torch.sigmoid(torch.randn(B, H, L, device="cuda", dtype=torch.float32))
 

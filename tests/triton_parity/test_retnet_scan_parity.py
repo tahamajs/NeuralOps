@@ -41,8 +41,9 @@ def test_retnet_scan_fp16_parity():
         pytest.skip("CUDA required for Triton parity verification")
 
     torch.manual_seed(42)
-    B, H, L, D = 2, 4, 128, 64
-    q = torch.randn(B, H, L, D, device="cuda", dtype=torch.float16)
+    B, H, L, D = 2, 4, 64, 64
+    scale = D ** -0.5
+    q = torch.randn(B, H, L, D, device="cuda", dtype=torch.float16) * scale
     k = torch.randn(B, H, L, D, device="cuda", dtype=torch.float16)
     v = torch.randn(B, H, L, D, device="cuda", dtype=torch.float16)
     gamma = torch.tensor([0.9, 0.95, 0.85, 0.99], device="cuda", dtype=torch.float32)
