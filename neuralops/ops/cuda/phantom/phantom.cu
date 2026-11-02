@@ -25,7 +25,8 @@ __global__ void __launch_bounds__(256) phantom_fwd_kernel(
 
     for (int idx = tid; idx < total_elements; idx += stride) {
         const float x_val = to_float(x[idx]);
-        const float g_val = 1.0f / (1.0f + expf(-to_float(gate[idx])));
+        const float raw_gate = to_float(gate[idx]);
+        const float g_val = __fdividef(1.0f, 1.0f + __expf(-raw_gate));
         const float mask = (g_val >= threshold) ? g_val : 0.0f;
         out[idx] = from_float<scalar_t>(x_val * mask);
     }
