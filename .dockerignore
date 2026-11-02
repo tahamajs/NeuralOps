@@ -1,0 +1,33 @@
+# Version control and temporary files
+.git/
+.gitignore
+.gitattributes
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+
+# Local IDE and editor configurations
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project outputs and local experiment logs
+results/_archive/
+audit/
+thesis_final/
+logs/
+grading.log
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

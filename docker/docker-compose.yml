@@ -3,7 +3,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.gpu
-    image: neuralops:v1.4.2-gpu
+    image: neuralops:v2.0.2-gpu
     container_name: neuralops-gpu-runtime
     ipc: host
     ulimits:
@@ -28,6 +28,20 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    command: /bin/bash
+
+  neuralops-cpu:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cpu
+    image: neuralops:v2.0.2-cpu
+    container_name: neuralops-cpu-runtime
+    ipc: host
+    environment:
+      - PYTHONPATH=/workspace
+    volumes:
+      - ../:/workspace
+      - neuralops-hf-cache:/root/.cache/huggingface
     command: /bin/bash
 
 volumes:
