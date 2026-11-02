@@ -21,5 +21,5 @@ Commit messages must strictly follow the conventional format:
 - **MUST push to `origin/main` after commit**: Keep remote central repository updated.
 - **MUST sync GPU worktrees**:
   ```bash
-  ssh taha@192.168.1.100 "cd /mnt/d/SVD_Project && git fetch && git reset --hard origin/main"
+  ssh hpc "cd ~/NeuralOps && git fetch && git reset --hard origin/main"
   ```

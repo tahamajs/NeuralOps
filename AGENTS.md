@@ -60,7 +60,7 @@ Three rules override everything else in this file:
 
 - **Zero Local macOS Python Execution (unsupervised)**: During normal operation, NEVER execute `python`, `pytest`, `python -c`, or any interpreter call on the local macOS host without explicit authorization. macOS Python 3.14 may lack typing extensions, PyTorch CUDA extensions, and native accelerator drivers, producing results that look like failures but aren't.
 - **Static Verification on Host (always allowed)**: Local verification on macOS MUST be conducted via POSIX inspection (`grep`, `rg`, `awk`, `find`, `sed`), AST parsers (`scripts/utils/audit_dead_code.py`), and lint checkers (`ruff`, `mypy` if installed). These are always permitted.
-- **Dynamic & GPU Kernel Verification (always remote)**: GPU tests, `torch.autograd.gradcheck`, CUDA C++ compilation, and Triton JIT execution MUST be run remotely on `taha@192.168.1.100` (`/mnt/d/SVD_Project`). Never attempt to run them locally under any circumstance.
+- **Dynamic & GPU Kernel Verification (always remote)**: GPU tests, `torch.autograd.gradcheck`, CUDA C++ compilation, and Triton JIT execution MUST be run remotely on the Sharif University HPC Cluster (`hpc.itc.sharif.edu`, alias `hpc`). Never attempt to run them locally under any circumstance.
 
 ### 3.2 User Authorization Exception (READ THIS BEFORE CITING PROHIBITION)
 
@@ -91,6 +91,33 @@ Before claiming a tool is "not installed", do this:
 
 **Never claim "ruff is not installed" or "pytest is not available" without running the above checks.** In past sessions, agents claimed tools were missing while they were installed at `.venv/bin/`. That was a false claim.
 
+### 3.4 — Sharif University HPC Cluster (Primary Remote GPU)
+
+The primary remote GPU host for NeuralOps is **Sharif University HPC Center** (`hpc.itc.sharif.edu`, login alias `hpc`).
+
+**When to use Sharif HPC (not local):**
+- CUDA C++ compilation of `neuralops/ops/cuda/*`
+- Triton JIT execution on real GPU hardware
+- `torch.autograd.gradcheck` on any kernel
+- DoD empirical measurement (accuracy, perplexity, latency, VRAM) requiring >8 GB VRAM
+- Any test marked `@pytest.mark.gpu` that requires Titan RTX (24 GB) or Quadro RTX 8000 (48 GB)
+
+**Mandatory workflow:**
+1. Load the skill: `.agents/skills/hpc-sharif-cluster/SKILL.md`
+2. Verify wallet credit via `grep 'credit Quota' /etc/motd` (or the dashboard at `https://ssh.hpc.sharif.ir`)
+3. Run CPU-only tests locally first — do NOT waste GPU credit on tests that work on CPU
+4. Submit GPU job with `qsub run.sh` from the skill's template
+5. Paste `qstat -f <JOB_ID>` (before and after) plus full `.o<JOB_ID>` and `.e<JOB_ID>` in the report
+
+**Forbidden:**
+- Submitting GPU jobs with `credit = 0.0` (silently fails, wastes time)
+- Fabricating GPU test results (violates §0.1)
+- Leaving orphaned jobs running (wastes credit — cancel with `qdel`)
+- Using `git clone` on the cluster (outbound network is restricted per HPC Center policy; use `rsync` from local Mac instead)
+- Modifying source code directly on the cluster — always upload via `rsync` from a clean local tree
+
+**Related:** §3.1 (default prohibition), §4.2 (kernel verification contract), skill `.agents/skills/hpc-sharif-cluster/SKILL.md`.
+
 ---
 
 ## 4. Verification Contract
@@ -112,7 +139,7 @@ Cannot be verified locally. Required evidence:
 
 1. `ruff check <changed_files>` → must pass.
 2. `python -c "import neuralops.<changed_module>"` → must not crash on CPU (fallback path).
-3. Remote verification is deferred to the user. State explicitly: "GPU verification deferred to remote host. To verify: `ssh taha@192.168.1.100 ...` and run `<command>`."
+3. Remote verification is deferred to the user. State explicitly: "GPU verification deferred to remote host. To verify: `ssh hpc ...` and run `<command>`."
 
 ### 4.3 For documentation-only changes
 
@@ -292,10 +319,10 @@ When you cannot complete a task due to a rule, missing tool, unreachable host, o
 1. **State the blocker explicitly**:
    - "Blocked by AGENTS.md §3.1 line 43 — pytest prohibited without authorization."
    - "Blocked by missing tool: `ruff` not found at `.venv/bin/ruff` or in PATH."
-   - "Blocked by unreachable host: `ssh taha@192.168.1.100` returns `Connection refused`."
+   - "Blocked by unreachable host: `ssh hpc` returns `Connection refused`."
 2. **State what you tried**:
    - "I ran `ls .venv/bin/ruff` and got: `<output>`."
-   - "I ran `ssh -v taha@192.168.1.100` and got: `<last 5 lines>`."
+   - "I ran `ssh -v hpc` and got: `<last 5 lines>`."
 3. **State what you need from the user**:
    - "Please authorize local pytest (§3.2)."
    - "Please install ruff: `pip install ruff`."
@@ -377,6 +404,7 @@ A session that says "I tried to fix X, it broke Y, I reverted" is a successful s
 Use the [skill index](.agents/skills/README.md) to select task-specific workflows and their execution order. Skills supplement `CONTRIBUTING.md` and this file; they do not define competing contribution policies.
 
 Load a relevant skill when the task matches its scope. In particular, load [neuralops-pr-readiness](.agents/skills/neuralops-pr-readiness/SKILL.md) before opening any PR.
+Load [hpc-sharif-cluster](.agents/skills/hpc-sharif-cluster/SKILL.md) **before** submitting any GPU job to Sharif HPC (see §3.4).
 
 ---
 
@@ -667,6 +695,7 @@ A release with any unchecked box must not be tagged. Ask the user for help befor
 
 When updating this file, append an entry here. Version number follows `major.minor.patch`. Major: rule added that retroactively invalidates prior practice. Minor: clarification or new section. Patch: typo or wording fix.
 
+- **v1.3.0** — Added §3.4 (Sharif University HPC Cluster as primary remote GPU host). Added skill `.agents/skills/hpc-sharif-cluster/` (SKILL.md, run.sh template, setup_env.sh, README). Updated §12 skill index to reference the HPC skill. Replaced legacy host references with Sharif HPC.
 - **v1.2.0** — Added §14 (Versioning, Releases & Changelog): source of truth, SemVer rules, PEP 440 string formats, files that must stay in sync, git tag conventions, sub-package versioning, version consistency gate, paper/thesis versioning, registry invariant versioning, changelog format, pre-commit hook, release checklist, and versioning failure modes.
 - **v1.1.0** — Added §0 (Core Operating Principles), §4 (Verification Contract), §5 (Scope Discipline), §6 (Silent Failure Policy), §10 (Blocker Escalation & Honest Reporting). Expanded §3 with user authorization exception (§3.2) and tool discovery protocol (§3.3). Added regression test requirement (§5.4). Added report format (§10.2). Added quality gate checklist to §11.
 - **v1.0.0** — Initial agent guidelines.

@@ -1737,7 +1737,7 @@ Every table and figure in this repository is reproducible from scratch on physic
 The framework-native implementation is the single source of truth under `neuralops.benchmarks`; the legacy `scripts/benchmarks` drivers have been removed. Evaluation modules likewise live under `neuralops.evaluation`.
 
 
-To reproduce the physical GPU benchmarks exactly as certified, execute on the remote GPU server (`taha@192.168.1.100` within `/mnt/d/SVD_Project`) using the production environment:
+To reproduce the physical GPU benchmarks exactly as certified, execute on the remote GPU cluster (Sharif HPC Center `hpc.itc.sharif.edu` within `~/NeuralOps`) using the production environment:
 
 ```bash
 # Environment interpreter

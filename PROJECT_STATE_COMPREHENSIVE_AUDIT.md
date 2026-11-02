@@ -3,7 +3,7 @@
 **License**: MIT License  
 **Attribution**: `taha <tahamaj4@gmail.com>`  
 **Verification Date**: November 2, 2026  
-**Host Target**: Apple Silicon MPS / CPU & Remote Linux NVIDIA CUDA Cluster (`taha@192.168.1.100`)
+**Host Target**: Apple Silicon MPS / CPU & Remote Sharif University HPC Cluster (`hpc.itc.sharif.edu`, alias `hpc`)
 
 ---
 
@@ -216,7 +216,7 @@ tests/test_serving_matrix_all_nine.py::test_09_gguf_v3_binary_export_and_inspect
 1. **Mandatory Git Attribution**: All commits must be made with `--author="taha <tahamaj4@gmail.com>"`.
 2. **Push Prohibition**: Never push to remote (`origin/main`) without explicit per-action user authorization.
 3. **Fail-Closed Conversions**: When an export or backend conversion cannot be completed accurately, immediately raise a descriptive `RuntimeError` rather than writing placeholder bytes or faking output files.
-4. **Zero Unsupervised macOS Python Execution**: Interpreters on macOS are run only under explicit user authorization; full GPU kernel compilation and profiling are strictly targeted to remote cluster hosts (`taha@192.168.1.100`).
+4. **Zero Unsupervised macOS Python Execution**: Interpreters on macOS are run only under explicit user authorization; full GPU kernel compilation and profiling are strictly targeted to remote cluster hosts (`hpc.itc.sharif.edu`, alias `hpc`).
 
 ### Roadmap v2.1:
 - [ ] Integration of live multi-GPU distributed tensor parallelism with NCCL/DeepSpeed inside `neuralops/distributed/`.
