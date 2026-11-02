@@ -422,7 +422,9 @@ def main():
     parser.add_argument("--repeat", type=int, default=30, help="Measurement repetitions")
     parser.add_argument("--quick", action="store_true", help="Quick mode (warmup=1, repeat=3)")
     parser.add_argument("--kernels", type=str, default=None, help="Comma-separated kernels to run")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducible input generation")
     args = parser.parse_args()
+    torch.manual_seed(args.seed)
 
     warmup = 1 if args.quick else args.warmup
     repeat = 3 if args.quick else args.repeat
