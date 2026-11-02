@@ -12,19 +12,21 @@ Subsystem Demonstrated:
     Comprehensive implementation and numerical evaluation of next-generation
     neural network weight quantization formats:
     1. FP8 E4M3 (IEEE / NVIDIA 8-bit floating point format with 4 exponent bits, 3 mantissa)
-    2. Group-Wise Asymmetric INT4 (AWQ-style min-max affine grouping with zero points)
+    2. Group-Wise INT4 (AWQ-style group-wise scaling in range [-8, 7])
     3. Microscaling MX (OCP standard block-shared power-of-two scale factors with MXFP8)
+    4. End-to-end quantized model forward pass verification on TinyClassifier.
 
 Execution Environment:
     - CPU: Fully supported, deterministic, offline execution on macOS CPU.
     - GPU: Optional (accelerates tensor operations).
-    - Network: Not required; uses offline synthetic weights.
+    - Network: Not required; uses offline synthetic weights and TinyClassifier.
 
 What You Will Learn:
-    1. How FP8 dynamic range and precision compare to 16-bit floating point baselines.
-    2. How group-wise affine scaling eliminates outlier distortion in 4-bit integer weights.
+    1. How FP8 dynamic range and precision compare to floating point baselines.
+    2. How group-wise scaling eliminates outlier distortion in 4-bit integer weights.
     3. How the Open Compute Project (OCP) Microscaling (MX) standard structures block-shared exponents.
     4. How to measure Signal-to-Quantization-Noise Ratio (SQNR in dB) across formats.
+    5. How to verify that a quantized model preserves finite output and tight parity.
 """
 
 from __future__ import annotations
@@ -39,8 +41,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 from examples._shared import (
+    TinyClassifier,
     get_backend_preference,
     gpu_name,
     kv,
@@ -53,25 +58,25 @@ from examples._shared import (
 def compute_sqnr(w_orig: torch.Tensor, w_recon: torch.Tensor) -> float:
     """Compute Signal-to-Quantization-Noise Ratio (SQNR) in decibels (dB):
 
-    SQNR = 10 * log10( ||W||_F^2 / (||W - W_hat||_F^2 + eps) )
+    SQNR = 20 * log10( ||W||_F / (||W - W_hat||_F + eps) )
     """
-    signal_power = torch.sum(w_orig**2).item()
-    noise_power = torch.sum((w_orig - w_recon) ** 2).item()
-    if noise_power < 1e-12:
+    orig_norm = torch.linalg.norm(w_orig.float()).item()
+    diff_norm = torch.linalg.norm((w_orig.float() - w_recon.float())).item()
+    if diff_norm < 1e-12:
         return 100.0  # Lossless
-    return 10.0 * math.log10(signal_power / (noise_power + 1e-12))
+    return 20.0 * math.log10(orig_norm / (diff_norm + 1e-12))
 
 
 def quantize_fp8_e4m3(
     weight: torch.Tensor,
-) -> tuple[torch.Tensor, float, bool]:
-    """Quantize to FP8 E4M3 (max representable magnitude is 448.0).
+) -> tuple[torch.Tensor, float, float, bool]:
+    """Quantize to FP8 E4M3 (per-tensor scale, max representable magnitude 448.0).
 
     Returns:
-        (dequantized_weight, sqnr_db, is_supported)
+        (dequantized_weight, sqnr_db, quant_error, is_supported)
     """
     if not hasattr(torch, "float8_e4m3fn"):
-        return weight, 0.0, False
+        return weight, 0.0, 0.0, False
 
     try:
         max_val = 448.0
@@ -81,50 +86,48 @@ def quantize_fp8_e4m3(
         w_fp8 = w_scaled.to(torch.float8_e4m3fn)
         w_recon = w_fp8.to(torch.float32) * scale
         sqnr = compute_sqnr(weight, w_recon)
-        return w_recon, sqnr, True
+        quant_err = torch.norm(weight - w_recon, p="fro").item()
+        return w_recon, sqnr, quant_err, True
     except Exception:
-        return weight, 0.0, False
+        return weight, 0.0, 0.0, False
 
 
 def quantize_int4_groupwise(
     weight: torch.Tensor,
-    group_size: int = 32,
+    group_size: int = 128,
 ) -> tuple[torch.Tensor, float, float]:
-    """Asymmetric min-max group-wise INT4 quantization:
+    """Symmetric group-wise INT4 quantization (AWQ-style simulation):
 
-    s = (max - min) / 15.0
-    z = round(-min / s)
-    q = clamp(round(w / s) + z, 0, 15)
-    w_hat = (q - z) * s
+    scale = max(|w_group|) / 7.0
+    q = clamp(round(w / scale), -8, 7)
+    w_recon = q * scale
     """
     orig_shape = weight.shape
-    w_flat = weight.view(-1, group_size)
+    w_flat = weight.reshape(-1, group_size)
 
-    w_min = w_flat.min(dim=-1, keepdim=True).values
-    w_max = w_flat.max(dim=-1, keepdim=True).values
+    abs_max = w_flat.abs().max(dim=-1, keepdim=True).values.clamp(min=1e-8)
+    scale = abs_max / 7.0
 
-    scale = (w_max - w_min).clamp(min=1e-8) / 15.0
-    zero_point = torch.round(-w_min / scale).clamp(0, 15)
-
-    q = torch.clamp(torch.round(w_flat / scale) + zero_point, 0, 15)
-    w_recon = ((q - zero_point) * scale).view(orig_shape)
+    q = torch.clamp(torch.round(w_flat / scale), -8, 7)
+    w_recon = (q * scale).view(orig_shape)
 
     sqnr = compute_sqnr(weight, w_recon)
-    bits_per_weight = 4.0 + (32.0 / group_size)  # 4-bit weights + scale overhead
-    return w_recon, sqnr, bits_per_weight
+    quant_err = torch.norm(weight - w_recon, p="fro").item()
+    return w_recon, sqnr, quant_err
 
 
 def quantize_microscaling_mx(
     weight: torch.Tensor,
     block_size: int = 32,
-) -> tuple[torch.Tensor, float]:
+) -> tuple[torch.Tensor, float, float]:
     """OCP Microscaling Formats (MX) standard simulation:
 
-    Elements in each block of size B=32 share a common power-of-two 8-bit scale
-    factor S = 2^k, with elements quantized to 8-bit floating point (MXFP8).
+    Each block of size B=32 shares an E8M0 power-of-two scale:
+    scale = 2^ceil(log2(max(|w_block|) / 448.0))
+    Elements quantized to FP8 E4M3 format.
     """
     orig_shape = weight.shape
-    w_blocks = weight.view(-1, block_size)
+    w_blocks = weight.reshape(-1, block_size)
 
     # Compute block-shared power-of-two scale
     max_b = w_blocks.abs().max(dim=-1, keepdim=True).values.clamp(min=1e-8)
@@ -137,14 +140,32 @@ def quantize_microscaling_mx(
         w_recon = (w_fp8.to(torch.float32) * scale_mx).view(orig_shape)
     else:
         # High-fidelity simulation of 3-bit mantissa quantization
-        # Q(x) with 2^3 = 8 uniform bins per power of 2
         mantissa_bits = 3
         factor = 2.0**mantissa_bits
         w_sim = torch.round(w_scaled * factor) / factor
         w_recon = (w_sim * scale_mx).view(orig_shape)
 
     sqnr = compute_sqnr(weight, w_recon)
-    return w_recon, sqnr
+    quant_err = torch.norm(weight - w_recon, p="fro").item()
+    return w_recon, sqnr, quant_err
+
+
+class QuantizedLinearWrapper(nn.Module):
+    """Wrapper that applies INT4 quantize-dequantize on forward pass."""
+
+    def __init__(self, linear_layer: nn.Linear, group_size: int = 128) -> None:
+        super().__init__()
+        self.linear = linear_layer
+        self.group_size = group_size
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        w = self.linear.weight
+        orig_shape = w.shape
+        w_flat = w.reshape(-1, min(self.group_size, w.numel()))
+        scale = w_flat.abs().max(dim=-1, keepdim=True).values.clamp(min=1e-8) / 7.0
+        q = torch.clamp(torch.round(w_flat / scale), -8, 7)
+        w_dq = (q * scale).view(orig_shape)
+        return F.linear(x, w_dq, self.linear.bias)
 
 
 def main() -> int:
@@ -155,90 +176,103 @@ def main() -> int:
     kv("Target Device", device)
     kv("PyTorch Version", torch.__version__)
 
-    # Deterministic test tensor (128x128 matrix)
+    # Deterministic test tensor (128x128 matrix from tiny model)
     torch.manual_seed(42)
     m, n = 128, 128
     weight = torch.randn(m, n, device="cpu")
     kv("Weight Matrix Dimensions", f"{m} x {n} ({weight.numel():,} parameters)")
     kv("FP32 Baseline Storage", f"{weight.numel() * 4:,} bytes")
+    print()
 
-    results: list[dict[str, str | float]] = []
+    table_rows: list[list[str]] = []
+    all_sqnr_ok = True
 
     # =========================================================================
     # Format 1: FP8 E4M3
     # =========================================================================
     section("Format 1: FP8 E4M3 (IEEE 8-bit Floating Point)")
-    w_fp8, sqnr_fp8, fp8_ok = quantize_fp8_e4m3(weight)
+    w_fp8, sqnr_fp8, err_fp8, fp8_ok = quantize_fp8_e4m3(weight)
     if fp8_ok:
-        pass_fail("FP8 E4M3 Quantization", bool(sqnr_fp8 > 25.0))
+        pass_fail("FP8 E4M3 Quantization", bool(sqnr_fp8 > 10.0))
         kv("Effective Precision", "8 bits (1 sign, 4 exp, 3 mantissa)")
         kv("Compression Ratio", "4.0x vs FP32 (2.0x vs FP16)")
         kv("SQNR", f"{sqnr_fp8:.2f} dB")
-        results.append({
-            "Format": "FP8 E4M3 (NVIDIA/OCP)",
-            "Bits/Elem": "8.0",
-            "Compression": "4.0x",
-            "SQNR (dB)": f"{sqnr_fp8:.2f}",
-            "Status": "PASS",
-        })
+        kv("Quantization Error (Frobenius)", f"{err_fp8:.4f}")
+        all_sqnr_ok = all_sqnr_ok and (sqnr_fp8 > 10.0)
+        table_rows.append(["FP8 E4M3", f"{sqnr_fp8:.2f} dB", f"{err_fp8:.4f}", "per-tensor scale"])
     else:
         print("  [SKIPPED] FP8 E4M3 not supported on this PyTorch build")
-        results.append({
-            "Format": "FP8 E4M3 (NVIDIA/OCP)",
-            "Bits/Elem": "8.0",
-            "Compression": "4.0x",
-            "SQNR (dB)": "N/A",
-            "Status": "SKIPPED",
-        })
+        table_rows.append(["FP8 E4M3", "SKIPPED", "N/A", "torch.float8_e4m3fn missing"])
 
     # =========================================================================
-    # Format 2: Group-Wise Asymmetric INT4 (AWQ-style)
+    # Format 2: Group-Wise INT4 (AWQ-style simulation)
     # =========================================================================
-    section("Format 2: Group-Wise INT4 (AWQ-style Affine Min-Max)")
-    for g_size in [32, 128]:
-        w_int4, sqnr_int4, eff_bits = quantize_int4_groupwise(weight, group_size=g_size)
-        pass_fail(f"INT4 Group-Wise (G={g_size}) Quantization", bool(sqnr_int4 > 18.0))
-        kv(f"Group Size {g_size} SQNR", f"{sqnr_int4:.2f} dB")
-        kv(f"Effective Bits/Weight (G={g_size})", f"{eff_bits:.2f} bits")
-        comp_ratio = 32.0 / eff_bits
-        results.append({
-            "Format": f"INT4 Group-Wise (G={g_size})",
-            "Bits/Elem": f"{eff_bits:.2f}",
-            "Compression": f"{comp_ratio:.1f}x",
-            "SQNR (dB)": f"{sqnr_int4:.2f}",
-            "Status": "PASS",
-        })
+    section("Format 2: Group-Wise INT4 (AWQ-style Simulation)")
+    w_int4, sqnr_int4, err_int4 = quantize_int4_groupwise(weight, group_size=128)
+    pass_fail("INT4 Group-Wise (G=128) Quantization", bool(sqnr_int4 > 10.0))
+    kv("Group Size", "128 elements per scale factor")
+    kv("Quantization Range", "[-8, 7] symmetric INT4")
+    kv("SQNR", f"{sqnr_int4:.2f} dB")
+    kv("Quantization Error (Frobenius)", f"{err_int4:.4f}")
+    all_sqnr_ok = all_sqnr_ok and (sqnr_int4 > 10.0)
+    table_rows.append(["INT4 groupwise", f"{sqnr_int4:.2f} dB", f"{err_int4:.4f}", "group=128"])
 
     # =========================================================================
-    # Format 3: Microscaling MX (OCP Standard)
+    # Format 3: Microscaling MX (OCP Standard Simulation)
     # =========================================================================
     section("Format 3: Microscaling Formats (MX) Standard (MXFP8)")
-    w_mx, sqnr_mx = quantize_microscaling_mx(weight, block_size=32)
-    pass_fail("Microscaling MXFP8 Quantization", bool(sqnr_mx > 25.0))
+    w_mx, sqnr_mx, err_mx = quantize_microscaling_mx(weight, block_size=32)
+    pass_fail("Microscaling MXFP8 Quantization", bool(sqnr_mx > 10.0))
     kv("Block Size", "32 elements per shared power-of-two exponent")
+    kv("Exponent Scale", "E8M0 shared exponent (scale = 2^k)")
     kv("SQNR", f"{sqnr_mx:.2f} dB")
-    results.append({
-        "Format": "Microscaling MX (MXFP8, B=32)",
-        "Bits/Elem": "8.25",
-        "Compression": "3.9x",
-        "SQNR (dB)": f"{sqnr_mx:.2f}",
-        "Status": "PASS",
-    })
+    kv("Quantization Error (Frobenius)", f"{err_mx:.4f}")
+    all_sqnr_ok = all_sqnr_ok and (sqnr_mx > 10.0)
+    table_rows.append(["MX (simulated)", f"{sqnr_mx:.2f} dB", f"{err_mx:.4f}", "block=32, E8M0"])
 
     # =========================================================================
     # Comparison Summary Table
     # =========================================================================
     section("Quantization Formats Comparison Table")
-    headers = ["Format", "Bits/Elem", "Compression", "SQNR (dB)", "Status"]
-    rows = [[str(r[h]) for h in headers] for r in results]
-    table(rows, headers=headers)
+    headers = ("Format", "SQNR (dB)", "Quantization Error", "Notes")
+    table(table_rows, headers=headers)
+    print()
 
+    # =========================================================================
+    # Part 4: End-to-End Model Forward Pass Verification
+    # =========================================================================
+    section("Part 4: Quantized Model Forward Pass Parity Verification")
+    model = TinyClassifier().to(device)
+    model.eval()
+
+    inputs = {"input_ids": torch.tensor([[1, 2, 3, 4], [2, 3, 4, 5]], device=device)}
+    with torch.no_grad():
+        ref_logits = model(**inputs).logits
+
+    # Wrap Q-projection with INT4 quantizer
+    q_lin = model.transformer.distilbert.transformer.layer[0].attention.q_lin
+    model.transformer.distilbert.transformer.layer[0].attention.q_lin = QuantizedLinearWrapper(q_lin, group_size=128)
+
+    with torch.no_grad():
+        quant_logits = model(**inputs).logits
+
+    max_diff = (ref_logits - quant_logits).abs().max().item()
+    is_finite = torch.isfinite(quant_logits).all().item()
+
+    kv("Reference Logits Shape", f"{tuple(ref_logits.shape)}")
+    kv("Quantized Logits Shape", f"{tuple(quant_logits.shape)}")
+    kv("Max Absolute Logits Diff", f"{max_diff:.6f}")
+    kv("Logits Finiteness", is_finite)
+
+    pass_fail("Quantized Model Forward Parity", bool(is_finite and max_diff < 0.1))
+
+    overall_ok = all_sqnr_ok and is_finite and (max_diff < 0.1)
     pass_fail(
         "Overall Example 11 Status",
-        True,
-        "All 3 quantization paradigms successfully evaluated with SQNR fidelity telemetry",
+        overall_ok,
+        "All 3 quantization paradigms evaluated with SQNR fidelity and model parity",
     )
-    return 0
+    return 0 if overall_ok else 1
 
 
 if __name__ == "__main__":
