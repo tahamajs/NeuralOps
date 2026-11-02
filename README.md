@@ -19,7 +19,7 @@
 [![Quality](https://img.shields.io/badge/quality-gated-blue)](https://github.com/tahamajs/NeuralOps/actions)
 [![PyTorch 2.11+](https://img.shields.io/badge/PyTorch-2.11%2B%20torch.compile-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![CUDA 12.8+](https://img.shields.io/badge/CUDA-12.8%20%2F%2013.2-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
-[![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](#5-exhaustive-gpu-capabilities-audit-131-attention--72-compression)
+[![Hardware Tested](https://img.shields.io/badge/Hardware%20Tested-RTX%203090%20(SM%208.6)-76B900?logo=nvidia&logoColor=white)](#5-registry-and-hardware-scope-131-attention--72-compression)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://tahamajs.github.io/NeuralOps/)
 [![Hugging Face Org](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Hooshaai%20(14%20Models)-ffcc00)](https://huggingface.co/Hooshaai)
 [![Benchmark Ledger](https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-orange)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
@@ -47,7 +47,7 @@
 | **Attention registry** | 131 mechanisms across dense, linear, gated, SSM, sparse, and hybrid families |
 | **Compression registry** | 72 engines covering SVD, quantization, pruning, and tensor decompositions |
 | **Hardware source inventory** | 112 CUDA package directories, 114 native implementations, 26 Triton modules, 62 registered Triton operators |
-| **Final benchmark ledger** | 203 logical rows: 42 `PASS_FAST`, 161 `PASS_SLOW`, 0 fallback, 0 timeout |
+| **Current remote exhaustive gate** | 915 tests: 709 passed, 195 failed, 7 skipped on RTX 3090; failures remain documented below |
 | **Notebook suite** | 27 master notebooks plus 2 integration notebooks present in the checkout (29 total) |
 | **Academic publications** | Master's Thesis (317 pages, 205 MB), Defense Slides (50 slides, 172 MB), 3 conference papers |
 
@@ -63,6 +63,17 @@ flowchart LR
 ```
 
 The dispatch hierarchy is intentionally conservative: a source file is not counted as an accelerated result unless the operation actually dispatches, passes correctness checks, and produces a measured latency.
+
+### Current Remote Verification Status — 2026-11-03
+
+The latest full remote run was executed on Sharif HPC queue `N3090` using an RTX 3090 (SM 8.6), NVIDIA driver 465.19.01, CUDA 11.3, and PyTorch 1.12.1+cu113:
+
+```text
+pytest tests/gpu_exhaustive -v --tb=short
+195 failed, 709 passed, 7 skipped in 715.70s (0:11:55)
+```
+
+This is an active remediation baseline, not a release certification. The complete merged PBS log is retained as `results/neuralops_exhaustive_job.log` on the HPC host. The failed groups are 115 attention checks, 70 compressor checks, 8 kernel-parity checks, and 2 long-context checks. Triton also reports `device kernel image is invalid` under the legacy CUDA 11.3 environment, and CUDA extension compilation reports missing `ninja`.
 
 ### ⚡ 30-Second Quickstart
 
@@ -410,7 +421,9 @@ print(f"Dispatches — CUDA: {stats['cuda']}, Triton: {stats['triton']}, PyTorch
 
 NeuralOps maintains **26 categorized Triton kernel modules** housing **62 unified Triton operators / JIT kernels** across 4 architectural tiers: standalone flagship kernels (`neuralops/kernels/triton/`), categorized core modules (`neuralops/core/triton_kernels/`), root bridges, and fused extended operators. By eliminating intermediate High-Bandwidth Memory (HBM) roundtrips and keeping recurrent states $[D, D]$ pinned directly inside ultra-fast on-chip GPU SRAM registers, NeuralOps delivers extraordinary acceleration on modern GPU architectures.
 
-### 🏆 Roofline Acceleration Leaderboard (RTX 4070 SM 8.9)
+### 🏆 Archival Roofline Acceleration Leaderboard (RTX 4070 SM 8.9)
+
+The following leaderboard is an archival historical dataset. It is not the current RTX 3090 release-gate result and must not be used as current hardware certification.
 
 ```
 Kernel Module                     Speedup Factor vs. Unoptimized Baseline
@@ -538,21 +551,21 @@ responses = adapter.continuous_batching_generate(
 
 ## 5. Registry and Hardware Scope (131 Attention + 72 Compression)
 
-The registries contain 131 attention mechanisms and 72 compression engines. The release-gate sweep evaluated 203 logical rows on an NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9, 8GB VRAM) under the configured PyTorch/CUDA environment:
+The registries contain 131 attention mechanisms and 72 compression engines. The latest exhaustive sweep evaluated the registered surfaces on an NVIDIA GeForce RTX 3090 (SM 8.6, 24GB VRAM) under the legacy CUDA 11.3 environment:
 
 | Registry Ecosystem Category | Total Registered | Validated & Functional | Failures / Skips | Hardware Certification Rate |
 | :--- | :---: | :---: | :---: | :---: |
-| **Attention Mechanisms (`ATTENTION_REGISTRY`)** | **131** | **131** | 0 | **Registry count** |
-| **Compression Engines (`COMPRESSOR_REGISTRY`)** | **72** | **72** | 0 | **100.0% PASS** |
-| **Combined NeuralOps Ecosystem** | **203** | **203** | **0** | **203 benchmark rows** |
+| **Attention Mechanisms (`ATTENTION_REGISTRY`)** | **131** | Forward/backward coverage ran; causal failures remain | 115 attention test failures | **Not certified** |
+| **Compression Engines (`COMPRESSOR_REGISTRY`)** | **72** | Real compression was attempted; contract failures remain | 70 compressor test failures | **Not certified** |
+| **Combined exhaustive pytest matrix** | **915 tests** | **709 passed** | **195 failed, 7 skipped** | **Remediation baseline** |
 
 > [!NOTE]
-> **Registry Module Scope**: `ATTENTION_REGISTRY` contains 131 attention mechanisms and `COMPRESSOR_REGISTRY` contains 72 compression engines. Native CUDA and Triton source modules are dispatch backends, not additional registry rows.
+> **Registry Module Scope**: `ATTENTION_REGISTRY` contains 131 attention mechanisms and `COMPRESSOR_REGISTRY` contains 72 compression engines. Native CUDA and Triton source modules are dispatch backends, not additional registry rows. Registry membership is not equivalent to passing the current exhaustive hardware gate.
 
 ### Verified Architectural Capabilities Summary
 
-- **Mixed-Precision Invariants**: All 131 attention modules pass forward execution across FP16, BF16, and FP32 precisions.
-- **Autograd Gradient Propagation**: 100% of modules verify finite, non-NaN backward gradients ($\nabla \mathcal{L} \ne \text{NaN}$).
+- **Mixed-Precision Invariants**: Forward/backward coverage passed for the exercised cases; the complete matrix is not certified because the current run has 195 failures.
+- **Autograd Gradient Propagation**: The integrity regression tests pass, but the exhaustive kernel and attention gradient gates still contain failures.
 - **State Cache Autoregressive Stepping**: All recurrent and SSM modules support $\mathcal{O}(1)$ step inference via `NeuralOpsStateCache`.
 - **Parameter Reduction Envelope**: 72 compression engines span from 1.0x (rank preservation) up to 256.0x parameter reduction (KMeans quantization).
 - **Forensic Report**: For individual module latency, peak VRAM allocations, and reconstruction error metrics, consult [Section 5](#5-exhaustive-gpu-capabilities-audit-131-attention--72-compression) and [Section 22](#22-empirical-benchmark-data-sources--telemetry).
@@ -1637,12 +1650,12 @@ print(f"Loaded {len(triton_kernels)} Triton kernels and {len(cuda_kernels)} CUDA
 
 ## 16. Honest Performance Claims & Fused Kernel Spectrum
 
-Not all Triton kernels outperform PyTorch cuBLAS across every tensor shape. Below is the honest empirical breakdown of our **26 categorized Triton kernel modules** from `results/triton_all_26_kernels_benchmark.json` on NVIDIA RTX 4070 SM 8.9:
+Not all Triton kernels outperform PyTorch cuBLAS across every tensor shape. The latest measured 26-kernel run on the RTX 3090 produced 16 `PASS`, 8 Triton execution errors, 1 index-type execution error, and 1 `FAIL_NUMERICS` result with `max_diff=0.0625`. The result artifact is `results/triton_26_integrity.json` on the HPC host.
 
 ```text
-High-Speedup Kernels (> 2.0x)      : 13 modules  [Recurrent scans, fused attention, state updates]
-Moderate-Speedup Kernels (1.0x-2.0x): 12 modules  [RoPE, elementwise activations, gating]
-Near-Parity / Slower (< 1.0x)       :  1 module   [cuBLAS preferred for tiny shapes: fused_favor_plus]
+PASS             : 16 modules
+FAIL_NUMERICS    :  1 module  (fused_kronecker_gemm, max_diff=0.0625)
+ERROR            :  9 modules (8 invalid Triton images, 1 index-type error)
 ```
 
 ### Empirical Spectrum Breakdown
@@ -1686,7 +1699,7 @@ NeuralOps is engineered specifically for subquadratic attention transplantation,
 
 ## 19. CI/CD Quality Metrics & Test Health
 
-Historical test-battery figures below are archival records, not the current release-gate result. The current release evidence is the 203-row benchmark ledger and the smoke tests run for the published package:
+Historical test-battery figures below are archival records, not the current release-gate result. The current remote exhaustive evidence is:
 
 | Test Suite File | Test Scope | Passed / Total | Status | Execution Time |
 | :--- | :--- | :---: | :---: | :---: |
@@ -1696,7 +1709,7 @@ Historical test-battery figures below are archival records, not the current rele
 | `tests/test_hnc_svd_exhaustive.py` | Hessian Null Space Continuation Formal Math | **73 / 73** | ✅ PASS | 8.12s |
 | `tests/test_v137_competitive_upgrades.py` | Autograd Backward Gradients & State Cache | **4 / 4** | ✅ PASS | 4.97s |
 | `tests/test_universal_gpu_compatibility.py` | Cross-Architecture SM 6.1–9.0 Invariants | **6 / 6** | ✅ PASS | 4.37s |
-| **Current release evidence** | **203-row benchmark ledger** | **203 / 203** | ✅ **Recorded** | **See backend telemetry above** |
+| **Current remote exhaustive gate** | `tests/gpu_exhaustive` | **709 / 915 passed** | ⚠️ **195 failed, 7 skipped** | **715.70s on RTX 3090** |
 
 ---
 
@@ -1726,10 +1739,10 @@ Every table and figure in this repository is reproducible from scratch on physic
 
 ### Hardware Testbench Specification
 
-- **GPU**: NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace, 36 SMs, 8GB GDDR6, Subsystem ID: `10de:2860`).
-- **Host OS**: Linux 6.6.137+ / Ubuntu 22.04 LTS.
-- **Driver & CUDA**: NVIDIA Driver `595.99.02`, CUDA `12.8` / `13.2`, PyTorch `2.11.0+cu128`, OpenAI Triton `3.6.0`.
-- **Primary Worktree**: `/mnt/d/SVD_Project`
+- **GPU**: NVIDIA GeForce RTX 3090 (Ampere SM 8.6, 24,268 MiB).
+- **Host**: Sharif University HPC, compute node `GPU-3090-1`.
+- **Driver & CUDA**: NVIDIA Driver `465.19.01`, CUDA runtime `11.3`, PyTorch `1.12.1+cu113`.
+- **Primary Worktree**: `/home/tahamajlesi.ut/NeuralOps`
 - **Reproducibility Seed**: `torch.manual_seed(42)`
 
 ### Benchmark Execution Commands
@@ -1741,7 +1754,7 @@ To reproduce the physical GPU benchmarks exactly as certified, execute on the re
 
 ```bash
 # Environment interpreter
-REMOTE_PYTHON="/mnt/d/venv/bin/python3"
+REMOTE_PYTHON="/home/tahamajlesi.ut/.conda/envs/neuralops/bin/python"
 
 # 1. Run full 26 Triton kernel microbenchmark suite
 $REMOTE_PYTHON -m neuralops.benchmarks --category triton --dynamic
@@ -1760,19 +1773,22 @@ $REMOTE_PYTHON -m neuralops.benchmarks --category all --dynamic
 
 # 6. Run isolated benchmark sweep across all 114 native CUDA C++ kernels
 $REMOTE_PYTHON -m neuralops.benchmarks --category cuda --dynamic
+
+# 7. Run the full GPU exhaustive matrix
+$REMOTE_PYTHON -m pytest tests/gpu_exhaustive -v --tb=short
 ```
 
 ---
 
 ## 22. Empirical Benchmark Data Sources & Telemetry
 
-All benchmark tables published in this document are generated from committed, timestamped artifacts:
+Benchmark tables dated October 2026 below are archival artifacts from the RTX 4070 environment. The current hardware evidence is the November 2026 RTX 3090 run listed first and must be interpreted independently:
 
 | Benchmark Scope | Underlying Source Artifact | Host Hardware | Date Verified |
 | :--- | :--- | :--- | :---: |
-| 131 Attention + 72 Compression Capabilities | Exhaustive Forensic Capabilities Audit ([Section 5](#5-exhaustive-gpu-capabilities-audit-131-attention--72-compression)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| 131 Attention + 72 Compression Capabilities | `results/neuralops_exhaustive_job.log` | NVIDIA RTX 3090 SM 8.6 | Nov 3 2026 |
 | 108 Native CUDA C++ Kernels | Native Kernel Benchmark Report ([Section 2](#2-cuda-kernel-packages--3-level-fallback-dispatch)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| 26 Triton Kernels Benchmark | [`results/triton_all_26_kernels_benchmark.json`](results/triton_all_26_kernels_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| 26 Triton Kernels Benchmark | `results/triton_26_integrity.json` | NVIDIA RTX 3090 SM 8.6 | Nov 2 2026 |
 | 131 Attention Mechanisms Sweep | [`results/triton_all_131_attentions_benchmark.json`](results/triton_all_131_attentions_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | 72 Compression Engines Sweep | [`results/triton_all_72_compressors_benchmark.json`](results/triton_all_72_compressors_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | GPT-2 End-to-End Speedup | [`results/triton_e2e_gpt2_benchmark.json`](results/triton_e2e_gpt2_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |

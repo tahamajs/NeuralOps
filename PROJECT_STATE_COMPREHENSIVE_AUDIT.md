@@ -5,6 +5,8 @@
 **Verification Date**: November 2, 2026  
 **Host Target**: Apple Silicon MPS / CPU & Remote Sharif University HPC Cluster (`hpc.itc.sharif.edu`, alias `hpc`)
 
+> **Current verification status (2026-11-03):** The full remote `tests/gpu_exhaustive` run completed on RTX 3090 / CUDA 11.3 with **709 passed, 195 failed, and 7 skipped** in 715.70 seconds. This document records the architecture and measured baseline; it is not a claim that the exhaustive GPU gate is currently green. See `results/neuralops_exhaustive_job.log` on the HPC host for the complete merged log.
+
 ---
 
 ## Table of Contents
@@ -24,10 +26,22 @@
 **NeuralOps** is an industrial-grade deep learning systems framework for state-space neural attention surgery, model compression, Fisher-spectral decomposition, and accelerated linear attention kernel dispatch across multi-tier hardware architectures (NVIDIA GPUs, Huawei Ascend NPUs, Apple Silicon MPS, and universal CPU fallbacks).
 
 ### Key Accomplishments in Version 2.0.2:
-- **Exhaustive Serving Matrix (9/9 Backends)**: Verified offline-safe, fail-closed, and production-ready implementations across all 9 serving backends: HuggingFace Transformers, Flash Linear Attention (FLA), Safetensors, ONNX Runtime, vLLM PagedAttention, SGLang Radix Cache, TensorRT-LLM Plugin Builder, TGI Request Simulator, and a pure-Python GGUF v3 binary writer.
-- **Strict Invariant Verification**: Full mathematical verification of **131 attention mechanisms**, **72 compression algorithms**, **26 canonical Triton modules** (62 unified operators across 4 tiers), **130 native CUDA C++ kernel packages** (132 native kernel implementations), and **29 master demonstration notebooks**.
+- **Exhaustive Serving Matrix (9/9 Backends)**: The serving matrix has dedicated fail-closed implementations across HuggingFace Transformers, Flash Linear Attention (FLA), Safetensors, ONNX Runtime, vLLM PagedAttention, SGLang Radix Cache, TensorRT-LLM Plugin Builder, TGI Request Simulator, and GGUF v3. Current GPU certification remains separate from this architecture inventory.
+- **Strict Invariant Verification**: Registry and filesystem inventories confirm **131 attention mechanisms**, **72 compression algorithms**, **26 canonical Triton modules** (62 unified operators across 4 tiers), **130 native CUDA C++ kernel packages** (132 native kernel implementations), and **29 master demonstration notebooks**. The latest exhaustive runtime gate found remaining attention, compressor, parity, and long-context failures.
 - **Autonomous GPU Benchmark Suite**: High-throughput orchestration pipeline (`scripts/run_full_gpu_suite.sh`, `scripts/benchmarks/gpu_master_suite.py`) supporting cold-cache microbenchmarking, backward autograd checks, automated surgery, forward inference validation, and publication-ready LaTeX table generation.
 - **Zero Fake Artifacts & Zero Hardcoded Fallbacks**: Fully compliant with AGENTS.md §6.1, §6.2, and §6.3, enforcing genuine binary exports, deterministic numerical budgets, and strict fail-closed error boundaries.
+
+### Latest GPU Gate Breakdown
+
+| Suite | Result |
+|---|---:|
+| Full exhaustive pytest matrix | 709 passed / 195 failed / 7 skipped |
+| Attention failures | 115 |
+| Compressor failures | 70 |
+| Kernel-parity failures | 8 |
+| Long-context failures | 2 |
+
+The principal environmental blockers are the legacy CUDA 11.3/Triton `device kernel image is invalid` errors and missing `ninja` for native CUDA extension compilation. These are reported as failures or explicit skips; they are not converted to passes.
 
 ---
 
