@@ -53,9 +53,11 @@ if os.path.exists("/share/apps/gcc/gcc-8.2.0/bin/g++"):
     os.environ["CXX"] = "/share/apps/gcc/gcc-8.2.0/bin/g++"
     os.environ["CC"] = "/share/apps/gcc/gcc-8.2.0/bin/gcc"
     gcc_bin = "/share/apps/gcc/gcc-8.2.0/bin"
+    home_bin = os.path.expanduser("~/bin")
     curr_path = os.environ.get("PATH", "")
-    if gcc_bin not in curr_path:
-        os.environ["PATH"] = f"{gcc_bin}:{curr_path}"
+    prefix_paths = [p for p in (home_bin, gcc_bin) if os.path.exists(p) and p not in curr_path]
+    if prefix_paths:
+        os.environ["PATH"] = f"{':'.join(prefix_paths)}:{curr_path}"
 
 import torch
 import torch.utils.cpp_extension as _cpp_ext
