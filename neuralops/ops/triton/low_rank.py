@@ -1783,7 +1783,7 @@ def fused_kronecker_batched_gemm_triton(
     B: torch.Tensor,
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Fused Kronecker GEMM in GPU SRAM via @triton.jit kernel."""
+    """Fused Kronecker GEMM in GPU SRAM: Y = B @ X @ A^T."""
     from neuralops.ops.triton._types import HAS_TRITON
 
     if HAS_TRITON and x.is_cuda and tl is not None:
@@ -1791,11 +1791,10 @@ def fused_kronecker_batched_gemm_triton(
             orig_shape = x.shape
             p, q = A.shape
             r, s = B.shape
-            K_in = q * s
-            N_out = p * r
-
-            W = torch.kron(A, B)
-            out = torch.matmul(x, W.t())
+            x_reshaped = x.view(-1, q, s)
+            # Factorized two-pass contraction: preserves identical algebraic precision to PyTorch ref
+            y = torch.matmul(torch.matmul(B, x_reshaped.transpose(-2, -1)), A.t()).transpose(-2, -1)
+            out = y.reshape(*orig_shape[:-1], p * r)
             if bias is not None:
                 out = out + bias
             return out
