@@ -113,4 +113,8 @@ class PipelineResult:
         }
 
 
-__all__ = ["PipelineError", "PipelineResult", "StageRecord"]
+class ValidationFailure(PipelineError):
+    """Specific error subtype for pipeline gate validation failure."""
+
+
+__all__ = ["PipelineError", "PipelineResult", "StageRecord", "ValidationFailure"]
