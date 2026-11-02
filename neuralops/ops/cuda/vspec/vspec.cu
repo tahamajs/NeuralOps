@@ -40,7 +40,8 @@ __global__ void __launch_bounds__(128) vspec_fwd_kernel(
         const float lam = to_float(decay[idx]);
 
         s = fmaf(lam, s, x_val * g_val);
-        const float norm = s * rsqrtf(fmaf(s, s, eps));
+        const float s_clamped = fminf(fmaxf(s, -100.0f), 100.0f);
+        const float norm = s_clamped * rsqrtf(fmaf(s_clamped, s_clamped, eps));
         out[idx] = from_float<scalar_t>(norm);
     }
 }
