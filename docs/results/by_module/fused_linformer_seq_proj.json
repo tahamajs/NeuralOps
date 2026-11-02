@@ -1,0 +1,101 @@
+{
+  "module_name": "fused_linformer_seq_proj",
+  "category": "triton_kernel",
+  "family": "low_rank",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 2,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:35:16.078400+00:00",
+  "latest_record": {
+    "record_id": "f5c6c4e6cd4706dc",
+    "module_name": "fused_linformer_seq_proj",
+    "category": "triton_kernel",
+    "family": "low_rank",
+    "version_tag": "v1.3.7",
+    "revision": 2,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+      "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=4,H=8,N=512,D=64",
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.0099,
+      "latency_pytorch_ms": 0.0084,
+      "speedup_x": 0.85,
+      "launch_overhead_ms": 0.0005,
+      "cosine_sim": 1.0,
+      "max_diff": 0.0
+    },
+    "notes": "Triton vs PyTorch benchmark for fused_linformer_seq_proj: 0.85x speedup"
+  },
+  "active_records": [
+    {
+      "record_id": "f5c6c4e6cd4706dc",
+      "module_name": "fused_linformer_seq_proj",
+      "category": "triton_kernel",
+      "family": "low_rank",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,H=8,N=512,D=64",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.0099,
+        "latency_pytorch_ms": 0.0084,
+        "speedup_x": 0.85,
+        "launch_overhead_ms": 0.0005,
+        "cosine_sim": 1.0,
+        "max_diff": 0.0
+      },
+      "notes": "Triton vs PyTorch benchmark for fused_linformer_seq_proj: 0.85x speedup"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "f5c6c4e6cd4706dc",
+      "module_name": "fused_linformer_seq_proj",
+      "category": "triton_kernel",
+      "family": "low_rank",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,H=8,N=512,D=64",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.0099,
+        "latency_pytorch_ms": 0.0084,
+        "speedup_x": 0.85,
+        "launch_overhead_ms": 0.0005,
+        "cosine_sim": 1.0,
+        "max_diff": 0.0
+      },
+      "notes": "Triton vs PyTorch benchmark for fused_linformer_seq_proj: 0.85x speedup"
+    }
+  ]
+}

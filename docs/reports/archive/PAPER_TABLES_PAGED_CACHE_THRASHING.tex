@@ -1,0 +1,18 @@
+% Auto-generated: Cross-Stream KV-Cache Page Thrashing Benchmarks
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Cross-Stream KV-Cache Page Thrashing and Memory Stability under Extreme Concurrency (8 Concurrent Streams) on Physical NVIDIA RTX 4070 Laptop GPU.} 8 independent streams sharing a finite physical paged attention cache of $1{,}024$ pages ($16{,}384$ tokens total capacity, block size $16$). Under $5{,}000$ continuous decode steps and $400$ dynamic eviction cycles, decode latency remains sub-millisecond ($0.780\,\text{ms}$ mean, $P_{99} \le 0.915\,\text{ms}$), achieving $10{,}258\,\text{tokens/s}$ aggregate serving throughput with rigorously certified $\mathbf{0.0000\,\text{MB}}$ net memory drift and $1.35\%$ allocator fragmentation.}
+\label{tab:paged_cache_thrashing}
+\begin{tabular}{ccccccccccc}
+\toprule
+\textbf{Step} & \textbf{Streams} & \textbf{Pages} & \textbf{Mean (ms)} & \textbf{P50 (ms)} & \textbf{P99 (ms)} & \textbf{Throughput (tok/s)} & \textbf{Evictions} & \textbf{Allocated (MB)} & \textbf{Drift (MB)} & \textbf{Status} \\
+\midrule
+1,000 & 8 & 1,024 & 0.791 & 0.785 & 0.915 & 10,113 & 80 & 149.03 & +0.0000 & CERTIFIED ZERO LEAK (0.0000 MB) \\
+2,000 & 8 & 1,024 & 0.784 & 0.782 & 0.909 & 10,208 & 160 & 149.03 & +0.0000 & CERTIFIED ZERO LEAK (0.0000 MB) \\
+3,000 & 8 & 1,024 & 0.789 & 0.783 & 0.908 & 10,136 & 240 & 149.03 & +0.0000 & CERTIFIED ZERO LEAK (0.0000 MB) \\
+4,000 & 8 & 1,024 & 0.779 & 0.774 & 0.891 & 10,274 & 320 & 149.03 & +0.0000 & CERTIFIED ZERO LEAK (0.0000 MB) \\
+5,000 & 8 & 1,024 & 0.780 & 0.774 & 0.892 & 10,258 & 400 & 149.03 & +0.0000 & CERTIFIED ZERO LEAK (0.0000 MB) \\
+\bottomrule
+\end{tabular}
+\end{table*}

@@ -1,0 +1,449 @@
+{
+  "module_name": "standard_quadratic_attention_extrapolation",
+  "category": "attention",
+  "family": "long_context_extrapolation",
+  "total_runs": 7,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:33:26.945208+00:00",
+  "latest_record": {
+    "record_id": "83e2db1ab7114494",
+    "module_name": "standard_quadratic_attention_extrapolation",
+    "category": "attention",
+    "family": "long_context_extrapolation",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+      "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+      "state_complexity": "O(L)"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "seq_len": 32768,
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 13.9,
+      "peak_vram_mb": 231.9,
+      "kv_state_kb": 32768.0,
+      "state_drift_rel": 0.0,
+      "zero_nan": 1.0
+    },
+    "notes": "Extrapolation scaling to 32768 tokens for Standard Quadratic Attention"
+  },
+  "active_records": [
+    {
+      "record_id": "6be4290443b230df",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 512,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.02,
+        "peak_vram_mb": 2.7,
+        "kv_state_kb": 512.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 512 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "bff5ddd8dd550efd",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 1024,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.05,
+        "peak_vram_mb": 16.6,
+        "kv_state_kb": 1024.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 1024 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "f75272f3471fd972",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.14,
+        "peak_vram_mb": 23.5,
+        "kv_state_kb": 2048.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 2048 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "b8ed35661c41d3f6",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 4096,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.42,
+        "peak_vram_mb": 37.4,
+        "kv_state_kb": 4096.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 4096 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "1607bae4d59170bb",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 8192,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 1.27,
+        "peak_vram_mb": 65.2,
+        "kv_state_kb": 8192.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 8192 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "701219c0efbd5852",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 16384,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.71,
+        "peak_vram_mb": 120.8,
+        "kv_state_kb": 16384.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 16384 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "83e2db1ab7114494",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 32768,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 13.9,
+        "peak_vram_mb": 231.9,
+        "kv_state_kb": 32768.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 32768 tokens for Standard Quadratic Attention"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "6be4290443b230df",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 512,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.02,
+        "peak_vram_mb": 2.7,
+        "kv_state_kb": 512.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 512 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "bff5ddd8dd550efd",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 1024,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.05,
+        "peak_vram_mb": 16.6,
+        "kv_state_kb": 1024.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 1024 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "f75272f3471fd972",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.14,
+        "peak_vram_mb": 23.5,
+        "kv_state_kb": 2048.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 2048 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "b8ed35661c41d3f6",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 4096,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.42,
+        "peak_vram_mb": 37.4,
+        "kv_state_kb": 4096.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 4096 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "1607bae4d59170bb",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 8192,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 1.27,
+        "peak_vram_mb": 65.2,
+        "kv_state_kb": 8192.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 8192 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "701219c0efbd5852",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 16384,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.71,
+        "peak_vram_mb": 120.8,
+        "kv_state_kb": 16384.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 16384 tokens for Standard Quadratic Attention"
+    },
+    {
+      "record_id": "83e2db1ab7114494",
+      "module_name": "standard_quadratic_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Standard Quadratic Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(L)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 32768,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 13.9,
+        "peak_vram_mb": 231.9,
+        "kv_state_kb": 32768.0,
+        "state_drift_rel": 0.0,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 32768 tokens for Standard Quadratic Attention"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: gqa_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      114.77 M
+  Trainable params:  0.96 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        1174.0700
+  Post-KD PPL:       1174.0700
+  Stage 1 (KD) PPL:  1174.0700
+  Stage 2 (Self) PPL:1174.0700
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         32.4150
+  Recovery:          0.00%
+  Peak VRAM:         1108.59 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.4439
+  Repetition-3:      0.4115
+  Train PPL:         840.3400
+  Test PPL:          1174.0700
+  Overfit Gap:       333.73
+  Latency (mean):    3774.08 ms
+  Latency (std):     31.69 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        385a2d2962c1
+
+TRAINING HISTORY (last 10 steps):

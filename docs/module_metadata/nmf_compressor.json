@@ -1,0 +1,34 @@
+{
+  "module_name": "nmf_compressor",
+  "class_name": "NMFCompressor",
+  "category": "compression",
+  "family": "Tensor Decomposition (Tensor-Train, Tucker & Kronecker)",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "shift",
+    "bias",
+    "dtype",
+    "device",
+    "model",
+    "max_iter",
+    "cfg",
+    "target_layers"
+  ],
+  "ops": [
+    "reshape",
+    "linear",
+    "view"
+  ],
+  "docstring": "Non-negative Matrix Factorization (NMF) Compressor.\nDecomposes linear layer weights into low-rank non-negative factors.\n\nArgs:\n    model: Model to compress.\n    rank: Target rank for NMF factorization.\n    max_iter: Maximum multiplicative update iterations.\n    cfg: Optional configuration object.\n    target_layers: Optional layer name filter.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.3956923367327673e+38,
+  "paradigm": "tensor_decomp",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

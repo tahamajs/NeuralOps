@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: rpca_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      44.22 M
+  Trainable params:  1.81 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        9595.6000
+  Post-KD PPL:       9595.6000
+  Stage 1 (KD) PPL:  9595.6000
+  Stage 2 (Self) PPL:9595.6000
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         264.9986
+  Recovery:          0.00%
+  Peak VRAM:         530.86 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.7812
+  Repetition-3:      0.0213
+  Train PPL:         11303.4800
+  Test PPL:          9595.6000
+  Overfit Gap:       -1707.88
+  Latency (mean):    239.23 ms
+  Latency (std):     19.09 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        9bdbef13ec63
+
+TRAINING HISTORY (last 10 steps):

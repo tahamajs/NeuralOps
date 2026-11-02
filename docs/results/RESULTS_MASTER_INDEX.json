@@ -1,0 +1,2951 @@
+{
+  "Unified": {
+    "category": "Unified Archive",
+    "path": "results/Unified",
+    "num_subdirs": 237,
+    "num_csvs": 845,
+    "num_jsons": 1298,
+    "has_summary_csv": true,
+    "summary_files": [
+      "unified_mgie_budget/roberta/summary.csv",
+      "unified_mgie_budget/distilbert/summary.csv",
+      "unified_mgie_budget/gpt2/summary.csv"
+    ]
+  },
+  "_archive_partial": {
+    "category": "Unified Archive",
+    "path": "results/_archive_partial",
+    "num_subdirs": 22,
+    "num_csvs": 0,
+    "num_jsons": 129,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "a3_optimization": {
+    "category": "Targeted Module Experiments",
+    "path": "results/a3_optimization",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "a3_tests": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/a3_tests",
+    "num_subdirs": 3,
+    "num_csvs": 1,
+    "num_jsons": 32,
+    "has_summary_csv": true,
+    "summary_files": [
+      "roberta_zeroshot/summary.csv"
+    ]
+  },
+  "aasvd_ablations": {
+    "category": "Targeted Module Experiments",
+    "path": "results/aasvd_ablations",
+    "num_subdirs": 2,
+    "num_csvs": 8,
+    "num_jsons": 12,
+    "has_summary_csv": true,
+    "summary_files": [
+      "rank/rank256/summary.csv",
+      "rank/rank128/summary.csv"
+    ]
+  },
+  "aatc_xkv_eval": {
+    "category": "Targeted Module Experiments",
+    "path": "results/aatc_xkv_eval",
+    "num_subdirs": 1,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "adaptive_v3": {
+    "category": "Targeted Module Experiments",
+    "path": "results/adaptive_v3",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "admm_aggressive": {
+    "category": "Targeted Module Experiments",
+    "path": "results/admm_aggressive",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "admm_s50": {
+    "category": "Targeted Module Experiments",
+    "path": "results/admm_s50",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "admm_s50_q4": {
+    "category": "Targeted Module Experiments",
+    "path": "results/admm_s50_q4",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "admm_s50_q8": {
+    "category": "Targeted Module Experiments",
+    "path": "results/admm_s50_q8",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "admm_s70": {
+    "category": "Targeted Module Experiments",
+    "path": "results/admm_s70",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "aegis_hybrid_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/aegis_hybrid_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "aegis_v2_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/aegis_v2_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "aegis_v4_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/aegis_v4_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "aegis_v5_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/aegis_v5_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "aegis_v6_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/aegis_v6_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "aegis_v6_single": {
+    "category": "Targeted Module Experiments",
+    "path": "results/aegis_v6_single",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "agnews_Dataset": {
+    "category": "Targeted Module Experiments",
+    "path": "results/agnews_Dataset",
+    "num_subdirs": 103,
+    "num_csvs": 178,
+    "num_jsons": 368,
+    "has_summary_csv": true,
+    "summary_files": [
+      "agnews_unified_lora_attention/distilbert/summary.csv",
+      "agnews_unified_gated_deltanet_block/distilbert/summary.csv",
+      "agnews_unified_hgrn2_layer/distilbert/summary.csv"
+    ]
+  },
+  "all_modules_paper_run": {
+    "category": "Targeted Module Experiments",
+    "path": "results/all_modules_paper_run",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "archive_unified": {
+    "category": "Unified Archive",
+    "path": "results/archive_unified",
+    "num_subdirs": 235,
+    "num_csvs": 850,
+    "num_jsons": 3730,
+    "has_summary_csv": true,
+    "summary_files": [
+      "unified_mgie_budget/roberta/summary.csv",
+      "unified_mgie_budget/distilbert/summary.csv",
+      "unified_mgie_budget/gpt2/summary.csv"
+    ]
+  },
+  "armor_aggressive": {
+    "category": "Targeted Module Experiments",
+    "path": "results/armor_aggressive",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 6,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "armor_r16": {
+    "category": "Targeted Module Experiments",
+    "path": "results/armor_r16",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "armor_r32": {
+    "category": "Targeted Module Experiments",
+    "path": "results/armor_r32",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "attention_rank_128": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/attention_rank_128",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 6,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "attention_rank_16": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/attention_rank_16",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 7,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "attention_rank_256": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/attention_rank_256",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 6,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "attention_rank_32": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/attention_rank_32",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 7,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "attention_rank_64": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/attention_rank_64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 6,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "attn_distilbert": {
+    "category": "Targeted Module Experiments",
+    "path": "results/attn_distilbert",
+    "num_subdirs": 18,
+    "num_csvs": 18,
+    "num_jsons": 57,
+    "has_summary_csv": true,
+    "summary_files": [
+      "samba_m3/summary.csv",
+      "aegis_v6/summary.csv",
+      "simple_ssm/summary.csv"
+    ]
+  },
+  "attn_roberta": {
+    "category": "Targeted Module Experiments",
+    "path": "results/attn_roberta",
+    "num_subdirs": 18,
+    "num_csvs": 17,
+    "num_jsons": 63,
+    "has_summary_csv": true,
+    "summary_files": [
+      "samba_m3/summary.csv",
+      "aegis_v6/summary.csv",
+      "simple_ssm/summary.csv"
+    ]
+  },
+  "baseline_check": {
+    "category": "Targeted Module Experiments",
+    "path": "results/baseline_check",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "roberta_sst2/summary.csv"
+    ]
+  },
+  "baseline_comparison": {
+    "category": "Targeted Module Experiments",
+    "path": "results/baseline_comparison",
+    "num_subdirs": 3,
+    "num_csvs": 1,
+    "num_jsons": 18,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "batch2_distilbert": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/batch2_distilbert",
+    "num_subdirs": 23,
+    "num_csvs": 46,
+    "num_jsons": 174,
+    "has_summary_csv": true,
+    "summary_files": [
+      "aasvd/rank_128/summary.csv",
+      "aasvd/rank_256/summary.csv",
+      "saes_svd_v2/rank_128/summary.csv"
+    ]
+  },
+  "batch2_roberta": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/batch2_roberta",
+    "num_subdirs": 23,
+    "num_csvs": 23,
+    "num_jsons": 84,
+    "has_summary_csv": true,
+    "summary_files": [
+      "aasvd/rank_256/summary.csv",
+      "saes_svd_v2/rank_256/summary.csv",
+      "uniql_compressor/rank_256/summary.csv"
+    ]
+  },
+  "batch3_distilbert": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/batch3_distilbert",
+    "num_subdirs": 34,
+    "num_csvs": 34,
+    "num_jsons": 140,
+    "has_summary_csv": true,
+    "summary_files": [
+      "hybridkv/summary.csv",
+      "hashed_linear/summary.csv",
+      "soka_compressor/summary.csv"
+    ]
+  },
+  "batch3_roberta": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/batch3_roberta",
+    "num_subdirs": 34,
+    "num_csvs": 34,
+    "num_jsons": 137,
+    "has_summary_csv": true,
+    "summary_files": [
+      "hybridkv/summary.csv",
+      "hashed_linear/summary.csv",
+      "soka_compressor/summary.csv"
+    ]
+  },
+  "batch_cache_mnli": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/batch_cache_mnli",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "benchmark_results": {
+    "category": "Targeted Module Experiments",
+    "path": "results/benchmark_results",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "benchmark_results_archived": {
+    "category": "Unified Archive",
+    "path": "results/benchmark_results_archived",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 810,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "bert_baselines": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/bert_baselines",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "adasvd/summary.csv"
+    ]
+  },
+  "bert_sst2_baseline": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/bert_sst2_baseline",
+    "num_subdirs": 1,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "bonsai_s50": {
+    "category": "Targeted Module Experiments",
+    "path": "results/bonsai_s50",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "c4_baselines": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/c4_baselines",
+    "num_subdirs": 8,
+    "num_csvs": 10,
+    "num_jsons": 67,
+    "has_summary_csv": true,
+    "summary_files": [
+      "kronecker/summary.csv",
+      "svd_llm/summary.csv",
+      "swift_svd_act/summary.csv"
+    ]
+  },
+  "come_fixed_distil": {
+    "category": "Targeted Module Experiments",
+    "path": "results/come_fixed_distil",
+    "num_subdirs": 1,
+    "num_csvs": 6,
+    "num_jsons": 17,
+    "has_summary_csv": true,
+    "summary_files": [
+      "come/rank_curve.csv",
+      "come/rank_384/summary.csv",
+      "come/rank_128/summary.csv"
+    ]
+  },
+  "come_fixed_gpt2": {
+    "category": "Targeted Module Experiments",
+    "path": "results/come_fixed_gpt2",
+    "num_subdirs": 1,
+    "num_csvs": 6,
+    "num_jsons": 15,
+    "has_summary_csv": true,
+    "summary_files": [
+      "come/rank_curve.csv",
+      "come/rank_384/summary.csv",
+      "come/rank_128/summary.csv"
+    ]
+  },
+  "come_fixed_roberta": {
+    "category": "Targeted Module Experiments",
+    "path": "results/come_fixed_roberta",
+    "num_subdirs": 1,
+    "num_csvs": 6,
+    "num_jsons": 16,
+    "has_summary_csv": true,
+    "summary_files": [
+      "come/rank_curve.csv",
+      "come/rank_384/summary.csv",
+      "come/rank_128/summary.csv"
+    ]
+  },
+  "come_fixed_roberta_v2": {
+    "category": "Targeted Module Experiments",
+    "path": "results/come_fixed_roberta_v2",
+    "num_subdirs": 1,
+    "num_csvs": 6,
+    "num_jsons": 16,
+    "has_summary_csv": true,
+    "summary_files": [
+      "come/rank_curve.csv",
+      "come/rank_384/summary.csv",
+      "come/rank_128/summary.csv"
+    ]
+  },
+  "concurrent_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/concurrent_test",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 6,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "cosformer_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/cosformer_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "cosformer_grid": {
+    "category": "Targeted Module Experiments",
+    "path": "results/cosformer_grid",
+    "num_subdirs": 8,
+    "num_csvs": 8,
+    "num_jsons": 24,
+    "has_summary_csv": true,
+    "summary_files": [
+      "sst2_rank16/summary.csv",
+      "mrpc_rank32/summary.csv",
+      "sst2_rank128/summary.csv"
+    ]
+  },
+  "cosformer_single": {
+    "category": "Targeted Module Experiments",
+    "path": "results/cosformer_single",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "cosformer_v3": {
+    "category": "Targeted Module Experiments",
+    "path": "results/cosformer_v3",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "deep_rank_distilbert": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/deep_rank_distilbert",
+    "num_subdirs": 48,
+    "num_csvs": 192,
+    "num_jsons": 727,
+    "has_summary_csv": true,
+    "summary_files": [
+      "aa_svd_compressor/rank_384/summary.csv",
+      "aa_svd_compressor/rank_128/summary.csv",
+      "aa_svd_compressor/rank_256/summary.csv"
+    ]
+  },
+  "deep_rank_roberta": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/deep_rank_roberta",
+    "num_subdirs": 48,
+    "num_csvs": 192,
+    "num_jsons": 740,
+    "has_summary_csv": true,
+    "summary_files": [
+      "aa_svd_compressor/rank_384/summary.csv",
+      "aa_svd_compressor/rank_128/summary.csv",
+      "aa_svd_compressor/rank_256/summary.csv"
+    ]
+  },
+  "diag_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/diag_test",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "distilbert": {
+    "category": "Targeted Module Experiments",
+    "path": "results/distilbert",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "distilbert_agnews_baseline": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_agnews_baseline",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "distilbert_base_uncased_finetuned_sst_2_english_sst2_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_base_uncased_finetuned_sst_2_english_sst2_sweep",
+    "num_subdirs": 1,
+    "num_csvs": 0,
+    "num_jsons": 6,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "distilbert_base_uncased_sst2_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_base_uncased_sst2_sweep",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 7,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "distilbert_mnli_baseline": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_mnli_baseline",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "distilbert_mnli_full_mnli_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_mnli_full_mnli_sweep",
+    "num_subdirs": 2,
+    "num_csvs": 266,
+    "num_jsons": 264,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "distilbert_rte_fast": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_rte_fast",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "distilbert_sst2_ag_news_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_sst2_ag_news_sweep",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "distilbert_sst2_sst2_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_sst2_sst2_sweep",
+    "num_subdirs": 1,
+    "num_csvs": 599,
+    "num_jsons": 388,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "distilbert_sst2_sst2_sweep_r192": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_sst2_sst2_sweep_r192",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "distilbert_sst2_sst2_sweep_r256": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/distilbert_sst2_sst2_sweep_r256",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "dynamic_entropy_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/dynamic_entropy_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "dynamic_entropy_r64_v2": {
+    "category": "Targeted Module Experiments",
+    "path": "results/dynamic_entropy_r64_v2",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "enlighten_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/enlighten_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "enlighten_r64_v2": {
+    "category": "Targeted Module Experiments",
+    "path": "results/enlighten_r64_v2",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "erc_e20": {
+    "category": "Targeted Module Experiments",
+    "path": "results/erc_e20",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "erc_fix_verify": {
+    "category": "Targeted Module Experiments",
+    "path": "results/erc_fix_verify",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 5,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "erc_fix_verify_r256": {
+    "category": "Targeted Module Experiments",
+    "path": "results/erc_fix_verify_r256",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 5,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "experiments": {
+    "category": "Targeted Module Experiments",
+    "path": "results/experiments",
+    "num_subdirs": 249,
+    "num_csvs": 119,
+    "num_jsons": 974,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "final_paper_run": {
+    "category": "Targeted Module Experiments",
+    "path": "results/final_paper_run",
+    "num_subdirs": 0,
+    "num_csvs": 2,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "fixed_aegis": {
+    "category": "Targeted Module Experiments",
+    "path": "results/fixed_aegis",
+    "num_subdirs": 7,
+    "num_csvs": 7,
+    "num_jsons": 14,
+    "has_summary_csv": true,
+    "summary_files": [
+      "aegis_hybrid_sst2/summary.csv",
+      "aegis_v3_ag_news/summary.csv",
+      "aegis_v1_sst2/summary.csv"
+    ]
+  },
+  "fixed_modules_verify": {
+    "category": "Targeted Module Experiments",
+    "path": "results/fixed_modules_verify",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 5,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "flap_s20": {
+    "category": "Targeted Module Experiments",
+    "path": "results/flap_s20",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "flap_s50": {
+    "category": "Targeted Module Experiments",
+    "path": "results/flap_s50",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "full_benchmark": {
+    "category": "Targeted Module Experiments",
+    "path": "results/full_benchmark",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "full_experiment_run": {
+    "category": "Targeted Module Experiments",
+    "path": "results/full_experiment_run",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "galerkin_v2": {
+    "category": "Targeted Module Experiments",
+    "path": "results/galerkin_v2",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "generalization_bert_mrpc": {
+    "category": "Targeted Module Experiments",
+    "path": "results/generalization_bert_mrpc",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "generated_csvs": {
+    "category": "Targeted Module Experiments",
+    "path": "results/generated_csvs",
+    "num_subdirs": 0,
+    "num_csvs": 202,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "gpt2": {
+    "category": "Targeted Module Experiments",
+    "path": "results/gpt2",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "gpt2_adasvd": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/gpt2_adasvd",
+    "num_subdirs": 1,
+    "num_csvs": 7,
+    "num_jsons": 15,
+    "has_summary_csv": true,
+    "summary_files": [
+      "adasvd_compressor/rank_curve.csv",
+      "adasvd_compressor/rank_16/summary.csv",
+      "adasvd_compressor/rank_32/summary.csv"
+    ]
+  },
+  "gpt2_adasvd_fixed": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/gpt2_adasvd_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 4,
+    "num_jsons": 6,
+    "has_summary_csv": true,
+    "summary_files": [
+      "adasvd_compressor/rank_curve.csv",
+      "adasvd_compressor/rank_16/summary.csv",
+      "adasvd_compressor/rank_64/summary.csv"
+    ]
+  },
+  "gpt2_adasvd_highrank": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/gpt2_adasvd_highrank",
+    "num_subdirs": 1,
+    "num_csvs": 4,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "adasvd_compressor/rank_curve.csv",
+      "adasvd_compressor/rank_640/summary.csv",
+      "adasvd_compressor/rank_512/summary.csv"
+    ]
+  },
+  "gpt2_adasvd_qkv_split": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/gpt2_adasvd_qkv_split",
+    "num_subdirs": 1,
+    "num_csvs": 4,
+    "num_jsons": 5,
+    "has_summary_csv": true,
+    "summary_files": [
+      "adasvd_compressor/rank_curve.csv",
+      "adasvd_compressor/rank_384/summary.csv",
+      "adasvd_compressor/rank_256/summary.csv"
+    ]
+  },
+  "gpt2_adasvd_r256_solo": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/gpt2_adasvd_r256_solo",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "gpt2_ag_news_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/gpt2_ag_news_sweep",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "gpt2_baselines_wt2": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/gpt2_baselines_wt2",
+    "num_subdirs": 3,
+    "num_csvs": 8,
+    "num_jsons": 23,
+    "has_summary_csv": true,
+    "summary_files": [
+      "svd_llm_compressor/rank_curve.csv",
+      "svd_llm_compressor/rank_384/summary.csv",
+      "asvd/rank_curve.csv"
+    ]
+  },
+  "gpt2_c4_ppl": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/gpt2_c4_ppl",
+    "num_subdirs": 1,
+    "num_csvs": 0,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "gpt2_r384": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/gpt2_r384",
+    "num_subdirs": 5,
+    "num_csvs": 11,
+    "num_jsons": 10,
+    "has_summary_csv": true,
+    "summary_files": [
+      "slicegpt/rank_curve.csv",
+      "slicegpt/rank_384/summary.csv",
+      "swift_svd_act/rank_curve.csv"
+    ]
+  },
+  "gpt2_sst2_lora_baseline": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/gpt2_sst2_lora_baseline",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "gpt2_svd_llm_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/gpt2_svd_llm_test",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "gpt2_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/gpt2_sweep",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "gpt2_wikitext2_sweep": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/gpt2_wikitext2_sweep",
+    "num_subdirs": 18,
+    "num_csvs": 127,
+    "num_jsons": 154,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "gpu_qwen_sweep_": {
+    "category": "Targeted Module Experiments",
+    "path": "results/gpu_qwen_sweep_",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "gpu_run_20260901_174218": {
+    "category": "Targeted Module Experiments",
+    "path": "results/gpu_run_20260901_174218",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "qwen_sweep/summary.csv"
+    ]
+  },
+  "gpu_server": {
+    "category": "Targeted Module Experiments",
+    "path": "results/gpu_server",
+    "num_subdirs": 4,
+    "num_csvs": 5,
+    "num_jsons": 720,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "hamming_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/hamming_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "hybrid_svd_r32": {
+    "category": "Targeted Module Experiments",
+    "path": "results/hybrid_svd_r32",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "hybrid_svd_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/hybrid_svd_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "isolated_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/isolated_test",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "kda_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/kda_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "kl_r16": {
+    "category": "Targeted Module Experiments",
+    "path": "results/kl_r16",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "kmeans_bits8": {
+    "category": "Targeted Module Experiments",
+    "path": "results/kmeans_bits8",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "ktl_r8": {
+    "category": "Targeted Module Experiments",
+    "path": "results/ktl_r8",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "linear_attention_v5": {
+    "category": "Targeted Module Experiments",
+    "path": "results/linear_attention_v5",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 6,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "lola_r128": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lola_r128",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "lola_r16": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lola_r16",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "lola_r32": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lola_r32",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "lola_r4": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lola_r4",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "lola_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lola_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "lola_r8": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lola_r8",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "long_context": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/long_context",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "lra_listops_adaptive_svd_attention": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lra_listops_adaptive_svd_attention",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "lra_listops_asvd_attention": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lra_listops_asvd_attention",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "lra_listops_cosformer": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lra_listops_cosformer",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "lra_listops_galerkin": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lra_listops_galerkin",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "lra_listops_performer_attention": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lra_listops_performer_attention",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "lra_listops_squeezing_heads": {
+    "category": "Targeted Module Experiments",
+    "path": "results/lra_listops_squeezing_heads",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "minimal_svd_gpt2_ppl": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/minimal_svd_gpt2_ppl",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "mnli_Dataset": {
+    "category": "Targeted Module Experiments",
+    "path": "results/mnli_Dataset",
+    "num_subdirs": 88,
+    "num_csvs": 103,
+    "num_jsons": 229,
+    "has_summary_csv": true,
+    "summary_files": [
+      "mnli_unified_leka_v1/distilbert/summary.csv",
+      "mnli_unified_routing/distilbert/summary.csv",
+      "mnli_unified_salt/distilbert/summary.csv"
+    ]
+  },
+  "module_plots": {
+    "category": "Targeted Module Experiments",
+    "path": "results/module_plots",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "mrpc_fix_majority": {
+    "category": "Targeted Module Experiments",
+    "path": "results/mrpc_fix_majority",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "mrpc_fix_oom": {
+    "category": "Targeted Module Experiments",
+    "path": "results/mrpc_fix_oom",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "mrpc_squeezing_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/mrpc_squeezing_fixed",
+    "num_subdirs": 3,
+    "num_csvs": 3,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "mrpc_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/mrpc_test",
+    "num_subdirs": 7,
+    "num_csvs": 4,
+    "num_jsons": 5,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "multiseed": {
+    "category": "Multi-Seed Statistical Rigor",
+    "path": "results/multiseed",
+    "num_subdirs": 5,
+    "num_csvs": 14,
+    "num_jsons": 60,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv",
+      "1011/aasvd/summary.csv",
+      "1011/a3/summary.csv"
+    ]
+  },
+  "multiseed_rigor_distilbert": {
+    "category": "Multi-Seed Statistical Rigor",
+    "path": "results/multiseed_rigor_distilbert",
+    "num_subdirs": 11,
+    "num_csvs": 22,
+    "num_jsons": 82,
+    "has_summary_csv": true,
+    "summary_files": [
+      "adasvd_compressor/seed_456/summary.csv",
+      "adasvd_compressor/seed_123/summary.csv",
+      "saes_svd_v2/seed_456/summary.csv"
+    ]
+  },
+  "multiseed_rigor_roberta": {
+    "category": "Multi-Seed Statistical Rigor",
+    "path": "results/multiseed_rigor_roberta",
+    "num_subdirs": 11,
+    "num_csvs": 22,
+    "num_jsons": 82,
+    "has_summary_csv": true,
+    "summary_files": [
+      "adasvd_compressor/seed_456/summary.csv",
+      "adasvd_compressor/seed_123/summary.csv",
+      "saes_svd_v2/seed_456/summary.csv"
+    ]
+  },
+  "multiseed_test": {
+    "category": "Multi-Seed Statistical Rigor",
+    "path": "results/multiseed_test",
+    "num_subdirs": 2,
+    "num_csvs": 4,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "seed123/summary.csv",
+      "seed42/summary.csv"
+    ]
+  },
+  "naive_svd_comparison": {
+    "category": "Targeted Module Experiments",
+    "path": "results/naive_svd_comparison",
+    "num_subdirs": 3,
+    "num_csvs": 3,
+    "num_jsons": 9,
+    "has_summary_csv": true,
+    "summary_files": [
+      "baseline/summary.csv",
+      "minimal/summary.csv",
+      "adasvd/summary.csv"
+    ]
+  },
+  "naive_svd_gpt2_ppl": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/naive_svd_gpt2_ppl",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "naive_svd_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/naive_svd_test",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "neuralops_suite": {
+    "category": "Targeted Module Experiments",
+    "path": "results/neuralops_suite",
+    "num_subdirs": 1,
+    "num_csvs": 2,
+    "num_jsons": 31,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "nli_softmax_distilbert": {
+    "category": "Targeted Module Experiments",
+    "path": "results/nli_softmax_distilbert",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "nli_softmax_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/nli_softmax_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "nli_softmax_roberta": {
+    "category": "Targeted Module Experiments",
+    "path": "results/nli_softmax_roberta",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "oha_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/oha_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "orion_favor_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/orion_favor_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "orion_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/orion_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "orion_r128": {
+    "category": "Targeted Module Experiments",
+    "path": "results/orion_r128",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "orion_r16": {
+    "category": "Targeted Module Experiments",
+    "path": "results/orion_r16",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "orion_r32": {
+    "category": "Targeted Module Experiments",
+    "path": "results/orion_r32",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "orion_r4": {
+    "category": "Targeted Module Experiments",
+    "path": "results/orion_r4",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "orion_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/orion_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "orion_r8": {
+    "category": "Targeted Module Experiments",
+    "path": "results/orion_r8",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "performer_v2_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/performer_v2_test",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "performer_v3_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/performer_v3_test",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "preflight_leak_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/preflight_leak_test",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "primal_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/primal_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "primal_r16": {
+    "category": "Targeted Module Experiments",
+    "path": "results/primal_r16",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "primal_r32": {
+    "category": "Targeted Module Experiments",
+    "path": "results/primal_r32",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "primal_r4": {
+    "category": "Targeted Module Experiments",
+    "path": "results/primal_r4",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "primal_r8": {
+    "category": "Targeted Module Experiments",
+    "path": "results/primal_r8",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "queued_come_distil": {
+    "category": "Targeted Module Experiments",
+    "path": "results/queued_come_distil",
+    "num_subdirs": 1,
+    "num_csvs": 4,
+    "num_jsons": 8,
+    "has_summary_csv": true,
+    "summary_files": [
+      "come/rank_curve.csv",
+      "come/rank_384/summary.csv",
+      "come/rank_256/summary.csv"
+    ]
+  },
+  "queued_come_roberta": {
+    "category": "Targeted Module Experiments",
+    "path": "results/queued_come_roberta",
+    "num_subdirs": 1,
+    "num_csvs": 5,
+    "num_jsons": 12,
+    "has_summary_csv": true,
+    "summary_files": [
+      "come/rank_curve.csv",
+      "come/rank_384/summary.csv",
+      "come/rank_128/summary.csv"
+    ]
+  },
+  "queued_cure_distil": {
+    "category": "Targeted Module Experiments",
+    "path": "results/queued_cure_distil",
+    "num_subdirs": 1,
+    "num_csvs": 4,
+    "num_jsons": 8,
+    "has_summary_csv": true,
+    "summary_files": [
+      "cure/rank_curve.csv",
+      "cure/rank_384/summary.csv",
+      "cure/rank_256/summary.csv"
+    ]
+  },
+  "queued_saes_roberta": {
+    "category": "Targeted Module Experiments",
+    "path": "results/queued_saes_roberta",
+    "num_subdirs": 1,
+    "num_csvs": 3,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "saes_svd/rank_curve.csv",
+      "saes_svd/rank_128/summary.csv"
+    ]
+  },
+  "qwen2.5_0.5b_instruct_sst2_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/qwen2.5_0.5b_instruct_sst2_sweep",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 6,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "rank128_bert": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank128_bert",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "rank256_bert": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank256_bert",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "rank32_bert": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank32_bert",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 5,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "rank64_bert": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank64_bert",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 5,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "rank_ablation": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank_ablation",
+    "num_subdirs": 18,
+    "num_csvs": 24,
+    "num_jsons": 762,
+    "has_summary_csv": true,
+    "summary_files": [
+      "lora0_mnli/summary.csv",
+      "lora0_agnews/summary.csv",
+      "sst2_rank128/summary.csv"
+    ]
+  },
+  "rank_sweep": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank_sweep",
+    "num_subdirs": 3,
+    "num_csvs": 4,
+    "num_jsons": 6,
+    "has_summary_csv": true,
+    "summary_files": [
+      "roberta_test_lr5e5/summary.csv"
+    ]
+  },
+  "rank_sweep_agnews": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank_sweep_agnews",
+    "num_subdirs": 3,
+    "num_csvs": 4,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "cluster_attention/rank_curve.csv",
+      "armor_pruner/rank_curve.csv",
+      "armor_pruner/rank_128/summary.csv"
+    ]
+  },
+  "rank_sweep_gpt2": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank_sweep_gpt2",
+    "num_subdirs": 6,
+    "num_csvs": 30,
+    "num_jsons": 245,
+    "has_summary_csv": true,
+    "summary_files": [
+      "svd_llm_compressor/rank_16/summary.csv",
+      "svd_llm_compressor/rank_32/summary.csv",
+      "svd_llm_compressor/rank_128/summary.csv"
+    ]
+  },
+  "rank_sweep_mnli": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank_sweep_mnli",
+    "num_subdirs": 4,
+    "num_csvs": 7,
+    "num_jsons": 7,
+    "has_summary_csv": true,
+    "summary_files": [
+      "svd_llm_compressor/rank_curve.csv",
+      "adasvd_compressor/rank_curve.csv",
+      "cluster_attention/rank_256/summary.csv"
+    ]
+  },
+  "rank_sweep_roberta": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank_sweep_roberta",
+    "num_subdirs": 7,
+    "num_csvs": 42,
+    "num_jsons": 393,
+    "has_summary_csv": true,
+    "summary_files": [
+      "svd_llm_compressor/rank_16/summary.csv",
+      "svd_llm_compressor/rank_32/summary.csv",
+      "svd_llm_compressor/rank_384/summary.csv"
+    ]
+  },
+  "rank_sweep_sst2": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/rank_sweep_sst2",
+    "num_subdirs": 7,
+    "num_csvs": 43,
+    "num_jsons": 319,
+    "has_summary_csv": true,
+    "summary_files": [
+      "svd_llm_compressor/rank_16/summary.csv",
+      "svd_llm_compressor/rank_32/summary.csv",
+      "svd_llm_compressor/rank_384/summary.csv"
+    ]
+  },
+  "regla_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/regla_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "replace_gpt2_r32": {
+    "category": "Targeted Module Experiments",
+    "path": "results/replace_gpt2_r32",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "replace_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/replace_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "results": {
+    "category": "Targeted Module Experiments",
+    "path": "results/results",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "retest_heavy_modules": {
+    "category": "Targeted Module Experiments",
+    "path": "results/retest_heavy_modules",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "roberta": {
+    "category": "Targeted Module Experiments",
+    "path": "results/roberta",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "roberta_base_ag_news_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/roberta_base_ag_news_sweep",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "roberta_mnli_baseline": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/roberta_mnli_baseline",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "roberta_sst2_lora_baseline": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/roberta_sst2_lora_baseline",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "roberta_sst2_sst2_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/roberta_sst2_sst2_sweep",
+    "num_subdirs": 1,
+    "num_csvs": 264,
+    "num_jsons": 292,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_all_broken_fix": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_all_broken_fix",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_broken_fix": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_broken_fix",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_final_verified": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_final_verified",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_final_verified_v2": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_final_verified_v2",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_20260826_175056": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_20260826_175056",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_20260828_023053": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_20260828_023053",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_all_screening": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_all_screening",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_clean": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_clean",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_ep1": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_ep1",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_fast": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_fast",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_fixed_1": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_fixed_1",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_fixed_final": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_fixed_final",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_pretrained": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_pretrained",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_recovery": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_recovery",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_resume": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_resume",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_screening": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_screening",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "run_quality_screening_fast": {
+    "category": "Targeted Module Experiments",
+    "path": "results/run_quality_screening_fast",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "samba_m3_r128": {
+    "category": "Targeted Module Experiments",
+    "path": "results/samba_m3_r128",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "samba_m3_r16": {
+    "category": "Targeted Module Experiments",
+    "path": "results/samba_m3_r16",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "samba_m3_r32": {
+    "category": "Targeted Module Experiments",
+    "path": "results/samba_m3_r32",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "samba_m3_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/samba_m3_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "samba_moe_r16": {
+    "category": "Targeted Module Experiments",
+    "path": "results/samba_moe_r16",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "seqlen_48h": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/seqlen_48h",
+    "num_subdirs": 6,
+    "num_csvs": 18,
+    "num_jsons": 67,
+    "has_summary_csv": true,
+    "summary_files": [
+      "simple_ssm/seq_128/summary.csv",
+      "simple_ssm/seq_256/summary.csv",
+      "simple_ssm/seq_512/summary.csv"
+    ]
+  },
+  "seqlen_scaling": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/seqlen_scaling",
+    "num_subdirs": 13,
+    "num_csvs": 13,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "full_attention/summary.csv",
+      "svd_linear_attention/summary.csv",
+      "linformer_attention/summary.csv"
+    ]
+  },
+  "seqlen_scaling_v2": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/seqlen_scaling_v2",
+    "num_subdirs": 3,
+    "num_csvs": 3,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "full_attention/summary.csv",
+      "cosformer/summary.csv",
+      "performer_attention/summary.csv"
+    ]
+  },
+  "seqlen_scaling_v2_linformer": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/seqlen_scaling_v2_linformer",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "linformer_attention/summary.csv"
+    ]
+  },
+  "slicegpt_fixed": {
+    "category": "Targeted Module Experiments",
+    "path": "results/slicegpt_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 5,
+    "num_jsons": 12,
+    "has_summary_csv": true,
+    "summary_files": [
+      "slicegpt/rank_curve.csv",
+      "slicegpt/rank_128/summary.csv",
+      "slicegpt/rank_256/summary.csv"
+    ]
+  },
+  "slicegpt_real_s60": {
+    "category": "Targeted Module Experiments",
+    "path": "results/slicegpt_real_s60",
+    "num_subdirs": 1,
+    "num_csvs": 5,
+    "num_jsons": 12,
+    "has_summary_csv": true,
+    "summary_files": [
+      "slicegpt/rank_curve.csv",
+      "slicegpt/rank_128/summary.csv",
+      "slicegpt/rank_256/summary.csv"
+    ]
+  },
+  "smoke_test_hgrn2_layer": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/smoke_test_hgrn2_layer",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "smoke_test_hgrn2_layer_with_recovery": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/smoke_test_hgrn2_layer_with_recovery",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "smoke_test_replace": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/smoke_test_replace",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "smoke_test_swift_svd_act": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/smoke_test_swift_svd_act",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "svd_projectmodelsdistilbert_mnli_full_mnli_sweep": {
+    "category": "Targeted Module Experiments",
+    "path": "results/svd_projectmodelsdistilbert_mnli_full_mnli_sweep",
+    "num_subdirs": 0,
+    "num_csvs": 16,
+    "num_jsons": 0,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "t5_cola_parallel": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/t5_cola_parallel",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "t5_cola_stsb_fast": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/t5_cola_stsb_fast",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "t5_cola_stsb_maxgpu": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/t5_cola_stsb_maxgpu",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "t5_cola_stsb_offline": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/t5_cola_stsb_offline",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "t5_sst2_attention_compat_final": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/t5_sst2_attention_compat_final",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "t5_sst2_full_sweep_fixed_v3": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/t5_sst2_full_sweep_fixed_v3",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "t5_sst2_recovery": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/t5_sst2_recovery",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "t5_sst2_sweep": {
+    "category": "Model/GLUE Classification Sweeps",
+    "path": "results/t5_sst2_sweep",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 0,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_adasvd_gpt2": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_adasvd_gpt2",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_agnews_600steps": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_agnews_600steps",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_agnews_baseline": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_agnews_baseline",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_agnews_svd": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_agnews_svd",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_baseline_agnews": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_baseline_agnews",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 1,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_baseline_mnli": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_baseline_mnli",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_batch": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_batch",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 2,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "test_bs128": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_bs128",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_bs256": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_bs256",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_bs32": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_bs32",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_c4_a3": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/test_c4_a3",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_c4_a3_r128": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/test_c4_a3_r128",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 2,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "test_c4_adasvd": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/test_c4_adasvd",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_c4_adasvd_r128": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/test_c4_adasvd_r128",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_c4_adasvd_r384": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/test_c4_adasvd_r384",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "test_c4_slicegpt": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/test_c4_slicegpt",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_fail_below_chance": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_fail_below_chance",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_gpt2_base": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_gpt2_base",
+    "num_subdirs": 1,
+    "num_csvs": 0,
+    "num_jsons": 4,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "test_gpt2_base_clean": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_gpt2_base_clean",
+    "num_subdirs": 1,
+    "num_csvs": 0,
+    "num_jsons": 3,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "test_local": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_local",
+    "num_subdirs": 2,
+    "num_csvs": 1,
+    "num_jsons": 9,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_local_final": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_local_final",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_memory_safe": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_memory_safe",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 3,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "test_mnli_distilbert": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_mnli_distilbert",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_perf": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_perf",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 2,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "test_replace_fixed": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_replace_fixed",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_replace_rank0": {
+    "category": "Rank Sweeps & SVD Scaling",
+    "path": "results/test_replace_rank0",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_replace_recovery": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_replace_recovery",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_roberta_base": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_roberta_base",
+    "num_subdirs": 1,
+    "num_csvs": 0,
+    "num_jsons": 3,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "test_run": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_run",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 4,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_seqlen_scaling": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/test_seqlen_scaling",
+    "num_subdirs": 0,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_ssm_stsb": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_ssm_stsb",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "test_zeroshot": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/test_zeroshot",
+    "num_subdirs": 0,
+    "num_csvs": 0,
+    "num_jsons": 1,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "token_compressed_r64": {
+    "category": "Targeted Module Experiments",
+    "path": "results/token_compressed_r64",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "tpa_cp": {
+    "category": "Targeted Module Experiments",
+    "path": "results/tpa_cp",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "tpa_r8": {
+    "category": "Targeted Module Experiments",
+    "path": "results/tpa_r8",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "tpa_roberta_r8": {
+    "category": "Targeted Module Experiments",
+    "path": "results/tpa_roberta_r8",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "tpa_test": {
+    "category": "Diagnostics & Smoke Tests",
+    "path": "results/tpa_test",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 3,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "verification_fixed_modules": {
+    "category": "Targeted Module Experiments",
+    "path": "results/verification_fixed_modules",
+    "num_subdirs": 1,
+    "num_csvs": 1,
+    "num_jsons": 2,
+    "has_summary_csv": true,
+    "summary_files": [
+      "summary.csv"
+    ]
+  },
+  "wikitext": {
+    "category": "Perplexity & Long-Context Scaling",
+    "path": "results/wikitext",
+    "num_subdirs": 46,
+    "num_csvs": 0,
+    "num_jsons": 52,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "zeroshot": {
+    "category": "Zero-Shot Reasoning Suite",
+    "path": "results/zeroshot",
+    "num_subdirs": 7,
+    "num_csvs": 0,
+    "num_jsons": 7,
+    "has_summary_csv": false,
+    "summary_files": []
+  },
+  "zeroshot_parallel": {
+    "category": "Zero-Shot Reasoning Suite",
+    "path": "results/zeroshot_parallel",
+    "num_subdirs": 40,
+    "num_csvs": 0,
+    "num_jsons": 414,
+    "has_summary_csv": false,
+    "summary_files": []
+  }
+}

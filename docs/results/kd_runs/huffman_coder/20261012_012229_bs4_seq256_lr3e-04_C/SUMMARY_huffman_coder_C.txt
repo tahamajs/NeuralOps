@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: huffman_coder / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.44 M
+  Trainable params:  28.35 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        1170049.0700
+  Post-KD PPL:       1170049.0700
+  Stage 1 (KD) PPL:  1170049.0700
+  Stage 2 (Self) PPL:1170049.0700
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         32312.8713
+  Recovery:          0.00%
+  Peak VRAM:         581.99 MB
+  Train time:        0.01 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0100
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.6633
+  Repetition-3:      0.0521
+  Train PPL:         1775249.5500
+  Test PPL:          1170049.0700
+  Overfit Gap:       -605200.48
+  Latency (mean):    213.71 ms
+  Latency (std):     9.64 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        d3c20fc7a43b
+
+TRAINING HISTORY (last 10 steps):

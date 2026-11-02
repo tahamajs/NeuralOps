@@ -1,0 +1,26 @@
+{
+  "module_name": "tomoe_compressor",
+  "class_name": "ToMoECompressor",
+  "category": "compression",
+  "family": "Optimal Subspace Projection & Latent Dimensionality Reduction",
+  "params": [
+    "original",
+    "num_experts",
+    "top_k",
+    "model"
+  ],
+  "ops": [
+    "topk",
+    "softmax"
+  ],
+  "docstring": "Converts FFN layers into Mixture of Experts via weight clustering.\n\nArgs:\n    model: PyTorch model.\n    num_experts: number of experts per MoE layer (default 4).\n    top_k: number of active experts per token (default 2).",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 8,
+  "top_k": 2,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.1427957220252579e+38,
+  "paradigm": "subspace",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

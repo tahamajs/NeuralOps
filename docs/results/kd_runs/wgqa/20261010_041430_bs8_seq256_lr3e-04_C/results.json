@@ -1,0 +1,21 @@
+[
+  {
+    "method": "C",
+    "error": "Injection failed: Could not instantiate attention class WeightedGroupedQueryAttention",
+    "pre_ppl": NaN,
+    "post_ppl": NaN,
+    "post_ppl_stage1": NaN,
+    "post_ppl_stage2": NaN,
+    "recovery_pct": NaN,
+    "train_time_s": 0.0,
+    "peak_vram_mb": 0.0,
+    "cached": false,
+    "teacher_params": 124439808,
+    "student_params": 0,
+    "trainable_params": 0,
+    "batch_size": 8,
+    "seq_len": 256,
+    "learning_rate": 0.0003,
+    "recovery_steps": 300
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "batch_size": 2,
+  "num_heads": 4,
+  "seq_len": 128,
+  "head_dim": 64,
+  "mha_latency_s": 0.002067324999916309,
+  "linear_latency_s": 0.002585200000066834,
+  "speedup": 0.8
+}

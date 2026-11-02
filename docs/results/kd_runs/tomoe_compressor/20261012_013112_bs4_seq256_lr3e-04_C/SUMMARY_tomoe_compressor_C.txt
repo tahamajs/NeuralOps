@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: tomoe_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.66 M
+  Trainable params:  28.39 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        78224.9400
+  Post-KD PPL:       78224.9400
+  Stage 1 (KD) PPL:  78224.9400
+  Stage 2 (Self) PPL:78224.9400
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         2160.3132
+  Recovery:          0.00%
+  Peak VRAM:         750.24 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.3571
+  Repetition-3:      0.5625
+  Train PPL:         73723.9400
+  Test PPL:          78224.9400
+  Overfit Gap:       4501.00
+  Latency (mean):    496.74 ms
+  Latency (std):     9.19 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        1143ec379d88
+
+TRAINING HISTORY (last 10 steps):

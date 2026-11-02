@@ -1,0 +1,33 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:90ab0eb7-fcfd-4cd9-a696-b0a466ecec5e",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-08T20:32:00Z",
+    "component": {
+      "type": "library",
+      "name": "neuralops",
+      "version": "1.0.0",
+      "description": "Production-Grade Framework for Subquadratic Attention and Model Compression"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "torch",
+      "version": "2.2.0"
+    },
+    {
+      "type": "library",
+      "name": "transformers",
+      "version": "4.40.0"
+    },
+    {
+      "type": "library",
+      "name": "numpy",
+      "version": "1.26.0"
+    }
+  ]
+}

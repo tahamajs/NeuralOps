@@ -1,0 +1,98 @@
+{
+  "module_name": "triton_spectral_entropy_svd_gate",
+  "category": "triton_kernel",
+  "family": "sram-fused-kernel",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "d14d80e951",
+  "latest_timestamp": "2026-10-17T21:54:09.661090+00:00",
+  "latest_record": {
+    "record_id": "aabf6bda3be2bf7f",
+    "module_name": "triton_spectral_entropy_svd_gate",
+    "category": "triton_kernel",
+    "family": "sram-fused-kernel",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-17T21:54:09.661090+00:00",
+    "git_commit_sha": "d14d80e951",
+    "generation_method": {
+      "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+      "source_artifact": "results/triton_13_flagship_kernels_benchmark.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "target_modules": "entropy_budget_allocation"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.029154560565948485,
+      "latency_pytorch_ms": 0.035285120010375974,
+      "speedup_x": 1.2102778887906742,
+      "cosine_sim": 0.9999998807907104,
+      "peak_vram_mb": 50.90234375,
+      "relative_error": 0.0005021325196139514
+    },
+    "notes": "Target: entropy_budget_allocation"
+  },
+  "active_records": [
+    {
+      "record_id": "aabf6bda3be2bf7f",
+      "module_name": "triton_spectral_entropy_svd_gate",
+      "category": "triton_kernel",
+      "family": "sram-fused-kernel",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T21:54:09.661090+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+        "source_artifact": "results/triton_13_flagship_kernels_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "target_modules": "entropy_budget_allocation"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.029154560565948485,
+        "latency_pytorch_ms": 0.035285120010375974,
+        "speedup_x": 1.2102778887906742,
+        "cosine_sim": 0.9999998807907104,
+        "peak_vram_mb": 50.90234375,
+        "relative_error": 0.0005021325196139514
+      },
+      "notes": "Target: entropy_budget_allocation"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "aabf6bda3be2bf7f",
+      "module_name": "triton_spectral_entropy_svd_gate",
+      "category": "triton_kernel",
+      "family": "sram-fused-kernel",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T21:54:09.661090+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Compiled Triton JIT Kernel w/ CUDA Event Timing (SM 8.9)",
+        "source_artifact": "results/triton_13_flagship_kernels_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "target_modules": "entropy_budget_allocation"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.029154560565948485,
+        "latency_pytorch_ms": 0.035285120010375974,
+        "speedup_x": 1.2102778887906742,
+        "cosine_sim": 0.9999998807907104,
+        "peak_vram_mb": 50.90234375,
+        "relative_error": 0.0005021325196139514
+      },
+      "notes": "Target: entropy_budget_allocation"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+module,dataset,status,zero_shot_acc,zero_shot_f1,post_recovery_acc,post_recovery_f1,delta_acc,quality_gate
+asvd_attention,sst2,PASS,91.0,0.9168,91.0,0.9171,0.0,PASS
+svd_llm_v2_attention,sst2,FAIL,75.8,0.7888,79.8,0.7984,4.0,FAIL (<80%)
+adaptive_svd_attention,sst2,PASS,79.2,0.8143,82.4,0.8327,3.2,PASS
+squeezing_heads,sst2,PASS,89.8,0.8998,90.4,0.9101,0.6,PASS
+gqa_attention,sst2,PASS,89.8,0.8998,90.2,0.9088,0.4,PASS
+primal_attention,sst2,PASS,87.6,0.8798,86.0,0.8638,-1.6,PASS
+svd_linear_attention,sst2,PASS,79.2,0.8143,81.4,0.8158,2.2,PASS
+mamba_svd_flash,sst2,PASS,89.0,0.8902,89.0,0.8902,0.0,PASS
+res_svd,sst2,FAIL,78.8,0.8059,79.8,0.8112,1.0,FAIL (<80%)
+lora_attention,sst2,PASS,89.8,0.8998,90.4,0.9104,0.6,PASS
+squeezing_heads_distill,sst2,PASS,89.8,0.8998,90.8,0.9135,1.0,PASS
+fusion_attn,sst2,PASS,89.8,0.8998,90.6,0.9112,0.8,PASS
+fused_svd_kernel,sst2,FAIL,52.8,0.2027,60.4,0.7219,7.6,FAIL (<80%)
+flash_attention3,sst2,PASS,89.8,0.8998,90.4,0.9087,0.6,PASS
+spectron,sst2,PASS,79.6,0.7773,82.4,0.8423,2.8,PASS

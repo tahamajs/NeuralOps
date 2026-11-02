@@ -1,0 +1,37 @@
+% Auto-generated Low-Rank SVD vs RPCA Sparse SVD Scaling LaTeX Tables on RTX 4070 (Ada Lovelace SM 8.9)
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Decomposition} & \textbf{Seq Len $L$} & \textbf{Rank $R$} & \textbf{CUDA (ms)} & \textbf{PyTorch (ms)} & \textbf{Speedup} & \textbf{Peak VRAM (MB)} & $\mathbf{\max |\nabla_X - \nabla_X^{\text{ref}}|}$ & \textbf{Status} \\
+\midrule
+low_rank_svd & 1024 & 16 & 0.1904 & 0.1404 & 0.74x & 26.6 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 1024 & 16 & 2.0491 & 0.1211 & 0.06x & 38.75 & 0.00e+00 & PASS \\
+low_rank_svd & 1024 & 32 & 0.1605 & 0.1384 & 0.86x & 47.07 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 1024 & 32 & 3.3623 & 0.1088 & 0.03x & 47.5 & 0.00e+00 & PASS \\
+low_rank_svd & 1024 & 64 & 0.153 & 0.1374 & 0.90x & 47.88 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 1024 & 64 & 6.4898 & 0.1126 & 0.02x & 48.75 & 0.00e+00 & PASS \\
+low_rank_svd & 1024 & 128 & 0.1513 & 0.142 & 0.94x & 49.5 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 1024 & 128 & 0.5249 & 0.1031 & 0.20x & 51.5 & 0.00e+00 & PASS \\
+low_rank_svd & 2048 & 16 & 0.2223 & 0.1383 & 0.62x & 57.79 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 2048 & 16 & 3.2931 & 0.1129 & 0.03x & 67.82 & 0.00e+00 & PASS \\
+low_rank_svd & 2048 & 32 & 0.1552 & 0.1423 & 0.92x & 77.13 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 2048 & 32 & 6.4814 & 0.1126 & 0.02x & 77.5 & 0.00e+00 & PASS \\
+low_rank_svd & 2048 & 64 & 0.1519 & 0.1439 & 0.95x & 78.0 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 2048 & 64 & 12.8557 & 0.1239 & 0.01x & 78.75 & 0.00e+00 & PASS \\
+low_rank_svd & 2048 & 128 & 0.1939 & 0.1737 & 0.90x & 79.75 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 2048 & 128 & 0.9627 & 0.1526 & 0.16x & 81.75 & 0.00e+00 & PASS \\
+low_rank_svd & 4096 & 16 & 0.2881 & 0.2257 & 0.78x & 96.16 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 4096 & 16 & 6.6109 & 0.1861 & 0.03x & 117.94 & 0.00e+00 & PASS \\
+low_rank_svd & 4096 & 32 & 0.3034 & 0.2338 & 0.77x & 137.25 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 4096 & 32 & 12.9595 & 0.2103 & 0.02x & 137.5 & 0.00e+00 & PASS \\
+low_rank_svd & 4096 & 64 & 0.3299 & 0.2649 & 0.80x & 138.25 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 4096 & 64 & 25.7066 & 0.2416 & 0.01x & 138.75 & 0.00e+00 & PASS \\
+low_rank_svd & 4096 & 128 & 0.4328 & 0.3797 & 0.88x & 140.25 & 0.00e+00 & PASS \\
+rpca_sparse_svd & 4096 & 128 & 1.9422 & 0.3375 & 0.17x & 142.25 & 0.00e+00 & PASS \\
+\bottomrule
+\end{tabular}
+\caption{Empirical evaluation of low-rank SVD decomposition vs truncated RPCA sparse SVD decomposition under dynamic rank expansion ($R \in \{16, 32, 64, 128\}$) across sequence lengths $L \in \{1024, 2048, 4096\}$ on NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, 8GB VRAM). Parity certified with zero NaNs/Infs.}
+\label{tab:svd_rpca_rank_scaling}
+\end{table*}

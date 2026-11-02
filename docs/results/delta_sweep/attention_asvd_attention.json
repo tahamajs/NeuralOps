@@ -1,0 +1,12 @@
+{
+  "module": "asvd_attention",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 110.91,
+  "student_ppl": 147.12,
+  "pre_ppl": 147.12,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.291104"
+}

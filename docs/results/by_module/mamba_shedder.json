@@ -1,0 +1,320 @@
+{
+  "module_name": "mamba_shedder",
+  "category": "attention",
+  "family": "general",
+  "total_runs": 5,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "d14d80e951",
+  "latest_timestamp": "2026-10-18T14:31:44.080764+00:00",
+  "latest_record": {
+    "record_id": "31e9cc3525cf8cef",
+    "module_name": "mamba_shedder",
+    "category": "attention",
+    "family": "general",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T14:31:44.080764+00:00",
+    "git_commit_sha": "d14d80e951",
+    "generation_method": {
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
+    },
+    "experimental_setup": {
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
+    },
+    "metrics": {
+      "accuracy": 90.48,
+      "roberta_acc": 85.44,
+      "gpt2_acc": 60.78,
+      "latency_ms": 83.8
+    },
+    "notes": "Master Aggregated Results"
+  },
+  "active_records": [
+    {
+      "record_id": "e7b2c6ecfe1f3824",
+      "module_name": "mamba_shedder",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:12:29.124350",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/mamba_shedder/checkpoints/mamba_shedder/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9079,
+        "val_loss": 0.3069,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 62220.5,
+        "latency_ms": 10030.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "95c36379c6c90989",
+      "module_name": "mamba_shedder",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:13:14.299097",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/mamba_shedder/checkpoints/mamba_shedder/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.04,
+        "f1": 0.9414,
+        "val_loss": 0.1879,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 123452.22,
+        "latency_ms": 13620.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "b6b2d2415a93714e",
+      "module_name": "mamba_shedder",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T13:53:23.695997+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 48.0,
+        "f1": 0.0,
+        "val_loss": 0.6931,
+        "param_reduction_pct": 13.67,
+        "compression_ratio": 1.1583,
+        "peak_vram_mb": 1191.4,
+        "latency_ms": 2460.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
+      "record_id": "e68456976fdb79ce",
+      "module_name": "mamba_shedder",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T02:46:18.831408+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 1.42,
+        "relative_error": 0.1128
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "31e9cc3525cf8cef",
+      "module_name": "mamba_shedder",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T14:31:44.080764+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "roberta_acc": 85.44,
+        "gpt2_acc": 60.78,
+        "latency_ms": 83.8
+      },
+      "notes": "Master Aggregated Results"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "e7b2c6ecfe1f3824",
+      "module_name": "mamba_shedder",
+      "category": "attention",
+      "family": "bert",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:12:29.124350",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_distilbert/mamba_shedder/checkpoints/mamba_shedder/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/distilbert_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 90.6,
+        "f1": 0.9079,
+        "val_loss": 0.3069,
+        "peak_vram_mb": 456.97,
+        "throughput_tok_s": 62220.5,
+        "latency_ms": 10030.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "95c36379c6c90989",
+      "module_name": "mamba_shedder",
+      "category": "attention",
+      "family": "roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-09-25T11:13:14.299097",
+      "git_commit_sha": "866fe45a1a",
+      "generation_method": {
+        "algorithm": "Calibration Sweep Record",
+        "source_artifact": "results/07_misc_tests/batch3_roberta/mamba_shedder/checkpoints/mamba_shedder/summary_record.json"
+      },
+      "experimental_setup": {
+        "backbone": "models/roberta_sst2",
+        "dataset": "sst2"
+      },
+      "metrics": {
+        "accuracy": 94.04,
+        "f1": 0.9414,
+        "val_loss": 0.1879,
+        "peak_vram_mb": 457.08,
+        "throughput_tok_s": 123452.22,
+        "latency_ms": 13620.0,
+        "compression_ratio": 1.0,
+        "param_reduction_pct": 0.0
+      },
+      "notes": "Status: PASS_NO_COMPRESSION"
+    },
+    {
+      "record_id": "b6b2d2415a93714e",
+      "module_name": "mamba_shedder",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T13:53:23.695997+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 48.0,
+        "f1": 0.0,
+        "val_loss": 0.6931,
+        "param_reduction_pct": 13.67,
+        "compression_ratio": 1.1583,
+        "peak_vram_mb": 1191.4,
+        "latency_ms": 2460.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
+      "record_id": "e68456976fdb79ce",
+      "module_name": "mamba_shedder",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T02:46:18.831408+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 1.42,
+        "relative_error": 0.1128
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "31e9cc3525cf8cef",
+      "module_name": "mamba_shedder",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T14:31:44.080764+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 90.48,
+        "roberta_acc": 85.44,
+        "gpt2_acc": 60.78,
+        "latency_ms": 83.8
+      },
+      "notes": "Master Aggregated Results"
+    }
+  ]
+}

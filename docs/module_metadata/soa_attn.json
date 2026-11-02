@@ -1,0 +1,29 @@
+{
+  "module_name": "soa_attn",
+  "class_name": "SOAAttention",
+  "category": "attention",
+  "family": "Hardware-Fused, Low-Precision & Spectral-Transform Attentions",
+  "params": [
+    "model_config",
+    "k_rank",
+    "dropout",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "matmul",
+    "view"
+  ],
+  "docstring": "Shared Orthogonal Attention (SOA) with Per-Projection Latent Bottlenecks. Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) - GPT-2 (Causal Decoder with Conv1D) - Qwen / LLaMA (GQA with Rotary Position Embeddings)",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.2160902782605375e+38,
+  "paradigm": "hardware",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

@@ -1,0 +1,11 @@
+{
+  "module": "slicegpt_pca",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 11173.25,
+  "duration_sec": 232.2,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:57:27"
+}

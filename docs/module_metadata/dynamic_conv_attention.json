@@ -1,0 +1,25 @@
+{
+  "module_name": "dynamic_conv_attention",
+  "class_name": "DynamicConvAttention",
+  "category": "attention",
+  "family": "Block-Sparse, Dilated & Sliding-Window Attentions",
+  "paradigm": "sparse",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Dynamic Conv Attention operator from the Block-Sparse, Dilated & Sliding-Window Attentions family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

@@ -1,0 +1,11 @@
+{
+  "module": "saes_svd_v2",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 9872.75,
+  "duration_sec": 195.0,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:44:39"
+}

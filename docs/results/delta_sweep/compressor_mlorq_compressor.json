@@ -1,0 +1,11 @@
+{
+  "module": "mlorq_compressor",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 39.25,
+  "duration_sec": 212.8,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:13:05"
+}

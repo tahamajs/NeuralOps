@@ -1,0 +1,33 @@
+{
+  "module_name": "subspace_projection",
+  "class_name": "SubspaceProjectionCompressor",
+  "category": "compression",
+  "family": "Optimal Subspace Projection & Latent Dimensionality Reduction",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "dtype",
+    "device",
+    "model",
+    "method",
+    "cfg",
+    "target_layers"
+  ],
+  "ops": [
+    "reshape",
+    "linear",
+    "view"
+  ],
+  "docstring": "Subspace Projection Compression Engine.\nCompresses neural networks by projecting weight matrices onto their principal\nsubspaces, replacing dense linear layers with factorized SubspaceLinear modules.\n\nArgs:\n    model: PyTorch model to compress.\n    rank: Subspace rank.\n    method: Subspace decomposition algorithm ('svd', 'randomized', 'pca').\n    cfg: Optional configuration object.\n    target_layers: Optional layer name filter.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 7.42827975994014e+37,
+  "paradigm": "subspace",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

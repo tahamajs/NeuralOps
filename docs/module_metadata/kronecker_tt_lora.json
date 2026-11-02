@@ -1,0 +1,37 @@
+{
+  "module_name": "kronecker_tt_lora",
+  "class_name": "KroneckerTTLoRACompressor",
+  "category": "compression",
+  "family": "Tensor Decomposition (Tensor-Train, Tucker & Kronecker)",
+  "params": [
+    "base_layer",
+    "m1",
+    "n1",
+    "m2",
+    "n2",
+    "tt_shapes",
+    "tt_ranks",
+    "gamma",
+    "lora_r",
+    "lora_alpha",
+    "r_min",
+    "r_max",
+    "entropy_threshold",
+    "model",
+    "rank",
+    "cfg"
+  ],
+  "ops": [
+    "linear"
+  ],
+  "docstring": "Compressor wrapper to apply Kronecker-TT-LoRA adapters to linear layers.\nInherits from BaseCompressor.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 8.629227310583058e+37,
+  "paradigm": "tensor_decomp",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

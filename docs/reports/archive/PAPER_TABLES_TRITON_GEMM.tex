@@ -1,0 +1,31 @@
+% Auto-generated Triton LaTeX Benchmark Tables on RTX 4070 (Ada Lovelace, SM 8.9)
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Triton Module} & \textbf{Dimension $N$} & \textbf{Rank $R$} & \textbf{Fwd (ms)} & \textbf{Bwd (ms)} & \textbf{Total (ms)} & \textbf{Speedup} & \textbf{Peak VRAM (MB)} & $\mathbf{\max |\nabla - \nabla_{\text{ref}}|}$ \\
+\midrule
+fused\_ce & 32000 & - & 1.2065 & 6.7763 & 7.9828 & 0.43x & 882.01 & 6.82e-13 \\
+fused\_ce & 64000 & - & 2.3757 & 13.5840 & 15.9597 & 0.46x & 2002.01 & 3.41e-13 \\
+fused\_ce & 128256 & - & 6.5715 & 29.0480 & 35.6195 & 0.48x & 4014.01 & 2.84e-13 \\
+low\_rank & 1024 & 16 & 0.0518 & 0.1672 & 0.2190 & 0.54x & 2017.23 & 5.00e-01 \\
+low\_rank & 1024 & 32 & 0.0492 & 0.1582 & 0.2074 & 0.56x & 2025.70 & 5.00e-01 \\
+low\_rank & 1024 & 64 & 0.0518 & 0.1646 & 0.2164 & 0.49x & 2025.89 & 0.00e+00 \\
+low\_rank & 4096 & 16 & 0.0386 & 0.1494 & 0.1879 & 0.50x & 2028.05 & 1.00e+00 \\
+low\_rank & 4096 & 32 & 0.0379 & 0.1521 & 0.1900 & 0.50x & 2028.34 & 1.00e+00 \\
+low\_rank & 4096 & 64 & 0.0382 & 0.1525 & 0.1907 & 0.52x & 2028.90 & 1.00e+00 \\
+low\_rank & 16384 & 16 & 0.0399 & 0.1550 & 0.1949 & 0.55x & 2037.85 & 1.00e+00 \\
+low\_rank & 16384 & 32 & 0.0447 & 0.1551 & 0.1998 & 0.52x & 2038.88 & 2.00e+00 \\
+low\_rank & 16384 & 64 & 0.0765 & 1.5862 & 1.6627 & 0.69x & 2040.95 & 2.00e+00 \\
+softplus & 1024 & - & 0.0172 & 0.0585 & 0.0757 & 0.62x & 2029.32 & 9.77e-04 \\
+softplus & 4096 & - & 0.0156 & 0.0580 & 0.0736 & 0.41x & 2031.20 & 9.77e-04 \\
+softplus & 16384 & - & 0.0156 & 0.0591 & 0.0747 & 0.36x & 2039.45 & 9.77e-04 \\
+softplus & 65536 & - & 0.0193 & 0.0317 & 0.0510 & 0.89x & 2072.45 & 9.77e-04 \\
+fused\_norm\_linear & 1024 & - & 0.0208 & 0.1991 & 0.2199 & 0.37x & 2047.70 & 1.25e-01 \\
+fused\_norm\_linear & 4096 & - & 0.0223 & 0.1932 & 0.2155 & 0.38x & 2040.20 & 2.50e-01 \\
+\bottomrule
+\end{tabular}
+\caption{Comprehensive Triton Forward/Backward Autograd Benchmark and Speedup on NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, CUDA 12.8, Triton 3.2.0).}
+\label{tab:triton_gemm_benchmarks}
+\end{table*}

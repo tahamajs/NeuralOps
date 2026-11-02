@@ -1,0 +1,27 @@
+{
+  "module_name": "uniql_compressor",
+  "class_name": "UniQLCompressor",
+  "category": "compression",
+  "family": "Quantization & Integer Codebooks",
+  "params": [
+    "model",
+    "rank",
+    "bits"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "UniQL: Joint low-rank + uniform quantization compressor.  Registered as 'uniql', 'uniql_compressor', 'uniql_factory'.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.475646605009071e+38,
+  "paradigm": "quant",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

@@ -1,0 +1,30 @@
+{
+  "module_name": "huffman_coder",
+  "class_name": "HuffmanCompressor",
+  "category": "compression",
+  "family": "Quantization & Integer Codebooks",
+  "params": [
+    "symbol",
+    "freq",
+    "left",
+    "right",
+    "model",
+    "quantize_bits"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "HuffmanCompressor: Model-wide entropy compression profiler and simulator.\n\nArgs:\n    model: PyTorch model.\n    quantize_bits: Pre-quantization bit-width before Huffman encoding (default 8).",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.6696000457363751e+38,
+  "paradigm": "quant",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

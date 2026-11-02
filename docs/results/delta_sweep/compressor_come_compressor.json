@@ -1,0 +1,11 @@
+{
+  "module": "come_compressor",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 117.91,
+  "duration_sec": 174.8,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:34:32"
+}

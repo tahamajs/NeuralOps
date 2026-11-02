@@ -1,0 +1,33 @@
+{
+  "module_name": "unified_rope",
+  "class_name": "UnifiedRoPE",
+  "category": "attention",
+  "family": "Modern Positional, Rotary & Geometric Attention Variants",
+  "params": [
+    "config",
+    "rank",
+    "dim",
+    "num_heads",
+    "max_seq_len",
+    "base",
+    "dropout",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "matmul",
+    "view"
+  ],
+  "docstring": "Universal Rotary Position Embedding Attention module.\n\nSubclasses :class:`BaseAttention` and applies rotary position embeddings to query and\nkey representations prior to dot-product attention computation.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.785259998456067e+38,
+  "paradigm": "positional",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

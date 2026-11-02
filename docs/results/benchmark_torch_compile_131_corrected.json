@@ -1,0 +1,94 @@
+{
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "cuda_version": "12.8",
+  "pytorch_version": "2.11.0+cu128",
+  "mode": "reduce-overhead",
+  "dynamic_shapes": true,
+  "seq_lens": [
+    128,
+    256,
+    512
+  ],
+  "total_canonical_modules": 2,
+  "total_deprecated_aliases": 6,
+  "modules": {
+    "adaptive_span_attention": {
+      "name": "adaptive_span_attention",
+      "status": "PASS",
+      "compile_status": "FULLY_COMPILED",
+      "reliability": "RELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.388,
+      "compiled_latency_ms": 0.449,
+      "speedup": 1.0,
+      "max_discrepancy": 6e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 4,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 4,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 4,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "adaptive_svd_attention": {
+      "name": "adaptive_svd_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.311,
+      "compiled_latency_ms": 0.759,
+      "speedup": 1.0,
+      "max_discrepancy": 7.2e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 14,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 7.2e-07
+        },
+        "256": {
+          "graphs": 14,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 14,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    }
+  },
+  "summary": {
+    "all_passed": false,
+    "total_canonical_modules": 2,
+    "total_recompilations": 0,
+    "zero_recompilations_guaranteed": true,
+    "zero_nan_guaranteed": true,
+    "zero_inf_guaranteed": true,
+    "average_speedup": 1.0
+  }
+}

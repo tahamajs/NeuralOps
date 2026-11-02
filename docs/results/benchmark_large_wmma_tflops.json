@@ -1,0 +1,290 @@
+[
+  {
+    "kernel": "quantized_fp8",
+    "shape": "(512,1024,1024)",
+    "dtype": "FP16",
+    "latency_ms": 2.249,
+    "tflops": 0.48,
+    "zero_nans": true,
+    "diff": 0.0625
+  },
+  {
+    "kernel": "quantized_fp8",
+    "shape": "(512,1024,1024)",
+    "dtype": "BF16",
+    "latency_ms": 2.1312,
+    "tflops": 0.5,
+    "zero_nans": true,
+    "diff": 0.5
+  },
+  {
+    "kernel": "quantized_fp8",
+    "shape": "(1024,2048,2048)",
+    "dtype": "FP16",
+    "latency_ms": 16.0755,
+    "tflops": 0.53,
+    "zero_nans": true,
+    "diff": 0.125
+  },
+  {
+    "kernel": "quantized_fp8",
+    "shape": "(1024,2048,2048)",
+    "dtype": "BF16",
+    "latency_ms": 16.205,
+    "tflops": 0.53,
+    "zero_nans": true,
+    "diff": 0.5
+  },
+  {
+    "kernel": "quantized_fp8",
+    "shape": "(1024,2048,4096)",
+    "dtype": "FP16",
+    "latency_ms": 33.3105,
+    "tflops": 0.52,
+    "zero_nans": true,
+    "diff": 0.125
+  },
+  {
+    "kernel": "quantized_fp8",
+    "shape": "(1024,2048,4096)",
+    "dtype": "BF16",
+    "latency_ms": 34.0488,
+    "tflops": 0.5,
+    "zero_nans": true,
+    "diff": 1.0
+  },
+  {
+    "kernel": "quantized_fp8",
+    "shape": "(2048,2048,2048)",
+    "dtype": "FP16",
+    "latency_ms": 31.8604,
+    "tflops": 0.54,
+    "zero_nans": true,
+    "diff": 0.125
+  },
+  {
+    "kernel": "quantized_fp8",
+    "shape": "(2048,2048,2048)",
+    "dtype": "BF16",
+    "latency_ms": 31.8604,
+    "tflops": 0.54,
+    "zero_nans": true,
+    "diff": 1.0
+  },
+  {
+    "kernel": "ternary_gemm",
+    "shape": "(512,1024,1024)",
+    "dtype": "FP16",
+    "latency_ms": 1.4495,
+    "tflops": 0.74,
+    "zero_nans": true,
+    "diff": 0.0009765625
+  },
+  {
+    "kernel": "ternary_gemm",
+    "shape": "(512,1024,1024)",
+    "dtype": "BF16",
+    "latency_ms": 1.6773,
+    "tflops": 0.64,
+    "zero_nans": true,
+    "diff": 0.00390625
+  },
+  {
+    "kernel": "ternary_gemm",
+    "shape": "(1024,2048,2048)",
+    "dtype": "FP16",
+    "latency_ms": 11.4603,
+    "tflops": 0.75,
+    "zero_nans": true,
+    "diff": 0.001953125
+  },
+  {
+    "kernel": "ternary_gemm",
+    "shape": "(1024,2048,2048)",
+    "dtype": "BF16",
+    "latency_ms": 12.6585,
+    "tflops": 0.68,
+    "zero_nans": true,
+    "diff": 0.0078125
+  },
+  {
+    "kernel": "ternary_gemm",
+    "shape": "(1024,2048,4096)",
+    "dtype": "FP16",
+    "latency_ms": 22.9582,
+    "tflops": 0.75,
+    "zero_nans": true,
+    "diff": 0.00390625
+  },
+  {
+    "kernel": "ternary_gemm",
+    "shape": "(1024,2048,4096)",
+    "dtype": "BF16",
+    "latency_ms": 25.4718,
+    "tflops": 0.67,
+    "zero_nans": true,
+    "diff": 0.015625
+  },
+  {
+    "kernel": "ternary_gemm",
+    "shape": "(2048,2048,2048)",
+    "dtype": "FP16",
+    "latency_ms": 22.9615,
+    "tflops": 0.75,
+    "zero_nans": true,
+    "diff": 0.001953125
+  },
+  {
+    "kernel": "ternary_gemm",
+    "shape": "(2048,2048,2048)",
+    "dtype": "BF16",
+    "latency_ms": 25.6672,
+    "tflops": 0.67,
+    "zero_nans": true,
+    "diff": 0.015625
+  },
+  {
+    "kernel": "lut_gemm",
+    "shape": "(512,1024,1024)",
+    "dtype": "FP16",
+    "latency_ms": 2.2534,
+    "tflops": 0.48,
+    "zero_nans": true,
+    "diff": 0.00048828125
+  },
+  {
+    "kernel": "lut_gemm",
+    "shape": "(512,1024,1024)",
+    "dtype": "BF16",
+    "latency_ms": 2.2865,
+    "tflops": 0.47,
+    "zero_nans": true,
+    "diff": 0.00390625
+  },
+  {
+    "kernel": "lut_gemm",
+    "shape": "(1024,2048,2048)",
+    "dtype": "FP16",
+    "latency_ms": 17.4598,
+    "tflops": 0.49,
+    "zero_nans": true,
+    "diff": 0.0009765625
+  },
+  {
+    "kernel": "lut_gemm",
+    "shape": "(1024,2048,2048)",
+    "dtype": "BF16",
+    "latency_ms": 17.7438,
+    "tflops": 0.48,
+    "zero_nans": true,
+    "diff": 0.0078125
+  },
+  {
+    "kernel": "lut_gemm",
+    "shape": "(1024,2048,4096)",
+    "dtype": "FP16",
+    "latency_ms": 37.4345,
+    "tflops": 0.46,
+    "zero_nans": true,
+    "diff": 0.001953125
+  },
+  {
+    "kernel": "lut_gemm",
+    "shape": "(1024,2048,4096)",
+    "dtype": "BF16",
+    "latency_ms": 39.8954,
+    "tflops": 0.43,
+    "zero_nans": true,
+    "diff": 0.015625
+  },
+  {
+    "kernel": "lut_gemm",
+    "shape": "(2048,2048,2048)",
+    "dtype": "FP16",
+    "latency_ms": 35.1789,
+    "tflops": 0.49,
+    "zero_nans": true,
+    "diff": 0.001953125
+  },
+  {
+    "kernel": "lut_gemm",
+    "shape": "(2048,2048,2048)",
+    "dtype": "BF16",
+    "latency_ms": 35.7067,
+    "tflops": 0.48,
+    "zero_nans": true,
+    "diff": 0.015625
+  },
+  {
+    "kernel": "low_rank_svd",
+    "shape": "(512,1024,1024,r=64)",
+    "dtype": "FP16",
+    "latency_ms": 0.0859,
+    "tflops": 1.56,
+    "zero_nans": true,
+    "diff": 0.0
+  },
+  {
+    "kernel": "low_rank_svd",
+    "shape": "(512,1024,1024,r=64)",
+    "dtype": "BF16",
+    "latency_ms": 0.0871,
+    "tflops": 1.54,
+    "zero_nans": true,
+    "diff": 0.0
+  },
+  {
+    "kernel": "low_rank_svd",
+    "shape": "(1024,2048,2048,r=64)",
+    "dtype": "FP16",
+    "latency_ms": 0.1,
+    "tflops": 5.37,
+    "zero_nans": true,
+    "diff": 0.0
+  },
+  {
+    "kernel": "low_rank_svd",
+    "shape": "(1024,2048,2048,r=64)",
+    "dtype": "BF16",
+    "latency_ms": 0.1027,
+    "tflops": 5.23,
+    "zero_nans": true,
+    "diff": 0.0
+  },
+  {
+    "kernel": "low_rank_svd",
+    "shape": "(1024,2048,4096,r=64)",
+    "dtype": "FP16",
+    "latency_ms": 0.1079,
+    "tflops": 7.46,
+    "zero_nans": true,
+    "diff": 0.0
+  },
+  {
+    "kernel": "low_rank_svd",
+    "shape": "(1024,2048,4096,r=64)",
+    "dtype": "BF16",
+    "latency_ms": 0.1105,
+    "tflops": 7.29,
+    "zero_nans": true,
+    "diff": 0.0
+  },
+  {
+    "kernel": "low_rank_svd",
+    "shape": "(2048,2048,2048,r=64)",
+    "dtype": "FP16",
+    "latency_ms": 0.1128,
+    "tflops": 9.52,
+    "zero_nans": true,
+    "diff": 0.0
+  },
+  {
+    "kernel": "low_rank_svd",
+    "shape": "(2048,2048,2048,r=64)",
+    "dtype": "BF16",
+    "latency_ms": 0.1136,
+    "tflops": 9.45,
+    "zero_nans": true,
+    "diff": 0.0
+  }
+]

@@ -1,0 +1,4165 @@
+{
+  "model": "roberta",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "ranks": [
+    8,
+    16,
+    32,
+    64
+  ],
+  "aggregate": {
+    "direct_svd_rank8": {
+      "method": "direct_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9999199509620667,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9999199509620667,
+      "rel_err_max": 0.9999199509620667,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 2.95712
+    },
+    "hnc_svd_rank8": {
+      "method": "hnc_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9857625365257263,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9857625365257263,
+      "rel_err_max": 0.9857625365257263,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 10.85711
+    },
+    "whitened_svd_rank8": {
+      "method": "whitened_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9908896684646606,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9908896684646606,
+      "rel_err_max": 0.9908896684646606,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 8.891070000000001
+    },
+    "fisher_svd_rank8": {
+      "method": "fisher_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9900729060173035,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9900729060173035,
+      "rel_err_max": 0.9900729060173035,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 1.9735399999999998
+    },
+    "fwsvd_rank8": {
+      "method": "fwsvd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9900729060173035,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9900729060173035,
+      "rel_err_max": 0.9900729060173035,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 1.9726199999999998
+    },
+    "dobi_svd_rank8": {
+      "method": "dobi_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9343248009681702,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9343248009681702,
+      "rel_err_max": 0.9343248009681702,
+      "top1_mean": 0.6720430254936218,
+      "top1_std": 0.0,
+      "time_mean_s": 0.00507
+    },
+    "tt_compressor_rank8": {
+      "method": "tt_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9995824098587036,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9995824098587036,
+      "rel_err_max": 0.9995824098587036,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 2.99444
+    },
+    "rpca_compressor_rank8": {
+      "method": "rpca_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9968405961990356,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9968405961990356,
+      "rel_err_max": 0.9968405961990356,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 17.673030000000004
+    },
+    "entropy_budget_allocation_rank8": {
+      "method": "entropy_budget_allocation",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9964506030082703,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9964506030082703,
+      "rel_err_max": 0.9964506030082703,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 3.3080999999999996
+    },
+    "direct_svd_rank16": {
+      "method": "direct_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9964040517807007,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9964040517807007,
+      "rel_err_max": 0.9964040517807007,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 2.9515200000000004
+    },
+    "hnc_svd_rank16": {
+      "method": "hnc_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9911342859268188,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9911342859268188,
+      "rel_err_max": 0.9911342859268188,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 10.868609999999999
+    },
+    "whitened_svd_rank16": {
+      "method": "whitened_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9893969297409058,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9893969297409058,
+      "rel_err_max": 0.9893969297409058,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 8.901819999999999
+    },
+    "fisher_svd_rank16": {
+      "method": "fisher_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9909301400184631,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9909301400184631,
+      "rel_err_max": 0.9909301400184631,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 1.9770499999999998
+    },
+    "fwsvd_rank16": {
+      "method": "fwsvd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9909301400184631,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9909301400184631,
+      "rel_err_max": 0.9909301400184631,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 1.9764499999999998
+    },
+    "dobi_svd_rank16": {
+      "method": "dobi_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9902667999267578,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9902667999267578,
+      "rel_err_max": 0.9902667999267578,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0049299999999999995
+    },
+    "tt_compressor_rank16": {
+      "method": "tt_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9984662532806396,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9984662532806396,
+      "rel_err_max": 0.9984662532806396,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 2.9911299999999996
+    },
+    "rpca_compressor_rank16": {
+      "method": "rpca_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9957600831985474,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9957600831985474,
+      "rel_err_max": 0.9957600831985474,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 17.96299
+    },
+    "entropy_budget_allocation_rank16": {
+      "method": "entropy_budget_allocation",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9964506030082703,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9964506030082703,
+      "rel_err_max": 0.9964506030082703,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 3.27267
+    },
+    "direct_svd_rank32": {
+      "method": "direct_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9961211085319519,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9961211085319519,
+      "rel_err_max": 0.9961211085319519,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 2.94707
+    },
+    "hnc_svd_rank32": {
+      "method": "hnc_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9831587076187134,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9831587076187134,
+      "rel_err_max": 0.9831587076187134,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 10.87109
+    },
+    "whitened_svd_rank32": {
+      "method": "whitened_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9891796112060547,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9891796112060547,
+      "rel_err_max": 0.9891796112060547,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 8.89928
+    },
+    "fisher_svd_rank32": {
+      "method": "fisher_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9959297180175781,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9959297180175781,
+      "rel_err_max": 0.9959297180175781,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 1.9733100000000001
+    },
+    "fwsvd_rank32": {
+      "method": "fwsvd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9959297180175781,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9959297180175781,
+      "rel_err_max": 0.9959297180175781,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 1.9745000000000001
+    },
+    "dobi_svd_rank32": {
+      "method": "dobi_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9899053573608398,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9899053573608398,
+      "rel_err_max": 0.9899053573608398,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 0.00502
+    },
+    "tt_compressor_rank32": {
+      "method": "tt_compressor",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9956141710281372,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9956141710281372,
+      "rel_err_max": 0.9956141710281372,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 2.9873299999999996
+    },
+    "rpca_compressor_rank32": {
+      "method": "rpca_compressor",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9956008195877075,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9956008195877075,
+      "rel_err_max": 0.9956008195877075,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 18.2314
+    },
+    "entropy_budget_allocation_rank32": {
+      "method": "entropy_budget_allocation",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.995568573474884,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.995568573474884,
+      "rel_err_max": 0.995568573474884,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 3.2808499999999996
+    },
+    "direct_svd_rank64": {
+      "method": "direct_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9993665814399719,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9993665814399719,
+      "rel_err_max": 0.9993665814399719,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 2.96484
+    },
+    "hnc_svd_rank64": {
+      "method": "hnc_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9841094017028809,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9841094017028809,
+      "rel_err_max": 0.9841094017028809,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 10.95186
+    },
+    "whitened_svd_rank64": {
+      "method": "whitened_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9906234741210938,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9906234741210938,
+      "rel_err_max": 0.9906234741210938,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 8.924349999999999
+    },
+    "fisher_svd_rank64": {
+      "method": "fisher_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9853672981262207,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9853672981262207,
+      "rel_err_max": 0.9853672981262207,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 1.9801300000000002
+    },
+    "fwsvd_rank64": {
+      "method": "fwsvd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9853672981262207,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9853672981262207,
+      "rel_err_max": 0.9853672981262207,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 1.9825199999999998
+    },
+    "dobi_svd_rank64": {
+      "method": "dobi_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9893887042999268,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9893887042999268,
+      "rel_err_max": 0.9893887042999268,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 0.004880000000000001
+    },
+    "tt_compressor_rank64": {
+      "method": "tt_compressor",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9955633878707886,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9955633878707886,
+      "rel_err_max": 0.9955633878707886,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 3.0105500000000003
+    },
+    "rpca_compressor_rank64": {
+      "method": "rpca_compressor",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9968416094779968,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9968416094779968,
+      "rel_err_max": 0.9968416094779968,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 18.90862
+    },
+    "entropy_budget_allocation_rank64": {
+      "method": "entropy_budget_allocation",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 10,
+      "rel_err_mean": 0.9969010949134827,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.9969010949134827,
+      "rel_err_max": 0.9969010949134827,
+      "top1_mean": 0.5403226017951965,
+      "top1_std": 0.0,
+      "time_mean_s": 3.3220799999999997
+    }
+  },
+  "raw": {
+    "direct_svd_rank8": [
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0076,
+        "peak_vram_mb": 1329.2,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.965,
+        "peak_vram_mb": 1338.8,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9506,
+        "peak_vram_mb": 1338.8,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9427,
+        "peak_vram_mb": 1338.8,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9565,
+        "peak_vram_mb": 1338.8,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9519,
+        "peak_vram_mb": 1338.8,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9511,
+        "peak_vram_mb": 1338.8,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9496,
+        "peak_vram_mb": 1338.8,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9404,
+        "peak_vram_mb": 1338.8,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9999199509620667,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9558,
+        "peak_vram_mb": 1338.8,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 9
+      }
+    ],
+    "hnc_svd_rank8": [
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8446,
+        "peak_vram_mb": 4214.0,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8984,
+        "peak_vram_mb": 4216.1,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9211,
+        "peak_vram_mb": 4216.1,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8347,
+        "peak_vram_mb": 4216.1,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8534,
+        "peak_vram_mb": 4216.1,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.852,
+        "peak_vram_mb": 4216.1,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8527,
+        "peak_vram_mb": 4216.1,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8456,
+        "peak_vram_mb": 4216.1,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8295,
+        "peak_vram_mb": 4216.1,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9857625365257263,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8391,
+        "peak_vram_mb": 4216.1,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 9
+      }
+    ],
+    "whitened_svd_rank8": [
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8743,
+        "peak_vram_mb": 3846.3,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9154,
+        "peak_vram_mb": 3850.7,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9026,
+        "peak_vram_mb": 3850.7,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8725,
+        "peak_vram_mb": 3850.7,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8974,
+        "peak_vram_mb": 3850.7,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8897,
+        "peak_vram_mb": 3850.7,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9104,
+        "peak_vram_mb": 3850.7,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8933,
+        "peak_vram_mb": 3850.7,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8892,
+        "peak_vram_mb": 3850.7,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9908896684646606,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8659,
+        "peak_vram_mb": 3850.7,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 9
+      }
+    ],
+    "fisher_svd_rank8": [
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9658,
+        "peak_vram_mb": 1550.7,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9848,
+        "peak_vram_mb": 1552.1,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.983,
+        "peak_vram_mb": 1552.1,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9671,
+        "peak_vram_mb": 1552.1,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9674,
+        "peak_vram_mb": 1552.1,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9749,
+        "peak_vram_mb": 1552.1,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9739,
+        "peak_vram_mb": 1552.1,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9774,
+        "peak_vram_mb": 1552.1,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9667,
+        "peak_vram_mb": 1552.1,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9744,
+        "peak_vram_mb": 1552.1,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 9
+      }
+    ],
+    "fwsvd_rank8": [
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9649,
+        "peak_vram_mb": 1550.3,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9799,
+        "peak_vram_mb": 1552.1,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.988,
+        "peak_vram_mb": 1552.1,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.966,
+        "peak_vram_mb": 1552.1,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9681,
+        "peak_vram_mb": 1552.1,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9644,
+        "peak_vram_mb": 1552.1,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9697,
+        "peak_vram_mb": 1552.1,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.981,
+        "peak_vram_mb": 1552.1,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9695,
+        "peak_vram_mb": 1552.1,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9900729060173035,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9747,
+        "peak_vram_mb": 1552.1,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 9
+      }
+    ],
+    "dobi_svd_rank8": [
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.0046,
+        "peak_vram_mb": 1620.3,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.0045,
+        "peak_vram_mb": 1620.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.0047,
+        "peak_vram_mb": 1620.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.005,
+        "peak_vram_mb": 1620.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.0051,
+        "peak_vram_mb": 1620.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.0051,
+        "peak_vram_mb": 1620.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.0054,
+        "peak_vram_mb": 1620.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.0055,
+        "peak_vram_mb": 1620.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.0052,
+        "peak_vram_mb": 1620.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9343248009681702,
+        "top1_match": 0.6720430254936218,
+        "status": "SUCCESS",
+        "time_s": 0.0056,
+        "peak_vram_mb": 1620.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 9
+      }
+    ],
+    "tt_compressor_rank8": [
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9855,
+        "peak_vram_mb": 1660.8,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0431,
+        "peak_vram_mb": 1662.6,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9955,
+        "peak_vram_mb": 1662.6,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9862,
+        "peak_vram_mb": 1662.6,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.994,
+        "peak_vram_mb": 1662.6,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9935,
+        "peak_vram_mb": 1662.6,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9886,
+        "peak_vram_mb": 1662.6,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.987,
+        "peak_vram_mb": 1662.6,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9871,
+        "peak_vram_mb": 1662.6,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9995824098587036,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9839,
+        "peak_vram_mb": 1662.6,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 9
+      }
+    ],
+    "rpca_compressor_rank8": [
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.2006,
+        "peak_vram_mb": 1552.7,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.3248,
+        "peak_vram_mb": 1553.0,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.3337,
+        "peak_vram_mb": 1553.0,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.2979,
+        "peak_vram_mb": 1553.0,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.2065,
+        "peak_vram_mb": 1553.0,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 21.2193,
+        "peak_vram_mb": 1553.0,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.2693,
+        "peak_vram_mb": 1553.0,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.316,
+        "peak_vram_mb": 1553.0,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.2639,
+        "peak_vram_mb": 1553.0,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9968405961990356,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.2983,
+        "peak_vram_mb": 1553.0,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 9
+      }
+    ],
+    "entropy_budget_allocation_rank8": [
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.3973,
+        "peak_vram_mb": 1651.4,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.3034,
+        "peak_vram_mb": 1651.7,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2806,
+        "peak_vram_mb": 1651.7,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2529,
+        "peak_vram_mb": 1651.7,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2516,
+        "peak_vram_mb": 1651.7,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.4152,
+        "peak_vram_mb": 1651.7,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2869,
+        "peak_vram_mb": 1651.7,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2534,
+        "peak_vram_mb": 1651.7,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.3749,
+        "peak_vram_mb": 1651.7,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2648,
+        "peak_vram_mb": 1651.7,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 9
+      }
+    ],
+    "direct_svd_rank16": [
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9397,
+        "peak_vram_mb": 1344.5,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9762,
+        "peak_vram_mb": 1346.0,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9676,
+        "peak_vram_mb": 1346.0,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9404,
+        "peak_vram_mb": 1346.0,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.941,
+        "peak_vram_mb": 1346.0,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9395,
+        "peak_vram_mb": 1346.0,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9735,
+        "peak_vram_mb": 1346.0,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9405,
+        "peak_vram_mb": 1346.0,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9477,
+        "peak_vram_mb": 1346.0,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9964040517807007,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9491,
+        "peak_vram_mb": 1346.0,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 9
+      }
+    ],
+    "hnc_svd_rank16": [
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8389,
+        "peak_vram_mb": 4235.8,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9304,
+        "peak_vram_mb": 4236.9,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9593,
+        "peak_vram_mb": 4236.9,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8501,
+        "peak_vram_mb": 4236.9,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.862,
+        "peak_vram_mb": 4236.9,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.834,
+        "peak_vram_mb": 4236.9,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8887,
+        "peak_vram_mb": 4236.9,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8422,
+        "peak_vram_mb": 4236.9,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8541,
+        "peak_vram_mb": 4236.9,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9911342859268188,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8264,
+        "peak_vram_mb": 4236.9,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 9
+      }
+    ],
+    "whitened_svd_rank16": [
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8891,
+        "peak_vram_mb": 3860.3,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9366,
+        "peak_vram_mb": 3860.8,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8982,
+        "peak_vram_mb": 3860.8,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9054,
+        "peak_vram_mb": 3860.8,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8903,
+        "peak_vram_mb": 3860.8,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9139,
+        "peak_vram_mb": 3860.8,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8923,
+        "peak_vram_mb": 3860.8,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.924,
+        "peak_vram_mb": 3860.8,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8917,
+        "peak_vram_mb": 3860.8,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9893969297409058,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8767,
+        "peak_vram_mb": 3860.8,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 9
+      }
+    ],
+    "fisher_svd_rank16": [
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9647,
+        "peak_vram_mb": 1552.9,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.994,
+        "peak_vram_mb": 1554.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9836,
+        "peak_vram_mb": 1554.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9797,
+        "peak_vram_mb": 1554.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9672,
+        "peak_vram_mb": 1554.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9832,
+        "peak_vram_mb": 1554.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9808,
+        "peak_vram_mb": 1554.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9874,
+        "peak_vram_mb": 1554.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9642,
+        "peak_vram_mb": 1554.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9657,
+        "peak_vram_mb": 1554.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 9
+      }
+    ],
+    "fwsvd_rank16": [
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9666,
+        "peak_vram_mb": 1553.5,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9831,
+        "peak_vram_mb": 1554.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9969,
+        "peak_vram_mb": 1554.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.975,
+        "peak_vram_mb": 1554.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9722,
+        "peak_vram_mb": 1554.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9757,
+        "peak_vram_mb": 1554.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9855,
+        "peak_vram_mb": 1554.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9767,
+        "peak_vram_mb": 1554.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9643,
+        "peak_vram_mb": 1554.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9909301400184631,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9685,
+        "peak_vram_mb": 1554.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 9
+      }
+    ],
+    "dobi_svd_rank16": [
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0042,
+        "peak_vram_mb": 1555.1,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0048,
+        "peak_vram_mb": 1556.6,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0051,
+        "peak_vram_mb": 1556.6,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0049,
+        "peak_vram_mb": 1556.6,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0051,
+        "peak_vram_mb": 1556.6,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0048,
+        "peak_vram_mb": 1556.6,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0051,
+        "peak_vram_mb": 1556.6,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0052,
+        "peak_vram_mb": 1556.6,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0051,
+        "peak_vram_mb": 1556.6,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9902667999267578,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.005,
+        "peak_vram_mb": 1556.6,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 9
+      }
+    ],
+    "tt_compressor_rank16": [
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9917,
+        "peak_vram_mb": 1667.0,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0064,
+        "peak_vram_mb": 1667.2,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9836,
+        "peak_vram_mb": 1667.2,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.987,
+        "peak_vram_mb": 1667.2,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9919,
+        "peak_vram_mb": 1667.2,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9848,
+        "peak_vram_mb": 1667.2,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9862,
+        "peak_vram_mb": 1667.2,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9917,
+        "peak_vram_mb": 1667.2,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9935,
+        "peak_vram_mb": 1667.2,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9984662532806396,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9945,
+        "peak_vram_mb": 1667.2,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 9
+      }
+    ],
+    "rpca_compressor_rank16": [
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.646,
+        "peak_vram_mb": 1562.5,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.6876,
+        "peak_vram_mb": 1562.7,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.6521,
+        "peak_vram_mb": 1562.7,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.5683,
+        "peak_vram_mb": 1562.7,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.5598,
+        "peak_vram_mb": 1562.7,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.5953,
+        "peak_vram_mb": 1562.7,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 21.0371,
+        "peak_vram_mb": 1562.7,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.6291,
+        "peak_vram_mb": 1562.7,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.6217,
+        "peak_vram_mb": 1562.7,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9957600831985474,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 17.6329,
+        "peak_vram_mb": 1562.7,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 9
+      }
+    ],
+    "entropy_budget_allocation_rank16": [
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2485,
+        "peak_vram_mb": 1656.5,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2669,
+        "peak_vram_mb": 1656.7,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2681,
+        "peak_vram_mb": 1656.7,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.248,
+        "peak_vram_mb": 1656.7,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2508,
+        "peak_vram_mb": 1656.7,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2862,
+        "peak_vram_mb": 1656.7,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2619,
+        "peak_vram_mb": 1656.7,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.3824,
+        "peak_vram_mb": 1656.7,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2476,
+        "peak_vram_mb": 1656.7,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9964506030082703,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2663,
+        "peak_vram_mb": 1656.7,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 9
+      }
+    ],
+    "direct_svd_rank32": [
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9445,
+        "peak_vram_mb": 1355.2,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.97,
+        "peak_vram_mb": 1356.7,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9435,
+        "peak_vram_mb": 1356.7,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9412,
+        "peak_vram_mb": 1356.7,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9438,
+        "peak_vram_mb": 1356.7,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9587,
+        "peak_vram_mb": 1356.7,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9426,
+        "peak_vram_mb": 1356.7,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9412,
+        "peak_vram_mb": 1356.7,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.943,
+        "peak_vram_mb": 1356.7,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9961211085319519,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9422,
+        "peak_vram_mb": 1356.7,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 9
+      }
+    ],
+    "hnc_svd_rank32": [
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8314,
+        "peak_vram_mb": 4276.3,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9073,
+        "peak_vram_mb": 4277.4,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8915,
+        "peak_vram_mb": 4277.4,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8239,
+        "peak_vram_mb": 4277.4,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8674,
+        "peak_vram_mb": 4277.4,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8982,
+        "peak_vram_mb": 4277.4,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8772,
+        "peak_vram_mb": 4277.4,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8752,
+        "peak_vram_mb": 4277.4,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8676,
+        "peak_vram_mb": 4277.4,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9831587076187134,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.8712,
+        "peak_vram_mb": 4277.4,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 9
+      }
+    ],
+    "whitened_svd_rank32": [
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8868,
+        "peak_vram_mb": 3880.5,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9298,
+        "peak_vram_mb": 3881.1,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8847,
+        "peak_vram_mb": 3881.1,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8924,
+        "peak_vram_mb": 3881.1,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8828,
+        "peak_vram_mb": 3881.1,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8927,
+        "peak_vram_mb": 3881.1,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9379,
+        "peak_vram_mb": 3881.1,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.894,
+        "peak_vram_mb": 3881.1,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8924,
+        "peak_vram_mb": 3881.1,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9891796112060547,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8993,
+        "peak_vram_mb": 3881.1,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 9
+      }
+    ],
+    "fisher_svd_rank32": [
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.969,
+        "peak_vram_mb": 1557.4,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9737,
+        "peak_vram_mb": 1558.9,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9841,
+        "peak_vram_mb": 1558.9,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.97,
+        "peak_vram_mb": 1558.9,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9735,
+        "peak_vram_mb": 1558.9,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9769,
+        "peak_vram_mb": 1558.9,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9802,
+        "peak_vram_mb": 1558.9,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9674,
+        "peak_vram_mb": 1558.9,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9728,
+        "peak_vram_mb": 1558.9,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9655,
+        "peak_vram_mb": 1558.9,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 9
+      }
+    ],
+    "fwsvd_rank32": [
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.968,
+        "peak_vram_mb": 1558.0,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9733,
+        "peak_vram_mb": 1558.9,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9795,
+        "peak_vram_mb": 1558.9,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9684,
+        "peak_vram_mb": 1558.9,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9805,
+        "peak_vram_mb": 1558.9,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9804,
+        "peak_vram_mb": 1558.9,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9745,
+        "peak_vram_mb": 1558.9,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.974,
+        "peak_vram_mb": 1558.9,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9683,
+        "peak_vram_mb": 1558.9,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9959297180175781,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9781,
+        "peak_vram_mb": 1558.9,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 9
+      }
+    ],
+    "dobi_svd_rank32": [
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0046,
+        "peak_vram_mb": 1557.4,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0045,
+        "peak_vram_mb": 1558.9,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0047,
+        "peak_vram_mb": 1558.9,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.005,
+        "peak_vram_mb": 1558.9,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0052,
+        "peak_vram_mb": 1558.9,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0051,
+        "peak_vram_mb": 1558.9,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0052,
+        "peak_vram_mb": 1558.9,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0052,
+        "peak_vram_mb": 1558.9,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0054,
+        "peak_vram_mb": 1558.9,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9899053573608398,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0053,
+        "peak_vram_mb": 1558.9,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 9
+      }
+    ],
+    "tt_compressor_rank32": [
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9863,
+        "peak_vram_mb": 1676.4,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9835,
+        "peak_vram_mb": 1676.6,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9878,
+        "peak_vram_mb": 1676.6,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.99,
+        "peak_vram_mb": 1676.6,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9895,
+        "peak_vram_mb": 1676.6,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9838,
+        "peak_vram_mb": 1676.6,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9925,
+        "peak_vram_mb": 1676.6,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9857,
+        "peak_vram_mb": 1676.6,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9878,
+        "peak_vram_mb": 1676.6,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9956141710281372,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9864,
+        "peak_vram_mb": 1676.6,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 9
+      }
+    ],
+    "rpca_compressor_rank32": [
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.1093,
+        "peak_vram_mb": 1582.0,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.4653,
+        "peak_vram_mb": 1582.2,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.1421,
+        "peak_vram_mb": 1582.2,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.1824,
+        "peak_vram_mb": 1582.2,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.1259,
+        "peak_vram_mb": 1582.2,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.1386,
+        "peak_vram_mb": 1582.2,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.7716,
+        "peak_vram_mb": 1582.2,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.1545,
+        "peak_vram_mb": 1582.2,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.1587,
+        "peak_vram_mb": 1582.2,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9956008195877075,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.0656,
+        "peak_vram_mb": 1582.2,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 9
+      }
+    ],
+    "entropy_budget_allocation_rank32": [
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.3119,
+        "peak_vram_mb": 1670.2,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2658,
+        "peak_vram_mb": 1670.4,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2812,
+        "peak_vram_mb": 1670.4,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2907,
+        "peak_vram_mb": 1670.4,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2965,
+        "peak_vram_mb": 1670.4,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2893,
+        "peak_vram_mb": 1670.4,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2985,
+        "peak_vram_mb": 1670.4,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2535,
+        "peak_vram_mb": 1670.4,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2565,
+        "peak_vram_mb": 1670.4,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.995568573474884,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2646,
+        "peak_vram_mb": 1670.4,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 9
+      }
+    ],
+    "direct_svd_rank64": [
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9636,
+        "peak_vram_mb": 1378.0,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9653,
+        "peak_vram_mb": 1379.5,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9725,
+        "peak_vram_mb": 1379.5,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.959,
+        "peak_vram_mb": 1379.5,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9662,
+        "peak_vram_mb": 1379.5,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9583,
+        "peak_vram_mb": 1379.5,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9832,
+        "peak_vram_mb": 1379.5,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9565,
+        "peak_vram_mb": 1379.5,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9644,
+        "peak_vram_mb": 1379.5,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9993665814399719,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9594,
+        "peak_vram_mb": 1379.5,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 9
+      }
+    ],
+    "hnc_svd_rank64": [
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9763,
+        "peak_vram_mb": 4365.4,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9264,
+        "peak_vram_mb": 4367.8,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9562,
+        "peak_vram_mb": 4367.8,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9668,
+        "peak_vram_mb": 4367.8,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9722,
+        "peak_vram_mb": 4367.8,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9142,
+        "peak_vram_mb": 4367.8,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9799,
+        "peak_vram_mb": 4367.8,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9235,
+        "peak_vram_mb": 4367.8,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9416,
+        "peak_vram_mb": 4367.8,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9841094017028809,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 10.9615,
+        "peak_vram_mb": 4367.8,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 9
+      }
+    ],
+    "whitened_svd_rank64": [
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9988,
+        "peak_vram_mb": 3921.0,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9332,
+        "peak_vram_mb": 3921.6,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.8851,
+        "peak_vram_mb": 3921.6,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9074,
+        "peak_vram_mb": 3921.6,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9541,
+        "peak_vram_mb": 3921.6,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9092,
+        "peak_vram_mb": 3921.6,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9199,
+        "peak_vram_mb": 3921.6,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9141,
+        "peak_vram_mb": 3921.6,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9041,
+        "peak_vram_mb": 3921.6,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9906234741210938,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 8.9176,
+        "peak_vram_mb": 3921.6,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 9
+      }
+    ],
+    "fisher_svd_rank64": [
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9851,
+        "peak_vram_mb": 1566.4,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.976,
+        "peak_vram_mb": 1567.9,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9758,
+        "peak_vram_mb": 1567.9,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9753,
+        "peak_vram_mb": 1567.9,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9764,
+        "peak_vram_mb": 1567.9,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9831,
+        "peak_vram_mb": 1567.9,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9784,
+        "peak_vram_mb": 1567.9,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9754,
+        "peak_vram_mb": 1567.9,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9838,
+        "peak_vram_mb": 1567.9,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.992,
+        "peak_vram_mb": 1567.9,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 9
+      }
+    ],
+    "fwsvd_rank64": [
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9784,
+        "peak_vram_mb": 1567.0,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.99,
+        "peak_vram_mb": 1567.9,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9763,
+        "peak_vram_mb": 1567.9,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9783,
+        "peak_vram_mb": 1567.9,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9848,
+        "peak_vram_mb": 1567.9,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9871,
+        "peak_vram_mb": 1567.9,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9814,
+        "peak_vram_mb": 1567.9,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9799,
+        "peak_vram_mb": 1567.9,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9763,
+        "peak_vram_mb": 1567.9,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9853672981262207,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 1.9927,
+        "peak_vram_mb": 1567.9,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 9
+      }
+    ],
+    "dobi_svd_rank64": [
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0043,
+        "peak_vram_mb": 1566.4,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0051,
+        "peak_vram_mb": 1567.9,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0051,
+        "peak_vram_mb": 1567.9,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.005,
+        "peak_vram_mb": 1567.9,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0048,
+        "peak_vram_mb": 1567.9,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.005,
+        "peak_vram_mb": 1567.9,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0049,
+        "peak_vram_mb": 1567.9,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0048,
+        "peak_vram_mb": 1567.9,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.0048,
+        "peak_vram_mb": 1567.9,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9893887042999268,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 0.005,
+        "peak_vram_mb": 1567.9,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 9
+      }
+    ],
+    "tt_compressor_rank64": [
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0167,
+        "peak_vram_mb": 1695.1,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0077,
+        "peak_vram_mb": 1695.4,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9832,
+        "peak_vram_mb": 1695.4,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9947,
+        "peak_vram_mb": 1695.4,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 2.9905,
+        "peak_vram_mb": 1695.4,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0018,
+        "peak_vram_mb": 1695.4,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0,
+        "peak_vram_mb": 1695.4,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0639,
+        "peak_vram_mb": 1695.4,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0162,
+        "peak_vram_mb": 1695.4,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9955633878707886,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.0308,
+        "peak_vram_mb": 1695.4,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 9
+      }
+    ],
+    "rpca_compressor_rank64": [
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.9488,
+        "peak_vram_mb": 1621.0,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.955,
+        "peak_vram_mb": 1621.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.9122,
+        "peak_vram_mb": 1621.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.8353,
+        "peak_vram_mb": 1621.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.8852,
+        "peak_vram_mb": 1621.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.839,
+        "peak_vram_mb": 1621.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.9207,
+        "peak_vram_mb": 1621.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.9091,
+        "peak_vram_mb": 1621.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.8845,
+        "peak_vram_mb": 1621.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9968416094779968,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 18.9964,
+        "peak_vram_mb": 1621.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 9
+      }
+    ],
+    "entropy_budget_allocation_rank64": [
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.314,
+        "peak_vram_mb": 1710.7,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 0
+      },
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.3855,
+        "peak_vram_mb": 1710.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 1
+      },
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.4714,
+        "peak_vram_mb": 1710.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 2
+      },
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.3297,
+        "peak_vram_mb": 1710.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 3
+      },
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2863,
+        "peak_vram_mb": 1710.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 4
+      },
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2819,
+        "peak_vram_mb": 1710.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 5
+      },
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2743,
+        "peak_vram_mb": 1710.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 6
+      },
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2896,
+        "peak_vram_mb": 1710.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 7
+      },
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.3,
+        "peak_vram_mb": 1710.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 8
+      },
+      {
+        "rel_err": 0.9969010949134827,
+        "top1_match": 0.5403226017951965,
+        "status": "SUCCESS",
+        "time_s": 3.2881,
+        "peak_vram_mb": 1710.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 9
+      }
+    ]
+  }
+}

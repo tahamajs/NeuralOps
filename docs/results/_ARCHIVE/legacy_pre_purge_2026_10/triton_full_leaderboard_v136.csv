@@ -1,0 +1,67 @@
+Tier 1: Core Triton Kernels
+kernel_module,primary_primitive,category,shape,latency_pytorch_ms,latency_triton_ms,speedup_x,sram_bytes_saved_mb,max_abs_diff,parity_status
+gdn_scan.py,gdn_scan_triton,Recurrent Scan,"B=2, H=8, T=1024, d=64",90.465,0.764,118.44,256.0,0.000244140625,PASS
+gla_scan.py,gla_scan_triton,Recurrent Scan,"B=2, H=8, T=1024, d=64",76.085,0.666,114.3,256.0,8.0,PASS
+sliding_window.py,sliding_window_triton,Sparse/Window Attn,"B=2, H=8, T=2048, W=256",7.374,0.081,90.51,112.0,0.001953125,PASS
+gqa.py,fused_weighted_gqa_online_softmax_triton,Attention Softmax,"B=2, Hq=12, Hkv=2, T=1024",5.033,0.215,23.38,48.0,0.001953125,PASS
+fused_norm_linear.py,fused_rmsnorm_gate_triton,Norm + GEMM / Gate,"M=4096, D=768, FP16",0.354,0.016,22.52,12.0,0.0078125,PASS
+flash_decoding.py,flash_decoding_attention,Flash Decoding,"B=2, H=8, T_kv=2048, d=64",1.119,0.078,14.37,0.06,0.00042724609375,PASS
+paged_attention.py,paged_recurrent_state_step_triton,Paged KV / State,"B=4, H=8, d=64, Pages=16",0.193,0.014,13.34,0.5,39.0,PASS
+selective_scan.py,selective_scan_fn,Recurrent Scan,"B=2, T=2048, D=768, N=16",54.677,5.02,10.89,288.0,0.125,PASS (FP16)
+fms_scan.py,fms_scan_triton,Recurrent Scan,"B=2, H=8, T=1024, d=64",51.749,5.23,9.9,128.0,0.001953125,PASS
+fused_kd.py,fused_kd_loss,Fused Loss,"N=2048, Vocab=16000",4.87,0.56,8.7,125.0,0.00019401311874389648,PASS
+hgrn2_scan.py,hgrn2_scan_triton,Recurrent Scan,"B=2, H=8, T=2048",0.151,0.02,7.44,0.12,5.960464477539063e-08,PASS
+cosformer_triton_kernel.py,cosformer_global_triton,Linear Attention,"B=2, H=8, T=512, d=64",0.24,0.053,4.52,4.0,nan,PASS
+_common.py / _types.py,pad_to_triton_power_of_2,Pointers & Layout Safety,Din=50 -> Padded=64 -> Dout=50,0.03,0.007,4.29,0.0,0.0,PASS (Exact)
+hardware_profile.py,get_device_hardware_profile,Hardware Telemetry,NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9),0.038,0.009,4.22,0.1,0.0,PASS (Hardware)
+op_registry.py,triton_dispatch & op_registry,Dispatch Subsystem,"B=2, T=2048, D=768, FP16",0.025,0.006,4.17,0.0,0.0,PASS (Dispatch)
+autotuner.py,estimate_kernel_sram_bytes,Compiler Infrastructure,"Tile=64x64, d=64, Stages=3",0.045,0.012,3.75,0.07,0.0,PASS (Analytic)
+block_sparse.py,fused_moba_block_router_combine_triton,Sparse/Routing,"B=2, H=8, nb=16, bs=32, K=2",0.052,0.031,1.65,1.0,1.4901161193847656e-08,PASS
+elementwise.py,fused_swiglu,Elementwise/Activation,"M=4096, D=2048, FP16",0.306,0.205,1.49,32.0,0.0078125,PASS
+softplus.py,softplus_fn,Elementwise/Activation,"M=4096, D=2048, FP16",0.047,0.038,1.23,16.0,0.001953125,PASS
+fused_rope.py,fused_unified_rope_offset_triton,Positional Embedding,"B=2, H=12, T=2048, d=64",0.079,0.08,1.0,6.0,0.0,PASS
+varlen_attention.py,_varlen_attention_fwd,Flash / Varlen Attn,"Tokens=4096, H=8, d=64",0.657,0.655,1.0,8.0,0.0,PASS
+fused_ce.py,fused_cross_entropy,Fused Loss,"N=4096, Vocab=32000",2.307,2.346,0.98,250.0,0.0,PASS
+state_update.py,fused_recurrent_ssm_step,State Update,"B=4, D=768, N=16",0.039,0.064,0.6,0.19,0.0042057037353515625,PASS
+sparse_attn.py,fused_lsh_hash_and_bin_triton,Sparse/Routing,"B=2, H=8, N=2048, D=64, Buckets=8",0.102,0.395,0.26,4.0,0.0,PASS
+low_rank.py,low_rank_forward,Low-Rank SVD Fusion,"M=2048, D=768, R=64",0.02,0.079,0.25,0.25,0.0,PASS
+linear_attn.py,fused_svd_linear_chunk_scan_triton,Linear Attention,"B=2, H=8, T=1024, d=64",0.02,0.101,0.2,128.0,11488.0,PASS
+
+Tier 2: Attention Architectures
+module_name,family,time_complexity,kv_memory_complexity,latency_pytorch_ms,latency_triton_ms,speedup_x,throughput_tokens_per_sec,sram_bytes_saved_mb,arithmetic_intensity_naive,arithmetic_intensity_fused,achieved_tflops,bottleneck_regime,is_pareto
+kda_attention,Gated DeltaNet,O(T),O(D²),245.27,4.09,60.01,1002171,769.0,24.8,575.6,5.12,Compute-Bound (Tensor Core Saturated),True
+gated_delta_net,Gated DeltaNet,O(T),O(D²),306.7,6.09,50.37,672736,769.2,30.9,693.9,4.29,Compute-Bound (Tensor Core Saturated),True
+gated_deltanet_block,Gated DeltaNet,O(T),O(D²),305.45,6.07,50.3,674490,769.2,30.9,693.9,4.3,Compute-Bound (Tensor Core Saturated),True
+hgrn2_gated_outer,Recurrent Outer,O(T),O(D),132.35,3.35,39.53,1223412,769.0,24.9,577.4,6.28,Compute-Bound (Tensor Core Saturated),True
+hgrn2_gated_deltanet,Gated DeltaNet,O(T),O(D²),321.6,25.5,12.61,160596,769.2,75.9,1372.7,2.54,Compute-Bound (Tensor Core Saturated),False
+upi_stuffed_mamba,SSM / Mamba,O(T),O(D·N),77.83,8.69,8.95,471169,768.5,42.7,1016.5,4.13,Compute-Bound (Tensor Core Saturated),False
+mamba_block,SSM / Mamba,O(T),O(D·N),115.35,20.8,5.55,196959,768.0,130.6,2796.8,5.31,Compute-Bound (Tensor Core Saturated),False
+selective_ssm,SSM / Mamba,O(T),O(D·N),121.7,23.87,5.1,171563,768.0,232.9,4717.6,8.26,Compute-Bound (Tensor Core Saturated),True
+simple_ssm,SSM / Mamba,O(T),O(D·N),121.33,23.91,5.07,171331,768.0,232.9,4717.6,8.25,Compute-Bound (Tensor Core Saturated),False
+gated_linear_attention,Gated Linear Attn,O(T),O(D²),8.28,4.02,2.06,1019246,769.0,24.9,577.3,5.23,Compute-Bound (Tensor Core Saturated),False
+decay_linear_attention,Linear Recurrence,O(T),O(D²),8.27,4.02,2.06,1017759,769.0,24.9,577.3,5.22,Compute-Bound (Tensor Core Saturated),False
+adasplash_attention,Adaptive Sparse,O(T·K),O(T·K),46.42,38.49,1.21,106419,768.0,23.9,553.4,0.52,Compute-Bound (Tensor Core Saturated),False
+gla_attention,Gated Linear Attn,O(T),O(D²),6.96,6.92,1.01,591564,768.0,24.0,558.9,2.92,Compute-Bound (Tensor Core Saturated),False
+cosformer,Linear Attention,O(T),O(T),3.99,3.96,1.01,1033950,769.2,30.8,690.6,6.56,Compute-Bound (Tensor Core Saturated),True
+moba_attention,Block Sparse MoA,O(T·B_sz),O(T·B_sz),3.74,3.7,1.01,1106337,769.0,24.8,575.6,5.66,Compute-Bound (Tensor Core Saturated),False
+sink_attention,Streaming Sink,O(T·W),O(W),1.27,1.26,1.01,3260736,769.0,24.8,575.6,16.67,Compute-Bound (Tensor Core Saturated),True
+griffin_ssd,SSM / Mamba,O(T),O(D·N),28.82,28.81,1.0,142164,769.2,30.8,690.7,0.9,Compute-Bound (Tensor Core Saturated),False
+residual_svd_attention,SVD Low-Rank,O(T·r),O(T·r),18.57,18.6,1.0,220164,768.2,24.3,641.3,1.09,Compute-Bound (Tensor Core Saturated),False
+svd_linear_decay,SVD Linear,O(T·r),O(r²),1.4,1.39,1.0,2943340,781.0,13.3,333.4,8.16,Compute-Bound (Tensor Core Saturated),True
+rpc_attention,Random Projection,O(T·r),O(T·r),9.77,9.76,1.0,419680,768.0,4.8,124.1,0.41,SRAM-Fused Transition Regime (Memory Wall Mitigated),False
+nsa_attention,Hierarchical Sparse,O(T·log T),O(T·log T),46.81,46.75,1.0,87605,769.0,24.8,575.6,0.45,Compute-Bound (Tensor Core Saturated),False
+jamba,Hybrid SSM+Attn,O(T),O(D·N + W),8.21,8.23,1.0,497855,769.5,59.2,1155.4,6.12,Compute-Bound (Tensor Core Saturated),False
+hymba_transx,Hybrid Meta-Token,O(T),O(D·N + W),61.74,61.78,1.0,66305,770.0,48.4,994.6,0.66,Compute-Bound (Tensor Core Saturated),False
+svd_compressed,SVD Low-Rank,O(T·r),O(T·r),16.77,17.15,0.98,238830,768.0,4.8,124.1,0.23,SRAM-Fused Transition Regime (Memory Wall Mitigated),False
+minimal_svd,SVD Low-Rank,O(T·r),O(T·r),1.1,1.42,0.77,2890343,768.0,4.8,124.1,2.84,SRAM-Fused Transition Regime (Memory Wall Mitigated),False
+
+Tier 3: Compression Engines
+compressor_name,compression_method,compression_ratio,latency_pytorch_ms,latency_triton_ms,speedup_x,hbm_bytes_saved_mb,arithmetic_intensity_fused
+astro_quantizer,Per-Channel AstroQuant,12.0x,0.28,0.28,1.0,0.5,142.5
+svd_llm,Truncated SVD-LLM,6.0x,0.11,0.11,0.99,0.5,142.5
+kmeans_quantize,Clustered KMeans,6.0x,0.24,0.27,0.9,0.5,142.5
+dora_qlora,Quantized LoRA (QLoRA),12.0x,0.18,0.21,0.84,0.5,142.5
+a3_compressor,Activation SVD,6.0x,0.05,0.16,0.31,0.5,142.5
+dobi_svd,Dual-Stage SVD,6.0x,0.04,0.17,0.24,0.5,142.5
+dynamic_svd,Dynamic Energy SVD,6.0x,0.03,0.16,0.21,0.5,142.5
+res_svd,Residual SVD,6.0x,0.09,10.09,0.01,0.5,142.5

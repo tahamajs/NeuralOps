@@ -1,0 +1,31 @@
+{
+  "module_name": "fused_svd_kernel",
+  "class_name": "FusedSVDLinear",
+  "category": "attention",
+  "family": "SVD Spectral & Low-Rank Decomposed Attentions",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "use_rms_norm",
+    "eps",
+    "dtype",
+    "device"
+  ],
+  "ops": [
+    "linear",
+    "view",
+    "reshape"
+  ],
+  "docstring": "RESEARCH SOTA: Fused SVD-Linear Module.\nCombines low-rank projection $Z = x V^T$, in-SRAM RMSNorm, and up-projection $Y = Z U^T + b$\ninto a single kernel invocation, eliminating HBM roundtrips.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.4373005152563283e+37,
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

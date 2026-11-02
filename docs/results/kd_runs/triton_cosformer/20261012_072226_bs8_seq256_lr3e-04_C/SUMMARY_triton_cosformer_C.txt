@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: triton_cosformer / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.44 M
+  Trainable params:  28.35 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        23200.8900
+  Post-KD PPL:       103.0400
+  Stage 1 (KD) PPL:  136.9400
+  Stage 2 (Self) PPL:103.0400
+  KD Gain:           +23063.95
+  Self Gain:         +33.90
+  Total Gain:        +23097.85
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         2.8456
+  Recovery:          99.71%
+  Peak VRAM:         3090.62 MB
+  Train time:        164.10 s (Stage 1: 122.7s, Stage 2: 41.4s)
+  s/step:            0.3282
+  Loss (final):      24.4010
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.1429
+  Repetition-3:      0.8438
+  Train PPL:         63.3300
+  Test PPL:          103.0400
+  Overfit Gap:       39.71
+  Latency (mean):    200.58 ms
+  Latency (std):     0.59 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=4.3928 | lr=1.74e-04
+  step   420 | loss=3.7958 | lr=1.50e-04
+  step   430 | loss=4.1886 | lr=1.27e-04
+  step   440 | loss=3.9054 | lr=1.04e-04
+  step   450 | loss=4.3055 | lr=8.20e-05
+  step   460 | loss=4.1427 | lr=6.19e-05
+  step   470 | loss=3.9266 | lr=4.40e-05
+  step   480 | loss=3.8531 | lr=2.87e-05
+  step   490 | loss=3.7832 | lr=1.64e-05
+  step   500 | loss=4.1209 | lr=7.44e-06

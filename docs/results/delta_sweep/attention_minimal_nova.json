@@ -1,0 +1,11 @@
+{
+  "module": "minimal_nova",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 3748.95,
+  "duration_sec": 159.7,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 03:39:14"
+}

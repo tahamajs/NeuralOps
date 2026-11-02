@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: hgrn2_gated_deltanet / C
+================================================================================
+
+MODEL INFO:
+  Total params:      240.16 M
+  Trainable params:  23.58 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        5323.2900
+  Post-KD PPL:       38.4700
+  Stage 1 (KD) PPL:  44.4400
+  Stage 2 (Self) PPL:38.4700
+  KD Gain:           +5278.85
+  Self Gain:         +5.97
+  Total Gain:        +5284.82
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.0624
+  Recovery:          99.96%
+  Peak VRAM:         3324.79 MB
+  Train time:        544.48 s (Stage 1: 450.0s, Stage 2: 94.5s)
+  s/step:            1.0890
+  Loss (final):      23.4334
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0765
+  Repetition-3:      0.9062
+  Train PPL:         31.3400
+  Test PPL:          38.4700
+  Overfit Gap:       7.13
+  Latency (mean):    2441.26 ms
+  Latency (std):     0.82 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        117be82d0331
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=3.6502 | lr=1.74e-04
+  step   420 | loss=2.9907 | lr=1.50e-04
+  step   430 | loss=3.5868 | lr=1.27e-04
+  step   440 | loss=3.1809 | lr=1.04e-04
+  step   450 | loss=3.5857 | lr=8.20e-05
+  step   460 | loss=3.3203 | lr=6.19e-05
+  step   470 | loss=3.2470 | lr=4.40e-05
+  step   480 | loss=3.2211 | lr=2.87e-05
+  step   490 | loss=3.2914 | lr=1.64e-05
+  step   500 | loss=3.4013 | lr=7.44e-06

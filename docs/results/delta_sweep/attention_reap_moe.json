@@ -1,0 +1,11 @@
+{
+  "module": "reap_moe",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 45276.56,
+  "duration_sec": 210.2,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 05:11:38"
+}

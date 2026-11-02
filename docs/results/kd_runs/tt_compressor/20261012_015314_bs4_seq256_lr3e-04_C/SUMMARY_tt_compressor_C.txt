@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: tt_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      43.61 M
+  Trainable params:  1.68 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        5067.7800
+  Post-KD PPL:       5067.7800
+  Stage 1 (KD) PPL:  5067.7800
+  Stage 2 (Self) PPL:5067.7800
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         139.9553
+  Recovery:          0.00%
+  Peak VRAM:         618.89 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8061
+  Repetition-3:      0.0208
+  Train PPL:         5475.8300
+  Test PPL:          5067.7800
+  Overfit Gap:       -408.05
+  Latency (mean):    402.04 ms
+  Latency (std):     0.17 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        37226964a0bb
+
+TRAINING HISTORY (last 10 steps):

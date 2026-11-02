@@ -1,0 +1,11 @@
+{
+  "module": "salr",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 10775.89,
+  "duration_sec": 191.3,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:47:55"
+}

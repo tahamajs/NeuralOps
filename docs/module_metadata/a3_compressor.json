@@ -1,0 +1,34 @@
+{
+  "module_name": "a3_compressor",
+  "class_name": "A3Compressor",
+  "category": "compression",
+  "family": "Activation-Aware & Standard Low-Rank SVD Factorization",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "dtype",
+    "device",
+    "model",
+    "use_fisher",
+    "recalibrate_ln",
+    "target_attention_only",
+    "tokenizer",
+    "calibration_loader",
+    "calibration_texts"
+  ],
+  "ops": [
+    "linear"
+  ],
+  "docstring": "A3 Compressor: Activation-Aware SVD with Fisher weighting and LayerNorm recalibration.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.3214063829052852e+37,
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

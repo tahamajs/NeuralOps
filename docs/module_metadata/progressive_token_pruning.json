@@ -1,0 +1,32 @@
+{
+  "module_name": "progressive_token_pruning",
+  "class_name": "ProgressiveTokenPruning",
+  "category": "attention",
+  "family": "Block-Sparse, Dilated & Sliding-Window Attentions",
+  "params": [
+    "config",
+    "d_model",
+    "keep_ratio",
+    "rank",
+    "pretrained_attn",
+    "old_attn"
+  ],
+  "ops": [
+    "topk",
+    "transpose",
+    "softmax",
+    "dropout",
+    "view",
+    "matmul"
+  ],
+  "docstring": "Learnable Progressive Token Pruning module with guaranteed [CLS] retention\nand full multi-head attention capabilities.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.65,
+  "bits": 4,
+  "hash_val": 7.883993803182524e+37,
+  "paradigm": "sparse",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

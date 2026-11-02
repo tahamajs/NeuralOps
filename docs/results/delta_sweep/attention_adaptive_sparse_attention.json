@@ -1,0 +1,12 @@
+{
+  "module": "adaptive_sparse_attention",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 12.88,
+  "student_ppl": 30.44,
+  "pre_ppl": 49.09,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.288539"
+}

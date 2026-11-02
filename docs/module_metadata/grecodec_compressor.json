@@ -1,0 +1,33 @@
+{
+  "module_name": "grecodec_compressor",
+  "class_name": "GreCoDeCCompressor",
+  "category": "compression",
+  "family": "Dynamic Rank & Entropy-Guided Budget Allocation",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "dtype",
+    "device",
+    "model",
+    "max_iter",
+    "cfg",
+    "target_layers"
+  ],
+  "ops": [
+    "reshape",
+    "linear",
+    "view"
+  ],
+  "docstring": "GreCoDeC (Greedy Coordinate Descent) Compressor.\nDecomposes linear layers into low-rank factors using fast greedy rank-1 updates.\n\nArgs:\n    model: PyTorch model.\n    rank: Target rank for decomposition.\n    max_iter: Coordinate descent iterations per rank component (default 15).\n    cfg: Optional configuration object.\n    target_layers: Optional target layer filter.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.5617533628073312e+38,
+  "paradigm": "dynamic_rank",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

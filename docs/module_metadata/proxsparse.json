@@ -1,0 +1,30 @@
+{
+  "module_name": "proxsparse",
+  "class_name": "ProxSparsePruner",
+  "category": "compression",
+  "family": "Structured Channel & Head Pruning",
+  "params": [
+    "model",
+    "sparsity",
+    "lambda_prox",
+    "steps",
+    "structured_24",
+    "block_size"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "ProxSparse: Regularized learning of structured and semi-structured sparsity.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.67,
+  "bits": 4,
+  "hash_val": 3.1693056653001236e+38,
+  "paradigm": "pruning",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

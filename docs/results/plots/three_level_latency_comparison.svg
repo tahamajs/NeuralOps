@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="950" height="620" viewBox="0 0 950 620">
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <text x="475.0" y="36" fill="#f8fafc" font-size="18" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle">3-Level Latency Hierarchy: PyTorch Ref vs. Triton JIT vs. Native CUDA C++</text>
+  <text x="475.0" y="56" fill="#38bdf8" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">Table 18 Benchmark Hierarchy (Ada Lovelace SM 8.9, CUDA 12.x)</text>
+  <rect x="220" y="80" width="680" height="480" fill="#1e293b" rx="6" stroke="#334155"/>
+  <line x1="220.0" y1="80" x2="220.0" y2="560" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="220.0" y="580" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">0.01 ms</text>
+  <line x1="390.0" y1="80" x2="390.0" y2="560" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="390.0" y="580" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">0.1 ms</text>
+  <line x1="560.0" y1="80" x2="560.0" y2="560" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="560.0" y="580" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">1.0 ms</text>
+  <line x1="730.0" y1="80" x2="730.0" y2="560" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="730.0" y="580" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">10.0 ms</text>
+  <line x1="900.0" y1="80" x2="900.0" y2="560" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="900.0" y="580" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">100.0 ms</text>
+  <text x="560.0" y="605" fill="#94a3b8" font-size="13" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">Execution Latency (ms, Log Scale) [Lower is Faster]</text>
+  <text x="210" y="104.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">moe_routing</text>
+  <circle cx="809.9" cy="95.0" r="4.5" fill="#f87171"/>
+  <circle cx="278.2" cy="105.0" r="4.5" fill="#34d399"/>
+  <line x1="278.2" y1="100.0" x2="809.9" y2="100.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="144.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">hgrn2_scan</text>
+  <circle cx="694.8" cy="135.0" r="4.5" fill="#f87171"/>
+  <circle cx="293.3" cy="140.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="244.8" cy="145.0" r="4.5" fill="#34d399"/>
+  <line x1="244.8" y1="140.0" x2="694.8" y2="140.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="184.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">linear_attn</text>
+  <circle cx="833.9" cy="175.0" r="4.5" fill="#f87171"/>
+  <circle cx="459.7" cy="180.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="427.9" cy="185.0" r="4.5" fill="#34d399"/>
+  <line x1="427.9" y1="180.0" x2="833.9" y2="180.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="224.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">selective_scan</text>
+  <circle cx="811.0" cy="215.0" r="4.5" fill="#f87171"/>
+  <circle cx="756.6" cy="220.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="464.4" cy="225.0" r="4.5" fill="#34d399"/>
+  <line x1="464.4" y1="220.0" x2="811.0" y2="220.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="264.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">chunked_delta_gate</text>
+  <circle cx="845.2" cy="255.0" r="4.5" fill="#f87171"/>
+  <circle cx="407.1" cy="260.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="519.5" cy="265.0" r="4.5" fill="#34d399"/>
+  <line x1="407.1" y1="260.0" x2="845.2" y2="260.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="304.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">paged_attention</text>
+  <circle cx="566.8" cy="295.0" r="4.5" fill="#f87171"/>
+  <circle cx="284.6" cy="305.0" r="4.5" fill="#34d399"/>
+  <line x1="284.6" y1="300.0" x2="566.8" y2="300.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="344.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">sliding_window</text>
+  <circle cx="604.5" cy="335.0" r="4.5" fill="#f87171"/>
+  <circle cx="458.2" cy="340.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="458.2" cy="345.0" r="4.5" fill="#34d399"/>
+  <line x1="458.2" y1="340.0" x2="604.5" y2="340.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="384.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">codebook_dequant</text>
+  <circle cx="387.0" cy="375.0" r="4.5" fill="#f87171"/>
+  <circle cx="290.5" cy="380.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="267.4" cy="385.0" r="4.5" fill="#34d399"/>
+  <line x1="267.4" y1="380.0" x2="387.0" y2="380.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="424.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">block_sparse_attn</text>
+  <circle cx="604.2" cy="415.0" r="4.5" fill="#f87171"/>
+  <circle cx="591.3" cy="420.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="485.6" cy="425.0" r="4.5" fill="#34d399"/>
+  <line x1="485.6" y1="420.0" x2="604.2" y2="420.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="464.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">flash_gqa</text>
+  <circle cx="438.2" cy="455.0" r="4.5" fill="#f87171"/>
+  <circle cx="344.5" cy="460.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="388.5" cy="465.0" r="4.5" fill="#34d399"/>
+  <line x1="344.5" y1="460.0" x2="438.2" y2="460.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="504.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">kronecker_matmul</text>
+  <circle cx="301.1" cy="495.0" r="4.5" fill="#f87171"/>
+  <circle cx="287.6" cy="500.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="259.2" cy="505.0" r="4.5" fill="#34d399"/>
+  <line x1="259.2" y1="500.0" x2="301.1" y2="500.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <text x="210" y="544.0" fill="#f8fafc" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">cosformer_linear</text>
+  <circle cx="403.5" cy="535.0" r="4.5" fill="#f87171"/>
+  <circle cx="357.1" cy="540.0" r="4.5" fill="#38bdf8"/>
+  <circle cx="378.0" cy="545.0" r="4.5" fill="#34d399"/>
+  <line x1="357.1" y1="540.0" x2="403.5" y2="540.0" stroke="#94a3b8" stroke-width="0.8" stroke-dasharray="2,2"/>
+  <rect x="240" y="95" width="280" height="60" fill="#0f172a" rx="4" stroke="#334155" opacity="0.9"/>
+  <circle cx="255" cy="111" r="5" fill="#f87171"/>
+  <text x="268" y="115" fill="#94a3b8" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Level 3: Pure PyTorch Reference</text>
+  <circle cx="255" cy="129" r="5" fill="#38bdf8"/>
+  <text x="268" y="133" fill="#94a3b8" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Level 2: OpenAI Triton JIT</text>
+  <circle cx="255" cy="145" r="5" fill="#34d399"/>
+  <text x="268" y="149" fill="#94a3b8" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Level 1: Native CUDA C++ (Fastest)</text>
+</svg>

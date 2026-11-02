@@ -1,0 +1,32 @@
+% Auto-generated: Multi-Stream TTFT & Decode Latency Benchmarks
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Multi-Stream Time-To-First-Token (TTFT) and Single-Token Decode Step Latency across Variable Prompt Prefixes ($L_{\text{prefix}} \in \{512, 1{,}024, 2{,}048, 4{,}096\}$) on Physical NVIDIA RTX 4070 Laptop GPU.} Profiles concurrent tenant streams under asynchronous multi-tenant arrival ($D=1{,}024$). Concurrency across 8 streams achieves up to $1.89\text{M}$ prefill tokens/s ($2.17\,\text{ms}$ TTFT at $L=512$) and $9{,}032\,\text{tokens/s}$ aggregate decode throughput with minimal VRAM footprint ($\le 452.6\,\text{MB}$).}
+\label{tab:ttft_decode_benchmarks}
+\begin{tabular}{ccccccccc}
+\toprule
+\textbf{Streams} & \textbf{Prefix ($L_{\text{prefix}}$)} & \textbf{Prefill Toks} & \textbf{TTFT (ms)} & \textbf{Prefill Throughput (tok/s)} & \textbf{Decode Latency (ms)} & \textbf{Decode Throughput (tok/s)} & \textbf{Peak VRAM (MB)} \\
+\midrule
+1 Stream     & 512      & 512      & 0.42 & 1,230,164 & 0.156 & 6,402 & 72.5 \\
+             & 1,024    & 1,024    & 0.82 & 1,255,742 & 0.161 & 6,193 & 72.5 \\
+             & 2,048    & 2,048    & 1.63 & 1,256,992 & 0.172 & 5,818 & 104.5 \\
+             & 4,096    & 4,096    & 3.70 & 1,105,992 & 0.196 & 5,109 & 168.6 \\
+\midrule
+2 Streams    & 512      & 1,024    & 0.74 & 1,383,222 & 0.289 & 6,931 & 76.5 \\
+             & 1,024    & 2,048    & 1.33 & 1,535,391 & 0.298 & 6,716 & 95.8 \\
+             & 2,048    & 4,096    & 2.74 & 1,494,964 & 0.297 & 6,731 & 133.1 \\
+             & 4,096    & 8,192    & 5.65 & 1,448,747 & 0.314 & 6,377 & 209.1 \\
+\midrule
+4 Streams    & 512      & 2,048    & 1.10 & 1,854,965 & 0.486 & 8,228 & 115.9 \\
+             & 1,024    & 4,096    & 2.26 & 1,809,013 & 0.496 & 8,060 & 140.0 \\
+             & 2,048    & 8,192    & 4.84 & 1,693,659 & 0.544 & 7,360 & 190.0 \\
+             & 4,096    & 16,384   & 11.36 & 1,442,483 & 0.708 & 5,652 & 290.0 \\
+\midrule
+8 Streams    & 512      & 4,096    & 2.17 & 1,890,661 & 0.886 & 9,032 & 195.3 \\
+             & 1,024    & 8,192    & 4.53 & 1,808,481 & 0.962 & 8,314 & 231.6 \\
+             & 2,048    & 16,384   & 9.70 & 1,689,599 & 1.102 & 7,258 & 304.1 \\
+             & 4,096    & 32,768   & 22.76 & 1,439,467 & 1.360 & 5,884 & 452.6 \\
+\bottomrule
+\end{tabular}
+\end{table*}

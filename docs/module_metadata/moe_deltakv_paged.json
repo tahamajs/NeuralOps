@@ -1,0 +1,27 @@
+{
+  "module_name": "moe_deltakv_paged",
+  "class_name": "MoEDeltaKVPagedAttention",
+  "category": "attention",
+  "family": "Mixture-of-Experts (MoE) & Sparsely-Gated Attentions",
+  "params": [
+    "config"
+  ],
+  "ops": [
+    "transpose",
+    "view",
+    "topk",
+    "softmax",
+    "dropout",
+    "matmul"
+  ],
+  "docstring": "MoE-DeltaKV-Paged Hybrid Attention Module.\nCombines Mixture-of-Block-Attention (MoBA) with Paged Delta-KV cache compression.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 8,
+  "top_k": 2,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.074167458498989e+37,
+  "paradigm": "moe",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

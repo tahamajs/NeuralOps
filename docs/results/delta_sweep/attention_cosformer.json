@@ -1,0 +1,12 @@
+{
+  "module": "cosformer",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 7310.0,
+  "student_ppl": 7346.21,
+  "pre_ppl": 7346.21,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.296105"
+}

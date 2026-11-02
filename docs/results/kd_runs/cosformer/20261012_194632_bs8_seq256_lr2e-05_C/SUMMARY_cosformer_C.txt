@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: cosformer / C
+================================================================================
+
+MODEL INFO:
+  Total params:      133.01 M
+  Trainable params:  1.47 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        247.0200
+  Post-KD PPL:       247.0200
+  Stage 1 (KD) PPL:  247.0200
+  Stage 2 (Self) PPL:247.0200
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         6.8219
+  Recovery:          0.00%
+  Peak VRAM:         2894.20 MB
+  Train time:        9.85 s (Stage 1: 9.8s, Stage 2: 0.0s)
+  s/step:            0.3940
+  Loss (final):      26.0889
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0306
+  Repetition-3:      0.9635
+  Train PPL:         319.5000
+  Test PPL:          247.0200
+  Overfit Gap:       -72.48
+  Latency (mean):    534.91 ms
+  Latency (std):     0.98 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        4904ad53643b
+
+TRAINING HISTORY (last 10 steps):
+  step    15 | loss=17.3268 | lr=3.00e-06
+  step    16 | loss=11.6594 | lr=3.20e-06
+  step    17 | loss=14.2322 | lr=3.40e-06
+  step    18 | loss=13.7041 | lr=3.60e-06
+  step    19 | loss=12.1653 | lr=3.80e-06
+  step    20 | loss=15.2783 | lr=4.00e-06
+  step    21 | loss=10.7997 | lr=4.20e-06
+  step    22 | loss=14.7767 | lr=4.40e-06
+  step    23 | loss=15.5578 | lr=4.60e-06
+  step    24 | loss=16.7792 | lr=4.80e-06

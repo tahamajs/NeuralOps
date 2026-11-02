@@ -1,0 +1,101 @@
+{
+  "module_name": "fused_mqa_bias_scale",
+  "category": "triton_kernel",
+  "family": "attention_head",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 2,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:35:16.078400+00:00",
+  "latest_record": {
+    "record_id": "330fb334d32e0ffe",
+    "module_name": "fused_mqa_bias_scale",
+    "category": "triton_kernel",
+    "family": "attention_head",
+    "version_tag": "v1.3.7",
+    "revision": 2,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+      "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=4,H=8,256x256",
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.0423,
+      "latency_pytorch_ms": 0.0421,
+      "speedup_x": 1.0,
+      "launch_overhead_ms": 0.0005,
+      "cosine_sim": 1.0,
+      "max_diff": 0.0
+    },
+    "notes": "Triton vs PyTorch benchmark for fused_mqa_bias_scale: 1.00x speedup"
+  },
+  "active_records": [
+    {
+      "record_id": "330fb334d32e0ffe",
+      "module_name": "fused_mqa_bias_scale",
+      "category": "triton_kernel",
+      "family": "attention_head",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,H=8,256x256",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.0423,
+        "latency_pytorch_ms": 0.0421,
+        "speedup_x": 1.0,
+        "launch_overhead_ms": 0.0005,
+        "cosine_sim": 1.0,
+        "max_diff": 0.0
+      },
+      "notes": "Triton vs PyTorch benchmark for fused_mqa_bias_scale: 1.00x speedup"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "330fb334d32e0ffe",
+      "module_name": "fused_mqa_bias_scale",
+      "category": "triton_kernel",
+      "family": "attention_head",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,H=8,256x256",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.0423,
+        "latency_pytorch_ms": 0.0421,
+        "speedup_x": 1.0,
+        "launch_overhead_ms": 0.0005,
+        "cosine_sim": 1.0,
+        "max_diff": 0.0
+      },
+      "notes": "Triton vs PyTorch benchmark for fused_mqa_bias_scale: 1.00x speedup"
+    }
+  ]
+}

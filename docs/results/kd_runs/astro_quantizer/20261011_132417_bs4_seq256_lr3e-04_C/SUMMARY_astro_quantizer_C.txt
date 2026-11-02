@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: astro_quantizer / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.44 M
+  Trainable params:  28.35 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        38.0000
+  Post-KD PPL:       31.4500
+  Stage 1 (KD) PPL:  38.1200
+  Stage 2 (Self) PPL:31.4500
+  KD Gain:           -0.12
+  Self Gain:         +6.67
+  Total Gain:        +6.55
+  Aligned w/ Teacher:NO
+  Beat Teacher:      YES
+  PPL Ratio:         0.8683
+  Recovery:          100.00%
+  Peak VRAM:         2519.06 MB
+  Train time:        133.76 s (Stage 1: 84.8s, Stage 2: 48.9s)
+  s/step:            0.2675
+  Loss (final):      23.7165
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.9082
+  Repetition-3:      0.0312
+  Train PPL:         21.2900
+  Test PPL:          31.4500
+  Overfit Gap:       10.16
+  Latency (mean):    1793.47 ms
+  Latency (std):     16.75 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        363d9d95c704
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=3.2791 | lr=1.74e-04
+  step   420 | loss=3.6116 | lr=1.50e-04
+  step   430 | loss=2.7522 | lr=1.27e-04
+  step   440 | loss=3.3862 | lr=1.04e-04
+  step   450 | loss=3.2817 | lr=8.20e-05
+  step   460 | loss=3.2601 | lr=6.19e-05
+  step   470 | loss=3.4211 | lr=4.40e-05
+  step   480 | loss=3.2095 | lr=2.87e-05
+  step   490 | loss=3.7340 | lr=1.64e-05
+  step   500 | loss=3.3180 | lr=7.44e-06

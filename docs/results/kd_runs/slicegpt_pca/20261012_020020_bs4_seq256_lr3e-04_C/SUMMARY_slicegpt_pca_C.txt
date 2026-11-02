@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: slicegpt_pca / C
+================================================================================
+
+MODEL INFO:
+  Total params:      119.52 M
+  Trainable params:  26.95 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        4799.5200
+  Post-KD PPL:       4799.5200
+  Stage 1 (KD) PPL:  4799.5200
+  Stage 2 (Self) PPL:4799.5200
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         132.5468
+  Recovery:          0.00%
+  Peak VRAM:         916.50 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.1962
+  Repetition-3:      0.7597
+  Train PPL:         6474.3100
+  Test PPL:          4799.5200
+  Overfit Gap:       -1674.79
+  Latency (mean):    571.43 ms
+  Latency (std):     15.72 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        37d2303c1ee9
+
+TRAINING HISTORY (last 10 steps):

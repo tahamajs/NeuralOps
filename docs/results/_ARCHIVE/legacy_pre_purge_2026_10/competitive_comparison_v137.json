@@ -1,0 +1,242 @@
+[
+  {
+    "sequence_length": 512,
+    "module": "pytorch_mha_baseline",
+    "framework": "PyTorch Reference",
+    "latency_ms": 0.324,
+    "throughput_tok_s": 3161437.7,
+    "peak_vram_mb": 35.13,
+    "speedup_vs_baseline": 1.0,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 512,
+    "module": "gated_delta_net",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 0.997,
+    "throughput_tok_s": 1027196.6,
+    "peak_vram_mb": 44.42,
+    "speedup_vs_baseline": 0.32,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 512,
+    "module": "gla_attention",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 0.495,
+    "throughput_tok_s": 2067147.6,
+    "peak_vram_mb": 41.21,
+    "speedup_vs_baseline": 0.65,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 512,
+    "module": "hgrn2_gated_deltanet",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 1.673,
+    "throughput_tok_s": 612031.8,
+    "peak_vram_mb": 62.9,
+    "speedup_vs_baseline": 0.19,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 512,
+    "module": "cosformer",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 1.601,
+    "throughput_tok_s": 639572.1,
+    "peak_vram_mb": 87.98,
+    "speedup_vs_baseline": 0.2,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 512,
+    "module": "minimal_svd",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 0.576,
+    "throughput_tok_s": 1777336.1,
+    "peak_vram_mb": 25.07,
+    "speedup_vs_baseline": 0.56,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 1024,
+    "module": "pytorch_mha_baseline",
+    "framework": "PyTorch Reference",
+    "latency_ms": 1.715,
+    "throughput_tok_s": 1194479.8,
+    "peak_vram_mb": 83.32,
+    "speedup_vs_baseline": 1.0,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 1024,
+    "module": "gated_delta_net",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 1.935,
+    "throughput_tok_s": 1058484.5,
+    "peak_vram_mb": 70.32,
+    "speedup_vs_baseline": 0.89,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 1024,
+    "module": "gla_attention",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 0.952,
+    "throughput_tok_s": 2150457.8,
+    "peak_vram_mb": 65.51,
+    "speedup_vs_baseline": 1.8,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 1024,
+    "module": "hgrn2_gated_deltanet",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 2.763,
+    "throughput_tok_s": 741303.5,
+    "peak_vram_mb": 94.18,
+    "speedup_vs_baseline": 0.62,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 1024,
+    "module": "cosformer",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 3.401,
+    "throughput_tok_s": 602152.2,
+    "peak_vram_mb": 156.47,
+    "speedup_vs_baseline": 0.5,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 1024,
+    "module": "minimal_svd",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 0.547,
+    "throughput_tok_s": 3741446.1,
+    "peak_vram_mb": 35.82,
+    "speedup_vs_baseline": 3.14,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 2048,
+    "module": "pytorch_mha_baseline",
+    "framework": "PyTorch Reference",
+    "latency_ms": 5.174,
+    "throughput_tok_s": 791657.6,
+    "peak_vram_mb": 255.57,
+    "speedup_vs_baseline": 1.0,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 2048,
+    "module": "gated_delta_net",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 3.683,
+    "throughput_tok_s": 1112094.3,
+    "peak_vram_mb": 120.22,
+    "speedup_vs_baseline": 1.4,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 2048,
+    "module": "gla_attention",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 1.494,
+    "throughput_tok_s": 2741562.5,
+    "peak_vram_mb": 109.97,
+    "speedup_vs_baseline": 3.46,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 2048,
+    "module": "hgrn2_gated_deltanet",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 6.271,
+    "throughput_tok_s": 653213.9,
+    "peak_vram_mb": 156.16,
+    "speedup_vs_baseline": 0.83,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 2048,
+    "module": "cosformer",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 5.03,
+    "throughput_tok_s": 814292.9,
+    "peak_vram_mb": 290.69,
+    "speedup_vs_baseline": 1.03,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 2048,
+    "module": "minimal_svd",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 1.206,
+    "throughput_tok_s": 3396112.0,
+    "peak_vram_mb": 56.57,
+    "speedup_vs_baseline": 4.29,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 4096,
+    "module": "pytorch_mha_baseline",
+    "framework": "PyTorch Reference",
+    "latency_ms": 19.116,
+    "throughput_tok_s": 428551.8,
+    "peak_vram_mb": 912.57,
+    "speedup_vs_baseline": 1.0,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 4096,
+    "module": "gated_delta_net",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 8.126,
+    "throughput_tok_s": 1008133.1,
+    "peak_vram_mb": 219.28,
+    "speedup_vs_baseline": 2.35,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 4096,
+    "module": "gla_attention",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 3.228,
+    "throughput_tok_s": 2538085.5,
+    "peak_vram_mb": 198.54,
+    "speedup_vs_baseline": 5.92,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 4096,
+    "module": "hgrn2_gated_deltanet",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 13.605,
+    "throughput_tok_s": 602111.9,
+    "peak_vram_mb": 283.15,
+    "speedup_vs_baseline": 1.41,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 4096,
+    "module": "cosformer",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 12.116,
+    "throughput_tok_s": 676154.9,
+    "peak_vram_mb": 560.38,
+    "speedup_vs_baseline": 1.58,
+    "cosine_similarity": 1.0
+  },
+  {
+    "sequence_length": 4096,
+    "module": "minimal_svd",
+    "framework": "NeuralOps (Triton Fused)",
+    "latency_ms": 3.451,
+    "throughput_tok_s": 2373698.3,
+    "peak_vram_mb": 98.57,
+    "speedup_vs_baseline": 5.54,
+    "cosine_similarity": 1.0
+  }
+]

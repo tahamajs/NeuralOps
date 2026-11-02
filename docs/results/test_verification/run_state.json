@@ -1,0 +1,16 @@
+{
+  "run_id": "dc1f1987-33bf-4b6f-ac91-7287697d61e5",
+  "completed": [
+    [
+      "svd_linear_attention",
+      "distilbert-base-uncased",
+      "sst2",
+      32
+    ]
+  ],
+  "failed": [],
+  "skipped": [],
+  "total_runs": 1,
+  "status": "finished",
+  "start_time": 1791563890.4722648
+}

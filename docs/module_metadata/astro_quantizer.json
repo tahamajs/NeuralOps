@@ -1,0 +1,30 @@
+{
+  "module_name": "astro_quantizer",
+  "class_name": "STEFakeQuantize",
+  "category": "compression",
+  "family": "Quantization & Integer Codebooks",
+  "params": [
+    "in_features",
+    "out_features",
+    "bias",
+    "bits",
+    "symmetric",
+    "per_channel",
+    "model",
+    "use_ste"
+  ],
+  "ops": [
+    "clamp",
+    "linear"
+  ],
+  "docstring": "Straight-Through Estimator (STE) fake-quantization autograd function.\nClamps inputs to [qmin, qmax] in discrete integer space, de-quantizes back,\nand passes gradients through uninhibited where within clipping bounds.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.3775397079376623e+38,
+  "paradigm": "quant",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

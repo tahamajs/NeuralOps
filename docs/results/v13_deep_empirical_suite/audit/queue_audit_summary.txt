@@ -1,0 +1,98 @@
+==================================================================
+FORENSIC AUDIT OF BENCHMARK QUEUE (202 total runs)
+==================================================================
+
+1. STATUS BREAKDOWN:
+   - success: 202 (100.0%)
+
+2. MODULE TYPE BREAKDOWN:
+   - compressor: 72
+   - attention: 129
+   - baseline: 1
+
+3. TOP 15 PERFORMERS BY SST-2 ACCURACY & F1:
+   Module                           Type         Accuracy   F1         Loss       VRAM (MB) 
+   -------------------------------- ------------ ---------- ---------- ---------- ----------
+   bam_umoe                         attention    0.7500     0.8000     0.5235     807.1     
+   ttt_linear_attention             attention    0.7000     0.7500     2.0061     985.0     
+   adaptive_sparse_attention        attention    0.6500     0.7407     1.1788     879.1     
+   aegis_hybrid                     attention    0.6500     0.6957     0.6598     799.3     
+   spectraformer_attention          attention    0.6500     0.6957     0.8929     884.1     
+   tri_branch_hybrid                attention    0.6500     0.6957     0.6598     804.0     
+   hybrid_svd_layer                 compressor   0.6500     0.6316     0.6385     510.1     
+   block_transformer_hiba           attention    0.6500     0.5333     0.8044     880.7     
+   minimal_nova                     attention    0.6000     0.7143     0.7811     793.9     
+   svd_projection_attention         attention    0.6000     0.7143     1.1937     793.9     
+   aegis_v1                         attention    0.6000     0.6923     1.0308     848.6     
+   aegis_v2                         attention    0.6000     0.6923     1.0308     848.6     
+   aegis_v3                         attention    0.6000     0.6923     1.0308     848.6     
+   aegis_v4                         attention    0.6000     0.6923     1.0308     848.6     
+   coopq_quantizer                  compressor   0.6000     0.6923     1.0121     346.5     
+
+4. NUMERICAL QUALITY & OUTLIERS:
+   - NaN loss count: 0
+   - Inf loss count: 0
+   - Low accuracy (<0.50) count: 32
+   - High loss (>5.0) count: 9
+
+   Modules with Accuracy < 0.50:
+     * huffman_coder                  (type=compressor): acc=0.2000, f1=0.2727, loss=1.6017
+     * griffin_ssd                    (type=attention): acc=0.3000, f1=0.3000, loss=2.7945
+     * ast_pruner                     (type=compressor): acc=0.3500, f1=0.2353, loss=0.7585
+     * proxsparse                     (type=compressor): acc=0.3500, f1=0.2353, loss=1.1253
+     * svd_llm_v2_attention           (type=attention): acc=0.3500, f1=0.0000, loss=0.7162
+     * chela_slay                     (type=attention): acc=0.4000, f1=0.0000, loss=0.9591
+     * chela_slay_attention           (type=attention): acc=0.4000, f1=0.0000, loss=0.9591
+     * decay_linear_attention         (type=attention): acc=0.4000, f1=0.2500, loss=1.2117
+     * decay_linear_attn              (type=attention): acc=0.4000, f1=0.2500, loss=1.2117
+     * gated_linear_attention         (type=attention): acc=0.4000, f1=0.2500, loss=1.2117
+     * gated_linear_attn              (type=attention): acc=0.4000, f1=0.2500, loss=1.2117
+     * gla_attention                  (type=attention): acc=0.4000, f1=0.0000, loss=1.1965
+     * routing_attention              (type=attention): acc=0.4000, f1=0.3333, loss=0.6852
+     * samba_m3                       (type=attention): acc=0.4000, f1=0.4545, loss=0.7704
+     * selective_ssm                  (type=attention): acc=0.4000, f1=0.0000, loss=0.9832
+     * simple_ssm                     (type=attention): acc=0.4000, f1=0.0000, loss=0.9832
+     * aa_svd_compressor              (type=compressor): acc=0.4500, f1=0.0000, loss=0.6670
+     * aegis_v6                       (type=attention): acc=0.4500, f1=0.0000, loss=0.8355
+     * astro_quantizer                (type=compressor): acc=0.4500, f1=0.1538, loss=5.4045
+     * compressed_attention           (type=attention): acc=0.4500, f1=0.5926, loss=0.8399
+     * cosformer                      (type=attention): acc=0.4500, f1=0.0000, loss=4.7740
+     * cosformer_attention            (type=attention): acc=0.4500, f1=0.0000, loss=4.7740
+     * direct_svd                     (type=compressor): acc=0.4500, f1=0.0000, loss=6.1878
+     * drone_compressor               (type=compressor): acc=0.4500, f1=0.5926, loss=0.7698
+     * fwsvd_compressor               (type=compressor): acc=0.4500, f1=0.5926, loss=0.7698
+     * hybridkv_compressor            (type=compressor): acc=0.4500, f1=0.5217, loss=1.4490
+     * linformer_attention            (type=attention): acc=0.4500, f1=0.4762, loss=0.7117
+     * moe_deltakv_paged              (type=attention): acc=0.4500, f1=0.0000, loss=2.5650
+     * progressive_token_pruning      (type=attention): acc=0.4500, f1=0.0000, loss=5.6673
+     * rpc_attention                  (type=attention): acc=0.4500, f1=0.2667, loss=0.8492
+     * triton_cosformer               (type=attention): acc=0.4500, f1=0.1538, loss=1.4412
+     * wgqa_attention                 (type=attention): acc=0.4500, f1=0.6207, loss=1.6587
+
+   Modules with Loss > 5.0:
+     * direct_svd                     (type=compressor): loss=6.1878, acc=0.4500
+     * adasplash_attention            (type=attention): loss=5.9990, acc=0.5000
+     * bonsai_pruner                  (type=compressor): loss=5.7585, acc=0.5000
+     * progressive_token_pruning      (type=attention): loss=5.6673, acc=0.4500
+     * mamba_shedder                  (type=compressor): loss=5.5343, acc=0.5000
+     * astro_quantizer                (type=compressor): loss=5.4045, acc=0.4500
+     * adaptive_ranks                 (type=compressor): loss=5.0442, acc=0.5000
+     * gfws                           (type=compressor): loss=5.0323, acc=0.5000
+     * svd_linear                     (type=compressor): loss=5.0251, acc=0.5000
+
+5. COMPRESSORS AUDIT (72 compressors):
+   Top 5 Compressors:
+     * hybrid_svd_layer            : acc=0.6500, f1=0.6316, loss=0.6385
+     * coopq_quantizer             : acc=0.6000, f1=0.6923, loss=1.0121
+     * dynamic_rank                : acc=0.6000, f1=0.6364, loss=0.5598
+     * a3_compressor               : acc=0.6000, f1=0.5556, loss=0.8878
+     * aatc_xkv_compressor         : acc=0.5500, f1=0.6897, loss=2.0901
+   Bottom 5 Compressors:
+     * aa_svd_compressor           : acc=0.4500, f1=0.0000, loss=0.6670
+     * direct_svd                  : acc=0.4500, f1=0.0000, loss=6.1878
+     * ast_pruner                  : acc=0.3500, f1=0.2353, loss=0.7585
+     * proxsparse                  : acc=0.3500, f1=0.2353, loss=1.1253
+     * huffman_coder               : acc=0.2000, f1=0.2727, loss=1.6017
+
+Audit complete.
+

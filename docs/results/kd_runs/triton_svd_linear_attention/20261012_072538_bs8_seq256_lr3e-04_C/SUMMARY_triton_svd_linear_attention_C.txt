@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: triton_svd_linear_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      104.98 M
+  Trainable params:  8.88 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        1643.5800
+  Post-KD PPL:       148.9600
+  Stage 1 (KD) PPL:  208.2500
+  Stage 2 (Self) PPL:148.9600
+  KD Gain:           +1435.33
+  Self Gain:         +59.29
+  Total Gain:        +1494.62
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         4.1138
+  Recovery:          92.99%
+  Peak VRAM:         2870.50 MB
+  Train time:        168.84 s (Stage 1: 132.5s, Stage 2: 36.3s)
+  s/step:            0.3377
+  Loss (final):      24.5211
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.7895
+  Repetition-3:      0.0330
+  Train PPL:         97.7700
+  Test PPL:          148.9600
+  Overfit Gap:       51.19
+  Latency (mean):    281.96 ms
+  Latency (std):     2.71 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=4.9219 | lr=1.74e-04
+  step   420 | loss=4.3278 | lr=1.50e-04
+  step   430 | loss=4.6094 | lr=1.27e-04
+  step   440 | loss=4.4238 | lr=1.04e-04
+  step   450 | loss=4.7665 | lr=8.20e-05
+  step   460 | loss=4.6850 | lr=6.19e-05
+  step   470 | loss=4.4727 | lr=4.40e-05
+  step   480 | loss=4.3419 | lr=2.87e-05
+  step   490 | loss=4.3514 | lr=1.64e-05
+  step   500 | loss=4.5766 | lr=7.44e-06

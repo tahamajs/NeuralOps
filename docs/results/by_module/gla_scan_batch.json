@@ -1,0 +1,95 @@
+{
+  "module_name": "gla_scan_batch",
+  "category": "triton_kernel",
+  "family": "linear_attention",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "1a2ee47690",
+  "latest_timestamp": "2026-10-17T15:04:48.705895+00:00",
+  "latest_record": {
+    "record_id": "e9a6cacdcf04da7c",
+    "module_name": "gla_scan_batch",
+    "category": "triton_kernel",
+    "family": "linear_attention",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-17T15:04:48.705895+00:00",
+    "git_commit_sha": "1a2ee47690",
+    "generation_method": {},
+    "experimental_setup": {
+      "batch_size": 16,
+      "seq_len": 1024,
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+    },
+    "metrics": {
+      "batch_size": 16.0,
+      "seq_len": 1024.0,
+      "sdpa_ms": 1.264,
+      "sdpa_vram_mb": 97.5,
+      "gla_ms": 2.687,
+      "gla_vram_mb": 96.8,
+      "tok_per_sec": 6096515.0
+    },
+    "notes": "Physical GPU context scaling measurement (batch_scaling)"
+  },
+  "active_records": [
+    {
+      "record_id": "e9a6cacdcf04da7c",
+      "module_name": "gla_scan_batch",
+      "category": "triton_kernel",
+      "family": "linear_attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:04:48.705895+00:00",
+      "git_commit_sha": "1a2ee47690",
+      "generation_method": {},
+      "experimental_setup": {
+        "batch_size": 16,
+        "seq_len": 1024,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+      },
+      "metrics": {
+        "batch_size": 16.0,
+        "seq_len": 1024.0,
+        "sdpa_ms": 1.264,
+        "sdpa_vram_mb": 97.5,
+        "gla_ms": 2.687,
+        "gla_vram_mb": 96.8,
+        "tok_per_sec": 6096515.0
+      },
+      "notes": "Physical GPU context scaling measurement (batch_scaling)"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "e9a6cacdcf04da7c",
+      "module_name": "gla_scan_batch",
+      "category": "triton_kernel",
+      "family": "linear_attention",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T15:04:48.705895+00:00",
+      "git_commit_sha": "1a2ee47690",
+      "generation_method": {},
+      "experimental_setup": {
+        "batch_size": 16,
+        "seq_len": 1024,
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU"
+      },
+      "metrics": {
+        "batch_size": 16.0,
+        "seq_len": 1024.0,
+        "sdpa_ms": 1.264,
+        "sdpa_vram_mb": 97.5,
+        "gla_ms": 2.687,
+        "gla_vram_mb": 96.8,
+        "tok_per_sec": 6096515.0
+      },
+      "notes": "Physical GPU context scaling measurement (batch_scaling)"
+    }
+  ]
+}

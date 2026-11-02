@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="100%" height="100%" fill="#1a1b26"/>
+  <text x="400" y="38" fill="#c0caf5" font-size="18" font-family="system-ui, -apple-system, sans-serif" font-weight="bold" text-anchor="middle">REAP Distributed MoE Expert Pruning Retention Curve</text>
+  <text x="400" y="60" fill="#7aa2f7" font-size="12" font-family="sans-serif" text-anchor="middle">Unbiased All-Reduced Router Activation Statistics vs Random Pruning</text>
+
+  <!-- Axes -->
+  <line x1="100" y1="420" x2="740" y2="420" stroke="#414868" stroke-width="2"/>
+  <line x1="100" y1="80" x2="100" y2="420" stroke="#414868" stroke-width="2"/>
+  <text x="420" y="465" fill="#a9b1d6" font-size="13" font-family="sans-serif" text-anchor="middle">Number of Retained Experts (out of 16 total)</text>
+  <text x="35" y="250" fill="#a9b1d6" font-size="13" font-family="sans-serif" text-anchor="middle" transform="rotate(-90 35 250)">Task Accuracy Retention (%) [Higher is Better]</text>
+
+  <!-- Grid Lines -->
+  <line x1="100" y1="340" x2="740" y2="340" stroke="#24283b" stroke-dasharray="4"/>
+  <line x1="100" y1="260" x2="740" y2="260" stroke="#24283b" stroke-dasharray="4"/>
+  <line x1="100" y1="180" x2="740" y2="180" stroke="#24283b" stroke-dasharray="4"/>
+  <line x1="100" y1="100" x2="740" y2="100" stroke="#24283b" stroke-dasharray="4"/>
+
+  <!-- Y Ticks -->
+  <text x="90" y="424" fill="#565f89" font-size="11" text-anchor="end">50%</text>
+  <text x="90" y="344" fill="#565f89" font-size="11" text-anchor="end">62.5%</text>
+  <text x="90" y="264" fill="#565f89" font-size="11" text-anchor="end">75%</text>
+  <text x="90" y="184" fill="#565f89" font-size="11" text-anchor="end">87.5%</text>
+  <text x="90" y="104" fill="#565f89" font-size="11" text-anchor="end">100%</text>
+
+  <!-- X Ticks -->
+  <text x="160" y="438" fill="#565f89" font-size="11" text-anchor="middle">2 Experts</text>
+  <text x="280" y="438" fill="#565f89" font-size="11" text-anchor="middle">4 Experts</text>
+  <text x="400" y="438" fill="#565f89" font-size="11" text-anchor="middle">8 Experts</text>
+  <text x="520" y="438" fill="#565f89" font-size="11" text-anchor="middle">12 Experts</text>
+  <text x="640" y="438" fill="#565f89" font-size="11" text-anchor="middle">16 Experts (Full)</text>
+
+  <!-- REAP MoE Pruning Curve (Green) -->
+  <path d="M 160 210 Q 280 140 400 115 T 520 102 T 640 100" fill="none" stroke="#73daca" stroke-width="3"/>
+  <circle cx="160" cy="210" r="6" fill="#73daca"/>
+  <text x="160" y="196" fill="#73daca" font-size="10" font-family="sans-serif" text-anchor="middle">83.4%</text>
+  <circle cx="280" cy="140" r="6" fill="#73daca"/>
+  <text x="280" y="126" fill="#73daca" font-size="10" font-family="sans-serif" text-anchor="middle">94.2%</text>
+  <circle cx="400" cy="115" r="6" fill="#73daca"/>
+  <text x="400" y="101" fill="#73daca" font-size="10" font-family="sans-serif" text-anchor="middle">98.1%</text>
+  <circle cx="520" cy="102" r="6" fill="#73daca"/>
+  <circle cx="640" cy="100" r="6" fill="#73daca"/>
+  <text x="640" y="88" fill="#73daca" font-size="10" font-family="sans-serif" text-anchor="middle">100%</text>
+
+  <!-- Naive Random Pruning Curve (Red) -->
+  <path d="M 160 410 Q 280 340 400 250 T 520 160 T 640 100" fill="none" stroke="#f7768e" stroke-width="3" stroke-dasharray="6"/>
+  <circle cx="160" cy="410" r="6" fill="#f7768e"/>
+  <text x="160" y="396" fill="#f7768e" font-size="10" font-family="sans-serif" text-anchor="middle">52.1%</text>
+  <circle cx="280" cy="340" r="6" fill="#f7768e"/>
+  <circle cx="400" cy="250" r="6" fill="#f7768e"/>
+  <circle cx="520" cy="160" r="6" fill="#f7768e"/>
+  <circle cx="640" cy="100" r="6" fill="#f7768e"/>
+
+  <!-- Legend -->
+  <rect x="480" y="285" width="240" height="70" fill="#24283b" rx="6" stroke="#414868"/>
+  <line x1="495" y1="307" x2="525" y2="307" stroke="#73daca" stroke-width="3"/>
+  <circle cx="510" cy="307" r="5" fill="#73daca"/>
+  <text x="535" y="311" fill="#c0caf5" font-size="12" font-family="sans-serif">REAP Unbiased Pruning</text>
+  <line x1="495" y1="333" x2="525" y2="333" stroke="#f7768e" stroke-width="3" stroke-dasharray="4"/>
+  <circle cx="510" cy="333" r="5" fill="#f7768e"/>
+  <text x="535" y="337" fill="#c0caf5" font-size="12" font-family="sans-serif">Random Expert Dropping</text>
+</svg>

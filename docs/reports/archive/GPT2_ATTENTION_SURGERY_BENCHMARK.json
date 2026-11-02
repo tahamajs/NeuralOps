@@ -1,0 +1,34 @@
+{
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "baseline_latency_ms": 547.03,
+  "flash_latency_ms": 327.18,
+  "generation_speedup": 1.67,
+  "baseline_peak_vram_mb": 487.99,
+  "flash_peak_vram_mb": 487.99,
+  "vram_saved_mb": -0.0,
+  "token_exact_match": true,
+  "baseline_text": "Artificial Intelligence and high performance neural attention mechanisms. J. Neurosci. 24, 809\u2013816 (2009).\n\n25. K. K.\n\nK. K.\n\n",
+  "flash_text": "Artificial Intelligence and high performance neural attention mechanisms. J. Neurosci. 24, 809\u2013816 (2009).\n\n25. K. K.\n\nK. K.\n\n",
+  "context_scaling": [
+    {
+      "seq_len": 128,
+      "latency_ms": 13.33,
+      "peak_vram_mb": 510.13
+    },
+    {
+      "seq_len": 256,
+      "latency_ms": 18.46,
+      "peak_vram_mb": 560.51
+    },
+    {
+      "seq_len": 512,
+      "latency_ms": 30.87,
+      "peak_vram_mb": 635.38
+    },
+    {
+      "seq_len": 1024,
+      "latency_ms": 66.88,
+      "peak_vram_mb": 782.7
+    }
+  ]
+}

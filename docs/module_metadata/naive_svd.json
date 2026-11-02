@@ -1,0 +1,25 @@
+{
+  "module_name": "naive_svd",
+  "class_name": "NaiveSVD",
+  "category": "attention",
+  "family": "SVD Spectral & Low-Rank Decomposed Attentions",
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Naive SVD baseline: plain truncated SVD without calibration, Fisher weighting, or whitening. Used as an uncalibrated low-rank baseline in comparative evaluations.  Paper comparison reference: Standard truncated SVD approximation W ~ U[:, :r] @ diag(S[:r]) @ V^T[:r, :].",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

@@ -1,0 +1,449 @@
+{
+  "module_name": "chunk_gla_extrapolation",
+  "category": "attention",
+  "family": "long_context_extrapolation",
+  "total_runs": 7,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:33:26.945208+00:00",
+  "latest_record": {
+    "record_id": "45b7c208548a1408",
+    "module_name": "chunk_gla_extrapolation",
+    "category": "attention",
+    "family": "long_context_extrapolation",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "Long-Context Extrapolation: Chunk GLA",
+      "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+      "state_complexity": "O(1)"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "seq_len": 32768,
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 27.47,
+      "peak_vram_mb": 299.3,
+      "kv_state_kb": 32.0,
+      "state_drift_rel": 0.000208,
+      "zero_nan": 1.0
+    },
+    "notes": "Extrapolation scaling to 32768 tokens for Chunk GLA"
+  },
+  "active_records": [
+    {
+      "record_id": "9b685e4a3b030603",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 512,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.42,
+        "peak_vram_mb": 4.6,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 512 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "4f13f8f45a80b189",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 1024,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.82,
+        "peak_vram_mb": 18.6,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 1024 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "1105ec583912ec97",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 1.64,
+        "peak_vram_mb": 27.6,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 2048 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "85ef8f7c31e2cd7c",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 4096,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.28,
+        "peak_vram_mb": 45.7,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 4096 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "d20682e9228caa8d",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 8192,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 5.31,
+        "peak_vram_mb": 82.0,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 8192 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "fa0c776bbf2e0cb9",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 16384,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 13.16,
+        "peak_vram_mb": 154.4,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 16384 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "45b7c208548a1408",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 32768,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 27.47,
+        "peak_vram_mb": 299.3,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 32768 tokens for Chunk GLA"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "9b685e4a3b030603",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 512,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.42,
+        "peak_vram_mb": 4.6,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 512 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "4f13f8f45a80b189",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 1024,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.82,
+        "peak_vram_mb": 18.6,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 1024 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "1105ec583912ec97",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 1.64,
+        "peak_vram_mb": 27.6,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 2048 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "85ef8f7c31e2cd7c",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 4096,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.28,
+        "peak_vram_mb": 45.7,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 4096 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "d20682e9228caa8d",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 8192,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 5.31,
+        "peak_vram_mb": 82.0,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 8192 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "fa0c776bbf2e0cb9",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 16384,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 13.16,
+        "peak_vram_mb": 154.4,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 16384 tokens for Chunk GLA"
+    },
+    {
+      "record_id": "45b7c208548a1408",
+      "module_name": "chunk_gla_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Chunk GLA",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 32768,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 27.47,
+        "peak_vram_mb": 299.3,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 32768 tokens for Chunk GLA"
+    }
+  ]
+}

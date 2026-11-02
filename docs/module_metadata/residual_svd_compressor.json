@@ -1,0 +1,25 @@
+{
+  "module_name": "residual_svd_compressor",
+  "class_name": "ResidualSVDCompressor",
+  "category": "compression",
+  "family": "Activation-Aware & Standard Low-Rank SVD Factorization",
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Residual SVD Compressor compression engine from the Activation-Aware & Standard Low-Rank SVD Factorization paradigm. Hardware certified for post-training compression.",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

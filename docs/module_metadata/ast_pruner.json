@@ -1,0 +1,35 @@
+{
+  "module_name": "ast_pruner",
+  "class_name": "ASTPruner",
+  "category": "compression",
+  "family": "Structured Channel & Head Pruning",
+  "params": [
+    "model",
+    "block_size",
+    "n_keep",
+    "dim",
+    "use_pca",
+    "use_fisher",
+    "recalibrate_ln",
+    "tokenizer",
+    "calibration_loader",
+    "calibration_texts",
+    "device"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "AST Pruner: Vectorized semi-structured 2:4 and N:M pruning engine with\nempirical Fisher calibration and PCA coordinate rotation.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.55,
+  "bits": 4,
+  "hash_val": 1.8786487315775817e+38,
+  "paradigm": "pruning",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

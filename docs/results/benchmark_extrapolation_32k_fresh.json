@@ -1,0 +1,282 @@
+[
+  {
+    "sequence_length": 512,
+    "mechanism": "Standard Quadratic Attention",
+    "latency_ms": 0.02,
+    "peak_vram_mb": 2.7,
+    "kv_state_kb": 512.0,
+    "state_complexity": "O(L)",
+    "state_drift_rel": 0.0,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 512,
+    "mechanism": "Chunk GLA",
+    "latency_ms": 0.42,
+    "peak_vram_mb": 4.6,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000207,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 512,
+    "mechanism": "Gated Delta Net",
+    "latency_ms": 0.49,
+    "peak_vram_mb": 5.2,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000207,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 512,
+    "mechanism": "SVD Linear Attention",
+    "latency_ms": 0.27,
+    "peak_vram_mb": 17.1,
+    "kv_state_kb": 8.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.521,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 1024,
+    "mechanism": "Standard Quadratic Attention",
+    "latency_ms": 0.05,
+    "peak_vram_mb": 16.6,
+    "kv_state_kb": 1024.0,
+    "state_complexity": "O(L)",
+    "state_drift_rel": 0.0,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 1024,
+    "mechanism": "Chunk GLA",
+    "latency_ms": 0.82,
+    "peak_vram_mb": 18.6,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000207,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 1024,
+    "mechanism": "Gated Delta Net",
+    "latency_ms": 0.96,
+    "peak_vram_mb": 19.6,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000208,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 1024,
+    "mechanism": "SVD Linear Attention",
+    "latency_ms": 0.26,
+    "peak_vram_mb": 24.6,
+    "kv_state_kb": 8.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.459,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 2048,
+    "mechanism": "Standard Quadratic Attention",
+    "latency_ms": 0.14,
+    "peak_vram_mb": 23.5,
+    "kv_state_kb": 2048.0,
+    "state_complexity": "O(L)",
+    "state_drift_rel": 0.0,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 2048,
+    "mechanism": "Chunk GLA",
+    "latency_ms": 1.64,
+    "peak_vram_mb": 27.6,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000208,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 2048,
+    "mechanism": "Gated Delta Net",
+    "latency_ms": 1.91,
+    "peak_vram_mb": 29.7,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000207,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 2048,
+    "mechanism": "SVD Linear Attention",
+    "latency_ms": 0.32,
+    "peak_vram_mb": 39.8,
+    "kv_state_kb": 8.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.415,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 4096,
+    "mechanism": "Standard Quadratic Attention",
+    "latency_ms": 0.42,
+    "peak_vram_mb": 37.4,
+    "kv_state_kb": 4096.0,
+    "state_complexity": "O(L)",
+    "state_drift_rel": 0.0,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 4096,
+    "mechanism": "Chunk GLA",
+    "latency_ms": 3.28,
+    "peak_vram_mb": 45.7,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000208,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 4096,
+    "mechanism": "Gated Delta Net",
+    "latency_ms": 3.82,
+    "peak_vram_mb": 49.9,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000207,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 4096,
+    "mechanism": "SVD Linear Attention",
+    "latency_ms": 0.83,
+    "peak_vram_mb": 70.0,
+    "kv_state_kb": 8.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.473,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 8192,
+    "mechanism": "Standard Quadratic Attention",
+    "latency_ms": 1.27,
+    "peak_vram_mb": 65.2,
+    "kv_state_kb": 8192.0,
+    "state_complexity": "O(L)",
+    "state_drift_rel": 0.0,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 8192,
+    "mechanism": "Chunk GLA",
+    "latency_ms": 5.31,
+    "peak_vram_mb": 82.0,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000207,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 8192,
+    "mechanism": "Gated Delta Net",
+    "latency_ms": 6.18,
+    "peak_vram_mb": 90.2,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000207,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 8192,
+    "mechanism": "SVD Linear Attention",
+    "latency_ms": 2.29,
+    "peak_vram_mb": 130.6,
+    "kv_state_kb": 8.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.626,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 16384,
+    "mechanism": "Standard Quadratic Attention",
+    "latency_ms": 3.71,
+    "peak_vram_mb": 120.8,
+    "kv_state_kb": 16384.0,
+    "state_complexity": "O(L)",
+    "state_drift_rel": 0.0,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 16384,
+    "mechanism": "Chunk GLA",
+    "latency_ms": 13.16,
+    "peak_vram_mb": 154.4,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000208,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 16384,
+    "mechanism": "Gated Delta Net",
+    "latency_ms": 15.43,
+    "peak_vram_mb": 170.9,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000207,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 16384,
+    "mechanism": "SVD Linear Attention",
+    "latency_ms": 8.33,
+    "peak_vram_mb": 251.6,
+    "kv_state_kb": 8.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.48,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 32768,
+    "mechanism": "Standard Quadratic Attention",
+    "latency_ms": 13.9,
+    "peak_vram_mb": 231.9,
+    "kv_state_kb": 32768.0,
+    "state_complexity": "O(L)",
+    "state_drift_rel": 0.0,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 32768,
+    "mechanism": "Chunk GLA",
+    "latency_ms": 27.47,
+    "peak_vram_mb": 299.3,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000208,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 32768,
+    "mechanism": "Gated Delta Net",
+    "latency_ms": 33.79,
+    "peak_vram_mb": 332.3,
+    "kv_state_kb": 32.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.000207,
+    "zero_nan": true
+  },
+  {
+    "sequence_length": 32768,
+    "mechanism": "SVD Linear Attention",
+    "latency_ms": 31.31,
+    "peak_vram_mb": 493.8,
+    "kv_state_kb": 8.0,
+    "state_complexity": "O(1)",
+    "state_drift_rel": 0.369,
+    "zero_nan": true
+  }
+]

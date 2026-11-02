@@ -1,0 +1,50 @@
+{
+  "format": "onnx",
+  "base_model": "unknown",
+  "attention_type": "gated_delta_net",
+  "compression_method": "svd",
+  "rank": 32,
+  "_neuralops_metadata": [
+    {
+      "op": "replace",
+      "type": "gated_delta_net",
+      "kwargs": {
+        "rank": null,
+        "copy_weights": true,
+        "layers": null
+      }
+    },
+    {
+      "op": "compress",
+      "type": "svd",
+      "kwargs": {
+        "rank": 32,
+        "layers": null,
+        "target_sparsity": 0.2
+      }
+    }
+  ],
+  "surgery_history": [
+    {
+      "op": "replace",
+      "type": "gated_delta_net",
+      "kwargs": {
+        "rank": null,
+        "copy_weights": true,
+        "layers": null
+      }
+    },
+    {
+      "op": "compress",
+      "type": "svd",
+      "kwargs": {
+        "rank": 32,
+        "layers": null,
+        "target_sparsity": 0.2
+      }
+    }
+  ],
+  "framework": "neuralops",
+  "pytorch_version": "2.11.0",
+  "extra_kwargs": {}
+}

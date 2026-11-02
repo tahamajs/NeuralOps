@@ -1,0 +1,61 @@
+{
+  "run_id": "2df06d5d-15e4-4f78-8a41-04596aa0ac8d",
+  "run_name": "gqa_attention_distilbert-base-uncased_sst2",
+  "timestamp_start": "2026-10-09T16:11:55Z",
+  "timestamp_end": "2026-10-09T16:20:07Z",
+  "git_commit": "6207c8cef6",
+  "module": {
+    "name": "gqa_attention",
+    "type": "attention",
+    "family": "gqa",
+    "supports_causal": true,
+    "supports_gqa": true,
+    "supports_rope": true,
+    "requires_cuda": false,
+    "rank": 32
+  },
+  "model": {
+    "name": "distilbert-base-uncased",
+    "family": "distilbert",
+    "num_params": 67544834,
+    "hidden_size": 768,
+    "num_heads": 12,
+    "num_layers": 6
+  },
+  "dataset": {
+    "name": "sst2",
+    "task": "classification",
+    "num_labels": 2,
+    "num_train": 67349,
+    "num_eval": 67349
+  },
+  "config": {
+    "rank": 32,
+    "epochs": 1,
+    "lr": 2e-05,
+    "batch_size": 16,
+    "max_length": 128,
+    "seed": 42,
+    "eval_only": false
+  },
+  "metrics": {
+    "accuracy": 0.9048165137614679,
+    "f1": 0.9068462401795736,
+    "precision": 0.9038031319910514,
+    "recall": 0.9099099099099099,
+    "loss": 0.3011918491599235
+  },
+  "resources": {
+    "peak_vram_mb": 560.5791015625,
+    "latency_ms_per_token": 0.014291904296825919,
+    "throughput_tok_per_sec": 69969.6820823303,
+    "duration_s": 492.23,
+    "num_params_after": 67544834
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timeout_s": 1800,
+  "timed_out": false
+}

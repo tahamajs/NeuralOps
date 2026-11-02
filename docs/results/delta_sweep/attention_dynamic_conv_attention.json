@@ -1,0 +1,12 @@
+{
+  "module": "dynamic_conv_attention",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 3355079.7,
+  "student_ppl": 3355115.91,
+  "pre_ppl": 3355115.91,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.299086"
+}

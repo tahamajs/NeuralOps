@@ -1,0 +1,32 @@
+{
+  "module_name": "compressed_attention",
+  "class_name": "CompressedAttentionLayer2",
+  "category": "attention",
+  "family": "Multi-Head Latent & Key-Value Compressed Attentions",
+  "params": [
+    "original_layer",
+    "rank_qkv",
+    "rank_out",
+    "method",
+    "config",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "chunk",
+    "transpose",
+    "softmax",
+    "dropout",
+    "view",
+    "matmul"
+  ],
+  "docstring": "Compressed Multi-Head Attention via Truncated Singular Value Decomposition (SVD).  Provides rank-constrained and singular-energy-thresholded low-rank approximations of standard PyTorch attention input (QKV) and output projection matrices with full pretrained weight transfer, trainable LoRA residual adapters, GQA, RoPE, and causal decoding support.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.2733879349927147e+38,
+  "paradigm": "mla",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

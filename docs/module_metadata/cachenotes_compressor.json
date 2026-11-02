@@ -1,0 +1,34 @@
+{
+  "module_name": "cachenotes_compressor",
+  "class_name": "CacheNotesCompressor",
+  "category": "compression",
+  "family": "KV-Cache Memory Optimization & Virtual Page Eviction",
+  "params": [
+    "max_cache_len",
+    "task_type",
+    "keep_ratio",
+    "num_sinks",
+    "model",
+    "recalibrate_ln",
+    "tokenizer",
+    "calibration_loader",
+    "calibration_texts",
+    "device"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "CacheNotes Compressor: Decouples static weight compression from KV cache dynamic pruning.\nCompresses static model weights using CPT-guided low-rank SVD without zeroing out entire output channels.\n\nArgs:\n    model: PyTorch model.\n    task_type: Target downstream task ('qa', 'summarize', 'code', 'reasoning', 'math').\n    keep_ratio: Fraction of rank / energy to retain (default 0.5).\n    recalibrate_ln: Whether to recalibrate LayerNorm statistics after compression.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.595509648490131e+38,
+  "paradigm": "kv_cache",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

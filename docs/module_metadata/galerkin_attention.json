@@ -1,0 +1,23 @@
+{
+  "module_name": "galerkin_attention",
+  "class_name": "GalerkinAttention",
+  "category": "attention",
+  "family": "Kernelized & Feature-Map Linear Attentions",
+  "params": [],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Galerkin Attention: Petrov-Galerkin Projection Attention (Corrected v3).  Rollback notes:   The previous \"linear attention with sequence-space normalization\" attempt   introduced NaN in training because Φ Φᵀ ≠ I_N, so Φ (Φᵀ 1_N) is not a   valid reconstruction of the all-ones vector. This version reverts to the   original softmax-in-basis-space for",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.7664050454328436e+38,
+  "paradigm": "linear",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

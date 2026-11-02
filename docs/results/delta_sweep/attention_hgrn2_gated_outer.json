@@ -1,0 +1,12 @@
+{
+  "module": "hgrn2_gated_outer",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 3833.06,
+  "student_ppl": 52.83,
+  "pre_ppl": 3869.27,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.311923"
+}

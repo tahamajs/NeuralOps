@@ -1,0 +1,11 @@
+{
+  "module": "residual_svd_compressor",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 6029.22,
+  "duration_sec": 240.0,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:33:26"
+}

@@ -1,0 +1,58 @@
+# Benchmark Module Coverage Report
+
+- **Registry Total**: 202 modules (131 Attention + 72 Compressors)
+- **Tested Modules**: 113 (55.9% coverage)
+- **Remaining Unbenchmarked**: 89
+
+### Missing Modules
+- `a3_compressor`
+- `aa_svd_compressor`
+- `aatc_xkv_compressor`
+- `adaptive_ranks`
+- `adasvd_compressor`
+- `admm_compressor`
+- `admm_pruner`
+- `armor_pruner`
+- `ast_pruner`
+- `astro_quantizer`
+- `bonsai_pruner`
+- `cachenotes_compressor`
+- `come_compressor`
+- `compot_compressor`
+- `coopq_quantizer`
+- `cr_compressor`
+- `cur_compressor`
+- `cur_moe_compressor`
+- `delta_kv`
+- `direct_svd`
+- `dobi_svd`
+- `drone_compressor`
+- `dynamic_rank`
+- `enlighten_compressor`
+- `entropy_budget_allocation`
+- `erc_svd`
+- `faq_quantizer`
+- `flap`
+- `flat_llm`
+- `frandi_compressor`
+- `full`
+- `fwsvd_compressor`
+- `gated_delta_net`
+- `gated_deltanet_block`
+- `gfws`
+- `granite_hybrid`
+- `grecodec_compressor`
+- `halo_regla`
+- `hashed_net_compressor`
+- `hgrn2_gated_deltanet`
+- `hgrn2_gated_outer`
+- `hgrn2_outer`
+- `huffman_coder`
+- `hybrid_svd_layer`
+- `hybridkv_compressor`
+- `kmeans_quantize`
+- `kronecker_compressor`
+- `kronecker_tt_lora`
+- `kvtc_compressor`
+- `liftr`
+- ... and 39 more

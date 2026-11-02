@@ -1,0 +1,11 @@
+{
+  "module": "lillama_compressor",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 36.21,
+  "duration_sec": 211.1,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 10:00:11"
+}

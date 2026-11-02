@@ -1,0 +1,31 @@
+{
+  "module_name": "slicegpt",
+  "class_name": "SliceGPTCompressor",
+  "category": "compression",
+  "family": "Rotational Smoothing & Incoherent Matrix Transformation",
+  "params": [
+    "model",
+    "tokenizer",
+    "sparsity",
+    "non_uniform",
+    "calibration_loader",
+    "calibration_texts",
+    "device"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Native PyTorch SliceGPT Compressor.\n\nApplies orthogonal transformation Q to rotate model representations onto principal\nactivation variance coordinates, followed by uniform or non-uniform projection head slicing.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.81,
+  "bits": 4,
+  "hash_val": 8.080036924533272e+37,
+  "paradigm": "rotational",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

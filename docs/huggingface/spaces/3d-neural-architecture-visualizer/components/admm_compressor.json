@@ -1,0 +1,74 @@
+{
+  "id": "admm_compressor",
+  "name": "ADMM Compressor: Alternating Direction Method of Multipliers for ",
+  "file": "neuralops/compression/pruning/admm_compressor.py",
+  "type": "Compression Engine",
+  "category": "Structured Channel & Head Pruning",
+  "paradigm": "pruning",
+  "icon": "✂️",
+  "description": "ADMM Compressor: Alternating Direction Method of Multipliers for Joint Pruning and Quantization. Registered in COMPRESSOR_REGISTRY as 'admm' and 'admm_compressor'.",
+  "classes": [
+    "ADMMCompressor"
+  ],
+  "methods_count": 7,
+  "math_latex": "\\tau = \\text{TopK}_{k} \\left( \\{ |W_{i,j}| \\}_{i=1, j=1}^{N, M} \\right)",
+  "components": [
+    {
+      "id": "orthogonal_rot",
+      "name": "Orthogonal Transformation Matrix (Q)",
+      "role": "Energy Concentration",
+      "shape_transform": "[d_{in} × d_{in}] Orthogonal",
+      "color": "#38bdf8",
+      "math_latex": "X' = X Q, \\quad Q^\\top Q = I"
+    },
+    {
+      "id": "sliced_linear",
+      "name": "Channel-Sliced Dense Linear Operator",
+      "role": "45% Channel Elimination",
+      "shape_transform": "[0.55 \\cdot d_{out} × 0.55 \\cdot d_{in}]",
+      "color": "#0ea5e9",
+      "math_latex": "W_{sliced} = (Q_2^\\top W Q_1)_{[:d'_1, :d'_2]}"
+    },
+    {
+      "id": "bias_correct",
+      "name": "Mean Bias Correction Vector",
+      "role": "Representation Recalibration",
+      "shape_transform": "[0.55 \\cdot d_{out}]",
+      "color": "#0284c7",
+      "math_latex": "\\mu_{err} = \\mathbb{E}[W X] - \\mathbb{E}[W_{sliced} X']"
+    }
+  ],
+  "model_projections": {
+    "distilbert": {
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
+    },
+    "roberta": {
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
+    },
+    "gpt2": {
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
+    },
+    "qwen": {
+      "hidden_size": 896,
+      "intermediate_size": 4864,
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 3337420,
+      "savings_ratio": 3.33
+    }
+  },
+  "family": "Structured Channel & Head Pruning",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "math": "\\tau = \\text{TopK}_{k} \\left( \\{ |W_{i,j}| \\}_{i=1, j=1}^{N, M} \\right)"
+}

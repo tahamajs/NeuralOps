@@ -1,0 +1,82 @@
+{
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "total_vram_gb": 7.62,
+  "iterations": 1000,
+  "background_load_mb": 4628.6919,
+  "elapsed_sec": 1.42,
+  "ms_per_iter": 1.423,
+  "baseline_allocated_mb": 4636.8325,
+  "final_allocated_mb": 4636.8325,
+  "peak_allocated_mb": 4674.8345,
+  "peak_reserved_mb": 4718.0,
+  "memory_drift_iter100_to_1000_mb": 0.0,
+  "zero_leak_verified": true,
+  "cuda_allocator_fragmentation_ratio": 0.0172,
+  "numerical_integrity": {
+    "total_nans": 0,
+    "total_infs": 0,
+    "clean": true
+  },
+  "checkpoints": {
+    "100": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    },
+    "200": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    },
+    "300": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    },
+    "400": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    },
+    "500": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    },
+    "600": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    },
+    "700": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    },
+    "800": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    },
+    "900": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    },
+    "1000": {
+      "allocated_mb": 4647.8325,
+      "max_allocated_mb": 4674.8345,
+      "reserved_mb": 4718.0,
+      "max_reserved_mb": 4718.0
+    }
+  }
+}

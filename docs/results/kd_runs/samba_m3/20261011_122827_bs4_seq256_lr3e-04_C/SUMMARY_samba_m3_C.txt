@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: samba_m3 / C
+================================================================================
+
+MODEL INFO:
+  Total params:      140.39 M
+  Trainable params:  1.77 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        117.5300
+  Post-KD PPL:       117.5300
+  Stage 1 (KD) PPL:  117.5300
+  Stage 2 (Self) PPL:117.5300
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         3.2449
+  Recovery:          0.00%
+  Peak VRAM:         1210.04 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0357
+  Repetition-3:      0.9531
+  Train PPL:         104.0000
+  Test PPL:          117.5300
+  Overfit Gap:       13.53
+  Latency (mean):    6658.30 ms
+  Latency (std):     22.47 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        347695032364
+
+TRAINING HISTORY (last 10 steps):

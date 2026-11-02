@@ -1,0 +1,11 @@
+module,type,latency_ms,p50_ms,p95_ms,p99_ms,peak_vram_mb,backward_ms,throughput_tok_s,sqnr_db,compression_ratio,compress_latency_ms,status
+eat,attention,2.114,1.382,5.11,5.11,0.0,0.0,15138.9,,,,PASS
+block_transformer_hiba,attention,3.58,1.868,11.025,11.025,0.0,0.0,8937.5,,,,PASS
+adaptive_span_attention,attention,4.131,1.759,9.836,9.836,0.0,0.0,7745.7,,,,PASS
+progressive_token_pruning,attention,2.242,1.441,4.83,4.83,0.0,0.0,14273.6,,,,PASS
+expert_choice_moe,attention,1.732,1.77,2.047,2.047,0.0,0.0,18477.5,,,,PASS
+direct_svd,compressor,,,,,,,,2.03,4.0,17.553,PASS
+flat_llm,compressor,,,,,,,,2.02,4.0,1.089,PASS
+hashed_net_compressor,compressor,,,,,,,,2.08,4.0,1.049,PASS
+liftr,compressor,,,,,,,,2.05,4.0,1.138,PASS
+roast_hashed_linear,compressor,,,,,,,,2.04,4.0,1.091,PASS

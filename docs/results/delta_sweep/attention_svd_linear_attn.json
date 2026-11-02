@@ -1,0 +1,11 @@
+{
+  "module": "svd_linear_attn",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 3608.18,
+  "student_ppl": 164.46,
+  "duration_sec": 144.3,
+  "retries_used": 1,
+  "error": "",
+  "timestamp": "2026-10-12 22:12:37"
+}

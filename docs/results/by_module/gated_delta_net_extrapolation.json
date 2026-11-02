@@ -1,0 +1,449 @@
+{
+  "module_name": "gated_delta_net_extrapolation",
+  "category": "attention",
+  "family": "long_context_extrapolation",
+  "total_runs": 7,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:33:26.945208+00:00",
+  "latest_record": {
+    "record_id": "e721c660bd43f3d0",
+    "module_name": "gated_delta_net_extrapolation",
+    "category": "attention",
+    "family": "long_context_extrapolation",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+      "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+      "state_complexity": "O(1)"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "seq_len": 32768,
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 33.79,
+      "peak_vram_mb": 332.3,
+      "kv_state_kb": 32.0,
+      "state_drift_rel": 0.000207,
+      "zero_nan": 1.0
+    },
+    "notes": "Extrapolation scaling to 32768 tokens for Gated Delta Net"
+  },
+  "active_records": [
+    {
+      "record_id": "7b69b316c1ab0091",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 512,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.49,
+        "peak_vram_mb": 5.2,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 512 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "2ff3cc61fe7b1545",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 1024,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.96,
+        "peak_vram_mb": 19.6,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 1024 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "83c9854170e8c4aa",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 1.91,
+        "peak_vram_mb": 29.7,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 2048 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "745db481bb6b809f",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 4096,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.82,
+        "peak_vram_mb": 49.9,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 4096 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "8878ea9d570dd597",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 8192,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 6.18,
+        "peak_vram_mb": 90.2,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 8192 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "7836f32b489d533e",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 16384,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 15.43,
+        "peak_vram_mb": 170.9,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 16384 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "e721c660bd43f3d0",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 32768,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 33.79,
+        "peak_vram_mb": 332.3,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 32768 tokens for Gated Delta Net"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "7b69b316c1ab0091",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 512,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.49,
+        "peak_vram_mb": 5.2,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 512 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "2ff3cc61fe7b1545",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 1024,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.96,
+        "peak_vram_mb": 19.6,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000208,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 1024 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "83c9854170e8c4aa",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 1.91,
+        "peak_vram_mb": 29.7,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 2048 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "745db481bb6b809f",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 4096,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.82,
+        "peak_vram_mb": 49.9,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 4096 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "8878ea9d570dd597",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 8192,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 6.18,
+        "peak_vram_mb": 90.2,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 8192 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "7836f32b489d533e",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 16384,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 15.43,
+        "peak_vram_mb": 170.9,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 16384 tokens for Gated Delta Net"
+    },
+    {
+      "record_id": "e721c660bd43f3d0",
+      "module_name": "gated_delta_net_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: Gated Delta Net",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 32768,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 33.79,
+        "peak_vram_mb": 332.3,
+        "kv_state_kb": 32.0,
+        "state_drift_rel": 0.000207,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 32768 tokens for Gated Delta Net"
+    }
+  ]
+}

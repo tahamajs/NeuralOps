@@ -1,0 +1,12 @@
+{
+  "module": "gated_delta_net",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 2141.11,
+  "student_ppl": 47.98,
+  "pre_ppl": 2177.32,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.305972"
+}

@@ -1,0 +1,155 @@
+{
+  "module_name": "fms_scan",
+  "category": "triton_kernel",
+  "family": "state_space",
+  "total_runs": 2,
+  "latest_version": "v1.3.7",
+  "latest_revision": 2,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:35:16.078400+00:00",
+  "latest_record": {
+    "record_id": "6af6fcd096943e87",
+    "module_name": "fms_scan",
+    "category": "triton_kernel",
+    "family": "state_space",
+    "version_tag": "v1.3.7",
+    "revision": 2,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+      "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=4,H=8,N=512,D=64",
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 3.0292,
+      "latency_pytorch_ms": 26.241,
+      "speedup_x": 8.66,
+      "launch_overhead_ms": 0.0006,
+      "cosine_sim": 1.0,
+      "max_diff": 0.001953
+    },
+    "notes": "Triton vs PyTorch benchmark for fms_scan: 8.66x speedup"
+  },
+  "active_records": [
+    {
+      "record_id": "ba3b357ea961dad7",
+      "module_name": "fms_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T08:33:14.128901+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fms_scan_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, T=1024, d=64"
+      },
+      "metrics": {
+        "latency_triton_ms": 5.23,
+        "latency_pytorch_ms": 51.749,
+        "speedup_x": 9.9,
+        "sram_bytes_saved_mb": 128.0
+      },
+      "notes": "Parity: PASS"
+    },
+    {
+      "record_id": "6af6fcd096943e87",
+      "module_name": "fms_scan",
+      "category": "triton_kernel",
+      "family": "state_space",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,H=8,N=512,D=64",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.0292,
+        "latency_pytorch_ms": 26.241,
+        "speedup_x": 8.66,
+        "launch_overhead_ms": 0.0006,
+        "cosine_sim": 1.0,
+        "max_diff": 0.001953
+      },
+      "notes": "Triton vs PyTorch benchmark for fms_scan: 8.66x speedup"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "ba3b357ea961dad7",
+      "module_name": "fms_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T08:33:14.128901+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "fms_scan_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, T=1024, d=64"
+      },
+      "metrics": {
+        "latency_triton_ms": 5.23,
+        "latency_pytorch_ms": 51.749,
+        "speedup_x": 9.9,
+        "sram_bytes_saved_mb": 128.0
+      },
+      "notes": "Parity: PASS"
+    },
+    {
+      "record_id": "6af6fcd096943e87",
+      "module_name": "fms_scan",
+      "category": "triton_kernel",
+      "family": "state_space",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,H=8,N=512,D=64",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 3.0292,
+        "latency_pytorch_ms": 26.241,
+        "speedup_x": 8.66,
+        "launch_overhead_ms": 0.0006,
+        "cosine_sim": 1.0,
+        "max_diff": 0.001953
+      },
+      "notes": "Triton vs PyTorch benchmark for fms_scan: 8.66x speedup"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "module": "cur_compressor",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 17113.29,
+  "duration_sec": 166.3,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:45:59"
+}

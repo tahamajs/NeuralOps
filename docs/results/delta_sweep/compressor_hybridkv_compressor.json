@@ -1,0 +1,12 @@
+{
+  "module": "hybridkv_compressor",
+  "type": "compressor",
+  "status": "DEPRECATED",
+  "delta": null,
+  "student_ppl": 30.59,
+  "pre_ppl": 36.22,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.341221"
+}

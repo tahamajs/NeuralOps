@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: liftr / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.44 M
+  Trainable params:  28.35 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        11138.9100
+  Post-KD PPL:       11138.9100
+  Stage 1 (KD) PPL:  11138.9100
+  Stage 2 (Self) PPL:11138.9100
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         307.6197
+  Recovery:          0.00%
+  Peak VRAM:         581.99 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.5204
+  Repetition-3:      0.1667
+  Train PPL:         13502.7900
+  Test PPL:          11138.9100
+  Overfit Gap:       -2363.88
+  Latency (mean):    212.42 ms
+  Latency (std):     4.49 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        2991eb4bd6df
+
+TRAINING HISTORY (last 10 steps):

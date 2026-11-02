@@ -1,0 +1,28 @@
+{
+  "module_name": "aegis_spectron_fp8",
+  "class_name": "AegisSpectronFP8Attention",
+  "category": "attention",
+  "family": "Hardware-Fused, Low-Precision & Spectral-Transform Attentions",
+  "params": [
+    "config",
+    "hidden_size",
+    "num_heads",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "softmax",
+    "norm",
+    "view",
+    "transpose"
+  ],
+  "docstring": "Aegis-Spectron-FP8 Hybrid Architecture.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 8,
+  "hash_val": 4.313083304353013e+37,
+  "paradigm": "hardware",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

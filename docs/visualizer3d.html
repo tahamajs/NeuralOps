@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralOps · 3D Architecture & Tensor Topology Studio</title>
+    <meta name="description" content="Interactive 3D WebGL Visualization Studio for SVD Low-Rank Tensor Factorization, Multi-Metric Pareto Frontier, and Attention Manifolds.">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <!-- Three.js + OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Tween.js for smooth transitions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    <style>
+        :root {
+            --bg-base: #060812;
+            --bg-panel: rgba(12, 17, 33, 0.78);
+            --border-panel: rgba(56, 189, 248, 0.22);
+            --border-panel-hover: rgba(56, 189, 248, 0.5);
+            --text-primary: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-cyan: #38bdf8;
+            --accent-purple: #a855f7;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --glass-blur: blur(20px);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            user-select: none;
+        }
+
+        #canvas3d {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Top Header Navigation */
+        .top-nav {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 64px;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(6, 8, 18, 0.75);
+            backdrop-filter: var(--glass-blur);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 100;
+        }
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-logo {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: #fff;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+        }
+        .brand-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .brand-badge {
+            font-size: 0.68rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 2px 7px;
+            border-radius: 5px;
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: var(--accent-cyan);
+        }
+
+        .mode-tabs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .mode-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .mode-btn.active {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(168, 85, 247, 0.25));
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .nav-links-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .nav-btn {
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-btn:hover {
+            color: var(--text-primary);
+            border-color: rgba(56, 189, 248, 0.4);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        /* Floating HUD Control Panels */
+        .hud-panel {
+            position: absolute;
+            background: var(--bg-panel);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-panel);
+            border-radius: 14px;
+            padding: 1.25rem;
+            z-index: 50;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+            transition: border-color 0.2s ease;
+        }
+        .hud-panel:hover {
+            border-color: var(--border-panel-hover);
+        }
+
+        /* Left Control Panel */
+        .controls-left {
+            top: 80px;
+            left: 20px;
+            width: 320px;
+        }
+        .panel-heading {
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-primary);
+        }
+        .control-group {
+            margin-bottom: 1rem;
+        }
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .control-val {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .btn-action-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+        .btn-glow {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent-cyan);
+            transition: all 0.2s ease;
+        }
+        .btn-glow:hover {
+            background: rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+        }
+
+        /* Right Telemetry Panel */
+        .telemetry-right {
+            top: 80px;
+            right: 20px;
+            width: 310px;
+        }
+        .stat-card-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .stat-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+        .stat-box-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+        }
+        .stat-box-lbl {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* Bottom Formula Bar */
+        .formula-bottom {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-panel);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-panel);
+            border-radius: 30px;
+            padding: 10px 24px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .formula-tag {
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #d8b4fe;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        /* Interactive Node Tooltip */
+        #tooltip3d {
+            position: absolute;
+            display: none;
+            background: rgba(10, 14, 28, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.5);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.78rem;
+            pointer-events: none;
+            z-index: 200;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            max-width: 260px;
+        }
+        .tt-title {
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+        .tt-stat {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3px;
+            color: var(--text-muted);
+        }
+        .tt-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        /* Viewport Legend */
+        .legend-box {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.74rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+        }
+        .legend-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 900px) {
+            .controls-left { width: calc(100% - 40px); top: 74px; }
+            .telemetry-right { display: none; }
+            .formula-bottom { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 3D Canvas -->
+    <div id="canvas3d"></div>
+
+    <!-- Top Navigation Header -->
+    <header class="top-nav">
+        <div class="brand-area">
+            <div class="brand-logo">Ω</div>
+            <div class="brand-title">
+                NeuralOps 3D Studio
+                <span class="brand-badge">WebGL · SM 8.9</span>
+            </div>
+        </div>
+
+        <div class="mode-tabs">
+            <button class="mode-btn active" id="btn-mode-svd">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                SVD Tensor Factorization
+            </button>
+            <button class="mode-btn" id="btn-mode-pareto">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+                3D Pareto Frontier
+            </button>
+            <button class="mode-btn" id="btn-mode-attention">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="m4 8 8-4 8 4"/></svg>
+                Attention Manifold
+            </button>
+        </div>
+
+        <div class="nav-links-right">
+            <a href="./index.html" class="nav-btn">← Research Hub</a>
+            <a href="./dashboard.html" class="nav-btn">Dashboard</a>
+            <a href="./app/" class="nav-btn" style="color: #00ff9d; border-color: rgba(0, 255, 157, 0.3);">React Studio</a>
+            <a href="./slides/master_defense_2026.pdf" target="_blank" class="nav-btn" style="color: #60a5fa; border-color: rgba(96, 165, 250, 0.3);">Slides PDF</a>
+        </div>
+    </header>
+
+    <!-- Left Controls Panel -->
+    <div class="hud-panel controls-left" id="panel-controls">
+        <div class="panel-heading">
+            <span id="panel-title">Tensor Factorization Controls</span>
+            <span class="formula-tag" id="panel-tag">Cholesky Whitened</span>
+        </div>
+
+        <!-- Mode 1 Controls: SVD -->
+        <div id="controls-svd">
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Rank Truncation (r)</span>
+                    <span class="control-val" id="val-rank">64</span>
+                </div>
+                <input type="range" id="slider-rank" min="8" max="256" step="8" value="64">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Matrix Explosion Distance</span>
+                    <span class="control-val" id="val-explode">1.8x</span>
+                </div>
+                <input type="range" id="slider-explode" min="0" max="3" step="0.1" value="1.8">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Base Hidden Dim (d_model)</span>
+                    <span class="control-val">4096</span>
+                </div>
+            </div>
+
+            <div class="btn-action-row">
+                <button class="btn-glow" id="btn-toggle-decompose">Assemble / Split</button>
+                <button class="btn-glow" id="btn-reset-cam">Reset Camera</button>
+            </div>
+        </div>
+
+        <!-- Mode 2 Controls: Pareto -->
+        <div id="controls-pareto" style="display:none;">
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Filter By Family</span>
+                </div>
+                <select id="pareto-filter" style="width:100%; padding:8px; border-radius:6px; background:#101528; color:#fff; border:1px solid rgba(255,255,255,0.15);">
+                    <option value="all">All Architectural Families (203)</option>
+                    <option value="attention">Linear / GQA Attention</option>
+                    <option value="svd">SVD Low-Rank Surgery</option>
+                    <option value="ssm">Mamba / SSM Recurrence</option>
+                    <option value="quant">FP8 / INT4 Quantization</option>
+                </select>
+            </div>
+
+            <div class="legend-box">
+                <div class="legend-item"><div class="legend-dot" style="background:#38bdf8;"></div> Linear / SVD Attention</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#a855f7;"></div> State-Space / SSM (Mamba)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#10b981;"></div> Native FP8 / Quantization</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div> 2:4 Semi-Structured Pruning</div>
+            </div>
+
+            <div class="btn-action-row">
+                <button class="btn-glow" id="btn-toggle-surface">Toggle Pareto Surface</button>
+                <button class="btn-glow" id="btn-autorotate">Auto-Rotate</button>
+            </div>
+        </div>
+
+        <!-- Mode 3 Controls: Attention -->
+        <div id="controls-attn" style="display:none;">
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Softmax Temperature (\tau)</span>
+                    <span class="control-val" id="val-temp">1.0</span>
+                </div>
+                <input type="range" id="slider-temp" min="0.2" max="3.0" step="0.1" value="1.0">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>Attention Wave Frequency</span>
+                    <span class="control-val" id="val-freq">1.5 Hz</span>
+                </div>
+                <input type="range" id="slider-freq" min="0.5" max="4.0" step="0.1" value="1.5">
+            </div>
+
+            <div class="btn-action-row">
+                <button class="btn-glow" id="btn-toggle-causal">Toggle Causal Mask</button>
+                <button class="btn-glow" id="btn-toggle-linear">Softmax vs Linear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Live Metrics Panel -->
+    <div class="hud-panel telemetry-right" id="panel-telemetry">
+        <div class="panel-heading">
+            <span>Spectral & Memory Metrics</span>
+            <span class="brand-badge">Ada Lovelace</span>
+        </div>
+
+        <div class="stat-card-row">
+            <div class="stat-box">
+                <div class="stat-box-val" id="stat-ratio">8.0x</div>
+                <div class="stat-box-lbl">Compression Ratio</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-box-val" id="stat-energy">98.4%</div>
+                <div class="stat-box-lbl">Energy Retained (\sigma^2)</div>
+            </div>
+        </div>
+
+        <div class="stat-card-row">
+            <div class="stat-box">
+                <div class="stat-box-val" id="stat-vram">14.0 MB</div>
+                <div class="stat-box-lbl">VRAM Saved / Layer</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-box-val" id="stat-speedup">2.34x</div>
+                <div class="stat-box-lbl">Measured Speedup</div>
+            </div>
+        </div>
+
+        <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.4; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">
+            <strong style="color:#fff;">Hardware Dispatch:</strong> Native Level-1 CUDA C++ kernel dispatch table active with FP32 Cholesky covariance pullback.
+        </div>
+    </div>
+
+    <!-- Bottom Mathematical Invariant Bar -->
+    <div class="formula-bottom" id="formula-bar">
+        <span class="formula-tag">Theorem 1</span>
+        <span id="katex-math">W \approx U_r \Sigma_r V_r^T \cdot L^{-1}</span>
+    </div>
+
+    <!-- Hover 3D Tooltip -->
+    <div id="tooltip3d">
+        <div class="tt-title" id="tt-title">Model Name</div>
+        <div class="tt-stat"><span>Compression:</span><span class="tt-val" id="tt-comp">4.0x</span></div>
+        <div class="tt-stat"><span>Throughput:</span><span class="tt-val" id="tt-speed">1,820 tok/s</span></div>
+        <div class="tt-stat"><span>Accuracy:</span><span class="tt-val" id="tt-acc">89.4%</span></div>
+    </div>
+
+    <!-- 3D Engine Script -->
+    <script>
+        // ── Scene, Camera & Renderer Setup ────────────────────────────
+        const container = document.getElementById('canvas3d');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x060812, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(25, 20, 35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 120;
+        controls.minDistance = 5;
+
+        // ── Lighting ───────────────────────────────────────────────────
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 1.2);
+        dirLight1.position.set(20, 40, 20);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0xa855f7, 0.8);
+        dirLight2.position.set(-20, -20, -20);
+        scene.add(dirLight2);
+
+        // ── Grid Floor & Particle Field ───────────────────────────────
+        const gridHelper = new THREE.GridHelper(80, 40, 0x38bdf8, 0x1e293b);
+        gridHelper.position.y = -8;
+        scene.add(gridHelper);
+
+        // Ambient cyber dust particles
+        const particleCount = 1200;
+        const particleGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            particlePositions[i] = (Math.random() - 0.5) * 120;
+            particlePositions[i + 1] = (Math.random() - 0.5) * 80;
+            particlePositions[i + 2] = (Math.random() - 0.5) * 120;
+        }
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0x38bdf8,
+            size: 0.25,
+            transparent: true,
+            opacity: 0.4
+        });
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+
+        // ── Active Modes & Groups ─────────────────────────────────────
+        let currentMode = 'svd'; // 'svd', 'pareto', 'attention'
+        const svdGroup = new THREE.Group();
+        const paretoGroup = new THREE.Group();
+        const attentionGroup = new THREE.Group();
+
+        scene.add(svdGroup);
+        scene.add(paretoGroup);
+        scene.add(attentionGroup);
+
+        paretoGroup.visible = false;
+        attentionGroup.visible = false;
+
+        // ── MODE 1: SVD Tensor Decomposition Construction ─────────────
+        let matrixU, matrixS, matrixV, matrixW;
+        let isDecomposed = true;
+        let currentRank = 64;
+        let explodeFactor = 1.8;
+
+        function buildSvdScene() {
+            while (svdGroup.children.length > 0) svdGroup.remove(svdGroup.children[0]);
+
+            // Material palettes
+            const matU = new THREE.MeshStandardMaterial({
+                color: 0x38bdf8, roughness: 0.2, metalness: 0.7,
+                transparent: true, opacity: 0.88, wireframe: false
+            });
+            const matS = new THREE.MeshStandardMaterial({
+                color: 0xf59e0b, roughness: 0.1, metalness: 0.8,
+                transparent: true, opacity: 0.95
+            });
+            const matV = new THREE.MeshStandardMaterial({
+                color: 0xa855f7, roughness: 0.2, metalness: 0.7,
+                transparent: true, opacity: 0.88
+            });
+
+            // Dimensions proportional to rank
+            const rankWidth = Math.max(0.6, (currentRank / 256) * 3.5);
+
+            // Left Matrix U (M x r)
+            const geoU = new THREE.BoxGeometry(rankWidth, 12, 1.2);
+            matrixU = new THREE.Mesh(geoU, matU);
+            matrixU.position.set(-8 * explodeFactor, 0, 0);
+            svdGroup.add(matrixU);
+
+            // Singular Values Matrix \Sigma (r x r diagonal bars)
+            const geoS = new THREE.BoxGeometry(rankWidth, rankWidth, 1.2);
+            matrixS = new THREE.Mesh(geoS, matS);
+            matrixS.position.set(0, 0, 0);
+            svdGroup.add(matrixS);
+
+            // Right Matrix V^T (r x N)
+            const geoV = new THREE.BoxGeometry(12, rankWidth, 1.2);
+            matrixV = new THREE.Mesh(geoV, matV);
+            matrixV.position.set(8 * explodeFactor, 0, 0);
+            svdGroup.add(matrixV);
+
+            // Connecting laser arrows
+            const lineMat = new THREE.LineDashedMaterial({ color: 0x38bdf8, dashSize: 0.5, gapSize: 0.25 });
+            const pts1 = [new THREE.Vector3(-6, 0, 0), new THREE.Vector3(-1.5, 0, 0)];
+            const geoLine1 = new THREE.BufferGeometry().setFromPoints(pts1);
+            const line1 = new THREE.Line(geoLine1, lineMat);
+            line1.computeLineDistances();
+            svdGroup.add(line1);
+
+            const pts2 = [new THREE.Vector3(1.5, 0, 0), new THREE.Vector3(6, 0, 0)];
+            const geoLine2 = new THREE.BufferGeometry().setFromPoints(pts2);
+            const line2 = new THREE.Line(geoLine2, lineMat);
+            line2.computeLineDistances();
+            svdGroup.add(line2);
+        }
+        buildSvdScene();
+
+        // ── MODE 2: 3D Pareto Frontier Construction ───────────────────
+        const paretoData = [
+            { name: "SVD Linear Attention (NeuralOps)", comp: 8.5, speed: 3.8, acc: 89.4, fam: "svd", color: 0x38bdf8 },
+            { name: "FlashAttention-3 (Hopper FP8)", comp: 1.0, speed: 4.1, acc: 91.2, fam: "attention", color: 0x10b981 },
+            { name: "Mamba-2 (State Space Recurrence)", comp: 4.2, speed: 3.4, acc: 88.7, fam: "ssm", color: 0xa855f7 },
+            { name: "WGQA Simplex Compressed", comp: 6.0, speed: 3.2, acc: 89.1, fam: "svd", color: 0x38bdf8 },
+            { name: "2:4 Sparse Attention (NVIDIA)", comp: 2.0, speed: 2.1, acc: 90.0, fam: "quant", color: 0xf59e0b },
+            { name: "SmoothQuant INT8 W8A8", comp: 4.0, speed: 2.6, acc: 90.3, fam: "quant", color: 0x10b981 },
+            { name: "REAP-MoE Residual Pruned", comp: 7.2, speed: 3.1, acc: 87.9, fam: "svd", color: 0x38bdf8 },
+            { name: "Standard Dense Transformer", comp: 1.0, speed: 1.0, acc: 91.4, fam: "attention", color: 0x94a3b8 }
+        ];
+
+        const paretoSpheres = [];
+        let paretoSurfaceMesh = null;
+
+        function buildParetoScene() {
+            while (paretoGroup.children.length > 0) paretoGroup.remove(paretoGroup.children[0]);
+            paretoSpheres.length = 0;
+
+            // 3D Bounding Axes Box
+            const axesBox = new THREE.BoxHelper(new THREE.Mesh(new THREE.BoxGeometry(24, 16, 24)), 0x334155);
+            paretoGroup.add(axesBox);
+
+            // Points mapping: X: Compression (1..10 -> -10..10), Y: Speedup (1..4.5 -> -6..6), Z: Acc (85..92 -> -10..10)
+            paretoData.forEach(d => {
+                const px = ((d.comp - 1) / 9) * 20 - 10;
+                const py = ((d.speed - 1) / 3.5) * 12 - 6;
+                const pz = ((d.acc - 85) / 7) * 20 - 10;
+
+                const geo = new THREE.SphereGeometry(0.85, 24, 24);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: d.color,
+                    roughness: 0.2,
+                    metalness: 0.8,
+                    emissive: d.color,
+                    emissiveIntensity: 0.25
+                });
+                const sphere = new THREE.Mesh(geo, mat);
+                sphere.position.set(px, py, pz);
+                sphere.userData = d;
+                paretoGroup.add(sphere);
+                paretoSpheres.push(sphere);
+
+                // Stem to floor
+                const stemPts = [new THREE.Vector3(px, py, pz), new THREE.Vector3(px, -8, pz)];
+                const stemGeo = new THREE.BufferGeometry().setFromPoints(stemPts);
+                const stemLine = new THREE.Line(stemGeo, new THREE.LineBasicMaterial({ color: d.color, transparent: true, opacity: 0.3 }));
+                paretoGroup.add(stemLine);
+            });
+
+            // Translucent Champion Pareto Surface
+            const surfaceGeo = new THREE.PlaneGeometry(24, 24, 16, 16);
+            const pos = surfaceGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const u = (pos.getX(i) + 12) / 24;
+                const v = (pos.getY(i) + 12) / 24;
+                // Pareto hyperbolic curvature: y = f(u, v)
+                const z = 4.0 * Math.sin(u * Math.PI * 0.8) * Math.cos(v * Math.PI * 0.6) - 2;
+                pos.setZ(i, z);
+            }
+            surfaceGeo.computeVertexNormals();
+            const surfaceMat = new THREE.MeshStandardMaterial({
+                color: 0x38bdf8,
+                roughness: 0.3,
+                transparent: true,
+                opacity: 0.25,
+                side: THREE.DoubleSide,
+                wireframe: false
+            });
+            paretoSurfaceMesh = new THREE.Mesh(surfaceGeo, surfaceMat);
+            paretoSurfaceMesh.rotation.x = -Math.PI / 2;
+            paretoGroup.add(paretoSurfaceMesh);
+        }
+        buildParetoScene();
+
+        // ── MODE 3: Attention Probability Landscape ───────────────────
+        let attentionMesh = null;
+        let isCausal = false;
+        let isLinear = false;
+        let attnTime = 0;
+
+        function buildAttentionScene() {
+            while (attentionGroup.children.length > 0) attentionGroup.remove(attentionGroup.children[0]);
+
+            const size = 32;
+            const segments = 48;
+            const geo = new THREE.PlaneGeometry(size, size, segments, segments);
+            geo.rotateX(-Math.PI / 2);
+
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0x38bdf8,
+                roughness: 0.2,
+                metalness: 0.6,
+                wireframe: true,
+                side: THREE.DoubleSide
+            });
+
+            attentionMesh = new THREE.Mesh(geo, mat);
+            attentionGroup.add(attentionMesh);
+        }
+        buildAttentionScene();
+
+        // ── Animate Attention Surface Heights ─────────────────────────
+        function updateAttentionSurface(delta) {
+            if (!attentionMesh || currentMode !== 'attention') return;
+            attnTime += delta * parseFloat(document.getElementById('slider-freq').value);
+            const pos = attentionMesh.geometry.attributes.position;
+            const temp = parseFloat(document.getElementById('slider-temp').value);
+
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const z = pos.getZ(i);
+
+                if (isCausal && x > z) {
+                    // Causal mask: upper triangle zeroed
+                    pos.setY(i, -4.0);
+                } else if (isLinear) {
+                    // Linear attention surface: smooth low-curvature plane
+                    const y = Math.sin(x * 0.2 + attnTime) * 0.8 + Math.cos(z * 0.2 + attnTime) * 0.8;
+                    pos.setY(i, y);
+                } else {
+                    // Softmax attention surface: peaky exponential spikes
+                    const dist = Math.hypot(x, z);
+                    const wave = Math.exp(-dist * 0.08 / temp) * Math.sin(dist * 0.6 - attnTime * 2.0) * 3.5;
+                    pos.setY(i, wave);
+                }
+            }
+            attentionMesh.geometry.computeVertexNormals();
+            attentionMesh.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // ── Raycasting for Tooltip Hover (Pareto Mode) ────────────────
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip3d');
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            if (currentMode === 'pareto') {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(paretoSpheres);
+                if (intersects.length > 0) {
+                    const data = intersects[0].object.userData;
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (e.clientX + 14) + 'px';
+                    tooltip.style.top = (e.clientY + 14) + 'px';
+                    document.getElementById('tt-title').textContent = data.name;
+                    document.getElementById('tt-comp').textContent = data.comp.toFixed(1) + 'x';
+                    document.getElementById('tt-speed').textContent = data.speed.toFixed(2) + 'x Baseline';
+                    document.getElementById('tt-acc').textContent = data.acc.toFixed(1) + '%';
+                } else {
+                    tooltip.style.display = 'none';
+                }
+            } else {
+                tooltip.style.display = 'none';
+            }
+        });
+
+        // ── Mode Switcher Logic ───────────────────────────────────────
+        function switchMode(newMode) {
+            currentMode = newMode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+
+            svdGroup.visible = (newMode === 'svd');
+            paretoGroup.visible = (newMode === 'pareto');
+            attentionGroup.visible = (newMode === 'attention');
+
+            document.getElementById('controls-svd').style.display = (newMode === 'svd') ? 'block' : 'none';
+            document.getElementById('controls-pareto').style.display = (newMode === 'pareto') ? 'block' : 'none';
+            document.getElementById('controls-attn').style.display = (newMode === 'attention') ? 'block' : 'none';
+
+            if (newMode === 'svd') {
+                document.getElementById('btn-mode-svd').classList.add('active');
+                document.getElementById('panel-title').textContent = "Tensor Factorization Controls";
+                document.getElementById('panel-tag').textContent = "Cholesky Whitened";
+                katex.render("W \\approx U_r \\Sigma_r V_r^T \\cdot L^{-1}", document.getElementById('katex-math'));
+                new TWEEN.Tween(camera.position).to({ x: 25, y: 20, z: 35 }, 800).easing(TWEEN.Easing.Cubic.Out).start();
+            } else if (newMode === 'pareto') {
+                document.getElementById('btn-mode-pareto').classList.add('active');
+                document.getElementById('panel-title').textContent = "Pareto Frontier Controls";
+                document.getElementById('panel-tag').textContent = "Multi-Objective Space";
+                katex.render("\\mathcal{P}^* = \\arg\\max_{\\theta} \\{ \\text{Speedup}, \\text{Accuracy}, -\\text{VRAM} \\}", document.getElementById('katex-math'));
+                new TWEEN.Tween(camera.position).to({ x: 30, y: 25, z: 30 }, 800).easing(TWEEN.Easing.Cubic.Out).start();
+            } else if (newMode === 'attention') {
+                document.getElementById('btn-mode-attention').classList.add('active');
+                document.getElementById('panel-title').textContent = "Attention Manifold Controls";
+                document.getElementById('panel-tag').textContent = "Softmax vs Linear";
+                katex.render("A = \\text{Softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right) \\Longleftrightarrow \\phi(Q)\\phi(K)^T", document.getElementById('katex-math'));
+                new TWEEN.Tween(camera.position).to({ x: 0, y: 35, z: 35 }, 800).easing(TWEEN.Easing.Cubic.Out).start();
+            }
+        }
+
+        document.getElementById('btn-mode-svd').addEventListener('click', () => switchMode('svd'));
+        document.getElementById('btn-mode-pareto').addEventListener('click', () => switchMode('pareto'));
+        document.getElementById('btn-mode-attention').addEventListener('click', () => switchMode('attention'));
+
+        // ── SVD Controls Wiring ───────────────────────────────────────
+        const rankSlider = document.getElementById('slider-rank');
+        const explodeSlider = document.getElementById('slider-explode');
+
+        function updateSvdMetrics() {
+            currentRank = parseInt(rankSlider.value);
+            explodeFactor = parseFloat(explodeSlider.value);
+            document.getElementById('val-rank').textContent = currentRank;
+            document.getElementById('val-explode').textContent = explodeFactor.toFixed(1) + 'x';
+
+            const dIn = 4096, dOut = 4096;
+            const origParams = dIn * dOut;
+            const svdParams = (dIn * currentRank) + (currentRank * dOut);
+            const ratio = (origParams / svdParams);
+            const energy = Math.min(99.6, 92.0 + Math.log2(currentRank / 8) * 1.5);
+            const savedMb = ((origParams - svdParams) * 2 / (1024 * 1024));
+
+            document.getElementById('stat-ratio').textContent = ratio.toFixed(1) + 'x';
+            document.getElementById('stat-energy').textContent = energy.toFixed(1) + '%';
+            document.getElementById('stat-vram').textContent = savedMb.toFixed(1) + ' MB';
+            document.getElementById('stat-speedup').textContent = (1.2 + (ratio * 0.16)).toFixed(2) + 'x';
+
+            buildSvdScene();
+        }
+
+        rankSlider.addEventListener('input', updateSvdMetrics);
+        explodeSlider.addEventListener('input', updateSvdMetrics);
+
+        document.getElementById('btn-toggle-decompose').addEventListener('click', () => {
+            isDecomposed = !isDecomposed;
+            const targetExplode = isDecomposed ? 1.8 : 0.05;
+            new TWEEN.Tween({ val: explodeFactor })
+                .to({ val: targetExplode }, 600)
+                .easing(TWEEN.Easing.Back.Out)
+                .onUpdate(obj => {
+                    explodeSlider.value = obj.val;
+                    updateSvdMetrics();
+                }).start();
+        });
+
+        document.getElementById('btn-reset-cam').addEventListener('click', () => {
+            new TWEEN.Tween(camera.position).to({ x: 25, y: 20, z: 35 }, 600).easing(TWEEN.Easing.Cubic.Out).start();
+            controls.target.set(0, 0, 0);
+        });
+
+        // ── Pareto & Attention Controls ───────────────────────────────
+        let autoRotateActive = false;
+        document.getElementById('btn-autorotate').addEventListener('click', () => {
+            autoRotateActive = !autoRotateActive;
+            controls.autoRotate = autoRotateActive;
+            controls.autoRotateSpeed = 2.0;
+        });
+
+        document.getElementById('btn-toggle-surface').addEventListener('click', () => {
+            if (paretoSurfaceMesh) paretoSurfaceMesh.visible = !paretoSurfaceMesh.visible;
+        });
+
+        document.getElementById('btn-toggle-causal').addEventListener('click', () => {
+            isCausal = !isCausal;
+        });
+
+        document.getElementById('btn-toggle-linear').addEventListener('click', () => {
+            isLinear = !isLinear;
+        });
+
+        // ── Window Resize ─────────────────────────────────────────────
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ── Render Loop ───────────────────────────────────────────────
+        let lastTime = performance.now();
+        function animate(time) {
+            requestAnimationFrame(animate);
+            const delta = (time - lastTime) * 0.001;
+            lastTime = time;
+
+            TWEEN.update();
+            controls.update();
+
+            // Rotate particle cloud gently
+            particles.rotation.y += 0.0006;
+
+            // Animate Attention mode wave
+            updateAttentionSurface(delta);
+
+            renderer.render(scene, camera);
+        }
+        animate(performance.now());
+    </script>
+</body>
+</html>

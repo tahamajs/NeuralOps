@@ -1,0 +1,26 @@
+% Publication Benchmark Deliverable: Multi-Seed SVD Linear Attention Fine-Tuning Convergence
+% Seeds: 42, 1337, 2026 | Hardware: NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM)
+
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Multi-Seed Fine-Tuning Convergence Curves for Post-Surgery SVD Linear Attention.} Training and validation trajectory on GLUE MRPC and SST-2 across 5 epochs under seeds $\{42, 1337, 2026\}$ on physical RTX 4070 Laptop GPU. Values reported as Mean $\pm$ Standard Deviation.}
+\label{tab:multiseed_finetune}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Downstream Task} & \textbf{Epoch} & \textbf{Training Loss} $\downarrow$ & \textbf{Validation Loss} $\downarrow$ & \textbf{Validation Accuracy (\%)} $\uparrow$ \\
+\midrule
+GLUE-MRPC & Epoch 1 & 0.6378 $\pm$ 0.0079 & 0.6325 $\pm$ 0.0125 & 68.67\% $\pm$ 0.00\% \\
+GLUE-MRPC & Epoch 2 & 0.6117 $\pm$ 0.0126 & 0.6228 $\pm$ 0.0173 & 70.00\% $\pm$ 2.31\% \\
+GLUE-MRPC & Epoch 3 & 0.6028 $\pm$ 0.0192 & 0.6184 $\pm$ 0.0110 & 68.67\% $\pm$ 0.00\% \\
+GLUE-MRPC & Epoch 4 & 0.5928 $\pm$ 0.0081 & 0.6505 $\pm$ 0.0172 & 68.89\% $\pm$ 1.02\% \\
+GLUE-MRPC & Epoch 5 & 0.5819 $\pm$ 0.0294 & 0.6529 $\pm$ 0.0226 & 65.33\% $\pm$ 5.21\% \\
+\midrule
+GLUE-SST2 & Epoch 1 & 0.7116 $\pm$ 0.0033 & 0.6934 $\pm$ 0.0002 & 50.00\% $\pm$ 0.00\% \\
+GLUE-SST2 & Epoch 2 & 0.6951 $\pm$ 0.0019 & 0.6964 $\pm$ 0.0057 & 50.00\% $\pm$ 0.00\% \\
+GLUE-SST2 & Epoch 3 & 0.7047 $\pm$ 0.0111 & 0.6972 $\pm$ 0.0022 & 50.00\% $\pm$ 0.00\% \\
+GLUE-SST2 & Epoch 4 & 0.7005 $\pm$ 0.0035 & 0.6935 $\pm$ 0.0006 & 50.00\% $\pm$ 0.00\% \\
+GLUE-SST2 & Epoch 5 & 0.6989 $\pm$ 0.0010 & 0.6947 $\pm$ 0.0017 & 50.00\% $\pm$ 0.00\% \\
+\bottomrule
+\end{tabular}
+\end{table*}

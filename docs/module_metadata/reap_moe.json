@@ -1,0 +1,36 @@
+{
+  "module_name": "reap_moe",
+  "class_name": "REAPMoEAttention",
+  "category": "attention",
+  "family": "Mixture-of-Experts (MoE) & Sparsely-Gated Attentions",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "d_model",
+    "n_experts",
+    "top_k",
+    "noise_std",
+    "use_svd",
+    "config",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "topk",
+    "softmax",
+    "view",
+    "transpose",
+    "dropout",
+    "matmul"
+  ],
+  "docstring": "REAP-MoE Attention Block combining Multi-Head Attention with REAP MoE feed-forward transformation.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 8,
+  "top_k": 2,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.6402450878623675e+38,
+  "paradigm": "moe",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

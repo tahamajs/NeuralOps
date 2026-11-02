@@ -1,0 +1,449 @@
+{
+  "module_name": "svd_linear_attention_extrapolation",
+  "category": "attention",
+  "family": "long_context_extrapolation",
+  "total_runs": 7,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:33:26.945208+00:00",
+  "latest_record": {
+    "record_id": "dc9facb3befcda6a",
+    "module_name": "svd_linear_attention_extrapolation",
+    "category": "attention",
+    "family": "long_context_extrapolation",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+      "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+      "state_complexity": "O(1)"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "seq_len": 32768,
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 31.31,
+      "peak_vram_mb": 493.8,
+      "kv_state_kb": 8.0,
+      "state_drift_rel": 0.369,
+      "zero_nan": 1.0
+    },
+    "notes": "Extrapolation scaling to 32768 tokens for SVD Linear Attention"
+  },
+  "active_records": [
+    {
+      "record_id": "1519e4dcce4b280a",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 512,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.27,
+        "peak_vram_mb": 17.1,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.521,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 512 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "9c214859520d50f7",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 1024,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.26,
+        "peak_vram_mb": 24.6,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.459,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 1024 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "2cb2bfc8730ba1dd",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.32,
+        "peak_vram_mb": 39.8,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.415,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 2048 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "ee5c727e0ad26f7d",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 4096,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.83,
+        "peak_vram_mb": 70.0,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.473,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 4096 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "adc348d93e7a2eb9",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 8192,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 2.29,
+        "peak_vram_mb": 130.6,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.626,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 8192 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "cc05b715c61a6a75",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 16384,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 8.33,
+        "peak_vram_mb": 251.6,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.48,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 16384 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "dc9facb3befcda6a",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 32768,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 31.31,
+        "peak_vram_mb": 493.8,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.369,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 32768 tokens for SVD Linear Attention"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "1519e4dcce4b280a",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 512,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.27,
+        "peak_vram_mb": 17.1,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.521,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 512 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "9c214859520d50f7",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 1024,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.26,
+        "peak_vram_mb": 24.6,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.459,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 1024 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "2cb2bfc8730ba1dd",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 2048,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.32,
+        "peak_vram_mb": 39.8,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.415,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 2048 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "ee5c727e0ad26f7d",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 4096,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.83,
+        "peak_vram_mb": 70.0,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.473,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 4096 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "adc348d93e7a2eb9",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 8192,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 2.29,
+        "peak_vram_mb": 130.6,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.626,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 8192 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "cc05b715c61a6a75",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 16384,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 8.33,
+        "peak_vram_mb": 251.6,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.48,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 16384 tokens for SVD Linear Attention"
+    },
+    {
+      "record_id": "dc9facb3befcda6a",
+      "module_name": "svd_linear_attention_extrapolation",
+      "category": "attention",
+      "family": "long_context_extrapolation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:33:26.945208+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Long-Context Extrapolation: SVD Linear Attention",
+        "source_artifact": "results/benchmark_extrapolation_32k_fresh.json",
+        "state_complexity": "O(1)"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "seq_len": 32768,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 31.31,
+        "peak_vram_mb": 493.8,
+        "kv_state_kb": 8.0,
+        "state_drift_rel": 0.369,
+        "zero_nan": 1.0
+      },
+      "notes": "Extrapolation scaling to 32768 tokens for SVD Linear Attention"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: block_transformer_hiba / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        36.2200
+  Post-KD PPL:       36.1900
+  Stage 1 (KD) PPL:  36.1900
+  Stage 2 (Self) PPL:36.1900
+  KD Gain:           +0.03
+  Self Gain:         +0.00
+  Total Gain:        +0.03
+  Aligned w/ Teacher:YES
+  Beat Teacher:      YES
+  PPL Ratio:         0.9992
+  Recovery:          nan%
+  Peak VRAM:         5342.48 MB
+  Train time:        87.61 s (Stage 1: 87.6s, Stage 2: 0.0s)
+  s/step:            1.7522
+  Loss (final):      2.3380
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.9184
+  Repetition-3:      0.0156
+  Train PPL:         36.7000
+  Test PPL:          36.1900
+  Overfit Gap:       -0.51
+  Latency (mean):    885.65 ms
+  Latency (std):     5.02 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.12.15
+  Torch:             2.5.1+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce GTX 1060
+  Git commit:        04960d0a1af2
+
+TRAINING HISTORY (last 10 steps):
+  step    40 | loss=9.4070 | lr=1.20e-04
+  step    41 | loss=10.0513 | lr=1.23e-04
+  step    42 | loss=10.3146 | lr=1.26e-04
+  step    43 | loss=10.7991 | lr=1.29e-04
+  step    44 | loss=11.3828 | lr=1.32e-04
+  step    45 | loss=11.9036 | lr=1.35e-04
+  step    46 | loss=12.0073 | lr=1.38e-04
+  step    47 | loss=12.4159 | lr=1.41e-04
+  step    48 | loss=12.9466 | lr=1.44e-04
+  step    49 | loss=13.2690 | lr=1.47e-04

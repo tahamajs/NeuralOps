@@ -1,0 +1,50 @@
+% Publication Benchmark Deliverable: NeuralOps Model Surgery & Attention Replacement
+% Hardware: NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM), CUDA 12.8, PyTorch 2.11.0+cu128
+
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Comprehensive Model Surgery and Attention Replacement Benchmarks.} Evaluation of pre-surgery Standard Quadratic Multi-Head Attention (MHA) against post-surgery NeuralOps linear attention mechanisms on Wikitext-2 language modeling and GLUE downstream classification tasks on physical RTX 4070 Laptop GPU.}
+\label{tab:model_surgery_benchmarks}
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Model Architecture} & \textbf{Attention Mechanism} & \textbf{Complexity} & \textbf{Wikitext-2 PPL} $\downarrow$ & \textbf{GLUE MRPC Acc} $\uparrow$ & \textbf{GLUE SST-2 Acc} $\uparrow$ & \textbf{GLUE CoLA Acc} $\uparrow$ \\
+\midrule
+GPT-2 (124M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & 39.33 & --- & --- & --- \\
+GPT-2 (124M) & SVD Linear Attention & $\mathcal{O}(N)$ & 3561.18 & --- & --- & --- \\
+GPT-2 (124M) & Chunk GLA (Triton) & $\mathcal{O}(N)$ & 7716.71 & --- & --- & --- \\
+\midrule
+RoBERTa-base (125M) & Standard MHA (Baseline) & $\mathcal{O}(N^2)$ & --- & 68.5\% & 50.5\% & 65.0\% \\
+RoBERTa-base (125M) & SVD Linear Attention & $\mathcal{O}(N)$ & --- & 31.5\% & 49.5\% & 65.0\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{Computational \& Memory Complexity Reduction under SVD Attention Surgery.} Attention matrix FLOPs, parameter count, and KV-cache memory scaling at $N=1024$ and $N=4096$.}
+\label{tab:complexity_reduction}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Sequence Length ($N$)} & \textbf{Baseline MHA FLOPs} & \textbf{SVD Linear FLOPs} & \textbf{FLOPs Savings} & \textbf{KV Decoding Memory $\Delta$} \\
+\midrule
+$N=1024$ & 1.93 GFLOPs & 1.20 GFLOPs & \textbf{37.5\%} & -100\% (Constant State) \\
+$N=4096$ & 30.93 GFLOPs & 4.83 GFLOPs & \textbf{84.4\%} & -100\% (Constant State) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\caption{\textbf{Parameter Count Reduction via SVD Linear Attention Surgery.}}
+\label{tab:param_reduction}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model Architecture} & \textbf{Baseline Parameters} & \textbf{Post-Surgery SVD Parameters} & \textbf{Parameter Reduction} \\
+\midrule
+GPT-2 & 124,439,808 & 111,574,416 & \textbf{10.3\% (12.86M params)} \\
+\bottomrule
+\end{tabular}
+\end{table}

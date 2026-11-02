@@ -1,0 +1,95 @@
+{
+  "module_name": "serving_concurrency_1",
+  "category": "serving",
+  "family": "continuous_serving_ttft_itl",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:38:46.653699+00:00",
+  "latest_record": {
+    "record_id": "1a6485ca2138d613",
+    "module_name": "serving_concurrency_1",
+    "category": "serving",
+    "family": "continuous_serving_ttft_itl",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:38:46.653699+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "Continuous Token Serving Throughput Benchmark",
+      "source_artifact": "results/benchmarks_serving_ttft_itl_fresh.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "concurrency": 1
+    },
+    "metrics": {
+      "ttft_mean_ms": 0.119,
+      "ttft_p99_ms": 0.37,
+      "itl_mean_ms": 0.102,
+      "throughput_tok_s": 9823.18,
+      "peak_vram_mb": 14.26
+    },
+    "notes": "Continuous serving benchmark at N_req=1: TTFT 0.12ms, ITL 0.10ms, Throughput 9,823.2 tok/s"
+  },
+  "active_records": [
+    {
+      "record_id": "1a6485ca2138d613",
+      "module_name": "serving_concurrency_1",
+      "category": "serving",
+      "family": "continuous_serving_ttft_itl",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:38:46.653699+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Continuous Token Serving Throughput Benchmark",
+        "source_artifact": "results/benchmarks_serving_ttft_itl_fresh.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "concurrency": 1
+      },
+      "metrics": {
+        "ttft_mean_ms": 0.119,
+        "ttft_p99_ms": 0.37,
+        "itl_mean_ms": 0.102,
+        "throughput_tok_s": 9823.18,
+        "peak_vram_mb": 14.26
+      },
+      "notes": "Continuous serving benchmark at N_req=1: TTFT 0.12ms, ITL 0.10ms, Throughput 9,823.2 tok/s"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "1a6485ca2138d613",
+      "module_name": "serving_concurrency_1",
+      "category": "serving",
+      "family": "continuous_serving_ttft_itl",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:38:46.653699+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Continuous Token Serving Throughput Benchmark",
+        "source_artifact": "results/benchmarks_serving_ttft_itl_fresh.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "concurrency": 1
+      },
+      "metrics": {
+        "ttft_mean_ms": 0.119,
+        "ttft_p99_ms": 0.37,
+        "itl_mean_ms": 0.102,
+        "throughput_tok_s": 9823.18,
+        "peak_vram_mb": 14.26
+      },
+      "notes": "Continuous serving benchmark at N_req=1: TTFT 0.12ms, ITL 0.10ms, Throughput 9,823.2 tok/s"
+    }
+  ]
+}

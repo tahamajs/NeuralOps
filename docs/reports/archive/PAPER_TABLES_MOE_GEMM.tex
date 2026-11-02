@@ -1,0 +1,21 @@
+% Auto-generated LaTeX Benchmark Table for samba_moe on RTX 4070 (Ada Lovelace, SM 8.9)
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Kernel} & \textbf{Tokens $N$} & \textbf{Hidden $D$} & \textbf{Fwd (ms)} & \textbf{Bwd (ms)} & \textbf{Total (ms)} & \textbf{Speedup} & \textbf{Peak VRAM (MB)} & $\mathbf{\max |\nabla - \nabla_{\text{ref}}|}$ \\
+\midrule
+samba\_moe & 1024 & 768 & 0.0144 & 0.0997 & 0.1141 & 1.57x & 27.02 & 0.00e+00 \\
+samba\_moe & 4096 & 768 & 0.1645 & 0.5003 & 0.6648 & 1.45x & 111.08 & 0.00e+00 \\
+samba\_moe & 16384 & 768 & 0.6506 & 2.8527 & 3.5034 & 1.80x & 444.31 & 0.00e+00 \\
+samba\_moe & 65536 & 768 & 2.5914 & 8.0766 & 10.6680 & 2.74x & 1777.25 & 0.00e+00 \\
+samba\_moe & 1024 & 1024 & 0.0137 & 0.1253 & 0.1390 & 0.89x & 1934.01 & 0.00e+00 \\
+samba\_moe & 4096 & 1024 & 0.2613 & 0.3391 & 0.6004 & 1.41x & 148.08 & 0.00e+00 \\
+samba\_moe & 16384 & 1024 & 0.8814 & 2.5521 & 3.4335 & 1.35x & 592.31 & 0.00e+00 \\
+samba\_moe & 65536 & 1024 & 4.2922 & 17.1315 & 21.4237 & 1.35x & 2369.25 & 0.00e+00 \\
+\bottomrule
+\end{tabular}
+\caption{Autograd Parity and Performance of Analytical CUDA samba\_moe Backward on NVIDIA RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, CUDA 12.8).}
+\label{tab:samba_moe_benchmarks}
+\end{table*}

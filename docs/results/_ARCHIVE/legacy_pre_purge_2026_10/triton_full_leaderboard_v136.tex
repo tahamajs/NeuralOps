@@ -1,0 +1,107 @@
+% ============================================================================
+% NeuralOps v1.3.6 Hardware Benchmark Leaderboard (NVIDIA GeForce RTX 4070 Laptop GPU)
+% ============================================================================
+
+% --- Table 1: Core Triton Kernels ---
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+Kernel Module & Primary Primitive ($\uparrow$) & Latency Pytorch Ms ($\downarrow$) & Latency Triton Ms ($\downarrow$) & Speedup X ($\uparrow$) & Sram Bytes Saved Mb ($\uparrow$) & Max Abs Diff ($\uparrow$) \\
+\midrule
+gdn\_scan.py & gdn\_scan\_triton & 90.47 & 0.76 & \textbf{118.44} & \underline{256.00} & 0.00 \\
+gla\_scan.py & gla\_scan\_triton & 76.08 & 0.67 & \underline{114.30} & \underline{256.00} & 8.00 \\
+sliding\_window.py & sliding\_window\_triton & 7.37 & 0.08 & 90.51 & 112.00 & 0.00 \\
+gqa.py & fused\_weighted\_gqa\_online\_softmax\_triton & 5.03 & 0.21 & 23.38 & 48.00 & 0.00 \\
+fused\_norm\_linear.py & fused\_rmsnorm\_gate\_triton & 0.35 & 0.02 & 22.52 & 12.00 & 0.01 \\
+flash\_decoding.py & flash\_decoding\_attention & 1.12 & 0.08 & 14.37 & 0.06 & 0.00 \\
+paged\_attention.py & paged\_recurrent\_state\_step\_triton & 0.19 & 0.01 & 13.34 & 0.50 & \underline{39.00} \\
+selective\_scan.py & selective\_scan\_fn & 54.68 & 5.02 & 10.89 & \textbf{288.00} & 0.12 \\
+fms\_scan.py & fms\_scan\_triton & 51.75 & 5.23 & 9.90 & 128.00 & 0.00 \\
+fused\_kd.py & fused\_kd\_loss & 4.87 & 0.56 & 8.70 & 125.00 & 0.00 \\
+hgrn2\_scan.py & hgrn2\_scan\_triton & 0.15 & 0.02 & 7.44 & 0.12 & 0.00 \\
+cosformer\_triton\_kernel.py & cosformer\_global\_triton & 0.24 & 0.05 & 4.52 & 4.00 & nan \\
+\_common.py / \_types.py & pad\_to\_triton\_power\_of\_2 & 0.03 & \underline{0.01} & 4.29 & 0.00 & 0.00 \\
+hardware\_profile.py & get\_device\_hardware\_profile & 0.04 & 0.01 & 4.22 & 0.10 & 0.00 \\
+op\_registry.py & triton\_dispatch \& op\_registry & \underline{0.03} & \textbf{0.01} & 4.17 & 0.00 & 0.00 \\
+autotuner.py & estimate\_kernel\_sram\_bytes & 0.04 & 0.01 & 3.75 & 0.07 & 0.00 \\
+block\_sparse.py & fused\_moba\_block\_router\_combine\_triton & 0.05 & 0.03 & 1.65 & 1.00 & 0.00 \\
+elementwise.py & fused\_swiglu & 0.31 & 0.20 & 1.49 & 32.00 & 0.01 \\
+softplus.py & softplus\_fn & 0.05 & 0.04 & 1.23 & 16.00 & 0.00 \\
+fused\_rope.py & fused\_unified\_rope\_offset\_triton & 0.08 & 0.08 & 1.00 & 6.00 & 0.00 \\
+varlen\_attention.py & \_varlen\_attention\_fwd & 0.66 & 0.66 & 1.00 & 8.00 & 0.00 \\
+fused\_ce.py & fused\_cross\_entropy & 2.31 & 2.35 & 0.98 & 250.00 & 0.00 \\
+state\_update.py & fused\_recurrent\_ssm\_step & 0.04 & 0.06 & 0.60 & 0.19 & 0.00 \\
+sparse\_attn.py & fused\_lsh\_hash\_and\_bin\_triton & 0.10 & 0.40 & 0.26 & 4.00 & 0.00 \\
+low\_rank.py & low\_rank\_forward & \textbf{0.02} & 0.08 & 0.25 & 0.25 & 0.00 \\
+linear\_attn.py & fused\_svd\_linear\_chunk\_scan\_triton & \textbf{0.02} & 0.10 & 0.20 & 128.00 & \textbf{11488.00} \\
+\bottomrule
+\end{tabular}
+\caption{Direct Micro-Benchmark of all 26 core Triton Kernel modules against un-fused PyTorch mathematical baselines on NVIDIA RTX 4070 (Ada Lovelace, SM 8.9, FP16). $^\star$ marks Pareto-optimal operating points. Bold indicates best, underline second best.}
+\label{tab:core_triton_kernels}
+\end{table}
+
+% --- Table 2: Attention Architecture Leaderboard ---
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrrrrl}
+\toprule
+Module Name & Family ($\uparrow$) & Latency Pytorch Ms ($\downarrow$) & Latency Triton Ms ($\downarrow$) & Speedup X ($\uparrow$) & Throughput Tokens Per Sec ($\uparrow$) & Achieved Tflops ($\uparrow$) & Bottleneck Regime \\
+\midrule
+kda\_attention$^\star$ & Gated DeltaNet & 245.27 & 4.09 & \textbf{60.01} & 1002171 & 5.12 & Compute-Bound (Tensor Core Saturated) \\
+gated\_delta\_net$^\star$ & Gated DeltaNet & 306.70 & 6.09 & \underline{50.37} & 672736 & 4.29 & Compute-Bound (Tensor Core Saturated) \\
+gated\_deltanet\_block$^\star$ & Gated DeltaNet & 305.45 & 6.07 & 50.30 & 674490 & 4.30 & Compute-Bound (Tensor Core Saturated) \\
+hgrn2\_gated\_outer$^\star$ & Recurrent Outer & 132.35 & 3.35 & 39.53 & 1223412 & 6.28 & Compute-Bound (Tensor Core Saturated) \\
+hgrn2\_gated\_deltanet & Gated DeltaNet & 321.60 & 25.50 & 12.61 & 160596 & 2.54 & Compute-Bound (Tensor Core Saturated) \\
+upi\_stuffed\_mamba & SSM / Mamba & 77.83 & 8.69 & 8.95 & 471169 & 4.13 & Compute-Bound (Tensor Core Saturated) \\
+mamba\_block & SSM / Mamba & 115.35 & 20.80 & 5.55 & 196959 & 5.31 & Compute-Bound (Tensor Core Saturated) \\
+selective\_ssm$^\star$ & SSM / Mamba & 121.70 & 23.87 & 5.10 & 171563 & \underline{8.26} & Compute-Bound (Tensor Core Saturated) \\
+simple\_ssm & SSM / Mamba & 121.33 & 23.91 & 5.07 & 171331 & 8.25 & Compute-Bound (Tensor Core Saturated) \\
+gated\_linear\_attention & Gated Linear Attn & 8.28 & 4.02 & 2.06 & 1019246 & 5.23 & Compute-Bound (Tensor Core Saturated) \\
+decay\_linear\_attention & Linear Recurrence & 8.27 & 4.02 & 2.06 & 1017759 & 5.22 & Compute-Bound (Tensor Core Saturated) \\
+adasplash\_attention & Adaptive Sparse & 46.42 & 38.49 & 1.21 & 106419 & 0.52 & Compute-Bound (Tensor Core Saturated) \\
+gla\_attention & Gated Linear Attn & 6.96 & 6.92 & 1.01 & 591564 & 2.92 & Compute-Bound (Tensor Core Saturated) \\
+cosformer$^\star$ & Linear Attention & 3.99 & 3.96 & 1.01 & 1033950 & 6.56 & Compute-Bound (Tensor Core Saturated) \\
+moba\_attention & Block Sparse MoA & 3.74 & 3.70 & 1.01 & 1106337 & 5.66 & Compute-Bound (Tensor Core Saturated) \\
+sink\_attention$^\star$ & Streaming Sink & \underline{1.27} & \textbf{1.26} & 1.01 & \textbf{3260736} & \textbf{16.67} & Compute-Bound (Tensor Core Saturated) \\
+griffin\_ssd & SSM / Mamba & 28.82 & 28.81 & 1.00 & 142164 & 0.90 & Compute-Bound (Tensor Core Saturated) \\
+residual\_svd\_attention & SVD Low-Rank & 18.57 & 18.60 & 1.00 & 220164 & 1.09 & Compute-Bound (Tensor Core Saturated) \\
+svd\_linear\_decay$^\star$ & SVD Linear & 1.40 & \underline{1.39} & 1.00 & \underline{2943340} & 8.16 & Compute-Bound (Tensor Core Saturated) \\
+rpc\_attention & Random Projection & 9.77 & 9.76 & 1.00 & 419680 & 0.41 & SRAM-Fused Transition Regime (Memory Wall Mitigated) \\
+nsa\_attention & Hierarchical Sparse & 46.81 & 46.75 & 1.00 & 87605 & 0.45 & Compute-Bound (Tensor Core Saturated) \\
+jamba & Hybrid SSM+Attn & 8.21 & 8.23 & 1.00 & 497855 & 6.12 & Compute-Bound (Tensor Core Saturated) \\
+hymba\_transx & Hybrid Meta-Token & 61.74 & 61.78 & 1.00 & 66305 & 0.66 & Compute-Bound (Tensor Core Saturated) \\
+svd\_compressed & SVD Low-Rank & 16.77 & 17.15 & 0.98 & 238830 & 0.23 & SRAM-Fused Transition Regime (Memory Wall Mitigated) \\
+minimal\_svd & SVD Low-Rank & \textbf{1.10} & 1.42 & 0.77 & 2890343 & 2.84 & SRAM-Fused Transition Regime (Memory Wall Mitigated) \\
+\bottomrule
+\end{tabular}
+\caption{End-to-End Attention Architecture Leaderboard across major architectural families at T=2048, B=2, D=768, H=12 in float16. $^\star$ marks Pareto-optimal operating points. Bold indicates best, underline second best.}
+\label{tab:attention_architecture_leaderboard}
+\end{table}
+
+% --- Table 3: Compression Engine Speedups ---
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+Compressor Name & Compression Method ($\uparrow$) & Compression Ratio ($\uparrow$) & Latency Pytorch Ms ($\downarrow$) & Latency Triton Ms ($\downarrow$) & Speedup X ($\uparrow$) & Hbm Bytes Saved Mb ($\uparrow$) \\
+\midrule
+astro\_quantizer & Per-Channel AstroQuant & 12.0x & 0.28 & 0.28 & \textbf{1.00} & \textbf{0.50} \\
+svd\_llm & Truncated SVD-LLM & 6.0x & 0.11 & \textbf{0.11} & \underline{0.99} & \textbf{0.50} \\
+kmeans\_quantize & Clustered KMeans & 6.0x & 0.24 & 0.27 & 0.90 & \textbf{0.50} \\
+dora\_qlora & Quantized LoRA (QLoRA) & 12.0x & 0.18 & 0.21 & 0.84 & \textbf{0.50} \\
+a3\_compressor & Activation SVD & 6.0x & 0.05 & \underline{0.16} & 0.31 & \textbf{0.50} \\
+dobi\_svd & Dual-Stage SVD & 6.0x & \underline{0.04} & 0.17 & 0.24 & \textbf{0.50} \\
+dynamic\_svd & Dynamic Energy SVD & 6.0x & \textbf{0.03} & \underline{0.16} & 0.21 & \textbf{0.50} \\
+res\_svd & Residual SVD & 6.0x & 0.09 & 10.09 & 0.01 & \textbf{0.50} \\
+\bottomrule
+\end{tabular}
+\caption{Compression Engine Fused Triton Forward Pass vs Un-fused PyTorch Fallback at B=2, T=2048, D=768. $^\star$ marks Pareto-optimal operating points. Bold indicates best, underline second best.}
+\label{tab:compression_engine_leaderboard}
+\end{table}

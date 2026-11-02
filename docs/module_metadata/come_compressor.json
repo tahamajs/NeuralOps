@@ -1,0 +1,25 @@
+{
+  "module_name": "come_compressor",
+  "class_name": "ComeCompressor",
+  "category": "compression",
+  "family": "Dynamic Rank & Entropy-Guided Budget Allocation",
+  "paradigm": "dynamic_rank",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "CoMe: Compress LLMs through Layer Concatenation and Shedding with Learnable Inter-Layer Interpolation Adapters.  Registered in COMPRESSOR_REGISTRY as 'come' and 'come_compressor'.  Mathematical Formulation: 1. Layer Shedding & Uniform Strided Selection:    I_keep = {i_0, i_1, ..., i_{K-1}}, i_k = round(k * (L-1) / (K-1))  2. Learnable Low-Rank Inte",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

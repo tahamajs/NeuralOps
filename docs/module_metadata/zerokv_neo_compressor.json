@@ -1,0 +1,30 @@
+{
+  "module_name": "zerokv_neo_compressor",
+  "class_name": "ZeroKVNeoCompressor",
+  "category": "compression",
+  "family": "KV-Cache Memory Optimization & Virtual Page Eviction",
+  "params": [
+    "max_cache_len",
+    "num_attention_sinks",
+    "recent_window",
+    "model",
+    "keep_ratio",
+    "heavy_hitter_ratio"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "ZeroKV-Neo Compressor: L2-norm weight pruning preserving attention sinks and heavy hitters.\n\nArgs:\n    model: PyTorch model.\n    keep_ratio: Fraction of output neurons to retain (default 0.3).\n    num_attention_sinks: Number of initial sink channels pinned (default 4).\n    heavy_hitter_ratio: Fraction allocated to heavy hitters (default 0.1).",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.9794810937821833e+38,
+  "paradigm": "kv_cache",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

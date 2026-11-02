@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: uniql_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.44 M
+  Trainable params:  28.35 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        36.2100
+  Post-KD PPL:       36.2100
+  Stage 1 (KD) PPL:  36.2100
+  Stage 2 (Self) PPL:36.2100
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:YES
+  Beat Teacher:      NO
+  PPL Ratio:         1.0000
+  Recovery:          nan%
+  Peak VRAM:         581.99 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8724
+  Repetition-3:      0.0573
+  Train PPL:         36.6900
+  Test PPL:          36.2100
+  Overfit Gap:       -0.48
+  Latency (mean):    308.51 ms
+  Latency (std):     27.70 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        2991eb4bd6df
+
+TRAINING HISTORY (last 10 steps):

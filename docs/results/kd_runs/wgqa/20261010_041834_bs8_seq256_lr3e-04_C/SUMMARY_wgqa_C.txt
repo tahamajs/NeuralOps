@@ -1,0 +1,56 @@
+================================================================================
+RUN SUMMARY: wgqa / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        36.2200
+  Post-KD PPL:       36.2300
+  Stage 1 (KD) PPL:  36.2300
+  Stage 2 (Self) PPL:36.2300
+  KD Gain:           -0.01
+  Self Gain:         +0.00
+  Total Gain:        -0.01
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.0003
+  Recovery:          nan%
+  Peak VRAM:         3376.89 MB
+  Train time:        12.18 s (Stage 1: 12.2s, Stage 2: 0.0s)
+  s/step:            2.4360
+  Loss (final):      1.6972
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0153
+  Repetition-3:      0.9844
+  Train PPL:         36.6800
+  Test PPL:          36.2300
+  Overfit Gap:       -0.45
+  Latency (mean):    3602.38 ms
+  Latency (std):     58.54 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        42610ee11e6e
+
+TRAINING HISTORY (last 10 steps):
+  step     0 | loss=1.3831 | lr=0.00e+00
+  step     1 | loss=1.4841 | lr=1.50e-05
+  step     2 | loss=1.4407 | lr=3.00e-05
+  step     3 | loss=1.4733 | lr=4.50e-05
+  step     4 | loss=1.6972 | lr=6.00e-05

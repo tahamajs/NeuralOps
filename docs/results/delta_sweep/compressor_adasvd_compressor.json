@@ -1,0 +1,11 @@
+{
+  "module": "adasvd_compressor",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 643.43,
+  "duration_sec": 166.8,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:10:55"
+}

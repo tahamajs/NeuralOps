@@ -1,0 +1,25 @@
+{
+  "module_name": "landmark_local_attention",
+  "class_name": "LandmarkLocalAttention",
+  "category": "attention",
+  "family": "Memory-Augmented & External Latent Recurrences",
+  "paradigm": "memory",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Landmark Local Attention operator from the Memory-Augmented & External Latent Recurrences family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

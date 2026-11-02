@@ -1,0 +1,99 @@
+{
+  "A": {
+    "category_name": "Dense Attention",
+    "description": "Full O(S²) quadratic multi-head or grouped-query self-attention with explicit QK^T matrix.",
+    "states": ["idle", "qkv_projection", "score_matrix", "softmax", "context", "output"],
+    "substates": {
+      "grouped_query": ["kv_sharing_visible", "kv_sharing_collapsed"],
+      "flash_attention": ["tiling_blocks_visible", "online_softmax_visible"],
+      "multi_head": ["head_split_visible"]
+    },
+    "forbidden": ["state_space_scan", "svd_singular_values", "recurrent_hidden_state"]
+  },
+  "B": {
+    "category_name": "Sparse / Approximate",
+    "description": "Linearized or kernelized attention via random features, low-rank projection, or landmarks.",
+    "states": ["idle", "feature_map", "associative_reorder", "output"],
+    "substates": {
+      "performer": ["kernel_features_visible"],
+      "linformer": ["low_rank_projection_visible"],
+      "nystrom": ["landmark_selection_visible"],
+      "lsh": ["hash_buckets_visible"]
+    },
+    "forbidden": ["dense_attention_matrix", "full_softmax_matrix", "quadratic_square"]
+  },
+  "C": {
+    "category_name": "Sliding Window",
+    "description": "Local banded attention restricting token interactions to a fixed or dynamic neighborhood.",
+    "states": ["idle", "qkv_projection", "banded_mask", "local_attention", "output"],
+    "substates": {
+      "sliding_window": ["local_window_mask_visible"],
+      "adaptive_span": ["dynamic_span_visible"],
+      "dilated_window": ["dilation_stride_visible"]
+    },
+    "forbidden": ["global_cross_attention", "svd_singular_values", "recurrent_hidden_state"]
+  },
+  "D": {
+    "category_name": "Recurrent / Linear",
+    "description": "Token-by-token state space or linear recurrence with O(1) inference memory and no S×S square.",
+    "states": ["idle", "t0", "t1", "t2", "t3", "t4", "output"],
+    "substates": {
+      "hgrn2": ["forget_gate_visible", "input_gate_visible"],
+      "mamba": ["state_space_visible", "selective_scan_visible"],
+      "delta_net": ["delta_rule_visible"]
+    },
+    "forbidden": ["qkv", "softmax", "attention_matrix", "square_attention", "dense_score_matrix"]
+  },
+  "E": {
+    "category_name": "SVD / Low-Rank",
+    "description": "Singular value decomposition compressing projection weight matrices into U_r Σ_r V_r^T.",
+    "states": ["idle", "show_W", "decompose", "singular_values", "truncate", "reconstruct", "error_heatmap"],
+    "substates": {
+      "fisher_svd": ["fisher_weights_visible", "ln_recalibration_visible"],
+      "plain_svd": ["no_weighting"],
+      "adaptive_rank": ["energy_threshold_visible"]
+    },
+    "forbidden": ["qkv", "softmax", "attention_matrix", "causal_mask", "square_attention"]
+  },
+  "F": {
+    "category_name": "Mixture of Experts",
+    "description": "Dynamic sparse routing directing token representations to specialized sub-networks.",
+    "states": ["idle", "router_gate", "expert_dispatch", "expert_compute", "expert_combine", "output"],
+    "substates": {
+      "expert_choice": ["capacity_limit_visible"],
+      "topk_routing": ["routing_probabilities_visible"]
+    },
+    "forbidden": ["svd_singular_values", "state_space_scan", "quadratic_square"]
+  },
+  "G": {
+    "category_name": "Pruning / Sparsity",
+    "description": "Weight or activation structured/unstructured zeroing to reduce parameter counts.",
+    "states": ["idle", "importance_eval", "mask_generation", "pruned_projection", "output"],
+    "substates": {
+      "magnitude": ["threshold_cutoff_visible"],
+      "wanda": ["activation_weight_product_visible"],
+      "sparsegpt": ["hessian_update_visible"]
+    },
+    "forbidden": ["dense_attention_matrix", "svd_singular_values", "softmax"]
+  },
+  "H": {
+    "category_name": "Quantization",
+    "description": "Low-bit precision mapping (FP8, INT8, INT4) with scale/zero-point calibration.",
+    "states": ["idle", "calibration", "scale_calc", "quantize_int8_fp8", "dequantize", "output"],
+    "substates": {
+      "fp8_e4m3": ["dynamic_scale_visible"],
+      "int8_smooth": ["smoothing_factors_visible"]
+    },
+    "forbidden": ["svd_singular_values", "state_space_scan", "quadratic_square"]
+  },
+  "I": {
+    "category_name": "Hybrid / Composite",
+    "description": "Multi-paradigm architecture combining interleaved local/recurrent and global attention.",
+    "states": ["idle", "layer_route", "hybrid_ssm_step", "hybrid_attn_step", "fusion_gate", "output"],
+    "substates": {
+      "interleaved": ["layer_index_indicator_visible"],
+      "fused": ["cross_layer_fusion_visible"]
+    },
+    "forbidden": ["pure_dense_only", "svd_singular_values"]
+  }
+}

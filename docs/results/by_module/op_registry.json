@@ -1,0 +1,95 @@
+{
+  "module_name": "op_registry",
+  "category": "triton_kernel",
+  "family": "Dispatch Subsystem",
+  "total_runs": 1,
+  "latest_version": "v1.3.6",
+  "latest_revision": 1,
+  "latest_git_sha": "d14d80e951",
+  "latest_timestamp": "2026-10-15T08:33:14.128901+00:00",
+  "latest_record": {
+    "record_id": "b36968ce76729655",
+    "module_name": "op_registry",
+    "category": "triton_kernel",
+    "family": "Dispatch Subsystem",
+    "version_tag": "v1.3.6",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-15T08:33:14.128901+00:00",
+    "git_commit_sha": "d14d80e951",
+    "generation_method": {
+      "algorithm": "Triton vs PyTorch Benchmark v136",
+      "primitive": "triton_dispatch & op_registry",
+      "source_artifact": "results/triton_full_leaderboard_v136.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=2, T=2048, D=768, FP16"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.006,
+      "latency_pytorch_ms": 0.025,
+      "speedup_x": 4.17,
+      "sram_bytes_saved_mb": 0.0
+    },
+    "notes": "Parity: PASS (Dispatch)"
+  },
+  "active_records": [
+    {
+      "record_id": "b36968ce76729655",
+      "module_name": "op_registry",
+      "category": "triton_kernel",
+      "family": "Dispatch Subsystem",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T08:33:14.128901+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "triton_dispatch & op_registry",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, T=2048, D=768, FP16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.006,
+        "latency_pytorch_ms": 0.025,
+        "speedup_x": 4.17,
+        "sram_bytes_saved_mb": 0.0
+      },
+      "notes": "Parity: PASS (Dispatch)"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "b36968ce76729655",
+      "module_name": "op_registry",
+      "category": "triton_kernel",
+      "family": "Dispatch Subsystem",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T08:33:14.128901+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "triton_dispatch & op_registry",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, T=2048, D=768, FP16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.006,
+        "latency_pytorch_ms": 0.025,
+        "speedup_x": 4.17,
+        "sram_bytes_saved_mb": 0.0
+      },
+      "notes": "Parity: PASS (Dispatch)"
+    }
+  ]
+}
