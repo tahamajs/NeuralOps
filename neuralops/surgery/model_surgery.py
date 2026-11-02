@@ -46,7 +46,8 @@ class ModelSurgery:
             self.baseline_model: Optional[nn.Module] = (
                 baseline_model if baseline_model is not None else copy.deepcopy(model).cpu()
             )
-        except Exception:
+        except Exception as e:
+            logger.warning("Could not deepcopy model for baseline_model: %s", e)
             self.baseline_model = baseline_model
 
         self.recipe: Optional[Recipe] = recipe
@@ -174,10 +175,22 @@ class ModelSurgery:
                         k, v = pair.split("=", 1)
                         config[k.strip()] = v.strip()
 
-            # Capture snapshot before mutation
-            self._history.append(ModelSnapshot.capture(self.model))
+            # Capture snapshot before mutation for transactional rollback
+            snapshot_before = ModelSnapshot.capture(self.model)
+            self._history.append(snapshot_before)
             op_impl = get_operation(op_name, version=version)
-            self.model, evidence = op_impl.apply(self.model, config)
+            try:
+                self.model, evidence = op_impl.apply(self.model, config)
+            except Exception as exc:
+                logger.error(
+                    "Surgery operation '%s' failed mid-transplant: %s. Rolling back to snapshot.",
+                    op_name,
+                    exc,
+                )
+                self.model = snapshot_before.restore(self.model)
+                if self._history and self._history[-1] is snapshot_before:
+                    self._history.pop()
+                raise
             if evidence:
                 self._evidence_records.append(evidence)
             return self
@@ -201,8 +214,9 @@ class ModelSurgery:
         """Commit current transformation state as the new baseline."""
         try:
             self.baseline_model = copy.deepcopy(self.model).cpu()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Could not deepcopy model for baseline on commit: %s", e)
+            self.baseline_model = None
         self._initial_snapshot = ModelSnapshot.capture(self.model)
         self._history = [self._initial_snapshot]
         return self

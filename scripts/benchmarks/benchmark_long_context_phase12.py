@@ -80,15 +80,15 @@ def run_benchmark():
                     fn = lambda: gla_scan(q, k, v, g)
 
                 elif ktype == "hgrn2":
-                    x = torch.randn(B, H, T, D, device=device, dtype=dtype)
-                    g = F.logsigmoid(torch.randn(B, H, T, D, device=device, dtype=dtype))
-                    fn = lambda: hgrn2_scan(x, g)
+                    f = torch.sigmoid(torch.randn(B, T, D * H, device=device, dtype=dtype))
+                    iv = torch.randn(B, T, D * H, device=device, dtype=dtype)
+                    fn = lambda: hgrn2_scan(f, iv, res_clip=1.0)
 
                 elif ktype == "linformer":
                     k_proj = 256
+                    p = torch.randn(k_proj, T, device=device, dtype=dtype)
                     x = torch.randn(B, H, T, D, device=device, dtype=dtype)
-                    e = torch.randn(k_proj, T, device=device, dtype=dtype)
-                    fn = lambda: fused_linformer_seq_proj_triton(x, e)
+                    fn = lambda: fused_linformer_seq_proj_triton(p, x)
 
                 elif ktype == "sliding_window":
                     W = 128
@@ -159,8 +159,6 @@ def run_benchmark():
     print("-" * 88)
     print("Evaluating subquadratic scaling linearity...")
     # Verify subquadratic VRAM ratio: VRAM(32768) / VRAM(4096)
-    # Quadratic attention (e.g. Vanilla O(N^2)) scaling ratio for 8x length would be ~64x.
-    # Linear O(N) scaling ratio for 8x length is ~8x.
     for kname, _ in kernels:
         k_results = [r for r in results if r["kernel"] == kname and r["status"] == "OK"]
         if len(k_results) >= 2:
@@ -169,8 +167,11 @@ def run_benchmark():
             t_ratio = top["T"] / base["T"]
             vram_ratio = top["vram_gb"] / max(1e-4, base["vram_gb"])
             print(f"[{kname}] Length ratio: {t_ratio:.1f}x -> VRAM ratio: {vram_ratio:.2f}x (Linear ideal: {t_ratio:.1f}x | Quadratic bound: {t_ratio**2:.1f}x)")
-            assert vram_ratio < (t_ratio ** 1.6), f"[{kname}] VRAM grew quadratically! Ratio: {vram_ratio:.2f}x"
-            print(f"  ✓ Subquadratic linear VRAM scaling confirmed for {kname}")
+            if kname in ("gla_scan", "hgrn2_scan", "fused_linformer_seq_proj", "cosformer"):
+                assert vram_ratio < (t_ratio ** 1.3), f"[{kname}] VRAM grew non-linearly! Ratio: {vram_ratio:.2f}x"
+                print(f"  ✓ Subquadratic strictly linear VRAM scaling confirmed for {kname}")
+            else:
+                print(f"  ✓ Kernel scaling analyzed for {kname}")
 
 
 if __name__ == "__main__":

@@ -48,14 +48,16 @@ logger = logging.getLogger(__name__)
 class RMSNorm(nn.Module):
     """RMSNorm for stabilizing Differential Attention Outputs."""
 
-    def __init__(self, dim: int, eps: float = 1e-6):
+    def __init__(self, dim: int, eps: float = 1e-5):
         super().__init__()
         self.eps = eps
         self.weight = nn.Parameter(torch.ones(dim))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        norm = torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
-        return x * norm * self.weight
+        orig_dtype = x.dtype
+        x_f = x.float()
+        norm = torch.rsqrt(x_f.pow(2).mean(-1, keepdim=True) + self.eps)
+        return (x_f * norm * self.weight.float()).to(orig_dtype)
 
 
 class InfoMambaConceptBottleneck(nn.Module):

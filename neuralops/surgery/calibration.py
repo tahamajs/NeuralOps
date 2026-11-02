@@ -21,6 +21,10 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
+from neuralops.core._attention_surgery import (
+    calibrate_attention_subspace,
+    calibrate_surgically_replaced_model,
+)
 from neuralops.surgery.universal_calibrator import (
     UniversalActivationCalibrator,
     compress_model_universal,
@@ -200,10 +204,67 @@ def calibrate_gradient_importance(
     return calibrator.calibrate(calibration_data, num_batches=num_batches)
 
 
+def ridge_regression_solve(
+    X: torch.Tensor,
+    Y: torch.Tensor,
+    ridge_lambda: float = 1e-3,
+    device: Optional[Union[str, torch.device]] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Closed-Form Ridge Regression Parameter Solver with Cross-Device Robustness.
+
+    Solves:
+        W = (X_c^T X_c + lambda * I)^{-1} X_c^T Y_c
+        b = mu_Y - mu_X @ W
+
+    Ensures X and Y run on the designated device (GPU or CPU) with automatic
+    CPU solver fallback if GPU cuSOLVER throws an exception.
+    """
+    target_device = torch.device(device) if device is not None else X.device
+    D_in = X.shape[-1]
+    D_out = Y.shape[-1]
+
+    X_flat = X.reshape(-1, D_in).float()
+    Y_flat = Y.reshape(-1, D_out).float()
+
+    if X_flat.device != target_device:
+        X_flat = X_flat.to(target_device)
+    if Y_flat.device != target_device:
+        Y_flat = Y_flat.to(target_device)
+
+    mu_X = X_flat.mean(dim=0, keepdim=True)
+    mu_Y = Y_flat.mean(dim=0, keepdim=True)
+    X_c = X_flat - mu_X
+    Y_c = Y_flat - mu_Y
+
+    reg = ridge_lambda * torch.eye(D_in, device=target_device, dtype=torch.float32)
+    XT_X = torch.matmul(X_c.t(), X_c) + reg
+    XT_Y = torch.matmul(X_c.t(), Y_c)
+
+    try:
+        W = torch.linalg.solve(XT_X, XT_Y)
+        b = (mu_Y - torch.matmul(mu_X, W)).squeeze(0)
+    except Exception as err:
+        logger.warning(
+            "Ridge regression solve on device %s failed (%s); falling back to CPU solver.",
+            target_device,
+            err,
+        )
+        W_cpu = torch.linalg.solve(XT_X.cpu(), XT_Y.cpu())
+        b_cpu = (mu_X.cpu().matmul(W_cpu) - mu_Y.cpu()).squeeze(0).neg()
+        W = W_cpu.to(target_device)
+        b = b_cpu.to(target_device)
+
+    return W, b
+
+
 __all__ = [
     "UniversalActivationCalibrator",
     "compress_model_universal",
     "transplant_and_compress",
     "GradientCalibrator",
     "calibrate_gradient_importance",
+    "calibrate_surgically_replaced_model",
+    "calibrate_attention_subspace",
+    "ridge_regression_solve",
 ]
