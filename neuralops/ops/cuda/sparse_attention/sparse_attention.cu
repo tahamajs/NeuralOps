@@ -64,6 +64,21 @@ __global__ void block_sparse_attn_warp_kernel(
     const int num_act = s_num_active;
     const int kv_head_base = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM);
 
+    if (num_act == 0) {
+        #pragma unroll
+        for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
+            const int cur_q = q_block_idx * BLOCK_SIZE + warp_id * QUERIES_PER_WARP + qi;
+            if (cur_q < N) {
+                const int out_base = kv_head_base + cur_q * HEAD_DIM;
+                #pragma unroll
+                for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+                    out[out_base + lane + e * 32] = 0.0f;
+                }
+            }
+        }
+        return;
+    }
+
     float q_local[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
     float acc[QUERIES_PER_WARP][ELEMENTS_PER_THREAD];
     float m_prev[QUERIES_PER_WARP];
