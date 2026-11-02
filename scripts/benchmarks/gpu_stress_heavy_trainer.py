@@ -29,6 +29,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import neuralops
+
 
 class TransformerEncoderBlock(nn.Module):
     """Production transformer encoder block with self-attention and MLP."""
@@ -132,7 +134,7 @@ def run_heavy_stress_training(
     """Execute high-throughput GPU stress training loop."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("=" * 75)
-    print("  🚀 NeuralOps Heavy GPU Stress Training & Workload Engine")
+    print("  [*] NeuralOps Heavy GPU Stress Training & Workload Engine")
     print(f"  Target Device     : {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
     if torch.cuda.is_available():
         vram_total = torch.cuda.get_device_properties(0).total_memory / 1e9
@@ -150,7 +152,7 @@ def run_heavy_stress_training(
         param.requires_grad = False
 
     param_count = sum(p.numel() for p in student.parameters() if p.requires_grad)
-    print(f"✓ Model initialized with {param_count / 1e6:.2f}M trainable parameters.", flush=True)
+    print(f"  [+] Model initialized with {param_count / 1e6:.2f}M trainable parameters.", flush=True)
 
     optimizer = torch.optim.AdamW(student.parameters(), lr=base_lr, weight_decay=0.01)
     scaler = torch.cuda.amp.GradScaler() if torch.cuda.is_available() else None
@@ -256,12 +258,12 @@ def run_heavy_stress_training(
                 },
                 ckpt_file,
             )
-            print(f"  💾 Saved stress checkpoint to {ckpt_file}", flush=True)
+            print(f"  [SAVED] Saved stress checkpoint to {ckpt_file}", flush=True)
 
     total_duration = time.perf_counter() - t_start
     overall_throughput = tokens_processed / max(1e-4, total_duration)
     print("\n" + "=" * 75)
-    print("  ✅ Heavy GPU Stress Training Completed Successfully!")
+    print("  [SUCCESS] Heavy GPU Stress Training Completed Successfully!")
     print(f"  Total Duration    : {total_duration:.2f}s ({total_duration/60:.2f} min)")
     print(f"  Total Tokens      : {tokens_processed:,}")
     print(f"  Mean Throughput   : {overall_throughput:.1f} tokens/second")

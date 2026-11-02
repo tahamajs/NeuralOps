@@ -370,13 +370,13 @@ def main() -> int:
         with force_kernel_backend("pytorch"):
             out = cosformer_linear_attention(q, k, v)
         stats = get_dispatch_stats()
-        print(f"  ✓ Reference execution verified: finite={torch.isfinite(out).all().item()}")
-        print(f"  ✓ Dispatch statistics: {stats}")
+        print(f"  [OK] Reference execution verified: finite={torch.isfinite(out).all().item()}")
+        print(f"  [OK] Dispatch statistics: {stats}")
 
     print("\n" + "=" * 70)
     passed = sum(1 for r in results if r.get("status") == "PASS")
     total = len(results)
-    print(f"✓ Master Benchmark Completed: {passed}/{total} modules passed.")
+    print(f"[OK] Master Benchmark Completed: {passed}/{total} modules passed.")
     print("=" * 70)
 
     if args.export and results:
@@ -386,7 +386,7 @@ def main() -> int:
             from results_exporter import export_benchmark_results
         output_dir = Path(__file__).resolve().parent.parent.parent / "results"
         paths = export_benchmark_results(results, device=device, output_dir=output_dir)
-        print("  ✓ Exported results to:")
+        print("  [OK] Exported results to:")
         for k, p in paths.items():
             print(f"    • {k:<10}: {p}")
 

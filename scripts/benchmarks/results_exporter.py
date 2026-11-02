@@ -254,10 +254,10 @@ def main() -> int:
         paths = export_benchmark_results(sample_records, device="mps")
 
     for k, p in paths.items():
-        print(f"  ✓ {k:<10}: {p}")
+        print(f"  [OK] {k:<10}: {p}")
 
     print("=" * 70)
-    print("✓ Phase 7 Results Exporter verified: All formats atomically written.")
+    print("[OK] Phase 7 Results Exporter verified: All formats atomically written.")
     print("=" * 70)
     return 0
 

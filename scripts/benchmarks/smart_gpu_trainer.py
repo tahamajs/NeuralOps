@@ -227,7 +227,7 @@ class SmartGPUTrainer:
 
         total_time = time.perf_counter() - t0
         throughput = (self.total_steps * batch_size * seq_len) / max(1e-6, total_time)
-        print(f"  ✓ Training loop completed in {total_time:.2f}s ({throughput:.1f} tokens/s).")
+        print(f"  [OK] Training loop completed in {total_time:.2f}s ({throughput:.1f} tokens/s).")
         return logs
 
 
@@ -264,7 +264,7 @@ def main() -> int:
     logs = trainer.train_loop(batch_size=args.batch_size, seq_len=32, vocab_size=100)
 
     print("=" * 70)
-    print(f"✓ Phase 6 Smart Trainer verified: {len(logs)} steps converged successfully.")
+    print(f"[OK] Phase 6 Smart Trainer verified: {len(logs)} steps converged successfully.")
     print("=" * 70)
     return 0
 
