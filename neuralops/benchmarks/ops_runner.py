@@ -179,6 +179,11 @@ def run_benchmark_worker(
     device = torch.device(device_str if torch.cuda.is_available() and device_str != "cpu" else "cpu")
     dtype = getattr(torch, dtype_str)
 
+    expected_seq_len_multiple = getattr(OP_REGISTRY[op_name], "expected_seq_len_multiple", None)
+    if expected_seq_len_multiple is not None and T % expected_seq_len_multiple != 0:
+        T = ((T + expected_seq_len_multiple - 1) // expected_seq_len_multiple) * expected_seq_len_multiple
+        logger.info("Adjusted sequence length for %s to multiple of %d: T=%d", op_name, expected_seq_len_multiple, T)
+
     fwd_fn, fwdbwd_fn = OP_REGISTRY[op_name](B, T, H, D, dtype, device)
     target_fn = fwd_fn if mode == "fwd" else fwdbwd_fn
 
