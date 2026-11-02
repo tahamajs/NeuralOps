@@ -93,12 +93,7 @@ class KroneckerLinear(nn.Module):
             and (self.m1 > 1 or self.out_features <= 3)
         )
 
-        self.A: nn.Parameter | None = None
-        self.B: nn.Parameter | None = None
         self.rank: int | None = rank
-        self.U: nn.Parameter | None = None
-        self.V: nn.Parameter | None = None
-        self.bias: nn.Parameter | None = None
         self._cached_weight: torch.Tensor | None = None
 
         requires_grad = not (self.lora_r > 0)
@@ -351,8 +346,8 @@ class KroneckerLinear(nn.Module):
         self.register_parameter("B", None)
 
         self.rank = best_r
-        self.U = nn.Parameter(best_U_r.to(dtype=target_dtype, device=target_device))
-        self.V = nn.Parameter(best_V_r.to(dtype=target_dtype, device=target_device))
+        self.register_parameter("U", nn.Parameter(best_U_r.to(dtype=target_dtype, device=target_device)))
+        self.register_parameter("V", nn.Parameter(best_V_r.to(dtype=target_dtype, device=target_device)))
 
         if bias is not None:
             self.bias = nn.Parameter(bias.clone().to(dtype=target_dtype, device=target_device))
