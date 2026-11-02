@@ -97,26 +97,38 @@ def pillar3_attention_js(student_map: torch.Tensor, teacher_map: torch.Tensor) -
     return 0.5 * (kl_pm + kl_qm)
 
 
-def pillar4_gradient_alignment(student_model: torch.nn.Module, teacher_model: torch.nn.Module) -> torch.Tensor:
-    """Pillar 4: Gradient trajectory directional cosine alignment."""
-    s_grads = [p.grad.flatten() for p in student_model.parameters() if p.grad is not None]
-    t_grads = [p.grad.flatten() for p in teacher_model.parameters() if p.grad is not None]
+def pillar4_gradient_alignment(
+    student_model: torch.nn.Module,
+    teacher_model: torch.nn.Module,
+    teacher_logits: torch.Tensor,
+) -> torch.Tensor:
+    """Pillar 4: Directional cosine alignment between student and teacher parameter gradients."""
+    pseudo_labels = teacher_logits.argmax(dim=-1)
+    loss_t = F.cross_entropy(teacher_logits, pseudo_labels)
+
+    t_params = [p for p in teacher_model.transformer.classifier.parameters()]
+    t_grads = torch.autograd.grad(loss_t, t_params, retain_graph=True)
+
+    s_params = [p for p in student_model.transformer.classifier.parameters()]
+    s_grads = [p.grad for p in s_params if p.grad is not None]
+
     if not s_grads or not t_grads:
-        return torch.tensor(0.0)
-    g_s = torch.cat(s_grads[:3])
-    g_t = torch.cat(t_grads[:3])
-    min_len = min(len(g_s), len(g_t))
-    cos_sim = F.cosine_similarity(g_s[:min_len].unsqueeze(0), g_t[:min_len].unsqueeze(0))
+        return torch.tensor(0.0, device=teacher_logits.device)
+
+    g_s_flat = torch.cat([g.flatten() for g in s_grads])
+    g_t_flat = torch.cat([g.flatten() for g in t_grads])
+    cos_sim = F.cosine_similarity(g_s_flat.unsqueeze(0), g_t_flat.unsqueeze(0))
     return (1.0 - cos_sim).squeeze()
 
 
 def pillar5_fisher_curvature(student_model: torch.nn.Module) -> torch.Tensor:
-    """Pillar 5: Diagonal empirical Fisher Information curvature penalty."""
+    """Pillar 5: Diagonal empirical Fisher Information curvature penalty (top 10 squared gradients)."""
     s_grads = [p.grad.flatten() for p in student_model.parameters() if p.grad is not None]
     if not s_grads:
         return torch.tensor(0.0)
-    flat_g = torch.cat(s_grads[:3])
-    return (flat_g ** 2).mean()
+    flat_g = torch.cat(s_grads)
+    top10_sq = (flat_g.abs().topk(min(10, len(flat_g))).values ** 2).mean()
+    return top10_sq
 
 
 def pillar6_activation_covariance(student_acts: torch.Tensor, teacher_acts: torch.Tensor) -> torch.Tensor:
@@ -133,9 +145,9 @@ def run_six_pillar_training(device: str) -> bool:
     """Execute 3-step 6-pillar distillation training with WSD scheduling."""
     section("Part 1: Initializing Teacher and Surgically Transformed Student")
 
-    teacher = TinyClassifier().to(device).eval()
-    student = TinyClassifier().to(device)
-    neuralops.replace_attention(student, attention="cosformer", copy_weights=True)
+    teacher = TinyClassifier(seed=42).to(device)
+    student = TinyClassifier(seed=99).to(device)
+    neuralops.replace_attention(student, attention="cosformer", copy_weights=False)
     student.train()
 
     kv("Teacher Architecture", "Dense DistilBERT (2 layers, full quadratic attention)")
@@ -156,6 +168,7 @@ def run_six_pillar_training(device: str) -> bool:
     section("Part 2: 3-Step Distillation Loop & Per-Pillar Telemetry")
     table_rows: list[list[str]] = []
     losses_history: list[float] = []
+    pillar_values_all: list[list[float]] = []
 
     for step, batch in enumerate(data_iter, start=1):
         optimizer.zero_grad()
@@ -164,30 +177,37 @@ def run_six_pillar_training(device: str) -> bool:
         attn_mask = batch["attention_mask"]
 
         # Forward teacher
-        with torch.no_grad():
-            t_out = teacher(input_ids, attention_mask=attn_mask, output_hidden_states=True)
-            t_logits = t_out.logits
-            t_hidden = t_out.hidden_states[-1] if hasattr(t_out, "hidden_states") else torch.randn_like(t_logits).unsqueeze(1)
+        t_out = teacher(input_ids, attention_mask=attn_mask, output_hidden_states=True)
+        t_logits = t_out.logits
+        t_hidden = t_out.hidden_states[-1] if hasattr(t_out, "hidden_states") else torch.randn_like(t_logits).unsqueeze(1)
 
         # Forward student
         s_out = student(input_ids, attention_mask=attn_mask, output_hidden_states=True)
         s_logits = s_out.logits
         s_hidden = s_out.hidden_states[-1] if hasattr(s_out, "hidden_states") else torch.randn_like(s_logits).unsqueeze(1)
 
-        # Compute Pillar 1, 2, 6 (Forward losses)
+        # Compute Pillar 1 (Logits KL), Pillar 2 (Hidden Cosine), Pillar 6 (Covariance)
         loss_p1 = pillar1_logit_kl(s_logits, t_logits, temperature=2.0)
         loss_p2 = pillar2_hidden_cosine(s_hidden, t_hidden)
-        # Synthetic attention map proxies for Pillar 3
-        s_dummy_map = torch.randn(input_ids.shape[0], 16, 16, device=device)
-        t_dummy_map = torch.randn(input_ids.shape[0], 16, 16, device=device)
-        loss_p3 = pillar3_attention_js(s_dummy_map, t_dummy_map)
         loss_p6 = pillar6_activation_covariance(s_hidden, t_hidden)
 
-        forward_loss = 0.5 * loss_p1 + 0.2 * loss_p2 + 0.1 * loss_p3 + 0.2 * loss_p6
+        # Pillar 3: Proxy Attention Map JS Divergence via Q-K dot products
+        attn_layer_t = teacher.transformer.distilbert.transformer.layer[0].attention
+        q_t = attn_layer_t.q_lin(t_hidden)
+        k_t = attn_layer_t.k_lin(t_hidden)
+        map_t = torch.matmul(q_t, k_t.transpose(-1, -2)) / (q_t.shape[-1] ** 0.5)
+
+        wrap_s = student.transformer.distilbert.transformer.layer[0].attention._wrapped_attention
+        q_s = wrap_s.q_proj(s_hidden)
+        k_s = wrap_s.k_proj(s_hidden)
+        map_s = torch.matmul(q_s, k_s.transpose(-1, -2)) / (q_s.shape[-1] ** 0.5)
+        loss_p3 = pillar3_attention_js(map_s, map_t)
+
+        forward_loss = 0.4 * loss_p1 + 0.3 * loss_p2 + 0.1 * loss_p3 + 0.2 * loss_p6
         forward_loss.backward(retain_graph=True)
 
-        # Compute Pillar 4 & 5 (Gradient & Curvature losses)
-        loss_p4 = pillar4_gradient_alignment(student, teacher)
+        # Compute Pillar 4 (Gradient Alignment) & Pillar 5 (Fisher Curvature)
+        loss_p4 = pillar4_gradient_alignment(student, teacher, t_logits)
         loss_p5 = pillar5_fisher_curvature(student)
 
         total_loss = forward_loss + 0.05 * loss_p4 + 0.01 * loss_p5
@@ -200,15 +220,24 @@ def run_six_pillar_training(device: str) -> bool:
         loss_val = total_loss.item()
         losses_history.append(loss_val)
 
+        p1_val = loss_p1.item()
+        p2_val = loss_p2.item()
+        p3_val = loss_p3.item()
+        p4_val = loss_p4.item()
+        p5_val = loss_p5.item()
+        p6_val = loss_p6.item()
+
+        pillar_values_all.append([p1_val, p2_val, p3_val, p4_val, p5_val, p6_val])
+
         table_rows.append([
             f"Step {step}",
             f"{current_lr:.6f}",
-            f"{loss_p1.item():.4f}",
-            f"{loss_p2.item():.4f}",
-            f"{loss_p3.item():.4f}",
-            f"{loss_p4.item():.4f}",
-            f"{loss_p5.item():.4f}",
-            f"{loss_p6.item():.4f}",
+            f"{p1_val:.6f}",
+            f"{p2_val:.4f}",
+            f"{p3_val:.4f}",
+            f"{p4_val:.4f}",
+            f"{p5_val:.4f}",
+            f"{p6_val:.4f}",
             f"{loss_val:.4f}",
         ])
 
@@ -220,12 +249,23 @@ def run_six_pillar_training(device: str) -> bool:
     all_finite = all(torch.isfinite(torch.tensor(l)).item() for l in losses_history)
     pass_fail("Multi-Pillar Loss Finiteness", all_finite, f"Loss trajectory: {[round(l, 4) for l in losses_history]}")
 
+    # Check non-zero real computation across all pillars
+    nonzero_counts = sum(
+        1 for col in range(6)
+        if any(step_vals[col] > 1e-6 for step_vals in pillar_values_all)
+    )
+
+    if nonzero_counts == 6:
+        pass_fail("Pillar Real Value Verification", True, "6/6 distillation pillars computed with nonzero real values")
+    else:
+        pass_fail("Pillar Real Value Verification", False, f"Only {nonzero_counts}/6 pillars computed nonzero values")
+
     if HAS_WSD_SCHEDULER:
         pass_fail("WSD Learning Rate Scheduling", True, "Successfully traversed warmup and stable phases")
     else:
         pass_fail("Learning Rate Scheduling", True, "Constant LR baseline active")
 
-    return all_finite
+    return all_finite and (nonzero_counts == 6)
 
 
 def main() -> int:
@@ -239,7 +279,7 @@ def main() -> int:
     success = run_six_pillar_training(backend)
     print()
     if success:
-        pass_fail("Overall Example 04 Status", True, "All 6 distillation pillars and schedulers verified")
+        pass_fail("Overall Example 04 Status", True, "6/6 distillation pillars computed with nonzero real values")
         return 0
     else:
         pass_fail("Overall Example 04 Status", False, "One or more distillation checks failed")
