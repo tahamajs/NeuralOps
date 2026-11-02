@@ -6,19 +6,22 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Hardware Pre-Flight & Memory Auto-Tuning Engine (Phase 1).
+Hardware Pre-Flight & Memory Auto-Tuning Engine (Phase 1 & Phase 2).
 
 Discovers GPU architecture, VRAM bounds, enables TF32 / CUDNN benchmarks,
 and dynamically searches for maximal safe batch sizes and sequence lengths
+using representative attention modules (e.g. CosformerLinearAttention)
 to saturate 85-92% of available accelerator memory without OOM.
 """
 
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import os
 import sys
+import time
 from typing import Any, Callable
 
 import torch
@@ -76,9 +79,18 @@ def configure_optimal_gpu_runtime() -> dict[str, bool]:
         torch.backends.cudnn.allow_tf32 = True
         torch.backends.cudnn.benchmark = True
         flags = {"tf32_matmul": True, "tf32_cudnn": True, "cudnn_benchmark": True}
-        # Optimize memory allocation splitting
         os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "max_split_size_mb:128")
     return flags
+
+
+def get_default_probe_module(dim: int = 768, num_heads: int = 12) -> nn.Module:
+    """Build a representative attention module for realistic memory profiling."""
+    try:
+        from neuralops.layers.attention.cosformer_attention import CosformerLinearAttention
+        return CosformerLinearAttention(dim=dim, num_heads=num_heads)
+    except Exception:
+        # Fallback to standard MultiheadAttention
+        return nn.MultiheadAttention(embed_dim=dim, num_heads=num_heads, batch_first=True)
 
 
 class AutoVRAMSaturator:
@@ -95,7 +107,7 @@ class AutoVRAMSaturator:
 
     def find_max_batch_size(
         self,
-        model_factory: Callable[[], nn.Module],
+        model_factory: Callable[[], nn.Module] | None = None,
         seq_len: int = 512,
         dim: int = 768,
         candidate_batches: list[int] | None = None,
@@ -103,6 +115,9 @@ class AutoVRAMSaturator:
         """Probes forward + backward passes to find the largest safe batch size."""
         if candidate_batches is None:
             candidate_batches = [1, 2, 4, 8, 16, 32, 64, 128]
+
+        if model_factory is None:
+            model_factory = lambda: get_default_probe_module(dim=dim)
 
         best_batch = 1
         measured_results: list[dict[str, Any]] = []
@@ -114,13 +129,22 @@ class AutoVRAMSaturator:
             if self.device.type == "cuda":
                 torch.cuda.empty_cache()
                 torch.cuda.reset_peak_memory_stats()
+            gc.collect()
 
             try:
                 # Synthetic input
                 x = torch.randn(b, seq_len, dim, device=self.device, requires_grad=True)
-                out = model(x)
+                
+                # Execute realistic forward
+                if isinstance(model, nn.MultiheadAttention):
+                    out, _ = model(x, x, x)
+                else:
+                    out = model(x)
                 if hasattr(out, "logits"):
                     out = out.logits
+                elif isinstance(out, tuple):
+                    out = out[0]
+
                 loss = out.sum()
                 loss.backward()
 
@@ -141,7 +165,6 @@ class AutoVRAMSaturator:
                 })
 
                 if self.device.type == "cuda" and utilization > self.target_vram_utilization:
-                    # Exceeds safe utilization target
                     break
                 best_batch = b
 
@@ -168,9 +191,10 @@ class AutoVRAMSaturator:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Phase 1: Hardware Pre-Flight & VRAM Auto-Tuning")
+    parser = argparse.ArgumentParser(description="Phase 1 & 2: Hardware Pre-Flight & VRAM Auto-Tuning")
     parser.add_argument("--json", action="store_true", help="Output machine-readable JSON")
     parser.add_argument("--probe-model", action="store_true", help="Run VRAM auto-saturator probe")
+    parser.add_argument("--export-hardware-json", type=str, default=None, help="Save hardware profile JSON to file")
     args = parser.parse_args()
 
     hw_info = get_hardware_info()
@@ -179,23 +203,21 @@ def main() -> int:
     result: dict[str, Any] = {"hardware": hw_info, "runtime_flags": flags}
 
     if args.probe_model:
-        # Minimal linear model factory for auto-tuning probe
-        def mock_transformer_block() -> nn.Module:
-            return nn.Sequential(
-                nn.Linear(768, 768),
-                nn.ReLU(),
-                nn.Linear(768, 768),
-            )
-
         saturator = AutoVRAMSaturator()
-        probe_res = saturator.find_max_batch_size(mock_transformer_block, seq_len=512, dim=768)
+        probe_res = saturator.find_max_batch_size(seq_len=512, dim=768)
         result["vram_probe"] = probe_res
+
+    if args.export_hardware_json:
+        out_p = os.path.abspath(args.export_hardware_json)
+        os.makedirs(os.path.dirname(out_p), exist_ok=True)
+        with open(out_p, "w", encoding="utf-8") as f:
+            json.dump(result, f, indent=2)
 
     if args.json:
         print(json.dumps(result, indent=2))
     else:
         print("=" * 65)
-        print("  NeuralOps Phase 1: Hardware Pre-Flight & Memory Auto-Tuner")
+        print("  NeuralOps Phase 1 & 2: Hardware Pre-Flight & Memory Auto-Tuner")
         print("=" * 65)
         for k, v in hw_info.items():
             print(f"  • {k:<25}: {v}")
@@ -206,7 +228,7 @@ def main() -> int:
             vp = result["vram_probe"]
             print(f"  Optimal Batch Size      : {vp['optimal_batch_size']} (seq_len={vp['seq_len']})")
         print("=" * 65)
-        print("✓ Phase 1 Hardware Pre-Flight complete.")
+        print("✓ Phase 1 & 2 Hardware Pre-Flight complete.")
     return 0
 
 

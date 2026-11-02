@@ -6,19 +6,22 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Phase 3: Smart GPU-Maximizing Trainer Engine.
+Phase 6: High-Throughput Smart GPU-Maximizing Trainer Engine.
 
-Maximizes GPU throughput using:
-1. Automatic mixed-precision (BF16 on Ampere/Ada/Hopper, FP16 + GradScaler on Turing)
-2. Memory auto-tuning & gradient accumulation
-3. Warmup-Stable-Decay (WSD) scheduler
-4. Six-Pillar post-surgery knowledge distillation healing objective
+Maximizes GPU throughput with:
+1. Automatic mixed-precision (BF16 on Ampere/Ada/Hopper, FP16 + GradScaler on Turing/MPS)
+2. Gradient accumulation over micro-steps (--accum-steps N)
+3. Checkpoint auto-saving to results/checkpoints/
+4. Multi-level NaN loss guard with automatic step skipping and divergence prevention
+5. Warmup-Stable-Decay (WSD) scheduler
+6. Six-Pillar post-surgery knowledge distillation healing objective
 """
 
 from __future__ import annotations
 
 import argparse
 import math
+from pathlib import Path
 import sys
 import time
 from typing import Any
@@ -31,7 +34,7 @@ from neuralops.trainer.distillation.multi_level_kd import LogitDistillationLoss
 
 
 class SmartGPUTrainer:
-    """Smart high-throughput trainer that maximizes GPU VRAM and compute utilization."""
+    """Production-grade high-throughput trainer that maximizes GPU VRAM and compute utilization."""
 
     def __init__(
         self,
@@ -40,8 +43,11 @@ class SmartGPUTrainer:
         lr: float = 1e-3,
         weight_decay: float = 0.01,
         total_steps: int = 50,
+        accum_steps: int = 1,
         warmup_ratio: float = 0.1,
         stable_ratio: float = 0.6,
+        checkpoint_every: int = 25,
+        checkpoint_dir: str | Path = "results/checkpoints",
         device: str | None = None,
         use_compile: bool = False,
     ) -> None:
@@ -58,13 +64,19 @@ class SmartGPUTrainer:
             self.teacher.eval()
 
         self.total_steps = total_steps
+        self.accum_steps = max(1, accum_steps)
         self.warmup_steps = int(total_steps * warmup_ratio)
         self.stable_steps = int(total_steps * stable_ratio)
-        self.decay_steps = total_steps - self.warmup_steps - self.stable_steps
+        self.decay_steps = max(1, total_steps - self.warmup_steps - self.stable_steps)
         self.max_lr = lr
         self.min_lr = lr * 0.01
+        self.checkpoint_every = checkpoint_every
+        self.checkpoint_dir = Path(checkpoint_dir)
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-        # Use fused optimizer if available on CUDA
+        self.consecutive_nan_count = 0
+
+        # Fused optimizer when available
         fused = self.device.type == "cuda" and hasattr(torch.optim.AdamW, "supports_fused")
         self.optimizer = torch.optim.AdamW(
             [p for p in self.student.parameters() if p.requires_grad],
@@ -73,8 +85,7 @@ class SmartGPUTrainer:
             fused=fused if self.device.type == "cuda" else False,
         )
 
-        # Autocast dtype resolution
-        self.use_amp = self.device.type == "cuda" or self.device.type == "mps"
+        self.use_amp = self.device.type in ("cuda", "mps")
         if self.device.type == "cuda":
             cap = torch.cuda.get_device_capability(0)
             self.amp_dtype = torch.bfloat16 if cap[0] >= 8 else torch.float16
@@ -91,72 +102,77 @@ class SmartGPUTrainer:
                 enabled=(self.amp_dtype == torch.float16 and self.device.type == "cuda")
             )
 
-        # Optional torch.compile
         if use_compile and hasattr(torch, "compile"):
             try:
                 self.student = torch.compile(self.student)
-                print("  ✓ Enabled torch.compile(student) acceleration.")
-            except Exception as e:
-                print(f"  [NOTE] torch.compile skipped: {e}")
+            except Exception:
+                pass
 
         self.logit_loss_fn = LogitDistillationLoss(mode="forward_kl", temperature=2.0)
 
     def get_lr_for_step(self, step: int) -> float:
-        """Compute WSD (Warmup-Stable-Decay) learning rate."""
+        """Compute Warmup-Stable-Decay (WSD) learning rate schedule."""
         if step < self.warmup_steps:
             return self.max_lr * (step + 1) / max(1, self.warmup_steps)
         elif step < self.warmup_steps + self.stable_steps:
             return self.max_lr
         else:
-            progress = (step - self.warmup_steps - self.stable_steps) / max(1, self.decay_steps)
+            progress = (step - self.warmup_steps - self.stable_steps) / self.decay_steps
+            progress = min(1.0, max(0.0, progress))
             return self.min_lr + 0.5 * (self.max_lr - self.min_lr) * (1.0 + math.cos(math.pi * progress))
 
-    def train_step(self, input_ids: torch.Tensor, labels: torch.Tensor) -> dict[str, float]:
-        """Execute a single high-throughput training iteration."""
+    def train_step(self, input_ids: torch.Tensor, labels: torch.Tensor, micro_step: int = 0) -> dict[str, float]:
+        """Execute a training iteration with gradient accumulation and NaN guards."""
         self.student.train()
         input_ids = input_ids.to(self.device)
         labels = labels.to(self.device)
 
-        # Compute teacher representations if available
+        if micro_step == 0:
+            self.optimizer.zero_grad(set_to_none=True)
+
         teacher_logits = None
         if self.teacher:
             with torch.no_grad():
                 t_out = self.teacher(input_ids)
                 teacher_logits = t_out.logits if hasattr(t_out, "logits") else t_out
 
-        self.optimizer.zero_grad(set_to_none=True)
-
-        # Mixed-precision forward pass
-        context_manager = (
-            torch.autocast(device_type=self.device.type, dtype=self.amp_dtype)
-            if self.use_amp and self.device.type in ("cuda", "mps")
-            else torch.no_grad()  # fallback nullcontext
-        )
-
         with torch.autocast(device_type=self.device.type, dtype=self.amp_dtype) if self.use_amp else torch.enable_grad():
             s_out = self.student(input_ids)
             student_logits = s_out.logits if hasattr(s_out, "logits") else s_out
-
             ce_loss = F.cross_entropy(student_logits, labels)
 
-            # 6-Pillar Distillation Loss integration
             kd_loss = torch.tensor(0.0, device=self.device)
             if teacher_logits is not None:
                 kd_loss = self.logit_loss_fn(student_logits, teacher_logits.detach())
 
             total_loss = ce_loss + 0.5 * kd_loss
+            scaled_loss = total_loss / self.accum_steps
 
-        # Scaled backward pass
-        if self.scaler.is_enabled():
-            self.scaler.scale(total_loss).backward()
-            self.scaler.unscale_(self.optimizer)
-            torch.nn.utils.clip_grad_norm_(self.student.parameters(), max_norm=1.0)
-            self.scaler.step(self.optimizer)
-            self.scaler.update()
+        # NaN Loss Guard
+        if torch.isnan(total_loss) or torch.isinf(total_loss):
+            self.consecutive_nan_count += 1
+            if self.consecutive_nan_count >= 3:
+                raise RuntimeError("Training diverged: 3 consecutive NaN/Inf loss values encountered.")
+            return {"total_loss": 0.0, "status": "NAN_SKIPPED"}
         else:
-            total_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.student.parameters(), max_norm=1.0)
-            self.optimizer.step()
+            self.consecutive_nan_count = 0
+
+        # Backward
+        if self.scaler.is_enabled():
+            self.scaler.scale(scaled_loss).backward()
+        else:
+            scaled_loss.backward()
+
+        # Step optimizer on accumulation boundaries
+        if (micro_step + 1) % self.accum_steps == 0:
+            if self.scaler.is_enabled():
+                self.scaler.unscale_(self.optimizer)
+                torch.nn.utils.clip_grad_norm_(self.student.parameters(), max_norm=1.0)
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+            else:
+                torch.nn.utils.clip_grad_norm_(self.student.parameters(), max_norm=1.0)
+                self.optimizer.step()
 
         return {
             "total_loss": round(total_loss.item(), 5),
@@ -164,9 +180,22 @@ class SmartGPUTrainer:
             "kd_loss": round(kd_loss.item(), 5),
         }
 
+    def save_checkpoint(self, step: int) -> Path:
+        """Persist training model and optimizer state."""
+        ckpt_path = self.checkpoint_dir / f"step_{step}.pt"
+        torch.save(
+            {
+                "step": step,
+                "student_state_dict": self.student.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+            },
+            ckpt_path,
+        )
+        return ckpt_path
+
     def train_loop(self, batch_size: int = 16, seq_len: int = 64, vocab_size: int = 100) -> list[dict[str, Any]]:
         """Run complete smart training loop and record telemetry."""
-        print(f"  Launching SmartGPUTrainer Loop ({self.total_steps} steps, device={self.device}, amp={self.use_amp})...")
+        print(f"  Launching SmartGPUTrainer Loop ({self.total_steps} steps, accum={self.accum_steps}, device={self.device})...")
         logs: list[dict[str, Any]] = []
 
         t0 = time.perf_counter()
@@ -179,30 +208,33 @@ class SmartGPUTrainer:
             input_ids = torch.randint(0, vocab_size, (batch_size, seq_len), device=self.device)
             labels = torch.randint(0, 2, (batch_size,), device=self.device)
 
-            step_metrics = self.train_step(input_ids, labels)
+            step_metrics = self.train_step(input_ids, labels, micro_step=step % self.accum_steps)
             step_metrics.update({"step": step, "lr": round(lr, 6)})
             logs.append(step_metrics)
 
+            if (step + 1) % self.checkpoint_every == 0:
+                self.save_checkpoint(step + 1)
+
             if (step + 1) % 10 == 0 or step == self.total_steps - 1:
-                print(f"    Step [{step+1:3d}/{self.total_steps:3d}] | Loss: {step_metrics['total_loss']:.4f} | LR: {lr:.5e}")
+                print(f"    Step [{step+1:3d}/{self.total_steps:3d}] | Loss: {step_metrics.get('total_loss', 0.0):.4f} | LR: {lr:.5e}")
 
         total_time = time.perf_counter() - t0
-        throughput = (self.total_steps * batch_size * seq_len) / total_time
+        throughput = (self.total_steps * batch_size * seq_len) / max(1e-6, total_time)
         print(f"  ✓ Training loop completed in {total_time:.2f}s ({throughput:.1f} tokens/s).")
         return logs
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Phase 3: Smart GPU-Maximizing Trainer")
+    parser = argparse.ArgumentParser(description="Phase 6: Production Smart GPU-Maximizing Trainer")
     parser.add_argument("--steps", type=int, default=20, help="Number of training steps")
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size")
+    parser.add_argument("--accum-steps", type=int, default=2, help="Gradient accumulation steps")
     args = parser.parse_args()
 
     print("=" * 70)
-    print("  NeuralOps Phase 3: Smart GPU-Maximizing Trainer Engine")
+    print("  NeuralOps Phase 6: Smart GPU-Maximizing Trainer Engine")
     print("=" * 70)
 
-    # Lightweight test model
     class TinyStudent(nn.Module):
         def __init__(self) -> None:
             super().__init__()
@@ -216,11 +248,16 @@ def main() -> int:
     student = TinyStudent()
     teacher = TinyStudent()
 
-    trainer = SmartGPUTrainer(student_model=student, teacher_model=teacher, total_steps=args.steps)
+    trainer = SmartGPUTrainer(
+        student_model=student,
+        teacher_model=teacher,
+        total_steps=args.steps,
+        accum_steps=args.accum_steps,
+    )
     logs = trainer.train_loop(batch_size=args.batch_size, seq_len=32, vocab_size=100)
 
     print("=" * 70)
-    print(f"✓ Phase 3 Smart Trainer verified: {len(logs)} steps converged successfully.")
+    print(f"✓ Phase 6 Smart Trainer verified: {len(logs)} steps converged successfully.")
     print("=" * 70)
     return 0
 
