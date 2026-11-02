@@ -28,6 +28,8 @@ def test_alias_count(aliases):
 
 def test_alias_sample_resolves(aliases):
     """Sample of aliases should resolve."""
+    ATTENTION_REGISTRY._load_all()
+    COMPRESSOR_REGISTRY._load_all()
     sample = list(aliases.items())[:50]
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

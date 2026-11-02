@@ -56,6 +56,8 @@ from neuralops.core.legacy_aliases import (
     COMPRESSOR_FILE_MAP as _COMPRESSOR_FILE_MAP,
 )
 
+DEPRECATED_ALIASES.update(_DEPRECATED_ALIASES)
+
 
 _UNIVERSAL_WRAPPER_CACHE: dict[type, type] = {}
 
