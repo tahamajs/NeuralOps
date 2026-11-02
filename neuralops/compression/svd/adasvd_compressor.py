@@ -263,7 +263,6 @@ class AdaSVDCompressor(BaseCompressor):
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
     is_custom_attention: bool = False
-    requires_calibration: bool = True
 
     def __init__(
         self,
@@ -428,13 +427,7 @@ class AdaSVDCompressor(BaseCompressor):
             or DEFAULT_CALIBRATION_CORPUS
         )
         self.device = (
-            torch.device(device)
-            if device is not None
-            else (
-                next(model.parameters()).device
-                if model is not None and hasattr(model, "parameters") and list(model.parameters())
-                else torch.device("cpu")
-            )
+            torch.device(device) if device is not None else next(model.parameters()).device
         )
         self.comp_config = cfg
 
@@ -1129,18 +1122,7 @@ class AdaSVDCompressor(BaseCompressor):
 
         return svd_layer, final_err, actual_iters
 
-    def compress(
-        self, model: nn.Module | None = None, calibration_data: Any | None = None, **kwargs: Any
-    ) -> tuple[nn.Module, dict[str, Any]]:
-        if model is not None:
-            self.model = model
-        if self.requires_calibration and calibration_data is None:
-            raise ValueError(
-                f"{self.__class__.__name__} requires calibration data for "
-                f"covariance estimation. Provide calibration_data=torch.Tensor "
-                f"or use a compressor that does not require calibration "
-                f"(e.g., direct_svd with rank >= 16)."
-            )
+    def compress(self, calibration_data: Any | None = None) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.layer_errors = {}

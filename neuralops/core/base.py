@@ -264,10 +264,8 @@ class BaseCompressor:
         """Return (compressed_model, statistics)."""
         raise NotImplementedError("Subclasses of BaseCompressor must implement compress()")
 
-    def _count_params(self, model: nn.Module | None) -> int:
+    def _count_params(self, model: nn.Module) -> int:
         """count params."""
-        if model is None or not hasattr(model, "parameters"):
-            return 0
         return sum(p.numel() for p in model.parameters())
 
     def get_compression_stats(self) -> dict[str, Any]:
