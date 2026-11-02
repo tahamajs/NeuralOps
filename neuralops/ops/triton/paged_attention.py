@@ -165,6 +165,7 @@ def paged_attention_kernel(
 
             out = torch.empty_like(q)
             grid = (B, H)
+            num_warps = 4 if D >= 64 else 2
             paged_attention_fwd_kernel[grid](
                 q, k_cache, v_cache, block_tables, seq_lens, out,
                 q.stride(0), q.stride(1), q.stride(2),
@@ -175,6 +176,7 @@ def paged_attention_kernel(
                 H,
                 BLOCK_SIZE=block_size,
                 BLOCK_D=D,
+                num_warps=num_warps,
             )
             return out
         except Exception:

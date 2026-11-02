@@ -905,6 +905,44 @@ if HAS_TRITON and tl is not None:
 
         tl.store(Out_ptr + pid * stride_on + offs_f * stride_of, phi.to(Out_ptr.dtype.element_ty), mask=mask)
 
+    @triton.jit
+    def _favor_plus_fused_proj_act_kernel(
+        X_ptr, OmegaT_ptr, Out_ptr,
+        total_tokens, D_in: tl.constexpr, F_dim: tl.constexpr, norm_factor,
+        stride_xn, stride_xd,
+        stride_ot_d, stride_ot_f,
+        stride_on, stride_of,
+        BLOCK_F: tl.constexpr,
+        BLOCK_D: tl.constexpr,
+    ):
+        """Single-pass Fused GEMM + DiagNorm + Exp activation: never materializes proj or diag_sq in HBM."""
+        pid_n = tl.program_id(0)
+        pid_f = tl.program_id(1)
+        if pid_n >= total_tokens:
+            return
+
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_d = offs_d < D_in
+        x_val = tl.load(X_ptr + pid_n * stride_xn + offs_d * stride_xd, mask=mask_d, other=0.0).to(tl.float32)
+        diag_sq = tl.sum(x_val * x_val, axis=0) * 0.5
+
+        offs_f = pid_f * BLOCK_F + tl.arange(0, BLOCK_F)
+        mask_f = offs_f < F_dim
+
+        # Load column slice of Omega^T: (D_in, BLOCK_F)
+        omega_ptrs = OmegaT_ptr + offs_d[:, None] * stride_ot_d + offs_f[None, :] * stride_ot_f
+        omega_tile = tl.load(omega_ptrs, mask=mask_d[:, None] & mask_f[None, :], other=0.0).to(tl.float32)
+
+        # Vector dot: x_val (1, D_in) @ omega_tile (D_in, BLOCK_F) -> (BLOCK_F,)
+        proj = tl.sum(x_val[:, None] * omega_tile, axis=0)
+
+        diff = proj - diag_sq
+        diff_clamped = tl.maximum(-20.0, tl.minimum(8.0, diff))
+        phi = tl.math.exp2(1.44269504 * diff_clamped) * norm_factor
+
+        out_ptrs = Out_ptr + pid_n * stride_on + offs_f * stride_of
+        tl.store(out_ptrs, phi.to(Out_ptr.dtype.element_ty), mask=mask_f)
+
 
 def fused_favor_plus_feature_map_triton(
     x: torch.Tensor,
@@ -924,35 +962,56 @@ def fused_favor_plus_feature_map_triton(
         return fused_favor_plus_feature_map_pytorch(x, omega, num_features, kernel_type, eps)
 
     try:
-        omega_t = omega.to(dtype=x.dtype, device=x.device).t().contiguous()
-        proj = torch.matmul(x, omega_t)
-
         if kernel_type in ("favor_plus", "exp", "favor"):
-            orig_shape = proj.shape
-            F_dim = orig_shape[-1]
-            proj_2d = proj.contiguous().view(-1, F_dim)
-            x_2d = x.contiguous().view(-1, x.shape[-1])
-            total_tokens = proj_2d.shape[0]
+            orig_shape = list(x.shape)
+            D_in = orig_shape[-1]
+            orig_shape[-1] = num_features
+            x_2d = x.contiguous().view(-1, D_in)
+            total_tokens = x_2d.shape[0]
 
-            diag_sq = (torch.sum(x_2d**2, dim=-1, keepdim=True) * 0.5).contiguous()
-            out_2d = torch.empty_like(proj_2d)
+            omega_t = omega.to(dtype=x.dtype, device=x.device).t().contiguous()
+            out_2d = torch.empty((total_tokens, num_features), device=x.device, dtype=x.dtype)
 
-            block_f = triton.next_power_of_2(F_dim)
             norm_factor = 1.0 / math.sqrt(num_features)
+            BLOCK_D = triton.next_power_of_2(D_in)
+            BLOCK_F = 64 if num_features >= 64 else triton.next_power_of_2(num_features)
+
+            if D_in <= 128:
+                grid = (total_tokens, triton.cdiv(num_features, BLOCK_F))
+                _favor_plus_fused_proj_act_kernel[grid](
+                    x_2d, omega_t, out_2d,
+                    total_tokens, D_in=D_in, F_dim=num_features, norm_factor=float(norm_factor),
+                    stride_xn=x_2d.stride(0), stride_xd=x_2d.stride(1),
+                    stride_ot_d=omega_t.stride(0), stride_ot_f=omega_t.stride(1),
+                    stride_on=out_2d.stride(0), stride_of=out_2d.stride(1),
+                    BLOCK_F=BLOCK_F, BLOCK_D=BLOCK_D,
+                    num_warps=4,
+                )
+                return out_2d.view(*orig_shape)
+
+            proj = torch.matmul(x, omega_t)
+            proj_2d = proj.contiguous().view(-1, num_features)
+            diag_sq = (torch.sum(x_2d**2, dim=-1, keepdim=True) * 0.5).contiguous()
+            block_f = triton.next_power_of_2(num_features)
             grid = (total_tokens,)
             _favor_plus_act_kernel[grid](
                 proj_2d, diag_sq, out_2d,
-                total_tokens, F_dim=F_dim, norm_factor=float(norm_factor),
+                total_tokens, F_dim=num_features, norm_factor=float(norm_factor),
                 stride_pn=proj_2d.stride(0), stride_pf=proj_2d.stride(1),
                 stride_dn=diag_sq.stride(0),
                 stride_on=out_2d.stride(0), stride_of=out_2d.stride(1),
                 BLOCK_F=block_f,
+                num_warps=4,
             )
-            return out_2d.view(orig_shape)
+            return out_2d.view(*orig_shape)
         elif kernel_type == "elu":
+            omega_t = omega.to(dtype=x.dtype, device=x.device).t().contiguous()
+            proj = torch.matmul(x, omega_t)
             phi = (F.elu(proj) + 1.0) / math.sqrt(num_features)
             return phi
         else:
+            omega_t = omega.to(dtype=x.dtype, device=x.device).t().contiguous()
+            proj = torch.matmul(x, omega_t)
             phi = (F.relu(proj) + eps) / math.sqrt(num_features)
             return phi
     except Exception:
