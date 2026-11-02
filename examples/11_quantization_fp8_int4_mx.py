@@ -247,11 +247,15 @@ def main() -> int:
 
     inputs = {"input_ids": torch.tensor([[1, 2, 3, 4], [2, 3, 4, 5]], device=device)}
     with torch.no_grad():
-        ref_logits = model(**inputs).logits
+        ref_logits = model(**inputs).logits.clone()
 
-    # Wrap Q-projection with INT4 quantizer
-    q_lin = model.transformer.distilbert.transformer.layer[0].attention.q_lin
-    model.transformer.distilbert.transformer.layer[0].attention.q_lin = QuantizedLinearWrapper(q_lin, group_size=128)
+    # Quantize the attention Q projection with INT4
+    for _, m_layer in model.named_modules():
+        if hasattr(m_layer, "q_lin"):
+            w = m_layer.q_lin.weight.data
+            scale = w.abs().max().clamp(min=1e-8) / 7.0
+            q = torch.clamp(torch.round(w / scale), -8, 7)
+            m_layer.q_lin.weight.data = q * scale
 
     with torch.no_grad():
         quant_logits = model(**inputs).logits
@@ -261,7 +265,7 @@ def main() -> int:
 
     kv("Reference Logits Shape", f"{tuple(ref_logits.shape)}")
     kv("Quantized Logits Shape", f"{tuple(quant_logits.shape)}")
-    kv("Max Absolute Logits Diff", f"{max_diff:.6f}")
+    kv("Max Absolute Logits Diff", f"{max_diff:.8f}")
     kv("Logits Finiteness", is_finite)
 
     pass_fail("Quantized Model Forward Parity", bool(is_finite and max_diff < 0.1))
