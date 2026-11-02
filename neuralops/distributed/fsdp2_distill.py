@@ -26,7 +26,6 @@ from neuralops.distributed.errors import (
     DistributedError,
     E_FSDP2_CONFIG_FAILED,
 )
-from neuralops.executor.layer_parallel import LayerParallelExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +84,8 @@ class FSDP2Distillation:
         teacher_sharded = fully_shard(teacher, mp_policy=self.mp_policy)
 
         # Shard student per transformer layer block
+        from neuralops.executor.layer_parallel import LayerParallelExecutor
+
         student_layers = LayerParallelExecutor.find_layer_list(student)
         if student_layers is not None:
             for layer in student_layers:
