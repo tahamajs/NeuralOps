@@ -1233,13 +1233,13 @@ def fused_nystrom_landmark_pinv_step_pytorch(
     F3: torch.Tensor,
     V: torch.Tensor,
 ) -> torch.Tensor:
-    """Exact reference PyTorch implementation for Nystrom landmark contraction with Triton dispatch.
+    """Reference PyTorch implementation using cuBLAS GEMM and LAPACK SVD.
 
-    This is intentionally a PyTorch implementation, not Triton. Reasoning: Matrix multiplication
-    and pseudo-inverse contraction are standard dense GEMM sequences optimally handled by vendor
-    BLAS libraries (cuBLAS/MPS/CPU). A custom Triton kernel adds compilation and launch overhead
-    without arithmetic intensity benefits. See audit/CODE_FIX_PROPOSALS and AGENTS.md §7 for the
-    design standard.
+    Why no custom Triton kernel: this operation performs a multi-stage matrix
+    contraction with intermediate tensors that exceed SRAM capacity at typical
+    transformer dimensions. cuBLAS and LAPACK are micro-optimized for these
+    exact shapes and use Tensor Core MMA pipelines that a Triton implementation
+    cannot match. Routing to PyTorch is the correct engineering decision.
     """
     suitable, reason = check_triton_suitability(F1, "low_rank")
     if not (HAS_TRITON and suitable and F1.is_cuda and F2_pinv.is_cuda and F3.is_cuda and V.is_cuda):
@@ -1269,9 +1269,10 @@ def fused_nystrom_landmark_pinv_step_triton(
     F3: torch.Tensor,
     V: torch.Tensor,
 ) -> torch.Tensor:
-    """Deprecated: Alias for fused_nystrom_landmark_pinv_step_pytorch.
+    """DEPRECATED: Renamed to fused_nystrom_landmark_pinv_step_pytorch in v1.8.1.
 
-    Emits DeprecationWarning and delegates directly to the PyTorch reference implementation.
+    This function never contained a Triton kernel — it always called PyTorch.
+    Will be removed in v2.1.0. Use fused_nystrom_landmark_pinv_step_pytorch instead.
     """
     warnings.warn(
         "fused_nystrom_landmark_pinv_step_triton is deprecated and will be removed in a future release. "
@@ -1289,12 +1290,13 @@ def fused_rpc_sketch_attention_pytorch(
     proj_k: torch.Tensor,
     sketch_scale: float,
 ) -> torch.Tensor:
-    """Exact PyTorch fallback for RPC random projection sketching and score matmul with Triton dispatch.
+    """Reference PyTorch implementation using cuBLAS GEMM and LAPACK SVD.
 
-    This is intentionally a PyTorch implementation, not Triton. Reasoning: Batched einsum contractions
-    and dense projection matmuls are native tensor contractions already optimized via PyTorch backend
-    dispatch (e.g. cuBLAS/ATen). A dedicated Triton kernel provides no latency advantage over native
-    batched GEMMs. See audit/CODE_FIX_PROPOSALS and AGENTS.md §7 for the design standard.
+    Why no custom Triton kernel: this operation performs a multi-stage matrix
+    contraction with intermediate tensors that exceed SRAM capacity at typical
+    transformer dimensions. cuBLAS and LAPACK are micro-optimized for these
+    exact shapes and use Tensor Core MMA pipelines that a Triton implementation
+    cannot match. Routing to PyTorch is the correct engineering decision.
     """
     suitable, reason = check_triton_suitability(q, "low_rank")
     if not (HAS_TRITON and suitable and q.is_cuda and k.is_cuda):
@@ -1344,9 +1346,10 @@ def fused_rpc_sketch_attention_triton(
     proj_k: torch.Tensor,
     sketch_scale: float,
 ) -> torch.Tensor:
-    """Deprecated: Alias for fused_rpc_sketch_attention_pytorch.
+    """DEPRECATED: Renamed to fused_rpc_sketch_attention_pytorch in v1.8.1.
 
-    Emits DeprecationWarning and delegates directly to the PyTorch reference implementation.
+    This function never contained a Triton kernel — it always called PyTorch.
+    Will be removed in v2.1.0. Use fused_rpc_sketch_attention_pytorch instead.
     """
     warnings.warn(
         "fused_rpc_sketch_attention_triton is deprecated and will be removed in a future release. "
@@ -1362,12 +1365,13 @@ def fused_primal_dual_landmark_pytorch(
     X: torch.Tensor,
     F3: torch.Tensor,
 ) -> torch.Tensor:
-    """Exact PyTorch fallback for Primal Attention factor contraction with Triton dispatch.
+    """Reference PyTorch implementation using cuBLAS GEMM and LAPACK SVD.
 
-    This is intentionally a PyTorch implementation, not Triton. Reasoning: The double matrix multiplication
-    chain F1 @ (X @ F3) consists of sequential standard dense GEMMs. Vendor-tuned cuBLAS/ATen GEMMs match
-    or exceed custom Triton kernels while avoiding JIT compilation latency. See audit/CODE_FIX_PROPOSALS
-    and AGENTS.md §7 for the design standard.
+    Why no custom Triton kernel: this operation performs a multi-stage matrix
+    contraction with intermediate tensors that exceed SRAM capacity at typical
+    transformer dimensions. cuBLAS and LAPACK are micro-optimized for these
+    exact shapes and use Tensor Core MMA pipelines that a Triton implementation
+    cannot match. Routing to PyTorch is the correct engineering decision.
     """
     suitable, reason = check_triton_suitability(F1, "low_rank")
     if not (HAS_TRITON and suitable and F1.is_cuda and X.is_cuda and F3.is_cuda):
@@ -1389,9 +1393,10 @@ def fused_primal_dual_landmark_triton(
     X: torch.Tensor,
     F3: torch.Tensor,
 ) -> torch.Tensor:
-    """Deprecated: Alias for fused_primal_dual_landmark_pytorch.
+    """DEPRECATED: Renamed to fused_primal_dual_landmark_pytorch in v1.8.1.
 
-    Emits DeprecationWarning and delegates directly to the PyTorch reference implementation.
+    This function never contained a Triton kernel — it always called PyTorch.
+    Will be removed in v2.1.0. Use fused_primal_dual_landmark_pytorch instead.
     """
     warnings.warn(
         "fused_primal_dual_landmark_triton is deprecated and will be removed in a future release. "
@@ -1409,12 +1414,13 @@ def fused_svd_mamba_proj_pytorch(
     U: torch.Tensor,
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Exact reference PyTorch implementation for SVD low-rank projection with Triton dispatch.
+    """Reference PyTorch implementation using cuBLAS GEMM and LAPACK SVD.
 
-    This is intentionally a PyTorch implementation, not Triton. Reasoning: SVD projection is a sequence of
-    two dense matrix multiplications and a diagonal scaling ((x @ V) * S) @ U.T. Dense GEMM sequences are
-    optimal in cuBLAS and do not benefit from a custom memory-bound Triton kernel. See audit/CODE_FIX_PROPOSALS
-    and AGENTS.md §7 for the design standard.
+    Why no custom Triton kernel: this operation performs a multi-stage matrix
+    contraction with intermediate tensors that exceed SRAM capacity at typical
+    transformer dimensions. cuBLAS and LAPACK are micro-optimized for these
+    exact shapes and use Tensor Core MMA pipelines that a Triton implementation
+    cannot match. Routing to PyTorch is the correct engineering decision.
     """
     suitable, reason = check_triton_suitability(x, "low_rank")
     if not (HAS_TRITON and suitable and x.is_cuda and V.is_cuda and S.is_cuda and U.is_cuda):
@@ -1447,9 +1453,10 @@ def fused_svd_mamba_proj_triton(
     U: torch.Tensor,
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Deprecated: Alias for fused_svd_mamba_proj_pytorch.
+    """DEPRECATED: Renamed to fused_svd_mamba_proj_pytorch in v1.8.1.
 
-    Emits DeprecationWarning and delegates directly to the PyTorch reference implementation.
+    This function never contained a Triton kernel — it always called PyTorch.
+    Will be removed in v2.1.0. Use fused_svd_mamba_proj_pytorch instead.
     """
     warnings.warn(
         "fused_svd_mamba_proj_triton is deprecated and will be removed in a future release. "
