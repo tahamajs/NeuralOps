@@ -7,6 +7,7 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 #
 # PBS Torque batch script template for Sharif University HPC Cluster
+# Targeting NVIDIA RTX 3090 (24GB VRAM) on GPU-3090-1 node via test-gpu queue
 #
 # Usage:
 #   qsub run.sh
@@ -17,24 +18,21 @@
 # PBS DIRECTIVES
 # =============================================================================
 # Job name
-#PBS -N neuralops_gpu_job
+#PBS -N neuralops_rtx3090
 
 # Notification: email on abort (a), begin (b), end (e)
 #PBS -m abe
 #PBS -M tahamajlesi@ut.ac.ir
 
-# Resource requests:
-# nodes=1:ppn=2:gpus=1 -> 1 node, 2 CPU cores, 1 GPU
-#PBS -l nodes=1:ppn=2:gpus=1
+# Target RTX 3090 (GPU-3090-1 host or test-gpu queue with 1 GPU)
+#PBS -l nodes=GPU-3090-1:ppn=2:gpus=1
+#PBS -q test-gpu
 
 # Memory request:
 #PBS -l mem=16G
 
-# Walltime limit (HH:MM:SS):
-#PBS -l walltime=02:00:00
-
-# Target Queue (adjust based on cluster status, e.g. cuda9, cuda7, DP, DDP):
-#PBS -q cuda9
+# Walltime limit (HH:MM:SS) - test-gpu allows up to 06:00:00:
+#PBS -l walltime=04:00:00
 
 # =============================================================================
 # JOB EXECUTION
@@ -73,14 +71,14 @@ import sys
 import torch
 if torch.version.cuda is None:
     print("FATAL: torch was built without CUDA support (torch.version.cuda is None)")
-    print("Reinstall with: pip install torch --index-url https://download.pytorch.org/whl/cu121")
     sys.exit(2)
 print(f"torch.version.cuda = {torch.version.cuda}")
 if not torch.cuda.is_available():
     print("FATAL: torch.cuda.is_available() is False inside a qsub job")
-    print("This means the job was not allocated a GPU, or the driver is broken.")
     sys.exit(3)
-print(f"GPU: {torch.cuda.get_device_name(0)}")
+gpu_name = torch.cuda.get_device_name(0)
+vram_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+print(f"GPU Allocated: {gpu_name} ({vram_gb:.2f} GB VRAM)")
 print("CUDA SUPPORT VERIFIED")
 PYEOF
 
