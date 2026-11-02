@@ -63,8 +63,7 @@ torch::Tensor entropy_row_reduction_fwd(const torch::Tensor& scores) {
     auto out = torch::empty({rows}, scores.options());
     if (rows == 0 || L == 0) return out;
 
-    int threads = std::min(256, ((L + 31) / 32) * 32);
-    if (threads < 32) threads = 32;
+    const int threads = 256;
 
     auto stream = c10::cuda::getCurrentCUDAStream();
     auto sc_c = scores.contiguous();
