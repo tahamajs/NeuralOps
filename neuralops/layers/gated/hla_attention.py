@@ -756,7 +756,12 @@ class HLAAttention(BaseAttention):
         v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         c_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
         scale = (v_rms / c_rms).clamp(0.25, 4.0)
-        context = context * scale
+        proj_dtype = (
+            self.out_proj.weight.dtype
+            if hasattr(self.out_proj, "weight") and self.out_proj.weight is not None
+            else hidden_states.dtype
+        )
+        context = (context * scale).to(proj_dtype)
 
         if self.is_nested_encoder:
             out = context * self.lora_output_scale
@@ -766,7 +771,7 @@ class HLAAttention(BaseAttention):
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
-        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(hidden_states.dtype)
 
         new_past_key_value: Any = None
         use_cache = kwargs.get("use_cache", False) or (

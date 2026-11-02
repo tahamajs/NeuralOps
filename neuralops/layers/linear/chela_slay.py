@@ -12,6 +12,7 @@ Spherical linearized attention mapping queries and keys onto hyperspheres with T
 """
 
 from __future__ import annotations
+import os
 from neuralops.core.common import repeat_kv
 
 from neuralops.core.attention_utils import (
@@ -349,6 +350,7 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
 
         use_triton = (
             HAS_TRITON
+            and os.environ.get("FORCE_PYTORCH_FALLBACK", "0").lower() not in ("1", "true", "yes")
             and q_feat.is_cuda
             and sm_supported
             and feat_2f in (16, 32, 64, 128, 256, 512)

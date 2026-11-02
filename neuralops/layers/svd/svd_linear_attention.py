@@ -1106,6 +1106,8 @@ class SVDLinearAttention(BaseAttention):
         else:
             output = self.out_proj(context)
 
+        output = output.to(hidden_states.dtype)
+
         if output.shape[-1] != hidden_states.shape[-1]:
             raise RuntimeError(
                 f"SVDLinearAttention: output dim {output.shape[-1]} != "

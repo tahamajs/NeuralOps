@@ -25,23 +25,31 @@ from neuralops.ops.cuda._fallback import dispatch
 logger = logging.getLogger(__name__)
 
 _MODULE = None
+_MODULE_ERROR: Exception | None = None
 
 
 def _get_module():
-    global _MODULE
+    global _MODULE, _MODULE_ERROR
+    if _MODULE_ERROR is not None:
+        return None
     if _MODULE is None:
-        curr_dir = Path(__file__).parent
-        with open(curr_dir / "selective_scan_binding.cpp", "r", encoding="utf-8") as f:
-            cpp_src = f.read()
-        with open(curr_dir / "selective_scan.cu", "r", encoding="utf-8") as f:
-            cuda_src = f.read()
+        try:
+            curr_dir = Path(__file__).parent
+            with open(curr_dir / "selective_scan_binding.cpp", "r", encoding="utf-8") as f:
+                cpp_src = f.read()
+            with open(curr_dir / "selective_scan.cu", "r", encoding="utf-8") as f:
+                cuda_src = f.read()
 
-        _MODULE = load_cuda_module(
-            name="cuda_selective_scan",
-            cpp_sources=cpp_src,
-            cuda_sources=cuda_src,
-            functions=["selective_scan_fwd", "selective_scan_bwd"],
-        )
+            _MODULE = load_cuda_module(
+                name="cuda_selective_scan",
+                cpp_sources=cpp_src,
+                cuda_sources=cuda_src,
+                functions=["selective_scan_fwd", "selective_scan_bwd"],
+            )
+        except Exception as exc:
+            _MODULE_ERROR = exc
+            logger.warning("Selective-scan CUDA extension unavailable; using lower-level fallback: %s", exc)
+            return None
     return _MODULE
 
 
@@ -57,14 +65,15 @@ def selective_scan_pytorch_ref(
     b, d, l = u.shape
     d_state = A.shape[1]
 
-    u_f = u.float()
-    delta_f = delta.float()
-    A_f = A.float()
-    B_f = B.float()
-    C_f = C.float()
-    D_f = D.float() if D is not None and D.numel() > 0 else None
+    acc_dtype = torch.float64 if u.dtype == torch.float64 else torch.float32
+    u_f = u.to(acc_dtype)
+    delta_f = delta.to(acc_dtype)
+    A_f = A.to(acc_dtype)
+    B_f = B.to(acc_dtype)
+    C_f = C.to(acc_dtype)
+    D_f = D.to(acc_dtype) if D is not None and D.numel() > 0 else None
 
-    h = torch.zeros(b, d, d_state, device=u.device, dtype=torch.float32)
+    h = torch.zeros(b, d, d_state, device=u.device, dtype=acc_dtype)
     ys = []
 
     for i in range(l):
@@ -90,12 +99,15 @@ class _SelectiveScanFunction(torch.autograd.Function):
     def forward(ctx, u, delta, A, B, C, D=None):
         mod = _get_module()
         if mod is not None and u.is_cuda and A.shape[1] <= 128:
-            d_tensor = D if D is not None and D.numel() > 0 else torch.empty(0, device=u.device, dtype=u.dtype)
-            out, last_state, states = mod.selective_scan_fwd(u, delta, A, B, C, d_tensor, True)
-            ctx.save_for_backward(u, delta, A, B, C, d_tensor, states)
-            ctx.has_d = D is not None and D.numel() > 0
-            ctx.is_py = False
-            return out, last_state
+            try:
+                d_tensor = D if D is not None and D.numel() > 0 else torch.empty(0, device=u.device, dtype=u.dtype)
+                out, last_state, states = mod.selective_scan_fwd(u, delta, A, B, C, d_tensor, True)
+                ctx.save_for_backward(u, delta, A, B, C, d_tensor, states)
+                ctx.has_d = D is not None and D.numel() > 0
+                ctx.is_py = False
+                return out, last_state
+            except Exception as exc:
+                logger.warning("Selective-scan CUDA forward failed; using lower-level fallback: %s", exc)
 
         u_p = u.detach().requires_grad_(u.requires_grad)
         delta_p = delta.detach().requires_grad_(delta.requires_grad)
