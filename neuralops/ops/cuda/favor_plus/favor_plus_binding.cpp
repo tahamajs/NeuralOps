@@ -9,3 +9,7 @@
 #include <c10/util/Optional.h>
 
 torch::Tensor favor_plus_act_fwd(const torch::Tensor& proj, const torch::Tensor& diag_sq, float norm_factor);
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("forward", &favor_plus_act_fwd, "Favor Plus Activation forward (CUDA)");
+}
