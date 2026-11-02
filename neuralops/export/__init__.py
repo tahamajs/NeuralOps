@@ -24,11 +24,13 @@ _EXPORTS = {
     "merge_for_inference": ("surgery_manifest", "merge_for_inference"),
     "export_to_hf": ("hf_compat", "export_to_hf"),
     "ExportResult": ("hf_compat", "ExportResult"),
+    "export_to_gguf": ("gguf_exporter", "export_to_gguf"),
+    "GGUFWriter": ("gguf_exporter", "GGUFWriter"),
     "check_compatibility": ("runtime_compat", "check_compatibility"),
     "CompatibilityReport": ("runtime_compat", "CompatibilityReport"),
     "EngineStatus": ("runtime_compat", "EngineStatus"),
 }
-_MODULES = {"exporter", "serving", "surgery_manifest", "hf_compat", "runtime_compat"}
+_MODULES = {"exporter", "serving", "surgery_manifest", "hf_compat", "runtime_compat", "gguf_exporter"}
 
 __all__ = [*_EXPORTS, *_MODULES]
 

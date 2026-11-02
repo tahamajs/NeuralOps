@@ -15,8 +15,13 @@ from neuralops.ops.cuda.cross_attention.autograd import (
     CrossAttentionFunction,
     cross_attention_forward,
 )
+from neuralops.ops.triton.cross_attention_triton import _cross_attention_pytorch as cross_attention_pytorch_ref
+
+cross_attention = cross_attention_forward
 
 __all__ = [
     "CrossAttentionFunction",
     "cross_attention_forward",
+    "cross_attention",
+    "cross_attention_pytorch_ref",
 ]

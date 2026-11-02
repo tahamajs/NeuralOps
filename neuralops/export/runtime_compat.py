@@ -200,35 +200,50 @@ def check_compatibility(
                 )
 
         elif eng == "gguf":
-            if not _is_package_installed("gguf"):
+            gguf_files = list(path.glob("*.gguf"))
+            if not gguf_files:
                 report.results[eng] = EngineStatus(
                     engine=eng,
-                    status="NOT_INSTALLED",
-                    message="gguf python library is not installed in current environment.",
+                    status="SKIPPED",
+                    message=f"No .gguf binary files present in {path} to verify.",
                 )
-            else:
-                gguf_files = list(path.glob("*.gguf"))
-                if not gguf_files:
+            elif _is_package_installed("gguf"):
+                try:
+                    import gguf
+                    reader = gguf.GGUFReader(str(gguf_files[0]))
                     report.results[eng] = EngineStatus(
                         engine=eng,
-                        status="SKIPPED",
-                        message=f"No .gguf binary files present in {path} to verify.",
+                        status="SUCCESS",
+                        message=f"GGUF binary {gguf_files[0].name} header verified ({len(reader.tensors)} tensors).",
                     )
-                else:
-                    try:
-                        import gguf
-                        reader = gguf.GGUFReader(str(gguf_files[0]))
-                        report.results[eng] = EngineStatus(
-                            engine=eng,
-                            status="SUCCESS",
-                            message=f"GGUF binary {gguf_files[0].name} header verified ({len(reader.tensors)} tensors).",
-                        )
-                    except Exception as e:
-                        report.results[eng] = EngineStatus(
-                            engine=eng,
-                            status="FAILURE",
-                            message=f"GGUF binary validation failed: {e}",
-                        )
+                except Exception as e:
+                    report.results[eng] = EngineStatus(
+                        engine=eng,
+                        status="FAILURE",
+                        message=f"GGUF binary validation failed: {e}",
+                    )
+            else:
+                # Built-in pure-Python GGUF header verification fallback
+                try:
+                    with open(gguf_files[0], "rb") as gf:
+                        magic = gf.read(4)
+                        if magic != b"GGUF":
+                            raise ValueError(f"Invalid GGUF magic bytes: {magic!r}")
+                        import struct
+                        version = struct.unpack("<I", gf.read(4))[0]
+                        n_tensors = struct.unpack("<Q", gf.read(8))[0]
+                        n_kv = struct.unpack("<Q", gf.read(8))[0]
+                    report.results[eng] = EngineStatus(
+                        engine=eng,
+                        status="SUCCESS",
+                        message=f"GGUF v{version} container verified ({n_tensors} tensors, {n_kv} metadata entries).",
+                    )
+                except Exception as e:
+                    report.results[eng] = EngineStatus(
+                        engine=eng,
+                        status="FAILURE",
+                        message=f"GGUF header validation failed: {e}",
+                    )
 
         elif eng == "onnx":
             if not _is_package_installed("onnx"):

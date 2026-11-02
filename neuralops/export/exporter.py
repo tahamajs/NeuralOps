@@ -43,31 +43,15 @@ def export_model(
     fmt = format.lower().strip()
     recorded_metadata = getattr(model, "_neuralops_metadata", None)
 
-    if fmt in ("gguf", "ggml"):
-        exported_attention = attention_type
-        if exported_attention is None:
-            for entry in recorded_metadata or []:
-                if (entry.get("op") or entry.get("action")) in ("replace", "replace_attention"):
-                    exported_attention = (
-                        entry.get("type") or entry.get("attention_type") or "unknown attention"
-                    )
-                    break
-        exported_attention = exported_attention or "unknown attention"
-        raise NotImplementedError(
-            f"GGUF export is not implemented for attention '{exported_attention}'; "
-            "the current exporter cannot produce a GGUF container. "
-            "Workaround: export as 'safetensors' and use a compatible external GGUF converter."
-        )
-
     if fmt == "awq":
         raise NotImplementedError(
             "AWQ export is not implemented: writing a quantization config beside dense weights "
             "does not quantize a model. Quantize the model with a supported AWQ tool first."
         )
 
-    supported_formats = {"safetensors", "onnx", "torchscript", "pt2", "torch_export", "aoti"}
+    supported_formats = {"safetensors", "onnx", "torchscript", "pt2", "torch_export", "aoti", "gguf"}
     if fmt not in supported_formats:
-        choices = "safetensors, onnx, torchscript, awq, pt2"
+        choices = "safetensors, onnx, torchscript, awq, pt2, gguf"
         raise ValueError(f"Unsupported export format {format!r}. Choose from: {choices}.")
     if fmt in {"torch_export", "aoti"}:
         fmt = "pt2"
@@ -328,6 +312,23 @@ def export_model(
 
         logger.info("Exported model to PyTorch 2.x export bundle: %s", pt2_target)
         return pt2_target
+
+    elif fmt == "gguf":
+        from neuralops.export.gguf_exporter import export_to_gguf
+        gguf_target = out_path / "model.gguf"
+        export_to_gguf(
+            model=model,
+            output_path=gguf_target,
+            architecture=kwargs.get("architecture", "llama"),
+            model_name=kwargs.get("model_name", "neuralops_model"),
+            context_length=kwargs.get("context_length", 2048),
+            embedding_length=kwargs.get("embedding_length", None),
+        )
+        with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+
+        logger.info("Exported model to GGUF binary format: %s", gguf_target)
+        return gguf_target
 
     else:
         raise ValueError(

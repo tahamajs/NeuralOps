@@ -17,7 +17,9 @@ from typing import Any
 import torch
 import torch.nn.functional as F
 from neuralops.ops.cuda.routing_attention.autograd import RoutingAttentionFunction
-from neuralops.ops.triton.routing_attention_triton import _kmeans_assign
+from neuralops.ops.triton.routing_attention_triton import _kmeans_assign, _routing_attention_pytorch
+
+routing_attention_ref = _routing_attention_pytorch
 
 
 def routing_attention_forward(
@@ -42,4 +44,8 @@ def routing_attention_forward(
     return out.to(dtype=q.dtype)
 
 
-__all__ = ["routing_attention_forward", "RoutingAttentionFunction"]
+__all__ = [
+    "routing_attention_forward",
+    "RoutingAttentionFunction",
+    "routing_attention_ref",
+]
