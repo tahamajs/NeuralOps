@@ -16,7 +16,10 @@ from neuralops.distributed.errors import (
     E_DIST_INIT_FAILED,
     E_DIST_NOT_INITIALIZED,
     E_DIST_COMM_FAILED,
+    E_FSDP2_CONFIG_FAILED,
+    E_FSDP2_NOT_INITIALIZED,
 )
+from neuralops.distributed.fsdp2_distill import FSDP2Distillation
 from neuralops.distributed.tensor_parallel import (
     SimulatedTPGroup,
     ColumnParallelLinear,
@@ -43,6 +46,9 @@ __all__ = [
     "E_DIST_INIT_FAILED",
     "E_DIST_NOT_INITIALIZED",
     "E_DIST_COMM_FAILED",
+    "E_FSDP2_CONFIG_FAILED",
+    "E_FSDP2_NOT_INITIALIZED",
+    "FSDP2Distillation",
     "SimulatedTPGroup",
     "ColumnParallelLinear",
     "RowParallelLinear",

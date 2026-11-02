@@ -1010,6 +1010,57 @@ def surgical_transplant_and_heal_pipeline(
         "saved_path": str(saved_path) if saved_path is not None else None,
     }
 
+
+def heal_distributed(
+    student: nn.Module,
+    teacher: nn.Module,
+    calibration_loader: Any,
+    steps: int = 50,
+    lr: float = 5e-5,
+    parallel_healing: bool = False,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    """
+    Knowledge distillation healing for post-transformation recovery.
+
+    If parallel_healing is True and a distributed context is active with >1 GPU,
+    uses FSDP2Distillation to shard student and teacher across devices.
+    Otherwise falls back to single-device heal_replaced_model.
+    """
+    if parallel_healing:
+        try:
+            from neuralops.distributed.context import DistributedContext
+            from neuralops.distributed.fsdp2_distill import FSDP2Distillation
+
+            ctx = DistributedContext()
+            if ctx.is_distributed():
+                distill = FSDP2Distillation(context=ctx)
+                return distill.heal_replaced_model_distributed(
+                    student=student,
+                    teacher=teacher,
+                    calibration_loader=calibration_loader,
+                    steps=steps,
+                    lr=lr,
+                    **kwargs,
+                )
+        except Exception as exc:
+            logger.warning(
+                "Parallel healing requested but encountered error (%s); falling back to single-device healing.",
+                exc,
+            )
+
+    from neuralops.core._attention_surgery import heal_replaced_model
+
+    return heal_replaced_model(
+        teacher_model=teacher,
+        student_model=student,
+        calibration_inputs=calibration_loader,
+        steps=steps,
+        lr=lr,
+        **kwargs,
+    )
+
+
 def train(
     model: nn.Module,
     dataset: Any,
@@ -1441,6 +1492,7 @@ __all__ = [
     "scaffold_module",
     "compare_attentions_ablation",
     "surgical_transplant_and_heal_pipeline",
+    "heal_distributed",
     "train",
     "distill",
     "evaluate",
