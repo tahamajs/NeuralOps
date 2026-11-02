@@ -386,6 +386,8 @@ def run_registered_ops(
     output: str | Path = "results/benchmark_ops.json", verify_only: bool = False,
     verbose: bool = False, dynamic: bool = False, timeout_s: float = 180.0,
     device: str | None = None, parallel_workers: int = 6,
+    seed: int = 42, dtype: str = "fp32", tolerance: float | None = None,
+    limit: int | None = None,
 ) -> list[dict[str, Any]]:
     """Run registered operations in killable subprocesses with checkpointing.
 
@@ -404,6 +406,8 @@ def run_registered_ops(
     # Registry discovery must be a set-like operation.  A stale registry or
     # merged checkpoint must never schedule the same operation twice.
     selected = list(dict.fromkeys(names or list_ops(category)))
+    if limit is not None and limit > 0:
+        selected = selected[:limit]
     target = Path(output)
     target.parent.mkdir(parents=True, exist_ok=True)
     results: list[dict[str, Any]] = []
@@ -434,7 +438,7 @@ def run_registered_ops(
     worker_code = (
         "import sys; "
         "from neuralops.benchmarks.ops_runner import _run_registered_op_worker; "
-        "_run_registered_op_worker(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])"
+        "_run_registered_op_worker(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])"
     )
     active: list[dict[str, Any]] = []
     max_workers = max(1, min(int(parallel_workers), 6)) if dynamic else 1
@@ -514,7 +518,11 @@ def run_registered_ops(
             os.close(worker_fd)
             worker_path = Path(worker_name)
             proc = subprocess.Popen(
-                [sys.executable, "-c", worker_code, name, str(verify_only), str(worker_path), device or ""],
+                [
+                    sys.executable, "-c", worker_code,
+                    name, str(verify_only), str(worker_path), device or "",
+                    str(seed), str(dtype), str(tolerance if tolerance is not None else ""),
+                ],
                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
             )
             active.append({"name": name, "proc": proc, "path": worker_path, "started": time.monotonic()})
@@ -527,10 +535,35 @@ def run_registered_ops(
     return results
 
 
-def _run_registered_op_worker(op_name: str, verify_only: str, output_path: str, device: str = "") -> None:
+def _run_registered_op_worker(
+    op_name: str,
+    verify_only: str,
+    output_path: str,
+    device: str = "",
+    seed_str: str = "42",
+    dtype_str: str = "fp32",
+    tol_str: str = "",
+) -> None:
     """Execute one registered operation and write a JSON row for the parent."""
+    import torch
     from neuralops.benchmarks.ops_registry import get_op
     from neuralops.benchmarks.verify_ops import _make_inputs, _tensor_output, verify_op
+
+    seed = int(seed_str) if seed_str.isdigit() else 42
+    torch.manual_seed(seed)
+
+    # Derive tolerance based on dtype if not explicitly provided
+    if tol_str and tol_str != "None" and tol_str.strip():
+        user_tol = float(tol_str)
+        atol = user_tol
+        rtol = user_tol
+    else:
+        if dtype_str in ("fp16", "float16", "bf16", "bfloat16"):
+            atol = 1e-2
+            rtol = 1e-2
+        else:
+            atol = 1e-4
+            rtol = 1e-4
 
     config = get_op(op_name)
     row: dict[str, Any] = {
@@ -573,7 +606,7 @@ def _run_registered_op_worker(op_name: str, verify_only: str, output_path: str, 
         return (time.perf_counter() - started) * 1000.0 / 25
 
     requested_device = device or None
-    if verify_op(op_name, device=requested_device):
+    if verify_op(op_name, atol=atol, rtol=rtol, device=requested_device):
         if verify_only.lower() == "true":
             row.update(status="VERIFIED", max_diff=0.0, error_reason=None)
         else:

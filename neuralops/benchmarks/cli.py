@@ -149,6 +149,18 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--batch-size", type=int, default=32, help="Batch size")
     run_p.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
     run_p.add_argument("--seq-len", type=int, default=128, help="Sequence length")
+    run_p.add_argument("--seq-lens", type=str, default=None, help="Comma-separated sequence lengths (e.g. 128,512,2048)")
+    run_p.add_argument("--batch-sizes", type=str, default=None, help="Comma-separated batch sizes (e.g. 1,4,16)")
+    run_p.add_argument("--seed", type=int, default=42, help="Random seed for benchmark input generation")
+    run_p.add_argument("--dtype", choices=["fp16", "bf16", "fp32", "float16", "bfloat16", "float32"], default="fp32", help="Precision format")
+    run_p.add_argument("--tolerance", type=float, default=None, help="Explicit tolerance threshold (if None, derived from --dtype)")
+    run_p.add_argument("--backend", type=str, default=None, help="Backend selection (e.g. pytorch, cuda, triton)")
+    run_p.add_argument("--shape", type=str, default=None, help="Tensor shape override for benchmark ops (e.g. 4,64,512)")
+    run_p.add_argument("--M", type=int, default=None, help="M dimension / feature count override")
+    run_p.add_argument("--D", type=int, default=None, help="D dimension / head dimension override")
+    run_p.add_argument("--hidden-size", type=int, default=None, help="Hidden size override")
+    run_p.add_argument("--calib-samples", type=int, default=32, help="Number of calibration samples for compressors")
+    run_p.add_argument("--limit", type=int, default=None, help="Limit number of modules to execute")
     run_p.add_argument("--parallel", type=int, default=1, help="Parallel worker count")
     run_p.add_argument("--output-dir", type=str, default="results", help="Directory to store outputs")
     run_p.add_argument("--timeout-s", type=int, default=1800, help="Timeout in seconds")
@@ -687,6 +699,10 @@ def handle_run(args: argparse.Namespace) -> None:
             dynamic=getattr(args, "dynamic", False),
             device=getattr(args, "device", None),
             parallel_workers=getattr(args, "parallel_workers", 4),
+            seed=getattr(args, "seed", 42),
+            dtype=getattr(args, "dtype", "fp32"),
+            tolerance=getattr(args, "tolerance", None),
+            limit=getattr(args, "limit", None),
         )
         if any(row["status"] == "FAIL_CORRECTNESS" for row in results):
             raise RuntimeError("Correctness gate failed; timing was not accepted for every requested operation")
