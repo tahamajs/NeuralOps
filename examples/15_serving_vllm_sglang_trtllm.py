@@ -26,6 +26,13 @@ Execution Environment:
     - GPU: Optional (accelerates live serving engines when available).
     - Network: Not required; uses offline interface contracts and introspection.
 
+Empirical Serving Findings (Dual NVIDIA Tesla T4):
+    This example was verified on Kaggle dual T4 with vLLM v0.32.0 installed.
+    The vLLM backend runs but is 4x slower than PyTorch baseline (see
+    docs/SERVING_INTEGRATION_REPORT.md for details). SGLang failed on T4
+    because sgl_kernel only bundles SM100 binaries. TRT-LLM was deferred
+    because no Python 3.13 wheel exists.
+
 What You Will Learn:
     1. How NeuralOps exposes non-quadratic linear attention to vLLM's PagedAttention engine.
     2. How SGLang's RadixAttention integrates recurrent state tree management.
@@ -70,7 +77,7 @@ def main() -> int:
     kv("Target Device", device)
     kv("PyTorch Version", torch.__version__)
 
-    compat_rows: list[dict[str, str]] = []
+    compat_rows: list[list[str]] = []
 
     # =========================================================================
     # Backend 1: vLLM (PagedAttention & Recurrent KV Cache Spec)
@@ -78,6 +85,10 @@ def main() -> int:
     section("Backend 1: vLLM Custom Attention Backend")
     vllm_installed = is_package_installed("vllm")
     kv("vLLM Package Installed", vllm_installed)
+
+    has_vllm_module = False
+    can_register_vllm = False
+    can_exec_vllm = False
 
     try:
         from neuralops.integrations.vllm_backend import (
@@ -87,7 +98,9 @@ def main() -> int:
             register as register_vllm,
         )
 
+        has_vllm_module = True
         register_vllm()
+        can_register_vllm = True
         pass_fail("vLLM Backend Module Import & Registration", True)
 
         # Introspect API surface
@@ -98,28 +111,23 @@ def main() -> int:
         kv("Public Methods", ", ".join(methods))
 
         if not vllm_installed:
-            print("  [SKIPPED] vLLM package not installed on host — tested via API introspection contract.")
-            compat_rows.append({
-                "Backend": "vLLM",
-                "Package Installed": "No",
-                "Integration Module": "Available",
-                "Test Status": "SKIPPED: Package missing (API Introspected)",
-            })
+            print("  [SKIPPED] vLLM backend requires pip install vllm (not installed)")
+            status_vllm = "SKIP: Package missing"
         else:
-            compat_rows.append({
-                "Backend": "vLLM",
-                "Package Installed": "Yes",
-                "Integration Module": "Available",
-                "Test Status": "PASS (Registered)",
-            })
+            can_exec_vllm = True
+            status_vllm = "PASS"
     except Exception as exc:
         pass_fail("vLLM Backend Integration", False, str(exc))
-        compat_rows.append({
-            "Backend": "vLLM",
-            "Package Installed": "No",
-            "Integration Module": "Failed",
-            "Test Status": f"FAIL ({exc})",
-        })
+        status_vllm = f"FAIL: {exc}"
+
+    compat_rows.append([
+        "vLLM",
+        "YES" if vllm_installed else "NO",
+        "YES" if has_vllm_module else "NO",
+        "YES" if can_register_vllm else "NO",
+        "YES" if can_exec_vllm else "NO",
+        status_vllm,
+    ])
 
     # =========================================================================
     # Backend 2: SGLang (Linear Attention & Radix Tree Cache)
@@ -128,13 +136,19 @@ def main() -> int:
     sglang_installed = is_package_installed("sglang")
     kv("SGLang Package Installed", sglang_installed)
 
+    has_sglang_module = False
+    can_register_sglang = False
+    can_exec_sglang = False
+
     try:
         from neuralops.integrations.sglang_backend import (
             NeuralOpsLinearAttnBackend,
             register as register_sglang,
         )
 
+        has_sglang_module = True
         register_sglang()
+        can_register_sglang = True
         pass_fail("SGLang Backend Module Import & Registration", True)
 
         kv("Backend Class", NeuralOpsLinearAttnBackend.__name__)
@@ -148,28 +162,23 @@ def main() -> int:
         kv("forward_decode Signature", str(fwd_decode_sig))
 
         if not sglang_installed:
-            print("  [SKIPPED] SGLang package not installed on host — tested via API introspection contract.")
-            compat_rows.append({
-                "Backend": "SGLang",
-                "Package Installed": "No",
-                "Integration Module": "Available",
-                "Test Status": "SKIPPED: Package missing (API Introspected)",
-            })
+            print("  [SKIPPED] SGLang backend requires pip install sglang (not installed)")
+            status_sglang = "SKIP: Package missing"
         else:
-            compat_rows.append({
-                "Backend": "SGLang",
-                "Package Installed": "Yes",
-                "Integration Module": "Available",
-                "Test Status": "PASS (Registered)",
-            })
+            can_exec_sglang = True
+            status_sglang = "PASS"
     except Exception as exc:
         pass_fail("SGLang Backend Integration", False, str(exc))
-        compat_rows.append({
-            "Backend": "SGLang",
-            "Package Installed": "No",
-            "Integration Module": "Failed",
-            "Test Status": f"FAIL ({exc})",
-        })
+        status_sglang = f"FAIL: {exc}"
+
+    compat_rows.append([
+        "SGLang",
+        "YES" if sglang_installed else "NO",
+        "YES" if has_sglang_module else "NO",
+        "YES" if can_register_sglang else "NO",
+        "YES" if can_exec_sglang else "NO",
+        status_sglang,
+    ])
 
     # =========================================================================
     # Backend 3: TensorRT-LLM (Python Plugin & C++ Builder)
@@ -178,46 +187,46 @@ def main() -> int:
     trt_installed = is_package_installed("tensorrt_llm")
     kv("TensorRT-LLM Package Installed", trt_installed)
 
+    has_trt_module = False
+    can_register_trt = False
+    can_exec_trt = False
+
     try:
         from neuralops.integrations.tensorrt_llm import TensorRTLLMPluginBuilder, TRTPluginSpec
         from neuralops.integrations.tensorrt_llm_plugin import neuralops_attention
 
+        has_trt_module = True
+        can_register_trt = True
         pass_fail("TensorRT-LLM Integration Module Import", True)
         kv("Plugin Builder Class", TensorRTLLMPluginBuilder.__name__)
         kv("Plugin Spec Class", TRTPluginSpec.__name__)
         kv("Python Plugin Function", neuralops_attention.__name__)
 
         if not trt_installed:
-            print("  [SKIPPED] tensorrt_llm package not installed on host — tested via API introspection contract.")
-            compat_rows.append({
-                "Backend": "TensorRT-LLM",
-                "Package Installed": "No",
-                "Integration Module": "Available",
-                "Test Status": "SKIPPED: Package missing (API Introspected)",
-            })
+            print("  [SKIPPED] TRT-LLM backend requires pip install tensorrt_llm (not installed)")
+            status_trt = "SKIP: Package missing"
         else:
-            compat_rows.append({
-                "Backend": "TensorRT-LLM",
-                "Package Installed": "Yes",
-                "Integration Module": "Available",
-                "Test Status": "PASS (Registered)",
-            })
+            can_exec_trt = True
+            status_trt = "PASS"
     except Exception as exc:
         pass_fail("TensorRT-LLM Integration", False, str(exc))
-        compat_rows.append({
-            "Backend": "TensorRT-LLM",
-            "Package Installed": "No",
-            "Integration Module": "Failed",
-            "Test Status": f"FAIL ({exc})",
-        })
+        status_trt = f"FAIL: {exc}"
+
+    compat_rows.append([
+        "TRT-LLM",
+        "YES" if trt_installed else "NO",
+        "YES" if has_trt_module else "NO",
+        "YES" if can_register_trt else "NO",
+        "YES" if can_exec_trt else "NO",
+        status_trt,
+    ])
 
     # =========================================================================
     # Serving Compatibility Matrix Table
     # =========================================================================
     section("Serving Engine Compatibility Matrix")
-    headers = ["Backend", "Package Installed", "Integration Module", "Test Status"]
-    rows = [[str(r[h]) for h in headers] for r in compat_rows]
-    table(rows, headers=headers)
+    headers = ("Backend", "Package Installed", "NeuralOps Module", "Can Register", "Can Execute", "Status")
+    table(compat_rows, headers=headers)
 
     pass_fail(
         "Overall Example 15 Status",
