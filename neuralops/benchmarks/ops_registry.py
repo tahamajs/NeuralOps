@@ -148,14 +148,29 @@ def _compressor_operation(name: str, *, compressed: bool, state: dict[str, Any])
     import inspect
     import torch
     import torch.nn as nn
+    import torch.nn.functional as F
     from neuralops.core.registry import create_compressor
 
     def invoke(x: Any) -> Any:
         if "base" not in state:
             hidden = int(x.shape[-1])
-            state["base"] = nn.Sequential(
-                nn.Linear(hidden, hidden), nn.GELU(), nn.Linear(hidden, hidden)
-            ).to(device=x.device, dtype=torch.float32)
+            # For attention-aware or KV-cache compressors, mock must expose attention projections
+            attn_compressors = {"h2o", "streaming_llm", "snapkv", "heavy_hitter", "kv_compressor", "cachenotes"}
+            if any(k in name.lower() for k in attn_compressors):
+                class MockAttentionModule(nn.Module):
+                    def __init__(self, dim: int):
+                        super().__init__()
+                        self.q_proj = nn.Linear(dim, dim)
+                        self.k_proj = nn.Linear(dim, dim)
+                        self.v_proj = nn.Linear(dim, dim)
+                        self.o_proj = nn.Linear(dim, dim)
+                    def forward(self, h: torch.Tensor) -> torch.Tensor:
+                        return self.o_proj(F.gelu(self.q_proj(h) + self.k_proj(h) + self.v_proj(h)))
+                state["base"] = MockAttentionModule(hidden).to(device=x.device, dtype=torch.float32)
+            else:
+                state["base"] = nn.Sequential(
+                    nn.Linear(hidden, hidden), nn.GELU(), nn.Linear(hidden, hidden)
+                ).to(device=x.device, dtype=torch.float32)
         if not compressed:
             return state["base"](x.float())
         if "compressed" not in state:
