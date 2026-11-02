@@ -79,6 +79,64 @@ TENSOR_CORE_DOT_KERNELS: set[str] = {
     "block_sparse",
 }
 
+PTX73_UNSUPPORTED_TRITON_KERNELS: set[str] = {
+    "fused_hnc_nullspace_step",
+    "gdn_scan",
+    "softplus",
+    "fused_kd",
+    "selective_scan",
+    "fused_rope",
+    "fused_recurrent_linear_step",
+}
+
+SIZE_THRESHOLDS: dict[str, dict[str, int]] = {
+    # Elementwise/activations: launch overhead dominates below 65,536 elements
+    "softplus": {"min_numel": 65536},
+    "fused_kd": {"min_numel": 65536},
+    "fused_ce": {"min_numel": 65536},
+    "fused_favor_plus": {"min_numel": 65536},
+    # Norm & Linear: cuBLAS / ATen is highly vectorized and beats Triton launch overhead below dim/numel threshold
+    "fused_norm_linear": {"min_numel": 131072},
+    "fused_jamba_hybrid_gate": {"min_numel": 131072},
+    # GEMMs / Low rank: launch overhead dominates below M=64 or N=64 or numel < 65536
+    "fused_linformer_seq_proj": {"min_seq_len": 128},
+    "fused_kronecker_gemm": {"min_numel": 16384},
+    "fused_nystrom_landmark_pinv": {"min_numel": 32768},
+    "fused_hnc_nullspace_step": {"min_numel": 262144},
+    # Sequence scans & Recurrent: sequential step overhead on CPU or tiny T
+    "gla_scan": {"min_seq_len": 128},
+    "gdn_scan": {"min_seq_len": 128},
+    "hgrn2_scan": {"min_seq_len": 128},
+    "fms_scan": {"min_seq_len": 128},
+    "selective_scan": {"min_seq_len": 128},
+    "fused_rala_augmented_scan": {"min_seq_len": 128},
+    "cosformer": {"min_seq_len": 128},
+    # Attention & Inference KV
+    "sliding_window": {"min_seq_len": 256},
+    "sliding_window_attention": {"min_seq_len": 256},
+    "paged_attention": {"min_numel": 32768},
+    "flash_decode": {"min_seq_len": 128},
+    "fused_moba_block_router": {"min_numel": 16384},
+    "fused_mqa_bias_scale": {"min_numel": 16384},
+    "fused_hamming_scores": {"min_numel": 16384},
+    "fused_rope": {"min_seq_len": 128},
+    "fused_recurrent_linear_step": {"min_numel": 1024},
+    "fused_goldfinch_hopfield": {"min_numel": 16384},
+}
+
+
+def _get_cuda_driver_version_int() -> int:
+    """Return CUDA driver version as integer (e.g. 11030 for 11.3 / 465.19)."""
+    try:
+        import ctypes
+        cuda = ctypes.CDLL("libcuda.so.1")
+        v = ctypes.c_int()
+        if cuda.cuDriverGetVersion(ctypes.byref(v)) == 0:
+            return v.value
+    except Exception:
+        pass
+    return 0
+
 
 def check_triton_suitability(
     tensor: torch.Tensor,
@@ -101,6 +159,29 @@ def check_triton_suitability(
 
     if not tensor.is_cuda:
         return False, f"tensor is on {tensor.device}, expected CUDA"
+
+    # PTX 7.3 constraint check: Drivers < 520 (CUDA < 11.8) cannot load PTX > 7.3 emitted by newer Triton
+    if kernel_name in PTX73_UNSUPPORTED_TRITON_KERNELS:
+        drv_ver = _get_cuda_driver_version_int()
+        if drv_ver > 0 and drv_ver < 11080:
+            return (
+                False,
+                f"CUDA driver version {drv_ver} < 11080 cannot load PTX > 7.3 for '{kernel_name}' without invalid image error",
+            )
+
+    # Size-threshold check: bypass Triton launch overhead on small tensors where PyTorch/cuBLAS is faster
+    thresh_cfg = SIZE_THRESHOLDS.get(kernel_name)
+    if thresh_cfg is not None:
+        if "min_numel" in thresh_cfg and tensor.numel() < thresh_cfg["min_numel"]:
+            return (
+                False,
+                f"tensor.numel()={tensor.numel()} < min threshold {thresh_cfg['min_numel']}; using PyTorch fast path",
+            )
+        if "min_seq_len" in thresh_cfg and seq_len is not None and seq_len < thresh_cfg["min_seq_len"]:
+            return (
+                False,
+                f"seq_len={seq_len} < min threshold {thresh_cfg['min_seq_len']}; using PyTorch fast path",
+            )
 
     try:
         from neuralops.ops.triton.hardware_profile import get_device_hardware_profile

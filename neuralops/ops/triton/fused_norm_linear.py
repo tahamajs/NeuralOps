@@ -219,10 +219,14 @@ def fused_rmsnorm_gate_triton(
     activation: str = "silu",
 ) -> torch.Tensor:
     """Hardware-accelerated fused RMSNorm + SiLU gating via Triton kernel."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
 
     if HAS_TRITON and x.is_cuda and not FORCE_PYTORCH_FALLBACK and activation == "silu":
         try:
+            suitable, _ = check_triton_suitability(x, "fused_norm_linear")
+            if not suitable:
+                return fused_rmsnorm_gate(x, gate, norm_weight, eps=eps, activation=activation)
+
             orig_shape = x.shape
             D = orig_shape[-1]
             x_2d = x.contiguous().view(-1, D)

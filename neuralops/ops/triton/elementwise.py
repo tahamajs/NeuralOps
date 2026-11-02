@@ -914,9 +914,13 @@ def fused_favor_plus_feature_map_triton(
     eps: float = 1e-4,
 ) -> torch.Tensor:
     """Fused FAVOR+ feature map in GPU SRAM."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
 
     if not (HAS_TRITON and not FORCE_PYTORCH_FALLBACK and x.is_cuda and omega.is_cuda):
+        return fused_favor_plus_feature_map_pytorch(x, omega, num_features, kernel_type, eps)
+
+    suitable, _ = check_triton_suitability(x, "fused_favor_plus", allow_fp32=True)
+    if not suitable:
         return fused_favor_plus_feature_map_pytorch(x, omega, num_features, kernel_type, eps)
 
     try:

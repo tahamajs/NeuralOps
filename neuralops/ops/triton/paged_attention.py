@@ -147,7 +147,7 @@ def paged_attention_kernel(
     block_size: int = 16,
 ) -> torch.Tensor:
     """Dispatches paged attention to Triton kernel if supported, else PyTorch fallback."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
     B, H, D = q.shape
     if (
         HAS_TRITON
@@ -158,6 +158,11 @@ def paged_attention_kernel(
         and D in (16, 32, 64, 128, 256)
     ):
         try:
+            total_elements = k_cache.numel()
+            suitable, _ = check_triton_suitability(k_cache, "paged_attention")
+            if not suitable:
+                return paged_attention_pytorch(q, k_cache, v_cache, block_tables, seq_lens, block_size=block_size)
+
             out = torch.empty_like(q)
             grid = (B, H)
             paged_attention_fwd_kernel[grid](
