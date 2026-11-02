@@ -7,13 +7,15 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 #
 # ==============================================================================
-# NeuralOps Master Autonomous GPU Execution Suite
+# NeuralOps Universal Autonomous Accelerator & Benchmark Suite
 #
-# Executes the full 5-phase suite:
-# 1. Hardware Pre-Flight & VRAM Auto-Tuning
-# 2. Unified GPU Master Benchmark (Attentions, Compressors, Fallbacks)
-# 3. Smart GPU-Maximizing Trainer Engine
-# 4. Atomic Results Persistence to results/master_ledger.sqlite & summaries
+# Lean, robust, hardware-agnostic (CUDA, MPS, CPU).
+#
+# Usage:
+#   bash scripts/run_full_gpu_suite.sh                  # Default full sweep
+#   bash scripts/run_full_gpu_suite.sh --quick          # Fast smoke sweep
+#   bash scripts/run_full_gpu_suite.sh --device cuda    # Force CUDA
+#   bash scripts/run_full_gpu_suite.sh --steps 100      # Custom training steps
 # ==============================================================================
 
 set -euo pipefail
@@ -21,45 +23,94 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# Resolve Python environment
 PYTHON_BIN="${REPO_ROOT}/.venv/bin/python"
 if [ ! -f "${PYTHON_BIN}" ]; then
-    PYTHON_BIN="python3"
+    PYTHON_BIN="$(which python3)"
 fi
 
+# Default configuration options
+DEVICE="auto"
+LIMIT=""
+STEPS=20
+BATCH_SIZE="auto"
+
+# Parse CLI flags
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --quick)
+            LIMIT="--limit 5"
+            STEPS=10
+            shift
+            ;;
+        --device)
+            DEVICE="$2"
+            shift 2
+            ;;
+        --limit)
+            LIMIT="--limit $2"
+            shift 2
+            ;;
+        --steps)
+            STEPS="$2"
+            shift 2
+            ;;
+        --batch-size)
+            BATCH_SIZE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            echo "Usage: bash scripts/run_full_gpu_suite.sh [--quick] [--device <cuda|mps|cpu|auto>] [--limit <N>] [--steps <N>]"
+            exit 0
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            exit 1
+            ;;
+    esac
+done
+
 echo "======================================================================"
-echo "  🚀 NeuralOps Master Autonomous Accelerator Execution Suite"
+echo "  🚀 NeuralOps Universal Autonomous Execution Suite"
 echo "======================================================================"
-echo "  Repository Root : ${REPO_ROOT}"
-echo "  Python Binary   : ${PYTHON_BIN}"
-echo "  Date/Time       : $(date)"
+echo "  Repository  : ${REPO_ROOT}"
+echo "  Interpreter : ${PYTHON_BIN}"
+echo "  Target      : ${DEVICE}"
+echo "  Timestamp   : $(date)"
 echo "======================================================================"
 
-# Phase 1: Hardware Pre-Flight & Telemetry
+# Ensure results directory exists
+mkdir -p "${REPO_ROOT}/results"
+
+# Phase 1: Hardware Pre-Flight & Memory Auto-Tuner
 echo ""
-echo ">>> [Phase 1/4] Running Hardware Pre-Flight & VRAM Auto-Tuner..."
+echo ">>> [1/4] Hardware Pre-Flight & VRAM Auto-Tuning..."
 "${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_telemetry.py" --probe-model
 
-# Phase 2: Master Benchmark Suite
+# Phase 2: Master Benchmark Sweep (Attentions, Compressors & Kernel Fallbacks)
 echo ""
-echo ">>> [Phase 2/4] Executing Master Benchmark Suite (Attentions & Compressors)..."
-"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_master_suite.py" --limit 10
+echo ">>> [2/4] Executing Benchmark Suite (Attentions, Compressors & Kernels)..."
+"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_master_suite.py" --device "${DEVICE}" ${LIMIT}
 
-# Phase 3: Smart GPU-Maximizing Trainer
+# Phase 3: Smart GPU-Maximizing Trainer Engine
 echo ""
-echo ">>> [Phase 3/4] Launching Smart GPU-Maximizing Trainer Engine..."
-"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/smart_gpu_trainer.py" --steps 20 --batch-size 8
+echo ">>> [3/4] Launching Smart GPU-Maximizing Trainer Engine..."
+TRAIN_ARGS=(--steps "${STEPS}")
+if [ "${BATCH_SIZE}" != "auto" ]; then
+    TRAIN_ARGS+=(--batch-size "${BATCH_SIZE}")
+fi
+"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/smart_gpu_trainer.py" "${TRAIN_ARGS[@]}"
 
-# Phase 4: Atomic Results Persistence
+# Phase 4: Structured Telemetry & Auto-Summary Persistence
 echo ""
-echo ">>> [Phase 4/4] Finalizing Results Ledger & Auto-Summaries..."
+echo ">>> [4/4] Writing Telemetry Ledger & Executive Summaries..."
 "${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/results_exporter.py" --demo
 
 echo ""
 echo "======================================================================"
-echo "  🎉 Master GPU Suite Successfully Completed!"
-echo "  Results stored in: ${REPO_ROOT}/results/"
-echo "    • SQLite Ledger  : results/master_ledger.sqlite"
-echo "    • JSONL Telemetry: results/benchmarks_latest.jsonl"
-echo "    • CSV Summary    : results/benchmarks_latest.csv"
-echo "    • Executive Report: results/BENCHMARK_EXECUTIVE_SUMMARY.md"
+echo "  ✓ Execution Complete! All artifacts saved to results/:"
+echo "    • SQLite DB   : results/master_ledger.sqlite"
+echo "    • JSONL Feed  : results/benchmarks_latest.jsonl"
+echo "    • CSV Sheet   : results/benchmarks_latest.csv"
+echo "    • Summary Doc : results/BENCHMARK_EXECUTIVE_SUMMARY.md"
 echo "======================================================================"
