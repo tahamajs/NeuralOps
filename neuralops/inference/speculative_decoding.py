@@ -85,6 +85,15 @@ class SelfSpeculativeDecoder:
         self.adaptive_k = adaptive_k
         self.current_k = max_draft_k
 
+    @property
+    def max_draft_tokens(self) -> int:
+        """Alias property for max_draft_k."""
+        return self.max_draft_k
+
+    @max_draft_tokens.setter
+    def max_draft_tokens(self, val: int) -> None:
+        self.max_draft_k = val
+
     def _get_logits(self, model: nn.Module, input_ids: torch.Tensor, is_draft: bool = False) -> torch.Tensor:
         """Runs model forward pass, toggling surgery alpha if single-model mode."""
         if self.draft_model is None:

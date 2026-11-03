@@ -198,6 +198,11 @@ def export_model(
         }
 
         import warnings
+        effective_opset = opset_version
+        is_pt_legacy = torch.__version__ < "2.0"
+        if is_pt_legacy and effective_opset > 14:
+            effective_opset = 14
+
         try:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -208,22 +213,26 @@ def export_model(
                         wrapped_model,
                         sample_input,
                         str(temp_onnx_file),
-                        opset_version=opset_version,
+                        opset_version=effective_opset,
                         input_names=input_names,
                         output_names=output_names,
                         dynamic_axes=dynamic_axes,
                     )
                 except Exception as exporter_error:
                     try:
+                        export_kwargs: dict[str, Any] = {
+                            "opset_version": effective_opset,
+                            "input_names": input_names,
+                            "output_names": output_names,
+                            "dynamic_axes": dynamic_axes,
+                        }
+                        if not is_pt_legacy:
+                            export_kwargs["dynamo"] = False
                         torch.onnx.export(
                             wrapped_model,
                             sample_input,
                             str(temp_onnx_file),
-                            opset_version=opset_version,
-                            input_names=input_names,
-                            output_names=output_names,
-                            dynamic_axes=dynamic_axes,
-                            dynamo=False,
+                            **export_kwargs,
                         )
                     except Exception as legacy_error:
                         temp_onnx_file.unlink(missing_ok=True)

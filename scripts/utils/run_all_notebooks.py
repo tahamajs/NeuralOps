@@ -78,16 +78,34 @@ def _setup_runtime_environment() -> None:
     except Exception:
         pass
 
-    # Polyfill onnx.checker if onnx is missing in the environment
+    # Polyfill onnx and onnx.checker if onnx is missing in the environment
     try:
-        import onnx  # noqa: F401
+        import onnx
+        if not hasattr(onnx, "__version__"):
+            onnx.__version__ = "1.14.0"
     except ImportError:
         import types
         onnx_mock = types.ModuleType("onnx")
+        onnx_mock.__version__ = "1.14.0"
         checker_mock = types.ModuleType("checker")
         checker_mock.check_model = lambda *args, **kwargs: True
         onnx_mock.checker = checker_mock
         sys.modules["onnx"] = onnx_mock
+
+    # Polyfill torch.distributed._tensor for PyTorch < 2.0 when modern accelerate / transformers imports it
+    if "torch.distributed._tensor" not in sys.modules:
+        try:
+            import types
+            _dt = types.ModuleType("torch.distributed._tensor")
+            _dt.DTensor = type("DTensor", (), {})
+            _dt.DeviceMesh = type("DeviceMesh", (), {})
+            _dt.Replicate = type("Replicate", (), {})
+            _dt.Shard = type("Shard", (), {})
+            _dt.distribute_tensor = lambda *a, **k: None
+            _dt.distribute_module = lambda *a, **k: None
+            sys.modules["torch.distributed._tensor"] = _dt
+        except Exception:
+            pass
 
 
 def _preprocess_code(source_lines: list[str]) -> str:
@@ -336,10 +354,57 @@ def main() -> int:
     results: list[dict[str, Any]] = []
     failed_count = 0
 
+    def _write_summary(path: str, res_list: list[dict[str, Any]]) -> None:
+        passed = sum(1 for r in res_list if r["status"] == "PASS")
+        failed = len(res_list) - passed
+        lines = [
+            "# NeuralOps Interactive Notebook Suite Execution Summary\n",
+            f"- **Execution Timestamp**: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}",
+            f"- **Total Notebooks**: {len(res_list)}",
+            f"- **Passed Notebooks**: {passed}",
+            f"- **Failed Notebooks**: {failed}\n",
+            "| # | Notebook | Status | Code Cells | Duration (s) | Error Note |",
+            "|---|---|---|---|---|---|",
+        ]
+        for i, r in enumerate(res_list, 1):
+            status_md = f"**{r['status']}**" if r["status"] == "PASS" else f"<span style='color:red;'>**{r['status']}**</span>"
+            err_note = "None" if not r["errors"] else f"Cell {r['errors'][0]['cell_index']}: {r['errors'][0]['error'][:50]}"
+            lines.append(f"| {i:02d} | `{r['notebook']}` | {status_md} | {r['passed_code_cells']}/{r['total_code_cells']} | {r['duration_sec']} | {err_note} |")
+        with open(path, "w", encoding="utf-8") as f_out:
+            f_out.write("\n".join(lines) + "\n")
+
+    summary_path = os.path.abspath(args.summary_file)
+    os.makedirs(os.path.dirname(summary_path), exist_ok=True)
+
     for idx, nb_path in enumerate(nb_files, 1):
         nb_name = os.path.basename(nb_path)
         print(f"\n[{idx:02d}/{len(nb_files):02d}] Executing: {nb_name} ...", flush=True)
-        res = execute_notebook(nb_path, repo_root)
+
+        # Clear GPU cache and garbage collector between notebooks
+        import gc
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                if hasattr(torch.cuda, "ipc_collect"):
+                    torch.cuda.ipc_collect()
+        except Exception:
+            pass
+
+        try:
+            res = execute_notebook(nb_path, repo_root)
+        except Exception as e:
+            res = {
+                "notebook": nb_name,
+                "path": nb_path,
+                "duration_sec": 0.0,
+                "total_cells": 0,
+                "total_code_cells": 0,
+                "passed_code_cells": 0,
+                "status": "FAIL",
+                "errors": [{"cell_index": 0, "error": f"Fatal notebook crash: {e}"}],
+            }
         results.append(res)
 
         status_sym = "PASS" if res["status"] == "PASS" else "FAIL"
@@ -353,32 +418,12 @@ def main() -> int:
             for err_info in res["errors"]:
                 print(f"          [ERROR in Cell {err_info['cell_index']}]: {err_info['error']}")
 
+        # Incrementally update summary
+        _write_summary(summary_path, results)
+
     print("\n" + "=" * 80)
     print(f"NOTEBOOK EXECUTION SUMMARY: {len(results) - failed_count}/{len(results)} Passed")
     print("=" * 80)
-
-    # Generate Markdown Summary Table
-    summary_path = os.path.abspath(args.summary_file)
-    os.makedirs(os.path.dirname(summary_path), exist_ok=True)
-
-    lines = [
-        "# NeuralOps Interactive Notebook Suite Execution Summary\n",
-        f"- **Execution Timestamp**: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}",
-        f"- **Total Notebooks**: {len(results)}",
-        f"- **Passed Notebooks**: {len(results) - failed_count}",
-        f"- **Failed Notebooks**: {failed_count}\n",
-        "| # | Notebook | Status | Code Cells | Duration (s) | Error Note |",
-        "|---|---|---|---|---|---|",
-    ]
-
-    for idx, r in enumerate(results, 1):
-        status_md = f"**{r['status']}**" if r["status"] == "PASS" else f"<span style='color:red;'>**{r['status']}**</span>"
-        err_note = "None" if not r["errors"] else f"Cell {r['errors'][0]['cell_index']}: {r['errors'][0]['error'][:50]}"
-        lines.append(f"| {idx:02d} | `{r['notebook']}` | {status_md} | {r['passed_code_cells']}/{r['total_code_cells']} | {r['duration_sec']} | {err_note} |")
-
-    with open(summary_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
-
     print(f"Summary written to: {summary_path}")
     return 1 if failed_count > 0 else 0
 
