@@ -26,6 +26,55 @@ __global__ void __launch_bounds__(128) hgrn2_bidirectional_scan_kernel(
     const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
+    // Vectorized 128-bit float4 path for float type when D is divisible by 4
+    if constexpr (std::is_same_v<scalar_t, float>) {
+        if (D % 4 == 0) {
+            const int num_vec = D / 4;
+            const int vi = blockIdx.x * blockDim.x + threadIdx.x;
+            if (vi >= num_vec) return;
+
+            const int base_bh = bh * (L * D) + vi * 4;
+            float4 h_fwd = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+            #pragma unroll 4
+            for (int t = 0; t < L; ++t) {
+                const int idx = base_bh + t * D;
+                const float4 x_t = *reinterpret_cast<const float4*>(x + idx);
+                const float4 g_t = *reinterpret_cast<const float4*>(g + idx);
+
+                h_fwd.x = fmaf(g_t.x, h_fwd.x, (1.0f - g_t.x) * x_t.x);
+                h_fwd.y = fmaf(g_t.y, h_fwd.y, (1.0f - g_t.y) * x_t.y);
+                h_fwd.z = fmaf(g_t.z, h_fwd.z, (1.0f - g_t.z) * x_t.z);
+                h_fwd.w = fmaf(g_t.w, h_fwd.w, (1.0f - g_t.w) * x_t.w);
+
+                *reinterpret_cast<float4*>(out + idx) = h_fwd;
+            }
+
+            float4 h_bwd = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+            #pragma unroll 4
+            for (int t = L - 1; t >= 0; --t) {
+                const int idx = base_bh + t * D;
+                const float4 x_t = *reinterpret_cast<const float4*>(x + idx);
+                const float4 g_t = *reinterpret_cast<const float4*>(g + idx);
+
+                h_bwd.x = fmaf(g_t.x, h_bwd.x, (1.0f - g_t.x) * x_t.x);
+                h_bwd.y = fmaf(g_t.y, h_bwd.y, (1.0f - g_t.y) * x_t.y);
+                h_bwd.z = fmaf(g_t.z, h_bwd.z, (1.0f - g_t.z) * x_t.z);
+                h_bwd.w = fmaf(g_t.w, h_bwd.w, (1.0f - g_t.w) * x_t.w);
+
+                const float4 fwd_val = *reinterpret_cast<const float4*>(out + idx);
+                float4 combined;
+                combined.x = 0.5f * (fwd_val.x + h_bwd.x);
+                combined.y = 0.5f * (fwd_val.y + h_bwd.y);
+                combined.z = 0.5f * (fwd_val.z + h_bwd.z);
+                combined.w = 0.5f * (fwd_val.w + h_bwd.w);
+
+                *reinterpret_cast<float4*>(out + idx) = combined;
+            }
+            return;
+        }
+    }
+
     const int d = blockIdx.x * blockDim.x + threadIdx.x;
     if (d >= D) return;
 

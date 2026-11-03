@@ -33,9 +33,11 @@ __global__ void selective_scan_fwd_kernel(
     if (batch_idx >= B_sz || dim_idx >= D_sz) return;
 
     float h[D_STATE];
+    float a_cache[D_STATE];
     #pragma unroll
     for (int n = 0; n < D_STATE; ++n) {
         h[n] = 0.0f;
+        a_cache[n] = A[dim_idx * D_STATE + n];
     }
 
     const float d_param = (D_val != nullptr) ? D_val[dim_idx] : 0.0f;
@@ -49,7 +51,7 @@ __global__ void selective_scan_fwd_kernel(
 
         #pragma unroll
         for (int n = 0; n < D_STATE; ++n) {
-            const float a_val = A[dim_idx * D_STATE + n];
+            const float a_val = a_cache[n];
             const float b_val = B[batch_idx * (D_STATE * L_sz) + n * L_sz + l];
             const float c_val = C[batch_idx * (D_STATE * L_sz) + n * L_sz + l];
 
@@ -68,6 +70,7 @@ __global__ void selective_scan_fwd_kernel(
     }
 
     if (last_state != nullptr) {
+        #pragma unroll
         for (int n = 0; n < D_STATE; ++n) {
             last_state[batch_idx * (D_sz * D_STATE) + dim_idx * D_STATE + n] = h[n];
         }
@@ -95,8 +98,10 @@ __global__ void selective_scan_fwd_generic_kernel(
     if (batch_idx >= B_sz || dim_idx >= D_sz) return;
 
     float h[128];
+    float a_cache[128];
     for (int n = 0; n < D_STATE && n < 128; ++n) {
         h[n] = 0.0f;
+        a_cache[n] = A[dim_idx * D_STATE + n];
     }
 
     const float d_param = (D_val != nullptr) ? D_val[dim_idx] : 0.0f;
@@ -108,7 +113,7 @@ __global__ void selective_scan_fwd_generic_kernel(
         float y_val = u_val * d_param;
 
         for (int n = 0; n < D_STATE && n < 128; ++n) {
-            const float a_val = A[dim_idx * D_STATE + n];
+            const float a_val = a_cache[n];
             const float b_val = B[batch_idx * (D_STATE * L_sz) + n * L_sz + l];
             const float c_val = C[batch_idx * (D_STATE * L_sz) + n * L_sz + l];
 
@@ -158,9 +163,11 @@ __global__ void selective_scan_bwd_kernel(
     if (batch_idx >= B_sz || dim_idx >= D_sz) return;
 
     float dh[D_STATE];
+    float a_cache[D_STATE];
     #pragma unroll
     for (int n = 0; n < D_STATE; ++n) {
         dh[n] = 0.0f;
+        a_cache[n] = A[dim_idx * D_STATE + n];
     }
 
     const float d_param = (D_val != nullptr) ? D_val[dim_idx] : 0.0f;
@@ -178,7 +185,7 @@ __global__ void selective_scan_bwd_kernel(
 
         #pragma unroll
         for (int n = 0; n < D_STATE; ++n) {
-            const float a_val = A[dim_idx * D_STATE + n];
+            const float a_val = a_cache[n];
             const float b_val = B[batch_idx * (D_STATE * L_sz) + n * L_sz + l];
             const float c_val = C[batch_idx * (D_STATE * L_sz) + n * L_sz + l];
 
@@ -234,8 +241,10 @@ __global__ void selective_scan_bwd_generic_kernel(
     if (batch_idx >= B_sz || dim_idx >= D_sz) return;
 
     float dh[128];
+    float a_cache[128];
     for (int n = 0; n < D_STATE && n < 128; ++n) {
         dh[n] = 0.0f;
+        a_cache[n] = A[dim_idx * D_STATE + n];
     }
 
     const float d_param = (D_val != nullptr) ? D_val[dim_idx] : 0.0f;
@@ -252,7 +261,7 @@ __global__ void selective_scan_bwd_generic_kernel(
         acc_dD += dy * u_val;
 
         for (int n = 0; n < D_STATE && n < 128; ++n) {
-            const float a_val = A[dim_idx * D_STATE + n];
+            const float a_val = a_cache[n];
             const float b_val = B[batch_idx * (D_STATE * L_sz) + n * L_sz + l];
             const float c_val = C[batch_idx * (D_STATE * L_sz) + n * L_sz + l];
 
