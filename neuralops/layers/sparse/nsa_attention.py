@@ -614,15 +614,31 @@ class NativeSparseAttention(BaseAttention):
 
         accel_context = None
         if not output_attentions and not return_mask and head_mask is None:
-            try:
-                accel_context = F.scaled_dot_product_attention(
-                    Q, K, V,
-                    attn_mask=total_mask,
-                    dropout_p=self.dropout.p if self.training else 0.0,
-                    scale=scale,
-                )
-            except Exception:
-                accel_context = None
+            if Q.is_cuda and (self.head_dim in (32, 64, 128)) and (self.block_size in (16, 32, 64)):
+                try:
+                    from neuralops.ops.triton.sparse_attn import fwd as triton_sparse_fwd
+                    num_blocks_q = (L + self.block_size - 1) // self.block_size
+                    b_mask_2d = block_mask.unsqueeze(1).expand(-1, num_blocks_q, -1).contiguous()
+                    accel_context = triton_sparse_fwd(
+                        Q, K, V,
+                        block_mask=b_mask_2d,
+                        block_size=self.block_size,
+                        is_causal=is_dec,
+                    )
+                except Exception as exc:
+                    logger.debug("NSA Triton block sparse fallback: %s", exc)
+                    accel_context = None
+
+            if accel_context is None:
+                try:
+                    accel_context = F.scaled_dot_product_attention(
+                        Q, K, V,
+                        attn_mask=total_mask,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                        scale=scale,
+                    )
+                except Exception:
+                    accel_context = None
 
         if accel_context is not None:
             context = accel_context

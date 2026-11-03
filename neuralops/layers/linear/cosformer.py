@@ -445,6 +445,16 @@ class CosformerAttention(BaseAttention):
                         return torch.nan_to_num(out_triton, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
                     except Exception as _triton_err:
                         pass
+                try:
+                    from neuralops.ops.cuda.cosformer.cosformer_autograd import cosformer_linear_attention
+                    return cosformer_linear_attention(
+                        Q_cos.transpose(1, 2).contiguous(),
+                        K_cos.transpose(1, 2).contiguous(),
+                        V.transpose(1, 2).contiguous(),
+                        is_causal=True
+                    ).transpose(1, 2).contiguous().to(dtype)
+                except Exception:
+                    pass
 
             chunk_size = 64
             num_chunks = (N + chunk_size - 1) // chunk_size
