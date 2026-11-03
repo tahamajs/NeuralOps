@@ -511,11 +511,18 @@ class DeepSeekMLASurgeryBridge(nn.Module):
             )
 
         seq_len = c_kv.shape[1]
+        if past_state is not None and hasattr(past_state, "get_recurrent_state"):
+            past_state = past_state.get_recurrent_state(int(kwargs.get("layer_idx", 0)))
+
         if (is_decode or seq_len == 1) and past_state is not None:
             if isinstance(past_state, DualStreamLatentState):
                 state_c, state_r = past_state.state_c, past_state.state_r
+            elif isinstance(past_state, (tuple, list)) and len(past_state) == 2:
+                state_c, state_r = past_state[0], past_state[1]
             else:
-                state_c, state_r = past_state
+                raise ValueError(
+                    f"Invalid past_state format: expected DualStreamLatentState or 2-tuple, got {type(past_state)}"
+                )
             out, new_state = self.forward_decode_step(
                 c_kv_step=c_kv,
                 k_rope_step=k_rope,

@@ -514,6 +514,16 @@ class UniversalAttentionBridge(nn.Module):
         if isinstance(self.new_attention, DeepSeekMLASurgeryBridge):
             if len(args) == 4 or ("c_kv" in kwargs and "k_rope" in kwargs):
                 return self.new_attention(*args, **kwargs)
+
+            hf_cache = kwargs.get("past_key_value", kwargs.get("past_key_values", None))
+            layer_i = self.layer_idx if self.layer_idx is not None else 0
+            if hf_cache is not None and hasattr(hf_cache, "get_recurrent_state"):
+                past_state = hf_cache.get_recurrent_state(layer_i)
+            else:
+                past_state = kwargs.get(
+                    "past_state", hf_cache if not hasattr(hf_cache, "get_recurrent_state") else None
+                )
+
             if hasattr(self.orig_module, "kv_a_proj_with_mqa"):
                 hs = args[0] if len(args) > 0 else kwargs.get("hidden_states")
                 if hs is not None:
@@ -527,23 +537,27 @@ class UniversalAttentionBridge(nn.Module):
                     else:
                         q_content = c_kv
                         q_rope = k_rope
-                    past_state = kwargs.get("past_key_value", kwargs.get("past_state", None))
-                    is_decode = kwargs.get("is_decode", False) or hs.shape[1] == 1
+                    is_decode = kwargs.get("is_decode", False) or (past_state is not None and hs.shape[1] == 1)
                     out, new_state = self.new_attention(
                         c_kv, k_rope, q_content, q_rope, past_state=past_state, is_decode=is_decode
                     )
-                    if kwargs.get("use_cache", False) or "past_key_value" in kwargs:
+                    if hf_cache is not None and hasattr(hf_cache, "update_recurrent_state"):
+                        hf_cache.update_recurrent_state(layer_i, new_state, num_tokens=hs.shape[1])
+                        return out, None, hf_cache
+                    if kwargs.get("use_cache", False) or "past_key_value" in kwargs or "past_key_values" in kwargs:
                         return out, None, new_state
                     return out
             elif self.new_attention.kv_latent_proj is not None:
                 hs = args[0] if len(args) > 0 else kwargs.get("hidden_states")
                 if hs is not None:
-                    past_state = kwargs.get("past_key_value", kwargs.get("past_state", None))
-                    is_decode = kwargs.get("is_decode", False) or hs.shape[1] == 1
+                    is_decode = kwargs.get("is_decode", False) or (past_state is not None and hs.shape[1] == 1)
                     out, new_state = self.new_attention(
                         hs, past_state=past_state, is_decode=is_decode
                     )
-                    if kwargs.get("use_cache", False) or "past_key_value" in kwargs:
+                    if hf_cache is not None and hasattr(hf_cache, "update_recurrent_state"):
+                        hf_cache.update_recurrent_state(layer_i, new_state, num_tokens=hs.shape[1])
+                        return out, None, hf_cache
+                    if kwargs.get("use_cache", False) or "past_key_value" in kwargs or "past_key_values" in kwargs:
                         return out, None, new_state
                     return out
 

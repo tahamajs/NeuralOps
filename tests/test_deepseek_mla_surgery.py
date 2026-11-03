@@ -40,6 +40,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.surgery.endoskeletal_shell import UniversalAttentionBridge
+from neuralops.surgery.hf_cache_bridge import NeuralOpsHybridHFCache
 from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge, DualStreamLatentState
 from neuralops.surgery.moa_router import (
     HybridMoARouter,
@@ -550,6 +551,78 @@ def test_phase_078_endoskeletal_shell_bridge_dispatch_hook() -> None:
 
     assert full_count == 6
     assert linear_count == 26
+
+
+def test_phase_078_hf_cache_bridge_interoperability() -> None:
+    """Certifies Phase 078: Seamless interoperability between UniversalAttentionBridge MLA and NeuralOpsHybridHFCache."""
+    d_model = 64
+    d_c = 32
+    d_r = 16
+
+    class MockOrigMLA(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.kv_a_proj_with_mqa = nn.Linear(d_model, d_c + d_r, bias=False)
+            self.q_a_proj = nn.Linear(d_model, d_c + d_r, bias=False)
+
+        def forward(self, x: torch.Tensor, **kwargs: object) -> torch.Tensor:
+            return x
+
+    orig = MockOrigMLA()
+    mla_bridge = DeepSeekMLASurgeryBridge(latent_kv_dim=d_c, decoupled_rope_dim=d_r)
+    spec = AttentionTargetSpec(
+        module_path="model.layers.4.self_attn",
+        parent_module=nn.Module(),
+        attr_name="self_attn",
+        target_module=orig,
+        pattern_type="deepseek_mla",
+        embed_dim=d_model,
+        num_heads=4,
+        num_kv_heads=1,
+        head_dim=16,
+        is_causal=True,
+        has_bias=False,
+    )
+
+    bridge_layer = UniversalAttentionBridge(
+        orig_module=orig,
+        spec=spec,
+        new_attention=mla_bridge,
+        inherit_weights=False,
+        layer_idx=4,
+    )
+
+    hf_cache = NeuralOpsHybridHFCache()
+
+    # Step 1: Prefill phase with sequence length 4
+    x_prefill = torch.randn(1, 4, d_model)
+    out_prefill, _, cache_after_pref = bridge_layer(
+        x_prefill,
+        past_key_value=hf_cache,
+        use_cache=True,
+    )
+    assert out_prefill.shape == (1, 4, d_c)
+    assert cache_after_pref is hf_cache
+    state_layer4 = hf_cache.get_recurrent_state(4)
+    assert state_layer4 is not None
+    assert isinstance(state_layer4, tuple)
+    sc, sr = state_layer4
+    assert sc.shape == (1, d_c, d_c)
+    assert sr.shape == (1, d_r, d_r)
+
+    # Step 2: Decode step with single token (sequence length 1)
+    x_decode = torch.randn(1, 1, d_model)
+    out_decode, _, cache_after_dec = bridge_layer(
+        x_decode,
+        past_key_value=hf_cache,
+        use_cache=True,
+    )
+    assert out_decode.shape == (1, 1, d_c)
+    assert cache_after_dec is hf_cache
+    new_state_l4 = hf_cache.get_recurrent_state(4)
+    assert new_state_l4 is not None
+    assert new_state_l4[0].shape == (1, d_c, d_c)
+    assert new_state_l4[1].shape == (1, d_r, d_r)
 
 
 # =========================================================================
