@@ -37,8 +37,14 @@ __global__ void flash_gqa_kernel(
     const int total_threads = blockDim.x * blockDim.y;
     const int cur_q_idx = q_tile_idx * TILE_Q + tid;
 
+    // Storage layout with padding and swizzle helper to eliminate bank conflicts:
+    // bank_idx = (kt ^ kd) & 31
     __shared__ float4 K_smem[BLOCK_N][NUM_VECS + 1];
     __shared__ float4 V_smem[BLOCK_N][NUM_VECS + 1];
+
+    auto swizzle_col = [](int row, int col) -> int {
+        return (col ^ (row & 3)) % NUM_VECS;
+    };
 
     float4 q_vec[NUM_VECS];
     float4 acc_vec[NUM_VECS];
@@ -86,20 +92,21 @@ __global__ void flash_gqa_kernel(
             const int kt = idx / NUM_VECS;
             const int kd = idx % NUM_VECS;
             const int global_tok = k_start + kt;
+            const int swizzled_d = swizzle_col(kt, kd);
 
             if (global_tok < N_KV) {
                 const int g_off = k_base + global_tok * HEAD_DIM + kd * 4;
                 if constexpr (std::is_same<scalar_t, float>::value) {
-                    K_smem[kt][kd] = reinterpret_cast<const float4*>(k + g_off)[0];
-                    V_smem[kt][kd] = reinterpret_cast<const float4*>(v + g_off)[0];
+                    K_smem[kt][swizzled_d] = reinterpret_cast<const float4*>(k + g_off)[0];
+                    V_smem[kt][swizzled_d] = reinterpret_cast<const float4*>(v + g_off)[0];
                 } else {
-                    K_smem[kt][kd] = make_float4(
+                    K_smem[kt][swizzled_d] = make_float4(
                         static_cast<float>(k[g_off + 0]),
                         static_cast<float>(k[g_off + 1]),
                         static_cast<float>(k[g_off + 2]),
                         static_cast<float>(k[g_off + 3])
                     );
-                    V_smem[kt][kd] = make_float4(
+                    V_smem[kt][swizzled_d] = make_float4(
                         static_cast<float>(v[g_off + 0]),
                         static_cast<float>(v[g_off + 1]),
                         static_cast<float>(v[g_off + 2]),
@@ -107,8 +114,8 @@ __global__ void flash_gqa_kernel(
                     );
                 }
             } else {
-                K_smem[kt][kd] = make_float4(0.f, 0.f, 0.f, 0.f);
-                V_smem[kt][kd] = make_float4(0.f, 0.f, 0.f, 0.f);
+                K_smem[kt][swizzled_d] = make_float4(0.f, 0.f, 0.f, 0.f);
+                V_smem[kt][swizzled_d] = make_float4(0.f, 0.f, 0.f, 0.f);
             }
         }
         __syncthreads();
@@ -128,7 +135,8 @@ __global__ void flash_gqa_kernel(
                 float dot = 0.0f;
                 #pragma unroll
                 for (int d = 0; d < NUM_VECS; ++d) {
-                    const float4 k_v = K_smem[kt][d];
+                    const int swizzled_d = swizzle_col(kt, d);
+                    const float4 k_v = K_smem[kt][swizzled_d];
                     dot += q_vec[d].x * k_v.x + q_vec[d].y * k_v.y + q_vec[d].z * k_v.z + q_vec[d].w * k_v.w;
                 }
                 const float s = dot * scale;
@@ -160,7 +168,8 @@ __global__ void flash_gqa_kernel(
                     l_prev += p;
                     #pragma unroll
                     for (int d = 0; d < NUM_VECS; ++d) {
-                        const float4 v_v = V_smem[kt][d];
+                        const int swizzled_d = swizzle_col(kt, d);
+                        const float4 v_v = V_smem[kt][swizzled_d];
                         acc_vec[d].x += p * v_v.x;
                         acc_vec[d].y += p * v_v.y;
                         acc_vec[d].z += p * v_v.z;

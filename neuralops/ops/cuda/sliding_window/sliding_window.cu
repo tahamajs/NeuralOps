@@ -65,6 +65,25 @@ __global__ void sliding_window_attn_warp_kernel(
 
     const int kv_head_base = b * (H * N * HEAD_DIM) + h * (N * HEAD_DIM);
 
+    // Persistent SRAM attention sink pinning: cache the initial num_sinks tokens in Shared Memory.
+    // This eliminates repeated DRAM fetches of sink tokens across query tokens.
+    constexpr int MAX_SINKS = 8;
+    __shared__ float s_sink_k[MAX_SINKS][HEAD_DIM];
+    __shared__ float s_sink_v[MAX_SINKS][HEAD_DIM];
+
+    const int active_sinks = min(num_sinks, min(N, MAX_SINKS));
+    const int tid = warp_id * 32 + lane;
+    const int total_threads = NUM_WARPS * 32;
+
+    for (int s_idx = 0; s_idx < active_sinks; ++s_idx) {
+        const int s_k_off = kv_head_base + s_idx * HEAD_DIM;
+        for (int d = tid; d < HEAD_DIM; d += total_threads) {
+            s_sink_k[s_idx][d] = k[s_k_off + d];
+            s_sink_v[s_idx][d] = v[s_k_off + d];
+        }
+    }
+    __syncthreads();
+
     #pragma unroll
     for (int qi = 0; qi < QUERIES_PER_WARP; ++qi) {
         const int cur_q_idx = q_indices[qi];
@@ -73,6 +92,33 @@ __global__ void sliding_window_attn_warp_kernel(
         const int sink_end = min(cur_q_idx + 1, num_sinks);
         const int win_start = max(sink_end, cur_q_idx - window_size + 1);
         const int win_end = cur_q_idx + 1;
+
+        // 1. Process attention sinks directly from persistent SRAM pinning
+        const int pinned_sinks = min(sink_end, active_sinks);
+        for (int k_pos = 0; k_pos < pinned_sinks; ++k_pos) {
+            float dot = 0.0f;
+            #pragma unroll
+            for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+                dot += q_local[qi][e] * s_sink_k[k_pos][lane + e * 32];
+            }
+
+            #pragma unroll
+            for (int mask = 16; mask > 0; mask /= 2) {
+                dot += __shfl_xor_sync(0xffffffff, dot, mask);
+            }
+
+            float qk = dot * scale;
+            float m_curr = fmaxf(m_prev[qi], qk);
+            float alpha = expf(m_prev[qi] - m_curr);
+            float p = expf(qk - m_curr);
+
+            l_prev[qi] = l_prev[qi] * alpha + p;
+            #pragma unroll
+            for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
+                acc[qi][e] = acc[qi][e] * alpha + p * s_sink_v[k_pos][lane + e * 32];
+            }
+            m_prev[qi] = m_curr;
+        }
 
         auto process_range = [&](int start_pos, int end_pos) {
             for (int k_pos = start_pos; k_pos < end_pos; ++k_pos) {
@@ -102,8 +148,9 @@ __global__ void sliding_window_attn_warp_kernel(
             }
         };
 
-        if (sink_end > 0) {
-            process_range(0, sink_end);
+        // If sinks exceed MAX_SINKS, process remainder from DRAM
+        if (sink_end > pinned_sinks) {
+            process_range(pinned_sinks, sink_end);
         }
 
         if (win_start < win_end) {
