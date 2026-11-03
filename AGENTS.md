@@ -109,6 +109,23 @@ The primary remote GPU host for NeuralOps is **Sharif University HPC Center** (`
 4. Submit GPU job with `qsub run.sh` from the skill's template
 5. Paste `qstat -f <JOB_ID>` (before and after) plus full `.o<JOB_ID>` and `.e<JOB_ID>` in the report
 
+**SSH connection reuse:**
+- All agents MUST use the configured `hpc` SSH alias and SSH multiplexing instead of opening repeated independent login sessions.
+- The user's local `~/.ssh/config` should contain:
+  ```sshconfig
+  Host hpc
+      HostName hpc.itc.sharif.edu
+      User tahamajlesi.ut
+      ControlMaster auto
+      ControlPath ~/.ssh/cm-%C
+      ControlPersist 12h
+  ```
+- Establish one master connection with `ssh hpc`; subsequent commands MUST use `ssh hpc "command"` so they reuse it.
+- Verify reuse with `ssh -O check hpc`. Close the master only when the work is complete with `ssh -O exit hpc`.
+- Long-running processes MUST run inside PBS, `screen`, or `tmux`; disconnecting the client must not terminate them.
+- `hpc` is the login gateway, not the GPU execution host. Agents MUST submit work through PBS (`qsub -q N3090 ...`) and may SSH to `GPU-3090-1` only after `qstat`/`qstat -f` confirms an active allocation for that job. Never assume that a direct login-node-to-GPU-node SSH session grants a valid GPU allocation.
+- Never print, commit, or place SSH private keys, HPC passwords, or access tokens in repository files, logs, prompts, or command output.
+
 **Forbidden:**
 - Submitting GPU jobs with `credit = 0.0` (silently fails, wastes time)
 - Fabricating GPU test results (violates §0.1)
@@ -416,6 +433,8 @@ When updating this file, append an entry here. Version number follows `major.min
 - **v1.1.0** — Added §0 (Core Operating Principles), §4 (Verification Contract), §5 (Scope Discipline), §6 (Silent Failure Policy), §10 (Blocker Escalation & Honest Reporting). Expanded §3 with user authorization exception (§3.2) and tool discovery protocol (§3.3). Added regression test requirement (§5.4). Added report format (§10.2). Added quality gate checklist to §11.
 - **v1.0.0** — Initial agent guidelines.
 - **v1.3.1** — Clarified that the 131/72 invariants count canonical registry keys rather than implementation files, and recorded the current source-file counts.
+- **v1.3.2** — Added the SSH multiplexing and persistent-session policy for the `hpc` alias so agents reuse one master connection and do not create repeated independent login sessions.
+- **v1.3.3** — Clarified that `hpc` is the login gateway and that `GPU-3090-1` may be used only after PBS confirms an active GPU allocation.
 
 ---
 ## 14. Versioning, Releases & Changelog
@@ -698,6 +717,7 @@ A release with any unchecked box must not be tagged. Ask the user for help befor
 When updating this file, append an entry here. Version number follows `major.minor.patch`. Major: rule added that retroactively invalidates prior practice. Minor: clarification or new section. Patch: typo or wording fix.
 
 - **v1.3.0** — Added §3.4 (Sharif University HPC Cluster as primary remote GPU host). Added skill `.agents/skills/hpc-sharif-cluster/` (SKILL.md, run.sh template, setup_env.sh, README). Updated §12 skill index to reference the HPC skill. Replaced legacy host references with Sharif HPC.
+- **v1.3.3** — Clarified SSH multiplexing and PBS allocation requirements for access to `GPU-3090-1`.
 - **v1.2.0** — Added §14 (Versioning, Releases & Changelog): source of truth, SemVer rules, PEP 440 string formats, files that must stay in sync, git tag conventions, sub-package versioning, version consistency gate, paper/thesis versioning, registry invariant versioning, changelog format, pre-commit hook, release checklist, and versioning failure modes.
 - **v1.1.0** — Added §0 (Core Operating Principles), §4 (Verification Contract), §5 (Scope Discipline), §6 (Silent Failure Policy), §10 (Blocker Escalation & Honest Reporting). Expanded §3 with user authorization exception (§3.2) and tool discovery protocol (§3.3). Added regression test requirement (§5.4). Added report format (§10.2). Added quality gate checklist to §11.
 - **v1.0.0** — Initial agent guidelines.

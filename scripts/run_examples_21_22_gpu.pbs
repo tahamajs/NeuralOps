@@ -11,6 +11,7 @@ PY=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python
 unset PYTHONPATH PYTHONHOME
 export PYTHONNOUSERSITE=1
 export PYTHONPATH="${PWD}"
+export LD_LIBRARY_PATH="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/lib:${LD_LIBRARY_PATH:-}"
 "$PY" - <<'PY'
 import torch
 

@@ -64,6 +64,14 @@ bash benchmarks/run_suite.sh numerics --quick
 New benchmark logic belongs in `neuralops/benchmarks`; root files should remain
 thin, stable entry points. Generated outputs belong under `results/`.
 
+Versioned configuration presets are available under `benchmarks/configs/`:
+
+```bash
+python -m neuralops.benchmarks.cli run --config benchmarks/configs/quick_cuda.json
+python -m neuralops.benchmarks.cli run --config benchmarks/configs/exhaustive_cuda.json
+python -m neuralops.benchmarks.cli run --config benchmarks/configs/long_context_cuda.json
+```
+
 ### 1. Realistic Memory Bandwidth & Saturation
 ```bash
 python benchmarks/bench_llm_bandwidth.py --quick

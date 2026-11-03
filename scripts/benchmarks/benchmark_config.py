@@ -72,6 +72,23 @@ class BenchmarkConfig(BaseModel):
         default=True, description="Track peak accelerator memory allocations."
     )
 
+    def to_canonical(self):
+        """Convert the legacy script config to the package config contract."""
+        from neuralops.benchmarks.config import BenchmarkConfig as CanonicalConfig
+
+        data = self.model_dump() if hasattr(self, "model_dump") else self.__dict__.copy()
+        data["precision"] = data.pop("dtype", "float32")
+        data["output_dir"] = Path(data.get("output_dir", "results"))
+        data["extra"] = {
+            "batch_sizes": data.pop("batch_sizes", [2, 4, 8]),
+            "seq_lens": data.pop("seq_lens", [16, 64, 256]),
+            "parallel_workers": data.pop("parallel_workers", 4),
+            "enable_backward": data.pop("enable_backward", True),
+            "enable_vram_tracking": data.pop("enable_vram_tracking", True),
+        }
+        allowed = set(CanonicalConfig.__dataclass_fields__)
+        return CanonicalConfig(**{key: value for key, value in data.items() if key in allowed})
+
     @classmethod
     def from_file(cls, path: str | Path) -> BenchmarkConfig:
         """Load configuration from JSON or YAML file."""

@@ -55,8 +55,10 @@ class BaseRunner(ABC):
         """Verify device, model, and dataset readiness before executing long sweeps."""
         self.logger.info("Verifying benchmark environment readiness...")
         if self.config.device == "cuda" and not torch.cuda.is_available():
-            self.logger.warning("CUDA requested but not available. Fallback to CPU.")
-            return False
+            raise RuntimeError(
+                "CUDA was requested for the benchmark, but CUDA is unavailable. "
+                "Refusing to continue on CPU because that would invalidate GPU results."
+            )
         return True
 
 
