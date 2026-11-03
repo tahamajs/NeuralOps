@@ -664,3 +664,62 @@ def test_universal_surgery_director_raises_on_untied_embeddings() -> None:
     gemma.lm_head.weight = nn.Parameter(torch.randn_like(gemma.embed_tokens.weight))
     with pytest.raises(RuntimeError, match="Law 8 Violation"):
         director.verify_invariants()
+
+
+def test_cross_attention_linear_bridge_forward_dual_mode() -> None:
+    """Tests CrossAttentionLinearBridge forward execution in both prefill and decode modes."""
+    bridge = CrossAttentionLinearBridge(head_dim=16)
+    B, H, T_enc, D = 2, 2, 8, 16
+    q = torch.randn(B, H, 1, D)
+    k_enc = torch.randn(B, H, T_enc, D)
+    v_enc = torch.randn(B, H, T_enc, D)
+
+    # 1. Forward with k and v: prefill + decode
+    out_1 = bridge(q, k=k_enc, v=v_enc)
+    assert out_1.shape == (B, H, 1, D)
+    assert bridge.cached_s_cross is not None
+
+    # 2. Forward with only q: single-step decode using cached matrix
+    out_2 = bridge(q)
+    assert out_2.shape == (B, H, 1, D)
+    assert torch.allclose(out_1, out_2, atol=1e-6)
+
+
+def test_invariant_preserving_linear_bridge_forward_step_autoregressive() -> None:
+    """Tests forward_step single-token recurrence with exponential state decay gamma."""
+    bridge = InvariantPreservingLinearBridge(head_dim=16, decay=0.99)
+    B, H, D = 2, 2, 16
+
+    state = None
+    z_state = None
+    outputs = []
+
+    for _ in range(5):
+        q_t = torch.randn(B, H, 1, D)
+        k_t = torch.randn(B, H, 1, D)
+        v_t = torch.randn(B, H, 1, D)
+        out_t, state, z_state = bridge.forward_step(q_t, k_t, v_t, state=state, z_state=z_state)
+        assert out_t.shape == (B, H, 1, D)
+        assert state is not None
+        assert z_state is not None
+        outputs.append(out_t)
+
+    assert len(outputs) == 5
+
+
+def test_legacy_shims_forwarding() -> None:
+    """Verifies attention_replace and surgery_manifest legacy shims forward to UniversalSurgeryDirector."""
+    from neuralops.surgery.attention_replace import (
+        UniversalSurgeryDirector as DirectorShim1,
+        replace_attention,
+    )
+    from neuralops.surgery.surgery_manifest import (
+        UniversalSurgeryDirector as DirectorShim2,
+    )
+
+    assert DirectorShim1 is UniversalSurgeryDirector
+    assert DirectorShim2 is UniversalSurgeryDirector
+
+    gemma = MockGemma2Model()
+    surgeried = replace_attention(gemma)
+    assert surgeried is not None

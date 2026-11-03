@@ -531,6 +531,49 @@ class InvariantPreservingLinearBridge(nn.Module):
         result = sanitize_output_for_padding_mask(result, attention_mask)
         return result
 
+    def forward_step(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        state: Optional[torch.Tensor] = None,
+        z_state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Autoregressive single-step O(1) recurrence with exponential state decay gamma:
+        S_t = gamma * S_{t-1} + phi(K_t)^T * V_t
+        z_t = gamma * z_{t-1} + phi(K_t)^T
+        O_t = (phi(Q_t) @ S_t) / (phi(Q_t) @ z_t + eps)
+        """
+        orig_dtype = q.dtype
+        q, k = self.apply_qk_norm(q, k)
+        scale = self.compute_folded_scale()
+        q_scaled = q * scale
+
+        q_acc = q_scaled.to(torch.float32)
+        k_acc = k.to(torch.float32)
+        v_acc = v.to(torch.float32)
+        self.last_accum_dtype = torch.float32
+
+        q_phi = F.elu(q_acc) + 1.0
+        k_phi = F.elu(k_acc) + 1.0
+
+        delta_s = torch.matmul(k_phi.transpose(-2, -1), v_acc)
+        delta_z = k_phi.sum(dim=-2, keepdim=True)
+
+        gamma = self.decay
+        if state is None:
+            new_s = delta_s
+            new_z = delta_z
+        else:
+            new_s = gamma * state + delta_s
+            new_z = gamma * (z_state if z_state is not None else 0.0) + delta_z
+
+        num = torch.matmul(q_phi, new_s)
+        denom = torch.matmul(q_phi, new_z.transpose(-2, -1)).clamp(min=self.eps)
+        out = (num / denom).to(dtype=orig_dtype)
+        return out, new_s, new_z
+
 
 class CrossAttentionLinearBridge(nn.Module):
     """
@@ -592,6 +635,33 @@ class CrossAttentionLinearBridge(nn.Module):
             out = numerator
 
         return out.to(dtype=orig_dtype)
+
+    def forward(
+        self,
+        q: torch.Tensor,
+        k: Optional[torch.Tensor] = None,
+        v: Optional[torch.Tensor] = None,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        **kwargs: Any,
+    ) -> torch.Tensor:
+        """
+        Dual-mode forward execution:
+        1. If k and v (or encoder_hidden_states) provided: prefill encoder associative state and decode.
+        2. If cached_s_cross is already initialized: execute O(1) single-token decode.
+        """
+        if k is not None and v is not None:
+            self.prefill_encoder(k, v, attention_mask=attention_mask)
+            return self.decode_step(q)
+        elif encoder_hidden_states is not None:
+            self.prefill_encoder(encoder_hidden_states, encoder_hidden_states, attention_mask=attention_mask)
+            return self.decode_step(q)
+        elif self.cached_s_cross is not None:
+            return self.decode_step(q)
+        else:
+            raise RuntimeError(
+                "CrossAttentionLinearBridge requires encoder representations to prefill, or a pre-cached matrix."
+            )
 
     def get_cache_stats(self) -> Dict[str, Any]:
         """Returns cache telemetry including hit rate across decoding steps."""
@@ -763,6 +833,14 @@ class UniversalSurgeryDirector:
             if not is_still_tied:
                 logger.warning("Law 8 Violation: Embeddings were un-tied during surgery. Re-tying...")
                 re_tie_embeddings(self.model)
+
+        # Law 10: Polymorphic Generation Cache Bridge for causal models
+        if not self.profile.is_encoder and not self.profile.is_encoder_decoder:
+            try:
+                from neuralops.surgery.hf_cache_bridge import wrap_model_for_generation
+                wrap_model_for_generation(self.model)
+            except Exception as e:
+                logger.debug("Polymorphic generation cache bridge attachment skipped: %s", e)
 
         self.verify_invariants()
         logger.info("UniversalSurgeryDirector: Surgery completed successfully with all invariants verified.")
