@@ -118,3 +118,36 @@ def test_c2_vram_gate_cpu_vs_gpu():
         assert res.skipped is True
         assert res.passed is True
         assert "zero-fabrication policy" in res.message
+
+
+def test_c2_empirical_gates_fail_closed_in_production_without_data():
+    """Verify empirical gates fail-closed when profile=production and datasets are missing."""
+    model = SimpleMLP(in_features=8, num_classes=2)
+
+    # 1. AccuracyGate in production profile without data -> fails closed
+    acc_gate = AccuracyGate()
+    acc_res = acc_gate.run(model=model, context={"profile": "production"})
+    assert acc_res.passed is False
+    assert acc_res.skipped is False
+    assert acc_res.error_code == "E_DATASET_MISSING"
+
+    # 2. Allow uncalibrated override allows skipping even in production
+    acc_res_uncal = acc_gate.run(model=model, context={"profile": "production", "allow_uncalibrated": True})
+    assert acc_res_uncal.passed is True
+    assert acc_res_uncal.skipped is True
+
+    # 3. PerplexityGate in production profile without data -> fails closed
+    from neuralops.validation.gates.empirical import PerplexityGate
+    ppl_gate = PerplexityGate()
+    ppl_res = ppl_gate.run(model=model, context={"profile": "production"})
+    assert ppl_res.passed is False
+    assert ppl_res.skipped is False
+    assert ppl_res.error_code == "E_DATASET_MISSING"
+
+    # 4. NIAH in production profile without data -> fails closed
+    niah_gate = NeedleInAHaystackGate()
+    niah_res = niah_gate.run(model=model, context={"profile": "production"})
+    assert niah_res.passed is False
+    assert niah_res.skipped is False
+    assert niah_res.error_code == "E_DATASET_MISSING"
+

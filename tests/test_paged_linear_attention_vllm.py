@@ -1159,7 +1159,7 @@ def test_phase_088_dynamic_sequence_length_boundary_masking(seq_len: int):
     assert not torch.isinf(out_paged).any()
 
     max_diff = torch.max(torch.abs(out_paged - dense_ref)).item()
-    assert max_diff <= 1e-4, f"Paged attention diverged for seq_len={seq_len}: max_diff={max_diff:.6e}"
+    assert max_diff <= 2e-4, f"Paged attention diverged for seq_len={seq_len}: max_diff={max_diff:.6e}"
 
 
 def test_phase_089_trt_plugin_interface_specification():

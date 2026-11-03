@@ -17,7 +17,7 @@ import pytest
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from transformers import AutoModelForCausalLM
+from transformers import AutoConfig, AutoModelForCausalLM
 
 from neuralops.api import heal_distributed
 from neuralops.distributed.context import DistributedContext
@@ -128,8 +128,16 @@ def _worker_memory_comparison(rank: int, world_size: int, port: int):
 
 def test_single_gpu_fallback_matches_heal_replaced_model():
     """Verify single-GPU execution falls back to heal_replaced_model without errors."""
-    student = AutoModelForCausalLM.from_pretrained(MODEL_ID)
-    teacher = AutoModelForCausalLM.from_pretrained(MODEL_ID)
+    config = AutoConfig.from_pretrained(
+        "gpt2",
+        n_layer=2,
+        n_head=2,
+        n_embd=64,
+        vocab_size=256,
+        n_positions=512,
+    )
+    student = AutoModelForCausalLM.from_config(config)
+    teacher = AutoModelForCausalLM.from_config(config)
     batches = torch.randint(0, 100, (2, 8))
     res = heal_distributed(
         student=student,
