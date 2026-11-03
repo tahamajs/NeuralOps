@@ -1,0 +1,30 @@
+#!/bin/bash
+#PBS -N examples_21_22_pandas
+#PBS -q N3090
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=02:00:00
+#PBS -o /home/tahamajlesi.ut/examples_21_22_pandas.out
+#PBS -e /home/tahamajlesi.ut/examples_21_22_pandas.err
+set -u
+cd /home/tahamajlesi.ut/NeuralOps
+PY=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python
+unset PYTHONPATH PYTHONHOME
+export PYTHONNOUSERSITE=1
+export PYTHONPATH="${PWD}"
+export LD_LIBRARY_PATH="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/lib:${LD_LIBRARY_PATH:-}"
+"$PY" - <<'PY'
+import torch
+
+print("TORCH=", torch.__version__, flush=True)
+print("TORCH_CUDA=", torch.version.cuda, flush=True)
+print("CUDA_AVAILABLE=", torch.cuda.is_available(), flush=True)
+if not torch.cuda.is_available():
+    raise RuntimeError("CUDA was requested but is unavailable; refusing CPU fallback")
+print("GPU=", torch.cuda.get_device_name(0), flush=True)
+PY
+"$PY" - <<'PY'
+import transformers
+print("TRANSFORMERS=", transformers.__version__, flush=True)
+PY
+"$PY" examples/21_full_model_surgery.py --device cuda --attention cosformer
+"$PY" examples/22_surgery_baseline_report.py --device cuda --attention cosformer --output results/surgery_baseline_report.json

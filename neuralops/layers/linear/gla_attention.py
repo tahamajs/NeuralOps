@@ -175,14 +175,34 @@ class GLAttention(BaseAttention):
                     if src_mod is not None and hasattr(src_mod, "weight"):
                         target = getattr(self, tgt_name)
                         with torch.no_grad():
-                            if src_mod.weight.shape == target.weight.shape:
-                                target.weight.copy_(src_mod.weight.data)
-                                if (
-                                    hasattr(src_mod, "bias")
-                                    and src_mod.bias is not None
-                                    and target.bias is not None
+                            src_w = src_mod.weight.data
+                            if src_w.shape == target.weight.shape:
+                                target.weight.copy_(src_w)
+                            elif (
+                                src_w.dim() == 2
+                                and target.weight.dim() == 2
+                                and src_w.shape[1] == target.weight.shape[1]
+                                and target.weight.shape[0] % src_w.shape[0] == 0
+                            ):
+                                # GQA: expand num_kv_heads to num_q_heads via repeat_interleave
+                                g = target.weight.shape[0] // src_w.shape[0]
+                                target.weight.copy_(src_w.repeat_interleave(g, dim=0))
+
+                            if (
+                                hasattr(src_mod, "bias")
+                                and src_mod.bias is not None
+                                and target.bias is not None
+                            ):
+                                src_b = src_mod.bias.data
+                                if src_b.shape == target.bias.shape:
+                                    target.bias.copy_(src_b)
+                                elif (
+                                    src_b.dim() == 1
+                                    and target.bias.dim() == 1
+                                    and target.bias.shape[0] % src_b.shape[0] == 0
                                 ):
-                                    target.bias.copy_(src_mod.bias.data)
+                                    g = target.bias.shape[0] // src_b.shape[0]
+                                    target.bias.copy_(src_b.repeat_interleave(g, dim=0))
                         break
 
     def forward(
@@ -196,7 +216,7 @@ class GLAttention(BaseAttention):
         H, d = self.num_heads, self.head_dim
 
         gate_logits = self.gate_W2(self.gate_W1(hidden_states))
-        g = F.logsigmoid(gate_logits / self.gate_tau)
+        g = F.logsigmoid((gate_logits / self.gate_tau).float()).to(gate_logits.dtype)
 
         Q = self.q_proj(hidden_states).view(B, N, H, d)
         K = self.k_proj(hidden_states).view(B, N, H, d)
@@ -268,7 +288,7 @@ class GLAttention(BaseAttention):
         step_idx = state.get("step_idx", 0)
 
         gate_logits = self.gate_W2(self.gate_W1(x))
-        g = F.logsigmoid(gate_logits / self.gate_tau)
+        g = F.logsigmoid((gate_logits / self.gate_tau).float()).to(gate_logits.dtype)
 
         Q = self.q_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)
         K = self.k_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)

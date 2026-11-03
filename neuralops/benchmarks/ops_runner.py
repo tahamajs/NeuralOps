@@ -176,7 +176,9 @@ def run_benchmark_worker(
     if op_name not in OP_REGISTRY:
         raise ValueError(f"Operator '{op_name}' not in OP_REGISTRY. Available: {list(OP_REGISTRY.keys())}")
 
-    device = torch.device(device_str if torch.cuda.is_available() and device_str != "cpu" else "cpu")
+    if device_str.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    device = torch.device(device_str)
     dtype = getattr(torch, dtype_str)
 
     expected_seq_len_multiple = getattr(OP_REGISTRY[op_name], "expected_seq_len_multiple", None)

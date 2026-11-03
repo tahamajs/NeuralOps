@@ -20,7 +20,7 @@ from typing import Any
 import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
-from neuralops.ops.cuda._fallback import dispatch
+from neuralops.ops.cuda._fallback import dispatch, set_last_dispatch_backend
 
 logger = logging.getLogger(__name__)
 
@@ -102,12 +102,15 @@ class _SelectiveScanFunction(torch.autograd.Function):
             try:
                 d_tensor = D if D is not None and D.numel() > 0 else torch.empty(0, device=u.device, dtype=u.dtype)
                 out, last_state, states = mod.selective_scan_fwd(u, delta, A, B, C, d_tensor, True)
+                set_last_dispatch_backend("selective_scan", "cuda")
                 ctx.save_for_backward(u, delta, A, B, C, d_tensor, states)
                 ctx.has_d = D is not None and D.numel() > 0
                 ctx.is_py = False
                 return out, last_state
             except Exception as exc:
                 logger.warning("Selective-scan CUDA forward failed; using lower-level fallback: %s", exc)
+
+        set_last_dispatch_backend("selective_scan", "pytorch")
 
         u_p = u.detach().requires_grad_(u.requires_grad)
         delta_p = delta.detach().requires_grad_(delta.requires_grad)

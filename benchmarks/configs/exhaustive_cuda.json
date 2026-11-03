@@ -1,0 +1,14 @@
+{
+  "device": "cuda",
+  "dtype": "float32",
+  "batch_sizes": [1, 2, 4, 8],
+  "seq_lens": [128, 512, 2048, 8192],
+  "warmup": 10,
+  "iters": 50,
+  "seed": 42,
+  "categories": ["attention", "compressor", "kernel", "serving"],
+  "output_dir": "results/exhaustive_cuda",
+  "parallel_workers": 1,
+  "enable_backward": true,
+  "enable_vram_tracking": true
+}

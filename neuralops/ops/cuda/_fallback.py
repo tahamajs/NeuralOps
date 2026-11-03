@@ -49,6 +49,10 @@ FORCE_PYTORCH_FALLBACK: bool = False
 _LAST_DISPATCH_BACKEND: dict[str, str] = {}
 _LAST_DISPATCH_ERROR: dict[str, str] = {}
 
+def set_last_dispatch_backend(kernel_name: str, backend: str) -> None:
+    """Explicitly record the backend executed for a kernel (e.g. from dedicated autograd functions)."""
+    _LAST_DISPATCH_BACKEND[kernel_name] = backend
+
 def get_last_dispatch_backend(kernel_name: str) -> str:
     return _LAST_DISPATCH_BACKEND.get(kernel_name, 'unknown')
 
@@ -731,6 +735,7 @@ __all__ = [
     "get_dispatch_stats",
     "reset_dispatch_stats",
     "get_last_dispatch_backend",
+    "set_last_dispatch_backend",
     "get_last_dispatch_error",
     "is_kernel_available",
     "register_kernel",

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "canonical_cli": "python -m neuralops.benchmarks.cli",
+  "groups": {
+    "validation": [
+      "scripts/benchmarks/validate_4_cuda_kernels.py",
+      "tests/benchmarks/test_gpu_benchmark_integrity.py"
+    ],
+    "performance": [
+      "scripts/benchmarks/gpu_master_suite.py",
+      "neuralops/benchmarks/benchmark_all_26_comprehensive.py",
+      "scripts/benchmarks/benchmark_kd_all_modules.py",
+      "scripts/benchmark_serving.py"
+    ],
+    "reporting": [
+      "scripts/benchmarks/results_exporter.py",
+      "scripts/benchmarks/consolidate_and_organize_benchmarks.py",
+      "scripts/benchmarks/visualizer.py"
+    ]
+  },
+  "legacy_redirectors": [
+    "scripts/benchmarks/batch_validate_all_compressors.py",
+    "scripts/benchmarks/benchmark_all_cuda.py",
+    "scripts/benchmarks/benchmark_all_triton_comprehensive.py",
+    "scripts/benchmarks/benchmark_triton_26_strict_baseline.py",
+    "scripts/benchmarks/benchmark_5_slow_kernels.py",
+    "scripts/benchmarks/benchmark_long_context_phase12.py",
+    "scripts/benchmarks/run_attention_sweep.py",
+    "scripts/benchmarks/run_quality_sweep.py",
+    "scripts/benchmarks/triton_leaderboard.py"
+  ]
+}

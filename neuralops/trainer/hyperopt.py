@@ -15,7 +15,10 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 try:
     import optuna
@@ -95,10 +98,12 @@ class HyperparameterOptimizer:
         print(f"Best params: {self.best_params}")
         return self.best_params
 
-    def get_trial_dataframe(self) -> pd.DataFrame:
+    def get_trial_dataframe(self) -> Any:
         """Return the trial dataframe."""
         if self.study is None:
             raise ValueError("Run optimization first")
+        if pd is None:
+            raise ImportError("pandas is required for get_trial_dataframe. Please install pandas.")
         return self.study.trials_dataframe()
 
     def get_importance(self) -> dict[str, float]:

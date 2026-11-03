@@ -46,6 +46,33 @@ Every benchmark in the suite conforms to a uniform argument schema:
 
 ## Sample Invocations
 
+## Standard organization and runner
+
+The root directory is organized into `kernels`, `attention`, `compression`,
+`systems`, and `numerics`. The machine-readable ownership map is in
+[`benchmark_catalog.json`](benchmark_catalog.json). Use the unified runner:
+
+```bash
+bash benchmarks/run_suite.sh dispatch
+bash benchmarks/run_suite.sh kernels --quick
+bash benchmarks/run_suite.sh cuda --quick
+bash benchmarks/run_suite.sh attention --limit 10
+bash benchmarks/run_suite.sh systems --engine pytorch
+bash benchmarks/run_suite.sh numerics --quick
+bash benchmarks/run_suite.sh resources --config benchmarks/configs/quick_cuda.json
+```
+
+New benchmark logic belongs in `neuralops/benchmarks`; root files should remain
+thin, stable entry points. Generated outputs belong under `results/`.
+
+Versioned configuration presets are available under `benchmarks/configs/`:
+
+```bash
+python -m neuralops.benchmarks.cli run --config benchmarks/configs/quick_cuda.json
+python -m neuralops.benchmarks.cli run --config benchmarks/configs/exhaustive_cuda.json
+python -m neuralops.benchmarks.cli run --config benchmarks/configs/long_context_cuda.json
+```
+
 ### 1. Realistic Memory Bandwidth & Saturation
 ```bash
 python benchmarks/bench_llm_bandwidth.py --quick

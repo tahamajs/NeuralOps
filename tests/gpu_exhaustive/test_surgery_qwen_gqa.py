@@ -40,13 +40,16 @@ def _load_qwen_model(causal: bool = False) -> Any:
         "Qwen/Qwen2.5-0.5B",
     ]
     cls = AutoModelForCausalLM if causal else AutoModel
-    for path in candidates:
-        if os.path.exists(path) or path == "Qwen/Qwen2.5-0.5B":
+    for path in candidates[:-1]:
+        if os.path.exists(path):
             try:
                 return cls.from_pretrained(path, torch_dtype=torch.float16, local_files_only=True)
             except Exception:
                 continue
-    return cls.from_pretrained("Qwen/Qwen2.5-0.5B", torch_dtype=torch.float16)
+    pytest.skip(
+        "Qwen/Qwen2.5-0.5B is not available in the local Hugging Face cache; "
+        "GPU surgery tests do not access the network implicitly."
+    )
 
 
 @pytest.mark.gpu

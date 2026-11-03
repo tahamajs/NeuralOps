@@ -14,7 +14,7 @@ NeuralOps v1.6.0 established a hardened, mathematically complete foundation for 
 - **131 Attention Mechanisms** physically consolidated in `neuralops.layers` across 12 mathematical families.
 - **72 Model Compression Engines** physically consolidated in `neuralops.compression` across 5 algorithmic paradigms.
 - **26 Triton Kernel Modules** (housing 62 unified Triton JIT operators across 4 performance tiers) with guaranteed Level-3 CPU fallbacks.
-- **114 Native CUDA C++ Extensions** spanning 112 packages targeting NVIDIA Ada Lovelace (SM 8.9), Hopper (SM 90), and Blackwell (SM 100).
+- **114 Native CUDA C++ Extensions** spanning 110 canonical modules targeting NVIDIA Ada Lovelace (SM 8.9), Hopper (SM 90), and Blackwell (SM 100). Compatibility/support directories remain separate from the catalog count.
 - **Sub-30ms PEP 562 Lazy Loading Architecture** ensuring zero-overhead module imports.
 - **Certified Fail-Closed Architecture** enforcing the Zero-Fake Artifacts Law (§0.2, §6.1).
 

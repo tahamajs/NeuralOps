@@ -17,7 +17,9 @@ import torch
 
 def run_benchmark(device: str = "cuda", batch_size: int = 8, vocab_size: int = 32000, steps: int = 32) -> dict[str, Any]:
     """Measure real top-k and top-p selection on synthetic logits."""
-    target = torch.device(device if device == "cpu" or torch.cuda.is_available() else "cpu")
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    target = torch.device(device)
     torch.manual_seed(42)
     logits = torch.randn(batch_size, vocab_size, device=target)
     started = time.perf_counter()

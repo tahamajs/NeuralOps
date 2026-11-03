@@ -114,7 +114,9 @@ def run_stress_test(
     if seeds is None:
         seeds = DEFAULT_SEEDS
 
-    device = torch.device(device_str if (torch.cuda.is_available() and "cuda" in device_str) else "cpu")
+    if "cuda" in device_str and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    device = torch.device(device_str)
     if device.type == "cuda":
         torch.cuda.set_device(device.index if device.index is not None else 0)
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"

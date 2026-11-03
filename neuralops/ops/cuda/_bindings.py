@@ -183,6 +183,12 @@ def load_cuda_module(
         return None
 
     if shutil.which("nvcc") is None:
+        for cuda_cand in ["/usr/local/cuda/bin", "/usr/local/cuda-11.3/bin", "/usr/local/cuda-11.8/bin", "/usr/local/cuda-12.1/bin"]:
+            if os.path.exists(os.path.join(cuda_cand, "nvcc")):
+                os.environ["PATH"] = f"{cuda_cand}:{os.environ.get('PATH', '')}"
+                break
+
+    if shutil.which("nvcc") is None:
         logger.warning(f"nvcc executable not found in PATH; skipping CUDA compilation for '{name}'")
         _FAILED_MODULES.add(name)
         return None

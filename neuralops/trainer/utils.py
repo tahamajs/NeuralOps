@@ -22,7 +22,11 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import psutil
+
+try:
+    import psutil
+except ImportError:
+    psutil = None
 import torch
 import torch.nn as nn
 from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
@@ -367,7 +371,7 @@ def benchmark_model(
             with torch.no_grad():
                 _ = model(input_ids=input_ids, attention_mask=attention_mask)
 
-    memory_before = psutil.Process().memory_info().rss / 1024 / 1024
+    memory_before = psutil.Process().memory_info().rss / 1024 / 1024 if psutil is not None else 0.0
     start_time = time.time()
     batch_times: list[float] = []
 
@@ -383,7 +387,7 @@ def benchmark_model(
             batch_times.append(time.time() - b_start)
 
     total_time = time.time() - start_time
-    memory_after = psutil.Process().memory_info().rss / 1024 / 1024
+    memory_after = psutil.Process().memory_info().rss / 1024 / 1024 if psutil is not None else 0.0
     num_samples = (
         len(data_loader.dataset)
         if hasattr(data_loader, "dataset")

@@ -41,7 +41,14 @@ except ImportError:
             "next_power_of_2": lambda n: 1 << (n - 1).bit_length() if n > 0 else 1,
         },
     )
-    tl = None
+    class _MockTL:
+        constexpr = int
+        dtype = type("_MockDtype", (), {})
+        int32 = int
+        float32 = float
+        def __getattr__(self, name):
+            return lambda *a, **kw: None
+    tl = _MockTL()
 
 SUPPORTED_HEAD_DIMS: set[int] = {32, 64, 128, 256}
 MAX_TRITON_SEQ_LEN: int = 16384

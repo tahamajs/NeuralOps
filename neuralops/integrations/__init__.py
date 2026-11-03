@@ -38,6 +38,8 @@ _EXPORTS = {
     "CompressedTensorsExporter": ("compressed_tensors", "CompressedTensorsExporter"),
     "NeuralOpsLinearMethod": ("vllm_plugin", "NeuralOpsLinearMethod"),
     "register_neuralops_linear_method": ("vllm_plugin", "register_neuralops_linear_method"),
+    "query_serving_capabilities": ("capabilities", "query_serving_capabilities"),
+    "BackendCapabilities": ("capabilities", "BackendCapabilities"),
 }
 _MODULES = {
     "compressed_tensors", "distributed_compile", "hf_automodel", "serving",

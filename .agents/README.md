@@ -8,6 +8,8 @@ Repository-local agent configuration and technical skill definitions reside here
 
 The [Skill Index](skills/README.md) serves as the authoritative catalog of engineering workflows across NeuralOps. Skills provide executable step-by-step procedures, technical guidance, CLI workflows, and mathematical foundations for specialized engineering tasks.
 
+For file-by-file scaling ownership and routing, use [`.agents/SCALING_ROUTING_MATRIX.md`](SCALING_ROUTING_MATRIX.md) and [project-wide scaling routing](PROJECT_SCALING_ROUTING.md) together with the [NeuralOps Scaling Contract](skills/neuralops-scaling/SKILL.md). Every selected file must be read and classified before editing.
+
 ### Core Architecture & Contribution Skills
 - **[Design Coverage](skills/neuralops-design-coverage/SKILL.md)**: Floating-point precision budgets (FP16, BF16, FP32, FP8), `input_guard` standards, and verifier contracts.
 - **[Correctness Coverage](skills/neuralops-correctness-coverage/SKILL.md)**: Matrix test guidelines for all 131 attention mechanisms and 72 compressors, autograd gradient checks (`atol=1e-3, eps=1e-5`), causal masking perturbation proofs, and cross-backend parity.
@@ -16,6 +18,7 @@ The [Skill Index](skills/README.md) serves as the authoritative catalog of engin
 - **[PR Stacks](skills/neuralops-pr-stacks/SKILL.md)**: 5-layer atomic stack decomposition, branching strategies, `git rebase --onto` workflows, and GitHub native stacked PRs.
 
 ### Hardware Performance & Specialization Skills
+- **[Scaling Contract](skills/neuralops-scaling/SKILL.md)**: Cross-file scaling matrix for models, batch/sequence workloads, precision, GPUs, PBS resources, serving, downloads, and result documentation.
 - **[NVIDIA Performance](skills/neuralops-nvidia-performance/SKILL.md)**: Nsight Compute (NCU) profiling, warp intrinsics, and shared memory bank conflict resolution.
 - **[Ascend Performance](skills/neuralops-ascend-performance/SKILL.md)**: DaVinci NPU architecture tuning, Unified Buffer (UB) tiling, and CANN compiler optimization.
 - **[Optimization Loop](skills/neuralops-optimization-loop/SKILL.md)**: Automated microbenchmarking and iterative kernel tuning with frozen correctness assertions.

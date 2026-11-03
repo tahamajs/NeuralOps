@@ -29,7 +29,9 @@ def _make_inputs(config: Any, device: str | None = None) -> tuple[tuple[Any, ...
         raise RuntimeError(config.unavailable_reason or "No input contract")
     specs = dict(config.tensor_specs)
     requested = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    specs["device"] = torch.device(requested if requested == "cpu" or torch.cuda.is_available() else "cpu")
+    if requested.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    specs["device"] = torch.device(requested)
     if specs.get("dtype") == "float16" and specs["device"].type == "cpu":
         specs["dtype"] = torch.float32
     else:

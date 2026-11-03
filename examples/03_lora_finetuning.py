@@ -147,7 +147,7 @@ def run_lora_workflow(device: str) -> bool:
             ref_logits = model(**inputs).logits
 
         # Load weights into fresh model
-        fresh_model.load_state_dict(torch.load(adapter_path, weights_only=True), strict=False)
+        fresh_model.load_state_dict(torch.load(adapter_path), strict=False)
         fresh_model.eval()
         with torch.no_grad():
             reloaded_logits = fresh_model(**inputs).logits

@@ -221,7 +221,7 @@ def generate_markdown_dashboard(
         f.write("| **Total VRAM Capacity** | 24,268 MiB (23.7 GB GDDR6X) |\n")
         f.write("| **CUDA Multiprocessors** | 82 SMs (10,496 CUDA Cores, 328 Tensor Cores) |\n")
         f.write("| **Driver & CUDA** | Driver 465.19.01 | CUDA 11.3 |\n")
-        f.write("| **Execution Framework** | PyTorch 1.12.1+cu113 (with NeuralOps 2.0.2 Compat Shims) |\n")
+        f.write("| **Execution Framework** | PyTorch 1.12.1+cu113 (with NeuralOps 2.0.3 Compat Shims) |\n")
         f.write("| **Operating System** | CentOS Linux 6.9 (Kernel 2.6.32-696.el6.x86_64) |\n\n")
 
         f.write("## 📊 Executive Summary\n\n")

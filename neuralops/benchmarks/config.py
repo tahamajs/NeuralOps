@@ -14,6 +14,7 @@ Implements config functionality for NeuralOps.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+import json
 from pathlib import Path
 from typing import Any, Optional
 
@@ -34,8 +35,16 @@ class BenchmarkConfig:
     seed: int = 42
     epochs: int = 3
     batch_size: int = 32
+    batch_sizes: list[int] = field(default_factory=lambda: [32])
     lr: float = 2e-5
     seq_len: int = 128
+    seq_lens: list[int] = field(default_factory=lambda: [128])
+    warmup: int = 3
+    iters: int = 10
+    categories: list[str] = field(default_factory=lambda: ["attention", "compressor", "kernel"])
+    parallel_workers: int = 1
+    enable_backward: bool = True
+    enable_vram_tracking: bool = True
     max_length: int = 128
     precision: str = "float32"
     eval_only: bool = False
@@ -74,11 +83,50 @@ class BenchmarkConfig:
     regenerate_summaries_every: int = 1
     extra: dict[str, Any] = field(default_factory=dict)
 
+    PRECISION_MAP = {
+        "fp32": "float32",
+        "float32": "float32",
+        "fp16": "float16",
+        "float16": "float16",
+        "half": "float16",
+        "bf16": "bfloat16",
+        "bfloat16": "bfloat16",
+    }
+
     def __post_init__(self) -> None:
+        norm_prec = str(self.precision).lower().strip()
+        if norm_prec in self.PRECISION_MAP:
+            self.precision = self.PRECISION_MAP[norm_prec]
+        else:
+            raise ValueError(
+                f"Unsupported precision '{self.precision}'. "
+                f"Supported precisions: {sorted(set(self.PRECISION_MAP.keys()))}"
+            )
         if self.eval_only:
             LOG.warning(
                 "eval_only=True specified: evaluating with a freshly initialized "
                 "classification head without fine-tuning may yield random accuracy."
+            )
+
+    def resolve_torch_dtype(self) -> Any:
+        """Resolve canonical precision string to torch.dtype."""
+        import torch
+
+        mapping = {
+            "float32": torch.float32,
+            "float16": torch.float16,
+            "bfloat16": torch.bfloat16,
+        }
+        return mapping[self.precision]
+
+    def validate_device(self) -> None:
+        """Fail closed if CUDA device is requested but unavailable."""
+        import torch
+
+        if self.device.startswith("cuda") and not torch.cuda.is_available():
+            raise RuntimeError(
+                f"CUDA device '{self.device}' was requested, but CUDA is unavailable on this host. "
+                "Failing closed to prevent invalid latency/throughput artifacts."
             )
 
     def to_dict(self) -> dict[str, Any]:
@@ -88,12 +136,48 @@ class BenchmarkConfig:
         return data
 
     @classmethod
+    def from_file(cls, path: str | Path) -> "BenchmarkConfig":
+        """Load a benchmark configuration from JSON or YAML."""
+        config_path = Path(path)
+        if not config_path.exists():
+            raise FileNotFoundError(f"Benchmark configuration not found: {config_path}")
+        text = config_path.read_text(encoding="utf-8")
+        if config_path.suffix in {".yaml", ".yml"}:
+            try:
+                import yaml  # type: ignore[import-untyped]
+            except ImportError as exc:
+                raise RuntimeError("YAML config requires PyYAML; use JSON or install PyYAML.") from exc
+            data = yaml.safe_load(text)
+        else:
+            data = json.loads(text)
+        if not isinstance(data, dict):
+            raise ValueError(f"Benchmark configuration must contain an object: {config_path}")
+        return cls.from_dict(data)
+
+    def save(self, path: str | Path) -> None:
+        """Persist the complete configuration as JSON."""
+        config_path = Path(path)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
+
+    @classmethod
     def from_dict(cls, data: dict[str, Any]) -> BenchmarkConfig:
         """Create config from dictionary."""
         d = dict(data)
+        if "dtype" in d and "precision" not in d:
+            d["precision"] = d.pop("dtype")
         if "output_dir" in d and isinstance(d["output_dir"], (str, Path)):
             d["output_dir"] = Path(d["output_dir"])
-        return cls(**d)
+        valid_fields = set(cls.__dataclass_fields__)
+        extra = dict(d.get("extra", {}))
+        filtered: dict[str, Any] = {}
+        for k, v in d.items():
+            if k in valid_fields:
+                filtered[k] = v
+            else:
+                extra[k] = v
+        filtered["extra"] = extra
+        return cls(**filtered)
 
 
 @dataclass

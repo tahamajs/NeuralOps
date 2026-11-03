@@ -74,7 +74,7 @@ if TYPE_CHECKING:
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY  # noqa: F401
     from neuralops.kernels import list_cuda_kernels, list_triton_kernels  # noqa: F401
 
-__version__ = "2.0.2"
+__version__ = "2.0.3"
 
 _TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__", "pipeline"})
 try:
@@ -306,7 +306,7 @@ if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
 
 def _patch_torch_compat():
     """Install PyTorch 1.12 backward compatibility polyfills (SDPA, torch.compile, torch.amp)."""
-    if "torch" in sys.modules or _TORCH_AVAILABLE:
+    if "torch" in sys.modules:
         try:
             import contextlib
             import math
@@ -437,7 +437,7 @@ def _patch_torch_compat():
 
 def _patch_pascal_svd_if_needed():
     """Install a lazy SVD compatibility shim without probing CUDA at import time."""
-    if "torch" in sys.modules or _TORCH_AVAILABLE:
+    if "torch" in sys.modules:
         try:
             import torch
 
@@ -511,6 +511,10 @@ _patch_pascal_svd_if_needed()
 
 
 _LAZY_EXPORTS = {
+    "RuntimeConfig": ("neuralops.runtime", "RuntimeConfig"),
+    "init": ("neuralops.runtime", "init"),
+    "use_runtime": ("neuralops.runtime", "use_runtime"),
+    "get_runtime_config": ("neuralops.runtime", "get_runtime_config"),
     "ABTestResult": ("neuralops.evaluation.ab_testing", "ABTestResult"),
     "ABTester": ("neuralops.evaluation.ab_testing", "ABTester"),
     "ATTENTION_REGISTRY": ("neuralops.core.registry", "ATTENTION_REGISTRY"),
@@ -626,6 +630,7 @@ _API_EXPORTS = {
     "load_model": "neuralops.api",
     "transplant_attention": "neuralops.api",
     "transplant": "neuralops.api",
+    "serve": "neuralops.api",
     "export_model": "neuralops.api",
     "export": "neuralops.api",
     "pipeline": "neuralops.api",
@@ -648,7 +653,11 @@ _API_EXPORTS = {
     "list_triton_kernels": "neuralops.kernels",
     "list_cuda_kernels": "neuralops.kernels",
     "get_attention_class": "neuralops.api",
+    "get_attention_module": "neuralops.api",
     "get_compressor_class": "neuralops.api",
+    "quick_benchmark": "neuralops.api",
+    "create_attention": "neuralops.api",
+    "create_compressor": "neuralops.api",
     "list_families": "neuralops.api",
     "train": "neuralops.api",
     "distill": "neuralops.api",
@@ -853,6 +862,7 @@ __all__ = [
     "replace_attention",
     "transplant_attention",
     "transplant",
+    "serve",
     "compress",
     "create_compressor",
     "get_attention_module",

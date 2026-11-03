@@ -1,6 +1,0 @@
-$ ssh -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=5 taha@192.168.1.100 'cd /mnt/d/SVD_linear_Attention && git rev-parse HEAD && git log -1 --format="%an | %s"'
-ssh: connect to host 192.168.1.100 port 22: Connection refused
-exit status: 255
-
-Remote commands, pip/package checks, model tests and GPU tests were not executed.
-

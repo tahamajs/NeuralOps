@@ -7,7 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.2] - 2026-11-02
+## [2.0.3] - 2026-11-03
+
+### Changed
+- Synchronized the package, project metadata, citation metadata, README, and integration capability version to `2.0.3`.
+- Added the repository-wide scaling and SSH/HPC operational contracts for reproducible GPU execution.
+
+### Verification
+- Static validation completed with `ruff check .` and `git diff --check`.
+
+## [2.0.2] - 2026-11-03
+
+### Added
+- **Full GPU Validation on NVIDIA RTX 3090** (Sharif University HPC Cluster `GPU-3090-1`).
+- **Surgery Validation on Qwen2.5-7B-Instruct**: Layer 14 surgically transplanted from full attention to `chunk_gla` with 10-step layerwise micro-healing converging cleanly within 24GB VRAM.
+- **Causal Mask Strictness (131 Attentions)**: Exhaustive GPU verification of all 131 registered attention mechanisms (130 passed, 1 skipped for encoder routing) confirming zero future-token leakage with `max_diff < 1e-6`.
+- **Compression Engines Suite (72 Compressors)**: 72/72 compression engines certified for parameter reduction, state factorization, and weight reconstruction.
+- **Real Foundation Model SVD**: DistilBERT (`distilbert-base-uncased`) evaluated on RTX 3090 with 49.95% linear parameter reduction (42.5M -> 21.3M parameters) in 31.08s.
+- **Native CUDA C++ Parity**: 5/5 representative CUDA kernels (LayerNorm, RMSNorm, Fast GELU, SwiGLU, Ternary GEMM) verified against PyTorch reference with `max_diff < 1e-4`.
+- **Triton JIT Kernels**: 26 canonical modules (62 unified operators) microbenchmarked on SM 8.6 with subquadratic speedups up to 184x.
+- **Serving Integration Contracts**: Validated `VLLMAdapter` with strict fail-closed boundary raising `IntegrationNotImplementedError` when optional dependencies are absent (zero fake stubs).
+- **HFCacheBridge & DynamicCache Hardening**: Native compatibility with `transformers.DynamicCache`, preserving 4D linear recurrent state matrices `(B, H, Dk, Dv)` during sequence cropping.
 
 ### Fixed
 - 5 crashing CUDA kernels now export PYBIND11_MODULE (WP1):

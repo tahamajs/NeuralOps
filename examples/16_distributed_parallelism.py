@@ -170,11 +170,14 @@ def simulate_layer_parallel_transformer(
         # Virtual Rank 0: Embeddings + Layer 0
         distil = model.transformer.distilbert
         emb = distil.embeddings(input_ids)
-        h0 = distil.transformer.layer[0](emb)
+        attn_mask = torch.ones_like(input_ids)
+        h0_out = distil.transformer.layer[0](emb, attn_mask=attn_mask)
+        h0 = h0_out[0] if isinstance(h0_out, tuple) else h0_out
 
         # Activations transferred across virtual network boundary to Rank 1
         # Virtual Rank 1: Layer 1 + Classification Head
-        h1 = distil.transformer.layer[1](h0)
+        h1_out = distil.transformer.layer[1](h0, attn_mask=attn_mask)
+        h1 = h1_out[0] if isinstance(h1_out, tuple) else h1_out
         pooled = h1[:, 0]
         pooled = model.transformer.pre_classifier(pooled)
         pooled = nn.ReLU()(pooled)

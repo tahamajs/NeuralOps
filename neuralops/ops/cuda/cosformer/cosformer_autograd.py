@@ -119,7 +119,9 @@ def cosformer_linear_attention(
     if D > 128:
         cuda_fn = None
 
-    if getattr(_fallback, "_FORCED_BACKEND", "auto") != "cuda":
+    backend_var = getattr(_fallback, "_FORCED_BACKEND", None)
+    backend_val = backend_var.get() if backend_var is not None else "auto"
+    if backend_val not in ("cuda", "auto"):
         cuda_fn = None
 
     return dispatch(

@@ -434,7 +434,22 @@ def _generate_text(
 VLLMAdapter = VLLMAttentionAdapter
 TGIAdapter = TGIAttentionAdapter
 
+
+class ServingEngine:
+    """Unified Serving Engine interface for vLLM, SGLang, and TGI runtimes."""
+
+    vllm = VLLMAttentionAdapter
+    tgi = TGIAttentionAdapter
+    sglang = SGLangRadixLinearCacheAdapter
+
+    @classmethod
+    def is_available(cls) -> bool:
+        """Check if any supported serving backend is available."""
+        return HAS_VLLM or HAS_TGI
+
+
 __all__ = [
+    "ServingEngine",
     "VLLMAttentionAdapter",
     "TGIAttentionAdapter",
     "VLLMAdapter",

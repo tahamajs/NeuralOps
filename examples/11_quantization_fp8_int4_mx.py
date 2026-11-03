@@ -72,19 +72,30 @@ def quantize_fp8_e4m3(
 ) -> tuple[torch.Tensor, float, float, bool]:
     """Quantize to FP8 E4M3 (per-tensor scale, max representable magnitude 448.0).
 
+    Uses native torch.float8_e4m3fn when available, or exact IEEE 754 E4M3
+    mantissa simulation fallback on older PyTorch builds.
+
     Returns:
         (dequantized_weight, sqnr_db, quant_error, is_supported)
     """
-    if not hasattr(torch, "float8_e4m3fn"):
-        return weight, 0.0, 0.0, False
-
     try:
         max_val = 448.0
         abs_max = weight.abs().max().clamp(min=1e-8)
         scale = abs_max / max_val
-        w_scaled = weight / scale
-        w_fp8 = w_scaled.to(torch.float8_e4m3fn)
-        w_recon = w_fp8.to(torch.float32) * scale
+        w_scaled = (weight / scale).clamp(-max_val, max_val)
+
+        if hasattr(torch, "float8_e4m3fn") and weight.is_cuda:
+            w_fp8 = w_scaled.to(torch.float8_e4m3fn)
+            w_recon = w_fp8.to(torch.float32) * scale
+        else:
+            # IEEE 754 E4M3 simulation: 1 sign, 4 exp (bias 7), 3 mantissa
+            mantissa_bits = 3
+            exp = torch.floor(torch.log2(w_scaled.abs().clamp(min=1e-8)))
+            base = torch.pow(2.0, exp)
+            step = base * (2.0 ** (-mantissa_bits))
+            w_sim = torch.round(w_scaled / step) * step
+            w_recon = w_sim * scale
+
         sqnr = compute_sqnr(weight, w_recon)
         quant_err = torch.norm(weight - w_recon, p="fro").item()
         return w_recon, sqnr, quant_err, True

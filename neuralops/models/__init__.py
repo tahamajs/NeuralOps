@@ -38,9 +38,21 @@ from neuralops.models.cuda_graph import CUDAGraphDecodeRunner
 from neuralops.compression.svd.direct_svd import merge_for_inference
 from neuralops.models.paged_state import PagedStateTable, RadixPrefixStateCache
 
+from neuralops.models.protocols import ModelHandle, SurgicalModel
+from neuralops.models.surgical_io import (
+    extract_surgical_manifest,
+    load_surgical_checkpoint,
+    save_surgical_checkpoint,
+)
+
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "ModelHandle",
+    "SurgicalModel",
+    "extract_surgical_manifest",
+    "load_surgical_checkpoint",
+    "save_surgical_checkpoint",
     "PagedStateTable",
     "RadixPrefixStateCache",
     "UnifiedHybridCache",

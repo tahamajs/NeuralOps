@@ -40,7 +40,9 @@ def toy_dataloader(
     device: str = "cpu",
 ) -> Iterator[dict[str, torch.Tensor]]:
     """Yield a sequence of offline synthetic token batches for training/evaluation loops."""
-    generator = torch.Generator().manual_seed(seed)
+    dev = torch.device(device)
+    gen_device = "cuda" if dev.type == "cuda" else "cpu"
+    generator = torch.Generator(device=gen_device).manual_seed(seed)
     for _ in range(num_batches):
         input_ids = torch.randint(0, vocab_size, (batch_size, seq_len), generator=generator, device=device)
         attention_mask = torch.ones_like(input_ids, device=device)

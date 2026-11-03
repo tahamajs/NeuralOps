@@ -10,13 +10,13 @@
 
 # NeuralOps Examples Suite
 
-The NeuralOps examples suite provides 20 self-contained, reproducible, offline-friendly demonstration scripts covering all subsystems of the framework: model surgery, low-rank compression, quantization, distillation, distributed training, high-throughput serving, kernel dispatch, and evaluation.
+The NeuralOps examples suite provides 22 self-contained, reproducible, offline-friendly demonstration scripts covering all subsystems of the framework: model surgery, low-rank compression, quantization, distillation, distributed training, high-throughput serving, kernel dispatch, and evaluation.
 
-All 20 examples are designed to execute reliably on CPU (macOS/Linux) without external network calls or GPU requirements, while dynamically exploiting Apple Silicon MPS or NVIDIA CUDA accelerators when available.
+Examples 01–20 are designed to execute reliably on CPU (macOS/Linux) without external network calls or GPU requirements. Examples 21–22 add explicit full-model surgery and integrity-report workflows; when `--device cuda` is requested, they fail closed if CUDA is unavailable.
 
 ---
 
-## Suite Summary Table (20 Examples)
+## Suite Summary Table (22 Examples)
 
 | Script | Subsystem | Demonstrates | Target Device | Execution Command |
 |---|---|---|---|---|
@@ -40,6 +40,8 @@ All 20 examples are designed to execute reliably on CPU (macOS/Linux) without ex
 | [`18_three_level_kernel_dispatch.py`](18_three_level_kernel_dispatch.py) | Kernel Dispatch Architecture | 3-level fallback hierarchy: CUDA C++ -> Triton JIT -> Vectorized PyTorch | CPU / MPS / CUDA | `python examples/18_three_level_kernel_dispatch.py` |
 | [`19_spectral_and_hessian_diagnostics.py`](19_spectral_and_hessian_diagnostics.py) | Landscape Diagnostics | Lanczos Hessian eigenspectrum estimation, top eigenvalue, and stable rank | CPU / MPS / CUDA | `python examples/19_spectral_and_hessian_diagnostics.py` |
 | [`20_long_context_niah_eval.py`](20_long_context_niah_eval.py) | Long-Context Evaluation | Needle-in-a-Haystack (NIAH) retrieval evaluation across context lengths | CPU / MPS / CUDA | `python examples/20_long_context_niah_eval.py` |
+| [`21_full_model_surgery.py`](21_full_model_surgery.py) | Full-Model Surgery | Replace attention in every model layer, then verify finite forward output and finite backward gradients | CPU / MPS / CUDA | `python examples/21_full_model_surgery.py --device cuda` |
+| [`22_surgery_baseline_report.py`](22_surgery_baseline_report.py) | Surgery Integrity Report | Compare pre/post-surgery outputs and write a machine-readable JSON report | CUDA required by default | `python examples/22_surgery_baseline_report.py` |
 
 ---
 

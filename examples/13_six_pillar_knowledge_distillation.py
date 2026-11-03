@@ -133,6 +133,9 @@ def main() -> int:
 
     student = TinyClassifier().to(device)
     replace_attention(student, attention="cosformer")
+    with torch.no_grad():
+        for p in student.parameters():
+            p.add_(0.02 * torch.randn_like(p))
     student.train()
 
     # 2. Hyperparameters & Pillar Weights (Lambdas)
@@ -150,38 +153,39 @@ def main() -> int:
         kv(f"Weight {name}", f"{weight:.2f}")
 
     optimizer = torch.optim.AdamW(student.parameters(), lr=1e-3, weight_decay=1e-4)
-    # WSD Scheduler: 1 warmup, 2 stable, 2 decay steps over 5 total iterations
+    # WSD Scheduler: 2 warmup, 8 stable, 10 decay steps over 20 iterations.
     scheduler = WSDScheduler(
         optimizer,
-        warmup_steps=1,
-        stable_steps=2,
-        decay_steps=2,
+        warmup_steps=2,
+        stable_steps=8,
+        decay_steps=10,
         min_lr_ratio=0.1,
     )
 
     batch_inputs = tiny_inputs()
-    batch_inputs = {k: v.to(device) for k, v in batch_inputs.items()}
+    batch_inputs["output_hidden_states"] = True
+    batch_inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch_inputs.items()}
 
     # Compute fixed teacher references
     with torch.no_grad():
         t_out = teacher(**batch_inputs)
         t_logits = t_out.logits if hasattr(t_out, "logits") else t_out
         t_hidden = t_out.hidden_states[-1] if hasattr(t_out, "hidden_states") and t_out.hidden_states else t_logits
-        t_attn = torch.randn(2, 4, 16, 16, device=device)
+        t_attn = torch.matmul(t_hidden, t_hidden.transpose(-1, -2))
 
-    # 3. Execute 5 Distillation Steps
-    section("Executing 5 Multi-Pillar Distillation Steps")
+    # 3. Execute 20 Distillation Steps
+    section("Executing 20 Multi-Pillar Distillation Steps")
     step_records: list[dict[str, str | float]] = []
     total_losses: list[float] = []
 
-    for step in range(1, 6):
+    for step in range(1, 21):
         current_lr = scheduler.get_last_lr()[0] if hasattr(scheduler, "get_last_lr") else 1e-3
         optimizer.zero_grad()
 
         s_out = student(**batch_inputs)
         s_logits = s_out.logits if hasattr(s_out, "logits") else s_out
         s_hidden = s_out.hidden_states[-1] if hasattr(s_out, "hidden_states") and s_out.hidden_states else s_logits
-        s_attn = torch.randn(2, 4, 16, 16, device=device)
+        s_attn = torch.matmul(s_hidden, s_hidden.transpose(-1, -2))
 
         # Compute each of the 6 pillars
         l1 = loss_pillar1_logit_kl(s_logits, t_logits)
@@ -201,6 +205,7 @@ def main() -> int:
         )
 
         total_loss.backward()
+        torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
         optimizer.step()
         scheduler.step()
 
@@ -224,21 +229,22 @@ def main() -> int:
     # Invariant checks
     loss_decreased = bool(total_losses[-1] < total_losses[0])
     pass_fail(
-        "Total Loss Convergence Check (L_step5 < L_step1)",
+        "Total Loss Convergence Check (L_step20 < L_step1)",
         loss_decreased,
         f"{total_losses[0]:.4f} -> {total_losses[-1]:.4f}",
     )
-    pass_fail(
-        "WSD Schedule Decay Verification",
-        bool(float(step_records[-1]["LR"]) < float(step_records[1]["LR"])),
-    )
+    schedule_decreased = bool(float(step_records[-1]["LR"]) < float(step_records[1]["LR"]))
+    pass_fail("WSD Schedule Decay Verification", schedule_decreased)
 
+    all_checks_passed = loss_decreased and schedule_decreased
     pass_fail(
         "Overall Example 13 Status",
-        True,
-        "Full 6-pillar distillation engine executed with verified loss reduction",
+        all_checks_passed,
+        "Full 6-pillar distillation engine executed with verified loss reduction"
+        if all_checks_passed
+        else "Distillation convergence or WSD schedule verification failed",
     )
-    return 0
+    return 0 if all_checks_passed else 1
 
 
 if __name__ == "__main__":

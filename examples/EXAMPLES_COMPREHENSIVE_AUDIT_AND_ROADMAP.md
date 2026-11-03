@@ -21,12 +21,12 @@ As of Version 2.0.1, the NeuralOps core codebase houses:
 - **Advanced Optimizers & Geometric Analysis**: Muon matrix-derivative optimizer, Riemannian Stiefel manifold SGD/Adam, Hessian eigenspectrum diagnostics, and 32k long-context evaluation.
 
 ### The Current Gap in `examples/`
-While the unit test suite (`tests/`, 25 subsystems) and research notebooks (`notebooks/`, 26 notebooks) explore empirical phenomena, the public `examples/` directory currently contains only **8 minimal scripts** (`01_` to `08_`) and a basic recipe runner (`run_recipe.py`). These 8 scripts cover less than **15% of NeuralOps' public capabilities**, relying on tiny mock models and omitting critical production subsystems such as multi-stage surgery chaining, 6-pillar distillation, advanced non-Euclidean optimizers, distributed parallelism, serving backends, and spectral diagnostics.
+The public `examples/` directory now contains **22 scripts** plus shared infrastructure. Examples 21–22 specifically close the full-model surgery gap by providing all-layer transplantation, strict forward/backward checks, and a machine-readable pre/post surgery report. The broader subsystem gaps below remain tracked as roadmap items rather than being presented as completed coverage.
 
 This document delivers:
 1. An **Exhaustive Subsystem-by-Subsystem Audit** comparing all NeuralOps capabilities against both `examples/` and `notebooks/`.
-2. A **Granular Audit of Existing Examples (`01_` to `08_`)**, identifying specific deficiencies and required upgrades.
-3. A **Blueprint for 12 New Example Scripts (`09_` to `20_`)** that brings the `examples/` suite to **100% full feature completeness**.
+2. A **Granular Audit of Existing Examples (`01_` to `22_`)**, identifying specific deficiencies and required upgrades.
+3. A **Blueprint for the example scripts (`09_` to `22_`)** that expands public coverage while keeping unverified subsystems explicitly marked as roadmap work.
 4. An **Audit and Actionable Enhancement Plan for all 26 Notebooks** in `notebooks/`.
 5. A **Structured Implementation Roadmap**.
 

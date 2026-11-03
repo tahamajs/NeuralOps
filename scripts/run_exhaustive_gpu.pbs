@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
+#PBS -N neuralops_exhaustive
+#PBS -q N3090
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=04:00:00
+#PBS -o /home/tahamajlesi.ut/neuralops_exhaustive.out
+#PBS -e /home/tahamajlesi.ut/neuralops_exhaustive.err
+
+set -euo pipefail
+cd /home/tahamajlesi.ut/NeuralOps
+export NEURALOPS_ENV_PREFIX="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113"
+export NEURALOPS_CUDA_HOME="/usr/local/cuda-11.3"
+export PATH="/share/apps/gcc/gcc-8.2.0/bin:${PATH}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
+source scripts/lib/neuralops_env.sh
+if ! command -v nvidia-smi >/dev/null 2>&1; then
+    echo "NVIDIA runtime is unavailable on the allocated node" >&2
+    exit 2
+fi
+if ! nvidia-smi -L >/dev/null 2>&1; then
+    echo "No NVIDIA GPU is visible on the allocated node" >&2
+    exit 2
+fi
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
+"${PYTHON_BIN}" -m pytest tests/gpu_exhaustive -v --tb=short

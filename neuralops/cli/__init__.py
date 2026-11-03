@@ -27,6 +27,7 @@ __all__ = [
     "test_cmd",
     "train_cmd",
     "terminal_ui",
+    "core",
 ]
 
 

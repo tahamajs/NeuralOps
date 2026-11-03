@@ -259,6 +259,7 @@ def save_parquet_index(result: BenchmarkResult, parquet_path: Path | str) -> Pat
 def save_all_formats(
     result: BenchmarkResult,
     output_dir: Path | str = "results",
+    require_parquet: bool = False,
 ) -> Dict[str, Path]:
     """
     Save the same benchmark run across all 5 canonical formats:
@@ -266,7 +267,7 @@ def save_all_formats(
     2. JSONL (append-only index)
     3. CSV (rolling spreadsheet index)
     4. Markdown (human-readable summary)
-    5. Parquet (columnar storage for queries)
+    5. Parquet (columnar storage for queries, optional unless require_parquet=True)
     """
     out_dir = Path(output_dir)
     json_path = compute_result_path(result, base_dir=out_dir)
@@ -281,21 +282,28 @@ def save_all_formats(
     csv_path = out_dir / "results.csv"
     save_csv_index(result, csv_path)
 
+    parquet_saved = False
     parquet_path = out_dir / "results.parquet"
     try:
         save_parquet_index(result, parquet_path)
+        parquet_saved = parquet_path.exists()
     except Exception as e:
-        LOG.warning("Failed to update parquet index: %s", e)
+        if require_parquet:
+            raise RuntimeError(f"Parquet export failed: {e}") from e
+        LOG.warning("Optional Parquet index export failed (%s); omitting from saved artifacts.", e)
 
     result.artifacts.json_file = str(json_path.relative_to(out_dir) if json_path.is_relative_to(out_dir) else json_path)
 
-    return {
+    saved_artifacts: Dict[str, Path] = {
         "json": json_path,
         "markdown": md_path,
         "jsonl": jsonl_path,
         "csv": csv_path,
-        "parquet": parquet_path,
     }
+    if parquet_saved:
+        saved_artifacts["parquet"] = parquet_path
+
+    return saved_artifacts
 
 
 __all__ = [

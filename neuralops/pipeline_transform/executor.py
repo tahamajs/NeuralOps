@@ -23,6 +23,7 @@ from neuralops.operations.registry import get_operation
 from neuralops.pipeline_transform.plan import ExecutionPlan
 from neuralops.pipeline_transform.result import PipelineError, PipelineResult, StageRecord
 from neuralops.pipeline_transform.snapshot import capture, restore
+from neuralops.runtime.context import get_event_sink
 from neuralops.validation.runner import run_validation_gates
 
 logger = logging.getLogger("NeuralOps.PipelineTransform.Executor")
@@ -75,9 +76,17 @@ def execute_plan(
 
     stage_records: List[StageRecord] = []
     completed_stages: Set[str] = set()
+    event_sink = get_event_sink()
+    event_sink.emit("pipeline.start", plan_id=getattr(plan, "name", "plan"), total_stages=len(plan.stages))
 
     for stage_idx, stage in enumerate(plan.stages):
         logger.info("Starting stage %d: '%s' (%s)", stage_idx + 1, stage.id, stage.operation_type)
+        event_sink.emit(
+            "stage.start",
+            stage_idx=stage_idx,
+            stage_id=stage.id,
+            operation_type=stage.operation_type,
+        )
 
         # 1. Verify dependencies
         for dep in stage.depends_on:
@@ -180,9 +189,23 @@ def execute_plan(
         )
         stage_records.append(record)
         completed_stages.add(stage.id)
+        event_sink.emit(
+            "stage.success",
+            stage_idx=stage_idx,
+            stage_id=stage.id,
+            duration=duration,
+            memory_bytes=mem_after,
+        )
         logger.info("Stage '%s' successfully committed (%.3fs)", stage.id, duration)
 
     total_time = time.perf_counter() - t_start
+    event_sink.emit(
+        "pipeline.success",
+        total_time=total_time,
+        total_stages=len(stage_records),
+    )
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     return PipelineResult(
         final_model=model,
         stage_records=stage_records,

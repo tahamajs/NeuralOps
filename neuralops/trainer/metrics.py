@@ -14,7 +14,23 @@ Computes statistical evaluation metrics, correlation coefficients, accuracy, and
 from typing import Any
 
 import numpy as np
-from scipy.stats import pearsonr, spearmanr
+
+try:
+    from scipy.stats import pearsonr, spearmanr
+except ImportError:
+    def pearsonr(x: Any, y: Any) -> tuple[float, float]:
+        x_arr, y_arr = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
+        mx, my = float(np.mean(x_arr)), float(np.mean(y_arr))
+        vx, vy = x_arr - mx, y_arr - my
+        denom = float(np.sqrt(np.sum(vx**2) * np.sum(vy**2)))
+        r = float(np.sum(vx * vy) / max(denom, 1e-12))
+        return (r, 0.0)
+
+    def spearmanr(x: Any, y: Any) -> tuple[float, float]:
+        x_arr, y_arr = np.asarray(x), np.asarray(y)
+        rx = np.argsort(np.argsort(x_arr)).astype(float)
+        ry = np.argsort(np.argsort(y_arr)).astype(float)
+        return pearsonr(rx, ry)
 
 # Pure-numpy replacements for sklearn.metrics — avoids OpenMP/TLS conflicts on
 # CentOS 6 (kernel 2.6.32) when torch and sklearn are loaded in the same process.

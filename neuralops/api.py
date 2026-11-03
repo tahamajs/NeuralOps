@@ -272,6 +272,43 @@ def transplant_attention(
 transplant = transplant_attention
 
 
+def serve(
+    model: Union[str, nn.Module],
+    port: int = 8000,
+    host: str = "0.0.0.0",
+    backend: str = "auto",
+    kv_cache_budget_gb: float = 4.0,
+    **kwargs: Any,
+) -> Any:
+    """Launches an OpenAI-compatible HTTP serving endpoint for the model.
+
+    Parameters:
+        model: PyTorch model instance or Hugging Face model identifier string.
+        port: HTTP server port (default: 8000).
+        host: Host binding address (default: '0.0.0.0').
+        backend: Serving engine ('vllm', 'sglang', or 'neuralops_native').
+        kv_cache_budget_gb: Maximum VRAM allocation for paged KV-cache.
+    """
+    if isinstance(model, str):
+        from transformers import AutoModelForCausalLM
+        resolved_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = AutoModelForCausalLM.from_pretrained(
+            model,
+            torch_dtype=torch.float16 if resolved_device.type == "cuda" else torch.float32,
+        ).to(resolved_device)
+
+    from neuralops.integrations.serving import create_openai_serving_app
+    app = create_openai_serving_app(
+        model,
+        backend=backend,
+        kv_cache_budget_gb=kv_cache_budget_gb,
+        **kwargs,
+    )
+    import uvicorn
+    return uvicorn.run(app, host=host, port=port)
+
+
+
 
 def collect_surgery_distillation_loss(model: nn.Module) -> torch.Tensor:
     """Collect shadow twin distillation loss across all transplanted attention layers."""
@@ -1493,7 +1530,18 @@ def quick_benchmark(
         dev = torch.device(dev)
     model = model.to(dev).eval()
 
-    sample = torch.randint(0, 1000, (2, 64), device=dev)
+    vocab_size = getattr(getattr(model, "config", None), "vocab_size", None)
+    if vocab_size is None and hasattr(model, "vocab_size"):
+        vocab_size = model.vocab_size
+    if vocab_size is None:
+        for m in model.modules():
+            if isinstance(m, nn.Embedding):
+                vocab_size = m.num_embeddings
+                break
+    if vocab_size is None or vocab_size <= 0:
+        vocab_size = 1000
+
+    sample = torch.randint(0, vocab_size, (2, 64), device=dev)
     with torch.no_grad():
         for _ in range(2):
             try:
@@ -1532,6 +1580,7 @@ __all__ = [
     "replace_attention",
     "transplant_attention",
     "transplant",
+    "serve",
     "compress",
     "get_attention_module",
     "quick_benchmark",

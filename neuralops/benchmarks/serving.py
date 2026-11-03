@@ -36,7 +36,9 @@ class PagedKVCache:
 
 def run_benchmark(device: str = "cuda", prompt_tokens: int = 128, decode_tokens: int = 32) -> dict[str, Any]:
     """Measure prompt projection latency and cached decode-step latency."""
-    target = torch.device(device if device == "cpu" or torch.cuda.is_available() else "cpu")
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    target = torch.device(device)
     torch.manual_seed(42)
     hidden, heads, head_dim = 512, 8, 64
     projection = torch.nn.Linear(hidden, hidden, device=target)

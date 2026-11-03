@@ -53,7 +53,9 @@ class PaperParetoBenchmarkSuite:
     ) -> None:
         self.d_model = d_model
         self.num_heads = num_heads
-        self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device or torch.device("cuda")
+        if self.device.type == "cuda" and not torch.cuda.is_available():
+            raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
         self.dtype = dtype
         self.results: List[ParetoBenchmarkResult] = []
 

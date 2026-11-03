@@ -37,7 +37,7 @@ def main() -> int:
 NeuralOps v1.6.0 marks a major architectural release focusing on CPU portability, clean tier separation, PEP 562 lazy loading, and robust verification.
 
 ### Highlights
-- **Modern 3-Tier Architecture**: Physical separation of core subsystems into `neuralops.layers` (131 attention mechanisms), `neuralops.compression` (72 model compression engines), and `neuralops.ops` (112 CUDA C++ packages housing 114 native kernels, and 26 Triton kernel modules housing 62 unified operators). Full backward-compatibility shims are preserved at legacy paths.
+- **Modern 3-Tier Architecture**: Physical separation of core subsystems into `neuralops.layers` (131 attention mechanisms), `neuralops.compression` (72 model compression engines), and `neuralops.ops` (110 canonical CUDA modules housing 114 native kernels, and 26 Triton kernel modules housing 62 unified operators). Compatibility/support directories are preserved at legacy paths.
 - **PEP 562 Lazy Loading**: Bare import `import neuralops` executes in `<30ms` using standard library only, completely decoupling import-time execution from PyTorch, CUDA, or Triton runtimes.
 - **Duplicate Primitive Consolidation**: Consolidated multiple legacy variants into single canonical classes (`LoRALinear`, `SVDLinear`, `FactorizedLinear`, `NeuralOpsConfig`, `compute_flops_estimate`). Deleted redundant dead packages (`neuralops/monitor`, legacy `neuralops/attention`) and unified training under `neuralops.trainer`.
 - **Decoupled Telemetry & Benchmarking**: Heavy analysis and plotting tools (`paper_export`, `results_ledger`, `roofline`, `inspector`) relocated out of core to `neuralops.analysis` and `neuralops.benchmarks`, decoupling the core engine from `matplotlib` and `pandas`.
