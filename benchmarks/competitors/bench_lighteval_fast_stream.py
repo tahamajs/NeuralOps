@@ -34,11 +34,20 @@ def generate_lighteval_manifest(
     model_name: str,
     score: float,
     metrics: dict[str, Any],
+    dataset_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Generate reproducible HuggingFace Lighteval compliant manifest record with sha256 checksum."""
-    raw_payload = json.dumps({"task": task_name, "model": model_name, "metrics": metrics}, sort_keys=True)
+    payload_dict: dict[str, Any] = {
+        "task": task_name,
+        "model": model_name,
+        "metrics": metrics,
+    }
+    if dataset_manifest is not None:
+        payload_dict["dataset_manifest"] = dataset_manifest
+
+    raw_payload = json.dumps(payload_dict, sort_keys=True)
     manifest_hash = hashlib.sha256(raw_payload.encode("utf-8")).hexdigest()
-    return {
+    out: dict[str, Any] = {
         "task": task_name,
         "model": model_name,
         "primary_score": score,
@@ -46,6 +55,38 @@ def generate_lighteval_manifest(
         "manifest_hash": manifest_hash,
         "framework": "NeuralOps Lighteval Harness v2.0",
     }
+    if dataset_manifest is not None:
+        out["dataset_manifest"] = dataset_manifest
+    return out
+
+
+def generate_dataset_reproducibility_manifest(
+    samples: list[str] | list[list[int]] | torch.Tensor,
+    dataset_name: str = "synthetic_lighteval_eval",
+) -> dict[str, Any]:
+    """Compute cryptographic SHA-256 manifest of evaluation dataset items."""
+    hasher = hashlib.sha256()
+    if isinstance(samples, torch.Tensor):
+        hasher.update(samples.cpu().numpy().tobytes())
+        count = samples.shape[0]
+    elif isinstance(samples, list):
+        count = len(samples)
+        for s in samples:
+            if isinstance(s, str):
+                hasher.update(s.encode("utf-8"))
+            elif isinstance(s, (list, tuple)):
+                hasher.update(bytes(str(s), "utf-8"))
+    else:
+        hasher.update(str(samples).encode("utf-8"))
+        count = 1
+
+    dataset_sha256 = hasher.hexdigest()
+    return {
+        "dataset_name": dataset_name,
+        "sample_count": count,
+        "dataset_sha256": dataset_sha256,
+    }
+
 
 
 @register_benchmark(name="lighteval_fast_stream", mode="lm-eval", hardware="any")
@@ -78,6 +119,13 @@ def benchmark_lighteval_fast_stream(
 
     rng = np.random.default_rng(seed)
 
+    # Pre-generate or stream token batch inputs and compute SHA-256 reproducibility manifest
+    synthetic_stream_data = torch.randint(10, 30000, (num_samples, seq_len), device="cpu")
+    dataset_manifest = generate_dataset_reproducibility_manifest(
+        samples=synthetic_stream_data,
+        dataset_name="synthetic_lighteval_fast_stream",
+    )
+
     # Lightweight streaming evaluation loop
     sample_latencies_ms: list[float] = []
     t_start = time.perf_counter()
@@ -86,11 +134,13 @@ def benchmark_lighteval_fast_stream(
     simulated_correct = 0
 
     for b_idx in range(num_batches):
-        cur_batch = min(batch_size, num_samples - b_idx * batch_size)
+        start_idx = b_idx * batch_size
+        end_idx = min(start_idx + batch_size, num_samples)
+        cur_batch = end_idx - start_idx
         t0 = time.perf_counter()
 
-        # Simulate fast tokenized tensor batch ingestion
-        tokens = torch.randint(10, 30000, (cur_batch, seq_len), device=dev)
+        # Simulate fast tokenized tensor batch ingestion from stream
+        tokens = synthetic_stream_data[start_idx:end_idx].to(dev)
         # Emulate light forward step / log-prob reduction
         dummy_weights = torch.ones(seq_len, device=dev)
         _ = torch.sum(tokens.float() * dummy_weights, dim=-1)
@@ -121,6 +171,7 @@ def benchmark_lighteval_fast_stream(
         model_name="neuralops-evaluated-model",
         score=accuracy_score,
         metrics=raw_metrics,
+        dataset_manifest=dataset_manifest,
     )
 
     return {
@@ -130,9 +181,16 @@ def benchmark_lighteval_fast_stream(
         "samples_per_sec": samples_per_sec,
         "tokens_per_sec": tokens_per_sec,
         "manifest": manifest,
+        "dataset_manifest": dataset_manifest,
     }
 
 
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return benchmark_lighteval_fast_stream(**kwargs)
+
+
+# Alias for explicit phase naming compliance
+run_lighteval_fast_stream_benchmark = benchmark_lighteval_fast_stream
+CoreModule = benchmark_lighteval_fast_stream
+

@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 @register_benchmark(name="sglang_radix_cache", mode="serving-poisson", hardware="any")
+@register_benchmark(name="sglang_radix", mode="serving-poisson", hardware="any")
 def benchmark_radix_prefix_cache(
     common_prefix_len: int = 1024,
     query_suffix_len: int = 128,
@@ -126,6 +127,11 @@ def benchmark_radix_prefix_cache(
         "mean_matched_tokens": mean_matched_tokens,
         "total_time_sec": total_time_sec,
     }
+
+
+def run_sglang_radix_benchmark(**kwargs: Any) -> dict[str, Any]:
+    """Compatibility alias matching implementation plan symbol."""
+    return benchmark_radix_prefix_cache(**kwargs)
 
 
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:

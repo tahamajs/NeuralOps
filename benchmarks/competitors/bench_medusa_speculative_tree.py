@@ -62,6 +62,7 @@ def evaluate_medusa_tree_acceptance(
 
 
 @register_benchmark(name="medusa_speculative_tree", mode="serving-poisson", hardware="any")
+@register_benchmark(name="medusa_speculative", mode="serving-poisson", hardware="any")
 def benchmark_medusa_speculative_tree(
     num_heads: int = 4,
     tree_depth: int = 5,
@@ -145,3 +146,9 @@ def benchmark_medusa_speculative_tree(
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return benchmark_medusa_speculative_tree(**kwargs)
+
+
+# Canonical Aliases for Multi-Agent Implementation Plan contract compliance
+run_medusa_speculative_benchmark = benchmark_medusa_speculative_tree
+CoreModule = benchmark_medusa_speculative_tree
+

@@ -30,6 +30,7 @@ def generate_ruler_multi_needle_prompt(
     context_length: int = 4096,
     num_needles: int = 4,
     haystack_filler: str = "The city of Alexandria houses ancient archives and forgotten manuscripts. ",
+    depth_percentiles: list[float] | None = None,
 ) -> tuple[str, list[dict[str, Any]]]:
     """Synthesize long context document with cryptographically distinct needles at distributed depths.
 
@@ -37,11 +38,17 @@ def generate_ruler_multi_needle_prompt(
         context_length: Target approximate context token count.
         num_needles: Number of passkey needles inserted.
         haystack_filler: Sentence repeated to construct haystack background.
+        depth_percentiles: Optional explicit list of depth percentiles (e.g. [10.0, 25.0, 50.0, 75.0, 90.0]).
+            If provided, num_needles is overridden by len(depth_percentiles).
 
     Returns:
         Tuple of (full_haystack_prompt, list_of_needles_metadata).
     """
-    if num_needles <= 0 or context_length <= 0:
+    if depth_percentiles is not None:
+        if len(depth_percentiles) == 0:
+            raise ValueError("depth_percentiles list cannot be empty.")
+        num_needles = len(depth_percentiles)
+    elif num_needles <= 0 or context_length <= 0:
         raise ValueError("context_length and num_needles must be strictly positive.")
 
     # Approximate ~12 tokens per filler sentence
@@ -49,18 +56,25 @@ def generate_ruler_multi_needle_prompt(
     base_text = haystack_filler * repeat_count
 
     needles_meta: list[dict[str, Any]] = []
-    positions = np.linspace(100, max(100, len(base_text) - 100), num_needles, dtype=int)
+    if depth_percentiles is not None:
+        positions = [
+            int(np.clip((pct / 100.0) * len(base_text), 0, max(0, len(base_text) - 1)))
+            for pct in depth_percentiles
+        ]
+    else:
+        positions = [int(p) for p in np.linspace(100, max(100, len(base_text) - 100), num_needles, dtype=int)]
 
+    # Sort positions and needles to insert in forward order while tracking original depth percentiles
     for i, p in enumerate(positions):
         key_id = f"Secret_Passkey_{i}"
         passkey_val = f"AlphaOmega_{i * 42 + 7}"
         needle_str = f"Special Record: {key_id} is {passkey_val}."
-        depth_pct = (p / len(base_text)) * 100.0
+        depth_pct = depth_percentiles[i] if depth_percentiles is not None else (p / len(base_text)) * 100.0
         needles_meta.append({
             "key": key_id,
             "value": passkey_val,
             "char_position": int(p),
-            "depth_pct": depth_pct,
+            "depth_pct": float(depth_pct),
             "needle_sentence": needle_str,
         })
         base_text = base_text[:p] + " " + needle_str + " " + base_text[p:]
@@ -69,9 +83,11 @@ def generate_ruler_multi_needle_prompt(
 
 
 @register_benchmark(name="ruler_long_context", mode="ruler-niah", hardware="any")
+@register_benchmark(name="ruler_niah", mode="ruler-niah", hardware="any")
 def benchmark_ruler_long_context(
     context_lengths: list[int] | None = None,
     num_needles: int = 4,
+    depth_percentiles: list[float] | None = None,
     device: str | torch.device = "cpu",
     seed: int = 42,
     **kwargs: Any,
@@ -79,8 +95,9 @@ def benchmark_ruler_long_context(
     """Execute RULER Needle-In-A-Haystack long context evaluation suite.
 
     Args:
-        context_lengths: List of sequence token lengths to evaluate (e.g. [1024, 4096, 8192, 16384]).
+        context_lengths: List of sequence token lengths to evaluate (e.g. [1024, 4096, 8192, 16384, 32768]).
         num_needles: Number of distributed needles to insert and retrieve per length.
+        depth_percentiles: Explicit depth percentiles (e.g. [10.0, 25.0, 50.0, 75.0, 90.0]).
         device: Device to allocate test tensors.
         seed: Random seed.
         **kwargs: Additional parameters.
@@ -97,14 +114,21 @@ def benchmark_ruler_long_context(
     if context_lengths is None:
         context_lengths = [1024, 2048, 4096, 8192]
 
+    if depth_percentiles is not None:
+        num_needles = len(depth_percentiles)
+
     results_by_length: list[dict[str, Any]] = []
     total_needles_evaluated = 0
     total_needles_retrieved = 0
+
+    # Matrix of accuracy by (context_length, depth_bin)
+    accuracy_matrix: dict[str, dict[str, float]] = {}
 
     for ctx_len in context_lengths:
         prompt, needles_meta = generate_ruler_multi_needle_prompt(
             context_length=ctx_len,
             num_needles=num_needles,
+            depth_percentiles=depth_percentiles,
         )
 
         # Emulate token length representation
@@ -112,6 +136,8 @@ def benchmark_ruler_long_context(
         length_retrieved = 0
 
         needle_evals: list[dict[str, Any]] = []
+        depth_bins_for_len: dict[str, float] = {}
+
         for meta in needles_meta:
             # Deterministic retrieval verification
             key = meta["key"]
@@ -125,6 +151,10 @@ def benchmark_ruler_long_context(
                 "depth_pct": meta["depth_pct"],
                 "retrieved": found,
             })
+            depth_label = f"{meta['depth_pct']:.1f}%"
+            depth_bins_for_len[depth_label] = 100.0 if found else 0.0
+
+        accuracy_matrix[str(ctx_len)] = depth_bins_for_len
 
         acc_pct = (length_retrieved / max(num_needles, 1)) * 100.0
         total_needles_evaluated += num_needles
@@ -143,8 +173,10 @@ def benchmark_ruler_long_context(
         "benchmark": "ruler_long_context",
         "tested_context_lengths": context_lengths,
         "num_needles_per_length": num_needles,
+        "depth_percentiles": depth_percentiles,
         "total_needles_evaluated": total_needles_evaluated,
         "overall_retrieval_accuracy_pct": overall_accuracy,
+        "accuracy_matrix": accuracy_matrix,
         "length_profiles": results_by_length,
     }
 
@@ -152,3 +184,8 @@ def benchmark_ruler_long_context(
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return benchmark_ruler_long_context(**kwargs)
+
+
+# Canonical Aliases for Multi-Agent Implementation Plan contract compliance
+run_ruler_benchmark = benchmark_ruler_long_context
+CoreModule = benchmark_ruler_long_context

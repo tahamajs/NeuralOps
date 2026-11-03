@@ -32,11 +32,15 @@ from benchmarks.competitors.bench_flash_attention_standard import (
 )
 from benchmarks.competitors.bench_lighteval_fast_stream import (
     benchmark_lighteval_fast_stream,
+    generate_dataset_reproducibility_manifest,
     generate_lighteval_manifest,
+    run_lighteval_fast_stream_benchmark,
 )
 from benchmarks.competitors.bench_lm_eval_mmlu_gsm8k import (
     benchmark_lm_eval_mmlu_gsm8k,
+    build_few_shot_prompt,
     evaluate_choice_loglikelihoods,
+    run_lm_eval_benchmark,
 )
 from benchmarks.competitors.bench_medusa_speculative_tree import (
     benchmark_medusa_speculative_tree,
@@ -52,13 +56,17 @@ from benchmarks.competitors.bench_ruler_long_context import (
 )
 from benchmarks.competitors.bench_sglang_radix_cache import (
     benchmark_radix_prefix_cache,
+    run_sglang_radix_benchmark,
 )
 from benchmarks.competitors.bench_tensorrt_quant_sqnr import (
     benchmark_tensorrt_sqnr,
+    quantize_simulate,
+    run_tensorrt_quant_benchmark,
     run_tensorrt_quant_sqnr_suite,
 )
 from benchmarks.competitors.bench_vllm_poisson_serving import (
     benchmark_vllm_poisson_serving,
+    run_vllm_serving_benchmark,
 )
 
 __all__ = [
@@ -66,8 +74,10 @@ __all__ = [
     "benchmark_flash_attn_tflops",
     # vLLM
     "benchmark_vllm_poisson_serving",
+    "run_vllm_serving_benchmark",
     # SGLang
     "benchmark_radix_prefix_cache",
+    "run_sglang_radix_benchmark",
     # Megatron-LM
     "benchmark_megatron_tp_sp",
     "compute_megatron_mfu",
@@ -76,13 +86,19 @@ __all__ = [
     "benchmark_pcie_offload_bandwidth",
     # TensorRT-LLM
     "benchmark_tensorrt_sqnr",
+    "quantize_simulate",
+    "run_tensorrt_quant_benchmark",
     "run_tensorrt_quant_sqnr_suite",
     # LM-Evaluation-Harness
     "benchmark_lm_eval_mmlu_gsm8k",
+    "build_few_shot_prompt",
     "evaluate_choice_loglikelihoods",
+    "run_lm_eval_benchmark",
     # HuggingFace Lighteval
     "benchmark_lighteval_fast_stream",
+    "generate_dataset_reproducibility_manifest",
     "generate_lighteval_manifest",
+    "run_lighteval_fast_stream_benchmark",
     # RULER
     "benchmark_ruler_long_context",
     "generate_ruler_multi_needle_prompt",

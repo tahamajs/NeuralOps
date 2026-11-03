@@ -19,6 +19,7 @@ import logging
 from typing import Any
 
 import torch
+import torch.nn.functional as F
 from neuralops.benchmarks.registry import register_benchmark
 
 logger = logging.getLogger(__name__)
@@ -65,8 +66,17 @@ def benchmark_tensorrt_sqnr(
 def quantize_simulate(
     tensor: torch.Tensor,
     format_type: str = "fp8_e4m3",
+    block_size: int = 32,
 ) -> torch.Tensor:
-    """Simulate low-precision quantization (FP8, INT8, INT4) with scale factor."""
+    """Simulate low-precision quantization (FP8, INT8, INT4) with scale factor.
+
+    Supports:
+        - 'fp8_e4m3': FP8 with 1 sign bit, 4 exponent bits, 3 mantissa bits (max ~448).
+        - 'fp8_e5m2': FP8 with 1 sign bit, 5 exponent bits, 2 mantissa bits (max ~57344).
+        - 'int8': Symmetric per-tensor or per-channel 8-bit signed integer (-128 to 127).
+        - 'int4': Symmetric 4-bit signed integer (-8 to 7).
+        - 'int4_mx': OCP MX microscaling standard INT4 with 32-element scaling blocks.
+    """
     t = tensor.float()
     if format_type == "fp8_e4m3":
         # Simulates 8-bit float with 1 sign, 4 exponent, 3 mantissa (max ~448)
@@ -77,6 +87,14 @@ def quantize_simulate(
         step = 2.0 ** (-3)
         quant = torch.round(scaled / step) * step
         return quant / scale
+    elif format_type == "fp8_e5m2":
+        # Simulates 8-bit float with 1 sign, 5 exponent, 2 mantissa (max ~57344)
+        max_val = 57344.0
+        scale = max_val / (t.abs().max().clamp(min=1e-8))
+        scaled = (t * scale).clamp(-max_val, max_val)
+        step = 2.0 ** (-2)
+        quant = torch.round(scaled / step) * step
+        return quant / scale
     elif format_type == "int8":
         scale = 127.0 / (t.abs().max().clamp(min=1e-8))
         quant = torch.clamp(torch.round(t * scale), -128, 127)
@@ -85,6 +103,22 @@ def quantize_simulate(
         scale = 7.0 / (t.abs().max().clamp(min=1e-8))
         quant = torch.clamp(torch.round(t * scale), -8, 7)
         return quant / scale
+    elif format_type in ("int4_mx", "int4_microscaling"):
+        # MX microscaling standard: block-wise scaling with block_size elements (default 32)
+        orig_shape = t.shape
+        numel = t.numel()
+        pad_len = (block_size - (numel % block_size)) % block_size
+        if pad_len > 0:
+            flat = F.pad(t.reshape(-1), (0, pad_len))
+        else:
+            flat = t.reshape(-1)
+
+        blocks = flat.view(-1, block_size)
+        block_max = blocks.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)
+        scale = 7.0 / block_max
+        quant_blocks = torch.clamp(torch.round(blocks * scale), -8, 7) / scale
+        dequant_flat = quant_blocks.view(-1)[:numel]
+        return dequant_flat.view(orig_shape)
     else:
         raise ValueError(f"Unsupported quantization format: {format_type}")
 
@@ -151,3 +185,9 @@ def run_tensorrt_quant_sqnr_suite(
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return run_tensorrt_quant_sqnr_suite(**kwargs)
+
+
+# Alias for explicit phase naming compliance
+run_tensorrt_quant_benchmark = run_tensorrt_quant_sqnr_suite
+CoreModule = run_tensorrt_quant_sqnr_suite
+

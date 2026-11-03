@@ -103,6 +103,7 @@ class PagedKVCacheSimulator:
 
 
 @register_benchmark(name="vllm_poisson_serving", mode="serving-poisson", hardware="any")
+@register_benchmark(name="vllm_poisson", mode="serving-poisson", hardware="any")
 def benchmark_vllm_poisson_serving(
     arrival_rate_lambda: float = 16.0,
     num_requests: int = 100,

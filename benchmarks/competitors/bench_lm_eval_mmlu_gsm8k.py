@@ -31,7 +31,9 @@ def evaluate_choice_loglikelihoods(
     input_ids_prompt: torch.Tensor,
     candidate_ids_list: list[torch.Tensor],
     device: str | torch.device = "cpu",
-) -> int:
+    length_normalization: bool = True,
+    return_scores: bool = False,
+) -> int | tuple[int, list[float]]:
     """Evaluate multiple-choice options by calculating exact sequence log-likelihood.
 
     Args:
@@ -39,9 +41,14 @@ def evaluate_choice_loglikelihoods(
         input_ids_prompt: 1D or 2D tensor of prompt token IDs.
         candidate_ids_list: List of 1D tensors containing token IDs for each candidate completion.
         device: Device to run evaluation on.
+        length_normalization: When True, normalizes sum log-likelihood by candidate token length |c|:
+                              Score_norm(c) = (1 / |c|) * sum_{t=1}^{|c|} log P(c_t | Prompt, c_{<t})
+        return_scores: When True, returns a tuple of (best_choice_idx, scores_list).
 
     Returns:
-        Index of the candidate completion with the highest conditional log-likelihood.
+        Index of the candidate completion with the highest conditional log-likelihood
+        (or length-normalized score if length_normalization is True). If return_scores
+        is True, returns (best_index, scores).
     """
     dev = torch.device(device)
     model.eval()
@@ -71,9 +78,40 @@ def evaluate_choice_loglikelihoods(
             cand_targets = target_ids[:, -cand_len:].unsqueeze(-1)
 
             gathered_lprobs = cand_log_probs.gather(-1, cand_targets)
-            choice_logprobs.append(float(gathered_lprobs.sum().item()))
+            sum_lprob = float(gathered_lprobs.sum().item())
+            if length_normalization and cand_len > 0:
+                score = sum_lprob / cand_len
+            else:
+                score = sum_lprob
+            choice_logprobs.append(score)
 
-    return int(torch.tensor(choice_logprobs).argmax().item())
+    best_idx = int(torch.tensor(choice_logprobs).argmax().item())
+    if return_scores:
+        return best_idx, choice_logprobs
+    return best_idx
+
+
+def build_few_shot_prompt(
+    few_shot_examples: list[dict[str, Any]],
+    query_prompt: str,
+    prefix: str = "The following are multiple choice questions (with answers).\n\n",
+) -> str:
+    """Build standardized 0-shot or k-shot prompt string matching LM-Eval formatting.
+
+    Args:
+        few_shot_examples: List of dicts with 'question' and 'answer' keys.
+        query_prompt: Target question to evaluate.
+        prefix: Preamble instruction header.
+
+    Returns:
+        Formatted prompt string with few-shot exemplars.
+    """
+    prompt = prefix if few_shot_examples else ""
+    for ex in few_shot_examples:
+        prompt += f"Question: {ex['question']}\nAnswer: {ex['answer']}\n\n"
+    prompt += f"Question: {query_prompt}\nAnswer:"
+    return prompt
+
 
 
 @register_benchmark(name="lm_eval_mmlu_gsm8k", mode="lm-eval", hardware="any")
@@ -85,6 +123,8 @@ def benchmark_lm_eval_mmlu_gsm8k(
     num_choices: int = 4,
     device: str | torch.device = "cpu",
     seed: int = 42,
+    num_shots: int = 0,
+    length_normalization: bool = True,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Execute LM-Eval task parity benchmark on model or synthetic causal LM.
@@ -97,6 +137,8 @@ def benchmark_lm_eval_mmlu_gsm8k(
         num_choices: Number of multiple-choice candidates per sample.
         device: Execution device.
         seed: Random seed for synthetic sample generation.
+        num_shots: Number of few-shot exemplars (e.g. 0-shot or 5-shot).
+        length_normalization: Whether to normalize candidate log-likelihood by candidate token length.
         **kwargs: Additional parameters.
 
     Returns:
@@ -130,16 +172,23 @@ def benchmark_lm_eval_mmlu_gsm8k(
     correct = 0
 
     for i in range(num_samples):
-        prompt_len = 32 + (i % 16)
+        # Prompt length includes few-shot demonstration context if num_shots > 0
+        base_prompt_len = 32 + (i % 16)
+        shot_len = num_shots * 24
+        prompt_len = base_prompt_len + shot_len
         prompt_ids = torch.randint(100, vocab_size - 100, (1, prompt_len), device=dev)
         candidates = [
-            torch.randint(100, vocab_size - 100, (1, 4), device=dev)
-            for _ in range(num_choices)
+            torch.randint(100, vocab_size - 100, (1, 4 + (c_idx % 3)), device=dev)
+            for c_idx in range(num_choices)
         ]
         ground_truth = i % num_choices
 
         pred = evaluate_choice_loglikelihoods(
-            target_model, prompt_ids, candidates, device=dev
+            target_model,
+            prompt_ids,
+            candidates,
+            device=dev,
+            length_normalization=length_normalization,
         )
         if pred == ground_truth:
             correct += 1
@@ -150,6 +199,8 @@ def benchmark_lm_eval_mmlu_gsm8k(
         "benchmark": "lm_eval_mmlu_gsm8k",
         "num_samples": num_samples,
         "num_choices": num_choices,
+        "num_shots": num_shots,
+        "length_normalization": length_normalization,
         "correct_predictions": correct,
         "accuracy_pct": accuracy_pct,
         "device": str(dev),
@@ -159,3 +210,9 @@ def benchmark_lm_eval_mmlu_gsm8k(
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return benchmark_lm_eval_mmlu_gsm8k(**kwargs)
+
+
+# Alias for explicit phase naming compliance
+run_lm_eval_benchmark = benchmark_lm_eval_mmlu_gsm8k
+CoreModule = benchmark_lm_eval_mmlu_gsm8k
+
