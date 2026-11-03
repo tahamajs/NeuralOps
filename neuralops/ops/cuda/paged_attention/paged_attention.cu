@@ -96,16 +96,16 @@ __global__ void paged_attention_kernel(
             const float qk = qk_partial * scale;
 
             const float m_curr = fmaxf(m_prev, qk);
-            const float p = expf(qk - m_curr);
-            const float alpha = expf(m_prev - m_curr);
+            const float p = __expf(qk - m_curr);
+            const float alpha = __expf(m_prev - m_curr);
 
-            l_prev = l_prev * alpha + p;
+            l_prev = __fmaf_rn(l_prev, alpha, p);
 
             #pragma unroll
             for (int e = 0; e < ELEMS_PER_THREAD; ++e) {
                 const int d = tid + e * WARP_SIZE;
                 const int v_offset = kv_block_base + d * BLOCK_SIZE + tok;
-                acc[e] = acc[e] * alpha + p * v_cache[v_offset];
+                acc[e] = __fmaf_rn(acc[e], alpha, p * v_cache[v_offset]);
             }
             m_prev = m_curr;
         }
@@ -196,13 +196,13 @@ __global__ void paged_attention_dynamic_kernel(
 
             const float qk = qk_partial * scale;
             const float m_curr = fmaxf(m_prev, qk);
-            const float p = expf(qk - m_curr);
-            const float alpha = expf(m_prev - m_curr);
+            const float p = __expf(qk - m_curr);
+            const float alpha = __expf(m_prev - m_curr);
 
-            l_prev = l_prev * alpha + p;
+            l_prev = __fmaf_rn(l_prev, alpha, p);
 
             for (int d = tid; d < head_dim; d += blockDim.x) {
-                acc_shared[d] = acc_shared[d] * alpha + p * v_cache[kv_block_base + d * block_size + tok];
+                acc_shared[d] = __fmaf_rn(acc_shared[d], alpha, p * v_cache[kv_block_base + d * block_size + tok]);
             }
             m_prev = m_curr;
         }
