@@ -488,7 +488,8 @@ class MambaBlock(nn.Module):
           Path 3: Fast chunked parallel scan (framework.core.selective_scan, O(1) ops per chunk)
           Path 4: Chunked recurrent scan with activation checkpointing (failsafe fallback)
         """
-        if HAS_MAMBA_CUDA and selective_scan is not None:
+        # Level 1 Native CUDA C++ (128-bit register cached) / Level 2 Triton JIT (In-SRAM zero-alloc)
+        if selective_scan is not None:
             try:
                 return selective_scan(
                     u=u,
@@ -500,7 +501,7 @@ class MambaBlock(nn.Module):
                     delta_softplus=True,
                 )
             except Exception as e:
-                logger.debug("CUDA selective_scan failed: %s", e)
+                logger.debug("Core selective_scan dispatch failed (%s); trying Triton directly.", e)
 
         if HAS_TRITON_MAMBA and triton_selective_scan is not None:
             try:
@@ -517,7 +518,7 @@ class MambaBlock(nn.Module):
             except Exception as e:
                 logger.warning("Triton selective_scan failed: %s", e)
 
-        if selective_scan is not None:
+        if HAS_MAMBA_CUDA and selective_scan is not None:
             try:
                 return selective_scan(
                     u=u,
@@ -529,7 +530,7 @@ class MambaBlock(nn.Module):
                     delta_softplus=True,
                 )
             except Exception as e:
-                logger.debug("Parallel selective_scan fallback failed: %s", e)
+                logger.debug("mamba_ssm CUDA selective_scan failed: %s", e)
 
         y, _ = self._recurrent_scan(u, delta, A, B_ssm, C_ssm, D, None)
         return y

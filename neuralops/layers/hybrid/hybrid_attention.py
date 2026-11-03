@@ -524,7 +524,18 @@ class HybridAttention(BaseAttention):
             .transpose(1, 2)
             .contiguous()
         )
-        fused = gate * out_standard + (1.0 - gate) * out_linear
+        if out_standard.is_cuda and out_linear.is_cuda:
+            try:
+                from neuralops.ops.cuda.hybrid_local_kernel import hybrid_two_branch_blend
+                fused = hybrid_two_branch_blend(
+                    out_standard.contiguous(),
+                    out_linear.contiguous(),
+                    gate.expand_as(out_standard).contiguous().to(out_standard.dtype)
+                )
+            except Exception:
+                fused = gate * out_standard + (1.0 - gate) * out_linear
+        else:
+            fused = gate * out_standard + (1.0 - gate) * out_linear
 
         if head_mask is not None:
             if head_mask.dim() == 1:

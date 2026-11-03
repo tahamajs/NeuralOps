@@ -109,13 +109,13 @@ __global__ void sliding_window_attn_warp_kernel(
 
             float qk = dot * scale;
             float m_curr = fmaxf(m_prev[qi], qk);
-            float alpha = expf(m_prev[qi] - m_curr);
-            float p = expf(qk - m_curr);
+            float alpha = __expf(m_prev[qi] - m_curr);
+            float p = __expf(qk - m_curr);
 
-            l_prev[qi] = l_prev[qi] * alpha + p;
+            l_prev[qi] = __fmaf_rn(l_prev[qi], alpha, p);
             #pragma unroll
             for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                acc[qi][e] = acc[qi][e] * alpha + p * s_sink_v[k_pos][lane + e * 32];
+                acc[qi][e] = __fmaf_rn(acc[qi][e], alpha, p * s_sink_v[k_pos][lane + e * 32]);
             }
             m_prev[qi] = m_curr;
         }
@@ -136,13 +136,13 @@ __global__ void sliding_window_attn_warp_kernel(
 
                 float qk = dot * scale;
                 float m_curr = fmaxf(m_prev[qi], qk);
-                float alpha = expf(m_prev[qi] - m_curr);
-                float p = expf(qk - m_curr);
+                float alpha = __expf(m_prev[qi] - m_curr);
+                float p = __expf(qk - m_curr);
 
-                l_prev[qi] = l_prev[qi] * alpha + p;
+                l_prev[qi] = __fmaf_rn(l_prev[qi], alpha, p);
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    acc[qi][e] = acc[qi][e] * alpha + p * v[k_off + lane + e * 32];
+                    acc[qi][e] = __fmaf_rn(acc[qi][e], alpha, p * v[k_off + lane + e * 32]);
                 }
                 m_prev[qi] = m_curr;
             }
@@ -236,12 +236,12 @@ __global__ void sliding_window_attn_generic_kernel(
 
                 float qk = dot * scale;
                 float m_curr = fmaxf(m_prev, qk);
-                float alpha = expf(m_prev - m_curr);
-                float p = expf(qk - m_curr);
+                float alpha = __expf(m_prev - m_curr);
+                float p = __expf(qk - m_curr);
 
-                l_prev = l_prev * alpha + p;
+                l_prev = __fmaf_rn(l_prev, alpha, p);
                 for (int d = lane; d < D; d += 32) {
-                    out[q_off + d] = out[q_off + d] * alpha + p * v[k_off + d];
+                    out[q_off + d] = __fmaf_rn(out[q_off + d], alpha, p * v[k_off + d]);
                 }
                 m_prev = m_curr;
             }

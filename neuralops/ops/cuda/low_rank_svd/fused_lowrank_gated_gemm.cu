@@ -165,8 +165,8 @@ torch::Tensor fused_lowrank_gated_gemm_fwd(
     auto out = torch::empty({M, N}, X.options());
     if (M == 0 || N == 0) return out;
 
-    // Use fast in-register fused kernel when rank R fits in registers (<= 64)
-    if (R <= 64) {
+    // Use fast in-register fused kernel when rank R fits in registers (<= 128)
+    if (R <= 128) {
         constexpr int THREADS = 256;
         const int blocks = (M + THREADS - 1) / THREADS;
         auto stream = c10::cuda::getCurrentCUDAStream();
@@ -196,8 +196,19 @@ torch::Tensor fused_lowrank_gated_gemm_fwd(
                         M, K, R, N,
                         has_alpha, has_bias
                     );
-                } else {
+                } else if (R <= 64) {
                     neuralops::cuda::fused_lowrank_down_up_gemm_fwd_kernel<scalar_t, 64><<<blocks, THREADS, 0, stream>>>(
+                        out.data_ptr<scalar_t>(),
+                        X.data_ptr<scalar_t>(),
+                        V.data_ptr<scalar_t>(),
+                        U.data_ptr<scalar_t>(),
+                        has_alpha ? alpha.data_ptr<scalar_t>() : nullptr,
+                        has_bias ? bias.data_ptr<scalar_t>() : nullptr,
+                        M, K, R, N,
+                        has_alpha, has_bias
+                    );
+                } else {
+                    neuralops::cuda::fused_lowrank_down_up_gemm_fwd_kernel<scalar_t, 128><<<blocks, THREADS, 0, stream>>>(
                         out.data_ptr<scalar_t>(),
                         X.data_ptr<scalar_t>(),
                         V.data_ptr<scalar_t>(),
@@ -248,7 +259,7 @@ torch::Tensor fused_lowrank_gated_gemm_bwd(
     auto dX = torch::empty({M, K}, X.options());
     if (M == 0 || K == 0) return dX;
 
-    if (R <= 64) {
+    if (R <= 128) {
         constexpr int THREADS = 256;
         const int blocks = (M + THREADS - 1) / THREADS;
         auto stream = c10::cuda::getCurrentCUDAStream();
@@ -276,8 +287,18 @@ torch::Tensor fused_lowrank_gated_gemm_bwd(
                         M, K, R, N,
                         has_alpha
                     );
-                } else {
+                } else if (R <= 64) {
                     neuralops::cuda::fused_lowrank_down_up_gemm_bwd_dx_kernel<scalar_t, 64><<<blocks, THREADS, 0, stream>>>(
+                        dX.data_ptr<scalar_t>(),
+                        dout.data_ptr<scalar_t>(),
+                        V.data_ptr<scalar_t>(),
+                        U.data_ptr<scalar_t>(),
+                        has_alpha ? alpha.data_ptr<scalar_t>() : nullptr,
+                        M, K, R, N,
+                        has_alpha
+                    );
+                } else {
+                    neuralops::cuda::fused_lowrank_down_up_gemm_bwd_dx_kernel<scalar_t, 128><<<blocks, THREADS, 0, stream>>>(
                         dX.data_ptr<scalar_t>(),
                         dout.data_ptr<scalar_t>(),
                         V.data_ptr<scalar_t>(),

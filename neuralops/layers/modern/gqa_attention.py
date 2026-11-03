@@ -649,16 +649,31 @@ class GroupedQueryAttention(BaseAttention):
         )
 
         if use_sdpa:
-            from neuralops.ops.triton.gqa import (
-                fused_weighted_gqa_online_softmax_triton,
-                fused_weighted_gqa_online_softmax_pytorch,
-            )
-            try:
-                if Q.is_cuda and not self.training:
+            scale_val = 1.0 / math.sqrt(int(d))
+            dispatched = False
+            if Q.is_cuda and not self.training and d in (32, 64, 128, 256):
+                # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
+                try:
+                    from neuralops.ops.cuda.flash_gqa import flash_gqa
+                    context = flash_gqa(Q, K, V, is_causal=is_causal, scale=scale_val)
+                    dispatched = True
+                except Exception as e_cuda:
+                    logger.debug("GQA Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
+
+            if not dispatched and Q.is_cuda and not self.training and d <= 128:
+                # Level 2: Triton JIT autotuned online softmax kernel
+                try:
+                    from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
                     context = fused_weighted_gqa_online_softmax_triton(
-                        Q, K, V, head_weights=None, is_causal=is_causal, scale=1.0 / math.sqrt(int(d))
+                        Q, K, V, head_weights=None, is_causal=is_causal, scale=scale_val
                     )
-                else:
+                    dispatched = True
+                except Exception as e_triton:
+                    logger.debug("GQA Level 2 Triton dispatch failed (%s), falling back to SDPA", e_triton)
+
+            if not dispatched:
+                # Level 3: PyTorch scaled_dot_product_attention / reference fallback
+                try:
                     context = F.scaled_dot_product_attention(
                         Q,
                         K_full,
@@ -667,9 +682,9 @@ class GroupedQueryAttention(BaseAttention):
                         dropout_p=self.dropout.p if self.training else 0.0,
                         is_causal=is_causal,
                     )
-            except Exception as e:
-                logger.debug("GQA SDPA fast-path failed, falling back: %s", e)
-                use_sdpa = False
+                except Exception as e_sdpa:
+                    logger.debug("GQA SDPA fallback failed: %s", e_sdpa)
+                    use_sdpa = False
 
         if not use_sdpa:
             scale = 1.0 / math.sqrt(int(d))

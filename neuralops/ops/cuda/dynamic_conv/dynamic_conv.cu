@@ -27,27 +27,41 @@ __device__ inline void dynamic_conv_kernel_impl(
     int w_offset = (bh * L + l) * K;
     float* out_ptr = out + out_offset;
 
-    float acc[512];
-    #pragma unroll 4
-    for (int d = 0; d < D; ++d) {
-        acc[d] = 0.0f;
+    if (D % 4 == 0) {
+        int D4 = D / 4;
+        const float4* v4 = reinterpret_cast<const float4*>(v);
+        float4* out_ptr4 = reinterpret_cast<float4*>(out_ptr);
+
+        for (int d = 0; d < D4; ++d) {
+            float4 acc = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+            #pragma unroll 4
+            for (int k = 0; k < K; ++k) {
+                float w = weights[w_offset + k];
+                int in_l = l + k - (K - 1);
+                if (in_l >= 0 && in_l < L) {
+                    float4 v_k = v4[(bh * L + in_l) * D4 + d];
+                    acc.x += w * v_k.x;
+                    acc.y += w * v_k.y;
+                    acc.z += w * v_k.z;
+                    acc.w += w * v_k.w;
+                }
+            }
+            out_ptr4[d] = acc;
+        }
+        return;
     }
 
-    for (int k = 0; k < K; ++k) {
-        float w = weights[w_offset + k];
-        int in_l = l + k - (K - 1);
-        if (in_l >= 0 && in_l < L) {
-            const float* v_k = v + (bh * L + in_l) * D;
-            #pragma unroll 4
-            for (int d = 0; d < D; ++d) {
-                acc[d] += w * v_k[d];
+    for (int d = 0; d < D; ++d) {
+        float acc = 0.0f;
+        #pragma unroll 4
+        for (int k = 0; k < K; ++k) {
+            float w = weights[w_offset + k];
+            int in_l = l + k - (K - 1);
+            if (in_l >= 0 && in_l < L) {
+                acc += w * v[(bh * L + in_l) * D + d];
             }
         }
-    }
-
-    #pragma unroll 4
-    for (int d = 0; d < D; ++d) {
-        out_ptr[d] = acc[d];
+        out_ptr[d] = acc;
     }
 }
 
