@@ -206,6 +206,41 @@ def compute_decayed_state_bound(
     return max_step_norm / (1.0 - gamma)
 
 
+class GatheredParametersContext:
+    """
+    Law 9 (Distributed Sharding Invariant):
+    Context manager handling deepspeed.zero.GatheredParameters or PyTorch FSDP.summon_full_params
+    to ensure weights are safely gathered across GPU ranks before extraction or weight transfer.
+    """
+
+    def __init__(self, module: nn.Module) -> None:
+        self.module = module
+        self._ctx: Any = None
+
+    def __enter__(self) -> None:
+        try:
+            from deepspeed import zero
+            if hasattr(zero, "GatheredParameters"):
+                self._ctx = zero.GatheredParameters(self.module.parameters(), modifier_rank=0)
+                self._ctx.__enter__()
+                return
+        except Exception:
+            pass
+
+        try:
+            from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+            if isinstance(self.module, FSDP):
+                self._ctx = FSDP.summon_full_params(self.module)
+                self._ctx.__enter__()
+                return
+        except Exception:
+            pass
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if self._ctx is not None:
+            self._ctx.__exit__(exc_type, exc_val, exc_tb)
+
+
 def profile_model_topology(model: nn.Module) -> ArchitectureProfile:
     """
     Classifies model architecture into one of 9 canonical families:
@@ -801,9 +836,10 @@ class UniversalSurgeryDirector:
                             head_dim=spec.head_dim,
                         )
 
-                    # Invariant 7: Inherit pretrained projections
+                    # Invariant 7 & Law 9: Inherit pretrained projections inside GatheredParametersContext
                     if inherit_weights and spec.extracted_qkv is not None:
-                        transfer_pretrained_qkv_weights(spec, new_attn)
+                        with GatheredParametersContext(spec.target_module):
+                            transfer_pretrained_qkv_weights(spec, new_attn)
 
                     # Mount into UniversalAttentionBridge
                     bridge = UniversalAttentionBridge(
@@ -947,6 +983,7 @@ __all__ = [
     "apply_rotary_pos_emb",
     "apply_rope_pre_feature_map",
     "compute_decayed_state_bound",
+    "GatheredParametersContext",
     "InvariantPreservingLinearBridge",
     "CrossAttentionLinearBridge",
     "UniversalSurgeryDirector",

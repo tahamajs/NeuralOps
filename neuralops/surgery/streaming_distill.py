@@ -70,20 +70,20 @@ class StreamingCKALoss(nn.Module):
         self.hidden_dim = int(hidden_dim)
         self.eps = float(eps)
         self.exact = bool(exact)
-        self.register_buffer("G_xy", torch.zeros(hidden_dim, hidden_dim, dtype=torch.float32))
-        self.register_buffer("G_xx", torch.zeros(hidden_dim, hidden_dim, dtype=torch.float32))
-        self.register_buffer("G_yy", torch.zeros(hidden_dim, hidden_dim, dtype=torch.float32))
-        self.register_buffer("mean_x", torch.zeros(1, hidden_dim, dtype=torch.float32))
-        self.register_buffer("mean_y", torch.zeros(1, hidden_dim, dtype=torch.float32))
+        self.register_buffer("G_xy", torch.zeros(hidden_dim, hidden_dim, dtype=torch.float64))
+        self.register_buffer("G_xx", torch.zeros(hidden_dim, hidden_dim, dtype=torch.float64))
+        self.register_buffer("G_yy", torch.zeros(hidden_dim, hidden_dim, dtype=torch.float64))
+        self.register_buffer("mean_x", torch.zeros(1, hidden_dim, dtype=torch.float64))
+        self.register_buffer("mean_y", torch.zeros(1, hidden_dim, dtype=torch.float64))
         self.total_tokens: int = 0
 
     def reset(self) -> None:
         """Resets accumulated outer products and running statistics for a new batch or distillation step."""
-        self.G_xy = torch.zeros(self.hidden_dim, self.hidden_dim, device=self.G_xy.device, dtype=torch.float32)
-        self.G_xx = torch.zeros(self.hidden_dim, self.hidden_dim, device=self.G_xx.device, dtype=torch.float32)
-        self.G_yy = torch.zeros(self.hidden_dim, self.hidden_dim, device=self.G_yy.device, dtype=torch.float32)
-        self.mean_x = torch.zeros(1, self.hidden_dim, device=self.mean_x.device, dtype=torch.float32)
-        self.mean_y = torch.zeros(1, self.hidden_dim, device=self.mean_y.device, dtype=torch.float32)
+        self.G_xy = torch.zeros(self.hidden_dim, self.hidden_dim, device=self.G_xy.device, dtype=torch.float64)
+        self.G_xx = torch.zeros(self.hidden_dim, self.hidden_dim, device=self.G_xx.device, dtype=torch.float64)
+        self.G_yy = torch.zeros(self.hidden_dim, self.hidden_dim, device=self.G_yy.device, dtype=torch.float64)
+        self.mean_x = torch.zeros(1, self.hidden_dim, device=self.mean_x.device, dtype=torch.float64)
+        self.mean_y = torch.zeros(1, self.hidden_dim, device=self.mean_y.device, dtype=torch.float64)
         self.total_tokens = 0
 
     def update(self, X_chunk: torch.Tensor, Y_chunk: torch.Tensor) -> None:
@@ -93,8 +93,8 @@ class StreamingCKALoss(nn.Module):
         X_chunk (student): requires_grad may be True (autograd graph preserved).
         Y_chunk (teacher): detached representation (requires_grad is False).
         """
-        x_flat = X_chunk.reshape(-1, self.hidden_dim).to(torch.float32)
-        y_flat = Y_chunk.reshape(-1, self.hidden_dim).detach().to(torch.float32)
+        x_flat = X_chunk.reshape(-1, self.hidden_dim).to(torch.float64)
+        y_flat = Y_chunk.reshape(-1, self.hidden_dim).detach().to(torch.float64)
         n_c = x_flat.size(0)
         if n_c == 0:
             return
@@ -108,7 +108,7 @@ class StreamingCKALoss(nn.Module):
             self.mean_x = self.mean_x.to(dev)
             self.mean_y = self.mean_y.to(dev)
 
-        # Micro-chunk local means
+        # Micro-chunk local means in float64 for exact precision
         mu_x_chunk = x_flat.mean(dim=0, keepdim=True)
         mu_y_chunk = y_flat.mean(dim=0, keepdim=True)
 
@@ -158,7 +158,7 @@ class StreamingCKALoss(nn.Module):
         Guarded against zero-magnitude features and zero division.
         """
         if self.total_tokens == 0:
-            return torch.tensor(0.0, device=self.G_xy.device, requires_grad=True)
+            return torch.tensor(0.0, device=self.G_xy.device, dtype=torch.float32, requires_grad=True)
 
         norm_xy = torch.norm(self.G_xy, p="fro") ** 2
         norm_xx = torch.norm(self.G_xx, p="fro")
@@ -166,12 +166,9 @@ class StreamingCKALoss(nn.Module):
 
         # Numerical epsilon guarding: prevents division by zero on zero-magnitude tensors
         denom = norm_xx * norm_yy + self.eps
-        if norm_xx <= 0.0 and norm_yy <= 0.0:
-            return torch.tensor(0.0, device=self.G_xy.device, requires_grad=True)
-
         similarity = norm_xy / denom
         similarity = torch.clamp(similarity, min=0.0, max=1.0)
-        return 1.0 - similarity
+        return (1.0 - similarity).to(torch.float32)
 
     def forward(
         self,
@@ -234,7 +231,10 @@ class CheckpointedTeacherBridge(nn.Module):
         with torch.no_grad():
             def custom_forward(*inputs: torch.Tensor) -> torch.Tensor:
                 mask = inputs[1] if len(inputs) > 1 else None
-                out = layer(inputs[0], attention_mask=mask, *args, **kwargs)
+                if mask is not None:
+                    out = layer(inputs[0], attention_mask=mask, *args, **kwargs)
+                else:
+                    out = layer(inputs[0], *args, **kwargs)
                 return out[0] if isinstance(out, (tuple, list)) else out
 
             c_args = (hidden_states,) if attention_mask is None else (hidden_states, attention_mask)

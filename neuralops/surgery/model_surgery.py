@@ -67,6 +67,7 @@ class ModelSurgery:
         logger.info("Loading model from pretrained '%s'...", model_name_or_path)
         try:
             from transformers import AutoModel
+
             model = AutoModel.from_pretrained(
                 model_name_or_path,
                 torch_dtype=dtype,
@@ -214,6 +215,7 @@ class ModelSurgery:
         """
         if engine == "fx":
             from neuralops.surgery.fx_surgery import FXAttentionGraphRewriter
+
             rewriter = FXAttentionGraphRewriter(
                 target_attention=target_attention,
                 head_dim=config.get("head_dim", 64),

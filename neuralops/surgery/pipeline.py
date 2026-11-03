@@ -192,6 +192,7 @@ class SurgeryRecipe:
     def from_yaml(cls, path: str) -> SurgeryRecipe:
         """Load and parse recipe from a local YAML file."""
         from neuralops.surgery.recipe import load_recipe
+
         return load_recipe(path)
 
     @classmethod
@@ -199,6 +200,7 @@ class SurgeryRecipe:
         """Download and load recipe from HuggingFace Hub."""
         try:
             from huggingface_hub import hf_hub_download
+
             cached_path = hf_hub_download(repo_id=repo_id, filename=filename)
             return cls.from_yaml(cached_path)
         except Exception as exc:

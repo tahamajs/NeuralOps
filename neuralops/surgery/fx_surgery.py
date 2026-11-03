@@ -14,6 +14,7 @@ torch.compile(mode="max-autotune") Inductor execution.
 """
 
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
+import inspect
 import logging
 import operator
 import time
@@ -99,6 +100,18 @@ class NeuralOpsAttentionTracer(torch.fx.Tracer):
         concrete_args: Optional[Dict[str, Any]] = None,
     ) -> torch.fx.Graph:
         """Traces the root module with control-flow sanitization and dynamic sequence proxy support."""
+        if concrete_args is None and hasattr(root, "forward") and callable(root.forward):
+            sig = inspect.signature(root.forward)
+            inferred_args: Dict[str, Any] = {}
+            for name, _ in sig.parameters.items():
+                if name in ("past_key_values", "past_key_value"):
+                    inferred_args[name] = None
+                elif name in ("use_cache", "output_attentions", "output_hidden_states"):
+                    inferred_args[name] = False
+                elif name == "return_dict":
+                    inferred_args[name] = False
+            if inferred_args:
+                concrete_args = inferred_args
         return super().trace(root, concrete_args=concrete_args)
 
 
@@ -107,7 +120,7 @@ def linear_feature_map(x: torch.Tensor) -> torch.Tensor:
 
     Guarantees non-negativity: phi(x) >= 0.0 for all x in R.
     """
-    return F.elu(x) + 1.0
+    return torch.clamp_min(F.elu(x) + 1.0, 0.0)
 
 
 def causal_prefix_scan(
@@ -120,12 +133,25 @@ def causal_prefix_scan(
 
     Computes S_t = sum_{i=1}^t phi(K_i)^T V_i, ensuring strict lower-triangular
     dependency where future tokens have zero gradient contribution to past representations.
+    Accumulates in FP32 for numerical stability when inputs are FP16 or BF16.
     """
+    orig_dtype = q_phi.dtype
+    if orig_dtype in (torch.float16, torch.bfloat16):
+        q_f = q_phi.float()
+        k_f = k_phi.float()
+        v_f = v.float()
+        kv = torch.einsum("bhtd,bhte->bhtde", k_f, v_f)
+        kv_cum = torch.cumsum(kv, dim=2)
+        out = torch.einsum("bhtd,bhtde->bhte", q_f, kv_cum)
+
+        k_cum = torch.cumsum(k_f, dim=2)
+        denom = torch.einsum("bhtd,bhtd->bht", q_f, k_cum).unsqueeze(-1) + eps
+        return (out / denom).to(orig_dtype)
+
     kv = torch.einsum("bhtd,bhte->bhtde", k_phi, v)
     kv_cum = torch.cumsum(kv, dim=2)
     out = torch.einsum("bhtd,bhtde->bhte", q_phi, kv_cum)
 
-    # Normalization denominator
     k_cum = torch.cumsum(k_phi, dim=2)
     denom = torch.einsum("bhtd,bhtd->bht", q_phi, k_cum).unsqueeze(-1) + eps
     return out / denom
@@ -140,11 +166,24 @@ def bidirectional_associative_scan(
     """Non-causal bidirectional associative scan for encoder models (BERT, ViT).
 
     Computes global associative memory S = sum_{j=1}^T phi(K_j)^T V_j and projects O = phi(Q) S.
+    Accumulates in FP32 for numerical stability when inputs are FP16 or BF16.
     """
+    orig_dtype = q_phi.dtype
+    if orig_dtype in (torch.float16, torch.bfloat16):
+        q_f = q_phi.float()
+        k_f = k_phi.float()
+        v_f = v.float()
+        kv = torch.einsum("bhtd,bhte->bhde", k_f, v_f)
+        out = torch.einsum("bhtd,bhde->bhte", q_f, kv)
+        k_sum = k_f.sum(dim=2, keepdim=True)
+        k_sum = k_f.sum(dim=2)  # [b, h, d]
+        denom = torch.einsum("bhtd,bhd->bht", q_f, k_sum).unsqueeze(-1) + eps
+        return (out / denom).to(orig_dtype)
+
     kv = torch.einsum("bhtd,bhte->bhde", k_phi, v)
     out = torch.einsum("bhtd,bhde->bhte", q_phi, kv)
-    k_sum = k_phi.sum(dim=2, keepdim=True)
-    denom = torch.einsum("bhtd,bh1d->bht", q_phi, k_sum).unsqueeze(-1) + eps
+    k_sum = k_phi.sum(dim=2)  # [b, h, d]
+    denom = torch.einsum("bhtd,bhd->bht", q_phi, k_sum).unsqueeze(-1) + eps
     return out / denom
 
 
@@ -201,7 +240,7 @@ def fast_linear_attention_replacement(
         v = v * m
 
     # Support 3D [B, T, D] inputs by temporarily unsqueezing head dimension
-    is_3d = (q.dim() == 3)
+    is_3d = q.dim() == 3
     if is_3d:
         q_phi = q_phi.unsqueeze(1)
         k_phi = k_phi.unsqueeze(1)
@@ -225,6 +264,8 @@ def _find_attention_candidates(graph: torch.fx.Graph) -> List[torch.fx.Node]:
     aggregation anchors, returning exactly one anchor node per attention head / layer cluster.
     """
     candidates: List[torch.fx.Node] = []
+    seen_nodes: Set[torch.fx.Node] = set()
+
     for node in graph.nodes:
         # Check 1: Native PyTorch 2.x SDPA function call
         if node.op == "call_function":
@@ -236,39 +277,37 @@ def _find_attention_candidates(graph: torch.fx.Graph) -> List[torch.fx.Node]:
                 or "scaled_dot_product_attention" in target_str
                 or target_name == "scaled_dot_product_attention"
             ):
-                candidates.append(node)
+                if node not in seen_nodes:
+                    candidates.append(node)
+                    seen_nodes.add(node)
                 continue
 
             # Check 2: Linear attention replacement node already spliced
             if node.target is fast_linear_attention_replacement:
-                candidates.append(node)
+                if node not in seen_nodes:
+                    candidates.append(node)
+                    seen_nodes.add(node)
                 continue
 
         # Check 3: Decomposed attention context matmul: P @ V
         target_str = str(node.target)
         target_name = getattr(node.target, "__name__", target_str)
         is_matmul = (
-            (
-                node.op == "call_function"
-                and (
-                    node.target in (torch.matmul, operator.matmul, torch.bmm)
-                    or target_name in ("matmul", "bmm")
-                    or "matmul" in target_str
-                    or "bmm" in target_str
-                )
+            node.op == "call_function"
+            and (
+                node.target in (torch.matmul, operator.matmul, torch.bmm)
+                or target_name in ("matmul", "bmm")
+                or "matmul" in target_str
+                or "bmm" in target_str
             )
-            or (node.op == "call_method" and node.target in ("matmul", "bmm"))
-        )
+        ) or (node.op == "call_method" and node.target in ("matmul", "bmm"))
         if is_matmul and len(node.args) >= 2:
             p_candidate = node.args[0]
             if isinstance(p_candidate, torch.fx.Node):
                 # Unpack optional dropout layer
                 if (
                     p_candidate.op == "call_function"
-                    and (
-                        p_candidate.target in (torch.dropout, F.dropout)
-                        or "dropout" in str(p_candidate.target)
-                    )
+                    and (p_candidate.target in (torch.dropout, F.dropout) or "dropout" in str(p_candidate.target))
                 ) or (p_candidate.op == "call_module" and "dropout" in str(p_candidate.target).lower()):
                     if len(p_candidate.args) >= 1 and isinstance(p_candidate.args[0], torch.fx.Node):
                         p_candidate = p_candidate.args[0]
@@ -277,18 +316,43 @@ def _find_attention_candidates(graph: torch.fx.Graph) -> List[torch.fx.Node]:
                 p_target_str = str(p_candidate.target)
                 p_target_name = getattr(p_candidate.target, "__name__", p_target_str)
                 is_softmax = (
-                    (
-                        p_candidate.op == "call_function"
-                        and (
-                            p_candidate.target in (torch.softmax, F.softmax)
-                            or "softmax" in p_target_str
-                            or p_target_name == "softmax"
-                        )
+                    p_candidate.op == "call_function"
+                    and (
+                        p_candidate.target in (torch.softmax, F.softmax)
+                        or "softmax" in p_target_str
+                        or p_target_name == "softmax"
                     )
-                    or (p_candidate.op == "call_method" and p_candidate.target == "softmax")
-                )
-                if is_softmax:
+                ) or (p_candidate.op == "call_method" and p_candidate.target == "softmax")
+                if is_softmax and node not in seen_nodes:
                     candidates.append(node)
+                    seen_nodes.add(node)
+
+        # Check 4: Reverse search from projection layers
+        if node.op == "call_module":
+            target_str = str(node.target).lower()
+            if any(proj_key in target_str for proj_key in ("out_proj", "o_proj", "c_proj", "dense")):
+                curr_cand = node.args[0] if len(node.args) >= 1 else None
+                while isinstance(curr_cand, torch.fx.Node):
+                    if curr_cand in seen_nodes:
+                        break
+                    if curr_cand.op == "call_function" and (
+                        curr_cand.target is fast_linear_attention_replacement
+                        or "scaled_dot_product_attention" in str(curr_cand.target)
+                    ):
+                        candidates.append(curr_cand)
+                        seen_nodes.add(curr_cand)
+                        break
+                    if curr_cand.op in ("call_method", "call_function") and any(
+                        op_name in str(curr_cand.target)
+                        for op_name in ("view", "reshape", "transpose", "permute", "contiguous")
+                    ):
+                        curr_cand = (
+                            curr_cand.args[0]
+                            if len(curr_cand.args) >= 1 and isinstance(curr_cand.args[0], torch.fx.Node)
+                            else None
+                        )
+                    else:
+                        break
 
     return candidates
 
@@ -371,17 +435,14 @@ class FXAttentionGraphRewriter:
             target_str = str(node.target)
             target_name = getattr(node.target, "__name__", target_str)
             is_matmul = (
-                (
-                    node.op == "call_function"
-                    and (
-                        node.target in (torch.matmul, operator.matmul, torch.bmm)
-                        or target_name in ("matmul", "bmm")
-                        or "matmul" in target_str
-                        or "bmm" in target_str
-                    )
+                node.op == "call_function"
+                and (
+                    node.target in (torch.matmul, operator.matmul, torch.bmm)
+                    or target_name in ("matmul", "bmm")
+                    or "matmul" in target_str
+                    or "bmm" in target_str
                 )
-                or (node.op == "call_method" and node.target in ("matmul", "bmm"))
-            )
+            ) or (node.op == "call_method" and node.target in ("matmul", "bmm"))
 
             if is_matmul and len(node.args) >= 2:
                 p_candidate = node.args[0]
@@ -391,10 +452,7 @@ class FXAttentionGraphRewriter:
                 if isinstance(p_candidate, torch.fx.Node):
                     if (
                         p_candidate.op == "call_function"
-                        and (
-                            p_candidate.target in (torch.dropout, F.dropout)
-                            or "dropout" in str(p_candidate.target)
-                        )
+                        and (p_candidate.target in (torch.dropout, F.dropout) or "dropout" in str(p_candidate.target))
                     ) or (p_candidate.op == "call_module" and "dropout" in str(p_candidate.target).lower()):
                         if len(p_candidate.args) >= 1 and isinstance(p_candidate.args[0], torch.fx.Node):
                             p_candidate = p_candidate.args[0]
@@ -402,16 +460,13 @@ class FXAttentionGraphRewriter:
                     p_target_str = str(p_candidate.target)
                     p_target_name = getattr(p_candidate.target, "__name__", p_target_str)
                     is_softmax = (
-                        (
-                            p_candidate.op == "call_function"
-                            and (
-                                p_candidate.target in (torch.softmax, F.softmax)
-                                or "softmax" in p_target_str
-                                or p_target_name == "softmax"
-                            )
+                        p_candidate.op == "call_function"
+                        and (
+                            p_candidate.target in (torch.softmax, F.softmax)
+                            or "softmax" in p_target_str
+                            or p_target_name == "softmax"
                         )
-                        or (p_candidate.op == "call_method" and p_candidate.target == "softmax")
-                    )
+                    ) or (p_candidate.op == "call_method" and p_candidate.target == "softmax")
 
                     if is_softmax and len(p_candidate.args) >= 1:
                         scores_node = p_candidate.args[0]
@@ -419,7 +474,7 @@ class FXAttentionGraphRewriter:
                         mask_node = None
                         scale_val = None
 
-                        # Strip additions (masks/biases) and divisions/multiplications (scaling)
+                        # Strip additions, masked_fill, and divisions/multiplications
                         while isinstance(curr, torch.fx.Node) and curr.op in ("call_function", "call_method"):
                             c_target = curr.target
                             c_name = getattr(c_target, "__name__", str(c_target))
@@ -437,15 +492,19 @@ class FXAttentionGraphRewriter:
                                 else:
                                     break
                             elif (
-                                c_target in (torch.div, operator.truediv, operator.__truediv__)
-                                or c_name in ("div", "truediv")
+                                c_target is torch.masked_fill
+                                or c_name == "masked_fill"
+                                or (curr.op == "call_method" and curr.target == "masked_fill")
+                            ):
+                                mask_node = curr.args[1] if len(curr.args) > 1 else None
+                                curr = curr.args[0]
+                            elif c_target in (torch.div, operator.truediv, operator.__truediv__) or c_name in (
+                                "div",
+                                "truediv",
                             ):
                                 scale_val = curr.args[1] if len(curr.args) > 1 else None
                                 curr = curr.args[0]
-                            elif (
-                                c_target in (torch.mul, operator.mul, operator.__mul__)
-                                or c_name == "mul"
-                            ):
+                            elif c_target in (torch.mul, operator.mul, operator.__mul__) or c_name == "mul":
                                 if isinstance(curr.args[0], torch.fx.Node) and curr.args[0].op in (
                                     "call_function",
                                     "call_method",
@@ -515,7 +574,7 @@ class FXAttentionGraphRewriter:
             graph.eliminate_dead_code()
             after = len(graph.nodes)
             changed = before != after
-            removed += (before - after)
+            removed += before - after
         return removed
 
     def clean_and_recompile(self, gm: torch.fx.GraphModule) -> torch.fx.GraphModule:
