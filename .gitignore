@@ -11,8 +11,8 @@ thesis_final/
 thesis_final/**
 academic/
 academic/**
-results/
-results/**
+/results/
+/results/**
 logs/
 logs/**
 site/

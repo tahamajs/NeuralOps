@@ -45,6 +45,7 @@ from benchmarks.competitors.bench_lm_eval_mmlu_gsm8k import (
 from benchmarks.competitors.bench_medusa_speculative_tree import (
     benchmark_medusa_speculative_tree,
     evaluate_medusa_tree_acceptance,
+    run_medusa_speculative_benchmark,
 )
 from benchmarks.competitors.bench_megatron_tp_sp import (
     benchmark_megatron_tp_sp,
@@ -53,6 +54,7 @@ from benchmarks.competitors.bench_megatron_tp_sp import (
 from benchmarks.competitors.bench_ruler_long_context import (
     benchmark_ruler_long_context,
     generate_ruler_multi_needle_prompt,
+    run_ruler_benchmark,
 )
 from benchmarks.competitors.bench_sglang_radix_cache import (
     benchmark_radix_prefix_cache,
@@ -102,7 +104,9 @@ __all__ = [
     # RULER
     "benchmark_ruler_long_context",
     "generate_ruler_multi_needle_prompt",
+    "run_ruler_benchmark",
     # Medusa Speculative Tree
     "benchmark_medusa_speculative_tree",
     "evaluate_medusa_tree_acceptance",
+    "run_medusa_speculative_benchmark",
 ]
