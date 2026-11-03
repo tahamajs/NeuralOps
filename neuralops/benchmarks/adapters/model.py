@@ -322,22 +322,105 @@ class SurgerizedModelAdapter(HuggingFaceModelAdapter):
     ) -> None:
         super().__init__(model=model, model_name=model_name, tokenizer=tokenizer)
         self.surgery_manifest = surgery_manifest or {}
-        self.transplanted_attention = self.surgery_manifest.get("transplanted_attention") or self.surgery_manifest.get("attention_key")
-        self.compressor_key = self.surgery_manifest.get("compressor_key") or self.surgery_manifest.get("compression_method")
+        self.transplanted_attention = str(
+            self.surgery_manifest.get("transplanted_attention")
+            or self.surgery_manifest.get("attention_key")
+            or ""
+        )
+        self.compressor_key = str(
+            self.surgery_manifest.get("compressor_key")
+            or self.surgery_manifest.get("compression_method")
+            or ""
+        )
         self.calibrated = bool(self.surgery_manifest.get("calibrated", False))
+        self.ridge_damping = str(
+            self.surgery_manifest.get("ridge_damping")
+            or self.surgery_manifest.get("damping")
+            or "1e-4"
+        )
+        self.pre_train_healed = str(
+            self.surgery_manifest.get("pre_train_healed")
+            or self.surgery_manifest.get("healed")
+            or ("true" if self.calibrated else "false")
+        )
 
     def get_surgery_lineage(self) -> Dict[str, Any]:
-        """Return provenance and surgical lineage metadata."""
+        """Return provenance and surgical lineage metadata.
+
+        Preserves lineage tracking attributes:
+        transplanted_attention, compressor_key, ridge_damping, calibrated, pre_train_healed.
+        """
         return {
-            "is_transplanted": bool(self.transplanted_attention is not None),
+            "is_transplanted": bool(self.transplanted_attention != ""),
             "transplanted_attention": self.transplanted_attention,
             "compressor_key": self.compressor_key,
-            "calibrated": self.calibrated,
+            "ridge_damping": self.ridge_damping,
+            "calibrated": "true" if self.calibrated else "false",
+            "pre_train_healed": self.pre_train_healed,
             "calibration_method": self.surgery_manifest.get("calibration_method", "none"),
-            "damping": self.surgery_manifest.get("damping", 1e-4),
             "base_model": self.surgery_manifest.get("base_model", self.model_name),
             "surgery_manifest": self.surgery_manifest,
         }
+
+    @classmethod
+    def from_checkpoint_dir(
+        cls,
+        checkpoint_dir: Union[str, Path],
+        model_name: Optional[str] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        torch_dtype: Optional[torch.dtype] = None,
+        tokenizer: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> "SurgerizedModelAdapter":
+        """Instantiate SurgerizedModelAdapter directly from a checkpoint directory.
+
+        Parses and validates 'neuralops_surgery_manifest.json' and locates accompanying weights.
+        Fails closed with FileNotFoundError or ValueError on missing or corrupt manifests.
+        """
+        ckpt_path = Path(checkpoint_dir)
+        if not ckpt_path.exists() or not ckpt_path.is_dir():
+            raise FileNotFoundError(f"Checkpoint directory does not exist: {ckpt_path}")
+
+        manifest_file = ckpt_path / "neuralops_surgery_manifest.json"
+        if not manifest_file.is_file():
+            raise FileNotFoundError(
+                f"Missing required surgery manifest 'neuralops_surgery_manifest.json' in {ckpt_path}"
+            )
+
+        try:
+            with open(manifest_file, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+        except Exception as e:
+            raise ValueError(f"Corrupted or invalid JSON in surgery manifest {manifest_file}: {e}") from e
+
+        if not isinstance(manifest, dict):
+            raise ValueError(f"Invalid schema: manifest in {manifest_file} must be a JSON object")
+
+        # Load weights using transformers AutoModelForCausalLM or AutoModel
+        try:
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+            load_kwargs: Dict[str, Any] = dict(kwargs)
+            if torch_dtype is not None:
+                load_kwargs["torch_dtype"] = torch_dtype
+            model = AutoModelForCausalLM.from_pretrained(str(ckpt_path), **load_kwargs)
+            if tokenizer is None:
+                try:
+                    tokenizer = AutoTokenizer.from_pretrained(str(ckpt_path))
+                except Exception:
+                    pass
+        except Exception as e:
+            raise RuntimeError(f"Failed to load weights from checkpoint dir {ckpt_path}: {e}") from e
+
+        resolved_name = model_name or manifest.get("model_tag") or ckpt_path.name
+        adapter = cls(
+            model=model,
+            model_name=resolved_name,
+            surgery_manifest=manifest,
+            tokenizer=tokenizer,
+        )
+        if device is not None:
+            adapter.to(device)
+        return adapter
 
     def get_model_metadata(self) -> Dict[str, Any]:
         meta = super().get_model_metadata()
