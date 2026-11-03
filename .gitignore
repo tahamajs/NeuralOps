@@ -90,6 +90,8 @@ coverage.xml
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 *.ipynb
+!notebooks/*.ipynb
+!notebooks/extended/*.ipynb
 cache/
 **/cache/
 .cache/
