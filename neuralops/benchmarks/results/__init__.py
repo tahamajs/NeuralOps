@@ -10,6 +10,7 @@ NeuralOps Benchmarks Results Subpackage.
 """
 
 from __future__ import annotations
+from .schema import normalize_legacy_result_dict
 
 import importlib
 from typing import Any
@@ -45,6 +46,7 @@ __all__ = [
     "ResultsIndex",
     "generate_reproduction_command",
     "generate_reproduction_script",
+    "normalize_legacy_result_dict",
 ]
 
 _LAZY_RESULTS_MAP: dict[str, tuple[str, str]] = {
@@ -74,6 +76,7 @@ _LAZY_RESULTS_MAP: dict[str, tuple[str, str]] = {
     "HardwareUsage": ("neuralops.benchmarks.results.schema", "HardwareUsage"),
     "ModelMetadata": ("neuralops.benchmarks.results.schema", "ModelMetadata"),
     "ModuleMetadata": ("neuralops.benchmarks.results.schema", "ModuleMetadata"),
+    "normalize_legacy_result_dict": ("neuralops.benchmarks.results.schema", "normalize_legacy_result_dict"),
     "PushInfo": ("neuralops.benchmarks.results.schema", "PushInfo"),
     "ReproducibilityInfo": ("neuralops.benchmarks.results.schema", "ReproducibilityInfo"),
     "RunMetadata": ("neuralops.benchmarks.results.schema", "RunMetadata"),

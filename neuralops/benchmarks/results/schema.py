@@ -190,6 +190,7 @@ class EnvironmentMetadata:
     gpu_model: Optional[str] = None
     gpu_count: int = 0
     gpu_vram_gb: float = 0.0
+    cuda_compute_capability: Optional[str] = None
     cuda_version: Optional[str] = None
     cudnn_version: Optional[str] = None
     torch_version: str = "unknown"
@@ -201,6 +202,7 @@ class EnvironmentMetadata:
     pandas_version: Optional[str] = None
     scipy_version: Optional[str] = None
     neuralops_version: str = "0.1.0"
+    git_commit: str = field(default_factory=_get_git_commit)
     all_installed_packages: Dict[str, str] = field(default_factory=dict)
     env_vars_used: Dict[str, str] = field(default_factory=dict)
 
@@ -209,6 +211,7 @@ class EnvironmentMetadata:
         """Capture active environment state."""
         import importlib.metadata
         env = cls()
+        env.git_commit = _get_git_commit()
         try:
             import torch
             env.torch_version = torch.__version__
@@ -216,6 +219,12 @@ class EnvironmentMetadata:
                 env.gpu_model = torch.cuda.get_device_name(0)
                 env.gpu_count = torch.cuda.device_count()
                 env.cuda_version = torch.version.cuda
+                try:
+                    cap = torch.cuda.get_device_capability(0)
+                    env.cuda_compute_capability = f"{cap[0]}.{cap[1]}"
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
                 if hasattr(torch.backends, "cudnn") and hasattr(torch.backends.cudnn, "version"):
                     env.cudnn_version = str(torch.backends.cudnn.version())
                 try:
@@ -462,10 +471,10 @@ class BenchmarkResult:
 
     def compute_run_key(self) -> str:
         """Compute unique deterministic run key for deduplication."""
-        mod = self.module.get("name", "none")
-        mdl = self.model.get("name", "none")
-        ds = self.dataset.get("name", "none")
-        rk = self.config.get("rank", 0)
+        mod = self.module.get("name", "none") if isinstance(self.module, dict) else (getattr(self.module, "name", str(self.module)) if self.module else (self.transplanted_attention or "none"))
+        mdl = self.model.get("name", "none") if isinstance(self.model, dict) else (getattr(self.model, "name", str(self.model)) if self.model else (self.model_name or "none"))
+        ds = self.dataset.get("name", "none") if isinstance(self.dataset, dict) else (getattr(self.dataset, "name", str(self.dataset)) if self.dataset else (self.benchmark_suite or "none"))
+        rk = self.config.get("rank", 0) if isinstance(self.config, dict) else 0
 
         clean_cfg = {
             k: v for k, v in self.config.items()
@@ -577,6 +586,65 @@ class BenchmarkResult:
         return res
 
 
+def normalize_legacy_result_dict(legacy_dict: Dict[str, Any]) -> BenchmarkResult:
+    """Map legacy benchmark result dictionary keys to canonical BenchmarkResult fields.
+
+    Ingests variations such as:
+      - 'suite' or 'dataset' -> benchmark_suite
+      - 'device' or 'device_type' -> device_type
+      - 'results' or 'metrics' -> metrics
+      - 'attention' or 'module' -> transplanted_attention
+      - 'model' -> model_name
+      - 'run_metadata' -> top-level metadata and run identification
+
+    Args:
+        legacy_dict: Raw dictionary from historical or legacy benchmark runs.
+
+    Returns:
+        Canonical BenchmarkResult instance.
+    """
+    d = dict(legacy_dict)
+
+    # 1. Benchmark suite
+    if "suite" in d and "benchmark_suite" not in d:
+        d["benchmark_suite"] = str(d["suite"])
+    elif "dataset" in d and isinstance(d["dataset"], dict) and "name" in d["dataset"] and "benchmark_suite" not in d:
+        d["benchmark_suite"] = str(d["dataset"]["name"])
+
+    # 2. Device type
+    if "device" in d and "device_type" not in d:
+        d["device_type"] = str(d["device"])
+
+    # 3. Model name
+    if "model" in d and "model_name" not in d:
+        if isinstance(d["model"], dict):
+            d["model_name"] = str(d["model"].get("name", ""))
+        else:
+            d["model_name"] = str(d["model"])
+
+    # 4. Attention / module name
+    if "attention" in d and "transplanted_attention" not in d:
+        d["transplanted_attention"] = str(d["attention"])
+    elif "module" in d and "transplanted_attention" not in d:
+        if isinstance(d["module"], dict):
+            d["transplanted_attention"] = str(d["module"].get("name", ""))
+        else:
+            d["transplanted_attention"] = str(d["module"])
+
+    # 5. Metrics & results
+    if "results" in d and "metrics" not in d:
+        d["metrics"] = d["results"] if isinstance(d["results"], dict) else {"raw": d["results"]}
+
+    # 6. Pre-train steps
+    if "steps" in d and "pre_train_steps" not in d:
+        try:
+            d["pre_train_steps"] = int(d["steps"])
+        except (ValueError, TypeError):
+            pass
+
+    return BenchmarkResult.from_dict(d)
+
+
 __all__ = [
     "RunMetadata",
     "ModuleMetadata",
@@ -589,4 +657,5 @@ __all__ = [
     "ArtifactPaths",
     "PushInfo",
     "BenchmarkResult",
+    "normalize_legacy_result_dict",
 ]
