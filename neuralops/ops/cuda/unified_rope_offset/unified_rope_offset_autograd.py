@@ -36,7 +36,10 @@ def _get_module():
         )
     return _MODULE
 
-from neuralops.ops.triton.fused_rope import fused_unified_rope_offset_pytorch
+from neuralops.ops.triton.fused_rope import (
+    fused_unified_rope_offset_pytorch,
+    fused_unified_rope_offset_triton,
+)
 
 def unified_rope_offset_pytorch_ref(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor, rotary_dim: int, offset: int = 0) -> torch.Tensor:
     N = x.shape[2]
@@ -53,9 +56,11 @@ def unified_rope_offset(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor, r
         mod = _get_module()
         fn = mod.unified_rope_offset_fwd
         return fn(x.contiguous(), cos.contiguous(), sin.contiguous(), rotary_dim, offset)
+    def triton_fn(x, cos, sin, rotary_dim, offset=0):
+        return fused_unified_rope_offset_triton(x, cos, sin, rotary_dim, offset=offset)
     return dispatch(
         cuda_fn,
-        None,
+        triton_fn,
         unified_rope_offset_pytorch_ref,
         x, cos, sin, rotary_dim, offset=offset,
         kernel_name="unified_rope_offset",

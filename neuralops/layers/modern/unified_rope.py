@@ -251,7 +251,7 @@ class UnifiedRoPE(BaseAttention):
             fused_unified_rope_offset_pytorch,
         )
         try:
-            return fused_unified_rope_offset_triton(x, cos, sin, rotary_dim)
+            return fused_unified_rope_offset_triton(x, self.cos_cached, self.sin_cached, rotary_dim, offset=past_len)
         except Exception:
             return fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim)
 

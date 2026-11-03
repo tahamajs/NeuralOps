@@ -625,17 +625,32 @@ class MoBAAttention(BaseAttention):
             triton_attn_success = False
             if (
                 Q_pad.is_cuda
-                and not is_causal
                 and valid_mask is None
                 and not self.training
                 and d in (32, 64, 128)
             ):
                 try:
-                    from neuralops.ops.triton.block_sparse import triton_block_sparse_streaming_attn
-                    # top_idx shape: [B, H, nb, top_k]
-                    stream_out = triton_block_sparse_streaming_attn(
-                        Q_pad, K_pad, V_pad, top_idx, block_size=bs, sm_scale=scale
-                    )
+                    if is_causal:
+                        from neuralops.ops.triton.sparse_attn import fwd as triton_sparse_fwd
+                        b_mask = torch.zeros(B, nb, nb, device=device, dtype=torch.int32)
+                        # top_idx: [B, H, nb, top_k] -> take union or broadcast across heads
+                        top_idx_any = top_idx.view(B, -1, nb, top_idx.shape[-1])
+                        for h_idx in range(top_idx_any.shape[1]):
+                            b_mask.scatter_(-1, top_idx_any[:, h_idx, :, :], 1)
+                        # Ensure causal condition on block level
+                        causal_tril_b = torch.tril(torch.ones(nb, nb, device=device, dtype=torch.int32)).unsqueeze(0)
+                        b_mask = b_mask * causal_tril_b
+                        stream_out = triton_sparse_fwd(
+                            Q_pad, K_pad, V_pad,
+                            block_mask=b_mask,
+                            block_size=bs,
+                            is_causal=True,
+                        )
+                    else:
+                        from neuralops.ops.triton.block_sparse import triton_block_sparse_streaming_attn
+                        stream_out = triton_block_sparse_streaming_attn(
+                            Q_pad, K_pad, V_pad, top_idx, block_size=bs, sm_scale=scale
+                        )
                     out_pad = stream_out[:, :, :L, :]
                     out = out_pad.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
                     triton_attn_success = True
