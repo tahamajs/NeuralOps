@@ -41,8 +41,9 @@ __global__ void cosformer_fwd_kernel(
     const int num_threads = blockDim.x;
 
     // Registers / Shared memory for decoupled S_cos and S_sin state accumulators
-    __shared__ float s_S_cos[MAX_D][MAX_D];
-    __shared__ float s_S_sin[MAX_D][MAX_D];
+    // MAX_D + 1 padding eliminates shared memory bank conflicts across all 32 banks
+    __shared__ float s_S_cos[MAX_D][MAX_D + 1];
+    __shared__ float s_S_sin[MAX_D][MAX_D + 1];
     __shared__ float s_Z_cos[MAX_D];
     __shared__ float s_Z_sin[MAX_D];
 
