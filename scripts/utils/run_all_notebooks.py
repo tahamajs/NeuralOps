@@ -21,7 +21,9 @@ import glob
 import io
 import json
 import os
+import subprocess
 import sys
+import tempfile
 import time
 import traceback
 from typing import Any
@@ -333,13 +335,22 @@ def main() -> int:
     parser.add_argument("--dir", type=str, default="notebooks", help="Path to notebooks directory")
     parser.add_argument("--pattern", type=str, default="*.ipynb", help="Glob pattern for notebooks")
     parser.add_argument("--summary-file", type=str, default="results/NOTEBOOKS_EXECUTION_SUMMARY.md")
+    parser.add_argument("--single-notebook", type=str, default=None, help="Execute single notebook and exit")
+    parser.add_argument("--output-json", type=str, default=None, help="Write execution result dictionary to JSON file")
     args = parser.parse_args()
 
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    nb_dir = os.path.abspath(args.dir)
-
     _setup_runtime_environment()
 
+    if args.single_notebook:
+        nb_path = os.path.abspath(args.single_notebook)
+        res = execute_notebook(nb_path, repo_root)
+        if args.output_json:
+            with open(args.output_json, "w", encoding="utf-8") as f_json:
+                json.dump(res, f_json)
+        return 0 if res["status"] == "PASS" else 1
+
+    nb_dir = os.path.abspath(args.dir)
     nb_files = sorted(glob.glob(os.path.join(nb_dir, args.pattern)))
     if not nb_files:
         print(f"No notebooks found in {nb_dir} matching {args.pattern}")
@@ -380,21 +391,34 @@ def main() -> int:
         nb_name = os.path.basename(nb_path)
         print(f"\n[{idx:02d}/{len(nb_files):02d}] Executing: {nb_name} ...", flush=True)
 
-        # Clear GPU cache and garbage collector between notebooks
-        import gc
-        gc.collect()
-        try:
-            import torch
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                if hasattr(torch.cuda, "ipc_collect"):
-                    torch.cuda.ipc_collect()
-        except Exception:
-            pass
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp_f:
+            tmp_json = tmp_f.name
 
-        try:
-            res = execute_notebook(nb_path, repo_root)
-        except Exception as e:
+        cmd = [
+            sys.executable,
+            "-u",
+            os.path.abspath(__file__),
+            "--single-notebook",
+            nb_path,
+            "--output-json",
+            tmp_json,
+        ]
+        proc = subprocess.run(cmd, cwd=repo_root)
+
+        if os.path.exists(tmp_json) and os.path.getsize(tmp_json) > 0:
+            try:
+                with open(tmp_json, "r", encoding="utf-8") as f_in:
+                    res = json.load(f_in)
+            except Exception:
+                res = None
+            try:
+                os.remove(tmp_json)
+            except OSError:
+                pass
+        else:
+            res = None
+
+        if res is None:
             res = {
                 "notebook": nb_name,
                 "path": nb_path,
@@ -403,7 +427,7 @@ def main() -> int:
                 "total_code_cells": 0,
                 "passed_code_cells": 0,
                 "status": "FAIL",
-                "errors": [{"cell_index": 0, "error": f"Fatal notebook crash: {e}"}],
+                "errors": [{"cell_index": 0, "error": f"Notebook process crashed (exit {proc.returncode})"}],
             }
         results.append(res)
 
