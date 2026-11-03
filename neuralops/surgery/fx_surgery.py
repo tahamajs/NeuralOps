@@ -139,7 +139,7 @@ class NeuralOpsAttentionTracer(torch.fx.Tracer):
 
     def create_node(
         self,
-        op: str,
+        kind: str,
         target: torch.fx.node.Target,
         args: Tuple[Any, ...],
         kwargs: Dict[str, Any],
@@ -148,7 +148,7 @@ class NeuralOpsAttentionTracer(torch.fx.Tracer):
     ) -> torch.fx.Node:
         """Creates a node in the graph and annotates dynamic shape metadata."""
         node = super().create_node(
-            op=op,
+            kind=kind,
             target=target,
             args=args,
             kwargs=kwargs,
