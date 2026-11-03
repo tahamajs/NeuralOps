@@ -89,8 +89,12 @@ def svd_linear_decay_pytorch_ref(
         lam_dec = lambda_decay.to(compute_dtype)
         if lam_dec.dim() == 4:
             lam_dec = lam_dec.squeeze(-1).squeeze(-1)
+        elif lam_dec.dim() == 1:
+            lam_dec = lam_dec.view(1, -1, 1).expand(B, H, N)
         elif lam_dec.dim() == 2:
             lam_dec = lam_dec.unsqueeze(-1).expand(B, H, N)
+        elif lam_dec.dim() == 3:
+            lam_dec = lam_dec.expand(B, H, N)
 
         for c in range(num_chunks):
             start = c * chunk_size
