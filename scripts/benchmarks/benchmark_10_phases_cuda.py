@@ -51,22 +51,22 @@ def main():
     # Test key representative kernels across the 10 phases
     print("Benchmarking Phase 1 (Attention Decoding & Fast Serving)...")
     try:
-        from neuralops.ops.cuda.fused_rope.rope_autograd import fused_rope_fwd
+        from neuralops.ops.cuda.fused_rope.rope_autograd import fused_rotary_emb
         x = torch.randn(2, 4, 1024, 64, device=args.device, dtype=torch.float16)
         cos = torch.randn(1, 1, 1024, 32, device=args.device, dtype=torch.float16)
         sin = torch.randn(1, 1, 1024, 32, device=args.device, dtype=torch.float16)
-        ms = benchmark_single("fused_rope", fused_rope_fwd, x, cos, sin)
+        ms = benchmark_single("fused_rope", fused_rotary_emb, x, cos, sin)
         results.append({"phase": 1, "module": "fused_rope", "latency_ms": ms, "status": "OK"})
         print(f"  fused_rope: {ms:.4f} ms")
     except Exception as e:
         results.append({"phase": 1, "module": "fused_rope", "latency_ms": 0.0, "status": str(e)})
 
     try:
-        from neuralops.ops.cuda.flash_decoding.flash_dec_autograd import flash_decoding_attention_fwd
+        from neuralops.ops.cuda.flash_decoding.flash_dec_autograd import flash_decoding_attention
         q = torch.randn(2, 4, 1, 64, device=args.device, dtype=torch.float16)
         k = torch.randn(2, 4, 1024, 64, device=args.device, dtype=torch.float16)
         v = torch.randn(2, 4, 1024, 64, device=args.device, dtype=torch.float16)
-        ms = benchmark_single("flash_decoding", flash_decoding_attention_fwd, q, k, v)
+        ms = benchmark_single("flash_decoding", flash_decoding_attention, q, k, v)
         results.append({"phase": 1, "module": "flash_decoding", "latency_ms": ms, "status": "OK"})
         print(f"  flash_decoding: {ms:.4f} ms")
     except Exception as e:
@@ -74,11 +74,11 @@ def main():
 
     print("Benchmarking Phase 2 (Context Parallel & Dynamic Convolutions)...")
     try:
-        from neuralops.ops.cuda.sliding_window.sliding_autograd import sliding_window_attention
+        from neuralops.ops.cuda.sliding_window.sliding_autograd import sliding_window_attn
         q = torch.randn(2, 4, 1024, 64, device=args.device, dtype=torch.float16)
         k = torch.randn(2, 4, 1024, 64, device=args.device, dtype=torch.float16)
         v = torch.randn(2, 4, 1024, 64, device=args.device, dtype=torch.float16)
-        ms = benchmark_single("sliding_window", sliding_window_attention, q, k, v, 128)
+        ms = benchmark_single("sliding_window", sliding_window_attn, q, k, v, 128)
         results.append({"phase": 2, "module": "sliding_window", "latency_ms": ms, "status": "OK"})
         print(f"  sliding_window: {ms:.4f} ms")
     except Exception as e:
@@ -125,14 +125,14 @@ def main():
         results.append({"phase": 9, "module": "gla_scan", "latency_ms": 0.0, "status": str(e)})
 
     try:
-        from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan_fn
+        from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan
         u = torch.randn(2, 64, 512, device=args.device, dtype=torch.float16)
         delta = torch.randn(2, 64, 512, device=args.device, dtype=torch.float16).abs() + 0.1
         A = -torch.rand(64, 16, device=args.device, dtype=torch.float16) - 0.1
         B = torch.randn(2, 16, 512, device=args.device, dtype=torch.float16)
         C = torch.randn(2, 16, 512, device=args.device, dtype=torch.float16)
         D = torch.randn(64, device=args.device, dtype=torch.float16)
-        ms = benchmark_single("selective_scan", selective_scan_fn, u, delta, A, B, C, D)
+        ms = benchmark_single("selective_scan", selective_scan, u, delta, A, B, C, D)
         results.append({"phase": 9, "module": "selective_scan", "latency_ms": ms, "status": "OK"})
         print(f"  selective_scan: {ms:.4f} ms")
     except Exception as e:
