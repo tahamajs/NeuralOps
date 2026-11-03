@@ -1930,6 +1930,37 @@ attention-module discovery warnings. These warnings do not change the PBS
 exit status, but they must be considered before claiming that every notebook
 used a native Triton/CUDA path.
 
+### 22.2 Executed notebooks copied from HPC
+
+The executed notebook files are preserved separately from the source notebooks
+under `results/notebooks_executed/`. This directory is a direct, non-
+destructive copy of `/home/tahamajlesi.ut/NeuralOps/notebooks/` from the HPC
+run; it preserves the notebook JSON, execution counts, cell outputs, embedded
+figures, and errors. The source notebooks under `notebooks/` remain the clean
+inputs for future runs.
+
+The synchronized bundle contains **99 notebook files**, of which **64 contain
+non-empty `outputs` arrays**. The 29 notebooks listed in
+`results/NOTEBOOKS_EXECUTION_SUMMARY.md` and `results/notebooks_pbs.out` are
+the completed PBS suite. The remaining copied notebooks are retained because
+they are part of the server's notebook catalog, but they are not claimed as
+executed unless their JSON contains outputs or a matching execution record.
+
+| Evidence | Path |
+| :--- | :--- |
+| Executed notebook JSON, including outputs | `results/notebooks_executed/*.ipynb` |
+| 29-notebook PBS status and cell counts | `results/notebooks_pbs.out` |
+| Machine-readable execution summary | `results/NOTEBOOKS_EXECUTION_SUMMARY.md` |
+| Warnings and runtime diagnostics | `results/notebooks_pbs.err` |
+| Earlier failed attempt, retained for provenance | `results/notebooks_execution.log` |
+| Notebook-generated plots and reports | `results/plots/`, `results/reports/`, `results/tables/` |
+
+The successful PBS run is the authoritative run for the 29-notebook claim.
+The older log is explicitly historical and failed during import; it must not
+be presented as a successful execution. Notebook output alone is also not
+proof of a native GPU path: consult the PBS stderr log for fallback warnings,
+missing optional dependencies, and driver limitations.
+
 ## 23. Hugging Face Model Zoo Audit
 
 NeuralOps integrates directly with the Hugging Face Hub under the [Hooshaai](https://huggingface.co/Hooshaai) organization and author checkpoints:
