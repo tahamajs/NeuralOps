@@ -813,28 +813,45 @@ class UniversalSurgeryDirector:
                     if idx not in selected_indices:
                         continue
 
-                    # Create target attention mechanism
-                    new_attn = create_attention(
-                        target_attention,
-                        embed_dim=spec.embed_dim,
-                        num_heads=spec.num_heads,
-                        num_kv_heads=spec.num_kv_heads,
-                        head_dim=spec.head_dim,
-                        is_decoder=not self.profile.is_encoder,
+                    # Check if target is cross-attention in encoder-decoder
+                    is_cross = (
+                        (spec.extra_metadata is not None and spec.extra_metadata.get("is_cross_attention", False))
+                        or "encdec" in spec.attr_name.lower()
+                        or "cross" in spec.attr_name.lower()
                     )
 
-                    # Invariant 5 / Phase 045: Wrap in BiDirectionalScanWrapper for encoders
-                    if self.profile.is_encoder:
-                        new_attn = BiDirectionalScanWrapper(new_attn, d_model=spec.embed_dim)
-
-                    # Law 1 & Law 2 Wrapping if QK-Norm or softcapping present
-                    if self.profile.has_qk_norm or self.profile.softcapping_factor is not None:
-                        new_attn = InvariantPreservingLinearBridge(
-                            base_attention=new_attn,
-                            has_qk_norm=self.profile.has_qk_norm,
-                            softcapping_factor=self.profile.softcapping_factor,
+                    if is_cross:
+                        new_attn = CrossAttentionLinearBridge(head_dim=spec.head_dim)
+                    else:
+                        # Create target attention mechanism
+                        new_attn = create_attention(
+                            target_attention,
+                            embed_dim=spec.embed_dim,
+                            num_heads=spec.num_heads,
+                            num_kv_heads=spec.num_kv_heads,
                             head_dim=spec.head_dim,
+                            is_decoder=not self.profile.is_encoder,
                         )
+
+                        # Invariant 5 / Phase 045: Wrap in BiDirectionalScanWrapper for encoders
+                        if self.profile.is_encoder:
+                            new_attn = BiDirectionalScanWrapper(new_attn, d_model=spec.embed_dim)
+
+                        # Law 1 & Law 2 Wrapping if QK-Norm or softcapping present
+                        has_qk = self.profile.has_qk_norm or (
+                            spec.extra_metadata is not None and spec.extra_metadata.get("has_qk_norm", False)
+                        )
+                        softcap = self.profile.softcapping_factor
+                        if softcap is None and spec.extra_metadata is not None:
+                            softcap = spec.extra_metadata.get("softcapping_factor", None)
+
+                        if has_qk or softcap is not None:
+                            new_attn = InvariantPreservingLinearBridge(
+                                base_attention=new_attn,
+                                has_qk_norm=has_qk,
+                                softcapping_factor=softcap,
+                                head_dim=spec.head_dim,
+                            )
 
                     # Invariant 7 & Law 9: Inherit pretrained projections inside GatheredParametersContext
                     if inherit_weights and spec.extracted_qkv is not None:
@@ -877,6 +894,23 @@ class UniversalSurgeryDirector:
                 wrap_model_for_generation(self.model)
             except Exception as e:
                 logger.debug("Polymorphic generation cache bridge attachment skipped: %s", e)
+
+        # Attach SurgicalModel protocol methods & manifest metadata
+        manifest = {
+            "family": self.profile.family,
+            "target_attention": target_attention,
+            "num_layers": self.profile.num_layers,
+            "engine": engine,
+        }
+        self.model._surgical_manifest = manifest
+        self.model.get_surgical_manifest = lambda: getattr(self.model, "_surgical_manifest", {})  # type: ignore[assignment]
+        self.model.get_attention_family = lambda layer_idx: target_attention  # type: ignore[assignment]
+
+        try:
+            from neuralops.models.protocols import SurgicalModel
+            SurgicalModel.register(type(self.model))
+        except Exception:
+            pass
 
         self.verify_invariants()
         logger.info("UniversalSurgeryDirector: Surgery completed successfully with all invariants verified.")

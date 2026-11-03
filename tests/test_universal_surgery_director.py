@@ -741,3 +741,18 @@ def test_legacy_shims_forwarding() -> None:
     gemma = MockGemma2Model()
     surgeried = replace_attention(gemma)
     assert surgeried is not None
+
+
+def test_surgical_model_protocol_compliance() -> None:
+    """Verifies surgeried model adheres to SurgicalModel protocol from neuralops.models.protocols."""
+    from neuralops.models.protocols import SurgicalModel
+
+    gemma = MockGemma2Model()
+    director = UniversalSurgeryDirector(gemma)
+    surgeried = director.execute_surgery(target_attention="cosformer")
+
+    manifest = surgeried.get_surgical_manifest()
+    assert manifest["target_attention"] == "cosformer"
+    assert manifest["family"] == "gemma2"
+    assert surgeried.get_attention_family(0) == "cosformer"
+    assert isinstance(surgeried, SurgicalModel)
