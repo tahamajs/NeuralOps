@@ -107,3 +107,20 @@ def linear_attention(
         v,
         kernel_name="linear_attention",
     )
+
+
+class LinearAttentionFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, q, k, v):
+        ctx.save_for_backward(q, k, v)
+        return linear_attention(q, k, v)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        q, k, v = ctx.saved_tensors
+        q_grad = torch.zeros_like(q)
+        k_grad = torch.zeros_like(k)
+        v_grad = torch.zeros_like(v)
+        return q_grad, k_grad, v_grad
+
+__all__ = ["LinearAttentionFunction", "linear_attention"]

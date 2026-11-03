@@ -17,11 +17,29 @@ import sys
 from pathlib import Path
 from typing import Any, List, Optional
 
-from neuralops.executor.executor import execute_recipe
-from neuralops.executor.planner import plan_recipe
-from neuralops.recipe.loader import load_recipe
-from neuralops.surgery import ModelSurgery
-from neuralops.validator.static import validate_recipe_static
+def execute_recipe(*args: Any, **kwargs: Any) -> Any:
+    from neuralops.executor.executor import execute_recipe as _impl
+    return _impl(*args, **kwargs)
+
+
+def plan_recipe(*args: Any, **kwargs: Any) -> Any:
+    from neuralops.executor.planner import plan_recipe as _impl
+    return _impl(*args, **kwargs)
+
+
+def load_recipe(*args: Any, **kwargs: Any) -> Any:
+    from neuralops.recipe.loader import load_recipe as _impl
+    return _impl(*args, **kwargs)
+
+
+def validate_recipe_static(*args: Any, **kwargs: Any) -> Any:
+    from neuralops.validator.static import validate_recipe_static as _impl
+    return _impl(*args, **kwargs)
+
+
+def _get_model_surgery():
+    from neuralops.surgery import ModelSurgery
+    return ModelSurgery
 
 
 def add_surgery_subparser(subparsers: argparse._SubParsersAction) -> None:
@@ -105,7 +123,7 @@ def handle_surgery_command(args: argparse.Namespace) -> int:
     elif action == "apply":
         try:
             print(f"Executing recipe '{recipe.metadata.name}'...")
-            surgery = ModelSurgery.from_recipe(recipe, model_name_or_path=args.model)
+            surgery = _get_model_surgery().from_recipe(recipe, model_name_or_path=args.model)
             if args.profile:
                 surgery.recipe.validation.profile = args.profile
 

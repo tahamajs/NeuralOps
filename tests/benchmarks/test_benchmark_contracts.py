@@ -25,7 +25,7 @@ def test_legacy_config_adapts_to_canonical_config(tmp_path: Path):
     assert isinstance(canonical, CanonicalConfig)
     assert canonical.device == "cpu"
     assert canonical.output_dir == tmp_path
-    assert canonical.extra["enable_backward"] is True
+    assert canonical.enable_backward is True
 
 
 def test_canonical_config_roundtrip(tmp_path: Path):
@@ -56,7 +56,7 @@ def test_requested_accelerator_is_fail_closed(monkeypatch):
     runner = ProbeRunner(CanonicalConfig(device="cuda"))
     monkeypatch.setattr("neuralops.benchmarks.runner.torch.cuda.is_available", lambda: False)
 
-    with pytest.raises(RuntimeError, match="CUDA was requested"):
+    with pytest.raises(RuntimeError, match="was requested.*unavailable"):
         runner.verify()
 
 
