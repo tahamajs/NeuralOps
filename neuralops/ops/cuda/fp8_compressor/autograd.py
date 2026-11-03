@@ -38,7 +38,7 @@ def _get_fp8_ops():
         _OPS = load(
             name="fp8_ops",
             sources=[str(pkg_dir / "fp8_compressor.cu"), str(pkg_dir / "binding.cpp")],
-            extra_cuda_cflags=["-gencode=arch=compute_75,code=sm_75", "-O3"],
+            extra_cuda_cflags=["-O3"],  # inherits torch nvcc arches including sm_80, sm_86, sm_89, sm_90
             verbose=False,
         )
         return _OPS

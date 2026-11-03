@@ -40,7 +40,7 @@ def _get_asvd_ops():
         _OPS = load(
             name="asvd_ops",
             sources=[str(pkg_dir / "asvd.cu"), str(pkg_dir / "binding.cpp")],
-            extra_cuda_cflags=["-gencode=arch=compute_75,code=sm_75", "-O3"],
+            extra_cuda_cflags=["-O3"],  # inherits torch nvcc arches including sm_80, sm_86, sm_89, sm_90
             verbose=False,
         )
         return _OPS
