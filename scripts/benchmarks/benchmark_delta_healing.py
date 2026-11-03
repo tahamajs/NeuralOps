@@ -29,8 +29,75 @@ import torch.nn.functional as F
 import transformers
 from datasets import Dataset
 
+import numpy as np
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.benchmarks._legacy.kd_quick_test import apply_module_to_model, eval_ppl
+from neuralops.evaluation.eval_patcher import apply_module_to_model
+
+
+def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int = 256, stride: int = 128, max_eval_tokens: int = 15000, device: str = "cuda") -> float:
+    """Canonical evaluation wrapper computing exact causal LM perplexity matching historical delta_sweep."""
+    model.eval()
+    sample_texts = []
+    accum_chars = 0
+    target_chars = max_eval_tokens * 6
+    for t in test_dataset["text"]:
+        sample_texts.append(t)
+        accum_chars += len(t)
+        if accum_chars >= target_chars:
+            break
+    text = "\n\n".join(sample_texts) if sample_texts else "\n\n".join(test_dataset["text"][:100])
+    enc = tokenizer(text, return_tensors="pt", truncation=False)
+    input_ids = enc.input_ids
+    if input_ids.dim() == 1:
+        input_ids = input_ids.unsqueeze(0)
+    total_len = min(input_ids.size(1), max_eval_tokens)
+    input_ids = input_ids[:, :total_len]
+
+    nlls = []
+    prev_end = 0
+    with torch.no_grad():
+        for begin in range(0, total_len, stride):
+            end = min(begin + seq_len, total_len)
+            trg_len = end - prev_end
+            if trg_len <= 0:
+                break
+            ids = input_ids[:, begin:end].to(device)
+            tgt = ids.clone()
+            if trg_len < (end - begin):
+                tgt[:, :-trg_len] = -100
+
+            out = model(ids, labels=tgt, use_cache=False)
+            loss = out.loss
+
+            if torch.isnan(loss) or torch.isinf(loss):
+                return float("nan")
+
+            nlls.append((loss * trg_len).detach().cpu())
+            prev_end = end
+            if end == total_len:
+                break
+
+    if not nlls:
+        return float("nan")
+    total_nll = float(torch.stack(nlls).sum().item())
+    ppl = float(np.exp(total_nll / max(1, prev_end)))
+    return round(ppl, 2)
+
+
+def eval_ppl(model: nn.Module, tokenizer, test_dataset, args) -> float:
+    stride = getattr(args, "eval_stride", 128)
+    max_eval_tokens = getattr(args, "eval_max_tokens", 15000)
+    seq_len = getattr(args, "seq_len", 256)
+    device = getattr(args, "device", "cuda" if torch.cuda.is_available() else "cpu")
+    return compute_perplexity(
+        model=model,
+        tokenizer=tokenizer,
+        test_dataset=test_dataset,
+        seq_len=seq_len,
+        stride=stride,
+        max_eval_tokens=max_eval_tokens,
+        device=device,
+    )
 from neuralops.trainer.distillation.multi_level_kd import (
     BlockwiseOperatorCloningLoss,
     HedgehogFeatureMapKDLoss,
@@ -60,6 +127,8 @@ def run_delta_healing(
     device_str: str = "cuda:0",
     max_duration_sec: float = 120.0,
     peak_lr: float = 1e-3,
+    batch_size: int = 32,
+    seq_len: int = 256,
     output_json: str = "results/delta_healing_result.json",
 ) -> dict[str, Any]:
     device = torch.device(device_str if torch.cuda.is_available() else "cpu")
@@ -79,7 +148,11 @@ def run_delta_healing(
         except Exception as e:
             logger.warning(f"Failed to read {ref_file}: {e}")
 
-    tokenizer = transformers.AutoTokenizer.from_pretrained("gpt2")
+    gpt2_snap = Path(os.path.expanduser("~/.cache/huggingface/hub/models--gpt2/snapshots/607a30d783dfa663caf39e06633721c8d4cfcd7e"))
+    gpt2_path = str(gpt2_snap) if gpt2_snap.exists() else "gpt2"
+    logger.info(f"Loading GPT-2 backbone from: {gpt2_path}")
+
+    tokenizer = transformers.AutoTokenizer.from_pretrained(gpt2_path, local_files_only=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -94,7 +167,7 @@ def run_delta_healing(
 
     # 2. Compute Clean Teacher GPT-2 Baseline PPL
     logger.info("Computing uncompressed Teacher GPT-2 baseline PPL...")
-    teacher = transformers.AutoModelForCausalLM.from_pretrained("gpt2")
+    teacher = transformers.AutoModelForCausalLM.from_pretrained(gpt2_path, local_files_only=True)
     teacher = teacher.to(device)
     teacher.eval()
     teacher_ppl = eval_ppl(teacher, tokenizer, eval_dataset, eval_args)
@@ -102,7 +175,7 @@ def run_delta_healing(
 
     # 3. Create Student and Transplant Attention Module
     logger.info(f"Transplanting {module_name} into GPT-2 student...")
-    student_model = transformers.AutoModelForCausalLM.from_pretrained("gpt2")
+    student_model = transformers.AutoModelForCausalLM.from_pretrained(gpt2_path, local_files_only=True)
     student, comp_stats = apply_module_to_model(student_model, module_name, "auto", rank=32, device=str(device))
     if student is None:
         raise RuntimeError(f"Failed to inject {module_name} into GPT-2")
@@ -130,8 +203,9 @@ def run_delta_healing(
     best_ppl = pre_healing_ppl
 
     min_lr = 1e-5
-    batch_size = 4
-    seq_len = 128
+    # Maximize GPU compute & memory utilization on 24GB RTX 3090:
+    batch_size = 32
+    seq_len = 256
     vocab_size = tokenizer.vocab_size
 
     while True:
@@ -235,6 +309,8 @@ def main() -> int:
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--duration", type=float, default=120.0)
     parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--seq-len", type=int, default=256)
     parser.add_argument("--output", type=str, default="results/delta_healing_result.json")
     args = parser.parse_args()
 
@@ -243,6 +319,8 @@ def main() -> int:
         device_str=args.device,
         max_duration_sec=args.duration,
         peak_lr=args.lr,
+        batch_size=args.batch_size,
+        seq_len=args.seq_len,
         output_json=args.output,
     )
     return 0
