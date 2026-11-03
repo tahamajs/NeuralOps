@@ -22,6 +22,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import sqlite3
 import subprocess
 import sys
 import time
@@ -29,6 +30,17 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 import torch
 import torch.nn as nn
+
+try:
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.table import Table
+
+    HAS_RICH = True
+    console = Console()
+except ImportError:
+    HAS_RICH = False
+    console = None
 
 logger = logging.getLogger("neuralops.cli.bench")
 
@@ -196,13 +208,14 @@ def handle_eval(args: argparse.Namespace) -> int:
                     logger.error("Failed processing attention %s: %s", attn_name, e)
                     # Record failure in saver
                     err_res = BenchmarkResult(
-                        run_id=f"fail_{attn_name}_{int(time.time())}",
-                        module_name=attn_name,
+                        module={"name": attn_name, "type": "attention"},
+                        model={"name": model_adapter.model_name},
                         benchmark_suite="eval_matrix",
                         status="failure",
                         metrics={"error": str(e)},
                         metadata={"attention_key": attn_name, "model": model_adapter.model_name},
                     )
+                    err_res.run_id = f"fail_{attn_name}_{int(time.time())}"
                     saver.save(err_res)
         else:
             # Sweep directly via SweepController and BenchmarkPipeline
@@ -257,7 +270,104 @@ def handle_eval(args: argparse.Namespace) -> int:
     print("\n==================================================")
     print(f"Evaluation Matrix finished. Telemetry persisted to: {output_dir}")
     print("==================================================")
+
+    # Render Rich summary table if available
+    _render_results_table(output_dir)
+
     return 0
+
+
+def _render_results_table(output_dir: str | Path) -> None:
+    """Render a structured summary table from the run's journal or SQLite ledger."""
+    p_dir = Path(output_dir)
+    journal_path = p_dir / ".journal.jsonl"
+    db_path = p_dir / "master_ledger.db"
+
+    entries: List[Dict[str, Any]] = []
+
+    # Read from journal if present
+    if journal_path.exists():
+        try:
+            with open(journal_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        entries.append(json.loads(line))
+        except Exception as e:
+            logger.debug("Failed parsing journal for summary table: %s", e)
+
+    # Alternatively query SQLite if journal was empty
+    if not entries and db_path.exists():
+        try:
+            conn = sqlite3.connect(str(db_path))
+            cur = conn.cursor()
+            rows = cur.execute(
+                "SELECT run_id, model_name, transplanted_attention, benchmark_suite, status, metrics_json FROM benchmark_runs"
+            ).fetchall()
+            for r_id, m_name, t_attn, b_suite, st, m_json in rows:
+                try:
+                    m_dict = json.loads(m_json) if m_json else {}
+                except Exception:
+                    m_dict = {}
+                entries.append({
+                    "run_id": r_id,
+                    "model_name": m_name,
+                    "transplanted_attention": t_attn,
+                    "benchmark_suite": b_suite,
+                    "status": st,
+                    "metrics": m_dict,
+                })
+            conn.close()
+        except Exception as e:
+            logger.debug("Failed querying sqlite for summary table: %s", e)
+
+    if not entries:
+        return
+
+    if HAS_RICH and console is not None:
+        table = Table(
+            title=f"NeuralOps Benchmark Matrix Summary: {p_dir.name}",
+            header_style="bold green",
+            show_lines=True,
+        )
+        table.add_column("Run ID", style="dim", overflow="fold", max_width=20)
+        table.add_column("Model", style="cyan")
+        table.add_column("Attention / Target", style="bold yellow")
+        table.add_column("Suite", style="magenta")
+        table.add_column("Status", justify="center")
+        table.add_column("Metrics Summary", style="white")
+
+        for ent in entries:
+            st = ent.get("status", "unknown")
+            st_styled = "[green]SUCCESS[/green]" if st == "success" else f"[red]{st.upper()}[/red]"
+            m_data = ent.get("metrics") or {}
+            m_summary_parts = []
+            for mk, mv in m_data.items():
+                if isinstance(mv, float):
+                    m_summary_parts.append(f"{mk}={mv:.3f}")
+                else:
+                    m_summary_parts.append(f"{mk}={mv}")
+            m_summary = ", ".join(m_summary_parts) if m_summary_parts else "N/A"
+
+            table.add_row(
+                str(ent.get("run_id", "")),
+                str(ent.get("model_name", "")),
+                str(ent.get("transplanted_attention", "") or "baseline"),
+                str(ent.get("benchmark_suite", "")),
+                st_styled,
+                m_summary,
+            )
+        console.print(table)
+    else:
+        print("\n=== Benchmark Matrix Summary ===")
+        for ent in entries:
+            print(
+                f"[{ent.get('status', '').upper()}] {ent.get('model_name')} | "
+                f"{ent.get('transplanted_attention') or 'baseline'} | "
+                f"Suite: {ent.get('benchmark_suite')} | "
+                f"Metrics: {ent.get('metrics')}"
+            )
+        print("================================")
 
 
 def add_eval_subparser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentParser:

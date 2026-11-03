@@ -38,8 +38,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.surgery.streaming_distill import StreamingCKALoss
-
 try:
     from neuralops.core.triton_kernels.fused_kd import fused_linear_kl_loss
     _HAS_FUSED_KD = True
@@ -250,6 +248,11 @@ class BlockwiseOperatorCloningLoss(nn.Module):
         return mse + self.lambda_cos * cos_dist + self.lambda_norm * norm_diff
 
 
+def _get_streaming_cka_loss_cls() -> Any:
+    from neuralops.surgery.streaming_distill import StreamingCKALoss
+    return StreamingCKALoss
+
+
 class LinearCKALoss(nn.Module):
     """Centered Kernel Alignment loss for orthogonal-invariant representation matching."""
 
@@ -265,8 +268,8 @@ class LinearCKALoss(nn.Module):
         self.use_streaming = bool(use_streaming)
         self.chunk_size = int(chunk_size)
         self.hidden_dim = hidden_dim
-        self._streaming_cka_engine: Optional[StreamingCKALoss] = (
-            StreamingCKALoss(hidden_dim=hidden_dim, eps=eps, exact=True)
+        self._streaming_cka_engine: Optional[Any] = (
+            _get_streaming_cka_loss_cls()(hidden_dim=hidden_dim, eps=eps, exact=True)
             if hidden_dim is not None
             else None
         )
@@ -281,7 +284,8 @@ class LinearCKALoss(nn.Module):
                 or self._streaming_cka_engine.hidden_dim != hidden_dim
                 or self._streaming_cka_engine.G_xy.device != x.device
             ):
-                self._streaming_cka_engine = StreamingCKALoss(
+                streaming_cls = _get_streaming_cka_loss_cls()
+                self._streaming_cka_engine = streaming_cls(
                     hidden_dim=hidden_dim,
                     eps=self.eps,
                     exact=True,
@@ -539,6 +543,16 @@ class MultiLevelKDTrainer:
                 torch.cuda.empty_cache()
 
         return losses_tracked
+
+
+StreamingCKALoss = None
+
+
+def __getattr__(name: str) -> Any:
+    if name == "StreamingCKALoss":
+        from neuralops.surgery.streaming_distill import StreamingCKALoss as _Impl
+        return _Impl
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 __all__ = [
