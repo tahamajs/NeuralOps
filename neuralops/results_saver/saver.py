@@ -16,10 +16,13 @@ from __future__ import annotations
 from datetime import datetime
 import json
 import logging
+import os
 from pathlib import Path
 import sqlite3
 import tarfile
 from typing import Any
+
+from neuralops.benchmarks.results.saver import MultiFormatSaver
 
 from neuralops.results_saver.config import SaveConfig
 from neuralops.results_saver.storage.sqlite_ops import (
@@ -38,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "MASTER_CSV_COLUMNS",
+    "MultiFormatSaver",
     "ResultsSaver",
     "save_result",
     "save_result_json",
@@ -387,6 +391,11 @@ class ResultsSaver:
         with open(log_dir / "metrics.jsonl", "w", encoding="utf-8") as f:
             for entry in history:
                 f.write(json.dumps(sanitize_json_value(entry), allow_nan=False) + "\n")
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except OSError:
+                pass
 
     def _save_model(self, model: Any, tokenizer: Any = None) -> None:
         p = self.run_dir / "artifacts" / "model"

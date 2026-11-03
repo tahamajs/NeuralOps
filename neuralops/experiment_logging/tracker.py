@@ -12,6 +12,7 @@ Tracks metrics in memory and serializes run histories to JSON format.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +49,11 @@ class MetricsTracker:
                         output_file.write(json.dumps(record, default=str) + "\n")
                 else:
                     json.dump(self.records, output_file, indent=2, ensure_ascii=False, default=str)
+                output_file.flush()
+                try:
+                    os.fsync(output_file.fileno())
+                except OSError:
+                    pass
 
     def flush(self) -> None:
         """Persist the in-memory history when a save path was configured."""

@@ -208,21 +208,35 @@ class SVDLinear(nn.Module):
             dispatched = False
             out = None
 
-            # Level 1: Native CUDA C++ in-register fused Down-Up GEMM
+            # Level 1: Native CUDA C++ fused SVD projection
             try:
-                from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
-                out = fused_lowrank_gated_gemm(x, V_eff, self.U, bias=b)
+                from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
+                # X: [*, in_features], U_proj: V^T [in_features, rank], S: [rank], V_proj: U^T [rank, out_features]
+                out = fused_svd_projection(x, self.V.t(), S=self.S, V_T=self.U.t(), bias=b)
                 dispatched = True
             except Exception:
-                pass
-
-            # Level 2: Triton JIT kernel
-            if not dispatched and self.use_triton and triton_dispatch is not None:
                 try:
-                    out = triton_dispatch(self.triton_kernel, x, self.U, V_eff, bias=b)
+                    from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+                    out = fused_lowrank_gated_gemm(x, V_eff, self.U, bias=b)
                     dispatched = True
                 except Exception:
                     pass
+
+            # Level 2: Triton JIT kernel
+            if not dispatched and self.use_triton:
+                try:
+                    from neuralops.ops.triton.fused_svd_projection_triton import (
+                        fused_svd_projection_triton,
+                    )
+                    out = fused_svd_projection_triton(x, self.V.t(), S=self.S, V_T=self.U.t(), bias=b)
+                    dispatched = True
+                except Exception:
+                    if triton_dispatch is not None:
+                        try:
+                            out = triton_dispatch(self.triton_kernel, x, self.U, V_eff, bias=b)
+                            dispatched = True
+                        except Exception:
+                            pass
 
             # Level 3: Fallback PyTorch matmul
             if not dispatched:

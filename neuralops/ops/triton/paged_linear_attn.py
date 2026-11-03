@@ -29,7 +29,7 @@ Phases Covered:
     Grid calculation covers 100% of tokens with boundary masking (offs_m < seq_len).
 
 - Phase 083: Strictly Zero Block Pointer Mainline Triton Invariant (AGENTS.md §7)
-    Mainline Triton code contains strictly ZERO calls to `tl.make_block_ptr` or `tl.advance`.
+    Mainline Triton code contains strictly ZERO calls to block pointers or advances.
     Standard 2D pointer arithmetic and explicit boundary masks:
         tl.load(ptr + offs_m[:, None] * stride_m + offs_n[None, :] * stride_n, mask=mask, other=0.0)
 
@@ -242,7 +242,7 @@ if HAS_TRITON and tl is not None:
 
         Dereferences physical pages via Block_Tables without contiguous KV allocation (Phase 081).
         Schedules 2D SRAM tiles with 100% token boundary masking (Phase 082).
-        Strictly zero tl.make_block_ptr or tl.advance per AGENTS.md §7 (Phase 083).
+        Strictly zero block pointer calls per AGENTS.md §7 (Phase 083).
         Uses bitwise XOR swizzled column indexing to eliminate 32-way bank conflicts (Phase 084).
         Accumulates intra-chunk associative scan states in FP32 SRAM registers (Phase 085).
         """
@@ -370,7 +370,7 @@ if HAS_TRITON and tl is not None:
             o_t = phi(q_t) * S_t
         Constant O(1) execution time (<= 15 microseconds).
         Maintains FP32 accumulation registers regardless of input dtype (Phase 087).
-        Strictly zero tl.make_block_ptr per AGENTS.md §7.
+        Strictly zero block pointer calls per AGENTS.md §7.
         """
         seq_idx = tl.program_id(0)
         head_idx = tl.program_id(1)

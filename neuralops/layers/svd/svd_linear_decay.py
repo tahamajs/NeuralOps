@@ -20,9 +20,12 @@ import torch.nn as nn
 from neuralops.layers.svd.svd_linear_attention import (
     SVDLinear,
     SVDLinearAttention,
+    compute_exponential_decay,
     inject_svd_linear_attention,
 )
+from neuralops.core.attention_utils import normalize_attention_mask as _normalize_mask
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.ops.cuda.svd_linear_decay import svd_linear_decay
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +51,54 @@ class DecayDecayLinearAttention(SVDLinearAttention):
         if "mode" not in kwargs:
             kwargs["mode"] = "decay_linear"
         super().__init__(*args, **kwargs)
+
+    def _forward_decay_gated_linear_kernel(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        hidden_states: torch.Tensor,
+        mask: torch.Tensor | None = None,
+        past_state: tuple[torch.Tensor, torch.Tensor] | None = None,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        if past_state is not None:
+            return super()._forward_decay_gated_linear_kernel(
+                q, k, v, hidden_states, mask=mask, past_state=past_state
+            )
+
+        B, H, N, D_k = q.shape
+        compute_dtype = torch.bfloat16 if q.dtype == torch.bfloat16 else torch.float32
+
+        mask_expanded = _normalize_mask(mask, B, H, N, compute_dtype, q.device)
+        k_masked = k
+        if mask_expanded is not None:
+            k_masked = k * mask_expanded
+
+        decay_logits = self.decay_gate(hidden_states)
+        if self.decay_channel_wise:
+            decay_logits = decay_logits.view(B, N, H, D_k).permute(0, 2, 1, 3)
+            lambda_decay = (
+                compute_exponential_decay(decay_logits, activation=self.decay_activation)
+                .unsqueeze(-1)
+                .to(compute_dtype)
+            )
+        else:
+            decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
+            lambda_decay = compute_exponential_decay(
+                decay_logits, activation=self.decay_activation
+            ).to(compute_dtype)
+
+        if mask_expanded is not None:
+            m_dec = mask_expanded
+            while m_dec.dim() < lambda_decay.dim():
+                m_dec = m_dec.unsqueeze(-1)
+            lambda_decay = torch.where(m_dec > 0, lambda_decay, torch.ones_like(lambda_decay))
+
+        context = svd_linear_decay(q, k_masked, v, lambda_decay, eps=self.eps)
+        D_v = v.shape[-1]
+        S_final = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)
+        Z_final = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)
+        return context, (S_final, Z_final)
 
 
 SVDLinearDecayAttention = DecayDecayLinearAttention

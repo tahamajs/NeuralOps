@@ -57,8 +57,20 @@ class NeedleInAHaystackGate(Gate):
             ctx.get("niah_eval_fn") or ctx.get("eval_fn") or self.config.get("niah_eval_fn")
         )
         niah_dataset = ctx.get("niah_dataset") or ctx.get("dataset") or self.config.get("niah_dataset")
+        profile = str(ctx.get("profile", "")).lower()
+        allow_uncalibrated = bool(ctx.get("allow_uncalibrated", False))
 
         if niah_fn is None and niah_dataset is None:
+            if profile in ("production", "empirical") and not allow_uncalibrated:
+                return GateResult(
+                    gate_name=self.name,
+                    passed=False,
+                    skipped=False,
+                    severity=self.severity,
+                    message="Production validation requires NIAH dataset or niah_eval_fn; failing closed (--allow-uncalibrated not set)",
+                    duration_seconds=time.perf_counter() - t0,
+                    error_code="E_DATASET_MISSING",
+                )
             return GateResult(
                 gate_name=self.name,
                 passed=True,

@@ -341,6 +341,17 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
         B, H, L, feat_2f = q_feat.shape
         D_v = v_masked.shape[-1]
 
+        # Wide head acceleration (feat_2f > 128 or D_v > 128) via 3-level fallback hierarchy
+        if q_feat.is_cuda and (feat_2f > 128 or D_v > 128):
+            try:
+                from neuralops.ops.cuda.chela_slay_wide import chela_slay_wide_attention_forward
+                out = chela_slay_wide_attention_forward(q_feat, k_feat, v_masked, chunk_size=chunk_size)
+                ctx.save_for_backward(q_feat, k_feat, v_masked)
+                ctx.chunk_size = chunk_size
+                return out
+            except Exception as e:
+                logger.debug("chela_slay_wide forward fallback to vectorized PyTorch: %s", e)
+
         sm_supported = True
         if q_feat.is_cuda:
             try:

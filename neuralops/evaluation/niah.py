@@ -69,6 +69,17 @@ class NeedleInAHaystackEvaluator:
         self.needle_depths = needle_depths or [0.0, 0.25, 0.5, 0.75, 1.0]
         self.passkey_digits = passkey_digits
         self.device = torch.device(device if torch.cuda.is_available() and device == "cuda" else "cpu")
+        self._cached_paragraph_tokens: Optional[List[int]] = None
+
+    def _get_pretokenized_haystack_pool(self) -> List[int]:
+        """Cache pre-tokenized haystack paragraphs to avoid repeated encoding and string allocs."""
+        if self._cached_paragraph_tokens is None:
+            pooled: List[int] = []
+            for p in HAYSTACK_PARAGRAPHS:
+                tokens = self.tokenizer.encode(p + " ", add_special_tokens=False)
+                pooled.extend(tokens)
+            self._cached_paragraph_tokens = pooled or [1]
+        return self._cached_paragraph_tokens
 
     def _generate_passkey(self) -> str:
         """Execute generate passkey routine."""
@@ -103,14 +114,9 @@ class NeedleInAHaystackEvaluator:
                     q_tokens = self.tokenizer.encode(prompt_question, add_special_tokens=False)
 
                     target_haystack_len = max(ctx_len - len(needle_tokens) - len(q_tokens), 32)
-                    haystack_tokens = []
-                    p_idx = 0
-                    while len(haystack_tokens) < target_haystack_len:
-                        p = HAYSTACK_PARAGRAPHS[p_idx % len(HAYSTACK_PARAGRAPHS)] + " "
-                        tokens = self.tokenizer.encode(p, add_special_tokens=False)
-                        haystack_tokens.extend(tokens)
-                        p_idx += 1
-                    haystack_tokens = haystack_tokens[:target_haystack_len]
+                    pool = self._get_pretokenized_haystack_pool()
+                    repeats = (target_haystack_len // len(pool)) + 1
+                    haystack_tokens = (pool * repeats)[:target_haystack_len]
 
                     insert_idx = int(len(haystack_tokens) * depth)
                     full_tokens = (

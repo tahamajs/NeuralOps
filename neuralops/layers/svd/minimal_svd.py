@@ -162,10 +162,14 @@ class FactorisedLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.down.weight.device != x.device:
             self.to(device=x.device)
-        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
+        if x.is_cuda:
+            # Level 1: Native CUDA C++ fused SVD projection
             try:
-                from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
-                base = fused_lowrank_gated_gemm(x, self.down.weight, self.up.weight, bias=self.up.bias)
+                from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
+
+                base = fused_svd_projection(
+                    x, self.down.weight.t(), V_T=self.up.weight.t(), bias=self.up.bias
+                )
                 if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                     base = (
                         base
@@ -177,8 +181,47 @@ class FactorisedLinear(nn.Module):
                     )
                 return base
             except Exception:
-                # allowed-swallow: best-effort-telemetry
                 pass
+
+            # Level 2: Triton JIT kernel
+            try:
+                from neuralops.ops.triton.fused_svd_projection_triton import (
+                    fused_svd_projection_triton,
+                )
+
+                base = fused_svd_projection_triton(
+                    x, self.down.weight.t(), V_T=self.up.weight.t(), bias=self.up.bias
+                )
+                if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                    base = (
+                        base
+                        + F.linear(
+                            F.linear(x, self.lora_A.to(dtype=x.dtype)),
+                            self.lora_B.to(dtype=x.dtype),
+                        )
+                        * self.lora_scaling
+                    )
+                return base
+            except Exception:
+                pass
+
+            if x.dtype in (torch.float16, torch.bfloat16):
+                try:
+                    from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+                    base = fused_lowrank_gated_gemm(x, self.down.weight, self.up.weight, bias=self.up.bias)
+                    if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                        base = (
+                            base
+                            + F.linear(
+                                F.linear(x, self.lora_A.to(dtype=x.dtype)),
+                                self.lora_B.to(dtype=x.dtype),
+                            )
+                            * self.lora_scaling
+                        )
+                    return base
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
         if x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton

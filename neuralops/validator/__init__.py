@@ -14,11 +14,23 @@ from neuralops.validator.errors import (
     StaticValidationError,
     ValidationError,
 )
+from neuralops.validator.numerical_guardrails import (
+    SymplecticNumericalGuard,
+    check_condition_number,
+    check_numerical_stability,
+    sanitize_non_finite,
+    symplectic_guarded_softmax,
+)
 from neuralops.validator.static import validate_recipe_static
 
 __all__ = [
     "RuntimeValidationError",
     "StaticValidationError",
+    "SymplecticNumericalGuard",
     "ValidationError",
+    "check_condition_number",
+    "check_numerical_stability",
+    "sanitize_non_finite",
+    "symplectic_guarded_softmax",
     "validate_recipe_static",
 ]

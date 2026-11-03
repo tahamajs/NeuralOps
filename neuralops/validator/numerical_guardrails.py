@@ -28,7 +28,51 @@ __all__ = [
     "symplectic_guarded_softmax",
     "sanitize_non_finite",
     "check_numerical_stability",
+    "check_condition_number",
 ]
+
+
+def check_condition_number(
+    x: torch.Tensor,
+    max_condition_number: float = 1e4,
+    eps: float = 1e-12,
+) -> Tuple[bool, dict]:
+    r"""
+    Audits matrix condition number:
+    \kappa(\mathbf{X}) = \frac{\sigma_{\max}(\mathbf{X})}{\sigma_{\min}(\mathbf{X})} \le 10^4.
+
+    Args:
+        x: Input 2D matrix or batch of matrices (..., M, N).
+        max_condition_number: Maximum permissible condition number kappa.
+        eps: Small floor to prevent division by zero for singular matrices.
+
+    Returns:
+        Tuple of (is_well_conditioned, metrics_dict).
+    """
+    if x.ndim < 2:
+        raise ValueError(f"check_condition_number expects at least 2D tensor, got ndim={x.ndim}")
+
+    # Compute SVD singular values in FP32/FP64 for numerical precision
+    x_float = x.detach().to(torch.float32)
+    try:
+        s = torch.linalg.svdvals(x_float)
+    except Exception as e:
+        logger.warning("torch.linalg.svdvals failed: %s", e)
+        return False, {"error": str(e), "kappa": float("inf"), "is_well_conditioned": False}
+
+    sigma_max = torch.max(s).item()
+    sigma_min = torch.min(s).item()
+
+    denom = max(float(sigma_min), eps)
+    kappa = float(sigma_max / denom) if sigma_min > 0 else float("inf")
+    is_well_conditioned = (kappa <= max_condition_number) and math.isfinite(kappa)
+
+    return is_well_conditioned, {
+        "sigma_max": sigma_max,
+        "sigma_min": sigma_min,
+        "kappa": kappa,
+        "is_well_conditioned": is_well_conditioned,
+    }
 
 
 def sanitize_non_finite(

@@ -10,13 +10,14 @@ NeuralOps Results Saver Subpackage.
 """
 
 from .config import SaveConfig
-from .saver import ResultsSaver
+from .saver import MultiFormatSaver, ResultsSaver
 from .storage.sqlite_ops import configure_sqlite_pragmas, sqlite_file_lock
 from .writers.csv_writer import MASTER_CSV_COLUMNS, save_result
 from .writers.json_parquet_writer import save_result_json, save_trajectories_parquet
 
 __all__ = [
     "MASTER_CSV_COLUMNS",
+    "MultiFormatSaver",
     "ResultsSaver",
     "SaveConfig",
     "configure_sqlite_pragmas",

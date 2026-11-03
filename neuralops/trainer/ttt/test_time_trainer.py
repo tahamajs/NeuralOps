@@ -75,8 +75,12 @@ class TTTLinearAttentionLayer(BaseAttention):
 
         k_norm = F.normalize(k, p=2, dim=-1)
 
-        from neuralops.core.triton_kernels.linear_attn import fused_ttt_linear_scan_triton
-        y_heads = fused_ttt_linear_scan_triton(q, k_norm, v, etas)
+        try:
+            from neuralops.ops.cuda.ttt_linear_step import ttt_linear_step_attention_forward
+            y_heads = ttt_linear_step_attention_forward(q, k_norm, v, etas)
+        except Exception:
+            from neuralops.core.triton_kernels.linear_attn import fused_ttt_linear_scan_triton
+            y_heads = fused_ttt_linear_scan_triton(q, k_norm, v, etas)
 
         y = y_heads.transpose(1, 2).contiguous().view(B, N, D)
         return self.out_proj(y), None
