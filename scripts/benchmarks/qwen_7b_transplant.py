@@ -250,8 +250,11 @@ def main() -> None:
 
     print(f"Initial Alignment -> MSE: {init_mse:.6f} | Cosine Similarity: {init_cos:.4f}")
 
-    optimizer = torch.optim.AdamW(trainable_params, lr=2e-3, weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(trainable_params, lr=1e-4, weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, args.heal_steps))
+
+    best_loss = float("inf")
+    best_state = {k: v.clone() for k, v in student_attn.state_dict().items()}
 
     student_attn.train()
     for step in range(args.heal_steps):
@@ -273,6 +276,11 @@ def main() -> None:
         optimizer.step()
         scheduler.step()
 
+        cur_loss_val = float(loss.item())
+        if cur_loss_val < best_loss:
+            best_loss = cur_loss_val
+            best_state = {k: v.clone() for k, v in student_attn.state_dict().items()}
+
         print(
             f"Step {step+1:02d}/{args.heal_steps:02d} | "
             f"Total Loss: {loss.item():.6f} | "
@@ -280,6 +288,8 @@ def main() -> None:
             f"Cosine: {(1.0 - loss_cos.item()):.4f}"
         )
 
+    # Restore optimal model state discovered during micro-healing
+    student_attn.load_state_dict(best_state)
     student_attn.eval()
     with torch.no_grad():
         pred_final = student_attn(attn_in)
