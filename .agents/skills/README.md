@@ -110,6 +110,7 @@ NeuralOps kernel and module development follows a rigorous four-phase engineerin
 | Skill | Category | Primary Focus & Capabilities |
 | :--- | :--- | :--- |
 | **[neuralops-design-coverage](neuralops-design-coverage/SKILL.md)** | Architecture & Contracts | Floating-point numerical budgets (FP16 underflow/overflow, BF16 quantization noise, FP32 master states), `input_guard` tensor sanitization, and dispatch verifier contracts. |
+| **[neuralops-scaling](neuralops-scaling/SKILL.md)** | Workload & System Scaling | Cross-file scaling contract for model, batch, sequence, precision, GPU/PBS, serving, download, result, and documentation changes. |
 | **[neuralops-correctness-coverage](neuralops-correctness-coverage/SKILL.md)** | Verification & Testing | Full matrix test suites for all 131 attention mechanisms and 72 compressors, analytical double-precision `gradcheck` (`atol=1e-3, eps=1e-5`), future-token causal perturbation proofs, and cross-backend parity. |
 | **[neuralops-dispatch-backends](neuralops-dispatch-backends/SKILL.md)** | Runtime Dispatch | 3-Level fallback chain (Level 1 CUDA C++/HIP -> Level 2 Triton JIT -> Level 3 Vectorized PyTorch), `force_kernel_backend` context manager, telemetry counters, and `_AutogradBridge`. |
 | **[neuralops-pr-readiness](neuralops-pr-readiness/SKILL.md)** | CI & Quality Gates | Strict submission quality checklist, automated 6-class dead code AST audit (`scripts/utils/audit_dead_code.py`), universal shebang verification, and Keep a Changelog formatting. |
