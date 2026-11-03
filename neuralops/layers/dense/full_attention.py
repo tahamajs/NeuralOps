@@ -413,34 +413,60 @@ class FullAttention(BaseAttention):
         )
 
         if use_sdpa:
-            try:
-                dropout_p = self.dropout.p if self.training else 0.0
-                if is_decoder and mask is None and N_q == N_k:
-                    context = F.scaled_dot_product_attention(
-                        Q, K, V, attn_mask=None, dropout_p=dropout_p, is_causal=True
-                    )
-                else:
-                    attn_mask = None
-                    if mask is not None and mask.dim() == 4:
-                        attn_mask = mask.to(Q.dtype)
-                    if is_decoder and attn_mask is None:
-                        causal_tril = (
-                            torch.tril(
-                                torch.ones((N_q, N_k), device=device, dtype=torch.bool),
-                                diagonal=max(0, N_k - N_q)
-                            )
-                            .unsqueeze(0)
-                            .unsqueeze(0)
-                        )
-                        attn_mask = torch.zeros((1, 1, N_q, N_k), device=device, dtype=Q.dtype).masked_fill(~causal_tril, -10000.0)
+            dispatched = False
+            scale_val = 1.0 / math.sqrt(int(d))
+            is_causal_sdpa = bool(is_decoder and mask is None and N_q == N_k)
+            if Q.is_cuda and not self.training and mask is None and d in (32, 64, 128, 256):
+                # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
+                try:
+                    from neuralops.ops.cuda.flash_gqa import flash_gqa
+                    context = flash_gqa(Q, K, V, is_causal=is_causal_sdpa, scale=scale_val).to(dtype)
+                    dispatched = True
+                    attn = None
+                except Exception as e_cuda:
+                    logger.debug("FullAttention Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
 
-                    context = F.scaled_dot_product_attention(
-                        Q, K, V, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=False
-                    )
-                attn = None
-            except Exception as e:
-                logger.debug("FullAttention SDPA fast-path failed: %s", e)
-                use_sdpa = False
+            if not dispatched and Q.is_cuda and not self.training and mask is None and d <= 128:
+                # Level 2: Triton JIT autotuned online softmax kernel
+                try:
+                    from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+                    context = fused_weighted_gqa_online_softmax_triton(
+                        Q, K, V, head_weights=None, is_causal=is_causal_sdpa, scale=scale_val
+                    ).to(dtype)
+                    dispatched = True
+                    attn = None
+                except Exception as e_triton:
+                    logger.debug("FullAttention Level 2 Triton dispatch failed (%s), falling back to SDPA", e_triton)
+
+            if not dispatched:
+                try:
+                    dropout_p = self.dropout.p if self.training else 0.0
+                    if is_decoder and mask is None and N_q == N_k:
+                        context = F.scaled_dot_product_attention(
+                            Q, K, V, attn_mask=None, dropout_p=dropout_p, is_causal=True
+                        )
+                    else:
+                        attn_mask = None
+                        if mask is not None and mask.dim() == 4:
+                            attn_mask = mask.to(Q.dtype)
+                        if is_decoder and attn_mask is None:
+                            causal_tril = (
+                                torch.tril(
+                                    torch.ones((N_q, N_k), device=device, dtype=torch.bool),
+                                    diagonal=max(0, N_k - N_q)
+                                )
+                                .unsqueeze(0)
+                                .unsqueeze(0)
+                            )
+                            attn_mask = torch.zeros((1, 1, N_q, N_k), device=device, dtype=Q.dtype).masked_fill(~causal_tril, -10000.0)
+
+                        context = F.scaled_dot_product_attention(
+                            Q, K, V, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=False
+                        )
+                    attn = None
+                except Exception as e:
+                    logger.debug("FullAttention SDPA fast-path failed: %s", e)
+                    use_sdpa = False
 
         if not use_sdpa:
             scale = 1.0 / math.sqrt(int(d))

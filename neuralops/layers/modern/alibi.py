@@ -570,6 +570,25 @@ class ALiBiAttention(BaseAttention):
         use_sdpa = head_mask_ok and attn_out_ok and mask_ok
 
         if use_sdpa:
+            dispatched = False
+            # Level 1/2 Hardware ALiBi kernel dispatch
+            if Q.is_cuda and not self.training and N_q == N_k and hasattr(self, "slopes"):
+                try:
+                    from neuralops.ops.cuda.alibi_attention import alibi_attention
+                    slopes_tensor = self.slopes.to(device=device, dtype=torch.float32)
+                    out_hw = alibi_attention(Q, K_full, V_full, slopes_tensor, is_causal=is_causal)
+                    out = out_hw.to(dtype).transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
+                    out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+                    output = out if self.is_nested_encoder else self.out_proj(out)
+                    valid_q = get_token_valid_mask(attention_mask, B, N_q, device)
+                    if valid_q is not None:
+                        output = output * valid_q.unsqueeze(-1).to(output.dtype)
+                    if self.is_decoder and not is_cross:
+                        return output, new_past_key_value
+                    return output, None
+                except Exception as e_alibi:
+                    logger.debug("ALiBi hardware kernel dispatch failed (%s), falling back to SDPA", e_alibi)
+
             try:
                 _q = Q.to(dtype)
                 _k = K_full.to(dtype)

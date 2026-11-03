@@ -573,15 +573,29 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     elif mask.dim() in (3, 4):
                         sdpa_mask = mask.to(dtype=torch.bool) if mask.dtype != torch.bool else mask
 
-                from neuralops.ops.triton.gqa import (
-                    fused_weighted_gqa_online_softmax_triton,
-                    fused_weighted_gqa_online_softmax_pytorch,
-                )
-                if Q.is_cuda and not self.training and sdpa_mask is None:
-                    context = fused_weighted_gqa_online_softmax_triton(
-                        Q, K, V, head_weights=None, is_causal=_is_causal, scale=scale
-                    )
-                else:
+                dispatched = False
+                if Q.is_cuda and not self.training and sdpa_mask is None and d in (32, 64, 128, 256):
+                    # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
+                    try:
+                        from neuralops.ops.cuda.flash_gqa import flash_gqa
+                        context = flash_gqa(Q, K, V, is_causal=_is_causal, scale=scale)
+                        dispatched = True
+                    except Exception as e_cuda:
+                        logger.debug("WGQA Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
+
+                if not dispatched and Q.is_cuda and not self.training and sdpa_mask is None and d <= 128:
+                    # Level 2: Triton JIT autotuned online softmax kernel
+                    try:
+                        from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+                        context = fused_weighted_gqa_online_softmax_triton(
+                            Q, K, V, head_weights=None, is_causal=_is_causal, scale=scale
+                        )
+                        dispatched = True
+                    except Exception as e_triton:
+                        logger.debug("WGQA Level 2 Triton dispatch failed (%s), falling back to SDPA", e_triton)
+
+                if not dispatched:
+                    # Level 3: PyTorch scaled_dot_product_attention fallback
                     context = F.scaled_dot_product_attention(
                         Q, K_full, V_full,
                         attn_mask=sdpa_mask,

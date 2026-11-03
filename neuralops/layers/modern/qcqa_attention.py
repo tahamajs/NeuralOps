@@ -563,34 +563,70 @@ class QCQAAttention(BaseAttention):
         attn_probs_out: torch.Tensor | None = None
 
         if use_sdpa:
-            try:
-                bool_mask = None
-                if causal_mask is not None and token_valid is not None:
-                    bool_mask = (causal_mask & token_valid[:, None, None, :]).expand(B, 1, L, N_kv)
-                elif causal_mask is not None:
-                    bool_mask = causal_mask
-                elif token_valid is not None:
-                    bool_mask = token_valid[:, None, None, :].expand(B, 1, L, N_kv)
+            dispatched = False
+            is_causal_flag = bool(self.is_decoder and not is_cross and L > 1 and token_valid is None)
+            d_val = q_heads.shape[-1]
+            if q_heads.is_cuda and not self.training and token_valid is None and d_val in (32, 64, 128, 256):
+                # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
+                try:
+                    from neuralops.ops.cuda.flash_gqa import flash_gqa
+                    out_cuda = flash_gqa(q_heads, K_mixed, V_mixed, is_causal=is_causal_flag, scale=scale)
+                    context = (
+                        out_cuda.to(q.dtype)
+                        .permute(0, 2, 1, 3).contiguous()
+                        .view(B, L, self.all_head_size)
+                    )
+                    context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+                    dispatched = True
+                except Exception as e_cuda:
+                    logger.debug("QCQA Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
 
-                q_sdp = maybe_half(q_heads)
-                k_sdp = maybe_half(K_mixed)
-                v_sdp = maybe_half(V_mixed)
+            if not dispatched and q_heads.is_cuda and not self.training and token_valid is None and d_val <= 128:
+                # Level 2: Triton JIT autotuned online softmax kernel
+                try:
+                    from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+                    out_triton = fused_weighted_gqa_online_softmax_triton(
+                        q_heads, K_mixed, V_mixed, head_weights=None, is_causal=is_causal_flag, scale=scale
+                    )
+                    context = (
+                        out_triton.to(q.dtype)
+                        .permute(0, 2, 1, 3).contiguous()
+                        .view(B, L, self.all_head_size)
+                    )
+                    context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+                    dispatched = True
+                except Exception as e_triton:
+                    logger.debug("QCQA Level 2 Triton dispatch failed (%s), falling back to SDPA", e_triton)
 
-                out_sdp = F.scaled_dot_product_attention(
-                    q_sdp, k_sdp, v_sdp,
-                    attn_mask=bool_mask,
-                    is_causal=False,
-                    dropout_p=self.dropout.p if self.training else 0.0,
-                )
-                context = (
-                    out_sdp.to(q.dtype)
-                    .permute(0, 2, 1, 3).contiguous()
-                    .view(B, L, self.all_head_size)
-                )
-                context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
-            except Exception as e:
-                logger.debug("QCQA SDPA failed: %s; falling back to manual.", e)
-                context = None
+            if not dispatched:
+                try:
+                    bool_mask = None
+                    if causal_mask is not None and token_valid is not None:
+                        bool_mask = (causal_mask & token_valid[:, None, None, :]).expand(B, 1, L, N_kv)
+                    elif causal_mask is not None:
+                        bool_mask = causal_mask
+                    elif token_valid is not None:
+                        bool_mask = token_valid[:, None, None, :].expand(B, 1, L, N_kv)
+
+                    q_sdp = maybe_half(q_heads)
+                    k_sdp = maybe_half(K_mixed)
+                    v_sdp = maybe_half(V_mixed)
+
+                    out_sdp = F.scaled_dot_product_attention(
+                        q_sdp, k_sdp, v_sdp,
+                        attn_mask=bool_mask,
+                        is_causal=False,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                    )
+                    context = (
+                        out_sdp.to(q.dtype)
+                        .permute(0, 2, 1, 3).contiguous()
+                        .view(B, L, self.all_head_size)
+                    )
+                    context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+                except Exception as e:
+                    logger.debug("QCQA SDPA failed: %s; falling back to manual.", e)
+                    context = None
 
         if context is None:
             scores = torch.matmul(

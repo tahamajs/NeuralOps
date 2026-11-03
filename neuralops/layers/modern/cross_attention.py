@@ -463,14 +463,26 @@ class CrossAttention(BaseAttention):
             fused_asymmetric_cross_attention_pytorch,
         )
         if head_mask is None:
-            try:
-                context_out = fused_asymmetric_cross_attention_triton(
-                    Q, K_full, V_full, self.scale, causal, eff_mask
-                )
-            except Exception:
-                context_out = fused_asymmetric_cross_attention_pytorch(
-                    Q, K_full, V_full, self.scale, causal, eff_mask
-                )
+            dispatched = False
+            if Q.is_cuda and not self.training and eff_mask is None and not is_causal:
+                # Level 1: Native CUDA cross_attention kernel
+                try:
+                    from neuralops.ops.cuda.cross_attention import cross_attention_forward as cross_attn_cuda
+                    context_out = cross_attn_cuda(Q, K_full, V_full, scale=self.scale).to(dtype)
+                    dispatched = True
+                except Exception as e_cuda:
+                    logger.debug("CrossAttention Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
+
+            if not dispatched:
+                # Level 2: Triton JIT cross attention / Level 3: Reference
+                try:
+                    context_out = fused_asymmetric_cross_attention_triton(
+                        Q, K_full, V_full, self.scale, causal, eff_mask
+                    )
+                except Exception:
+                    context_out = fused_asymmetric_cross_attention_pytorch(
+                        Q, K_full, V_full, self.scale, causal, eff_mask
+                    )
         else:
             scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * self.scale
             if is_causal and causal is not None:

@@ -604,20 +604,43 @@ class MultiQueryAttention(BaseAttention):
         attn_weights: torch.Tensor | None = None
 
         if use_sdpa:
-            try:
-                _qs = maybe_half(q)
-                _ks = maybe_half(k_full)
-                _vs = maybe_half(v_full)
-                context = F.scaled_dot_product_attention(
-                    _qs, _ks, _vs,
-                    attn_mask=None,
-                    dropout_p=self.dropout_p if self.training else 0.0,
-                    is_causal=is_causal,
-                )
-                context = context.to(dtype)
-            except Exception as e:
-                logger.debug("MQA SDPA fast-path failed (%s); falling back", e)
-                use_sdpa = False
+            scale_val = 1.0 / math.sqrt(d)
+            dispatched = False
+            if q.is_cuda and not self.training and d in (32, 64, 128, 256):
+                # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
+                try:
+                    from neuralops.ops.cuda.flash_gqa import flash_gqa
+                    context = flash_gqa(q, k, v, is_causal=is_causal, scale=scale_val).to(dtype)
+                    dispatched = True
+                except Exception as e_cuda:
+                    logger.debug("MQA Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
+
+            if not dispatched and q.is_cuda and not self.training and d <= 128:
+                # Level 2: Triton JIT autotuned online softmax kernel
+                try:
+                    from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+                    context = fused_weighted_gqa_online_softmax_triton(
+                        q, k, v, head_weights=None, is_causal=is_causal, scale=scale_val
+                    ).to(dtype)
+                    dispatched = True
+                except Exception as e_triton:
+                    logger.debug("MQA Level 2 Triton dispatch failed (%s), falling back to SDPA", e_triton)
+
+            if not dispatched:
+                try:
+                    _qs = maybe_half(q)
+                    _ks = maybe_half(k_full)
+                    _vs = maybe_half(v_full)
+                    context = F.scaled_dot_product_attention(
+                        _qs, _ks, _vs,
+                        attn_mask=None,
+                        dropout_p=self.dropout_p if self.training else 0.0,
+                        is_causal=is_causal,
+                    )
+                    context = context.to(dtype)
+                except Exception as e:
+                    logger.debug("MQA SDPA fast-path failed (%s); falling back", e)
+                    use_sdpa = False
 
         if not use_sdpa:
             scale = 1.0 / math.sqrt(d)

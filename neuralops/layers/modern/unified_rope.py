@@ -239,6 +239,13 @@ class UnifiedRoPE(BaseAttention):
         cos = cos.to(x.device, x.dtype)
         sin = sin.to(x.device, x.dtype)
 
+        if x.is_cuda:
+            try:
+                from neuralops.ops.cuda.unified_rope_offset import unified_rope_offset
+                return unified_rope_offset(x, self.cos_cached, self.sin_cached, rotary_dim, offset=past_len)
+            except Exception as e_cuda:
+                logger.debug("UnifiedRoPE Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
+
         from neuralops.ops.triton.fused_rope import (
             fused_unified_rope_offset_triton,
             fused_unified_rope_offset_pytorch,
@@ -472,38 +479,61 @@ class UnifiedRoPE(BaseAttention):
 
         use_sdpa = (not output_attentions) and (head_mask is None)
         if use_sdpa:
-            try:
-                bool_mask = None
-                if is_causal:
-                    q_idx = torch.arange(L, device=device).unsqueeze(1) + (N_kv - L)
-                    k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
-                    causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
-                    bool_mask = causal
-                if attention_mask is not None:
-                    if attention_mask.dim() == 2:
-                        pad = (attention_mask > 0).bool()
-                        pad = pad[:, None, None, :]
-                    elif attention_mask.dim() == 4:
-                        pad = (attention_mask > 0).bool() if attention_mask.dtype != torch.bool else attention_mask
-                    else:
-                        pad = None
-                    if pad is not None:
-                        bool_mask = pad if bool_mask is None else (bool_mask & pad)
+            dispatched = False
+            d_val = q.shape[-1]
+            if q.is_cuda and not self.training and attention_mask is None and d_val in (32, 64, 128, 256):
+                # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
+                try:
+                    from neuralops.ops.cuda.flash_gqa import flash_gqa
+                    attn_out = flash_gqa(q, K_cat, V_cat, is_causal=is_causal, scale=self.scale).to(q.dtype)
+                    dispatched = True
+                except Exception as e_cuda:
+                    logger.debug("UnifiedRoPE Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
 
-                q_s = maybe_half(q)
-                k_s = maybe_half(K_full)
-                v_s = maybe_half(V_full)
+            if not dispatched and q.is_cuda and not self.training and attention_mask is None and d_val <= 128:
+                # Level 2: Triton JIT autotuned online softmax kernel
+                try:
+                    from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+                    attn_out = fused_weighted_gqa_online_softmax_triton(
+                        q, K_cat, V_cat, head_weights=None, is_causal=is_causal, scale=self.scale
+                    ).to(q.dtype)
+                    dispatched = True
+                except Exception as e_triton:
+                    logger.debug("UnifiedRoPE Level 2 Triton dispatch failed (%s), falling back to SDPA", e_triton)
 
-                out_sdp = F.scaled_dot_product_attention(
-                    q_s, k_s, v_s,
-                    attn_mask=bool_mask,
-                    is_causal=False,
-                    dropout_p=self.dropout.p if self.training else 0.0,
-                )
-                attn_out = out_sdp.to(q.dtype)
-            except Exception as e:
-                logger.debug("UnifiedRoPE SDPA failed, falling back: %s", e)
-                attn_out = None
+            if not dispatched:
+                try:
+                    bool_mask = None
+                    if is_causal:
+                        q_idx = torch.arange(L, device=device).unsqueeze(1) + (N_kv - L)
+                        k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
+                        causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
+                        bool_mask = causal
+                    if attention_mask is not None:
+                        if attention_mask.dim() == 2:
+                            pad = (attention_mask > 0).bool()
+                            pad = pad[:, None, None, :]
+                        elif attention_mask.dim() == 4:
+                            pad = (attention_mask > 0).bool() if attention_mask.dtype != torch.bool else attention_mask
+                        else:
+                            pad = None
+                        if pad is not None:
+                            bool_mask = pad if bool_mask is None else (bool_mask & pad)
+
+                    q_s = maybe_half(q)
+                    k_s = maybe_half(K_full)
+                    v_s = maybe_half(V_full)
+
+                    out_sdp = F.scaled_dot_product_attention(
+                        q_s, k_s, v_s,
+                        attn_mask=bool_mask,
+                        is_causal=False,
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                    )
+                    attn_out = out_sdp.to(q.dtype)
+                except Exception as e:
+                    logger.debug("UnifiedRoPE SDPA failed, falling back: %s", e)
+                    attn_out = None
 
         if attn_out is None:
             scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * self.scale
