@@ -32,6 +32,7 @@ from neuralops.benchmarks.results import (
     MultiFormatSaver,
     dedup_results_ledger,
     load_surgerized_safetensors,
+    normalize_legacy_result_dict,
     save_surgerized_safetensors,
 )
 
@@ -80,6 +81,23 @@ def test_benchmark_result_schema_methods():
     assert reconstructed.device_type == res.device_type
     assert reconstructed.metrics == res.metrics
 
+    # Test backward compatibility translation layer (Phase 44)
+    legacy_blob = {
+        "suite": "glue_sst2",
+        "device": "cuda:1",
+        "results": {"accuracy": 0.912},
+        "model": "distilbert",
+        "attention": "linear_attention",
+        "steps": 200,
+    }
+    normalized = normalize_legacy_result_dict(legacy_blob)
+    assert normalized.benchmark_suite == "glue_sst2"
+    assert normalized.device_type == "cuda:1"
+    assert normalized.model_name == "distilbert"
+    assert normalized.transplanted_attention == "linear_attention"
+    assert normalized.pre_train_steps == 200
+    assert normalized.metrics.get("accuracy") == 0.912
+
 
 def test_multi_format_saver_four_targets():
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -126,7 +144,12 @@ def test_multi_format_saver_four_targets():
         cur = conn.cursor()
         cur.execute("SELECT run_id, model_name, transplanted_attention, status FROM benchmark_runs ORDER BY run_id")
         rows = cur.fetchall()
+        # Verify multi-column indices per Phase 50
+        cur.execute("PRAGMA index_list('benchmark_runs')")
+        indices = [row[1] for row in cur.fetchall()]
         conn.close()
+        assert "idx_model_attn" in indices
+        assert "idx_suite_time" in indices
         assert len(rows) == 2
         assert rows[0] == ("run_alpha", "gpt2", "fms_scan", "success")
         assert rows[1] == ("run_beta", "gpt2", "gla_attention", "failed")
@@ -142,6 +165,8 @@ def test_benchmark_sweep_resumer():
 
         resumer = BenchmarkSweepResumer(output_dir=tmp_dir)
         assert resumer.completed_count == 1
+        completed_set = resumer.get_completed_runs()
+        assert ("gpt2", "fms_scan", "vllm_poisson") in completed_set
 
         # Check skip logic
         skip_done, reason_done = resumer.should_skip("gpt2", "fms_scan", "vllm_poisson")

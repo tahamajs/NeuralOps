@@ -104,14 +104,15 @@ class TestUniversalPipeline(unittest.TestCase):
     def test_benchmark_registry_dispatch(self) -> None:
         """Verify BENCHMARK_REGISTRY decorator and lookup contract."""
         self.assertIn("dummy_mock_eval", BENCHMARK_REGISTRY)
-        entry = BENCHMARK_REGISTRY["dummy_mock_eval"]
-        self.assertEqual(entry["name"], "dummy_mock_eval")
+        target = BENCHMARK_REGISTRY["dummy_mock_eval"]
+        self.assertTrue(issubclass(target, BaseBenchmark))
+        self.assertEqual(getattr(target, "_benchmark_name", None), "dummy_mock_eval")
 
         adapter = UniversalModelAdapter.from_pretrained(self.model, model_name="dummy_model")
         pipeline = BenchmarkPipeline(model_adapter=adapter, task_keys=["dummy_mock_eval"])
         res = pipeline.execute_task("dummy_mock_eval")
-        self.assertIn("metrics", res)
-        self.assertEqual(res["metrics"]["dummy_metric"], 42.0)
+        self.assertIn("dummy_metric", res)
+        self.assertEqual(res["dummy_metric"], 42.0)
 
     def test_multiformatsaver_atomic_wal_and_ledger(self) -> None:
         """Verify MultiFormatSaver writes to raw_results, .journal.jsonl, and master_ledger.db."""
