@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+"""
+Linear Attention Autograd Compatibility Module.
+Re-exports symbols from neuralops.ops.cuda.linear_attention.linear_attn_autograd.
+"""
+
+from __future__ import annotations
+
+from neuralops.ops.cuda.linear_attention.linear_attn_autograd import (
+    LinearAttentionFunction,
+    linear_attention,
+)
+
+__all__ = ["LinearAttentionFunction", "linear_attention"]
