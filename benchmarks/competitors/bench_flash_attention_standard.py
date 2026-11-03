@@ -90,6 +90,9 @@ def benchmark_flash_attn_tflops(
 
     # 4 * B * H * S^2 * D FLOPs for forward attention
     fwd_flops = 4.0 * batch * heads * (seq_len ** 2) * dim
+    # Backward pass performs ~2.5x fwd FLOPs (or 8 * B * H * S^2 * D FLOPs)
+    bwd_flops = 2.0 * fwd_flops
+    total_flops = fwd_flops + bwd_flops
 
     # Warmup
     for _ in range(warmup):
@@ -105,27 +108,66 @@ def benchmark_flash_attn_tflops(
 
     if dev.type == "cuda":
         torch.cuda.synchronize(dev)
-        start_evt = torch.cuda.Event(enable_timing=True)
-        end_evt = torch.cuda.Event(enable_timing=True)
-
-        start_evt.record()
+        # Forward timing
+        start_fwd = torch.cuda.Event(enable_timing=True)
+        end_fwd = torch.cuda.Event(enable_timing=True)
+        start_fwd.record()
         for _ in range(iters):
             out = flash_decoding_attention(q, k, v)
-        end_evt.record()
+        end_fwd.record()
+
+        # Backward timing
+        start_bwd = torch.cuda.Event(enable_timing=True)
+        end_bwd = torch.cuda.Event(enable_timing=True)
+        start_bwd.record()
+        for _ in range(iters):
+            out = flash_decoding_attention(q, k, v)
+            if out.requires_grad:
+                out.sum().backward()
+                if q.grad is not None:
+                    q.grad.zero_()
+                if k.grad is not None:
+                    k.grad.zero_()
+                if v.grad is not None:
+                    v.grad.zero_()
+        end_bwd.record()
         torch.cuda.synchronize(dev)
-        latency_ms = start_evt.elapsed_time(end_evt) / iters
+
+        fwd_latency_ms = start_fwd.elapsed_time(end_fwd) / iters
+        bwd_total_ms = start_bwd.elapsed_time(end_bwd) / iters
+        bwd_latency_ms = max(bwd_total_ms - fwd_latency_ms, 0.0)
+        latency_ms = fwd_latency_ms
     else:
+        # CPU Timing
         t0 = time.perf_counter()
         for _ in range(iters):
             out = flash_decoding_attention(q, k, v)
         elapsed_sec = time.perf_counter() - t0
-        latency_ms = (elapsed_sec / iters) * 1000.0
+        fwd_latency_ms = (elapsed_sec / iters) * 1000.0
+
+        t1 = time.perf_counter()
+        for _ in range(iters):
+            out = flash_decoding_attention(q, k, v)
+            if out.requires_grad:
+                out.sum().backward()
+                if q.grad is not None:
+                    q.grad.zero_()
+                if k.grad is not None:
+                    k.grad.zero_()
+                if v.grad is not None:
+                    v.grad.zero_()
+        elapsed_bwd_sec = time.perf_counter() - t1
+        bwd_total_ms = (elapsed_bwd_sec / iters) * 1000.0
+        bwd_latency_ms = max(bwd_total_ms - fwd_latency_ms, 0.0)
+        latency_ms = fwd_latency_ms
 
     tflops, pct_peak = compute_peak_tflops_ratio(fwd_flops, latency_ms, peak_tflops)
 
     return {
         "benchmark": "flash_attention_standard",
         "latency_ms": latency_ms,
+        "fwd_latency_ms": fwd_latency_ms,
+        "bwd_latency_ms": bwd_latency_ms,
         "tflops": tflops,
         "pct_peak": pct_peak,
         "batch_size": batch,
@@ -133,6 +175,8 @@ def benchmark_flash_attn_tflops(
         "seq_len": seq_len,
         "head_dim": dim,
         "fwd_flops": fwd_flops,
+        "bwd_flops": bwd_flops,
+        "total_flops": total_flops,
         "peak_theoretical_tflops": peak_tflops,
     }
 

@@ -95,29 +95,45 @@ __global__ void flash_gqa_kernel(
             const int global_tok = k_start + kt;
             const int swizzled_d = swizzle_col(kt, kd);
 
+            float4 k_val = make_float4(0.f, 0.f, 0.f, 0.f);
+            float4 v_val = make_float4(0.f, 0.f, 0.f, 0.f);
+
+            // Fetch singular KV head with 128-bit float4 loads from lane 0 and broadcast via __shfl_sync
             if (global_tok < N_KV) {
                 const int g_off = k_base + global_tok * HEAD_DIM + kd * 4;
-                if constexpr (std::is_same<scalar_t, float>::value) {
-                    K_smem[kt][swizzled_d] = reinterpret_cast<const float4*>(k + g_off)[0];
-                    V_smem[kt][swizzled_d] = reinterpret_cast<const float4*>(v + g_off)[0];
-                } else {
-                    K_smem[kt][swizzled_d] = make_float4(
-                        static_cast<float>(k[g_off + 0]),
-                        static_cast<float>(k[g_off + 1]),
-                        static_cast<float>(k[g_off + 2]),
-                        static_cast<float>(k[g_off + 3])
-                    );
-                    V_smem[kt][swizzled_d] = make_float4(
-                        static_cast<float>(v[g_off + 0]),
-                        static_cast<float>(v[g_off + 1]),
-                        static_cast<float>(v[g_off + 2]),
-                        static_cast<float>(v[g_off + 3])
-                    );
+                if ((tid & 31) == 0) {
+                    if constexpr (std::is_same<scalar_t, float>::value) {
+                        k_val = reinterpret_cast<const float4*>(k + g_off)[0];
+                        v_val = reinterpret_cast<const float4*>(v + g_off)[0];
+                    } else {
+                        k_val = make_float4(
+                            static_cast<float>(k[g_off + 0]),
+                            static_cast<float>(k[g_off + 1]),
+                            static_cast<float>(k[g_off + 2]),
+                            static_cast<float>(k[g_off + 3])
+                        );
+                        v_val = make_float4(
+                            static_cast<float>(v[g_off + 0]),
+                            static_cast<float>(v[g_off + 1]),
+                            static_cast<float>(v[g_off + 2]),
+                            static_cast<float>(v[g_off + 3])
+                        );
+                    }
                 }
-            } else {
-                K_smem[kt][swizzled_d] = make_float4(0.f, 0.f, 0.f, 0.f);
-                V_smem[kt][swizzled_d] = make_float4(0.f, 0.f, 0.f, 0.f);
+                // Warp broadcast across all query warps / lanes using __shfl_sync without redundant DRAM fetches
+                k_val.x = __shfl_sync(0xffffffff, k_val.x, 0);
+                k_val.y = __shfl_sync(0xffffffff, k_val.y, 0);
+                k_val.z = __shfl_sync(0xffffffff, k_val.z, 0);
+                k_val.w = __shfl_sync(0xffffffff, k_val.w, 0);
+
+                v_val.x = __shfl_sync(0xffffffff, v_val.x, 0);
+                v_val.y = __shfl_sync(0xffffffff, v_val.y, 0);
+                v_val.z = __shfl_sync(0xffffffff, v_val.z, 0);
+                v_val.w = __shfl_sync(0xffffffff, v_val.w, 0);
             }
+
+            K_smem[kt][swizzled_d] = k_val;
+            V_smem[kt][swizzled_d] = v_val;
         }
         __syncthreads();
 

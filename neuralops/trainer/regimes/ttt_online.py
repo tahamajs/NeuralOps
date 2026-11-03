@@ -69,13 +69,15 @@ class TTTOnlineAdapter:
         self.model.eval()
 
         if isinstance(prompt_batch, dict):
-            input_ids = prompt_batch.get("input_ids")
+            input_tensor = prompt_batch.get("input_ids")
+            if input_tensor is None:
+                input_tensor = prompt_batch.get("inputs_embeds")
         elif isinstance(prompt_batch, torch.Tensor):
-            input_ids = prompt_batch
+            input_tensor = prompt_batch
         else:
             return {"ttt_loss": 0.0}
 
-        if input_ids is None or input_ids.ndim != 2:
+        if input_tensor is None or input_tensor.ndim not in (2, 3):
             return {"ttt_loss": 0.0}
 
         # Backup original parameter data
@@ -98,15 +100,27 @@ class TTTOnlineAdapter:
             else:
                 break
 
-            # Next token prediction self-supervised cross-entropy
-            shift_logits = logits[..., :-1, :].contiguous()
-            shift_labels = input_ids[..., 1:].contiguous()
+            # Handle discrete token IDs vs continuous feature embeddings
+            if input_tensor.dtype in (torch.int32, torch.int64, torch.long, torch.int) and input_tensor.ndim == 2:
+                # Next token prediction self-supervised cross-entropy
+                shift_logits = logits[..., :-1, :].contiguous()
+                shift_labels = input_tensor[..., 1:].contiguous()
 
-            loss = F.cross_entropy(
-                shift_logits.view(-1, shift_logits.size(-1)),
-                shift_labels.view(-1),
-                reduction="mean",
-            )
+                loss = F.cross_entropy(
+                    shift_logits.view(-1, shift_logits.size(-1)),
+                    shift_labels.view(-1),
+                    reduction="mean",
+                )
+            else:
+                # Continuous reconstruction / associative state prediction loss ||x - hat{x}||_2^2
+                target_x = input_tensor
+                pred_x = logits
+                if pred_x.shape[-1] != target_x.shape[-1]:
+                    # Target dimension projection or slice if shapes differ
+                    min_dim = min(pred_x.shape[-1], target_x.shape[-1])
+                    pred_x = pred_x[..., :min_dim]
+                    target_x = target_x[..., :min_dim]
+                loss = F.mse_loss(pred_x, target_x, reduction="mean")
             total_loss += loss.item()
 
             grads = torch.autograd.grad(
