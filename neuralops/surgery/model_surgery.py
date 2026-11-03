@@ -223,6 +223,16 @@ class ModelSurgery:
                 leaf_modules=config.get("leaf_modules", None),
             )
             self.model = rewriter.rewrite(self.model, concrete_args=config.get("concrete_args", None))
+            self._evidence_records.append(
+                {
+                    "operation": "attention.fx",
+                    "engine": "fx",
+                    "target_attention": target_attention,
+                    "head_dim": config.get("head_dim", 64),
+                    "is_causal": config.get("is_causal", True),
+                    "status": "success",
+                }
+            )
             return self
         elif engine == "shell":
             return self.apply(

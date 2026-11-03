@@ -195,12 +195,14 @@ def fast_linear_attention_replacement(
     scale: Optional[float] = None,
     is_causal: bool = True,
     eps: float = 1e-6,
+    target_attention: str = "cosformer",
 ) -> torch.Tensor:
     """Universal linear attention replacement function for FX graph rewrites.
 
     Applies normalized feature map phi(x) = elu(x) + 1.0, integrates optional
-    scaling and zero-bleed padding sanitization, and computes associative prefix states.
-    Compatible with PyTorch Inductor (torch.compile) without graph breaks.
+    scaling, cosformer cosine positional reweighting, and zero-bleed padding sanitization,
+    computing associative prefix states. Compatible with PyTorch Inductor (torch.compile)
+    without graph breaks.
     """
     # Normalized feature map: phi(x) = elu(x) + 1.0
     q_phi = linear_feature_map(q)
@@ -208,6 +210,19 @@ def fast_linear_attention_replacement(
 
     if scale is not None:
         q_phi = q_phi * scale
+
+    if target_attention == "cosformer":
+        # Cosformer cosine positional reweighting: cos(pi * i / (2 * T))
+        t = q_phi.shape[-2]
+        indices = torch.arange(t, device=q_phi.device, dtype=q_phi.dtype)
+        angles = indices * (torch.pi / (2.0 * max(t, 1)))
+        cos_weights = torch.cos(angles).unsqueeze(-1)
+        if q_phi.dim() == 4:
+            cos_weights = cos_weights.unsqueeze(0).unsqueeze(0)
+        elif q_phi.dim() == 3:
+            cos_weights = cos_weights.unsqueeze(0)
+        q_phi = q_phi * cos_weights
+        k_phi = k_phi * cos_weights
 
     # Zero-bleed padding mask sanitization (monograph Law 3)
     if mask is not None:
@@ -419,7 +434,12 @@ class FXAttentionGraphRewriter:
                         new_node = graph.call_function(
                             fast_linear_attention_replacement,
                             args=(q, k, v),
-                            kwargs={"mask": mask, "scale": scale, "is_causal": causal},
+                            kwargs={
+                                "mask": mask,
+                                "scale": scale,
+                                "is_causal": causal,
+                                "target_attention": self.target_attention,
+                            },
                         )
                         node.replace_all_uses_with(new_node)
                         graph.erase_node(node)
@@ -557,7 +577,12 @@ class FXAttentionGraphRewriter:
                                 new_node = graph.call_function(
                                     fast_linear_attention_replacement,
                                     args=(q_candidate, k_candidate, v_candidate),
-                                    kwargs={"mask": mask_node, "scale": scale_val, "is_causal": self.is_causal},
+                                    kwargs={
+                                        "mask": mask_node,
+                                        "scale": scale_val,
+                                        "is_causal": self.is_causal,
+                                        "target_attention": self.target_attention,
+                                    },
                                 )
                                 node.replace_all_uses_with(new_node)
                                 graph.erase_node(node)

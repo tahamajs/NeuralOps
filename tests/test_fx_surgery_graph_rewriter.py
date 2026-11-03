@@ -470,17 +470,33 @@ def test_phase_019_inductor_compile_and_fusion() -> None:
 def test_phase_020_model_surgery_declarative_recipe_dispatch() -> None:
     """Phase 020: End-to-end recipe dispatch with engine='fx' and attention.fx in SurgeryRecipe."""
     model = MultiLayerTransformerModel(d_model=32, num_heads=2, num_layers=2)
+    surgery = ModelSurgery(model)
+    surgery.replace_attention(target_attention="cosformer", engine="fx", head_dim=16, is_causal=True)
+
+    # Check evidence records
+    evidence = surgery.get_evidence()
+    assert len(evidence) > 0
+    assert evidence[-1]["operation"] == "attention.fx"
+    assert evidence[-1]["engine"] == "fx"
+
+    # Forward pass
+    x = torch.randn(2, 8, 32)
+    out = surgery(x)
+    assert out.shape == (2, 8, 32)
+    assert not torch.isnan(out).any()
+
+    # Recipe dispatch
+    model2 = MultiLayerTransformerModel(d_model=32, num_heads=2, num_layers=2)
     recipe = SurgeryRecipe(
         ops=[SurgeryOp(name="attention.fx", params={"target_attention": "cosformer", "head_dim": 16})]
     )
-    new_model, report = recipe.apply(model)
+    new_model, report = recipe.apply(model2)
     assert report.success
     assert "attention.fx" in report.applied_ops
 
-    x = torch.randn(2, 8, 32)
-    out = new_model(x)
-    assert out.shape == (2, 8, 32)
-    assert not torch.isnan(out).any()
+    out2 = new_model(x)
+    assert out2.shape == (2, 8, 32)
+    assert not torch.isnan(out2).any()
 
 
 def test_fx_backward_gradients() -> None:
