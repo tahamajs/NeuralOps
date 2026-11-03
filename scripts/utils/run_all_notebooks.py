@@ -121,7 +121,8 @@ def _preprocess_code(source_lines: list[str]) -> str:
             cleaned_lines.append(f"# {line}")
         else:
             cleaned_lines.append(line)
-    return "".join(cleaned_lines)
+    code_str = "".join(cleaned_lines)
+    return code_str.replace(r"\text{", r"\mathrm{").replace(r"\\text{", r"\\mathrm{")
 
 
 def _capture_figures() -> list[dict[str, Any]]:
@@ -262,6 +263,22 @@ def execute_notebook(nb_path: str, repo_root: str) -> dict[str, Any]:
         "__builtins__": __builtins__,
         "display": _display,
     }
+
+    try:
+        import pandas as pd
+        cell_globals["pd"] = pd
+    except ImportError:
+        pass
+    try:
+        import numpy as np
+        cell_globals["np"] = np
+    except ImportError:
+        pass
+    try:
+        import json as _json
+        cell_globals["json"] = _json
+    except ImportError:
+        pass
 
     # Pre-create standard directories expected by notebooks
     from pathlib import Path
