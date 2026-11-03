@@ -242,22 +242,34 @@ def selective_scan(
                 e,
             )
 
-    # Level 1 Native CUDA C++ / Level 2 Triton JIT Dispatch
+    # Level 1 Native CUDA C++ / Level 2 Triton JIT / Level 3 PyTorch Fallback
     if u.is_cuda and z is None and delta_bias is None:
         try:
-            from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan as _cuda_autograd_scan
+            from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
+                selective_scan as _cuda_autograd_scan,
+            )
+
             out_tuple = _cuda_autograd_scan(u, delta, A, B, C, D)
             if isinstance(out_tuple, tuple):
                 return out_tuple[0]
             return out_tuple
         except Exception as exc:
-            logger.warning("NeuralOps CUDA/Triton selective_scan dispatch failed (%s); falling back to Triton/chunked.", exc)
+            logger.warning(
+                "NeuralOps Level 1 CUDA selective_scan failed (%s); trying Level 2 Triton.",
+                exc,
+            )
 
         try:
-            from neuralops.core.triton_kernels.selective_scan import selective_scan_fn as _triton_scan_fn
+            from neuralops.core.triton_kernels.selective_scan import (
+                selective_scan_fn as _triton_scan_fn,
+            )
+
             return _triton_scan_fn(u, delta, A, B, C, D=D, delta_softplus=delta_softplus)
-        except Exception as e:
-            logger.warning("Triton selective_scan_fn failed, falling back to chunked PyTorch: %s", e)
+        except Exception as exc:
+            logger.warning(
+                "NeuralOps Level 2 Triton selective_scan failed (%s); falling back to Level 3 chunked PyTorch.",
+                exc,
+            )
 
     return selective_scan_chunked(
         u=u,

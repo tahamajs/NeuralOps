@@ -948,7 +948,7 @@ def triton_fused_latent_kv_cache_attention(
 
     q_latent = torch.matmul(q, u_k)
 
-    if not HAS_TRITON or not q.is_cuda or R > 128 or D_V > 128:
+    if not HAS_TRITON or not q.is_cuda or R > 512 or D_V > 512:
         return triton_fused_latent_kv_cache_attention_pytorch_ref(q, c_kv, u_k, u_v, sm_scale=sm_scale)
 
     out = torch.empty((B, H, L_Q, D_V), device=q.device, dtype=q.dtype)

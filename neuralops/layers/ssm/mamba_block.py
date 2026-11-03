@@ -33,6 +33,13 @@ except Exception as e:
     HAS_MAMBA_CUDA = False
 
 try:
+    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
+        selective_scan as cuda_selective_scan,
+    )
+except Exception:
+    cuda_selective_scan = None
+
+try:
     from neuralops.ops.triton.selective_scan import (
         selective_scan_fn as triton_selective_scan,
     )

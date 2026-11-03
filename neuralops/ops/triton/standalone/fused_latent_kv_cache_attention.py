@@ -149,7 +149,7 @@ def triton_fused_latent_kv_cache_attention(
 
     q_latent = torch.matmul(q, u_k)
 
-    if not q.is_cuda or R > 128 or D_V > 128:
+    if not q.is_cuda or R > 512 or D_V > 512:
         c_expanded = c_kv.unsqueeze(1)
         scores = torch.matmul(q_latent.float(), c_expanded.float().transpose(-1, -2)) * sm_scale
         probs = F.softmax(scores, dim=-1)
