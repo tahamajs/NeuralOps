@@ -60,6 +60,7 @@ ATTENTION_FILE_MAP: dict[str, str] = {
     "svd_compressed_attention": "svd_compressed",
     "svd_llm_v2": "svd_llm_v2_attention",
     "svd_proj_attn": "svd_projection_attention",
+    "linear_attention": "svd_linear_attention",
     "inject_svd_linear_attention": "svd_linear_attention",
     "token_compressed": "token_compressed_attention",
     "tt": "token_compressed_attention",

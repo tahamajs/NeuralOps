@@ -9,14 +9,45 @@
 vLLM Runtime Integration for NeuralOps.
 """
 
+from typing import Any, Optional
+from neuralops.core.errors import IntegrationNotImplementedError
 from neuralops.integrations.vllm.backend import (
     NeuralOpsAttentionBackend,
     NeuralOpsAttentionImpl,
 )
 from neuralops.integrations.vllm.state_table import PagedStateTable
 
+try:
+    import vllm
+    HAS_VLLM = True
+except ImportError:
+    HAS_VLLM = False
+
+
+class VLLMAdapter:
+    """vLLM runtime adapter for NeuralOps models."""
+
+    def __init__(self, model: Optional[Any] = None, **kwargs: Any) -> None:
+        if not HAS_VLLM:
+            raise IntegrationNotImplementedError(
+                "vLLM is not installed. NeuralOps vLLM serving adapter fails closed when vLLM is unavailable. "
+                "See docs/roadmap/VLLM_PLAN.md for details."
+            )
+        self.model = model
+        self.kwargs = kwargs
+
+    def generate(self, prompts: Any, **kwargs: Any) -> Any:
+        if not HAS_VLLM:
+            raise IntegrationNotImplementedError(
+                "vLLM is not installed. Cannot run generation."
+            )
+        return self.model.generate(prompts, **kwargs)
+
+
 __all__ = [
     "NeuralOpsAttentionBackend",
     "NeuralOpsAttentionImpl",
     "PagedStateTable",
+    "VLLMAdapter",
+    "HAS_VLLM",
 ]

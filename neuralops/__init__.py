@@ -34,6 +34,8 @@ if TYPE_CHECKING:
         evaluate,
         export_model,
         finalize_surgery,
+        get_attention_module,
+        quick_benchmark,
         get_attention_class,
         get_compressor_class,
         get_version,
@@ -421,6 +423,12 @@ def _patch_torch_compat():
                         return self.weight * x_normed
 
                 torch.nn.RMSNorm = RMSNorm
+
+            # 7. Polyfill torch.cuda.OutOfMemoryError for PyTorch < 2.0
+            if hasattr(torch, "cuda") and not hasattr(torch.cuda, "OutOfMemoryError"):
+                class _OutOfMemoryError(RuntimeError):
+                    pass
+                torch.cuda.OutOfMemoryError = _OutOfMemoryError
 
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -847,6 +855,8 @@ __all__ = [
     "transplant",
     "compress",
     "create_compressor",
+    "get_attention_module",
+    "quick_benchmark",
     "export_model",
     "export",
     "pipeline",

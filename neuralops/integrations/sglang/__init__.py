@@ -13,8 +13,14 @@ from neuralops.integrations.sglang.radix_recurrent import (
     RadixRecurrentNode,
     RadixRecurrentTree,
 )
+from neuralops.integrations.radix_prefix_cache import (
+    RadixPrefixNode,
+    SGLangRadixAdapter,
+)
 
 __all__ = [
     "RadixRecurrentNode",
     "RadixRecurrentTree",
+    "RadixPrefixNode",
+    "SGLangRadixAdapter",
 ]

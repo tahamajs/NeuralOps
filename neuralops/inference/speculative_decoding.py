@@ -68,7 +68,10 @@ class SelfSpeculativeDecoder:
         max_draft_k: int = 5,
         min_draft_k: int = 1,
         adaptive_k: bool = True,
+        max_draft_tokens: Optional[int] = None,
     ) -> None:
+        if max_draft_tokens is not None:
+            max_draft_k = max_draft_tokens
         if not isinstance(max_draft_k, int) or isinstance(max_draft_k, bool) or max_draft_k <= 0:
             raise ValueError("max_draft_k must be a positive integer")
         if not isinstance(min_draft_k, int) or isinstance(min_draft_k, bool) or min_draft_k <= 0:

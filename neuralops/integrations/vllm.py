@@ -185,6 +185,7 @@ from neuralops.integrations.vllm.backend import (
     NeuralOpsAttentionImpl,
 )
 from neuralops.integrations.vllm.state_table import PagedStateTable
+from neuralops.integrations.vllm import VLLMAdapter
 
 __all__ = [
     "NeuralOpsvLLMMetadata",
@@ -194,6 +195,7 @@ __all__ = [
     "NeuralOpsAttentionBackend",
     "NeuralOpsAttentionImpl",
     "PagedStateTable",
+    "VLLMAdapter",
     "register_neuralops_vllm_plugin",
     "vllm_is_available",
     "HAS_VLLM",

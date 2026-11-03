@@ -591,10 +591,14 @@ def render_architecture_card(spec: ArchitectureSpec, plain: bool = False) -> str
     return "\n".join(lines)
 
 
+inspect_model = summary
+
+
 __all__ = [
     "ArchitectureSpec",
     "inspect_architecture",
     "render_architecture_card",
     "summary",
     "compare",
+    "inspect_model",
 ]

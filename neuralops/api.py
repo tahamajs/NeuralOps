@@ -90,6 +90,8 @@ def replace_attention(
     attn_name = attention or attention_type
     if not attn_name:
         raise ValueError("Must specify attention or attention_type.")
+    if attn_name in ("chunk_gla", "gla"):
+        attn_name = "gla_attention"
     if attn_name.startswith("fla:"):
         from neuralops.core.errors import IntegrationNotImplementedError
         from neuralops.integrations.fla import (
@@ -156,6 +158,15 @@ def replace_attention(
         if not hasattr(out_model.config, "neuralops_history") or out_model.config.neuralops_history is None:
             out_model.config.neuralops_history = []
         out_model.config.neuralops_history.append(meta_entry)
+        try:
+            out_model.config.neuralops_attention = attn_name
+        except Exception:
+            pass
+    elif hasattr(out_model, "config") and out_model.config is not None:
+        try:
+            out_model.config.neuralops_attention = attn_name
+        except Exception:
+            pass
 
     from neuralops.utils.hub_integration import attach_attention_methods
     return attach_attention_methods(out_model)
@@ -1461,6 +1472,58 @@ def info() -> Dict[str, Any]:
     }
 
 
+def get_attention_module(name: str) -> Any:
+    """Retrieve an attention module class by key from the registry."""
+    return get_attention_class(name)
+
+
+def quick_benchmark(
+    model: nn.Module,
+    task: str = "synthetic_sst2",
+    device: Optional[Union[str, torch.device]] = None,
+    iterations: int = 5,
+    **kwargs: Any,
+) -> Any:
+    """Quickly benchmark a model on sample inputs and return a latency summary DataFrame."""
+    import pandas as pd
+    import time
+
+    dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    if isinstance(dev, str):
+        dev = torch.device(dev)
+    model = model.to(dev).eval()
+
+    sample = torch.randint(0, 1000, (2, 64), device=dev)
+    with torch.no_grad():
+        for _ in range(2):
+            try:
+                _ = model(sample)
+            except TypeError:
+                _ = model(input_ids=sample)
+        if dev.type == "cuda":
+            torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        for _ in range(max(1, iterations)):
+            try:
+                out = model(sample)
+            except TypeError:
+                out = model(input_ids=sample)
+        if dev.type == "cuda":
+            torch.cuda.synchronize()
+        t1 = time.perf_counter()
+
+    latency_ms = ((t1 - t0) / max(1, iterations)) * 1000.0
+    is_finite = True
+    if hasattr(out, "logits"):
+        is_finite = bool(torch.isfinite(out.logits).all())
+    elif isinstance(out, torch.Tensor):
+        is_finite = bool(torch.isfinite(out).all())
+
+    return pd.DataFrame([
+        {"task": task, "device": dev.type, "latency_ms": latency_ms, "finite": is_finite}
+    ])
+
+
 from neuralops.trainer import NeuralOpsTrainer  # noqa: E402
 
 
@@ -1470,6 +1533,8 @@ __all__ = [
     "transplant_attention",
     "transplant",
     "compress",
+    "get_attention_module",
+    "quick_benchmark",
     "export_model",
     "export",
     "push_to_hub",
