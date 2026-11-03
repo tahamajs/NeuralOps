@@ -142,6 +142,10 @@ def test_flash_attention_standard_cpu_fallback() -> None:
     assert res["benchmark"] == "flash_attention_standard"
     assert "latency_ms" in res
     assert res["latency_ms"] > 0
+    assert "fwd_latency_ms" in res
+    assert res["fwd_latency_ms"] > 0
+    assert "bwd_latency_ms" in res
+    assert res["bwd_latency_ms"] >= 0
     assert "tflops" in res
     assert res["tflops"] >= 0
     assert "pct_peak" in res
@@ -149,6 +153,10 @@ def test_flash_attention_standard_cpu_fallback() -> None:
     assert res["num_heads"] == 4
     assert res["seq_len"] == 64
     assert res["head_dim"] == 32
+    assert "fwd_flops" in res
+    assert "bwd_flops" in res
+    assert "total_flops" in res
+    assert res["total_flops"] == res["fwd_flops"] + res["bwd_flops"]
 
 
 def test_vllm_poisson_serving() -> None:
