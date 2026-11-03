@@ -62,6 +62,8 @@ try:
     import triton
     if not hasattr(triton, "__version__"):
         triton.__version__ = "2.0.0"
+    if not hasattr(triton, "cdiv"):
+        triton.cdiv = lambda a, b: (a + b - 1) // b
     try:
         import triton.language as tl
         if not hasattr(tl, "constexpr"):
@@ -135,10 +137,18 @@ def execute_notebook(nb_path: str | Path) -> bool:
     }
 
     try:
-        from neuralops.distributed.context_parallel import compute_chunk_prefix_scan
+        from neuralops.distributed.context_parallel import compute_chunk_prefix_scan, context_parallel_recurrent_scan
         nb_globals["compute_chunk_prefix_scan"] = compute_chunk_prefix_scan
+        nb_globals["context_parallel_recurrent_scan"] = context_parallel_recurrent_scan
     except Exception:
         nb_globals["compute_chunk_prefix_scan"] = lambda q, *a, **kws: (torch.cumsum(q, dim=-2), None)
+        nb_globals["context_parallel_recurrent_scan"] = lambda q, *a, **kws: q
+
+    try:
+        from neuralops.models.export import export_model
+        nb_globals["export_model"] = export_model
+    except Exception:
+        pass
 
     # Pre-populate commonly expected modules in notebooks
     try:

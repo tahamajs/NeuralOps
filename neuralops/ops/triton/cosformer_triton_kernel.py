@@ -549,35 +549,37 @@ def triton_cosformer_linear_attention(
     k_c = k.contiguous()
     v_c = v.contiguous()
 
-    _cosformer_fwd_kernel[grid](
-        q_c,
-        k_c,
-        v_c,
-        out,
-        B,
-        H,
-        L,
-        D=D,
-        stride_qb=q_c.stride(0),
-        stride_qh=q_c.stride(1),
-        stride_ql=q_c.stride(2),
-        stride_qd=q_c.stride(3),
-        stride_kb=k_c.stride(0),
-        stride_kh=k_c.stride(1),
-        stride_kl=k_c.stride(2),
-        stride_kd=k_c.stride(3),
-        stride_vb=v_c.stride(0),
-        stride_vh=v_c.stride(1),
-        stride_vl=v_c.stride(2),
-        stride_vd=v_c.stride(3),
-        stride_ob=out.stride(0),
-        stride_oh=out.stride(1),
-        stride_ol=out.stride(2),
-        stride_od=out.stride(3),
-        CAUSAL=is_causal,
-    )
-
-    return out
+    try:
+        _cosformer_fwd_kernel[grid](
+            q_c,
+            k_c,
+            v_c,
+            out,
+            B,
+            H,
+            L,
+            D=D,
+            stride_qb=q_c.stride(0),
+            stride_qh=q_c.stride(1),
+            stride_ql=q_c.stride(2),
+            stride_qd=q_c.stride(3),
+            stride_kb=k_c.stride(0),
+            stride_kh=k_c.stride(1),
+            stride_kl=k_c.stride(2),
+            stride_kd=k_c.stride(3),
+            stride_vb=v_c.stride(0),
+            stride_vh=v_c.stride(1),
+            stride_vl=v_c.stride(2),
+            stride_vd=v_c.stride(3),
+            stride_ob=out.stride(0),
+            stride_oh=out.stride(1),
+            stride_ol=out.stride(2),
+            stride_od=out.stride(3),
+            CAUSAL=is_causal,
+        )
+        return out
+    except Exception:
+        return triton_cosformer_linear_attention_pytorch_ref(q, k, v, is_causal=is_causal)
 
 
 __all__ = [

@@ -81,8 +81,9 @@ class _SoftplusAutograd(torch.autograd.Function):
             try:
                 out = torch.empty_like(x)
                 N = x.numel()
-                grid = (triton.cdiv(N, 1024),)
-                _softplus_fwd_kernel[grid](x, out, N, BETA=float(beta), THRESHOLD=float(threshold), BLOCK_SIZE=1024)
+                BLOCK_SIZE = 4096
+                grid = (triton.cdiv(N, BLOCK_SIZE),)
+                _softplus_fwd_kernel[grid](x, out, N, BETA=float(beta), THRESHOLD=float(threshold), BLOCK_SIZE=BLOCK_SIZE, num_warps=8)
                 return out
             except Exception:
                 pass
@@ -98,8 +99,9 @@ class _SoftplusAutograd(torch.autograd.Function):
             try:
                 dx = torch.empty_like(x)
                 N = x.numel()
-                grid = (triton.cdiv(N, 1024),)
-                _softplus_bwd_kernel[grid](x, grad_output, dx, N, BETA=beta, THRESHOLD=threshold, BLOCK_SIZE=1024)
+                BLOCK_SIZE = 4096
+                grid = (triton.cdiv(N, BLOCK_SIZE),)
+                _softplus_bwd_kernel[grid](x, grad_output, dx, N, BETA=beta, THRESHOLD=threshold, BLOCK_SIZE=BLOCK_SIZE, num_warps=8)
                 return dx, None, None
             except Exception:
                 pass
