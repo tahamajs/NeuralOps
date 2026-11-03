@@ -80,6 +80,11 @@ try:
         pass
 except (ImportError, ModuleNotFoundError):
     triton_mock = types.ModuleType("triton")
+    triton_mock.cdiv = lambda a, b: (a + b - 1) // b
+    triton_mock.jit = lambda f: f
+    triton_mock.autotune = lambda *a, **kw: lambda f: f
+    triton_mock.heuristics = lambda *a, **kw: lambda f: f
+
     triton_mock.__version__ = "2.0.0"
     triton_mock.jit = lambda f: f
     triton_mock.autotune = lambda *a, **k: (lambda f: f)
