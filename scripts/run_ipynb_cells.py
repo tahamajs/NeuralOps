@@ -30,6 +30,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+import torch
+import torch.nn as nn
+
 # Inject compatibility shim for torch.distributed._tensor on PyTorch 1.12
 try:
     import torch.distributed._tensor
@@ -93,9 +96,6 @@ except (ImportError, ModuleNotFoundError):
     triton_lang.bfloat16 = torch.bfloat16
     sys.modules["triton.language"] = triton_lang
     triton_mock.language = triton_lang
-
-import torch
-import torch.nn as nn
 
 
 def clean_cell_source(source: str) -> str:
