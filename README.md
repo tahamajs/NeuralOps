@@ -1840,6 +1840,46 @@ must also be identified explicitly: `/home/tahamajlesi.ut/NeuralOps` is not a
 Git checkout in the current audit, so it must not be treated as the canonical
 source tree.
 
+### 22.1 Results layout, synchronization, and provenance
+
+All benchmark outputs are collected under `results/`. This directory is
+machine-generated and intentionally ignored by Git: it contains PBS/screen
+logs, SQLite state, JSON/CSV/Parquet exports, plots, and intermediate files.
+The source checkout and the evidence bundle therefore have different roles:
+the checkout contains reproducible code and reviewed summaries, while
+`results/` contains the raw measurements needed to audit a run.
+
+| Category | Canonical location | What it contains |
+| :--- | :--- | :--- |
+| Structured ledger | `results/registry/` | SQLite/JSONL records with module, device, dtype, status, and provenance fields |
+| Machine-readable exports | `results/*.json`, `results/*.jsonl`, `results/*.csv`, `results/*.parquet`, `results/csv/`, `results/quick_cuda/` | Aggregated benchmark data for analysis and ingestion |
+| Kernel and benchmark reports | `results/reports/`, `results/*kernel*.md`, `results/*SUMMARY*.md` | Human-readable CUDA, Triton, attention, compressor, and serving summaries |
+| Execution evidence | `results/*.log`, `results/screen_logs/`, `results/examples_logs/`, `results/contract_latest/` | PBS, screen, exhaustive-suite, contract, and example logs |
+| Publication assets | `results/tables/`, `results/plots/`, `results/figures/` | LaTeX tables, PNG/PDF plots, and SVG figures |
+| Module-level evidence | `results/by_module/`, `results/by_category/` | Per-module and per-category result records |
+
+The current local evidence sync from the HPC bundle is complete: 70 MB across
+284 files. It was performed from
+`/home/tahamajlesi.ut/NeuralOps/results/` into this checkout's `results/`
+directory with `rsync` and without `--delete`; no source code was overwritten.
+The separate `/home/tahamajlesi.ut/results/` directory is not merged
+automatically because it is a different result set and must be reconciled by
+manifest before combining it.
+
+The two local ledger paths `results/master_ledger.sqlite` and
+`results/registry/master_ledger.sqlite` are currently byte-for-byte identical;
+`results/registry/master_ledger.sqlite` is the canonical path for new tools.
+Do not delete or merge ledger copies without recording checksums and checking
+all consumers.
+
+Every result cited as verified must identify the exact Git commit, hardware,
+CUDA/PyTorch/Triton versions, dtype, tensor shape, command, timestamp, and
+completion status. A filename or a non-empty log is not sufficient evidence;
+failed, partial, and superseded runs must remain labelled as such. Before a
+future HPC sync, compare manifests and checksums, copy server evidence into
+`results/`, and never use a destructive `rsync --delete` until both sides have
+been reviewed.
+
 ## 23. Hugging Face Model Zoo Audit
 
 NeuralOps integrates directly with the Hugging Face Hub under the [Hooshaai](https://huggingface.co/Hooshaai) organization and author checkpoints:
