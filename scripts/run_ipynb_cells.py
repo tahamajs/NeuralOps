@@ -86,9 +86,9 @@ except (ImportError, ModuleNotFoundError):
 
     triton_lang = types.ModuleType("triton.language")
     triton_lang.constexpr = int
-    triton_lang.int32 = torch.int32
+    triton_lang.int32 = int
     triton_lang.int64 = torch.int64
-    triton_lang.float32 = torch.float32
+    triton_lang.float32 = float
     triton_lang.float16 = torch.float16
     triton_lang.bfloat16 = torch.bfloat16
     sys.modules["triton.language"] = triton_lang
