@@ -48,15 +48,18 @@ from benchmarks.competitors import (
     benchmark_vllm_poisson_serving,
     build_few_shot_prompt,
     compute_megatron_mfu,
+    compute_tp_sp_communication_volume,
     evaluate_choice_loglikelihoods,
     evaluate_medusa_tree_acceptance,
     generate_dataset_reproducibility_manifest,
     generate_lighteval_manifest,
     generate_ruler_multi_needle_prompt,
     quantize_simulate,
+    run_deepspeed_zero3_benchmark,
     run_lighteval_fast_stream_benchmark,
     run_lm_eval_benchmark,
     run_medusa_speculative_benchmark,
+    run_megatron_tp_sp_benchmark,
     run_ruler_benchmark,
     run_tensorrt_quant_benchmark,
     run_tensorrt_quant_sqnr_suite,
@@ -68,11 +71,16 @@ def test_package_exports() -> None:
     expected_callables = [
         "benchmark_flash_attn_tflops",
         "benchmark_vllm_poisson_serving",
+        "run_vllm_serving_benchmark",
         "benchmark_radix_prefix_cache",
+        "run_sglang_radix_benchmark",
         "benchmark_megatron_tp_sp",
         "compute_megatron_mfu",
+        "compute_tp_sp_communication_volume",
+        "run_megatron_tp_sp_benchmark",
         "benchmark_deepspeed_zero3_overhead",
         "benchmark_pcie_offload_bandwidth",
+        "run_deepspeed_zero3_benchmark",
         "benchmark_tensorrt_sqnr",
         "quantize_simulate",
         "run_tensorrt_quant_benchmark",
@@ -205,6 +213,22 @@ def test_megatron_tp_sp_and_mfu() -> None:
     # ratio = 6e10 / 1e14 = 6e-4 = 0.06%
     assert abs(mfu_calc["mfu_pct"] - 0.06) < 1e-4
 
+    # Test communication volume formula
+    # B=2, S=64, H=128, TP=2, bytes=2 (fp16)
+    # factor = 2 * (2 - 1) / 2 = 1.0
+    # tokens = 2 * 64 = 128
+    # allreduce_bytes = 1.0 * 128 * 128 * 2 = 32768 bytes
+    vol = compute_tp_sp_communication_volume(
+        batch_size=2,
+        seq_len=64,
+        hidden_size=128,
+        tp_size=2,
+        dtype_bytes=2,
+    )
+    assert vol["allreduce_volume_bytes"] == 32768.0
+    assert vol["layer_fwd_volume_mb"] > 0
+    assert vol["factor"] == 1.0
+
     # Test runner execution
     res = benchmark_megatron_tp_sp(
         hidden_size=64,
@@ -222,6 +246,20 @@ def test_megatron_tp_sp_and_mfu() -> None:
     assert "mfu_pct" in res
     assert res["mfu_pct"] >= 0
     assert res["latency_ms"] > 0
+    assert "allreduce_volume_mb" in res
+
+    # Verify alias callable
+    res_alias = run_megatron_tp_sp_benchmark(
+        hidden_size=64,
+        intermediate_size=128,
+        seq_len=16,
+        batch_size=1,
+        tp_size=1,
+        iters=1,
+        warmup=1,
+        device="cpu",
+    )
+    assert res_alias["benchmark"] == "megatron_tp_sp"
 
 
 def test_deepspeed_zero3_overhead() -> None:
@@ -238,6 +276,18 @@ def test_deepspeed_zero3_overhead() -> None:
     assert res["total_param_mb"] == 8
     assert res["gather_latency_ms"] > 0
     assert res["effective_bandwidth_gb_sec"] > 0
+    assert res["memory_footprint_reduction_ratio"] == 0.5
+
+    # Verify alias callable
+    res_alias = run_deepspeed_zero3_benchmark(
+        num_shards=4,
+        shard_size_mb=2,
+        iters=1,
+        warmup=1,
+        device="cpu",
+    )
+    assert res_alias["benchmark"] == "deepspeed_zero3_overhead"
+    assert res_alias["memory_footprint_reduction_ratio"] == 0.25
 
 
 def test_tensorrt_quant_sqnr() -> None:
