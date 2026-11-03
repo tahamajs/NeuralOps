@@ -807,17 +807,40 @@ def _heal_replaced_model_impl(
     cached_targets: Dict[str, list[torch.Tensor]] = {name: [] for name, _, _ in layer_pairs}
     hooks = []
 
+    # Map each attention module to its parent container (e.g. DecoderLayer) to capture inputs
+    # even when callers invoke self_attn solely with keyword arguments (kwargs-only call pattern).
+    mod_to_parent: Dict[nn.Module, nn.Module] = {}
+    for _, parent in teacher_model.named_modules():
+        for child in parent.children():
+            if child not in mod_to_parent:
+                mod_to_parent[child] = parent
+
     for name, t_mod, _ in layer_pairs:
-        def _make_capture_hook(layer_name: str):
+        parent_mod = mod_to_parent.get(t_mod)
+
+        def _make_capture_hook(layer_name: str, has_parent_hook: bool):
             def _hook(mod, inp, out):
-                in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
                 out_tensor = out[0] if isinstance(out, tuple) else out
-                if isinstance(in_tensor, torch.Tensor):
-                    cached_inputs[layer_name].append(in_tensor.detach().float())
                 if isinstance(out_tensor, torch.Tensor):
                     cached_targets[layer_name].append(out_tensor.detach().float())
+                if not has_parent_hook:
+                    in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
+                    if isinstance(in_tensor, torch.Tensor):
+                        cached_inputs[layer_name].append(in_tensor.detach().float())
             return _hook
-        hooks.append(t_mod.register_forward_hook(_make_capture_hook(name)))
+
+        def _make_parent_prehook(layer_name: str):
+            def _pre_hook(mod, inp):
+                in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
+                if isinstance(in_tensor, torch.Tensor):
+                    cached_inputs[layer_name].append(in_tensor.detach().float())
+            return _pre_hook
+
+        if parent_mod is not None:
+            hooks.append(parent_mod.register_forward_pre_hook(_make_parent_prehook(name)))
+            hooks.append(t_mod.register_forward_hook(_make_capture_hook(name, has_parent_hook=True)))
+        else:
+            hooks.append(t_mod.register_forward_hook(_make_capture_hook(name, has_parent_hook=False)))
 
     with torch.no_grad():
         for b in batches:
