@@ -1212,8 +1212,8 @@ class MicroChunkedShadowTwinDistiller:
 
             # Online incremental task loss accumulation without holding all logits in VRAM (Phase 030)
             if chunk_labels is not None and s_logits is not None:
-                flat_logits = s_logits.view(-1, s_logits.size(-1))
-                flat_labels = chunk_labels.view(-1)
+                flat_logits = s_logits.reshape(-1, s_logits.size(-1))
+                flat_labels = chunk_labels.reshape(-1)
                 valid_mask = flat_labels != -100
                 num_valid = int(valid_mask.sum().item())
                 if num_valid > 0:

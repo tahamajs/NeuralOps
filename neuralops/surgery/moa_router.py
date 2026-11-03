@@ -494,49 +494,59 @@ class MoARouter:
     # =========================================================================
     # Phase 071: Middle Bulk Linear Replacement Routing (Layers 4 to L-3)
     # =========================================================================
-    @classmethod
     def route_middle_layers(
-        cls_or_self,
+        self,
         entropies: Optional[Sequence[float]] = None,
         k_linear: Optional[int] = None,
         num_layers: Optional[int] = None,
         boundary_prefix: int = 4,
         boundary_suffix: int = 2,
     ) -> MiddleLayersRoutingResult:
-        r"""Routes middle layers to linear attention based on descending entropy order.
+        r"""Routes middle layers to linear attention based on descending entropy order."""
+        l_total = num_layers if num_layers is not None else self.num_layers
+        return self._do_route_middle_layers(
+            router=self,
+            l_total=l_total,
+            entropies=entropies,
+            k_linear=k_linear,
+            boundary_prefix=boundary_prefix,
+            boundary_suffix=boundary_suffix,
+        )
 
-        Mathematical Formulation:
-            Boundary safeguards:
-                \mathcal{B}_{early} = \{0, 1, \dots, \text{boundary\_prefix} - 1\}
-                \mathcal{B}_{late} = \{L - \text{boundary\_suffix}, \dots, L - 1\}
-            Middle bulk candidates:
-                \mathcal{M} = \{l \in [0, L-1] \mid l \notin \mathcal{B}_{early} \cup \mathcal{B}_{late}\}
-                (For L=32: layers 4 to 29, exactly 26 layers)
-            Entropy routing decision:
-                \text{Layer } l \in \text{argtopk}(\mathcal{H}_l, K) \implies \text{Route to Linear Attention}.
-
-        Args:
-            entropies: Optional sequence of layer-wise attention entropy measurements.
-            k_linear: Number of middle layers to route to linear attention.
-                If None, all middle layers (layers 4 to L-3) are routed to linear attention.
-            num_layers: Total number of transformer layers (defaults to instance num_layers or 32).
-            boundary_prefix: Number of initial layers to safeguard as full attention (default: 4).
-            boundary_suffix: Number of final layers to safeguard as full attention (default: 2).
-
-        Returns:
-            MiddleLayersRoutingResult wrapping the routed linear layer indices and router.
-        """
-        if isinstance(cls_or_self, type):
-            if num_layers is not None:
-                l_total = num_layers
-            elif entropies is not None:
-                l_total = len(entropies)
-            else:
-                l_total = 32
-            router = cls_or_self(num_layers=l_total)
+    @classmethod
+    def route_middle_layers_static(
+        cls,
+        entropies: Optional[Sequence[float]] = None,
+        k_linear: Optional[int] = None,
+        num_layers: Optional[int] = None,
+        boundary_prefix: int = 4,
+        boundary_suffix: int = 2,
+    ) -> MiddleLayersRoutingResult:
+        if num_layers is not None:
+            l_total = num_layers
+        elif entropies is not None:
+            l_total = len(entropies)
         else:
-            router = cls_or_self
-            l_total = router.num_layers
+            l_total = 32
+        router = cls(num_layers=l_total)
+        return cls._do_route_middle_layers(
+            router=router,
+            l_total=l_total,
+            entropies=entropies,
+            k_linear=k_linear,
+            boundary_prefix=boundary_prefix,
+            boundary_suffix=boundary_suffix,
+        )
+
+    @staticmethod
+    def _do_route_middle_layers(
+        router: MoARouter,
+        l_total: int,
+        entropies: Optional[Sequence[float]] = None,
+        k_linear: Optional[int] = None,
+        boundary_prefix: int = 4,
+        boundary_suffix: int = 2,
+    ) -> MiddleLayersRoutingResult:
 
         if entropies is not None:
             if len(entropies) != l_total:
