@@ -142,7 +142,7 @@ def test_lazy_legacy_module_aliases_resolve() -> None:
 
 
 def test_attention_and_compressor_registries_match_project_inventory() -> None:
-    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    import neuralops
 
-    assert len(ATTENTION_REGISTRY.keys()) == 131
-    assert len(COMPRESSOR_REGISTRY.keys()) == 72
+    assert len(neuralops.ATTENTION_REGISTRY) == 131
+    assert len(neuralops.COMPRESSOR_REGISTRY) == 72

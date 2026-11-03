@@ -119,7 +119,7 @@ def test_parquet_missing_dependency_fails_honestly(tmp_path: Path, monkeypatch):
 def test_cli_config_preset_deep_override(tmp_path: Path):
     """Bug 7: CLI handle_run must deeply apply all fields from the config file."""
     import argparse
-    from neuralops.benchmarks.cli import handle_run
+    from neuralops.benchmarks.cli import apply_config_to_args
 
     preset_path = tmp_path / "custom_preset.json"
     custom_config = CanonicalConfig(
@@ -146,7 +146,7 @@ def test_cli_config_preset_deep_override(tmp_path: Path):
         verify_only=False,
     )
 
-    handle_run(args)
+    apply_config_to_args(args)
     assert args.warmup == 9
     assert args.iters == 42
     assert args.seed == 999
