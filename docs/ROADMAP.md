@@ -11,7 +11,8 @@ The v1.6.0 release completes the structural tier modernization, PEP 562 lazy loa
 - **131 Attention Mechanisms** physically migrated to `neuralops.layers` across 12 mathematical families.
 - **72 Model Compression Engines** physically migrated to `neuralops.compression` spanning SVD, low-rank, pruning, and quantization.
 - **26 Triton Kernel Modules** (housing 62 unified Triton JIT operators across 4 tiers) in `neuralops.ops.triton` with universal CPU fallbacks.
-- **114 Native CUDA C++ Extensions** across 112 packages in `neuralops.ops.cuda` targeting Ada Lovelace (SM 8.9), Hopper (SM 90), and Blackwell (SM 100).
+- **114 Native CUDA C++ Extensions** across 110 canonical modules in the CUDA catalog,
+  with compatibility/support directories also present under `neuralops.ops.cuda`.
 - **PEP 562 Lazy Loading Architecture**: Bare import `import neuralops` executes in `<30ms` using standard library only, deferring PyTorch/accelerator loading until modules are accessed.
 - **Consolidated Primitives**: Single canonical implementations for `SVDLinear`, `LoRALinear`, `FactorizedLinear`, `NeuralOpsConfig`, and `compute_flops_estimate`.
 - **Decoupled Telemetry & Benchmarking**: Heavy plotting and analysis dependencies (`matplotlib`, `pandas`) relocated out of core to `neuralops.analysis` and `neuralops.benchmarks`.
@@ -24,7 +25,7 @@ The v1.6.0 release completes the structural tier modernization, PEP 562 lazy loa
 | Canonical Attentions | 131 | 131 (`neuralops.layers`) | **Verified 100%** |
 | Compression Engines | 72 | 72 (`neuralops.compression`) | **Verified 100%** |
 | Triton Kernel Modules | 26 (62 Ops) | 26 (62 Ops) (`ops.triton`) | **Verified 100%** |
-| Native CUDA Packages | 110 | 112 packages (114 kernels) | **Verified 100%** |
+| Native CUDA Catalog | 110 modules | 110 modules (114 kernels) | **Verified 100%** |
 | Bare Import Latency | ~1.5s+ | < 30ms (PEP 562) | **Sub-30ms Verified** |
 | Dead Code LOC Pruned | Baseline | 0 Dead Code Issues | **0 AST Issues** |
 | CPU Test Health | Partial collection | 48 passed, 0 failed | **100% Passing** |

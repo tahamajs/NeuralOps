@@ -18,7 +18,7 @@ NeuralOps maintains a strictly audited, immutable contract across registries, ke
 - **72 Compression Engines (8 Paradigms)**: Low-rank SVD factorization (FWSVD, AdaSVD, ASVD, Direct SVD), dynamic rank budgeting, structured pruning (SparseGPT, Wanda, ADMM, SliceGPT), subspace projection, tensor networks (Kronecker, TT), integer/floating-point quantization (FAQ, SmoothQuant, QuaRot), KV-cache optimization, and rotational transforms unified under `neuralops.core.registry.COMPRESSOR_REGISTRY`.
 - **203 Unified Modules Total**: Exactly 131 attention mechanisms + 72 compression engines verified on physical hardware.
 - **26 Categorized Triton Kernel Modules (62 Unified Operators)**: High-performance fused JIT operators spanning 4 architectural tiers, eliminating global memory roundtrips and executing within on-chip GPU SRAM/registers.
-- **112 Native CUDA C++ Packages (114 Native Implementations)**: Production-grade NVCC warp-shuffle primitives, tensor core MMA intrinsics, shared memory bank conflict elimination, and register tiling across 112 modular packages.
+- **110 Canonical CUDA Modules (114 Native Implementations)**: Production-grade NVCC warp-shuffle primitives, tensor core MMA intrinsics, shared memory bank conflict elimination, and register tiling. Compatibility/support directories remain in the raw CUDA tree.
 - **29 Master Jupyter Notebooks**: Complete reproducible demonstration tutorials (00–25 plus paper empirical master and integration showcases) covering end-to-end surgery, distillation healing, roofline profiling, and production serving.
 
 ---
@@ -43,7 +43,7 @@ Every kernel operation in NeuralOps adheres to a zero-overhead, multi-tier execu
   SM >= 7.0 / Ampere/Ada         FP16 / BF16 / FP32             Reference Parity
 ```
 
-1. **Level 1 (Native CUDA C++ / HIP)**: Compiled NVCC extensions leveraging 128-bit vector loads, warp-level shuffles, and shared memory tiling for maximum throughput across 112 packages.
+1. **Level 1 (Native CUDA C++ / HIP)**: Compiled NVCC extensions leveraging 128-bit vector loads, warp-level shuffles, and shared memory tiling across 110 canonical modules.
 2. **Level 2 (Triton JIT)**: Autotuned 2D/3D tiled Triton JIT kernels compiling directly to PTX for FP16, BF16, and FP32 datatypes across 26 canonical modules (62 operators).
 3. **Level 3 (Vectorized PyTorch Reference)**: Numerically validated PyTorch tensor reference guaranteeing seamless execution on CPU, Apple Silicon (MPS), and non-CUDA environments.
 
@@ -84,7 +84,7 @@ NeuralOps bans hardcoded numeric fallbacks and unverified placeholder outputs. T
     Live GPU telemetry, dynamic VRAM tracking, throughput metrics, and hardware temperature monitor.
 
 -   :material-chart-bell-curve: __[Ada Roofline Interactive](roofline_interactive.html)__  
-    Explore arithmetic intensity vs. attained TFLOPS across all 26 Triton and 112 CUDA kernel packages.
+    Explore arithmetic intensity vs. attained TFLOPS across all 26 Triton and 110 canonical CUDA modules.
 
 -   :material-cube-scan: __[3D Attention Lab](visualizer/index.html)__  
     WebGL 3D interactive atlas inspecting the latent manifolds of 203 unified modules (131 attentions + 72 compressors). Also explore the standalone __[3D Latent Manifold](visualizer/latent_manifold.html)__.

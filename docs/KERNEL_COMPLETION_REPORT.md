@@ -23,7 +23,7 @@ Across all 203 registered modules (131 Attentions + 72 Compressors):
 
 | Kernel Execution Level | Module Count | Percentage of Catalog | Verification Status |
 |---|---|---|---|
-| **Level 1 Native CUDA C++** | 114 native implementations (112 packages) | 56.2% | Verified static layout on macOS; GPU tests deferred |
+| **Level 1 Native CUDA C++** | 114 native implementations (110 canonical modules) | 56.2% | Verified static layout on macOS; GPU tests deferred |
 | **Level 2 Unified Triton JIT** | 62 operators across 26 canonical modules | 30.5% | Verified CPU fallback & syntax; GPU parity deferred |
 | **Level 3 Vectorized PyTorch Reference** | 203 modules | 100.0% | Complete reference coverage |
 | **Feature Branch Extensions (Unmerged)** | 10 Triton + 6 CUDA packages | N/A | Completed on feature branches `feat/diagnostics-*` |
