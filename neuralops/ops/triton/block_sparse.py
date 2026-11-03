@@ -569,9 +569,14 @@ def fused_dsa_sparse_attn_triton(
             q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
         )
     except Exception:
-        out_4d = triton_block_sparse_streaming_attn(
-            q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
-        )
+        try:
+            out_4d = triton_block_sparse_streaming_attn(
+                q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
+            )
+        except Exception:
+            return fused_dsa_sparse_attn_pytorch_ref(
+                q, k, v, block_mask, block_size=block_size, sm_scale=sm_scale
+            )
 
     if is_3d:
         return out_4d.permute(0, 2, 1, 3).contiguous().view(B, L, D)

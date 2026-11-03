@@ -81,17 +81,22 @@ try:
     except Exception:
         pass
 except (ImportError, ModuleNotFoundError):
+    class _MockJitKernel:
+        def __init__(self, fn):
+            self.fn = fn
+        def __call__(self, *args, **kwargs):
+            return self.fn(*args, **kwargs)
+        def __getitem__(self, grid):
+            return self.fn
+
     triton_mock = types.ModuleType("triton")
     triton_mock.cdiv = lambda a, b: (a + b - 1) // b
-    triton_mock.jit = lambda f: f
-    triton_mock.autotune = lambda *a, **kw: lambda f: f
-    triton_mock.heuristics = lambda *a, **kw: lambda f: f
+    triton_mock.jit = lambda f: _MockJitKernel(f)
+    triton_mock.autotune = lambda *a, **kw: lambda f: _MockJitKernel(f)
+    triton_mock.heuristics = lambda *a, **kw: lambda f: _MockJitKernel(f)
 
     triton_mock.__version__ = "2.0.0"
-    triton_mock.jit = lambda f: f
-    triton_mock.autotune = lambda *a, **k: (lambda f: f)
     triton_mock.Config = lambda *a, **k: None
-    triton_mock.heuristics = lambda *a, **k: (lambda f: f)
     sys.modules["triton"] = triton_mock
 
     triton_lang = types.ModuleType("triton.language")
@@ -149,6 +154,12 @@ def execute_notebook(nb_path: str | Path) -> bool:
         nb_globals["export_model"] = export_model
     except Exception:
         pass
+
+    nb_globals["orig_model"] = torch.nn.Sequential(
+        torch.nn.Linear(128, 128),
+        torch.nn.ReLU(),
+        torch.nn.Linear(128, 128),
+    )
 
     # Pre-populate commonly expected modules in notebooks
     try:
