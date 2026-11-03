@@ -196,7 +196,7 @@ class GLAttention(BaseAttention):
         H, d = self.num_heads, self.head_dim
 
         gate_logits = self.gate_W2(self.gate_W1(hidden_states))
-        g = F.logsigmoid(gate_logits / self.gate_tau)
+        g = F.logsigmoid((gate_logits / self.gate_tau).float()).to(gate_logits.dtype)
 
         Q = self.q_proj(hidden_states).view(B, N, H, d)
         K = self.k_proj(hidden_states).view(B, N, H, d)
@@ -268,7 +268,7 @@ class GLAttention(BaseAttention):
         step_idx = state.get("step_idx", 0)
 
         gate_logits = self.gate_W2(self.gate_W1(x))
-        g = F.logsigmoid(gate_logits / self.gate_tau)
+        g = F.logsigmoid((gate_logits / self.gate_tau).float()).to(gate_logits.dtype)
 
         Q = self.q_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)
         K = self.k_proj(x).view(B, 1, H, d).transpose(1, 2).squeeze(2)
