@@ -939,9 +939,11 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
 
 
 HFCacheBridge = NeuralOpsHybridHFCache
+PolymorphicGenerationCacheBridge = NeuralOpsHybridHFCache
 
 __all__ = [
     "HFCacheBridge",
+    "PolymorphicGenerationCacheBridge",
     "NeuralOpsHybridHFCache",
     "RadixTreeNode",
     "SGLangRadixStateAdapter",

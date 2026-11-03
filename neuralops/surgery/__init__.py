@@ -45,6 +45,7 @@ from neuralops.surgery.shadow_twin import (
 from neuralops.surgery.hf_cache_bridge import (
     HFCacheBridge,
     NeuralOpsHybridHFCache,
+    PolymorphicGenerationCacheBridge,
     wrap_model_for_generation,
 )
 
@@ -160,6 +161,7 @@ __all__ = [
     "check_surgery_divergence",
     "HFCacheBridge",
     "NeuralOpsHybridHFCache",
+    "PolymorphicGenerationCacheBridge",
     "wrap_model_for_generation",
     "UniversalActivationCalibrator",
     "compress_model_universal",

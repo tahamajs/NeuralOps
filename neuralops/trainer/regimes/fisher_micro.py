@@ -26,6 +26,106 @@ from torch.optim.optimizer import Optimizer
 logger = logging.getLogger("NeuralOps.Trainer.Regimes.FisherMicro")
 
 
+def compute_empirical_diagonal_fisher(
+    model: nn.Module,
+    dataloader: Iterable[Any],
+    num_samples: int = 64,
+    loss_fn: Optional[Any] = None,
+    device: Optional[Union[str, torch.device]] = None,
+) -> Dict[str, torch.Tensor]:
+    """
+    Computes diagonal empirical Fisher Information Matrix (FIM):
+        F_diag = E_{x ~ D}[ (grad_theta L(x))^2 ]
+    on calibration batches prior to micro-training.
+
+    Args:
+        model: Target model whose parameters are evaluated.
+        dataloader: Calibration data stream.
+        num_samples: Maximum number of samples to process.
+        loss_fn: Optional surrogate loss callable. If None, uses mean squared output norm.
+        device: Target execution device.
+
+    Returns:
+        Mapping of parameter name to diagonal empirical Fisher tensor matching parameter shape.
+    """
+    target_device = (
+        torch.device(device)
+        if device is not None
+        else next(model.parameters()).device
+    )
+    was_training = model.training
+    model.eval()
+
+    fisher_accum: Dict[str, torch.Tensor] = {}
+    for p_name, p in model.named_parameters():
+        if p.requires_grad:
+            fisher_accum[p_name] = torch.zeros_like(p.data, device=target_device)
+
+    sample_count = 0
+
+    for batch in dataloader:
+        if sample_count >= num_samples:
+            break
+
+        model.zero_grad(set_to_none=True)
+
+        if isinstance(batch, dict):
+            batch_inputs = {
+                k: v.to(target_device) if isinstance(v, torch.Tensor) else v
+                for k, v in batch.items()
+            }
+            outputs = model(**batch_inputs)
+        elif isinstance(batch, (tuple, list)):
+            batch_inputs = [
+                v.to(target_device) if isinstance(v, torch.Tensor) else v
+                for v in batch
+            ]
+            outputs = model(*batch_inputs)
+        elif isinstance(batch, torch.Tensor):
+            outputs = model(batch.to(target_device))
+        else:
+            continue
+
+        # Compute empirical surrogate loss for curvature (log-likelihood proxy)
+        if loss_fn is not None:
+            loss = loss_fn(outputs)
+        else:
+            if isinstance(outputs, torch.Tensor):
+                loss = 0.5 * (outputs.float() ** 2).mean()
+            elif hasattr(outputs, "logits"):
+                loss = 0.5 * (outputs.logits.float() ** 2).mean()
+            elif isinstance(outputs, (tuple, list)) and len(outputs) > 0 and isinstance(outputs[0], torch.Tensor):
+                loss = 0.5 * (outputs[0].float() ** 2).mean()
+            else:
+                loss = torch.tensor(0.0, device=target_device, requires_grad=True)
+
+        loss.backward()
+
+        with torch.no_grad():
+            for p_name, p in model.named_parameters():
+                if p.requires_grad and p.grad is not None:
+                    fisher_accum[p_name].add_(p.grad.data.detach() ** 2)
+
+        batch_sz = 1
+        if isinstance(batch, dict) and "input_ids" in batch:
+            batch_sz = batch["input_ids"].size(0)
+        elif isinstance(batch, torch.Tensor):
+            batch_sz = batch.size(0)
+        sample_count += batch_sz
+
+    if was_training:
+        model.train()
+
+    norm_factor = max(1, sample_count)
+    fisher_diag = {k: v / norm_factor for k, v in fisher_accum.items()}
+    logger.info(
+        "Computed empirical diagonal Fisher over %d samples across %d parameter tensors.",
+        sample_count,
+        len(fisher_diag),
+    )
+    return fisher_diag
+
+
 class FMicroOptimizer(Optimizer):
     """
     Fisher-Weighted Curvature Optimizer (F-Micro).
@@ -69,16 +169,20 @@ class FMicroOptimizer(Optimizer):
                 if weight_decay != 0.0:
                     grad = grad.add(p.data, alpha=weight_decay)
 
-                # Find matching Fisher diagonal entry
-                param_id = id(p)
+                # Match Fisher diagonal tensor
                 f_diag = None
-                for key, val in self.fisher_diag.items():
-                    if val.shape == p.shape:
-                        # Match by shape/key if tracked
-                        f_diag = val
-                        break
+                if p in self.fisher_diag:
+                    f_diag = self.fisher_diag[p]
+                elif id(p) in self.fisher_diag:
+                    f_diag = self.fisher_diag[id(p)]
+                else:
+                    for key, val in self.fisher_diag.items():
+                        if val.shape == p.shape:
+                            f_diag = val
+                            break
 
                 if f_diag is not None:
+                    # Natural gradient damping: Delta theta = -(F + lambda I)^(-1) grad L
                     scale = 1.0 / (f_diag.to(p.device) + damping)
                     step_dir = grad * scale
                 else:
@@ -119,70 +223,12 @@ class FisherMicroHealer:
         Computes diagonal empirical Fisher information matrix:
             F_diag = E_{x ~ D}[ (grad_theta L(x))^2 ]
         """
-        self.model.eval()
-        fisher_accum: Dict[str, torch.Tensor] = {}
-        sample_count = 0
-
-        for p_name, p in self.model.named_parameters():
-            if p.requires_grad:
-                fisher_accum[p_name] = torch.zeros_like(p.data, device=self.device)
-
-        for batch in dataloader:
-            if sample_count >= num_samples:
-                break
-
-            self.model.zero_grad(set_to_none=True)
-
-            if isinstance(batch, dict):
-                batch_inputs = {
-                    k: v.to(self.device) if isinstance(v, torch.Tensor) else v
-                    for k, v in batch.items()
-                }
-                outputs = self.model(**batch_inputs)
-            elif isinstance(batch, (tuple, list)):
-                batch_inputs = [
-                    v.to(self.device) if isinstance(v, torch.Tensor) else v
-                    for v in batch
-                ]
-                outputs = self.model(*batch_inputs)
-            elif isinstance(batch, torch.Tensor):
-                outputs = self.model(batch.to(self.device))
-            else:
-                continue
-
-            # Compute empirical surrogate loss for curvature (log-likelihood proxy)
-            if loss_fn is not None:
-                loss = loss_fn(outputs)
-            else:
-                if isinstance(outputs, torch.Tensor):
-                    loss = 0.5 * (outputs.float() ** 2).mean()
-                elif hasattr(outputs, "logits"):
-                    loss = 0.5 * (outputs.logits.float() ** 2).mean()
-                elif isinstance(outputs, (tuple, list)) and len(outputs) > 0 and isinstance(outputs[0], torch.Tensor):
-                    loss = 0.5 * (outputs[0].float() ** 2).mean()
-                else:
-                    loss = torch.tensor(0.0, device=self.device, requires_grad=True)
-
-            loss.backward()
-
-            with torch.no_grad():
-                for p_name, p in self.model.named_parameters():
-                    if p.requires_grad and p.grad is not None:
-                        fisher_accum[p_name].add_(p.grad.data.detach() ** 2)
-
-            batch_sz = 1
-            if isinstance(batch, dict) and "input_ids" in batch:
-                batch_sz = batch["input_ids"].size(0)
-            elif isinstance(batch, torch.Tensor):
-                batch_sz = batch.size(0)
-            sample_count += batch_sz
-
-        norm_factor = max(1, sample_count)
-        self.fisher_diag = {k: v / norm_factor for k, v in fisher_accum.items()}
-        logger.info(
-            "Computed empirical diagonal Fisher over %d samples across %d parameter tensors.",
-            sample_count,
-            len(self.fisher_diag),
+        self.fisher_diag = compute_empirical_diagonal_fisher(
+            model=self.model,
+            dataloader=dataloader,
+            num_samples=num_samples,
+            loss_fn=loss_fn,
+            device=self.device,
         )
         return self.fisher_diag
 
@@ -204,4 +250,4 @@ class FisherMicroHealer:
         )
 
 
-__all__ = ["FMicroOptimizer", "FisherMicroHealer"]
+__all__ = ["FMicroOptimizer", "FisherMicroHealer", "compute_empirical_diagonal_fisher"]

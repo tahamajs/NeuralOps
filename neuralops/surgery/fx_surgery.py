@@ -175,7 +175,6 @@ def bidirectional_associative_scan(
         v_f = v.float()
         kv = torch.einsum("bhtd,bhte->bhde", k_f, v_f)
         out = torch.einsum("bhtd,bhde->bhte", q_f, kv)
-        k_sum = k_f.sum(dim=2, keepdim=True)
         k_sum = k_f.sum(dim=2)  # [b, h, d]
         denom = torch.einsum("bhtd,bhd->bht", q_f, k_sum).unsqueeze(-1) + eps
         return (out / denom).to(orig_dtype)

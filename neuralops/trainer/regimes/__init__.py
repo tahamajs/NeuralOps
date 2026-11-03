@@ -20,6 +20,7 @@ from __future__ import annotations
 from neuralops.trainer.regimes.fisher_micro import (
     FisherMicroHealer,
     FMicroOptimizer,
+    compute_empirical_diagonal_fisher,
 )
 from neuralops.trainer.regimes.dora_healing import (
     DoRAHealingHealer,
@@ -35,6 +36,7 @@ from neuralops.trainer.regimes.spectral_annealing import (
 __all__ = [
     "FMicroOptimizer",
     "FisherMicroHealer",
+    "compute_empirical_diagonal_fisher",
     "DoRAProjectionWrapper",
     "DoRAHealingHealer",
     "TTTOnlineAdapter",

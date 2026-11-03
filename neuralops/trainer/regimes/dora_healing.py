@@ -83,6 +83,10 @@ class DoRAProjectionWrapper(nn.Module):
                 merged_layer.bias.data.copy_(self.bias)
         return merged_layer
 
+    def collapse_adapters(self) -> nn.Linear:
+        """Alias for merge_and_collapse to fold adapter into standard nn.Linear layer."""
+        return self.merge_and_collapse()
+
 
 class DoRAHealingHealer:
     """
