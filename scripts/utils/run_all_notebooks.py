@@ -94,6 +94,39 @@ def _setup_runtime_environment() -> None:
         onnx_mock.checker = checker_mock
         sys.modules["onnx"] = onnx_mock
 
+    # Polyfill triton and triton.language if missing in runtime environment
+    try:
+        import triton
+    except ImportError:
+        import types
+
+        class _MockJitKernel:
+            def __init__(self, fn):
+                self.fn = fn
+            def __call__(self, *args, **kwargs):
+                raise RuntimeError("Triton JIT compilation requires a native Triton runtime.")
+            def __getitem__(self, grid):
+                return self
+
+        triton_mock = types.ModuleType("triton")
+        triton_mock.cdiv = lambda a, b: (a + b - 1) // b
+        triton_mock.jit = lambda f: _MockJitKernel(f)
+        triton_mock.autotune = lambda *a, **kw: lambda f: _MockJitKernel(f)
+        triton_mock.heuristics = lambda *a, **kw: lambda f: _MockJitKernel(f)
+        triton_mock.__version__ = "2.0.0"
+        triton_mock.Config = lambda *a, **k: None
+        sys.modules["triton"] = triton_mock
+
+        triton_lang = types.ModuleType("triton.language")
+        triton_lang.constexpr = int
+        triton_lang.int32 = int
+        triton_lang.int64 = int
+        triton_lang.float32 = float
+        triton_lang.float16 = float
+        triton_lang.bfloat16 = float
+        sys.modules["triton.language"] = triton_lang
+        triton_mock.language = triton_lang
+
     # Polyfill torch.distributed._tensor for PyTorch < 2.0 when modern accelerate / transformers imports it
     if "torch.distributed._tensor" not in sys.modules:
         try:
