@@ -116,7 +116,14 @@ def _build_keep_mask(
 
     if attention_mask is not None:
         am = _combine(attention_mask)
-        mask = am if mask is None else (mask & am)
+        if mask is not None:
+            if am.shape[-1] != mask.shape[-1]:
+                am = am[..., :mask.shape[-1]]
+            if am.shape[-2] != mask.shape[-2]:
+                am = am[..., :mask.shape[-2], :]
+            mask = mask & am
+        else:
+            mask = am
 
     if encoder_attention_mask is not None:
         em = _combine(encoder_attention_mask)

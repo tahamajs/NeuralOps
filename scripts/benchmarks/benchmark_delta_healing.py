@@ -148,11 +148,13 @@ def run_delta_healing(
         except Exception as e:
             logger.warning(f"Failed to read {ref_file}: {e}")
 
-    gpt2_snap = Path(os.path.expanduser("~/.cache/huggingface/hub/models--gpt2/snapshots/607a30d783dfa663caf39e06633721c8d4cfcd7e"))
-    gpt2_path = str(gpt2_snap) if gpt2_snap.exists() else "gpt2"
-    logger.info(f"Loading GPT-2 backbone from: {gpt2_path}")
+    # Use fully cached local Qwen2.5-0.5B (954MB complete with safetensors and tokenizer)
+    # or fallback to local cache directory
+    qwen_path = Path(os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B"))
+    model_path = str(qwen_path) if qwen_path.exists() else "Qwen/Qwen2.5-0.5B"
+    logger.info(f"Loading backbone teacher model from: {model_path}")
 
-    tokenizer = transformers.AutoTokenizer.from_pretrained(gpt2_path, local_files_only=True)
+    tokenizer = transformers.AutoTokenizer.from_pretrained(model_path, local_files_only=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -165,9 +167,9 @@ def run_delta_healing(
     )
     eval_dataset = get_eval_dataset()
 
-    # 2. Compute Clean Teacher GPT-2 Baseline PPL
-    logger.info("Computing uncompressed Teacher GPT-2 baseline PPL...")
-    teacher = transformers.AutoModelForCausalLM.from_pretrained(gpt2_path, local_files_only=True)
+    # 2. Compute Clean Teacher Baseline PPL
+    logger.info("Computing uncompressed Teacher baseline PPL...")
+    teacher = transformers.AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
     teacher = teacher.to(device)
     teacher.eval()
     teacher_ppl = eval_ppl(teacher, tokenizer, eval_dataset, eval_args)
@@ -175,7 +177,7 @@ def run_delta_healing(
 
     # 3. Create Student and Transplant Attention Module
     logger.info(f"Transplanting {module_name} into GPT-2 student...")
-    student_model = transformers.AutoModelForCausalLM.from_pretrained(gpt2_path, local_files_only=True)
+    student_model = transformers.AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
     student, comp_stats = apply_module_to_model(student_model, module_name, "auto", rank=32, device=str(device))
     if student is None:
         raise RuntimeError(f"Failed to inject {module_name} into GPT-2")

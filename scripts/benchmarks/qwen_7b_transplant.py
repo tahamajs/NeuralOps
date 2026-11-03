@@ -74,6 +74,21 @@ def main() -> None:
     print(f"Target Layer: {args.target_layer} | Attention: {args.target_attention}")
     print_gpu_memory("Initial")
 
+    # 0. PyTorch < 2.0 Compatibility Shim for Transformers / Accelerate
+    _orig_named_parameters = torch.nn.Module.named_parameters
+
+    def _compat_named_parameters(self, prefix="", recurse=True, remove_duplicate=True):
+        return _orig_named_parameters(self, prefix=prefix, recurse=recurse)
+
+    torch.nn.Module.named_parameters = _compat_named_parameters
+
+    _orig_named_buffers = torch.nn.Module.named_buffers
+
+    def _compat_named_buffers(self, prefix="", recurse=True, remove_duplicate=True):
+        return _orig_named_buffers(self, prefix=prefix, recurse=recurse)
+
+    torch.nn.Module.named_buffers = _compat_named_buffers
+
     # 1. Load Tokenizer & Model
     print("\n[1/6] Loading model and tokenizer in bfloat16...")
     t0 = time.time()
@@ -85,16 +100,24 @@ def main() -> None:
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
-            device_map="auto" if torch.cuda.is_available() else None,
+            device_map={"": 0} if torch.cuda.is_available() else None,
             trust_remote_code=True,
+            low_cpu_mem_usage=True,
         )
     except Exception as e:
-        print(f"device_map='auto' failed ({e}), loading directly onto {device}...")
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            torch_dtype=torch.bfloat16,
-            trust_remote_code=True,
-        ).to(device)
+        print(f"device_map={{'': 0}} failed ({e}), loading with direct CUDA default tensor allocation...")
+        if torch.cuda.is_available():
+            torch.set_default_tensor_type(torch.cuda.BFloat16Tensor)
+        try:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                trust_remote_code=True,
+                low_cpu_mem_usage=False,
+            )
+        finally:
+            if torch.cuda.is_available():
+                torch.set_default_tensor_type(torch.FloatTensor)
 
     model.eval()
     print(f"Model loaded successfully in {time.time() - t0:.2f}s.")
