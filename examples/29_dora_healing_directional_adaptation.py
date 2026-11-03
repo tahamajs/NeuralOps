@@ -69,7 +69,8 @@ def run_demonstration(device: torch.device, rank: int = 4, alpha: float = 8.0, s
     # 1. Initialize baseline model
     model = TinyClassifier(n_layers=2).to(device)
     inputs = {k: v.to(device) for k, v in tiny_inputs().items()}
-    ref_logits = baseline_output(model, inputs)
+    # Create target healing labels (e.g. classification target)
+    target_labels = torch.randint(0, 2, (inputs["input_ids"].size(0),), device=device)
 
     # 2. Inject DoRA adapters into linear projections
     target_keys = ["dense", "q_lin", "k_lin", "v_lin", "out_lin"]
@@ -92,8 +93,8 @@ def run_demonstration(device: torch.device, rank: int = 4, alpha: float = 8.0, s
     # 4. Perform directional micro-healing steps
     optimizer = torch.optim.AdamW(
         [p for p in model.parameters() if p.requires_grad],
-        lr=5e-3,
-        weight_decay=1e-4,
+        lr=1e-2,
+        weight_decay=0.0,
     )
     model.train()
     loss_history: list[float] = []
@@ -102,7 +103,7 @@ def run_demonstration(device: torch.device, rank: int = 4, alpha: float = 8.0, s
         optimizer.zero_grad(set_to_none=True)
         out = model(**inputs)
         logits = out.logits if hasattr(out, "logits") else out
-        loss = F.mse_loss(logits, ref_logits)
+        loss = F.cross_entropy(logits, target_labels)
         loss.backward()
         optimizer.step()
         loss_history.append(float(loss.item()))
