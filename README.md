@@ -1880,6 +1880,56 @@ future HPC sync, compare manifests and checksums, copy server evidence into
 `results/`, and never use a destructive `rsync --delete` until both sides have
 been reviewed.
 
+### 22.2 Notebook execution index
+
+The authoritative notebook run is the PBS execution recorded in
+`results/notebooks_pbs.out`, with the machine-readable summary in
+`results/NOTEBOOKS_EXECUTION_SUMMARY.md` and diagnostics in
+`results/notebooks_pbs.err`. That run executed all 29 notebooks on an NVIDIA
+RTX 3090 (24,268 MiB reported by `nvidia-smi`) and exited with code 0. The
+earlier `results/notebooks_execution.log` is retained as a failed historical
+attempt and must not be confused with the successful PBS run.
+
+| Notebook | Status | Cells | Duration (s) | Run evidence |
+| :--- | :---: | :---: | ---: | :--- |
+| `00_master_neuralops_complete_system_walkthrough.ipynb` | PASS | 14/14 | 10.84 | `results/notebooks_pbs.out` |
+| `01_attention_surgery_and_lora.ipynb` | PASS | 8/8 | 2.17 | `results/notebooks_pbs.out` |
+| `01_quickstart_surgery_and_healing.ipynb` | PASS | 7/7 | 2.21 | `results/notebooks_pbs.out` |
+| `02_roofline_and_triton_kernels.ipynb` | PASS | 14/14 | 40.11 | `results/notebooks_pbs.out` |
+| `02_unified_training.ipynb` | PASS | 9/9 | 3.07 | `results/notebooks_pbs.out` |
+| `03_custom_plugins_and_extensibility.ipynb` | PASS | 15/15 | 3.21 | `results/notebooks_pbs.out` |
+| `04_end_to_end_3level_benchmarking.ipynb` | PASS | 8/8 | 2.32 | `results/notebooks_pbs.out` |
+| `05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb` | PASS | 15/15 | 321.47 | `results/notebooks_pbs.out` |
+| `05_paper_empirical_results_master.ipynb` | PASS | 17/17 | 2.26 | `results/notebooks_pbs.out` |
+| `06_master_all_131_attention_mechanisms_interactive.ipynb` | PASS | 9/9 | 4.02 | `results/notebooks_pbs.out` |
+| `07_master_all_72_compression_engines_quant_and_svd.ipynb` | PASS | 9/9 | 2.32 | `results/notebooks_pbs.out` |
+| `08_six_pillar_distillation_and_surgical_recovery.ipynb` | PASS | 9/9 | 2.32 | `results/notebooks_pbs.out` |
+| `09_production_serving_paged_cache_and_speculative_decoding.ipynb` | PASS | 8/8 | 2.15 | `results/notebooks_pbs.out` |
+| `10_long_context_extrapolation_32k.ipynb` | PASS | 15/15 | 16.34 | `results/notebooks_pbs.out` |
+| `11_cuda_vs_triton_vs_pytorch_matrix.ipynb` | PASS | 14/14 | 9.08 | `results/notebooks_pbs.out` |
+| `12_svd_whitening_spectral_allocation.ipynb` | PASS | 14/14 | 19.27 | `results/notebooks_pbs.out` |
+| `13_quantization_pareto_fp8_int4_kmeans.ipynb` | PASS | 14/14 | 9.29 | `results/notebooks_pbs.out` |
+| `14_structured_pruning_token_shedding.ipynb` | PASS | 14/14 | 7.37 | `results/notebooks_pbs.out` |
+| `15_downstream_glue_lra_evaluation.ipynb` | PASS | 14/14 | 5.30 | `results/notebooks_pbs.out` |
+| `16_roofline_ada_rtx4070_saturation.ipynb` | PASS | 15/15 | 8.19 | `results/notebooks_pbs.out` |
+| `17_speculative_paged_kv_throughput.ipynb` | PASS | 14/14 | 7.42 | `results/notebooks_pbs.out` |
+| `18_cross_seed_statistical_variance.ipynb` | PASS | 14/14 | 7.18 | `results/notebooks_pbs.out` |
+| `19_publication_figures_latex_generator.ipynb` | PASS | 14/14 | 6.79 | `results/notebooks_pbs.out` |
+| `20_production_serving_vllm_sglang_trtllm_integrations.ipynb` | PASS | 13/13 | 9.60 | `results/notebooks_pbs.out` |
+| `21_model_export_onnx_safetensors_surgery_manifest.ipynb` | PASS | 13/13 | 11.00 | `results/notebooks_pbs.out` |
+| `22_distributed_tensor_and_context_parallelism.ipynb` | PASS | 13/13 | 11.90 | `results/notebooks_pbs.out` |
+| `23_spectral_diagnostics_and_hessian_analysis.ipynb` | PASS | 13/13 | 14.99 | `results/notebooks_pbs.out` |
+| `24_advanced_optimizers_muon_stiefel_and_ttt_training.ipynb` | PASS | 13/13 | 10.37 | `results/notebooks_pbs.out` |
+| `25_long_context_niah_cka_similarity_and_eval_harness.ipynb` | PASS | 13/13 | 8.51 | `results/notebooks_pbs.out` |
+
+The execution summary reports 29/29 notebooks passed. Warnings in
+`results/notebooks_pbs.err` remain part of the evidence: they include an
+optional missing `onnxruntime` verification, a Triton-to-PyTorch fallback for
+`gdn_scan` because the installed driver is older than the PTX target, and
+attention-module discovery warnings. These warnings do not change the PBS
+exit status, but they must be considered before claiming that every notebook
+used a native Triton/CUDA path.
+
 ## 23. Hugging Face Model Zoo Audit
 
 NeuralOps integrates directly with the Hugging Face Hub under the [Hooshaai](https://huggingface.co/Hooshaai) organization and author checkpoints:
