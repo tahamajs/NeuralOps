@@ -244,6 +244,23 @@ class GLAttention(BaseAttention):
                 warn_once("gla_fla_fallback", "FLA failed with %s; switching to Triton/PyTorch fallback", e)
 
         if out is None:
+            # Level 1: CUDA gla_scan fastpath
+            if Q.is_cuda and Q.dtype in (torch.float16, torch.bfloat16) and d <= 128:
+                try:
+                    from neuralops.ops.cuda.gla_scan import gla_scan
+                    q_t = Q.transpose(1, 2).contiguous()
+                    k_t = K.transpose(1, 2).contiguous()
+                    v_t = V.transpose(1, 2).contiguous()
+                    # g is [B, N, H]; transpose to [B, H, N]
+                    alpha_t = torch.exp(g.transpose(1, 2).contiguous().float()).clamp(1e-4, 1.0 - 1e-4).to(Q.dtype)
+                    out_t = gla_scan(q_t, k_t, v_t, alpha=alpha_t)
+                    out = out_t.transpose(1, 2).contiguous().float()
+                except Exception:
+                    # Fallback to Triton / PyTorch
+                    out = None
+
+        if out is None:
+            # Level 2: Triton kda_hla_chunk_scan_triton fastpath
             try:
                 from neuralops.ops.triton.gla_scan import kda_hla_chunk_scan_triton
                 # Q, K, V are [B, N, H, d]; transpose to [B, H, N, d]
@@ -254,6 +271,7 @@ class GLAttention(BaseAttention):
                 out_t = kda_hla_chunk_scan_triton(q_t, k_t, v_t, g_t, scale=self.scale)
                 out = out_t.transpose(1, 2).contiguous().float()
             except Exception:
+                # Level 3: Numerically stable PyTorch reference fallback
                 out = self._pytorch_gla_stable(Q, K, V, g).float()
 
         if not self.is_decoder:

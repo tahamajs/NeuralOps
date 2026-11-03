@@ -32,6 +32,20 @@ import torch.nn.functional as F
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
+# Denormalized float flush-to-zero threshold
+_FTZ_THRESHOLD: float = 1e-15
+
+
+def _flush_denormals(t: torch.Tensor) -> torch.Tensor:
+    r"""Flush denormalized floating-point values to zero to prevent hardware pipeline stalls.
+
+    Applies flush-to-zero (FTZ) semantics on floating-point tensors with magnitude below
+    1e-15 to ensure numerical stability and avoid subnormal microcode traps.
+    """
+    if t.is_floating_point():
+        return torch.where(t.abs() < _FTZ_THRESHOLD, torch.zeros_like(t), t)
+    return t
+
 try:
     from flash_attn_interface import flash_attn_func
 
@@ -333,6 +347,13 @@ class FlashAttention3FP8(BaseAttention):
 
         self.rotary_emb = None
         self.comp_config: Any | None = comp_config
+
+        # Delayed scaling history buffers for FP8 quantization
+        # Maintains delayed maximum scales over window to prevent sudden scale jumps
+        self.register_buffer("_delayed_q_scale", torch.tensor(1.0, dtype=torch.float32))
+        self.register_buffer("_delayed_k_scale", torch.tensor(1.0, dtype=torch.float32))
+        self.register_buffer("_delayed_v_scale", torch.tensor(1.0, dtype=torch.float32))
+        self.delayed_scaling_momentum: float = 0.9
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -667,6 +688,11 @@ class FlashAttention3FP8(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
+        # Enforce flush-to-zero handling on projection activations
+        q = _flush_denormals(q)
+        k = _flush_denormals(k)
+        v = _flush_denormals(v)
+
         causal_flag = bool(self.is_decoder and not is_cross_attention and kv_len == L)
 
         out = None
@@ -685,9 +711,31 @@ class FlashAttention3FP8(BaseAttention):
                     v_perm = v.transpose(1, 2).contiguous()
 
                     fp8_max = 448.0
-                    q_scale = (q_perm.abs().amax() / fp8_max).clamp(min=1e-6)
-                    k_scale = (k_perm.abs().amax() / fp8_max).clamp(min=1e-6)
-                    v_scale = (v_perm.abs().amax() / fp8_max).clamp(min=1e-6)
+                    cur_q_scale = (q_perm.abs().amax() / fp8_max).clamp(min=1e-6)
+                    cur_k_scale = (k_perm.abs().amax() / fp8_max).clamp(min=1e-6)
+                    cur_v_scale = (v_perm.abs().amax() / fp8_max).clamp(min=1e-6)
+
+                    # Update delayed scaling factors
+                    if self.training:
+                        self._delayed_q_scale.mul_(self.delayed_scaling_momentum).add_(
+                            cur_q_scale.detach().to(self._delayed_q_scale.device),
+                            alpha=1.0 - self.delayed_scaling_momentum,
+                        )
+                        self._delayed_k_scale.mul_(self.delayed_scaling_momentum).add_(
+                            cur_k_scale.detach().to(self._delayed_k_scale.device),
+                            alpha=1.0 - self.delayed_scaling_momentum,
+                        )
+                        self._delayed_v_scale.mul_(self.delayed_scaling_momentum).add_(
+                            cur_v_scale.detach().to(self._delayed_v_scale.device),
+                            alpha=1.0 - self.delayed_scaling_momentum,
+                        )
+                        q_scale = self._delayed_q_scale.clamp(min=1e-6).to(device)
+                        k_scale = self._delayed_k_scale.clamp(min=1e-6).to(device)
+                        v_scale = self._delayed_v_scale.clamp(min=1e-6).to(device)
+                    else:
+                        q_scale = cur_q_scale
+                        k_scale = cur_k_scale
+                        v_scale = cur_v_scale
 
                     q_fa = (q_perm / q_scale).to(torch.float8_e4m3fn)
                     k_fa = (k_perm / k_scale).to(torch.float8_e4m3fn)
@@ -737,8 +785,6 @@ class FlashAttention3FP8(BaseAttention):
                         attn = F.softmax(scores, dim=-1)
                         if self.dropout.p > 0.0 and self.training:
                             attn = self.dropout(attn)
-                        attn_2d = attn.contiguous().view(B * self.num_heads * L, L)
-                        v_2d = v.contiguous().view(B * self.num_heads, L, Dh).view(B * self.num_heads * L, Dh)
                         out_heads = []
                         for h_idx in range(self.num_heads):
                             ah = attn[:, h_idx].contiguous()
@@ -755,22 +801,28 @@ class FlashAttention3FP8(BaseAttention):
                     out = None
 
         if out is None:
+            # Enforce FP32 accumulation registers for FP16 and BF16 inputs to maintain numerical precision
+            accum_dtype = torch.float32 if dtype in (torch.float16, torch.bfloat16) else dtype
+            q_acc = q.to(accum_dtype)
+            k_acc = k.to(accum_dtype)
+            v_acc = v.to(accum_dtype)
+
             eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
             attn_mask = None
             if eff_mask is not None:
                 if eff_mask.dim() == 2:
-                    min_val = torch.finfo(q.dtype).min if q.dtype.is_floating_point else -1e4
-                    attn_mask = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * min_val
+                    min_val = torch.finfo(accum_dtype).min if accum_dtype.is_floating_point else -1e4
+                    attn_mask = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).to(accum_dtype)) * min_val
                 elif eff_mask.dim() == 3:
-                    attn_mask = eff_mask.unsqueeze(1).float()
+                    attn_mask = eff_mask.unsqueeze(1).to(accum_dtype)
                 elif eff_mask.dim() == 4:
-                    attn_mask = eff_mask.float()
+                    attn_mask = eff_mask.to(accum_dtype)
 
             if causal_flag and attn_mask is None:
                 out_sdpa = F.scaled_dot_product_attention(
-                    q,
-                    k,
-                    v,
+                    q_acc,
+                    k_acc,
+                    v_acc,
                     attn_mask=None,
                     is_causal=True,
                     dropout_p=self.dropout.p if self.training else 0.0,
@@ -782,7 +834,7 @@ class FlashAttention3FP8(BaseAttention):
                             (L, kv_len),
                             float("-inf"),
                             device=device,
-                            dtype=torch.float32,
+                            dtype=accum_dtype,
                         ),
                         diagonal=1,
                     )
@@ -793,13 +845,16 @@ class FlashAttention3FP8(BaseAttention):
                     )
 
                 out_sdpa = F.scaled_dot_product_attention(
-                    q,
-                    k,
-                    v,
+                    q_acc,
+                    k_acc,
+                    v_acc,
                     attn_mask=attn_mask,
                     is_causal=False,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
+
+            # Cast back from FP32 accumulator to target output dtype and flush denormals
+            out_sdpa = _flush_denormals(out_sdpa.to(dtype))
 
             if head_mask is not None:
                 if head_mask.dim() == 1:
@@ -808,7 +863,7 @@ class FlashAttention3FP8(BaseAttention):
                     head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(-1)
-                out_sdpa = out_sdpa * head_mask
+                out_sdpa = out_sdpa * head_mask.to(out_sdpa.dtype)
 
             out = out_sdpa.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 

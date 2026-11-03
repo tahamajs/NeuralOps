@@ -631,13 +631,6 @@ class GroupedQueryAttention(BaseAttention):
             present_key_value = past_key_value
 
         N_k = K.shape[-2]
-
-        if self.kv_repeat > 1:
-            K_full = repeat_kv(K, self.kv_repeat)
-            V_full = repeat_kv(V, self.kv_repeat)
-        else:
-            K_full, V_full = K, V
-
         is_causal = bool(self.is_decoder and not is_cross and N_q > 1)
         attn_weights: torch.Tensor | None = None
 
@@ -652,7 +645,7 @@ class GroupedQueryAttention(BaseAttention):
             scale_val = 1.0 / math.sqrt(int(d))
             dispatched = False
             if Q.is_cuda and not self.training and d in (32, 64, 128, 256):
-                # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
+                # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM (direct KV broadcast, no DRAM expansion)
                 try:
                     from neuralops.ops.cuda.flash_gqa import flash_gqa
                     context = flash_gqa(Q, K, V, is_causal=is_causal, scale=scale_val)
@@ -661,7 +654,7 @@ class GroupedQueryAttention(BaseAttention):
                     logger.debug("GQA Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
 
             if not dispatched and Q.is_cuda and not self.training and d <= 128:
-                # Level 2: Triton JIT autotuned online softmax kernel
+                # Level 2: Triton JIT autotuned online softmax kernel (direct in-register GQA grouping)
                 try:
                     from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
                     context = fused_weighted_gqa_online_softmax_triton(
@@ -672,7 +665,9 @@ class GroupedQueryAttention(BaseAttention):
                     logger.debug("GQA Level 2 Triton dispatch failed (%s), falling back to SDPA", e_triton)
 
             if not dispatched:
-                # Level 3: PyTorch scaled_dot_product_attention / reference fallback
+                # Level 3: PyTorch scaled_dot_product_attention / reference fallback with lazy KV expansion
+                K_full = repeat_kv(K, self.kv_repeat) if self.kv_repeat > 1 else K
+                V_full = repeat_kv(V, self.kv_repeat) if self.kv_repeat > 1 else V
                 try:
                     context = F.scaled_dot_product_attention(
                         Q,
@@ -687,6 +682,8 @@ class GroupedQueryAttention(BaseAttention):
                     use_sdpa = False
 
         if not use_sdpa:
+            K_full = repeat_kv(K, self.kv_repeat) if self.kv_repeat > 1 else K
+            V_full = repeat_kv(V, self.kv_repeat) if self.kv_repeat > 1 else V
             scale = 1.0 / math.sqrt(int(d))
             scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
