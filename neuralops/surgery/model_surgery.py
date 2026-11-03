@@ -175,6 +175,10 @@ class ModelSurgery:
                         k, v = pair.split("=", 1)
                         config[k.strip()] = v.strip()
 
+            if op_name in ("attention.fx", "fx_transplant", "attention.rewrite_fx") or config.get("engine") == "fx":
+                target_att = config.get("target_attention", config.get("target", "cosformer"))
+                return self.replace_attention(target_attention=target_att, engine="fx", **config)
+
             # Capture snapshot before mutation for transactional rollback
             snapshot_before = ModelSnapshot.capture(self.model)
             self._history.append(snapshot_before)
@@ -196,6 +200,43 @@ class ModelSurgery:
             return self
 
         raise ValueError("Must provide operation name or Recipe to apply()")
+
+    def replace_attention(
+        self,
+        target_attention: str = "cosformer",
+        layer_indices: Optional[List[int]] = None,
+        engine: str = "shell",
+        **config: Any,
+    ) -> ModelSurgery:
+        """Replace quadratic attention mechanisms using Python module mutation ('shell')
+
+        or PyTorch FX AST graph rewriting ('fx').
+        """
+        if engine == "fx":
+            from neuralops.surgery.fx_surgery import FXAttentionGraphRewriter
+            rewriter = FXAttentionGraphRewriter(
+                target_attention=target_attention,
+                head_dim=config.get("head_dim", 64),
+                is_causal=config.get("is_causal", True),
+                leaf_modules=config.get("leaf_modules", None),
+            )
+            self.model = rewriter.rewrite(self.model, concrete_args=config.get("concrete_args", None))
+            return self
+        elif engine == "shell":
+            return self.apply(
+                "attention.transplant",
+                target_attention=target_attention,
+                layer_indices=layer_indices,
+                **config,
+            )
+        else:
+            raise ValueError(f"Unknown surgery engine '{engine}'. Choose 'shell' or 'fx'.")
+
+    def compile(self, mode: str = "max-autotune", fullgraph: bool = True, **kwargs: Any) -> nn.Module:
+        """Compiles the surgical model with PyTorch Inductor for maximum fusion and throughput."""
+        logger.info("Compiling model via torch.compile(mode='%s', fullgraph=%s)...", mode, fullgraph)
+        self.model = torch.compile(self.model, mode=mode, fullgraph=fullgraph, **kwargs)
+        return self.model
 
     def validate(
         self,

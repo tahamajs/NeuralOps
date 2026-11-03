@@ -14,7 +14,8 @@ Bridges NeuralOps recurrent and hybrid state caches with HuggingFace DynamicCach
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+import time
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 import torch
 
 logger = logging.getLogger("NeuralOps.Surgery.HFCacheBridge")
@@ -551,6 +552,284 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         return cache
 
 
+class RadixTreeNode:
+    """A node in the SGLang Radix Tree storing recurrent associative state."""
+
+    def __init__(
+        self,
+        token_chunk: Tuple[int, ...] = (),
+        parent: Optional[RadixTreeNode] = None,
+        prefix_state: Optional[Dict[int, torch.Tensor]] = None,
+    ) -> None:
+        self.token_chunk = token_chunk
+        self.parent = parent
+        self.prefix_state: Optional[Dict[int, torch.Tensor]] = prefix_state
+        self.children: Dict[int, RadixTreeNode] = {}
+        self.access_count: int = 0
+        self.last_accessed: float = time.time()
+
+    def is_leaf(self) -> bool:
+        return len(self.children) == 0
+
+
+class SGLangRadixStateAdapter:
+    """
+    SGLang Radix Tree Recurrent State Adapter.
+
+    Caches associative state matrices S_prefix at radix tree prefix nodes to allow O(1) state recovery
+    and zero-prefill multi-turn serving for linear attention models.
+    """
+
+    def __init__(self, max_cached_nodes: int = 1000) -> None:
+        self.root = RadixTreeNode()
+        self.max_cached_nodes = max_cached_nodes
+        self._node_count: int = 1
+
+    @staticmethod
+    def _normalize_tokens(tokens: Sequence[int] | torch.Tensor) -> Tuple[int, ...]:
+        if isinstance(tokens, torch.Tensor):
+            if tokens.ndim > 1:
+                tokens = tokens.squeeze()
+            return tuple(int(t) for t in tokens.tolist())
+        return tuple(int(t) for t in tokens)
+
+    @staticmethod
+    def _extract_state_dict(
+        state: Union[Dict[int, torch.Tensor], NeuralOpsHybridHFCache, torch.Tensor],
+    ) -> Dict[int, torch.Tensor]:
+        if isinstance(state, NeuralOpsHybridHFCache):
+            state_dict = {}
+            for l_idx, s in state.recurrent_state_cache.items():
+                if isinstance(s, torch.Tensor):
+                    state_dict[l_idx] = s.detach().clone()
+            for l_idx, (k, _) in enumerate(state.key_cache):
+                if l_idx not in state_dict and isinstance(k, torch.Tensor) and k.numel() > 0:
+                    state_dict[l_idx] = k.detach().clone()
+            return state_dict
+        elif isinstance(state, dict):
+            return {k: v.detach().clone() for k, v in state.items() if isinstance(v, torch.Tensor)}
+        elif isinstance(state, torch.Tensor):
+            return {0: state.detach().clone()}
+        else:
+            raise TypeError(f"Unsupported state format: {type(state)}")
+
+    def insert(
+        self,
+        token_ids: Sequence[int] | torch.Tensor,
+        state: Union[Dict[int, torch.Tensor], NeuralOpsHybridHFCache, torch.Tensor],
+    ) -> RadixTreeNode:
+        """
+        Inserts a token sequence and its corresponding recurrent state S_prefix into the Radix Tree.
+        Handles radix node splitting when a common prefix diverges.
+        """
+        tokens = self._normalize_tokens(token_ids)
+        if len(tokens) == 0:
+            return self.root
+
+        state_dict = self._extract_state_dict(state)
+        curr = self.root
+        idx = 0
+
+        while idx < len(tokens):
+            first_tok = tokens[idx]
+            if first_tok not in curr.children:
+                # No child with this token, create new child with remaining tokens
+                new_node = RadixTreeNode(
+                    token_chunk=tokens[idx:],
+                    parent=curr,
+                    prefix_state=state_dict,
+                )
+                curr.children[first_tok] = new_node
+                self._node_count += 1
+                self._check_capacity()
+                return new_node
+
+            child = curr.children[first_tok]
+            chunk = child.token_chunk
+            # Find common prefix between chunk and tokens[idx:]
+            match_len = 0
+            while (
+                match_len < len(chunk)
+                and idx + match_len < len(tokens)
+                and chunk[match_len] == tokens[idx + match_len]
+            ):
+                match_len += 1
+
+            if match_len == len(chunk):
+                # Full match of child's chunk, continue deeper
+                idx += match_len
+                curr = child
+                if idx == len(tokens):
+                    # Exact match at this node, update state
+                    curr.prefix_state = state_dict
+                    curr.last_accessed = time.time()
+                    curr.access_count += 1
+                    return curr
+            else:
+                # Partial match: split child into parent (split_node) and remaining children
+                common_chunk = chunk[:match_len]
+                remaining_child_chunk = chunk[match_len:]
+
+                split_node = RadixTreeNode(
+                    token_chunk=common_chunk,
+                    parent=curr,
+                    prefix_state=None,
+                )
+                curr.children[first_tok] = split_node
+
+                # Update existing child
+                child.token_chunk = remaining_child_chunk
+                child.parent = split_node
+                split_node.children[remaining_child_chunk[0]] = child
+
+                self._node_count += 1
+                idx += match_len
+
+                if idx == len(tokens):
+                    # The inserted sequence ends at the split node
+                    split_node.prefix_state = state_dict
+                    split_node.last_accessed = time.time()
+                    split_node.access_count += 1
+                    self._check_capacity()
+                    return split_node
+                else:
+                    # Create second child from split node
+                    new_child_chunk = tokens[idx:]
+                    new_node = RadixTreeNode(
+                        token_chunk=new_child_chunk,
+                        parent=split_node,
+                        prefix_state=state_dict,
+                    )
+                    split_node.children[new_child_chunk[0]] = new_node
+                    self._node_count += 1
+                    self._check_capacity()
+                    return new_node
+
+        curr.prefix_state = state_dict
+        curr.last_accessed = time.time()
+        curr.access_count += 1
+        return curr
+
+    def match_prefix(
+        self,
+        token_ids: Sequence[int] | torch.Tensor,
+    ) -> Tuple[int, Optional[Dict[int, torch.Tensor]], Optional[RadixTreeNode]]:
+        """
+        Finds the longest matching token prefix in the Radix Tree.
+
+        Returns:
+            (matched_length, prefix_state_dict, matching_node)
+        """
+        tokens = self._normalize_tokens(token_ids)
+        if len(tokens) == 0:
+            return 0, None, None
+
+        curr = self.root
+        idx = 0
+        deepest_node_with_state: Optional[RadixTreeNode] = None
+        matched_state_len = 0
+
+        while idx < len(tokens):
+            first_tok = tokens[idx]
+            if first_tok not in curr.children:
+                break
+
+            child = curr.children[first_tok]
+            chunk = child.token_chunk
+            match_len = 0
+            while (
+                match_len < len(chunk)
+                and idx + match_len < len(tokens)
+                and chunk[match_len] == tokens[idx + match_len]
+            ):
+                match_len += 1
+
+            if match_len == len(chunk):
+                idx += match_len
+                curr = child
+                curr.last_accessed = time.time()
+                curr.access_count += 1
+                if curr.prefix_state is not None:
+                    deepest_node_with_state = curr
+                    matched_state_len = idx
+            else:
+                # Partial match on edge does not yield state at intermediate chunk
+                break
+
+        if deepest_node_with_state is not None and deepest_node_with_state.prefix_state is not None:
+            # Clone states for return
+            res_state = {
+                k: v.clone() for k, v in deepest_node_with_state.prefix_state.items()
+            }
+            return matched_state_len, res_state, deepest_node_with_state
+
+        return 0, None, None
+
+    def cache_prefix_state(
+        self,
+        prompt_tokens: Sequence[int] | torch.Tensor,
+        cache: Union[Dict[int, torch.Tensor], NeuralOpsHybridHFCache, torch.Tensor],
+    ) -> RadixTreeNode:
+        """Stores associative state matrix S_prefix at radix tree prefix node."""
+        return self.insert(prompt_tokens, cache)
+
+    def retrieve_prefix_state(
+        self,
+        prompt_tokens: Sequence[int] | torch.Tensor,
+    ) -> Tuple[int, Optional[NeuralOpsHybridHFCache]]:
+        """
+        Retrieves matching prefix state in O(1) time and initializes a NeuralOpsHybridHFCache.
+
+        Returns:
+            (matched_length, populated_hybrid_cache_or_none)
+        """
+        matched_len, state_dict, _ = self.match_prefix(prompt_tokens)
+        if state_dict is None or matched_len == 0:
+            return 0, None
+
+        cache = NeuralOpsHybridHFCache()
+        cache._seen_tokens = matched_len
+        for layer_idx, s in state_dict.items():
+            cache.update_recurrent_state(layer_idx, s, num_tokens=0)
+
+        return matched_len, cache
+
+    def _check_capacity(self) -> None:
+        if self._node_count > self.max_cached_nodes:
+            self.evict_lru(num_nodes=max(1, self.max_cached_nodes // 10))
+
+    def evict_lru(self, num_nodes: int = 1) -> int:
+        """Evicts the least-recently used leaf nodes from the Radix Tree."""
+        leaves: List[RadixTreeNode] = []
+
+        def collect_leaves(node: RadixTreeNode) -> None:
+            if node is not self.root and node.is_leaf():
+                leaves.append(node)
+            for child in node.children.values():
+                collect_leaves(child)
+
+        collect_leaves(self.root)
+        leaves.sort(key=lambda n: n.last_accessed)
+
+        evicted = 0
+        for node in leaves[:num_nodes]:
+            if node.parent is not None and len(node.token_chunk) > 0:
+                first_tok = node.token_chunk[0]
+                if first_tok in node.parent.children:
+                    del node.parent.children[first_tok]
+                    self._node_count -= 1
+                    evicted += 1
+
+        return evicted
+
+    def total_nodes(self) -> int:
+        return self._node_count
+
+    def clear(self) -> None:
+        self.root = RadixTreeNode()
+        self._node_count = 1
+
+
 def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
     """
     Wraps model's prepare_inputs_for_generation or injects NeuralOpsHybridHFCache
@@ -586,6 +865,8 @@ HFCacheBridge = NeuralOpsHybridHFCache
 __all__ = [
     "HFCacheBridge",
     "NeuralOpsHybridHFCache",
+    "RadixTreeNode",
+    "SGLangRadixStateAdapter",
     "validate_cache_format",
     "wrap_model_for_generation",
 ]

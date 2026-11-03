@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from neuralops.executor.snapshot import ModelSnapshot
-from neuralops.surgery.registry import SURGERY_REGISTRY
+from neuralops.surgery.registry import SURGERY_REGISTRY, register_surgery
 from neuralops.surgery.validation import ValidationReport, validate_before_surgery
 
 logger = logging.getLogger(__name__)
@@ -207,8 +207,37 @@ class SurgeryRecipe:
             ) from exc
 
 
+@register_surgery(
+    name="attention.fx",
+    category="attention",
+    compat=["llama", "qwen", "gpt2", "mistral", "gemma", "phi", "toy"],
+    requires_gpu=False,
+    requires_calibration=False,
+    reversibility="none",
+    cost_estimate="low",
+)
+def apply_fx_attention_surgery(
+    model: Any,
+    target_attention: str = "cosformer",
+    head_dim: int = 64,
+    is_causal: bool = True,
+    **kwargs: Any,
+) -> Any:
+    """Execute PyTorch FX AST graph rewriting to replace quadratic attention with linear attention."""
+    from neuralops.surgery.fx_surgery import FXAttentionGraphRewriter
+
+    rewriter = FXAttentionGraphRewriter(
+        target_attention=target_attention,
+        head_dim=head_dim,
+        is_causal=is_causal,
+        **kwargs,
+    )
+    return rewriter.rewrite(model)
+
+
 __all__ = [
     "SurgeryOp",
     "SurgeryRecipe",
     "ApplyReport",
+    "apply_fx_attention_surgery",
 ]

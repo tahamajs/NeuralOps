@@ -21,6 +21,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge
+from neuralops.surgery.moa_router import HybridMoARouter
 from neuralops.surgery.scanner import AttentionTargetSpec
 
 logger = logging.getLogger("NeuralOps.Surgery.EndoskeletalShell")
@@ -423,6 +425,8 @@ class UniversalAttentionBridge(nn.Module):
         new_attention: nn.Module,
         inherit_weights: bool = True,
         attach_sidecar: bool = False,
+        moa_router: Optional[HybridMoARouter] = None,
+        layer_idx: Optional[int] = None,
     ) -> None:
         super().__init__()
         self.orig_module = orig_module
@@ -431,6 +435,8 @@ class UniversalAttentionBridge(nn.Module):
         self.pattern_type = spec.pattern_type
         self.embed_dim = spec.embed_dim
         self.num_heads = spec.num_heads
+        self.moa_router = moa_router
+        self.layer_idx = layer_idx
 
         # Unwrap base layer if orig_module is a PEFT/LoRA wrapper
         self.base_module: nn.Module = getattr(orig_module, "base_layer", orig_module)
@@ -490,6 +496,37 @@ class UniversalAttentionBridge(nn.Module):
         self.stage: str = "stage3_end_to_end"
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
+        # Check Hybrid MoA routing if router is attached and layer_idx is provided
+        if self.moa_router is not None and self.layer_idx is not None:
+            if self.moa_router.is_full_attention(self.layer_idx):
+                # Preserve original quadratic Full Attention execution
+                return self.orig_module(*args, **kwargs)
+
+        # Route DeepSeek MLA blocks through DeepSeekMLASurgeryBridge
+        if isinstance(self.new_attention, DeepSeekMLASurgeryBridge):
+            if len(args) == 4 or ("c_kv" in kwargs and "k_rope" in kwargs):
+                return self.new_attention(*args, **kwargs)
+            if hasattr(self.orig_module, "kv_a_proj_with_mqa"):
+                hs = args[0] if len(args) > 0 else kwargs.get("hidden_states")
+                if hs is not None:
+                    kv_comp = self.orig_module.kv_a_proj_with_mqa(hs)
+                    c_kv = kv_comp[..., : self.new_attention.latent_kv_dim]
+                    k_rope = kv_comp[..., self.new_attention.latent_kv_dim :]
+                    if hasattr(self.orig_module, "q_a_proj"):
+                        q_comp = self.orig_module.q_a_proj(hs)
+                        q_content = q_comp[..., : self.new_attention.latent_kv_dim]
+                        q_rope = q_comp[..., self.new_attention.latent_kv_dim :]
+                    else:
+                        q_content = c_kv
+                        q_rope = k_rope
+                    past_state = kwargs.get("past_key_value", kwargs.get("past_state", None))
+                    out, new_state = self.new_attention(
+                        c_kv, k_rope, q_content, q_rope, past_state=past_state
+                    )
+                    if kwargs.get("use_cache", False) or "past_key_value" in kwargs:
+                        return out, None, new_state
+                    return out
+
         kwargs_clean = dict(kwargs)
         if len(args) > 0:
             hidden_states = args[0]
@@ -539,6 +576,12 @@ class UniversalAttentionBridge(nn.Module):
                 return (core_tensor, attn_weights, present_kv)
             return (core_tensor, attn_weights)
 
+        if self.pattern_type == "deepseek_mla":
+            if kwargs.get("use_cache", False) or "past_key_value" in kwargs:
+                present_state = extra_outputs[0] if len(extra_outputs) > 0 else None
+                return (core_tensor, None, present_state)
+            return (core_tensor,)
+
         if len(extra_outputs) > 0:
             return (core_tensor, *extra_outputs)
 
@@ -559,4 +602,6 @@ __all__ = [
     "SidecarGateBranch",
     "transfer_pretrained_qkv_weights",
     "UniversalAttentionBridge",
+    "DeepSeekMLASurgeryBridge",
+    "HybridMoARouter",
 ]

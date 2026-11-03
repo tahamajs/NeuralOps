@@ -237,8 +237,28 @@ def ridge_regression_solve(
     X_c = X_flat - mu_X
     Y_c = Y_flat - mu_Y
 
-    reg = ridge_lambda * torch.eye(D_in, device=target_device, dtype=torch.float32)
-    XT_X = torch.matmul(X_c.t(), X_c) + reg
+    # Dynamic Tikhonov damping escalation based on Gram matrix condition number
+    XT_X_raw = torch.matmul(X_c.t(), X_c)
+    current_lambda = float(ridge_lambda)
+
+    # Check condition number: escalation from 1e-5 up to 1e-2 if ill-conditioned
+    try:
+        svals = torch.linalg.svdvals(XT_X_raw)
+        cond = (svals[0] / svals[-1].clamp(min=1e-12)).item()
+        if cond > 1e6 and current_lambda < 1e-2:
+            escalated_lambda = max(current_lambda, min(1e-2, current_lambda * 100.0))
+            logger.warning(
+                "Gram matrix ill-conditioned (cond=%.2e > 1e6); escalating Ridge damping from %.1e to %.1e",
+                cond,
+                current_lambda,
+                escalated_lambda,
+            )
+            current_lambda = escalated_lambda
+    except Exception:
+        pass
+
+    reg = current_lambda * torch.eye(D_in, device=target_device, dtype=torch.float32)
+    XT_X = XT_X_raw + reg
     XT_Y = torch.matmul(X_c.t(), Y_c)
 
     try:
@@ -246,16 +266,23 @@ def ridge_regression_solve(
         b = (mu_Y - torch.matmul(mu_X, W)).squeeze(0)
     except Exception as err:
         logger.warning(
-            "Ridge regression solve on device %s failed (%s); falling back to CPU solver.",
+            "Ridge regression solve on device %s failed (%s); escalating damping to 1e-2 and falling back to CPU solver.",
             target_device,
             err,
         )
-        W_cpu = torch.linalg.solve(XT_X.cpu(), XT_Y.cpu())
-        b_cpu = (mu_X.cpu().matmul(W_cpu) - mu_Y.cpu()).squeeze(0).neg()
+        reg_fallback = 1e-2 * torch.eye(D_in, device="cpu", dtype=torch.float32)
+        XT_X_cpu = XT_X_raw.cpu() + reg_fallback
+        XT_Y_cpu = XT_Y.cpu()
+        W_cpu = torch.linalg.solve(XT_X_cpu, XT_Y_cpu)
+        b_cpu = (mu_Y.cpu() - torch.matmul(mu_X.cpu(), W_cpu)).squeeze(0)
         W = W_cpu.to(target_device)
         b = b_cpu.to(target_device)
 
     return W, b
+
+
+# Alias for pre-benchmark micro-training & surgical healing engine
+compute_ridge_calibration = ridge_regression_solve
 
 
 __all__ = [
@@ -267,4 +294,5 @@ __all__ = [
     "calibrate_surgically_replaced_model",
     "calibrate_attention_subspace",
     "ridge_regression_solve",
+    "compute_ridge_calibration",
 ]

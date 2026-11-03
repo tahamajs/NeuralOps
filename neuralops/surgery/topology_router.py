@@ -268,6 +268,43 @@ class AsymmetricCrossAttentionRouter(nn.Module):
         out = out.transpose(1, 2).contiguous().view(B, T_q, D)
         return self.out_proj(out), None
 
+    def prefill_encoder(
+        self,
+        encoder_hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """Law 4: Computes and caches cross-attention state matrix S_cross = K_phi^T * V."""
+        B, T_kv, D = encoder_hidden_states.shape
+        H, D_h = self.num_heads, self.head_dim
+        k = self.k_proj(encoder_hidden_states).view(B, T_kv, H, D_h).transpose(1, 2)
+        v = self.v_proj(encoder_hidden_states).view(B, T_kv, H, D_h).transpose(1, 2)
+        if attention_mask is not None:
+            k, v = sanitize_kv_for_padding_mask(k, v, attention_mask)
+        k_phi = F.elu(k) + 1.0
+        self._cached_s_cross = torch.matmul(k_phi.transpose(-2, -1), v)
+        self._cached_z_cross = k_phi.sum(dim=-2, keepdim=True)
+        return self._cached_s_cross
+
+    def decode_step(self, hidden_states: torch.Tensor) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Law 4: O(1) step decoding using cached static cross-attention matrix."""
+        if getattr(self, "_cached_s_cross", None) is None:
+            raise RuntimeError("Static cross-attention matrix not initialized. Call prefill_encoder first.")
+        B, T_q, D = hidden_states.shape
+        H, D_h = self.num_heads, self.head_dim
+        q = self.q_proj(hidden_states).view(B, T_q, H, D_h).transpose(1, 2)
+        q_phi = F.elu(q) + 1.0
+        out = torch.matmul(q_phi, self._cached_s_cross)
+        if getattr(self, "_cached_z_cross", None) is not None:
+            denom = torch.matmul(q_phi, self._cached_z_cross.transpose(-2, -1)).clamp(min=1e-6)
+            out = out / denom
+        out = out.transpose(1, 2).contiguous().view(B, T_q, D)
+        return self.out_proj(out), None
+
+    def reset_cross_cache(self) -> None:
+        """Clears cached encoder states."""
+        self._cached_s_cross = None
+        self._cached_z_cross = None
+
 
 __all__ = [
     "extract_binary_token_mask",

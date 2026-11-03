@@ -271,6 +271,9 @@ class UniversalArchitectureScanner:
             b = getattr(linear_or_conv, "bias", None)
             return w, b
 
+        if hasattr(linear_or_conv, "qweight"):
+            return linear_or_conv.qweight, getattr(linear_or_conv, "bias", None)
+
         raise ValueError(f"Cannot extract weight and bias from module {linear_or_conv}")
 
     @classmethod
@@ -544,6 +547,18 @@ class UniversalArchitectureScanner:
                 else:
                     b_q, b_k, b_v = None, None, None
 
+            extra_meta: Dict[str, Any] = {}
+            if lora_adapters:
+                extra_meta["lora_adapters"] = lora_adapters
+            if hasattr(module, "q_norm") and hasattr(module, "k_norm"):
+                extra_meta["has_qk_norm"] = True
+                extra_meta["q_norm"] = module.q_norm
+                extra_meta["k_norm"] = module.k_norm
+            cfg = getattr(module, "config", getattr(root_model, "config", None))
+            softcap = getattr(module, "attn_logit_softcapping", getattr(cfg, "attn_logit_softcapping", None))
+            if softcap is not None:
+                extra_meta["softcapping_factor"] = float(softcap)
+
             return AttentionTargetSpec(
                 module_path=path,
                 parent_module=parent,
@@ -557,7 +572,7 @@ class UniversalArchitectureScanner:
                 is_causal=getattr(module, "is_causal", False),
                 has_bias=b_qkv is not None,
                 extracted_qkv=(W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o),
-                extra_metadata={"lora_adapters": lora_adapters} if lora_adapters else None,
+                extra_metadata=extra_meta if extra_meta else None,
             )
 
         q_mod, k_mod, v_mod, o_mod = None, None, None, None
@@ -629,6 +644,20 @@ class UniversalArchitectureScanner:
                     )
                 )
 
+            extra_meta: Dict[str, Any] = {}
+            if lora_adapters:
+                extra_meta["lora_adapters"] = lora_adapters
+            if hasattr(module, "q_norm") and hasattr(module, "k_norm"):
+                extra_meta["has_qk_norm"] = True
+                extra_meta["q_norm"] = module.q_norm
+                extra_meta["k_norm"] = module.k_norm
+            cfg = getattr(module, "config", getattr(root_model, "config", None))
+            softcap = getattr(module, "attn_logit_softcapping", getattr(cfg, "attn_logit_softcapping", None))
+            if softcap is not None:
+                extra_meta["softcapping_factor"] = float(softcap)
+            if getattr(module, "is_cross_attention", False):
+                extra_meta["is_cross_attention"] = True
+
             return AttentionTargetSpec(
                 module_path=path,
                 parent_module=parent,
@@ -642,7 +671,7 @@ class UniversalArchitectureScanner:
                 is_causal=is_causal,
                 has_bias=b_q is not None,
                 extracted_qkv=(W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o),
-                extra_metadata={"lora_adapters": lora_adapters} if lora_adapters else None,
+                extra_metadata=extra_meta if extra_meta else None,
             )
 
         return None
