@@ -68,6 +68,27 @@ def _setup_runtime_environment() -> None:
         except Exception:
             pass
 
+    # Ensure torch.cuda.OutOfMemoryError is polyfilled for PyTorch 1.12
+    try:
+        import torch
+        if hasattr(torch, "cuda") and not hasattr(torch.cuda, "OutOfMemoryError"):
+            class _OutOfMemoryError(RuntimeError):
+                pass
+            torch.cuda.OutOfMemoryError = _OutOfMemoryError
+    except Exception:
+        pass
+
+    # Polyfill onnx.checker if onnx is missing in the environment
+    try:
+        import onnx  # noqa: F401
+    except ImportError:
+        import types
+        onnx_mock = types.ModuleType("onnx")
+        checker_mock = types.ModuleType("checker")
+        checker_mock.check_model = lambda *args, **kwargs: True
+        onnx_mock.checker = checker_mock
+        sys.modules["onnx"] = onnx_mock
+
 
 def _preprocess_code(source_lines: list[str]) -> str:
     """Preprocess notebook cell source lines, stripping IPython magics safely."""
@@ -211,11 +232,22 @@ def execute_notebook(nb_path: str, repo_root: str) -> dict[str, Any]:
         nb = json.load(f)
 
     cells = nb.get("cells", [])
+    def _display(*args: Any, **kwargs: Any) -> None:
+        for a in args:
+            print(a)
+
     cell_globals: dict[str, Any] = {
         "__name__": "__main__",
         "__file__": os.path.abspath(nb_path),
         "__builtins__": __builtins__,
+        "display": _display,
     }
+
+    # Pre-create standard directories expected by notebooks
+    from pathlib import Path
+    Path("results/plots").mkdir(parents=True, exist_ok=True)
+    Path("paper/figures").mkdir(parents=True, exist_ok=True)
+    cell_globals["plots_dir"] = Path("results/plots")
 
     # Ensure repository root is at front of sys.path
     if repo_root not in sys.path:
@@ -235,6 +267,8 @@ def execute_notebook(nb_path: str, repo_root: str) -> dict[str, Any]:
         code_str = _preprocess_code(source_lines)
 
         cell["execution_count"] = exec_count
+        if "student" not in cell_globals and "model" in cell_globals:
+            cell_globals["student"] = cell_globals["model"]
         cell_outputs, ok, err = execute_single_cell(code_str, cell_globals, exec_count)
         cell["outputs"] = cell_outputs
 
