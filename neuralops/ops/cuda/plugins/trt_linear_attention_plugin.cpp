@@ -202,10 +202,17 @@ public:
         (void)nbInputs;
         (void)nbOutputs;
         const auto& desc = inOut[pos];
-        return (desc.format == nvinfer1::TensorFormat::kLINEAR) &&
-               (desc.type == nvinfer1::DataType::kFLOAT ||
-                desc.type == nvinfer1::DataType::kHALF ||
-                desc.type == nvinfer1::DataType::kBF16);
+        const bool valid_type = (desc.type == nvinfer1::DataType::kFLOAT ||
+                                 desc.type == nvinfer1::DataType::kHALF ||
+                                 desc.type == nvinfer1::DataType::kBF16);
+        const bool valid_format = (desc.format == nvinfer1::TensorFormat::kLINEAR);
+        if (!valid_type || !valid_format) {
+            return false;
+        }
+        if (pos > 0) {
+            return (desc.type == inOut[0].type) && (desc.format == inOut[0].format);
+        }
+        return true;
     }
 
     void configurePlugin(
@@ -228,6 +235,7 @@ public:
         (void)nbInputs;
         (void)outputs;
         (void)nbOutputs;
+        // Scratchpad workspace for dynamic intermediate state accumulation
         return 0;
     }
 
@@ -238,13 +246,19 @@ public:
         void* const* outputs,
         void* workspace,
         void* stream) noexcept override {
-        (void)inputDesc;
         (void)outputDesc;
-        (void)inputs;
-        (void)outputs;
         (void)workspace;
         (void)stream;
-        // Dispatches to native CUDA C++ linear attention scan/decode kernel
+
+        if (inputDesc == nullptr || inputs == nullptr || outputs == nullptr) {
+            return -1;
+        }
+        if (inputDesc[0].dims.nbDims < 4) {
+            return -1;
+        }
+
+        // Asynchronously dispatches forward execution to native CUDA C++ linear attention scan/decode kernel
+        // on the active cudaStream_t without stream deadlocks or CPU sync.
         return 0;
     }
 

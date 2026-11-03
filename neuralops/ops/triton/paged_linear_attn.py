@@ -396,6 +396,7 @@ def paged_linear_attention_decode_step_pytorch(
     k: torch.Tensor,
     v: torch.Tensor,
     state: torch.Tensor,
+    block_tables: Optional[torch.Tensor] = None,
     decay: float = 1.0,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
@@ -405,7 +406,8 @@ def paged_linear_attention_decode_step_pytorch(
         q: [B, H, D] or [B, 1, H, D] query tensor.
         k: [B, H, D] or [B, 1, H, D] key tensor.
         v: [B, H, D] or [B, 1, H, D] value tensor.
-        state: [B, H, D, D] recurrent state matrix.
+        state: [B, H, D, D] recurrent state matrix, or [num_blocks, H, D, D] physical state pool.
+        block_tables: Optional [B] or [B, 1] physical block table mapping sequence to state block.
         decay: Exponential decay factor gamma in (0, 1].
 
     Returns:
@@ -422,7 +424,15 @@ def paged_linear_attention_decode_step_pytorch(
         k_cur = k.float()
         v_cur = v.float()
 
-    state_cur = state.float()
+    if block_tables is not None:
+        if block_tables.ndim == 1:
+            seq_block_ids = block_tables.long()
+        else:
+            seq_block_ids = block_tables[:, -1].long()
+        state_cur = state[seq_block_ids].float()
+    else:
+        seq_block_ids = None
+        state_cur = state.float()
 
     # Feature maps
     q_phi = torch.where(q_cur > 0.0, q_cur + 1.0, torch.exp(q_cur))
@@ -437,6 +447,10 @@ def paged_linear_attention_decode_step_pytorch(
 
     if orig_ndim == 4:
         out = out.unsqueeze(1)
+
+    if seq_block_ids is not None:
+        state[seq_block_ids] = new_state.to(state.dtype)
+        return out.to(q.dtype), state
 
     return out.to(q.dtype), new_state.to(state.dtype)
 
@@ -537,6 +551,7 @@ def paged_linear_attention_decode_step(
     k: torch.Tensor,
     v: torch.Tensor,
     state: torch.Tensor,
+    block_tables: Optional[torch.Tensor] = None,
     decay: float = 1.0,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
@@ -549,7 +564,8 @@ def paged_linear_attention_decode_step(
         q: [B, 1, H, D] or [B, H, D] Query tensor.
         k: [B, 1, H, D] or [B, H, D] Key tensor.
         v: [B, 1, H, D] or [B, H, D] Value tensor.
-        state: [B, H, D, D] Recurrent associative state tensor.
+        state: [B, H, D, D] Recurrent associative state tensor or [num_blocks, H, D, D] state pool.
+        block_tables: Optional physical block indices mapping sequences to state blocks.
         decay: State decay factor gamma in (0, 1].
 
     Returns:
@@ -566,6 +582,7 @@ def paged_linear_attention_decode_step(
         and k.is_cuda
         and v.is_cuda
         and state.is_cuda
+        and block_tables is None
         and check_triton_suitability(q)
     )
 
@@ -607,7 +624,7 @@ def paged_linear_attention_decode_step(
             out = out.unsqueeze(1)
         return out, state_in
 
-    if q.is_cuda:
+    if q.is_cuda and block_tables is None:
         logger.warning(
             "paged_linear_attention_decode_step: Triton kernel unavailable or input conditions not met. "
             "Falling back to Level 3 PyTorch reference."
@@ -618,6 +635,7 @@ def paged_linear_attention_decode_step(
         k=k,
         v=v,
         state=state,
+        block_tables=block_tables,
         decay=decay,
     )
 
