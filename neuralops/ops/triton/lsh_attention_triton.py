@@ -199,6 +199,14 @@ if HAS_TRITON and triton is not None and tl is not None:
 
 def _compute_lsh_buckets(vectors: torch.Tensor, proj: torch.Tensor, num_buckets: int) -> torch.Tensor:
     """Computes integer bucket indices using random hyperplane projections."""
+    if vectors.is_cuda and HAS_TRITON and proj.shape[-1] <= 32 and vectors.shape[-1] <= 256:
+        try:
+            from neuralops.ops.triton.sparse_attn import fused_lsh_hash_and_bin_triton
+
+            return fused_lsh_hash_and_bin_triton(vectors, proj, num_buckets)
+        except Exception:
+            pass
+
     norm = F.normalize(vectors.float(), p=2, dim=-1)
     dots = torch.matmul(norm, proj.float())
     signs = (dots >= 0).long()
