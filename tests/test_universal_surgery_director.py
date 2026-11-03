@@ -565,6 +565,8 @@ def test_phase_056_law_6_decoupled_latent_state_router() -> None:
     # Execute surgery
     surgeried_model = director.execute_surgery()
     assert surgeried_model is not None
+    from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge
+    assert isinstance(surgeried_model.layers[0]["self_attn"], DeepSeekMLASurgeryBridge)
 
 
 def test_phase_057_law_7_causal_monotonicity_state_decay() -> None:
@@ -615,19 +617,35 @@ def test_phase_058_law_8_tied_embedding_preservation_and_remediation() -> None:
 
 def test_phase_059_law_9_fp32_accumulation_guard() -> None:
     """
-    Phase 059 (Law 9): Enforces FP32 accumulation when input activations are FP16 or BF16.
+    Phase 059 (Law 9): Enforces FP32 accumulation when input activations are FP16 or BF16,
+    and validates GatheredParametersContext for distributed parameter gathering.
     """
     bridge = InvariantPreservingLinearBridge(head_dim=16)
     B, H, T, D = 2, 2, 4, 16
 
-    # Run with float16 inputs
-    q = torch.randn(B, H, T, D, dtype=torch.float16)
-    k = torch.randn(B, H, T, D, dtype=torch.float16)
-    v = torch.randn(B, H, T, D, dtype=torch.float16)
+    # 1. Run with float16 inputs
+    q_fp16 = torch.randn(B, H, T, D, dtype=torch.float16)
+    k_fp16 = torch.randn(B, H, T, D, dtype=torch.float16)
+    v_fp16 = torch.randn(B, H, T, D, dtype=torch.float16)
 
-    out = bridge(q, k, v)
-    assert out.dtype == torch.float16
+    out_fp16 = bridge(q_fp16, k_fp16, v_fp16)
+    assert out_fp16.dtype == torch.float16
     assert bridge.last_accum_dtype == torch.float32
+
+    # 2. Run with bfloat16 inputs
+    q_bf16 = torch.randn(B, H, T, D, dtype=torch.bfloat16)
+    k_bf16 = torch.randn(B, H, T, D, dtype=torch.bfloat16)
+    v_bf16 = torch.randn(B, H, T, D, dtype=torch.bfloat16)
+
+    out_bf16 = bridge(q_bf16, k_bf16, v_bf16)
+    assert out_bf16.dtype == torch.bfloat16
+    assert bridge.last_accum_dtype == torch.float32
+
+    # 3. Distributed sharding context test
+    from neuralops.surgery.director import GatheredParametersContext
+    linear = nn.Linear(16, 16)
+    with GatheredParametersContext(linear):
+        assert linear.weight.shape == (16, 16)
 
 
 def test_phase_060_law_10_master_universal_surgery_integration() -> None:

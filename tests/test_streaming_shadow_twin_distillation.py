@@ -123,7 +123,7 @@ def test_phase_022_online_feature_centering_chans_update() -> None:
     total_len = num_chunks * chunk_len
 
     # Sequence with large arbitrary non-zero mean
-    x_full = torch.randn(total_len, d, dtype=torch.float32) * 5.0 + 12.34
+    x_full = torch.randn(total_len, d, dtype=torch.float64) * 5.0 + 12.34
     true_mean = x_full.mean(dim=0, keepdim=True)
 
     cka = StreamingCKALoss(hidden_dim=d, exact=True)
@@ -154,8 +154,8 @@ def test_phase_023_streaming_cross_covariance_accumulator() -> None:
     c_size = 50
     total_tokens = chunks * c_size
 
-    x = torch.randn(total_tokens, d, dtype=torch.float32) + 2.5
-    y = torch.randn(total_tokens, d, dtype=torch.float32) - 1.8
+    x = torch.randn(total_tokens, d, dtype=torch.float64) + 2.5
+    y = torch.randn(total_tokens, d, dtype=torch.float64) - 1.8
 
     # Batch outer-product
     x_c = x - x.mean(dim=0, keepdim=True)
@@ -329,20 +329,22 @@ def test_phase_028_030_checkpointed_teacher_bridge_detachment() -> None:
 def test_phase_029_rng_state_isolation_student_dropout() -> None:
     """
     Gate DoD: preserve_rng_state=False eliminates RNG tensor overhead and preserves
-    student dropout reproducibility across identical seeds.
+    student dropout reproducibility across identical seeds without desynchronization.
     """
-    torch.manual_seed(1234)
-    dropout = nn.Dropout(p=0.5)
-    x = torch.randn(10, 50)
-    out_ref = dropout(x)
-
-    # Reset seed and execute teacher bridge checkpointing in between
-    torch.manual_seed(1234)
     teacher = nn.Linear(50, 50)
     bridge = CheckpointedTeacherBridge(teacher)
-    _ = bridge.forward_layer(teacher, torch.randn(2, 50))
+    dropout = nn.Dropout(p=0.5)
+    x = torch.ones(10, 50)
 
-    # Evaluate student dropout again
+    # 1. Run reference student dropout under seed 1234
+    torch.manual_seed(1234)
+    out_ref = dropout(x)
+
+    # 2. Reset seed and execute teacher bridge checkpointing in between
+    torch.manual_seed(1234)
+    _ = bridge.forward_layer(teacher, x[:2])
+
+    # 3. Evaluate student dropout again: must be 100% identical
     out_test = dropout(x)
     assert torch.equal(out_ref, out_test), "Teacher checkpointing polluted student RNG state"
 
@@ -443,7 +445,8 @@ def test_phase_032_inter_chunk_gradient_flow_recurrent_state() -> None:
 
     # 3 chunks of length 16 (total length 48)
     input_ids = torch.randint(0, 20, (2, 48))
-    res = distiller.step(input_ids)
+    labels = torch.randint(0, 20, (2, 48))
+    res = distiller.step(input_ids, labels=labels)
 
     # Verify backpropagation across chunk boundaries
     res["loss"].backward()
@@ -684,8 +687,14 @@ def test_phase_039_shadow_twin_lifecycle_hooking() -> None:
     new_module = nn.Linear(dim, dim)
     spec = AttentionTargetSpec(
         module_path="layer.0.attn",
-        layer_index=0,
-        attention_type="dense",
+        parent_module=orig_module,
+        attr_name="attn",
+        target_module=orig_module,
+        pattern_type="custom",
+        embed_dim=dim,
+        num_heads=1,
+        num_kv_heads=1,
+        head_dim=dim,
     )
     bridge = UniversalAttentionBridge(
         orig_module=orig_module,

@@ -68,11 +68,41 @@ class ToyDecomposedAttentionBlock(nn.Module):
         v = self.v_proj(x).view(b, t, self.num_heads, self.head_dim).transpose(1, 2)
 
         # Decomposed attention: matmul -> scale -> optional mask -> softmax -> dropout -> matmul
-        scores = torch.matmul(q, k.transpose(-2, -1)) / (self.head_dim ** 0.5)
+        scores = torch.matmul(q, k.transpose(-2, -1)) / (self.head_dim**0.5)
         if mask is not None:
             scores = scores + mask
         probs = F.softmax(scores, dim=-1)
         probs = self.dropout(probs)
+        out = torch.matmul(probs, v)
+
+        out = out.transpose(1, 2).contiguous().view(b, t, d)
+        return self.out_proj(out)
+
+
+class ToyMaskedFillAttentionBlock(nn.Module):
+    """Toy block using masked_fill eager PyTorch attention."""
+
+    def __init__(self, d_model: int = 64, num_heads: int = 4) -> None:
+        super().__init__()
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.head_dim = d_model // num_heads
+        self.q_proj = nn.Linear(d_model, d_model)
+        self.k_proj = nn.Linear(d_model, d_model)
+        self.v_proj = nn.Linear(d_model, d_model)
+        self.out_proj = nn.Linear(d_model, d_model)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        b, t, d = x.shape
+        q = self.q_proj(x).view(b, t, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.k_proj(x).view(b, t, self.num_heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(x).view(b, t, self.num_heads, self.head_dim).transpose(1, 2)
+
+        scale = 1.0 / (self.head_dim**0.5)
+        scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+        mask = torch.ones((16, 16), dtype=torch.bool).tril()
+        scores = scores.masked_fill(~mask, float("-inf"))
+        probs = F.softmax(scores, dim=-1)
         out = torch.matmul(probs, v)
 
         out = out.transpose(1, 2).contiguous().view(b, t, d)
@@ -108,10 +138,9 @@ class MultiLayerTransformerModel(nn.Module):
 
     def __init__(self, d_model: int = 32, num_heads: int = 2, num_layers: int = 2) -> None:
         super().__init__()
-        self.layers = nn.ModuleList([
-            ToySDPAAttentionBlock(d_model=d_model, num_heads=num_heads)
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [ToySDPAAttentionBlock(d_model=d_model, num_heads=num_heads) for _ in range(num_layers)]
+        )
         self.norm = nn.LayerNorm(d_model)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -230,6 +259,24 @@ def test_phase_007_additive_attention_mask_matching() -> None:
     x = torch.randn(2, 16, 32)
     out = gm(x)
     assert out.shape == (2, 16, 32)
+
+
+def test_phase_005_to_009_masked_fill_pattern() -> None:
+    """Phases 005-009: Match and replace decomposed attention with masked_fill causal mask."""
+    model = ToyMaskedFillAttentionBlock(d_model=32, num_heads=2)
+    rewriter = FXAttentionGraphRewriter(target_attention="cosformer", head_dim=16, is_causal=True)
+    gm = rewriter.rewrite(model)
+
+    # Verify that all softmax calls are replaced
+    targets = [n.target for n in gm.graph.nodes]
+    assert F.softmax not in targets
+    assert torch.softmax not in targets
+    assert fast_linear_attention_replacement in targets
+
+    x = torch.randn(2, 16, 32)
+    out = gm(x)
+    assert out.shape == (2, 16, 32)
+    assert not torch.isnan(out).any()
 
 
 # ---------------------------------------------------------------------------
@@ -424,9 +471,7 @@ def test_phase_020_model_surgery_declarative_recipe_dispatch() -> None:
     """Phase 020: End-to-end recipe dispatch with engine='fx' and attention.fx in SurgeryRecipe."""
     model = MultiLayerTransformerModel(d_model=32, num_heads=2, num_layers=2)
     recipe = SurgeryRecipe(
-        ops=[
-            SurgeryOp(name="attention.fx", params={"target_attention": "cosformer", "head_dim": 16})
-        ]
+        ops=[SurgeryOp(name="attention.fx", params={"target_attention": "cosformer", "head_dim": 16})]
     )
     new_model, report = recipe.apply(model)
     assert report.success
