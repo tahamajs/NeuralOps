@@ -41,7 +41,12 @@ def _get_module():
             name="cuda_hybrid_local_kernel",
             cpp_sources=cpp_src,
             cuda_sources=cuda_src,
-            functions=["hybrid_local_attn_fwd", "hybrid_two_branch_blend_fwd", "hybrid_three_branch_blend_fwd"],
+            functions=[
+                "hybrid_local_attn_fwd",
+                "hybrid_two_branch_blend_fwd",
+                "hybrid_three_branch_blend_fwd",
+                "hybrid_heterogeneous_branch_fwd",
+            ],
         )
     return _MODULE
 
@@ -212,3 +217,65 @@ def hybrid_three_branch_blend(
         alpha=alpha,
         kernel_name="hybrid_three_branch_blend",
     )
+
+
+def hybrid_heterogeneous_branch_ref(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    num_dense_heads: int,
+    radius: int = 32,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Pure PyTorch reference for heterogeneous hybrid heads."""
+    B, H, N, D = q.shape
+    out = torch.empty_like(q)
+    if num_dense_heads > 0:
+        out[:, :num_dense_heads] = hybrid_local_attn_ref(
+            q[:, :num_dense_heads], k[:, :num_dense_heads], v[:, :num_dense_heads],
+            radius=radius, is_causal=is_causal,
+        )
+    if num_dense_heads < H:
+        scale = 1.0 / math.sqrt(D)
+        q_lin = q[:, num_dense_heads:].float() * scale
+        k_lin = k[:, num_dense_heads:].float()
+        v_lin = v[:, num_dense_heads:].float()
+        scores = torch.matmul(q_lin, k_lin.transpose(-2, -1))
+        if is_causal:
+            mask = torch.tril(torch.ones((N, N), device=q.device, dtype=torch.bool))
+            scores = scores.masked_fill(~mask, 0.0)
+        out[:, num_dense_heads:] = torch.matmul(scores, v_lin).to(q.dtype)
+    return out
+
+
+def hybrid_heterogeneous_branch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    num_dense_heads: int,
+    radius: int = 32,
+    is_causal: bool = True,
+) -> torch.Tensor:
+    """Dispatches heterogeneous branch kernel in a single grid launch."""
+    def cuda_fn(q, k, v, num_dense_heads=1, radius=32, is_causal=True):
+        mod = _get_module()
+        if mod is None:
+            return None
+        return mod.hybrid_heterogeneous_branch_fwd(
+            q.contiguous(), k.contiguous(), v.contiguous(),
+            int(num_dense_heads), int(radius), bool(is_causal)
+        )
+
+    return dispatch(
+        cuda_fn,
+        None,
+        hybrid_heterogeneous_branch_ref,
+        q,
+        k=k,
+        v=v,
+        num_dense_heads=num_dense_heads,
+        radius=radius,
+        is_causal=is_causal,
+        kernel_name="hybrid_heterogeneous_branch",
+    )
+

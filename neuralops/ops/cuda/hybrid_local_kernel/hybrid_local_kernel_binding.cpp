@@ -32,3 +32,12 @@ torch::Tensor hybrid_three_branch_blend_fwd(
     const torch::Tensor& b2,
     const torch::Tensor& alpha
 );
+
+torch::Tensor hybrid_heterogeneous_branch_fwd(
+    const torch::Tensor& q,
+    const torch::Tensor& k,
+    const torch::Tensor& v,
+    int num_dense_heads,
+    int radius,
+    bool is_causal
+);
