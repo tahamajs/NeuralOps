@@ -155,7 +155,7 @@ __global__ void moe_fused_dispatch_kernel(
     }
 
     float max_val = __shfl_sync(0xffffffff, val, 0);
-    float exp_val = (lane < top_k) ? expf(val - max_val) : 0.0f;
+    float exp_val = (lane < top_k) ? __expf(val - max_val) : 0.0f;
 
     float sum_exp = exp_val;
     #pragma unroll
@@ -294,7 +294,7 @@ __global__ void moe_topk_routing_kernel(
     }
 
     float max_val = __shfl_sync(0xffffffff, val, 0);
-    float exp_val = (lane < top_k) ? expf(val - max_val) : 0.0f;
+    float exp_val = (lane < top_k) ? __expf(val - max_val) : 0.0f;
 
     float sum_exp = exp_val;
     #pragma unroll
