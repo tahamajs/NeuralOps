@@ -132,6 +132,9 @@ def benchmark_deepspeed_zero3_overhead(
     gather_sec = gather_latency_ms * 1e-3
     effective_bandwidth_gb_sec = (total_mb / 1024.0) / max(gather_sec, 1e-12)
 
+    # Theoretical memory reduction factor under ZeRO-3 parameter partitioning: 1 / num_shards
+    memory_footprint_reduction_ratio = 1.0 / max(float(num_shards), 1.0)
+
     # Optional PCIe benchmark if on CUDA
     pcie_stats: dict[str, float] = {}
     if dev.type == "cuda":
@@ -151,9 +154,16 @@ def benchmark_deepspeed_zero3_overhead(
         "effective_bandwidth_gb_sec": effective_bandwidth_gb_sec,
         "pcie_bandwidth_gb_sec": pcie_stats.get("bandwidth_gb_sec", 0.0),
         "total_elements": total_elements,
+        "memory_footprint_reduction_ratio": memory_footprint_reduction_ratio,
     }
 
 
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return benchmark_deepspeed_zero3_overhead(**kwargs)
+
+
+# Canonical Aliases for Multi-Agent Implementation Plan contract compliance
+run_deepspeed_zero3_benchmark = benchmark_deepspeed_zero3_overhead
+CoreModule = benchmark_deepspeed_zero3_overhead
+

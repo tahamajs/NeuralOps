@@ -145,3 +145,8 @@ def run_flash_attention_benchmark(**kwargs: Any) -> dict[str, Any]:
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return benchmark_flash_attn_tflops(**kwargs)
+
+
+# Canonical Aliases for Multi-Agent Implementation Plan contract compliance
+CoreModule = benchmark_flash_attn_tflops
+

@@ -224,3 +224,8 @@ def run_vllm_serving_benchmark(**kwargs: Any) -> dict[str, Any]:
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return benchmark_vllm_poisson_serving(**kwargs)
+
+
+# Canonical Aliases for Multi-Agent Implementation Plan contract compliance
+CoreModule = benchmark_vllm_poisson_serving
+

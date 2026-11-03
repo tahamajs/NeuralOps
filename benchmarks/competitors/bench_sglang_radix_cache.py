@@ -144,3 +144,8 @@ def run_sglang_radix_benchmark(**kwargs: Any) -> dict[str, Any]:
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return benchmark_radix_prefix_cache(**kwargs)
+
+
+# Canonical Aliases for Multi-Agent Implementation Plan contract compliance
+CoreModule = benchmark_radix_prefix_cache
+

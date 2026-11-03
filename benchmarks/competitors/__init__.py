@@ -26,6 +26,7 @@ from __future__ import annotations
 from benchmarks.competitors.bench_deepspeed_zero3_overhead import (
     benchmark_deepspeed_zero3_overhead,
     benchmark_pcie_offload_bandwidth,
+    run_deepspeed_zero3_benchmark,
 )
 from benchmarks.competitors.bench_flash_attention_standard import (
     benchmark_flash_attn_tflops,
@@ -50,6 +51,8 @@ from benchmarks.competitors.bench_medusa_speculative_tree import (
 from benchmarks.competitors.bench_megatron_tp_sp import (
     benchmark_megatron_tp_sp,
     compute_megatron_mfu,
+    compute_tp_sp_communication_volume,
+    run_megatron_tp_sp_benchmark,
 )
 from benchmarks.competitors.bench_ruler_long_context import (
     benchmark_ruler_long_context,
@@ -83,9 +86,12 @@ __all__ = [
     # Megatron-LM
     "benchmark_megatron_tp_sp",
     "compute_megatron_mfu",
+    "compute_tp_sp_communication_volume",
+    "run_megatron_tp_sp_benchmark",
     # DeepSpeed
     "benchmark_deepspeed_zero3_overhead",
     "benchmark_pcie_offload_bandwidth",
+    "run_deepspeed_zero3_benchmark",
     # TensorRT-LLM
     "benchmark_tensorrt_sqnr",
     "quantize_simulate",
