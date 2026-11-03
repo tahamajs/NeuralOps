@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
+r"""
 Numerical Guardrails & Symplectic Stabilization Engine (Phases 031-034).
 
 Provides mathematical protection against 10^{\pm 12} dynamic range spikes,
@@ -63,7 +63,7 @@ def check_numerical_stability(
     x: torch.Tensor,
     dynamic_range_threshold: float = 1e12,
 ) -> Tuple[bool, dict]:
-    """
+    r"""
     Audits tensor stability against extreme dynamic range spikes (10^{\pm 12}).
 
     Returns:
@@ -98,7 +98,7 @@ def symplectic_guarded_softmax(
     eps_max: float = 1e-4,
     clamp_max_exp: float = 50.0,
 ) -> torch.Tensor:
-    """
+    r"""
     Symplectic scaled shifted log-sum-exp softmax preventing FP16/BF16 exponent overflow.
 
     Guarantees finite denominators even under 10^{\pm 12} activation spikes.
