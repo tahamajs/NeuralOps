@@ -240,6 +240,7 @@ class HuggingFaceModelAdapter(BaseModelAdapter):
         self,
         input_ids: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        layer_indices: Optional[Union[int, Sequence[int]]] = None,
         layer_idx: Optional[int] = None,
         **kwargs: Any,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
@@ -258,6 +259,10 @@ class HuggingFaceModelAdapter(BaseModelAdapter):
         states = outputs.hidden_states
         if layer_idx is not None:
             return states[layer_idx]
+        if layer_indices is not None:
+            if isinstance(layer_indices, int):
+                return states[layer_indices]
+            return tuple(states[i] for i in layer_indices)
         return states
 
     def generate(
@@ -269,14 +274,24 @@ class HuggingFaceModelAdapter(BaseModelAdapter):
         top_p: Optional[float] = None,
         do_sample: bool = False,
         eos_token_id: Optional[int] = None,
+        use_cache: bool = True,
         **kwargs: Any,
     ) -> torch.Tensor:
-        """Autoregressive generation via HF .generate() when supported, or greedy loop fallback."""
+        """Autoregressive generation via HF .generate() or PolymorphicGenerationCacheBridge.
+
+        Interfaces with DynamicCache / PolymorphicGenerationCacheBridge for O(1) recurrent step latency.
+        """
+        # If model supports HF generate, wrap with PolymorphicGenerationCacheBridge if available
         if hasattr(self.model, "generate"):
             try:
+                wrapped_model = self.model
+                if _HAS_CACHE_BRIDGE and wrap_model_for_generation is not None:
+                    wrapped_model = wrap_model_for_generation(self.model)
+
                 gen_kwargs: Dict[str, Any] = {
                     "max_new_tokens": max_new_tokens,
                     "do_sample": do_sample,
+                    "use_cache": use_cache,
                     **kwargs,
                 }
                 if do_sample:
@@ -288,15 +303,44 @@ class HuggingFaceModelAdapter(BaseModelAdapter):
                 if eos_token_id is not None:
                     gen_kwargs["eos_token_id"] = eos_token_id
 
-                return self.model.generate(input_ids, **gen_kwargs)
+                return wrapped_model.generate(input_ids, **gen_kwargs)
             except Exception as e:
                 logger.warning("HF native generate failed (%s); falling back to manual generation loop", e)
 
-        # Autoregressive loop fallback
+        # Autoregressive loop fallback with DynamicCache / PolymorphicGenerationCacheBridge support
         curr_ids = input_ids.clone()
-        for _ in range(max_new_tokens):
+        past_key_values: Optional[Any] = None
+        if use_cache:
+            if _HAS_CACHE_BRIDGE and PolymorphicGenerationCacheBridge is not None:
+                past_key_values = PolymorphicGenerationCacheBridge()
+            elif _HAS_DYNAMIC_CACHE and DynamicCache is not None:
+                past_key_values = DynamicCache()
+
+        for step in range(max_new_tokens):
             with torch.no_grad():
-                logits = self.get_logits(curr_ids)
+                step_input = curr_ids if past_key_values is None else curr_ids[:, -1:]
+                step_kwargs: Dict[str, Any] = dict(kwargs)
+                if past_key_values is not None:
+                    step_kwargs["past_key_values"] = past_key_values
+                    step_kwargs["use_cache"] = True
+
+                outputs = self.model(step_input, **step_kwargs)
+
+                # Extract logits and update cache
+                if hasattr(outputs, "logits"):
+                    logits = outputs.logits
+                elif isinstance(outputs, (tuple, list)):
+                    logits = outputs[0]
+                elif isinstance(outputs, torch.Tensor):
+                    logits = outputs
+                else:
+                    raise AttributeError(f"Unable to extract logits in generate loop: {type(outputs)}")
+
+                if hasattr(outputs, "past_key_values") and outputs.past_key_values is not None:
+                    past_key_values = outputs.past_key_values
+                elif isinstance(outputs, (tuple, list)) and len(outputs) > 1 and outputs[1] is not None:
+                    past_key_values = outputs[1]
+
                 next_token_logits = logits[:, -1, :]
                 if do_sample and temperature > 0:
                     probs = torch.softmax(next_token_logits / temperature, dim=-1)
