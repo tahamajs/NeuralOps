@@ -27,6 +27,8 @@ _ATTENTIONS_LEGACY_MAP = {'lola_attention': 'adaptive.lola_attention', 'eat': 'a
 
 _ATTENTIONS_RENAMED_MAP = {'aegis_hybrid': ('hybrid.tri_branch_hybrid_attention', {'AegisHybridAttention': 'TriBranchHybridAttention', 'inject_aegis_hybrid': 'inject_tri_branch_hybrid'}), 'aegis_spectron_fp8': ('hybrid.spectron_fp8_attention', {'AegisSpectronFP8Attention': 'SpectronFP8Attention', 'inject_aegis_spectron_fp8': 'inject_spectron_fp8'}), 'aegis_v2': ('hybrid.hybrid_local_kernel_attention', {'AegisAttentionV2': 'HybridLocalKernelAttention', 'inject_aegis_v2': 'inject_hybrid_local_kernel'}), 'aegis_v5': ('hybrid.split_head_hybrid_attention', {'AegisAttention': 'SplitHeadHybridAttention', 'AegisConfigV5': 'SplitHeadHybridConfig', 'inject_aegis_v5': 'inject_split_head_hybrid'}), 'aegis_v6': ('hybrid.gated_hybrid_kernel_attention', {'AegisAttentionV3': 'GatedHybridKernelAttention', 'inject_aegis_v6': 'inject_gated_hybrid_kernel'}), 'leka_v1': ('hybrid.positive_kernel_linear_attention', {'LEKAV1Attention': 'PositiveKernelLinearAttention', 'inject_leka_v1': 'inject_positive_kernel_linear'}), 'leka_v2': ('hybrid.landmark_local_attention', {'LEKAv2Attention': 'LandmarkLocalAttention', 'inject_leka_v2': 'inject_landmark_local'}), 'leka_v3': ('hybrid.refined_landmark_attention', {'LEKAv3Attention': 'RefinedLandmarkAttention', 'inject_leka_v3': 'inject_refined_landmark'}), 'res_svd': ('svd.residual_svd_attention', {'ResSVDAttention': 'ResidualSVDAttention', 'inject_res_svd': 'inject_residual_svd_attention'})}
 
+_COMPRESSION_RENAMED_MAP = {'res_svd': ('svd.residual_svd_compressor', {'ResSVDCompressor': 'ResidualSVDCompressor', 'inject_res_svd': 'inject_residual_svd_compressor', 'ResSVDLinear': 'ResidualSVDLinear'})}
+
 
 class ExactModuleAliasLoader(Loader):
     """Loader that delegates module resolution directly to canonical module or builds an alias module."""
@@ -87,6 +89,13 @@ class NeuralOpsCompatibilityRedirectFinder(MetaPathFinder):
             if leaf in _ATTENTIONS_LEGACY_MAP:
                 rel_path = _ATTENTIONS_LEGACY_MAP[leaf]
                 return (f"neuralops.layers.{rel_path}", False, None)
+
+        # Handle neuralops.compression.<leaf>
+        if len(parts) == 3 and parts[0] == "neuralops" and parts[1] == "compression":
+            leaf = parts[2]
+            if leaf in _COMPRESSION_RENAMED_MAP:
+                rel_path, sym_map = _COMPRESSION_RENAMED_MAP[leaf]
+                return (f"neuralops.compression.{rel_path}", False, sym_map)
 
         # Direct spec lookup
         try:
