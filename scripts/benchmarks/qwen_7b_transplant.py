@@ -175,8 +175,8 @@ def main() -> None:
 
     # 5. Micro-Healing
     print(f"\n[5/6] Running layerwise micro-healing for {args.heal_steps} steps...")
-    teacher_container = nn.ModuleDict({"self_attn": orig_layer.self_attn})
-    student_container = nn.ModuleDict({"self_attn": model.model.layers[target_layer_idx].self_attn})
+    teacher_container = orig_layer
+    student_container = model.model.layers[target_layer_idx]
 
     heal_stats = heal_replaced_model(
         teacher_model=teacher_container,

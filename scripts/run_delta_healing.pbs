@@ -35,6 +35,8 @@ echo "======================================================================"
     --device cuda:0 \
     --duration "${DURATION}" \
     --lr "${PEAK_LR}" \
+    --batch-size 8 \
+    --seq-len 128 \
     --output results/delta_healing_${MODULE_NAME}.json
 
 echo "======================================================================"
