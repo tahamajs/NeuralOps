@@ -21,10 +21,30 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn as nn
+
+try:
+    from neuralops.surgery.hf_cache_bridge import (
+        NeuralOpsHybridHFCache,
+        PolymorphicGenerationCacheBridge,
+        wrap_model_for_generation,
+    )
+    _HAS_CACHE_BRIDGE = True
+except ImportError:
+    _HAS_CACHE_BRIDGE = False
+    NeuralOpsHybridHFCache = None  # type: ignore[assignment,misc]
+    PolymorphicGenerationCacheBridge = None  # type: ignore[assignment,misc]
+    wrap_model_for_generation = None  # type: ignore[assignment]
+
+try:
+    from transformers.cache_utils import DynamicCache
+    _HAS_DYNAMIC_CACHE = True
+except ImportError:
+    _HAS_DYNAMIC_CACHE = False
+    DynamicCache = None  # type: ignore[assignment,misc]
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +103,53 @@ class BaseModelAdapter(ABC):
         self,
         input_ids: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        layer_indices: Optional[Union[int, Sequence[int]]] = None,
         layer_idx: Optional[int] = None,
         **kwargs: Any,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
-        """Extract intermediate hidden states across layers or at a specified layer index."""
+        """Extract intermediate hidden states across layers or at specified layer indices."""
+
+    def extract_pooled_output(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        pooling_mode: str = "mean",
+        **kwargs: Any,
+    ) -> torch.Tensor:
+        """Extract sequence-level pooled representation for encoders / representation analysis.
+
+        Supported pooling modes:
+        - 'mean': Mean pooling over tokens respecting attention_mask.
+        - 'cls': First token ([CLS]) embedding representation.
+        - 'max': Max pooling over tokens.
+        - 'last': Last token representation.
+        """
+        states = self.get_hidden_states(input_ids, attention_mask=attention_mask, **kwargs)
+        if isinstance(states, (tuple, list)):
+            last_hidden = states[-1]
+        else:
+            last_hidden = states
+
+        if pooling_mode == "cls":
+            return last_hidden[:, 0, :]
+        elif pooling_mode == "last":
+            if attention_mask is not None:
+                seq_lengths = attention_mask.sum(dim=1).long() - 1
+                batch_size = last_hidden.size(0)
+                return last_hidden[torch.arange(batch_size, device=last_hidden.device), seq_lengths]
+            return last_hidden[:, -1, :]
+        elif pooling_mode == "max":
+            if attention_mask is not None:
+                expanded_mask = attention_mask.unsqueeze(-1).expand_as(last_hidden).float()
+                last_hidden = last_hidden.masked_fill(expanded_mask == 0, -1e9)
+            return torch.max(last_hidden, dim=1)[0]
+        else:  # 'mean'
+            if attention_mask is not None:
+                expanded_mask = attention_mask.unsqueeze(-1).expand_as(last_hidden).float()
+                sum_embeddings = torch.sum(last_hidden * expanded_mask, dim=1)
+                sum_mask = torch.clamp(expanded_mask.sum(dim=1), min=1e-9)
+                return sum_embeddings / sum_mask
+            return torch.mean(last_hidden, dim=1)
 
     @abstractmethod
     def generate(

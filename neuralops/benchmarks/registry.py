@@ -86,8 +86,15 @@ def register_benchmark(
     description: str = "",
 ) -> Callable[[Any], Any]:
     """Decorator to register a benchmark function or BaseBenchmark subclass in BENCHMARK_REGISTRY."""
+    if mode not in OPERATIONAL_BENCHMARK_MODES and mode not in ("any", "all"):
+        raise ValueError(
+            f"Invalid benchmark mode '{mode}'. Must be one of {OPERATIONAL_BENCHMARK_MODES} or 'any'/'all'."
+        )
 
     def decorator(target: Any) -> Any:
+        if name in BENCHMARK_REGISTRY and BENCHMARK_REGISTRY[name] is not target:
+            raise ValueError(f"Conflicting benchmark registration for '{name}': already registered.")
+
         BENCHMARK_REGISTRY[name] = target
         _BENCHMARK_METADATA[name] = {
             "name": name,

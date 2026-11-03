@@ -391,12 +391,6 @@ class BenchmarkResult:
         else:
             self.run_metadata.run_id = self.run_id
 
-        if not self.training_type and isinstance(self.config, dict):
-            self.training_type = self.config.get("training_type", "finetune")
-
-        if not self.checksum:
-            self.checksum = self.compute_checksum()
-
         if not self.run_name:
             self.run_name = self.run_metadata.run_name
         else:
@@ -425,6 +419,9 @@ class BenchmarkResult:
             self.run_metadata.git_commit = self.git_commit
 
         self.git_dirty = self.run_metadata.git_dirty
+
+        if not self.training_type and isinstance(self.config, dict):
+            self.training_type = self.config.get("training_type", "finetune")
 
         # Synchronize normalized model & transplant metadata
         if not self.model_name:
@@ -468,6 +465,9 @@ class BenchmarkResult:
                     self.pre_train_steps = int(self.config["steps"])
                 except (ValueError, TypeError):
                     self.pre_train_steps = 0
+
+        if not self.checksum:
+            self.checksum = self.compute_checksum()
 
     def compute_run_key(self) -> str:
         """Compute unique deterministic run key for deduplication."""
@@ -641,6 +641,15 @@ def normalize_legacy_result_dict(legacy_dict: Dict[str, Any]) -> BenchmarkResult
             d["pre_train_steps"] = int(d["steps"])
         except (ValueError, TypeError):
             pass
+
+    # 7. Preserve extra unknown fields into metadata
+    known_fields = set(BenchmarkResult.__dataclass_fields__.keys())
+    existing_meta = dict(d.get("metadata", {})) if isinstance(d.get("metadata"), dict) else {}
+    for k, v in list(d.items()):
+        if k not in known_fields and k not in ("suite", "dataset", "device", "attention", "module", "results", "steps"):
+            existing_meta[k] = v
+    if existing_meta:
+        d["metadata"] = existing_meta
 
     return BenchmarkResult.from_dict(d)
 
