@@ -341,6 +341,9 @@ class MultiFormatSaver:
         conn = sqlite3.connect(str(self.ledger_db_path), timeout=30.0)
         try:
             cur = conn.cursor()
+            cur.execute("PRAGMA journal_mode=WAL;")
+            cur.execute("PRAGMA synchronous=NORMAL;")
+            cur.execute("PRAGMA busy_timeout=30000;")
             cur.execute(
                 """
                 CREATE TABLE IF NOT EXISTS benchmark_runs (
