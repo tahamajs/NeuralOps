@@ -102,6 +102,8 @@ COMPRESSOR_FILE_MAP: dict[str, str] = {
     "res_svd": "residual_svd_compressor",
     "spectral_residual_lora": "residual_svd_compressor",
     "svd": "direct_svd",
+    "hnc_svd": "direct_svd",
+    "hnc_svd_compressor": "direct_svd",
     "svd_llm": "svd_llm_compressor",
 }
 
