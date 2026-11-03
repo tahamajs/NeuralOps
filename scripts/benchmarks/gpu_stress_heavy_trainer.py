@@ -130,9 +130,12 @@ def run_heavy_stress_training(
     accum_steps: int = 1,
     base_lr: float = 5e-4,
     checkpoint_dir: str = "results/checkpoints",
+    device: str = "cuda",
 ) -> None:
     """Execute high-throughput GPU stress training loop."""
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    device = torch.device(device)
     print("=" * 75)
     print("  [*] NeuralOps Heavy GPU Stress Training & Workload Engine")
     print(f"  Target Device     : {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
@@ -280,6 +283,7 @@ def main() -> int:
     parser.add_argument("--num-heads", type=int, default=12, help="Number of attention heads (default: 12)")
     parser.add_argument("--accum-steps", type=int, default=1, help="Gradient accumulation steps (default: 1)")
     parser.add_argument("--lr", type=float, default=5e-4, help="Peak learning rate (default: 5e-4)")
+    parser.add_argument("--device", default="cuda", help="Execution device; CUDA is required by default")
     args = parser.parse_args()
 
     run_heavy_stress_training(
@@ -291,6 +295,7 @@ def main() -> int:
         num_heads=args.num_heads,
         accum_steps=args.accum_steps,
         base_lr=args.lr,
+        device=args.device,
     )
     return 0
 

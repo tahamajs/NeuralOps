@@ -131,7 +131,9 @@ def run_delta_healing(
     seq_len: int = 64,
     output_json: str = "results/delta_healing_result.json",
 ) -> dict[str, Any]:
-    device = torch.device(device_str if torch.cuda.is_available() else "cpu")
+    if "cuda" in device_str and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    device = torch.device(device_str)
     logger.info(f"=== COMMENCING DEDICATED DELTA HEALING: {module_name} ON {device} ===")
 
     # 1. Load Baseline Reference Results

@@ -17,7 +17,9 @@ bash scripts/submit_gpu.sh --screen --name benchmark_suite \
 ```
 
 `lib/neuralops_env.sh` is the shared environment bootstrap. Set
-`NEURALOPS_PYTHON` when the interpreter is not `.venv/bin/python`.
+`NEURALOPS_PYTHON` or `NEURALOPS_ENV_PREFIX` when the interpreter is not
+`.venv/bin/python`. On HPC, set `NEURALOPS_CUDA_HOME` and
+`NEURALOPS_NVIDIA_LIB_ROOT` instead of editing each runner separately.
 
 Operational helpers:
 

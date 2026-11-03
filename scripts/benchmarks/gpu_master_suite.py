@@ -269,12 +269,24 @@ def benchmark_single_compressor(
         if compressed_model is None or not hasattr(compressed_model, "parameters"):
             raise RuntimeError(f"Compressor '{name}' produced an invalid compressed model.")
 
-        # Test forward pass with token inputs
+        # Compare the real compressed model with the uncompressed reference.
         x = torch.randint(0, 100, (1, 8), device=dev)
         with torch.no_grad():
+            reference_out = model(x).last_hidden_state.float()
             out = compressed_model(x).last_hidden_state
         if out.shape != (1, 8, 64):
             raise RuntimeError(f"Output shape mismatch: expected (1, 8, 64), got {tuple(out.shape)}")
+
+        compressed_out = out.float()
+        if not torch.isfinite(compressed_out).all().item():
+            raise RuntimeError("Compressed model produced non-finite output.")
+        residual = compressed_out - reference_out
+        reference_norm = torch.linalg.vector_norm(reference_out)
+        residual_norm = torch.linalg.vector_norm(residual)
+        relative_frob_error = float((residual_norm / reference_norm.clamp_min(torch.finfo(reference_out.dtype).eps)).item())
+        signal_power = torch.sum(reference_out.square())
+        noise_power = torch.sum(residual.square())
+        sqnr_db = float((10.0 * torch.log10(signal_power / noise_power.clamp_min(torch.finfo(reference_out.dtype).eps))).item())
 
         if dev.type == "cuda":
             torch.cuda.synchronize(dev)
@@ -289,8 +301,8 @@ def benchmark_single_compressor(
             "param_reduction_pct": param_reduction,
             "compression_ratio": compression_ratio,
             "compress_latency_ms": compress_latency_ms,
-            "relative_frob_error": 0.05,
-            "sqnr_db": 26.50,
+            "relative_frob_error": relative_frob_error,
+            "sqnr_db": sqnr_db,
             "status": "PASS",
         })
     except Exception as exc:

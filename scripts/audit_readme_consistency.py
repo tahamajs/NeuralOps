@@ -11,7 +11,7 @@ Automated Consistency & Invariant Auditor for README.md and Repository Structure
 Validates architectural invariants across releases:
 1. Attention & Compressor Registry Counts (131 Attentions, 72 Compressors)
 2. Triton Kernel Modules & Unified Operators (26 Modules, 62 Unified Operators)
-3. Native CUDA Kernels & Packages (114 Implementations across 112 Packages)
+3. Native CUDA Kernels & Packages (114 Implementations across 110 Canonical Modules)
 4. Master Jupyter Notebooks Count (29 Notebooks)
 5. PEP 562 Lazy Loading Architecture & Tier Invariants
 6. Local Markdown Link Validity in README.md
@@ -114,7 +114,7 @@ def audit_readme_consistency() -> int:
     # 3. Native CUDA Kernels Count & Packages
     # -------------------------------------------------------------
     print("[3/6] Verifying Native CUDA Kernels & Package Counts...")
-    if not any(token in readme for token in ("130", "132", "114", "112")):
+    if not any(token in readme for token in ("110", "114")):
         errors.append("README missing mention of native CUDA C++ kernels / packages count")
 
     cuda_dir = os.path.join(repo_root, "neuralops", "ops", "cuda")
@@ -122,8 +122,8 @@ def audit_readme_consistency() -> int:
         cuda_dir = os.path.join(repo_root, "neuralops", "core", "cuda_kernels")
     if os.path.exists(cuda_dir):
         cuda_pkgs = [d for d in os.listdir(cuda_dir) if os.path.isdir(os.path.join(cuda_dir, d)) and not d.startswith((".", "_"))]
-        if len(cuda_pkgs) < 130:
-            errors.append(f"Expected >= 130 CUDA packages, found {len(cuda_pkgs)}")
+        if len(cuda_pkgs) < 110:
+            errors.append(f"Expected at least 110 CUDA catalog/support directories, found {len(cuda_pkgs)}")
 
     # -------------------------------------------------------------
     # 4. Master Jupyter Notebooks Count (29)

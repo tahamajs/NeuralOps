@@ -51,6 +51,7 @@ def main() -> None:
     parser.add_argument("--target_layer", type=int, default=14, help="Layer index to transplant (default: 14)")
     parser.add_argument("--target_attention", type=str, default="chunk_gla", help="Target attention mechanism")
     parser.add_argument("--heal_steps", type=int, default=10, help="Number of micro-healing steps")
+    parser.add_argument("--device", default="cuda:0", help="Execution device; CUDA is required by default")
     args = parser.parse_args()
 
     default_paths = [
@@ -67,7 +68,9 @@ def main() -> None:
         if not model_path:
             model_path = "Qwen/Qwen2.5-7B-Instruct"
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if args.device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    device = torch.device(args.device)
     print("=== NeuralOps Surgery: Qwen2.5-7B-Instruct Transplant & Heal ===")
     print(f"Model Path: {model_path}")
     print(f"Device: {device}")
