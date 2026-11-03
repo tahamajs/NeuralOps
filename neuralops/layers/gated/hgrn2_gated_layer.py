@@ -39,6 +39,15 @@ except Exception as _e:
     hgrn2_scan_triton = None
     HAS_TRITON_HGRN2 = False
 
+try:
+    from neuralops.ops.cuda.hgrn2_scan.hgrn2_autograd import hgrn2_scan as hgrn2_scan_cuda
+
+    HAS_CUDA_HGRN2 = True
+except Exception as _e:
+    logger.debug("HGRN2: CUDA scan unavailable: %s", _e)
+    hgrn2_scan_cuda = None
+    HAS_CUDA_HGRN2 = False
+
 
 class HGRN2CacheState:
     """Lightweight cache container for HGRN2Layer."""
@@ -511,15 +520,26 @@ class HGRN2Layer(BaseAttention):
 
         # Non-causal bidirectional fast path: check Level 1 CUDA / Level 2 Triton fused scan
         if initial_state is None and f.is_cuda:
-            try:
-                from neuralops.ops.cuda.hgrn2_scan.hgrn2_autograd import hgrn2_scan as _cuda_hgrn2_scan
-                # Fused bidirectional scan combines forward and backward passes directly
-                f_4d = f.unsqueeze(1)
-                iv_4d = iv.unsqueeze(1)
-                fused_out = _cuda_hgrn2_scan(iv_4d, f_4d).squeeze(1)
-                return fused_out, None, fused_out[:, -1]
-            except Exception as exc:
-                logger.debug("HGRN2 fused bidirectional scan fallback: %s", exc)
+            if HAS_CUDA_HGRN2 and hgrn2_scan_cuda is not None:
+                try:
+                    # Fused bidirectional scan combines forward and backward passes directly
+                    f_4d = f.unsqueeze(1)
+                    iv_4d = iv.unsqueeze(1)
+                    fused_out = hgrn2_scan_cuda(iv_4d, f_4d).squeeze(1)
+                    return fused_out, None, fused_out[:, -1]
+                except Exception as exc:
+                    logger.debug("HGRN2 fused bidirectional scan fallback: %s", exc)
+            else:
+                try:
+                    from neuralops.ops.cuda.hgrn2_scan.hgrn2_autograd import hgrn2_scan as _cuda_hgrn2_scan
+
+                    # Fused bidirectional scan combines forward and backward passes directly
+                    f_4d = f.unsqueeze(1)
+                    iv_4d = iv.unsqueeze(1)
+                    fused_out = _cuda_hgrn2_scan(iv_4d, f_4d).squeeze(1)
+                    return fused_out, None, fused_out[:, -1]
+                except Exception as exc:
+                    logger.debug("HGRN2 fused bidirectional scan fallback: %s", exc)
 
         h_fwd, h_last = self._scan_direction(f, iv, initial_state=initial_state)
         f_rev = torch.flip(f, dims=[1])

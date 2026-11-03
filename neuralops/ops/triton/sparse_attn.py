@@ -245,10 +245,17 @@ if HAS_TRITON and tl is not None:
                 v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
 
                 s = tl.dot(q, tl.trans(k)) * sm_scale
-                cond = (offs_q[:, None] >= offs_k[None, :]) if IS_CAUSAL else True
-                s = tl.where(cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
-                p = tl.math.exp2(1.44269504 * (s - m_prev[:, None])) / denom
-                p = tl.where(cond & mask_q[:, None] & mask_k[None, :], p, 0.0)
+                is_interior = (k_start + BLOCK_SIZE <= N_K) & (q_start + BLOCK_SIZE <= N_Q)
+                if IS_CAUSAL:
+                    is_interior = is_interior & (k_blk_idx < q_blk_idx)
+
+                if not is_interior:
+                    cond = (offs_q[:, None] >= offs_k[None, :]) if IS_CAUSAL else True
+                    s = tl.where(cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                    p = tl.math.exp2(1.44269504 * (s - m_prev[:, None])) / denom
+                    p = tl.where(cond & mask_q[:, None] & mask_k[None, :], p, 0.0)
+                else:
+                    p = tl.math.exp2(1.44269504 * (s - m_prev[:, None])) / denom
 
                 dv = tl.dot(tl.trans(p.to(do.dtype)), do)
                 dv_ptrs = dv_base + (offs_k[:, None] * stride_dvn + offs_d[None, :] * stride_dvd)
