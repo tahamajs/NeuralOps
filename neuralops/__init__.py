@@ -15,6 +15,9 @@ import importlib
 import importlib.util
 import sys
 
+from neuralops.core._compat_importer import install_compatibility_interceptor
+install_compatibility_interceptor()
+
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
