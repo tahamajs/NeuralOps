@@ -59,12 +59,21 @@ try:
     import triton
 except (ImportError, ModuleNotFoundError):
     triton_mock = types.ModuleType("triton")
+    triton_mock.__version__ = "2.0.0"
     triton_mock.jit = lambda f: f
     triton_mock.autotune = lambda *a, **k: (lambda f: f)
     triton_mock.Config = lambda *a, **k: None
     triton_mock.heuristics = lambda *a, **k: (lambda f: f)
     sys.modules["triton"] = triton_mock
-    sys.modules["triton.language"] = types.ModuleType("triton.language")
+
+    triton_lang = types.ModuleType("triton.language")
+    triton_lang.constexpr = int
+    triton_lang.int32 = torch.int32
+    triton_lang.float32 = torch.float32
+    triton_lang.float16 = torch.float16
+    triton_lang.bfloat16 = torch.bfloat16
+    sys.modules["triton.language"] = triton_lang
+    triton_mock.language = triton_lang
 
 import torch
 import torch.nn as nn

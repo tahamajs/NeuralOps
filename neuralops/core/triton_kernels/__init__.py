@@ -13,11 +13,19 @@ from typing import Any
 import sys
 
 
+HAS_TRITON = True
+
+
 def __getattr__(name: str) -> Any:
+    if name == "HAS_TRITON":
+        return True
+    if name == "fast_linear_attention":
+        from neuralops.ops.triton.linear_attn import linear_attn
+        return linear_attn
     import neuralops.ops.triton as _ops_triton
     return getattr(_ops_triton, name)
 
 
 def __dir__() -> list[str]:
     import neuralops.ops.triton as _ops_triton
-    return list(_ops_triton.__dir__())
+    return list(_ops_triton.__dir__()) + ["HAS_TRITON", "fast_linear_attention"]
