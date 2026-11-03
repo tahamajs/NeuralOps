@@ -352,6 +352,7 @@ class MicroChunkedShadowTwinDistiller:
         attention_mask: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
         student_recurrent_state: Optional[Any] = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         """
         Executes a single zero-OOM distillation step over the input sequence.
@@ -377,16 +378,23 @@ class MicroChunkedShadowTwinDistiller:
             chunk_ids = input_ids[:, start:end]
             chunk_mask = attention_mask[:, start:end] if attention_mask is not None else None
 
+            extra_chunk_kwargs: Dict[str, Any] = {}
+            for k, v in kwargs.items():
+                if isinstance(v, torch.Tensor) and v.dim() >= 2 and v.shape[1] == seq_len:
+                    extra_chunk_kwargs[k] = v[:, start:end]
+                else:
+                    extra_chunk_kwargs[k] = v
+
             # Teacher forward pass under no_grad (Phase 028, 030)
             with torch.no_grad():
-                t_kwargs: Dict[str, Any] = {"output_hidden_states": True}
+                t_kwargs: Dict[str, Any] = {"output_hidden_states": True, **extra_chunk_kwargs}
                 if chunk_mask is not None:
                     t_kwargs["attention_mask"] = chunk_mask
                 t_out = self.teacher(chunk_ids, **t_kwargs)
                 t_rep = self._extract_hidden_representation(t_out).detach()
 
             # Student forward pass with gradient tracking (Phase 032)
-            s_kwargs: Dict[str, Any] = {"output_hidden_states": True}
+            s_kwargs: Dict[str, Any] = {"output_hidden_states": True, **extra_chunk_kwargs}
             if chunk_mask is not None:
                 s_kwargs["attention_mask"] = chunk_mask
             if curr_student_state is not None:

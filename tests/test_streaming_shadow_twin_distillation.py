@@ -631,24 +631,30 @@ def test_phase_038_physical_hardware_memory_ceiling_gpu() -> None:
 
     b, t, d = 128, 1024, 1024
 
-    class BenchmarkLayer(nn.Module):
-        def __init__(self, hidden_dim: int) -> None:
+    class Benchmark12LayerTransformer(nn.Module):
+        def __init__(self, hidden_dim: int, num_layers: int = 12) -> None:
             super().__init__()
-            self.linear = nn.Linear(hidden_dim, hidden_dim)
+            self.layers = nn.ModuleList([nn.Linear(hidden_dim, hidden_dim) for _ in range(num_layers)])
+            self.hidden_dim = hidden_dim
 
         def forward(self, x: torch.Tensor, output_hidden_states: bool = False, **kwargs: Any) -> Any:
-            h = self.linear(x)
+            h = x
+            hiddens = []
+            for layer in self.layers:
+                h = layer(h)
+                if output_hidden_states:
+                    hiddens.append(h)
             if output_hidden_states:
                 class Out:
                     pass
                 res = Out()
-                res.hidden_states = [h]
+                res.hidden_states = hiddens
                 res.logits = h
                 return res
             return h
 
-    teacher = BenchmarkLayer(d).to(device)
-    student = BenchmarkLayer(d).to(device)
+    teacher = Benchmark12LayerTransformer(d, num_layers=12).to(device)
+    student = Benchmark12LayerTransformer(d, num_layers=12).to(device)
 
     distiller = MicroChunkedShadowTwinDistiller(
         teacher=teacher,
@@ -658,9 +664,14 @@ def test_phase_038_physical_hardware_memory_ceiling_gpu() -> None:
         device=device,
     )
 
-    dummy_ids = torch.randn(b, t, d, device=device)
-    res = distiller.step(dummy_ids)
-    res["loss"].backward()
+    optimizer = torch.optim.SGD(student.parameters(), lr=1e-3)
+
+    for _ in range(5):
+        dummy_ids = torch.randn(b, t, d, device=device)
+        optimizer.zero_grad()
+        res = distiller.step(dummy_ids)
+        res["loss"].backward()
+        optimizer.step()
 
     peak_bytes = torch.cuda.max_memory_allocated()
     peak_gb = peak_bytes / (1024 ** 3)
