@@ -245,3 +245,109 @@ void moe_fused_dispatch_cuda(
 
     C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
+
+template<typename scalar_t>
+__launch_bounds__(128)
+__global__ void moe_topk_routing_kernel(
+    scalar_t* __restrict__ routing_weights,
+    int32_t* __restrict__ topk_indices,
+    const scalar_t* __restrict__ gate_logits,
+    const int num_tokens,
+    const int num_experts,
+    const int top_k
+) {
+    const int tok_idx = blockIdx.x * blockDim.y + threadIdx.y;
+    const int lane = threadIdx.x;
+
+    if (tok_idx >= num_tokens) return;
+
+    float val = -1e30f;
+    int idx = 0;
+
+    const scalar_t* g_row = gate_logits + tok_idx * num_experts;
+    if (lane < num_experts) {
+        val = neuralops::cuda::to_float(g_row[lane]);
+        idx = lane;
+    }
+
+    for (int e = lane + 32; e < num_experts; e += 32) {
+        float cand_val = neuralops::cuda::to_float(g_row[e]);
+        if (cand_val > val) {
+            val = cand_val;
+            idx = e;
+        }
+    }
+
+    #pragma unroll
+    for (int size = 2; size <= 32; size *= 2) {
+        #pragma unroll
+        for (int stride = size / 2; stride > 0; stride /= 2) {
+            float other_val = __shfl_xor_sync(0xffffffff, val, stride);
+            int other_idx = __shfl_xor_sync(0xffffffff, idx, stride);
+            bool dir = ((lane & size) == 0);
+            bool swap = dir ? (val < other_val) : (val > other_val);
+            if (swap) {
+                val = other_val;
+                idx = other_idx;
+            }
+        }
+    }
+
+    float max_val = __shfl_sync(0xffffffff, val, 0);
+    float exp_val = (lane < top_k) ? expf(val - max_val) : 0.0f;
+
+    float sum_exp = exp_val;
+    #pragma unroll
+    for (int offset = 16; offset > 0; offset /= 2) {
+        sum_exp += __shfl_down_sync(0xffffffff, sum_exp, offset);
+    }
+    sum_exp = __shfl_sync(0xffffffff, sum_exp, 0);
+    float inv_sum = 1.0f / (sum_exp > 0.0f ? sum_exp : 1.0f);
+
+    if (lane < top_k) {
+        routing_weights[tok_idx * top_k + lane] = neuralops::cuda::from_float<scalar_t>(exp_val * inv_sum);
+        topk_indices[tok_idx * top_k + lane] = idx;
+    }
+}
+
+void moe_topk_routing_cuda(
+    torch::Tensor& routing_weights,
+    torch::Tensor& topk_indices,
+    const torch::Tensor& gate_logits,
+    int num_tokens,
+    int num_experts,
+    int top_k
+) {
+    CHECK_INPUT(routing_weights);
+    CHECK_INPUT(topk_indices);
+    CHECK_INPUT(gate_logits);
+
+    TORCH_CHECK(top_k <= 32, "moe_topk_routing_cuda: top_k=", top_k, " exceeds warp width");
+
+    if (num_tokens <= 0 || top_k <= 0 || num_experts <= 0) {
+        return;
+    }
+
+    dim3 block(32, 4);
+    dim3 grid((num_tokens + 3) / 4);
+    cudaStream_t stream = c10::cuda::getCurrentCUDAStream().stream();
+
+    AT_DISPATCH_FLOATING_TYPES_AND2(
+        at::ScalarType::Half,
+        at::ScalarType::BFloat16,
+        gate_logits.scalar_type(),
+        "moe_topk_routing_cuda",
+        ([&] {
+            moe_topk_routing_kernel<scalar_t><<<grid, block, 0, stream>>>(
+                routing_weights.data_ptr<scalar_t>(),
+                topk_indices.data_ptr<int32_t>(),
+                gate_logits.data_ptr<scalar_t>(),
+                num_tokens,
+                num_experts,
+                top_k
+            );
+        })
+    );
+
+    C10_CUDA_KERNEL_LAUNCH_CHECK();
+}
