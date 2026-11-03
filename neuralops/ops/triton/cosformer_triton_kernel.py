@@ -534,7 +534,7 @@ def triton_cosformer_linear_attention(
 ) -> torch.Tensor:
     B, H, L, D = q.shape
 
-    if not HAS_TRITON or not q.is_cuda or D > 128:
+    if not HAS_TRITON or not q.is_cuda or D > 128 or not hasattr(_cosformer_fwd_kernel, "__getitem__"):
         return triton_cosformer_linear_attention_pytorch_ref(q, k, v, is_causal=is_causal)
 
     out = torch.empty_like(v)
