@@ -524,18 +524,47 @@ class PADReAttention(BaseAttention):
             v = repeat_kv(v, self.num_heads // self.num_kv_heads)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
-        invalid_mask = torch.zeros(B, 1, N, N, device=scores.device, dtype=torch.bool)
+        invalid_mask = None
+        has_invalid = False
         if attention_mask is not None:
-            valid_tok = get_token_valid_mask(attention_mask, B, N, scores.device)
+            valid_tok = get_token_valid_mask(attention_mask, B, N, q.device)
             invalid_pad = ~valid_tok.unsqueeze(1).unsqueeze(2)
-            invalid_mask = invalid_mask | invalid_pad
+            invalid_mask = invalid_pad
+            has_invalid = True
 
         if self.is_decoder:
-            causal_mask = torch.tril(torch.ones(N, N, device=scores.device, dtype=torch.bool))
+            causal_mask = torch.tril(torch.ones(N, N, device=q.device, dtype=torch.bool))
             invalid_causal = ~causal_mask.unsqueeze(0).unsqueeze(0)
-            invalid_mask = invalid_mask | invalid_causal
+            invalid_mask = invalid_causal if invalid_mask is None else (invalid_mask | invalid_causal)
+            has_invalid = True
+
+        can_use_fused = (
+            not output_attentions
+            and head_mask is None
+            and not self.training
+            and q.is_cuda
+            and not has_invalid
+            and self.order in (2, 4)
+        )
+
+        if can_use_fused:
+            try:
+                from neuralops.ops.triton.sparse_attn import fused_padre_polynomial_attn_triton
+
+                context = fused_padre_polynomial_attn_triton(
+                    q, k, v, scale=scale, order=self.order, temperature=self.temperature
+                )
+                context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+                output = context if self.is_nested_encoder else self.out_proj(context)
+                return (output, None)
+            except Exception:
+                pass
+
+        scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
+
+        if invalid_mask is None:
+            invalid_mask = torch.zeros(B, 1, N, N, device=scores.device, dtype=torch.bool)
 
         from neuralops.ops.triton.sparse_attn import fused_padre_polynomial_attn_triton
 
