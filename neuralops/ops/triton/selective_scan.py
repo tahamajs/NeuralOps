@@ -58,6 +58,7 @@ def _selective_scan_fwd_kernel(
     N_STATE: tl.constexpr,
     HAS_D: tl.constexpr,
     DELTA_SOFTPLUS: tl.constexpr,
+    SAVE_WORKSPACE: tl.constexpr = True,
 ):
     pid_b = tl.program_id(0)
     pid_d = tl.program_id(1)
@@ -95,14 +96,15 @@ def _selective_scan_fwd_kernel(
         input_term = delta_val * u_val * b_val
         h_state = decay * h_state + input_term
 
-        h_ptrs = (
-            h_workspace_ptr
-            + pid_b * stride_hb
-            + pid_d * stride_hd
-            + l * stride_hl
-            + n_offsets * stride_hn
-        )
-        tl.store(h_ptrs, h_state)
+        if SAVE_WORKSPACE:
+            h_ptrs = (
+                h_workspace_ptr
+                + pid_b * stride_hb
+                + pid_d * stride_hd
+                + l * stride_hl
+                + n_offsets * stride_hn
+            )
+            tl.store(h_ptrs, h_state)
 
         y_val = tl.sum(h_state * c_val) + d_val * u_val
 
@@ -478,7 +480,49 @@ def selective_scan_fn(
         suitable, _ = check_triton_suitability(u_in, "selective_scan", head_dim=None, seq_len=u_in.shape[1], supports_backward=True)
 
     if suitable:
-        out = TritonSelectiveScanFunction.apply(u_in, delta_in, A, B_in, C_in, D, delta_softplus)
+        if not torch.is_grad_enabled() and not u_in.requires_grad and not delta_in.requires_grad and not A.requires_grad and not B_in.requires_grad and not C_in.requires_grad:
+            B_size, L_size, D_dim = u_in.shape
+            N_state = A.shape[1]
+            out = torch.empty_like(u_in)
+            dummy_workspace = out  # Zero allocation for h_workspace
+            grid = (B_size, D_dim)
+            _selective_scan_fwd_kernel[grid](
+                u_in,
+                delta_in,
+                A,
+                B_in,
+                C_in,
+                D if D is not None else u_in,
+                out,
+                dummy_workspace,
+                u_in.stride(0),
+                u_in.stride(1),
+                u_in.stride(2),
+                delta_in.stride(0),
+                delta_in.stride(1),
+                delta_in.stride(2),
+                A.stride(0),
+                A.stride(1),
+                B_in.stride(0),
+                B_in.stride(1),
+                B_in.stride(2),
+                C_in.stride(0),
+                C_in.stride(1),
+                C_in.stride(2),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
+                0, 0, 0, 0,
+                B_size,
+                L_size,
+                D_dim,
+                N_STATE=N_state,
+                HAS_D=(D is not None),
+                DELTA_SOFTPLUS=delta_softplus,
+                SAVE_WORKSPACE=False,
+            )
+        else:
+            out = TritonSelectiveScanFunction.apply(u_in, delta_in, A, B_in, C_in, D, delta_softplus)
     else:
         out = selective_scan_ref(u_in, delta_in, A, B_in, C_in, D, delta_softplus)
 

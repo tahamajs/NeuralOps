@@ -181,14 +181,25 @@ if HAS_TRITON and tl is not None:
         num_k_blocks = tl.cdiv(end_col - start_col, BLOCK_N)
 
         for j in range(num_k_blocks):
-            offs_n = start_col + j * BLOCK_N + tl.arange(0, BLOCK_N)
+            col_start = start_col + j * BLOCK_N
+            col_end = col_start + BLOCK_N
+            offs_n = col_start + tl.arange(0, BLOCK_N)
             k_ptrs = K + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
             k = tl.load(k_ptrs, mask=offs_n[None, :] < N, other=0.0)
 
             scores = tl.dot(q, k) * sm_scale
-            dist = offs_m[:, None] - offs_n[None, :]
-            mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
-            scores = tl.where(mask_window, scores, -1e4)
+
+            is_interior = (
+                (col_end <= N) &
+                (offs_m_max < N) &
+                (col_end <= offs_m_min + 1) &
+                (col_start >= offs_m_max - WINDOW + 1)
+            )
+
+            if not is_interior:
+                dist = offs_m[:, None] - offs_n[None, :]
+                mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
+                scores = tl.where(mask_window, scores, -1e4)
 
             m_curr = tl.maximum(m_i, tl.max(scores, 1))
             alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
@@ -199,18 +210,31 @@ if HAS_TRITON and tl is not None:
         dq = tl.zeros([BLOCK_M, BLOCK_D], dtype=tl.float32)
 
         for j in range(num_k_blocks):
-            offs_n = start_col + j * BLOCK_N + tl.arange(0, BLOCK_N)
+            col_start = start_col + j * BLOCK_N
+            col_end = col_start + BLOCK_N
+            offs_n = col_start + tl.arange(0, BLOCK_N)
             k_ptrs = K + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
             v_ptrs = V + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
             k = tl.load(k_ptrs, mask=offs_n[:, None] < N, other=0.0)
             v = tl.load(v_ptrs, mask=offs_n[:, None] < N, other=0.0)
 
             scores = tl.dot(q, tl.trans(k)) * sm_scale
-            dist = offs_m[:, None] - offs_n[None, :]
-            mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
-            scores = tl.where(mask_window, scores, -1e4)
-            p = tl.math.exp2(1.44269504 * (scores - m_i[:, None])) / tl.maximum(l_i[:, None], 1e-6)
-            p = tl.where(mask_window, p, 0.0)
+
+            is_interior = (
+                (col_end <= N) &
+                (offs_m_max < N) &
+                (col_end <= offs_m_min + 1) &
+                (col_start >= offs_m_max - WINDOW + 1)
+            )
+
+            if not is_interior:
+                dist = offs_m[:, None] - offs_n[None, :]
+                mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
+                scores = tl.where(mask_window, scores, -1e4)
+                p = tl.math.exp2(1.44269504 * (scores - m_i[:, None])) / tl.maximum(l_i[:, None], 1e-6)
+                p = tl.where(mask_window, p, 0.0)
+            else:
+                p = tl.math.exp2(1.44269504 * (scores - m_i[:, None])) / tl.maximum(l_i[:, None], 1e-6)
 
             dp = tl.dot(do, tl.trans(v))
             ds = p * (dp - tl.sum(p * dp, 1)[:, None]) * sm_scale
@@ -729,14 +753,25 @@ if HAS_TRITON and tl is not None:
         num_k_blocks = tl.cdiv(end_col - start_col, BLOCK_N)
 
         for j in range(num_k_blocks):
-            offs_n = start_col + j * BLOCK_N + tl.arange(0, BLOCK_N)
+            col_start = start_col + j * BLOCK_N
+            col_end = col_start + BLOCK_N
+            offs_n = col_start + tl.arange(0, BLOCK_N)
             k_ptrs = K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
             k = tl.load(k_ptrs, mask=offs_n[None, :] < N, other=0.0)
 
             scores = tl.dot(q, k) * sm_scale
-            dist = offs_m[:, None] - offs_n[None, :]
-            mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
-            scores = tl.where(mask_window, scores, -1e4)
+
+            is_interior = (
+                (col_end <= N) &
+                (offs_m_max < N) &
+                (col_end <= offs_m_min + 1) &
+                (col_start >= offs_m_max - WINDOW + 1)
+            )
+
+            if not is_interior:
+                dist = offs_m[:, None] - offs_n[None, :]
+                mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
+                scores = tl.where(mask_window, scores, -1e4)
 
             m_curr = tl.maximum(m_i, tl.max(scores, 1))
             alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))

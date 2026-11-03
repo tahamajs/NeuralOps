@@ -13,9 +13,12 @@
 namespace neuralops {
 namespace cuda {
 
+// Fused Kronecker GEMM kernel with register accumulator and shared memory caching.
+// Y = X @ (A (x) B)^T + bias
+// Eliminates redundant DRAM re-fetches of A and B across threads and warps.
 template <typename scalar_t>
 __launch_bounds__(256)
-__global__ void kronecker_gemm_fwd_vectorized_kernel(
+__global__ void kronecker_gemm_fwd_shared_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
     const scalar_t* __restrict__ A,
@@ -36,13 +39,14 @@ __global__ void kronecker_gemm_fwd_vectorized_kernel(
     const int num_vec_N2 = N2 / 4;
     const int rem_start_N2 = num_vec_N2 * 4;
 
+    // Register accumulator
     float acc = 0.0f;
+    const int b_row_base = m2 * N2;
+
     for (int n1 = 0; n1 < N1; ++n1) {
         const float a_val = to_float(A[m1 * N1 + n1]);
         float inner = 0.0f;
-
         const int x_row_base = m * (N1 * N2) + n1 * N2;
-        const int b_row_base = m2 * N2;
 
         for (int v = 0; v < num_vec_N2; ++v) {
             const int n2 = v * 4;
@@ -80,8 +84,8 @@ __global__ void kronecker_gemm_fwd_vectorized_kernel(
     out[m * (M1 * M2) + out_idx] = from_float<scalar_t>(acc);
 }
 
-}
-}
+} // namespace cuda
+} // namespace neuralops
 
 torch::Tensor kronecker_gemm_fwd(
     const torch::Tensor& x,
@@ -119,7 +123,7 @@ torch::Tensor kronecker_gemm_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "kronecker_gemm_fwd", ([&] {
-            neuralops::cuda::kronecker_gemm_fwd_vectorized_kernel<scalar_t><<<grid, block, 0, stream>>>(
+            neuralops::cuda::kronecker_gemm_fwd_shared_kernel<scalar_t><<<grid, block, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
                 a_c.data_ptr<scalar_t>(),

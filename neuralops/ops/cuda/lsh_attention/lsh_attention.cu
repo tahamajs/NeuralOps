@@ -26,16 +26,32 @@ __global__ void lsh_hash_kernel(
 
     const float* x_l = x + (bh * L + l) * D;
 
+    // Vectorized 128-bit float4 loads and bitwise hash accumulation
     int bucket = 0;
+    const int d_vec4 = D / 4;
+
     for (int p = 0; p < num_hashes; ++p) {
         float dot = 0.0f;
+        const float* r_p = R + p; // stride in column-major R is num_hashes
+
         #pragma unroll 4
-        for (int d = 0; d < D; ++d) {
-            dot += x_l[d] * R[d * num_hashes + p];
+        for (int v = 0; v < d_vec4; ++v) {
+            float4 xv = reinterpret_cast<const float4*>(x_l)[v];
+            int d_idx = v * 4;
+            dot += xv.x * r_p[(d_idx + 0) * num_hashes]
+                 + xv.y * r_p[(d_idx + 1) * num_hashes]
+                 + xv.z * r_p[(d_idx + 2) * num_hashes]
+                 + xv.w * r_p[(d_idx + 3) * num_hashes];
         }
-        if (dot >= 0.0f) {
-            bucket |= (1 << p);
+
+        // Remainder loop for unaligned tail
+        for (int d = d_vec4 * 4; d < D; ++d) {
+            dot += x_l[d] * r_p[d * num_hashes];
         }
+
+        // Bitwise branchless bucket population
+        int sign_bit = (dot >= 0.0f) ? 1 : 0;
+        bucket |= (sign_bit << p);
     }
 
     hashes[bh * L + l] = bucket;

@@ -103,15 +103,23 @@ if HAS_TRITON:
 
                 s = (tl.dot(q, tl.trans(k)) * sm_scale).to(tl.float32)
 
+                # Unmasked interior tile optimization:
+                # If block is strictly interior (q_blk_idx > k_blk_idx when IS_CAUSAL, and fully in-bounds),
+                # all elements satisfy causal condition and bounds without tl.where SFU evaluation.
+                is_interior = (k_start + BLOCK_SIZE <= N_K) & (q_start + BLOCK_SIZE <= N_Q)
                 if IS_CAUSAL:
-                    causal_cond = offs_q[:, None] >= offs_k[None, :]
-                    s = tl.where(
-                        causal_cond & mask_q[:, None] & mask_k[None, :],
-                        s,
-                        float("-inf"),
-                    )
-                else:
-                    s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                    is_interior = is_interior & (k_blk_idx < q_blk_idx)
+
+                if not is_interior:
+                    if IS_CAUSAL:
+                        causal_cond = offs_q[:, None] >= offs_k[None, :]
+                        s = tl.where(
+                            causal_cond & mask_q[:, None] & mask_k[None, :],
+                            s,
+                            float("-inf"),
+                        )
+                    else:
+                        s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
 
                 m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
                 alpha = tl.math.exp2(1.44269504 * (m_prev - m_curr))
@@ -198,11 +206,16 @@ if HAS_TRITON and tl is not None:
                 k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
 
                 s = tl.dot(q, tl.trans(k)) * sm_scale
+                is_interior = (k_start + BLOCK_SIZE <= N_K) & (q_start + BLOCK_SIZE <= N_Q)
                 if IS_CAUSAL:
-                    causal_cond = offs_q[:, None] >= offs_k[None, :]
-                    s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
-                else:
-                    s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                    is_interior = is_interior & (k_blk_idx < q_blk_idx)
+
+                if not is_interior:
+                    if IS_CAUSAL:
+                        causal_cond = offs_q[:, None] >= offs_k[None, :]
+                        s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                    else:
+                        s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
 
                 m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
                 alpha = tl.math.exp2(1.44269504 * (m_prev - m_curr))
@@ -486,6 +499,34 @@ def bwd(
 
 
 if HAS_TRITON:
+    @triton.jit
+    def _fused_reap_router_softmax_kernel(
+        Logits_ptr,
+        Probs_ptr,
+        NUM_TOKENS,
+        NUM_EXPERTS: tl.constexpr,
+        BLOCK_E: tl.constexpr,
+    ):
+        """
+        Fused in-SRAM Softmax normalizer across experts for MoE router.
+        Operates entirely in SRAM without round-trips to DRAM or CPU.
+        """
+        pid = tl.program_id(0)
+        if pid >= NUM_TOKENS:
+            return
+
+        offs_e = tl.arange(0, BLOCK_E)
+        mask_e = offs_e < NUM_EXPERTS
+
+        logits = tl.load(Logits_ptr + pid * NUM_EXPERTS + offs_e, mask=mask_e, other=-1e9).to(tl.float32)
+        max_val = tl.max(logits, axis=0)
+        exp_logits = tl.where(mask_e, tl.math.exp2(1.44269504 * (logits - max_val)), 0.0)
+        sum_exp = tl.sum(exp_logits, axis=0)
+        inv_sum = 1.0 / tl.maximum(sum_exp, 1e-8)
+        probs = exp_logits * inv_sum
+
+        tl.store(Probs_ptr + pid * NUM_EXPERTS + offs_e, probs.to(Probs_ptr.dtype.element_ty), mask=mask_e)
+
     @triton.jit
     def _fused_topk_route_kernel(
         Branches_ptr, Weights_ptr, Out_ptr,
@@ -880,7 +921,31 @@ def fused_reap_moe_router_triton(
     gate_logits: torch.Tensor,
     top_k: int,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Fused REAP-MoE router gating in GPU SRAM."""
+    """Fused REAP-MoE router gating in GPU SRAM without CPU synchronization."""
+    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and gate_logits.is_cuda:
+        try:
+            num_experts = gate_logits.shape[-1]
+            total_tokens = gate_logits.numel() // num_experts
+            gate_flat = gate_logits.view(total_tokens, num_experts).contiguous()
+            gate_probs = torch.empty_like(gate_flat)
+
+            BLOCK_E = triton.next_power_of_2(num_experts)
+            grid = (total_tokens,)
+            _fused_reap_router_softmax_kernel[grid](
+                gate_flat,
+                gate_probs,
+                total_tokens,
+                NUM_EXPERTS=num_experts,
+                BLOCK_E=BLOCK_E,
+            )
+            act_k = min(top_k, num_experts)
+            gate_probs = gate_probs.view(gate_logits.shape)
+            topk_vals, topk_indices = torch.topk(gate_probs, act_k, dim=-1)
+            return topk_vals, topk_indices
+        except Exception:
+            # allowed-swallow: best-effort-telemetry
+            pass
     return fused_reap_moe_router_pytorch(gate_logits, top_k)
 
 

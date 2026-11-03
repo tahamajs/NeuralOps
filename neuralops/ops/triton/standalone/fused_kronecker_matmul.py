@@ -25,6 +25,7 @@ from neuralops.ops.triton._base import triton, tl, HAS_TRITON
         triton.Config({"BLOCK_M": 16}, num_stages=2, num_warps=2),
         triton.Config({"BLOCK_M": 32}, num_stages=3, num_warps=4),
         triton.Config({"BLOCK_M": 64}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 128}, num_stages=4, num_warps=8),
     ],
     key=["M", "M1", "M2", "N1", "N2"],
 )
