@@ -39,10 +39,12 @@ class SafeTensorsExporter:
         try:
             from safetensors.torch import save_file
             save_file(tensor_dict, str(st_path))
-        except ImportError:
-            # Fallback only if safetensors package is not available
-            torch.save(tensor_dict, str(st_path) + ".pt")
-            st_path = Path(str(st_path) + ".pt")
+        except ImportError as e:
+            raise RuntimeError(
+                f"SafeTensors export requested for '{filename_prefix}' but 'safetensors' package "
+                f"is not installed. Per AGENTS.md §6.1, fallback to fake/unrequested format is banned. "
+                f"Underlying error: {e}"
+            ) from e
 
         manifest = {
             "filename_prefix": filename_prefix,
