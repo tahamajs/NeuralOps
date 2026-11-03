@@ -292,7 +292,9 @@ if HAS_TRITON and tl is not None:
                 v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
 
                 s_tile = tl.dot(q_tile, tl.trans(k_tile), allow_tf32=True) * sm_scale
-                s_tile = tl.where(mask_m[:, None] & mask_n[None, :], s_tile, float("-inf"))
+                is_interior = ((pid_m + 1) * BLOCK_M <= L) & (kv_block_id * BLOCK_SIZE + BLOCK_N <= L)
+                if not is_interior:
+                    s_tile = tl.where(mask_m[:, None] & mask_n[None, :], s_tile, float("-inf"))
 
                 m_ij = tl.maximum(m_i, tl.max(s_tile, axis=1))
                 p = tl.math.exp2(1.44269504 * (s_tile - m_ij[:, None]))
