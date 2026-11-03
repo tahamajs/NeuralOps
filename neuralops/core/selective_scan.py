@@ -238,11 +238,21 @@ def selective_scan(
         except Exception as e:
             logger.warning(
                 "mamba_ssm CUDA selective_scan failed (%s); "
-                "trying Triton selective_scan_fn.",
+                "trying Level 1/2 NeuralOps fallback.",
                 e,
             )
 
+    # Level 1 Native CUDA C++ / Level 2 Triton JIT Dispatch
     if u.is_cuda and z is None and delta_bias is None:
+        try:
+            from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan as _cuda_autograd_scan
+            out_tuple = _cuda_autograd_scan(u, delta, A, B, C, D)
+            if isinstance(out_tuple, tuple):
+                return out_tuple[0]
+            return out_tuple
+        except Exception as exc:
+            logger.warning("NeuralOps CUDA/Triton selective_scan dispatch failed (%s); falling back to Triton/chunked.", exc)
+
         try:
             from neuralops.core.triton_kernels.selective_scan import selective_scan_fn as _triton_scan_fn
             return _triton_scan_fn(u, delta, A, B, C, D=D, delta_softplus=delta_softplus)
