@@ -136,6 +136,14 @@ class DirectSVDCompressor(BaseCompressor):
             _cfg_get(cfg_obj, "target_attention_only", target_attention_only),
         )
 
+        target_ratio = kwargs.get("target_ratio", kwargs.get("ratio", None))
+        if target_ratio is not None:
+            self.target_ratio = float(target_ratio)
+            if "rank" not in kwargs:
+                rank = None
+        else:
+            self.target_ratio = None
+
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
 
@@ -278,7 +286,9 @@ class DirectSVDCompressor(BaseCompressor):
             )
         ref_dim = max(1.0, ref_dim)
 
-        if self.rank_ratio is not None:
+        if getattr(self, "target_ratio", None) is not None:
+            r = int(round(self.target_ratio * (in_f * out_f) / max(1, in_f + out_f)))
+        elif self.rank_ratio is not None:
             r = int(round(min(in_f, out_f) * max(0.01, min(0.99, self.rank_ratio))))
         elif target_r is not None:
             r = int(target_r)
@@ -292,7 +302,7 @@ class DirectSVDCompressor(BaseCompressor):
             default_rank=r,
             comp_config=getattr(self, "cfg", None),
         )
-        if target_r is None and self.rank_ratio is None:
+        if target_r is None and self.rank_ratio is None and getattr(self, "target_ratio", None) is None:
             r = max(self.min_rank, r)
         return max(1, min(r, max_r))
 

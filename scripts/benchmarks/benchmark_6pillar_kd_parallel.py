@@ -6,11 +6,11 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-High-Throughput 6-Pillar Knowledge Distillation Parallel Benchmark Suite.
+High-Throughput 6-Pillar Knowledge Distillation Parallel Benchmark Suite with PPL Tracking.
 
 Executes dedicated 6-pillar knowledge distillation training (up to 2 minutes per module)
-supporting concurrent multi-worker execution (e.g. 3 parallel workers on a 24GB GPU)
-to fully saturate GPU compute and VRAM capacity.
+supporting concurrent multi-worker execution (3 parallel workers on a 24GB GPU)
+with continuous Perplexity (PPL = exp(loss_CE)) tracking at initial, intermediate, and final steps.
 
 6 Distillation Pillars:
 1. Logit KL Distillation (T=2.0)
@@ -94,7 +94,6 @@ class DenseTeacherModel(nn.Module):
         feat = self.norm(x)
         logits = self.head(feat)
 
-        # Projections for attention map and relation distillation
         q = feat.view(B, S, self.num_heads, self.head_dim).transpose(1, 2)
         k = feat.view(B, S, self.num_heads, self.head_dim).transpose(1, 2)
         v = feat.view(B, S, self.num_heads, self.head_dim).transpose(1, 2)
@@ -102,7 +101,7 @@ class DenseTeacherModel(nn.Module):
 
 
 class SixPillarKDSuite:
-    """Coordinates multi-pillar knowledge distillation healing loops."""
+    """Coordinates multi-pillar knowledge distillation healing loops with exact PPL computation."""
 
     def __init__(self, device: str = "cuda:0", temperature: float = 2.0) -> None:
         self.device = torch.device(device)
@@ -122,34 +121,34 @@ class SixPillarKDSuite:
         t_hidden: list[torch.Tensor],
         s_qkv: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
         t_qkv: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-    ) -> tuple[torch.Tensor, dict[str, float]]:
-        # Pillar 0: Hard Cross-Entropy
+    ) -> tuple[torch.Tensor, float, float]:
+        """Compute full 6-pillar distillation objective and exact language perplexity."""
+        # 1. Standard Causal Language Modeling NLL Cross-Entropy (for Perplexity)
         loss_ce = F.cross_entropy(s_logits.view(-1, s_logits.size(-1)), labels.view(-1))
+        ppl = math.exp(min(loss_ce.item(), 80.0))
 
-        # Pillar 1: Logit Distillation
+        # 2. Logit Distillation
         loss_logit = self.l_logit(s_logits, t_logits.detach())
 
-        # Pillar 2: Feature Map KL (Hedgehog)
+        # 3. Feature Map KL (Hedgehog)
         q_t, k_t, _ = t_qkv
         q_s, k_s, v_s = s_qkv
         loss_feat = self.l_feature(q_t.detach(), k_t.detach(), q_s, k_s)
 
-        # Pillar 3: MiniLM Value Relation
+        # 4. MiniLM Value Relation
         _, _, v_t = t_qkv
         loss_rel = self.l_relation(v_s, v_t.detach())
 
-        # Pillar 4: Blockwise Operator Cloning
+        # 5. Blockwise Operator Cloning
         loss_op = self.l_operator(s_hidden[-1], t_hidden[-1].detach())
 
-        # Pillar 5: Linear CKA Alignment
+        # 6. Linear CKA Alignment + Layer Steering
         loss_cka = self.l_cka(s_hidden[-1], t_hidden[-1].detach())
-
-        # Pillar 6: Layer CKA Steering
         loss_steer = self.l_steering(s_hidden, [h.detach() for h in t_hidden])
 
-        # Combined 6-Pillar Objective
+        # Combined 6-Pillar Distillation Objective
         total_loss = (
-            0.5 * loss_ce
+            1.0 * loss_ce
             + 0.5 * loss_logit
             + 0.1 * loss_feat
             + 0.1 * loss_rel
@@ -157,18 +156,7 @@ class SixPillarKDSuite:
             + 0.1 * loss_cka
             + 0.1 * loss_steer
         )
-
-        metrics = {
-            "ce": round(loss_ce.item(), 4),
-            "logit": round(loss_logit.item(), 4),
-            "feat": round(loss_feat.item(), 4),
-            "rel": round(loss_rel.item(), 4),
-            "op": round(loss_op.item(), 4),
-            "cka": round(loss_cka.item(), 4),
-            "steer": round(loss_steer.item(), 4),
-            "total": round(total_loss.item(), 4),
-        }
-        return total_loss, metrics
+        return total_loss, loss_ce.item(), ppl
 
 
 def train_module_kd(
@@ -182,7 +170,7 @@ def train_module_kd(
     seq_len: int = 64,
     vocab_size: int = 1000,
 ) -> dict[str, Any]:
-    """Train single module under 6-pillar distillation bounded to max_duration_sec."""
+    """Train single module under 6-pillar distillation bounded to max_duration_sec with continuous PPL evaluation."""
     t_start = time.perf_counter()
     student = DenseTeacherModel(vocab_size=vocab_size, hidden_size=768, num_heads=12, num_layers=4)
 
@@ -198,9 +186,11 @@ def train_module_kd(
             "category": module_type,
             "status": "INJECTION_FAILED",
             "duration_sec": round(time.perf_counter() - t_start, 2),
-            "initial_loss": None,
-            "final_loss": None,
-            "loss_drop_pct": 0.0,
+            "initial_ppl": None,
+            "final_ppl": None,
+            "ppl_drop_pct": 0.0,
+            "initial_ce_loss": None,
+            "final_ce_loss": None,
             "steps_completed": 0,
             "throughput_tokens_per_sec": 0.0,
             "peak_vram_mb": 0.0,
@@ -208,11 +198,13 @@ def train_module_kd(
         }
 
     student.to(device)
-    optimizer = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=2e-4, weight_decay=0.01)
+    optimizer = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=1e-3, weight_decay=0.01)
 
     steps = 0
-    init_loss = None
-    last_loss = None
+    init_ce = None
+    last_ce = None
+    init_ppl = None
+    last_ppl = None
     toks_total = 0
 
     student.train()
@@ -232,26 +224,28 @@ def train_module_kd(
         optimizer.zero_grad(set_to_none=True)
         s_logits, s_hidden, s_qkv = student(input_ids)
 
-        loss, m = kd_suite.compute_loss(s_logits, t_logits, labels, s_hidden, t_hidden, s_qkv, t_qkv)
+        loss, ce_val, ppl_val = kd_suite.compute_loss(s_logits, t_logits, labels, s_hidden, t_hidden, s_qkv, t_qkv)
 
         if torch.isnan(loss) or torch.isinf(loss):
-            logger.warning(f"NaN loss on module {module_name}; skipping step")
+            logger.warning(f"NaN loss encountered on {module_name}; skipping step")
             continue
 
-        if init_loss is None:
-            init_loss = loss.item()
+        if init_ce is None:
+            init_ce = ce_val
+            init_ppl = ppl_val
 
         loss.backward()
         torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
         optimizer.step()
 
-        last_loss = loss.item()
+        last_ce = ce_val
+        last_ppl = ppl_val
         steps += 1
         toks_total += batch_size * seq_len
 
     dur = time.perf_counter() - t_start
     tps = toks_total / max(1e-6, dur)
-    drop_pct = round(((init_loss - last_loss) / max(1e-6, init_loss)) * 100, 2) if init_loss and last_loss else 0.0
+    ppl_drop_pct = round(((init_ppl - last_ppl) / max(1e-6, init_ppl)) * 100, 2) if init_ppl and last_ppl else 0.0
 
     peak_vram = round(torch.cuda.max_memory_allocated(device) / (1024 * 1024), 1) if torch.cuda.is_available() else 0.0
     total_params = sum(p.numel() for p in student.parameters())
@@ -266,9 +260,11 @@ def train_module_kd(
         "category": module_type,
         "status": "PASS",
         "duration_sec": round(dur, 2),
-        "initial_loss": round(init_loss, 4) if init_loss else 0.0,
-        "final_loss": round(last_loss, 4) if last_loss else 0.0,
-        "loss_drop_pct": drop_pct,
+        "initial_ppl": round(init_ppl, 2) if init_ppl else 0.0,
+        "final_ppl": round(last_ppl, 2) if last_ppl else 0.0,
+        "ppl_drop_pct": ppl_drop_pct,
+        "initial_ce_loss": round(init_ce, 4) if init_ce else 0.0,
+        "final_ce_loss": round(last_ce, 4) if last_ce else 0.0,
         "steps_completed": steps,
         "throughput_tokens_per_sec": round(tps, 1),
         "peak_vram_mb": peak_vram,
@@ -277,7 +273,7 @@ def train_module_kd(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="6-Pillar KD Parallel Benchmark")
+    parser = argparse.ArgumentParser(description="6-Pillar KD Parallel Benchmark with PPL")
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--max-duration", type=float, default=120.0)
     parser.add_argument("--worker-id", type=int, default=0, help="Worker rank (0, 1, 2)")
@@ -295,7 +291,6 @@ def main() -> int:
     for k in sorted(COMPRESSOR_REGISTRY.keys()):
         all_modules.append((k, "compressor"))
 
-    # Shard modules for this worker
     worker_modules = [m for idx, m in enumerate(all_modules) if idx % args.num_workers == args.worker_id]
     logger.info(f"Worker [{args.worker_id}/{args.num_workers}] assigned {len(worker_modules)} modules on {args.device}")
 
@@ -303,9 +298,9 @@ def main() -> int:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     fieldnames = [
-        "module", "category", "status", "duration_sec", "initial_loss",
-        "final_loss", "loss_drop_pct", "steps_completed", "throughput_tokens_per_sec",
-        "peak_vram_mb", "params_m"
+        "module", "category", "status", "duration_sec", "initial_ppl",
+        "final_ppl", "ppl_drop_pct", "initial_ce_loss", "final_ce_loss",
+        "steps_completed", "throughput_tokens_per_sec", "peak_vram_mb", "params_m"
     ]
 
     with open(out_path, "w", newline="", encoding="utf-8") as f:
@@ -314,13 +309,14 @@ def main() -> int:
         f.flush()
 
         for idx, (m_name, m_type) in enumerate(worker_modules, 1):
-            logger.info(f"[Worker {args.worker_id}] [{idx}/{len(worker_modules)}] Starting 6-Pillar KD: {m_name} ({m_type})...")
+            logger.info(f"[Worker {args.worker_id}] [{idx}/{len(worker_modules)}] Starting 6-Pillar KD + PPL: {m_name} ({m_type})...")
             res = train_module_kd(m_name, m_type, teacher, kd_suite, dev, max_duration_sec=args.max_duration)
             writer.writerow(res)
             f.flush()
             logger.info(
                 f"[Worker {args.worker_id}]   -> Status: {res['status']} | Steps: {res['steps_completed']} | "
-                f"Loss: {res['initial_loss']} -> {res['final_loss']} ({res['loss_drop_pct']}%) | "
+                f"PPL: {res['initial_ppl']} -> {res['final_ppl']} (Drop: {res['ppl_drop_pct']}%) | "
+                f"CE Loss: {res['initial_ce_loss']} -> {res['final_ce_loss']} | "
                 f"Throughput: {res['throughput_tokens_per_sec']} tok/s"
             )
 

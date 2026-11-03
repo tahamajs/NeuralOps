@@ -128,3 +128,5 @@ def hgrn2_fused_bwd_scan(x, g):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, g)):
         return _Hgrn2_fused_bwd_scanFunction.apply(x, g)
     return _hgrn2_fused_bwd_scan_dispatch(x, g)
+
+hgrn2_scan = hgrn2_fused_bwd_scan

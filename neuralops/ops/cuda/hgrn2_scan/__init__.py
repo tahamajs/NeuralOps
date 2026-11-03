@@ -12,9 +12,11 @@ HGRN2 Selective Scan Hardware Operators.
 from neuralops.ops.cuda.hgrn2_scan.hgrn2_autograd import (
     hgrn2_fused_bwd_scan,
     hgrn2_fused_bwd_scan_pytorch_ref,
+    hgrn2_scan,
 )
 
 __all__ = [
     "hgrn2_fused_bwd_scan",
+    "hgrn2_scan",
     "hgrn2_fused_bwd_scan_pytorch_ref",
 ]
