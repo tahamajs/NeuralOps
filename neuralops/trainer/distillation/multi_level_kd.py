@@ -212,6 +212,10 @@ class MiniLMValueRelationKDLoss(nn.Module):
         self.eps = eps
 
     def forward(self, v_student: torch.Tensor, v_teacher: torch.Tensor) -> torch.Tensor:
+        if v_student.dim() == 3:
+            v_student = v_student.unsqueeze(1)
+        if v_teacher.dim() == 3:
+            v_teacher = v_teacher.unsqueeze(1)
         Bs, Hs, N, Ds = v_student.shape
         Bt, Ht, _, Dt = v_teacher.shape
 
@@ -421,7 +425,11 @@ class MultiLevelKDTrainer:
             ]
             outputs = model(*batch_inputs)
         elif isinstance(inputs, torch.Tensor):
-            outputs = model(inputs.to(self.device))
+            tensor_input = inputs.to(self.device)
+            if "output_hidden_states" in getattr(model, "forward", {}).__code__.co_varnames:
+                outputs = model(tensor_input, output_hidden_states=True)
+            else:
+                outputs = model(tensor_input)
         else:
             raise TypeError(f"Unsupported batch type: {type(inputs).__name__}")
 
@@ -487,7 +495,7 @@ class MultiLevelKDTrainer:
             s_last = s_hidden[-1].float()
             t_last = t_hidden[-1].float()
             if s_last.shape == t_last.shape:
-                frob_loss = torch.linalg.norm(s_last - t_last, ord="fro") / max(1, s_last.numel())
+                frob_loss = torch.linalg.vector_norm(s_last - t_last) / max(1, s_last.numel())
             else:
                 frob_loss = F.mse_loss(s_last, t_last)
             total_loss = total_loss + self.lambda_frob * frob_loss

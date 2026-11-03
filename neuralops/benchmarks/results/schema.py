@@ -441,8 +441,8 @@ class BenchmarkResult:
                 self.benchmark_suite = str(self.dataset["name"])
 
         if not self.device_type:
-            if isinstance(self.environment, EnvironmentMetadata) and self.environment.device:
-                self.device_type = self.environment.device
+            if isinstance(self.environment, EnvironmentMetadata) and getattr(self.environment, "device", None):
+                self.device_type = getattr(self.environment, "device", "cpu")
             elif isinstance(self.config, dict) and "device" in self.config:
                 self.device_type = str(self.config["device"])
             else:

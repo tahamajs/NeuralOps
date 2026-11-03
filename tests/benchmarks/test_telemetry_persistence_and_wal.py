@@ -193,6 +193,50 @@ def test_safetensors_io_roundtrip():
         assert loaded_meta.get("transplanted_attention") == "fms_scan"
         assert float(loaded_meta.get("retention_score", 0)) == pytest.approx(0.985)
 
+        # Also test with PyTorch tensors if torch is available
+        try:
+            import torch
+            torch_state = {
+                "layer_w": torch.randn(8, 8),
+                "layer_b": torch.zeros(8),
+            }
+            torch_path = Path(tmp_dir) / "torch_model.safetensors"
+            saved_torch = save_surgerized_safetensors(torch_state, torch_path, metadata={"format": "torch"})
+            assert saved_torch.exists()
+            tensors_pt, meta_pt = load_surgerized_safetensors(saved_torch)
+            assert "layer_w" in tensors_pt
+            assert meta_pt.get("format") == "torch"
+        except ImportError:
+            pass
+
+
+def test_saver_sqlite_concurrency():
+    """Test thread-safe concurrent saves to MultiFormatSaver SQLite ledger."""
+    import concurrent.futures
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        saver = MultiFormatSaver(output_dir=tmp_dir)
+
+        def worker(idx: int):
+            res = _build_sample_result(
+                run_id=f"run_thread_{idx}",
+                attn=f"attn_{idx % 4}",
+                status="success" if idx % 2 == 0 else "failed",
+            )
+            saver.save(res)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            list(executor.map(worker, range(20)))
+
+        # Verify all 20 records persisted into SQLite without locking corruption
+        db_file = Path(tmp_dir) / "master_ledger.db"
+        conn = sqlite3.connect(str(db_file))
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM benchmark_runs")
+        total = cur.fetchone()[0]
+        conn.close()
+        assert total == 20
+
 
 def test_dedup_results_ledger():
     with tempfile.TemporaryDirectory() as tmp_dir:
