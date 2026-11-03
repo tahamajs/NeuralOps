@@ -42,6 +42,7 @@ import torch
 
 from neuralops.ops.triton.paged_linear_attn import (
     create_paged_kv_cache,
+    paged_linear_attention,
     paged_linear_attention_decode_step,
     paged_linear_attention_decode_step_pytorch,
     paged_linear_attention_pytorch,
@@ -675,3 +676,48 @@ def test_paged_linear_attention_parity(block_size: int):
 
     max_diff = torch.max(torch.abs(paged_out - dense_ref)).item()
     assert max_diff <= 1e-4, f"Paged attention diverged from dense reference: max_diff={max_diff:.6e}"
+
+
+def test_paged_linear_attention_inference_paged_cache_integration():
+    """
+    Verifies interoperability between paged_linear_attention and neuralops.inference.PagedKVCache.
+    """
+    from neuralops.inference.paged_cache import PagedKVCache
+
+    b, t, h, d = 2, 32, 4, 32
+    block_size = 16
+    paged_cache = PagedKVCache(
+        num_blocks=16,
+        block_size=block_size,
+        num_heads=h,
+        head_dim=d,
+    )
+    for seq_id in range(b):
+        paged_cache.allocate_sequence(seq_id)
+        for _ in range(t):
+            k_tok = torch.randn(h, d)
+            v_tok = torch.randn(h, d)
+            paged_cache.append_token(seq_id, k_tok, v_tok)
+
+    q = torch.randn(b, t, h, d)
+    out = paged_linear_attention(q=q, k_cache=paged_cache, block_size=block_size)
+    assert out.shape == (b, t, h, d)
+    assert not torch.isnan(out).any()
+
+
+def test_sglang_radix_adapter_serving_batcher_integration():
+    """
+    Verifies that SGLangRadixStateAdapter prefix state recovery integrates with serving generation.
+    """
+    adapter = SGLangRadixStateAdapter(max_cached_nodes=100)
+    system_prompt = (101, 2054, 2003)
+    system_state = {0: torch.randn(1, 4, 32, 32)}
+    adapter.cache_prefix_state(system_prompt, system_state)
+
+    # Multi-turn request: Turn 2 shares system_prompt
+    turn2_tokens = system_prompt + (3001, 4002)
+    matched_len, hybrid_cache = adapter.retrieve_prefix_state(turn2_tokens)
+    assert matched_len == len(system_prompt)
+    assert hybrid_cache is not None
+    assert hybrid_cache.get_seq_length(0) == len(system_prompt)
+    assert torch.equal(hybrid_cache.get_recurrent_state(0), system_state[0])

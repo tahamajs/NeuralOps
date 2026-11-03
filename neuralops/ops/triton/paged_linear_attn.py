@@ -43,7 +43,7 @@ Microarchitectural Analysis (SM 8.9 Ada Lovelace / SM 90 Hopper):
 from __future__ import annotations
 
 import logging
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import torch
 
@@ -457,9 +457,9 @@ def paged_linear_attention_decode_step_pytorch(
 
 def paged_linear_attention(
     q: torch.Tensor,
-    k_cache: torch.Tensor,
-    v_cache: torch.Tensor,
-    block_tables: torch.Tensor,
+    k_cache: Any,
+    v_cache: Optional[torch.Tensor] = None,
+    block_tables: Optional[torch.Tensor] = None,
     block_size: int = 16,
     swizzle: bool = False,
 ) -> torch.Tensor:
@@ -470,10 +470,12 @@ def paged_linear_attention(
     Level 2: Triton JIT kernel with swizzled banking.
     Level 3: Vectorized PyTorch reference (universal CPU/MPS fallback).
 
+    Supports raw physical block tensors as well as neuralops.inference.paged_cache.PagedKVCache objects.
+
     Args:
         q: [B, T, H, D] Query tensor.
-        k_cache: [num_blocks, block_size, H, D] Physical block pool for keys.
-        v_cache: [num_blocks, block_size, H, D] Physical block pool for values.
+        k_cache: [num_blocks, block_size, H, D] Physical block pool for keys, or a PagedKVCache instance.
+        v_cache: [num_blocks, block_size, H, D] Physical block pool for values (optional if PagedKVCache passed).
         block_tables: [B, max_num_blocks] Logical-to-physical block table mapping.
         block_size: Tokens per physical page block (e.g. 16, 32, or 64).
         swizzle: Whether XOR shared memory bank swizzling is applied.
@@ -483,13 +485,39 @@ def paged_linear_attention(
     """
     b, t, h, d = q.shape
 
+    # Handle PagedKVCache instance from neuralops.inference.paged_cache
+    if hasattr(k_cache, "key_cache") and hasattr(k_cache, "value_cache"):
+        paged_cache_obj = k_cache
+        k_cache_t = paged_cache_obj.key_cache
+        v_cache_t = paged_cache_obj.value_cache
+        block_size = getattr(paged_cache_obj, "block_size", block_size)
+        if block_tables is None and hasattr(paged_cache_obj, "block_tables"):
+            seq_lists = list(paged_cache_obj.block_tables.values())[:b]
+            max_b = max((len(l) for l in seq_lists), default=1)
+            bt = torch.zeros(b, max_b, dtype=torch.long, device=q.device)
+            for i, l in enumerate(seq_lists):
+                if l:
+                    bt[i, : len(l)] = torch.tensor(l, dtype=torch.long, device=q.device)
+            block_tables_t = bt
+        else:
+            block_tables_t = block_tables
+    else:
+        k_cache_t = k_cache
+        v_cache_t = v_cache
+        block_tables_t = block_tables
+
+    if v_cache_t is None or block_tables_t is None:
+        raise ValueError(
+            "Both v_cache and block_tables must be provided when k_cache is a raw tensor."
+        )
+
     can_use_triton = (
         HAS_TRITON
         and paged_linear_attention_fwd_kernel is not None
         and q.is_cuda
-        and k_cache.is_cuda
-        and v_cache.is_cuda
-        and block_tables.is_cuda
+        and k_cache_t.is_cuda
+        and v_cache_t.is_cuda
+        and block_tables_t.is_cuda
         and (t % block_size == 0)
         and check_triton_suitability(q)
     )
@@ -501,28 +529,28 @@ def paged_linear_attention(
         grid = (b, h, num_chunks)
         paged_linear_attention_fwd_kernel[grid](
             q,
-            k_cache,
-            v_cache,
+            k_cache_t,
+            v_cache_t,
             out,
-            block_tables,
+            block_tables_t,
             q.stride(0),
             q.stride(1),
             q.stride(2),
             q.stride(3),
-            k_cache.stride(0),
-            k_cache.stride(1),
-            k_cache.stride(2),
-            k_cache.stride(3),
-            v_cache.stride(0),
-            v_cache.stride(1),
-            v_cache.stride(2),
-            v_cache.stride(3),
+            k_cache_t.stride(0),
+            k_cache_t.stride(1),
+            k_cache_t.stride(2),
+            k_cache_t.stride(3),
+            v_cache_t.stride(0),
+            v_cache_t.stride(1),
+            v_cache_t.stride(2),
+            v_cache_t.stride(3),
             out.stride(0),
             out.stride(1),
             out.stride(2),
             out.stride(3),
-            block_tables.stride(0),
-            block_tables.stride(1),
+            block_tables_t.stride(0),
+            block_tables_t.stride(1),
             BLOCK_M=block_size,
             BLOCK_N=block_size,
             BLOCK_D=d,
@@ -538,9 +566,9 @@ def paged_linear_attention(
 
     return paged_linear_attention_pytorch(
         q=q,
-        k_cache=k_cache,
-        v_cache=v_cache,
-        block_tables=block_tables,
+        k_cache=k_cache_t,
+        v_cache=v_cache_t,
+        block_tables=block_tables_t,
         block_size=block_size,
         swizzle=swizzle,
     )
