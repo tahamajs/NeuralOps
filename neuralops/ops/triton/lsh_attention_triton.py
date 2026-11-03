@@ -63,10 +63,12 @@ if HAS_TRITON and triton is not None and tl is not None:
         max_score = -1e9
         sum_exp = 0.0
 
-        # First pass: find max score among matching bucket keys
+        # First pass: find max score among matching bucket keys (bitwise XOR matching)
         for n in range(N_k):
             b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
-            match = b_q == b_k
+            # Bitwise matching: identical bucket codes have 0 difference under XOR
+            diff = b_q ^ b_k
+            match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
@@ -85,7 +87,8 @@ if HAS_TRITON and triton is not None and tl is not None:
         acc = tl.zeros((D,), dtype=tl.float32)
         for n in range(N_k):
             b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
-            match = b_q == b_k
+            diff = b_q ^ b_k
+            match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
@@ -149,7 +152,8 @@ if HAS_TRITON and triton is not None and tl is not None:
 
         for n in range(N_k):
             b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
-            match = b_q == b_k
+            diff = b_q ^ b_k
+            match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
@@ -167,7 +171,8 @@ if HAS_TRITON and triton is not None and tl is not None:
         acc = tl.zeros((D,), dtype=tl.float32)
         for n in range(N_k):
             b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
-            match = b_q == b_k
+            diff = b_q ^ b_k
+            match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:

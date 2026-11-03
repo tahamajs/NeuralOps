@@ -50,6 +50,8 @@ if HAS_TRITON and tl is not None:
 
         offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
         offs_d = tl.arange(0, BLOCK_D)
+        offs_m_min = pid_m * BLOCK_M
+        offs_m_max = (pid_m + 1) * BLOCK_M - 1
 
         q_ptrs = Q + i_b * stride_qb + i_h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
         q = tl.load(q_ptrs, mask=offs_m[:, None] < N, other=0.0)
@@ -65,18 +67,37 @@ if HAS_TRITON and tl is not None:
             end_col = tl.minimum(N, ((pid_m + 1) * BLOCK_M) + WINDOW)
         num_k_blocks = tl.cdiv(end_col - start_col, BLOCK_N)
 
+        # Banded tile partitioning: separate interior unmasked tiles from boundary tiles.
+        # For interior tiles fully contained in the window, eliminate tl.where SFU evaluations.
         for j in range(num_k_blocks):
-            offs_n = start_col + j * BLOCK_N + tl.arange(0, BLOCK_N)
+            col_start = start_col + j * BLOCK_N
+            col_end = col_start + BLOCK_N
+            offs_n = col_start + tl.arange(0, BLOCK_N)
             k_ptrs = K + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
             k = tl.load(k_ptrs, mask=offs_n[None, :] < N, other=0.0)
 
             scores = tl.dot(q, k) * (1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32)))
-            dist = offs_m[:, None] - offs_n[None, :]
-            if IS_CAUSAL:
-                mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
-            else:
-                mask_window = (tl.abs(dist) < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
-            scores = tl.where(mask_window, scores, -1e4)
+
+            # Check if current tile is an interior tile strictly inside window and bounds
+            is_interior = (
+                (col_end <= N) &
+                (offs_m_max < N) &
+                (col_end <= offs_m_min + 1) &
+                (col_start >= offs_m_max - WINDOW + 1)
+            ) if IS_CAUSAL else (
+                (col_end <= N) &
+                (offs_m_max < N) &
+                (col_end <= offs_m_min + WINDOW) &
+                (col_start >= offs_m_max - WINDOW + 1)
+            )
+
+            if not is_interior:
+                dist = offs_m[:, None] - offs_n[None, :]
+                if IS_CAUSAL:
+                    mask_window = (dist >= 0) & (dist < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
+                else:
+                    mask_window = (tl.abs(dist) < WINDOW) & (offs_m[:, None] < N) & (offs_n[None, :] < N)
+                scores = tl.where(mask_window, scores, -1e4)
 
             m_curr = tl.maximum(m_i, tl.max(scores, 1))
             alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
@@ -142,6 +163,8 @@ if HAS_TRITON and tl is not None:
 
         offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
         offs_d = tl.arange(0, BLOCK_D)
+        offs_m_min = pid_m * BLOCK_M
+        offs_m_max = (pid_m + 1) * BLOCK_M - 1
 
         q_ptrs = Q + i_b * stride_qb + i_h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
         do_ptrs = DO + i_b * stride_dob + i_h * stride_doh + offs_m[:, None] * stride_don + offs_d[None, :] * stride_dod
@@ -671,6 +694,8 @@ if HAS_TRITON and tl is not None:
 
         offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
         offs_d = tl.arange(0, BLOCK_D)
+        offs_m_min = pid_m * BLOCK_M
+        offs_m_max = (pid_m + 1) * BLOCK_M - 1
         mask_m = offs_m < N
 
         q_ptrs = Q_ptr + i_b * stride_qb + i_h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd

@@ -68,7 +68,9 @@ __global__ void lsh_bucket_attention_kernel(
 
     for (int n = 0; n < L; ++n) {
         int hash_n = kv_hashes[bh_offset_l + n];
-        bool match = (hash_m == hash_n);
+        // Single-cycle hardware POPC (__popc) for bitwise Hamming distance matching
+        // Tokens belong to the same cluster/bucket if bit differences are within tolerance (exact match: popc == 0)
+        bool match = (__popc(static_cast<unsigned int>(hash_m ^ hash_n)) == 0);
         float dot = -1e4f;
         if (match) {
             const float* k_n = k + bh_offset_ld + n * D;
@@ -93,7 +95,7 @@ __global__ void lsh_bucket_attention_kernel(
 
     for (int n = 0; n < L; ++n) {
         int hash_n = kv_hashes[bh_offset_l + n];
-        bool match = (hash_m == hash_n);
+        bool match = (__popc(static_cast<unsigned int>(hash_m ^ hash_n)) == 0);
         float dot = -1e4f;
         if (match) {
             const float* k_n = k + bh_offset_ld + n * D;

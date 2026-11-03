@@ -99,6 +99,147 @@ if HAS_TRITON and tl is not None:
         out_ptrs = OUT_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_d * stride_od
         tl.store(out_ptrs, out.to(OUT_ptr.dtype.element_ty))
 
+    @triton.jit
+    def paged_attention_splitk_stage1_kernel(
+        Q_ptr, K_CACHE_ptr, V_CACHE_ptr, BLOCK_TABLE_ptr, SEQ_LENS_ptr,
+        MidOut_ptr, MidLse_ptr,
+        stride_qb, stride_qh, stride_qd,
+        stride_kblk, stride_kidx, stride_kh, stride_kd,
+        stride_vblk, stride_vidx, stride_vh, stride_vd,
+        stride_bt_b, stride_bt_idx,
+        stride_mb, stride_mh, stride_ms, stride_md,
+        stride_lb, stride_lh, stride_ls,
+        H,
+        NUM_SPLITS: tl.constexpr,
+        BLOCK_SIZE: tl.constexpr,
+        BLOCK_D: tl.constexpr,
+    ):
+        """
+        Stage 1 of Split-K Flash-Decoding for PagedAttention:
+        Partition sequence blocks across NUM_SPLITS CTAs and compute partial (m, l, acc).
+        """
+        pid_s = tl.program_id(0)
+        pid_b = tl.program_id(1)
+        pid_h = tl.program_id(2)
+
+        seq_len = tl.load(SEQ_LENS_ptr + pid_b)
+        if seq_len <= 0:
+            return
+
+        total_blocks = tl.cdiv(seq_len, BLOCK_SIZE)
+        blocks_per_split = tl.cdiv(total_blocks, NUM_SPLITS)
+        start_block = pid_s * blocks_per_split
+        end_block = tl.minimum(start_block + blocks_per_split, total_blocks)
+
+        offs_d = tl.arange(0, BLOCK_D)
+        q_ptrs = Q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd
+        q = tl.load(q_ptrs).to(tl.float32)
+
+        sm_scale = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
+
+        m_i = -1e4
+        l_i = 0.0
+        acc = tl.zeros([BLOCK_D], dtype=tl.float32)
+
+        if start_block < end_block:
+            for i in range(start_block, end_block):
+                phys_block = tl.load(BLOCK_TABLE_ptr + pid_b * stride_bt_b + i * stride_bt_idx)
+
+                offs_tok = i * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
+                mask_tok = offs_tok < seq_len
+
+                k_ptrs = (
+                    K_CACHE_ptr
+                    + phys_block * stride_kblk
+                    + tl.arange(0, BLOCK_SIZE)[:, None] * stride_kidx
+                    + pid_h * stride_kh
+                    + offs_d[None, :] * stride_kd
+                )
+                k = tl.load(k_ptrs, mask=mask_tok[:, None], other=0.0).to(tl.float32)
+
+                scores = tl.sum(q[None, :] * k, axis=1) * sm_scale
+                scores = tl.where(mask_tok, scores, -1e4)
+
+                m_curr = tl.maximum(m_i, tl.max(scores, axis=0))
+                alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
+                p = tl.math.exp2(1.44269504 * (scores - m_curr))
+                l_curr = l_i * alpha + tl.sum(p, axis=0)
+                acc = acc * alpha
+
+                v_ptrs = (
+                    V_CACHE_ptr
+                    + phys_block * stride_vblk
+                    + tl.arange(0, BLOCK_SIZE)[:, None] * stride_vidx
+                    + pid_h * stride_vh
+                    + offs_d[None, :] * stride_vd
+                )
+                v = tl.load(v_ptrs, mask=mask_tok[:, None], other=0.0).to(tl.float32)
+
+                acc += tl.sum(p[:, None] * v, axis=0)
+                m_i = m_curr
+                l_i = l_curr
+
+        out_partial = acc / tl.maximum(l_i, 1e-6)
+        lse_partial = m_i + tl.log(tl.maximum(l_i, 1e-6))
+
+        mid_out_ptrs = MidOut_ptr + pid_b * stride_mb + pid_h * stride_mh + pid_s * stride_ms + offs_d * stride_md
+        tl.store(mid_out_ptrs, out_partial.to(MidOut_ptr.dtype.element_ty))
+
+        mid_lse_ptr = MidLse_ptr + pid_b * stride_lb + pid_h * stride_lh + pid_s * stride_ls
+        tl.store(mid_lse_ptr, lse_partial)
+
+    @triton.jit
+    def paged_attention_splitk_stage2_kernel(
+        MidOut_ptr, MidLse_ptr, SEQ_LENS_ptr, OUT_ptr,
+        stride_mb, stride_mh, stride_ms, stride_md,
+        stride_lb, stride_lh, stride_ls,
+        stride_ob, stride_oh, stride_od,
+        H,
+        NUM_SPLITS: tl.constexpr,
+        BLOCK_D: tl.constexpr,
+        BLOCK_SIZE: tl.constexpr,
+    ):
+        """
+        Stage 2 of Split-K Flash-Decoding for PagedAttention:
+        Tree-reduction over the NUM_SPLITS partial accumulators in SRAM.
+        """
+        pid_b = tl.program_id(0)
+        pid_h = tl.program_id(1)
+
+        seq_len = tl.load(SEQ_LENS_ptr + pid_b)
+        if seq_len <= 0:
+            return
+
+        total_blocks = tl.cdiv(seq_len, BLOCK_SIZE)
+        blocks_per_split = tl.cdiv(total_blocks, NUM_SPLITS)
+        active_splits = tl.minimum(NUM_SPLITS, tl.cdiv(total_blocks, tl.maximum(blocks_per_split, 1)))
+        active_splits = tl.maximum(active_splits, 1)
+
+        offs_s = tl.arange(0, NUM_SPLITS)
+        mask_s = offs_s < active_splits
+
+        lse_ptrs = MidLse_ptr + pid_b * stride_lb + pid_h * stride_lh + offs_s * stride_ls
+        lse_vals = tl.load(lse_ptrs, mask=mask_s, other=-1e4)
+
+        max_lse = tl.max(lse_vals, axis=0)
+        p = tl.where(mask_s, tl.math.exp2(1.44269504 * (lse_vals - max_lse)), 0.0)
+        global_sum = tl.sum(p, axis=0)
+
+        offs_d = tl.arange(0, BLOCK_D)
+        acc = tl.zeros([BLOCK_D], dtype=tl.float32)
+
+        for s in range(NUM_SPLITS):
+            if s < active_splits:
+                w_s = tl.load(MidLse_ptr + pid_b * stride_lb + pid_h * stride_lh + s * stride_ls)
+                weight = tl.math.exp2(1.44269504 * (w_s - max_lse)) / tl.maximum(global_sum, 1e-6)
+
+                mid_ptrs = MidOut_ptr + pid_b * stride_mb + pid_h * stride_mh + s * stride_ms + offs_d * stride_md
+                val_s = tl.load(mid_ptrs).to(tl.float32)
+                acc += weight * val_s
+
+        out_ptrs = OUT_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_d * stride_od
+        tl.store(out_ptrs, acc.to(OUT_ptr.dtype.element_ty))
+
 
 def paged_attention_pytorch(
     q: torch.Tensor,
@@ -164,6 +305,42 @@ def paged_attention_kernel(
                 return paged_attention_pytorch(q, k_cache, v_cache, block_tables, seq_lens, block_size=block_size)
 
             out = torch.empty_like(q)
+            max_seq_len = int(seq_lens.max().item()) if seq_lens.numel() > 0 else 0
+            NUM_SPLITS = 16
+            if max_seq_len > block_size * NUM_SPLITS:
+                mid_out = torch.empty((B, H, NUM_SPLITS, D), dtype=q.dtype, device=q.device)
+                mid_lse = torch.empty((B, H, NUM_SPLITS), dtype=torch.float32, device=q.device)
+                grid_stage1 = (NUM_SPLITS, B, H)
+                num_warps = 4 if D >= 64 else 2
+                paged_attention_splitk_stage1_kernel[grid_stage1](
+                    q, k_cache, v_cache, block_tables, seq_lens,
+                    mid_out, mid_lse,
+                    q.stride(0), q.stride(1), q.stride(2),
+                    k_cache.stride(0), k_cache.stride(1), k_cache.stride(2), k_cache.stride(3),
+                    v_cache.stride(0), v_cache.stride(1), v_cache.stride(2), v_cache.stride(3),
+                    block_tables.stride(0), block_tables.stride(1),
+                    mid_out.stride(0), mid_out.stride(1), mid_out.stride(2), mid_out.stride(3),
+                    mid_lse.stride(0), mid_lse.stride(1), mid_lse.stride(2),
+                    H,
+                    NUM_SPLITS=NUM_SPLITS,
+                    BLOCK_SIZE=block_size,
+                    BLOCK_D=D,
+                    num_warps=num_warps,
+                )
+                grid_stage2 = (B, H)
+                paged_attention_splitk_stage2_kernel[grid_stage2](
+                    mid_out, mid_lse, seq_lens, out,
+                    mid_out.stride(0), mid_out.stride(1), mid_out.stride(2), mid_out.stride(3),
+                    mid_lse.stride(0), mid_lse.stride(1), mid_lse.stride(2),
+                    out.stride(0), out.stride(1), out.stride(2),
+                    H,
+                    NUM_SPLITS=NUM_SPLITS,
+                    BLOCK_D=D,
+                    BLOCK_SIZE=block_size,
+                    num_warps=2,
+                )
+                return out
+
             grid = (B, H)
             num_warps = 4 if D >= 64 else 2
             paged_attention_fwd_kernel[grid](
