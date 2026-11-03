@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -32,10 +33,12 @@ torch.no_grad() contexts, guaranteeing zero gradient leakage and minimal VRAM fo
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from neuralops.surgery.streaming_distill import StreamingCKALoss
 
 try:
     from neuralops.core.triton_kernels.fused_kd import fused_linear_kl_loss
@@ -246,11 +249,25 @@ class BlockwiseOperatorCloningLoss(nn.Module):
 class LinearCKALoss(nn.Module):
     """Centered Kernel Alignment loss for orthogonal-invariant representation matching."""
 
-    def __init__(self, eps: float = 1e-6) -> None:
+    def __init__(
+        self,
+        eps: float = 1e-6,
+        use_streaming: bool = False,
+        chunk_size: int = 128,
+    ) -> None:
         super().__init__()
         self.eps = eps
+        self.use_streaming = use_streaming
+        self.chunk_size = chunk_size
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        if self.use_streaming or (
+            x.dim() >= 2 and x.size(1) > self.chunk_size and x.numel() > 65536
+        ):
+            hidden_dim = x.size(-1)
+            cka_mod = StreamingCKALoss(hidden_dim=hidden_dim, eps=self.eps).to(x.device)
+            return cka_mod(x, y, chunk_size=self.chunk_size)
+
         X = x.view(-1, x.size(-1)).float()
         Y = y.view(-1, y.size(-1)).float()
 
@@ -281,11 +298,23 @@ class SmoothMaxOverLayersCKASteeringLoss(nn.Module):
     Differentiably steers worst-aligned layers towards optimal representation alignment.
     """
 
-    def __init__(self, temperature: float = 0.1, eps: float = 1e-6) -> None:
+    def __init__(
+        self,
+        temperature: float = 0.1,
+        eps: float = 1e-6,
+        use_streaming: bool = False,
+        chunk_size: int = 128,
+    ) -> None:
         super().__init__()
         self.temperature = float(temperature)
         self.eps = float(eps)
-        self.cka_loss_fn = LinearCKALoss(eps=self.eps)
+        self.use_streaming = use_streaming
+        self.chunk_size = chunk_size
+        self.cka_loss_fn = LinearCKALoss(
+            eps=self.eps,
+            use_streaming=use_streaming,
+            chunk_size=chunk_size,
+        )
 
     def forward(
         self,
@@ -310,6 +339,184 @@ class SmoothMaxOverLayersCKASteeringLoss(nn.Module):
         return smooth_max
 
 
+class MultiLevelKDTrainer:
+    """
+    6-Pillar Knowledge Distillation & Post-Surgery Healing Engine.
+
+    Coordinates multi-objective distillation loss between teacher and student backbones:
+        L_{total} = lambda_{KD} * L_{KL} + lambda_{MSE} * L_{MSE} + lambda_{Rel} * L_{MiniLM}
+                  + lambda_{CKA} * L_{CKA} + lambda_{Frob} * L_{Frobenius} + lambda_{Stab} * L_{AttentionStability}
+    """
+
+    def __init__(
+        self,
+        teacher: nn.Module,
+        student: nn.Module,
+        device: Optional[Union[str, torch.device]] = None,
+        temperature: float = 2.0,
+        lambda_kd: float = 1.0,
+        lambda_mse: float = 0.5,
+        lambda_rel: float = 0.1,
+        lambda_cka: float = 0.2,
+        lambda_frob: float = 0.05,
+        lambda_stab: float = 0.01,
+        lambda_feat: float = 0.0,
+        use_streaming_cka: bool = False,
+        chunk_size: int = 128,
+        memory_mode: str = "standard",
+    ) -> None:
+        self.device = (
+            torch.device(device)
+            if device is not None
+            else (
+                next(student.parameters()).device
+                if list(student.parameters())
+                else torch.device("cpu")
+            )
+        )
+        self.teacher = teacher.to(self.device)
+        self.student = student.to(self.device)
+
+        # Teacher invariant: frozen, eval mode
+        self.teacher.eval()
+        for p in self.teacher.parameters():
+            p.requires_grad = False
+
+        self.lambda_kd = float(lambda_kd)
+        self.lambda_mse = float(lambda_mse)
+        self.lambda_rel = float(lambda_rel)
+        self.lambda_cka = float(lambda_cka)
+        self.lambda_frob = float(lambda_frob)
+        self.lambda_stab = float(lambda_stab)
+        self.lambda_feat = float(lambda_feat)
+        self.use_streaming_cka = bool(use_streaming_cka or memory_mode == "streaming_checkpointed")
+        self.chunk_size = int(chunk_size)
+        self.memory_mode = str(memory_mode)
+
+        self.logit_loss_fn = LogitDistillationLoss(temperature=temperature)
+        self.cka_loss_fn = SmoothMaxOverLayersCKASteeringLoss(
+            temperature=0.1,
+            use_streaming=self.use_streaming_cka,
+            chunk_size=self.chunk_size,
+        )
+        self.rel_loss_fn = MiniLMValueRelationKDLoss()
+        self.feature_loss_fn = HedgehogFeatureMapKDLoss(chunk_size=64, temperature=temperature)
+
+    def _extract_logits_and_hidden(
+        self,
+        model: nn.Module,
+        inputs: Any,
+    ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor, ...]]]:
+        """Extracts logits and intermediate hidden states from arbitrary forward output."""
+        if isinstance(inputs, dict):
+            batch_inputs = {
+                k: v.to(self.device) if isinstance(v, torch.Tensor) else v
+                for k, v in inputs.items()
+            }
+            outputs = model(**batch_inputs, output_hidden_states=True) if "output_hidden_states" in getattr(model, "forward", {}).__code__.co_varnames else model(**batch_inputs)
+        elif isinstance(inputs, (tuple, list)):
+            batch_inputs = [
+                v.to(self.device) if isinstance(v, torch.Tensor) else v
+                for v in inputs
+            ]
+            outputs = model(*batch_inputs)
+        elif isinstance(inputs, torch.Tensor):
+            outputs = model(inputs.to(self.device))
+        else:
+            raise TypeError(f"Unsupported batch type: {type(inputs).__name__}")
+
+        logits = None
+        hidden_states = None
+
+        if hasattr(outputs, "logits"):
+            logits = outputs.logits
+        elif isinstance(outputs, torch.Tensor):
+            logits = outputs
+        elif isinstance(outputs, (tuple, list)) and len(outputs) > 0 and isinstance(outputs[0], torch.Tensor):
+            logits = outputs[0]
+
+        if hasattr(outputs, "hidden_states") and outputs.hidden_states is not None:
+            hidden_states = outputs.hidden_states
+        elif isinstance(outputs, (tuple, list)) and len(outputs) > 1 and isinstance(outputs[1], (tuple, list)):
+            hidden_states = outputs[1]
+
+        return logits, hidden_states
+
+    def training_step(self, batch: Any) -> Dict[str, Any]:
+        """
+        Executes one forward pass over teacher and student, evaluating the 6-pillar objective.
+        Returns dictionary containing individual loss terms and total combined loss.
+        """
+        self.student.train()
+
+        # 1. Forward teacher under torch.no_grad()
+        with torch.no_grad():
+            t_logits, t_hidden = self._extract_logits_and_hidden(self.teacher, batch)
+
+        # 2. Forward student with grad
+        s_logits, s_hidden = self._extract_logits_and_hidden(self.student, batch)
+
+        total_loss = torch.tensor(0.0, device=self.device)
+        losses_tracked: Dict[str, Any] = {}
+
+        # Pillar 1 & 2: Logit KL Divergence & Hidden/Logit MSE
+        if s_logits is not None and t_logits is not None:
+            kd_loss = self.logit_loss_fn(s_logits, t_logits)
+            total_loss = total_loss + self.lambda_kd * kd_loss
+            losses_tracked["kd_loss"] = kd_loss.item()
+
+            if self.lambda_mse > 0.0:
+                mse_loss = F.mse_loss(s_logits.float(), t_logits.float())
+                total_loss = total_loss + self.lambda_mse * mse_loss
+                losses_tracked["mse_loss"] = mse_loss.item()
+
+        # Pillar 3 & 4: Centered Kernel Alignment (CKA) & MiniLM Relation Distillation
+        if s_hidden is not None and t_hidden is not None:
+            if self.lambda_cka > 0.0:
+                cka_loss = self.cka_loss_fn(s_hidden, t_hidden)
+                total_loss = total_loss + self.lambda_cka * cka_loss
+                losses_tracked["cka_loss"] = cka_loss.item()
+
+            if self.lambda_rel > 0.0 and len(s_hidden) > 0 and len(t_hidden) > 0:
+                rel_loss = self.rel_loss_fn(s_hidden[-1], t_hidden[-1])
+                total_loss = total_loss + self.lambda_rel * rel_loss
+                losses_tracked["rel_loss"] = rel_loss.item()
+
+        # Pillar 5: Frobenius Feature Alignment
+        if self.lambda_frob > 0.0 and s_hidden is not None and t_hidden is not None:
+            s_last = s_hidden[-1].float()
+            t_last = t_hidden[-1].float()
+            if s_last.shape == t_last.shape:
+                frob_loss = torch.linalg.norm(s_last - t_last, ord="fro") / max(1, s_last.numel())
+            else:
+                frob_loss = F.mse_loss(s_last, t_last)
+            total_loss = total_loss + self.lambda_frob * frob_loss
+            losses_tracked["frob_loss"] = frob_loss.item()
+
+        # Pillar 6: Attention Stability Regularizer (Gate saturation prevention)
+        if self.lambda_stab > 0.0:
+            stab_penalties = []
+            for name, param in self.student.named_parameters():
+                if "gate" in name.lower() and param.requires_grad:
+                    g = torch.sigmoid(param.float())
+                    stab_penalties.append(torch.mean((g - 0.5) ** 2))
+            if stab_penalties:
+                stab_loss = torch.stack(stab_penalties).mean()
+                total_loss = total_loss + self.lambda_stab * stab_loss
+                losses_tracked["stab_loss"] = stab_loss.item()
+
+        losses_tracked["total_loss"] = total_loss
+
+        # Memory threshold purging for streaming checkpointed distillation
+        if self.memory_mode == "streaming_checkpointed" and torch.cuda.is_available():
+            alloc = torch.cuda.memory_allocated()
+            total = torch.cuda.get_device_properties(0).total_memory
+            if total > 0 and (alloc / total) > 0.75:
+                torch.cuda.empty_cache()
+
+        return losses_tracked
+
+
 __all__ = [
     "LogitDistillationLoss",
     "SpikyFeatureMap",
@@ -318,4 +525,6 @@ __all__ = [
     "BlockwiseOperatorCloningLoss",
     "LinearCKALoss",
     "SmoothMaxOverLayersCKASteeringLoss",
+    "StreamingCKALoss",
+    "MultiLevelKDTrainer",
 ]
