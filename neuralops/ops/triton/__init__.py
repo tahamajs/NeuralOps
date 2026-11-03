@@ -69,10 +69,11 @@ except Exception:
 
 try:
     from neuralops.ops.triton import gla_scan
-    from neuralops.ops.triton.gla_scan import gla_scan_triton
+    from neuralops.ops.triton.gla_scan import gla_scan_triton, chunked_gla_scan
 except Exception:
     gla_scan = None
     gla_scan_triton = None
+    chunked_gla_scan = None
 
 try:
     from neuralops.ops.triton import hgrn2_scan

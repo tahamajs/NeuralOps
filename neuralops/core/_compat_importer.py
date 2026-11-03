@@ -16,24 +16,51 @@ import importlib
 import importlib.util
 import logging
 import sys
+import types
 from importlib.abc import Loader, MetaPathFinder
 from types import ModuleType
 from typing import Any, Optional, Sequence
 
 logger = logging.getLogger("NeuralOps.CompatImporter")
 
+_RENAMED_ATTENTIONS = {
+    'aegis_hybrid': ('hybrid.tri_branch_hybrid_attention', {'AegisHybridAttention': 'TriBranchHybridAttention', 'inject_aegis_hybrid': 'inject_tri_branch_hybrid'}),
+    'aegis_spectron_fp8': ('hybrid.spectron_fp8_attention', {'AegisSpectronFP8Attention': 'SpectronFP8Attention', 'inject_aegis_spectron_fp8': 'inject_spectron_fp8'}),
+    'aegis_v1': ('hybrid.hybrid_local_kernel_attention', {'AegisAttentionV1': 'HybridLocalKernelAttention'}),
+    'aegis_v2': ('hybrid.hybrid_local_kernel_attention', {'AegisAttentionV2': 'HybridLocalKernelAttention', 'inject_aegis_v2': 'inject_hybrid_local_kernel'}),
+    'aegis_v3': ('hybrid.hybrid_local_kernel_attention', {'AegisAttentionV3': 'HybridLocalKernelAttention'}),
+    'aegis_v4': ('hybrid.hybrid_local_kernel_attention', {'AegisAttentionV4': 'HybridLocalKernelAttention'}),
+    'aegis_v5': ('hybrid.split_head_hybrid_attention', {'AegisAttention': 'SplitHeadHybridAttention', 'AegisConfigV5': 'SplitHeadHybridConfig', 'inject_aegis_v5': 'inject_split_head_hybrid'}),
+    'aegis_v6': ('hybrid.gated_hybrid_kernel_attention', {'AegisAttentionV3': 'GatedHybridKernelAttention', 'AegisAttentionV6': 'GatedHybridKernelAttention', 'inject_aegis_v6': 'inject_gated_hybrid_kernel'}),
+    'leka_v1': ('hybrid.positive_kernel_linear_attention', {'LEKAV1Attention': 'PositiveKernelLinearAttention', 'inject_leka_v1': 'inject_positive_kernel_linear'}),
+    'leka_v2': ('hybrid.landmark_local_attention', {'LEKAv2Attention': 'LandmarkLocalAttention', 'inject_leka_v2': 'inject_landmark_local'}),
+    'leka_v3': ('hybrid.refined_landmark_attention', {'LEKAv3Attention': 'RefinedLandmarkAttention', 'inject_leka_v3': 'inject_refined_landmark'}),
+    'res_svd': ('svd.residual_svd_attention', {'ResSVDAttention': 'ResidualSVDAttention', 'inject_res_svd': 'inject_residual_svd_attention'}),
+}
+
 
 class ExactModuleAliasLoader(Loader):
-    """Loader that delegates module resolution directly to the canonical module in sys.modules."""
+    """Loader that delegates module resolution directly to canonical module or builds an alias module."""
 
-    def __init__(self, canonical_name: str, is_pkg: bool = False):
+    def __init__(self, canonical_name: str, is_pkg: bool = False, symbol_aliases: Optional[dict[str, str]] = None):
         self.canonical_name = canonical_name
         self.is_pkg = is_pkg
+        self.symbol_aliases = symbol_aliases
 
     def create_module(self, spec: Any) -> Optional[ModuleType]:
-        if self.canonical_name not in sys.modules:
-            importlib.import_module(self.canonical_name)
-        return sys.modules[self.canonical_name]
+        if not self.symbol_aliases:
+            if self.canonical_name not in sys.modules:
+                importlib.import_module(self.canonical_name)
+            return sys.modules[self.canonical_name]
+        
+        # Build compatibility alias module with symbol remappings
+        canon_mod = importlib.import_module(self.canonical_name)
+        alias_mod = types.ModuleType(spec.name)
+        alias_mod.__dict__.update(canon_mod.__dict__)
+        for alias_sym, canon_sym in self.symbol_aliases.items():
+            if hasattr(canon_mod, canon_sym):
+                setattr(alias_mod, alias_sym, getattr(canon_mod, canon_sym))
+        return alias_mod
 
     def exec_module(self, module: ModuleType) -> None:
         pass
@@ -59,18 +86,26 @@ class NeuralOpsCompatibilityRedirectFinder(MetaPathFinder):
         "neuralops.backward_compat.compression_engine.": "neuralops.compression.",
     }
 
-    def _resolve_canonical(self, canonical_fullname: str) -> Optional[tuple[str, bool]]:
-        # Try direct
+    def _resolve_canonical(self, canonical_fullname: str) -> Optional[tuple[str, bool, Optional[dict[str, str]]]]:
+        # 1. Check renamed attention legacy modules
+        parts = canonical_fullname.split(".")
+        if len(parts) == 3 and parts[0] == "neuralops" and parts[1] == "layers":
+            leaf = parts[2]
+            if leaf in _RENAMED_ATTENTIONS:
+                rel_path, sym_map = _RENAMED_ATTENTIONS[leaf]
+                target_canon = f"neuralops.layers.{rel_path}"
+                return (target_canon, False, sym_map)
+
+        # 2. Try direct import
         try:
             c_spec = importlib.util.find_spec(canonical_fullname)
             if c_spec is not None:
                 is_pkg = c_spec.submodule_search_locations is not None
-                return (canonical_fullname, is_pkg)
+                return (canonical_fullname, is_pkg, None)
         except Exception:
             pass
 
-        # If flat submodule lookup failed in layers or compression, try searching subdirectories
-        parts = canonical_fullname.split(".")
+        # 3. If flat submodule lookup failed in layers or compression, try searching subdirectories
         if len(parts) == 3 and parts[0] == "neuralops":
             pkg, mod = parts[1], parts[2]
             subpkgs = []
@@ -85,7 +120,7 @@ class NeuralOpsCompatibilityRedirectFinder(MetaPathFinder):
                     c_spec = importlib.util.find_spec(candidate)
                     if c_spec is not None:
                         is_pkg = c_spec.submodule_search_locations is not None
-                        return (candidate, is_pkg)
+                        return (candidate, is_pkg, None)
                 except Exception:
                     continue
         return None
@@ -109,8 +144,8 @@ class NeuralOpsCompatibilityRedirectFinder(MetaPathFinder):
                 canonical_fullname = f"{new_prefix}{subpath}"
                 resolved = self._resolve_canonical(canonical_fullname)
                 if resolved is not None:
-                    canon, is_pkg = resolved
-                    loader = ExactModuleAliasLoader(canon, is_pkg=is_pkg)
+                    canon, is_pkg, sym_map = resolved
+                    loader = ExactModuleAliasLoader(canon, is_pkg=is_pkg, symbol_aliases=sym_map)
                     return importlib.util.spec_from_loader(fullname, loader, is_package=is_pkg)
         return None
 
