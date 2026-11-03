@@ -102,14 +102,16 @@ def test_qwen_7b_hnc_svd_compression_and_forward():
     vram_free = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
     print(f"\n[Qwen 7B Test] Target GPU: {torch.cuda.get_device_name(0)}, Total VRAM: {vram_free:.2f} GB")
 
+    OOM_EXCEPTIONS = (torch.cuda.OutOfMemoryError,) if hasattr(torch.cuda, "OutOfMemoryError") else ()
+
     try:
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
-            device_map="auto",
             local_files_only=True,
-        )
-    except torch.cuda.OutOfMemoryError as e:
+            low_cpu_mem_usage=False,
+        ).to("cuda:0")
+    except OOM_EXCEPTIONS as e:
         pytest.fail(f"OOM during Qwen 7B model load: {e}")
     except Exception as e:
         if "out of memory" in str(e).lower():
@@ -133,5 +135,9 @@ def test_qwen_7b_hnc_svd_compression_and_forward():
         assert outputs.logits is not None
         assert torch.isfinite(outputs.logits).all(), "Qwen 7B output logits contain NaN/Inf"
         print("[Qwen 7B SVD] Forward pass SUCCESS with finite logits.")
-    except torch.cuda.OutOfMemoryError as e:
+    except OOM_EXCEPTIONS as e:
         pytest.fail(f"OOM during Qwen 7B forward pass: {e}")
+    except Exception as e:
+        if "out of memory" in str(e).lower():
+            pytest.fail(f"OOM during Qwen 7B forward pass: {e}")
+        raise
