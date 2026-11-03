@@ -266,9 +266,19 @@ def hybrid_heterogeneous_branch(
             int(num_dense_heads), int(radius), bool(is_causal)
         )
 
+    def triton_fn(q, k, v, num_dense_heads=1, radius=32, is_causal=True):
+        try:
+            from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_heterogeneous_branch_triton
+            return hybrid_heterogeneous_branch_triton(
+                q, k, v, num_dense_heads=int(num_dense_heads), radius=int(radius), is_causal=bool(is_causal)
+            )
+        except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
+            logger.warning("Failed in Triton hybrid_heterogeneous_branch: %s", exc, exc_info=True)
+            return None
+
     return dispatch(
         cuda_fn,
-        None,
+        triton_fn,
         hybrid_heterogeneous_branch_ref,
         q,
         k=k,
