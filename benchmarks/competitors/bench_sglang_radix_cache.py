@@ -111,9 +111,13 @@ def benchmark_radix_prefix_cache(
 
     total_time_sec = time.perf_counter() - t_start
     hit_rate = (hits / max(num_queries, 1)) * 100.0
-    mean_lookup_us = float(np.mean(lookup_times_us))
-    p95_lookup_us = float(np.percentile(lookup_times_us, 95))
-    mean_matched_tokens = float(np.mean(matched_lengths))
+    arr_lookup = np.array(lookup_times_us, dtype=np.float64) if lookup_times_us else np.array([0.0])
+    mean_lookup_us = float(np.mean(arr_lookup))
+    p50_lookup_us = float(np.percentile(arr_lookup, 50))
+    p90_lookup_us = float(np.percentile(arr_lookup, 90))
+    p95_lookup_us = float(np.percentile(arr_lookup, 95))
+    p99_lookup_us = float(np.percentile(arr_lookup, 99))
+    mean_matched_tokens = float(np.mean(matched_lengths)) if matched_lengths else 0.0
 
     return {
         "benchmark": "sglang_radix_cache",
@@ -123,7 +127,10 @@ def benchmark_radix_prefix_cache(
         "prefix_diversity": prefix_diversity,
         "prefix_hit_rate_pct": hit_rate,
         "mean_lookup_us": mean_lookup_us,
+        "p50_lookup_us": p50_lookup_us,
+        "p90_lookup_us": p90_lookup_us,
         "p95_lookup_us": p95_lookup_us,
+        "p99_lookup_us": p99_lookup_us,
         "mean_matched_tokens": mean_matched_tokens,
         "total_time_sec": total_time_sec,
     }

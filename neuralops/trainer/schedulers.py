@@ -108,11 +108,17 @@ class WSDScheduler(LRScheduler):
         progress = float(decay_step) / float(max(1, self.decay_steps))
         progress = min(1.0, max(0.0, progress))
 
+        min_ratio = self.min_lr_ratio
+        if min_ratio == 0.0 and self.min_lr > 0.0 and hasattr(self, "base_lrs") and self.base_lrs:
+            max_base = max(self.base_lrs)
+            if max_base > 0:
+                min_ratio = self.min_lr / max_base
+
         if self.decay_type == "linear":
-            return self.min_lr_ratio + (1.0 - self.min_lr_ratio) * (1.0 - progress)
+            return min_ratio + (1.0 - min_ratio) * (1.0 - progress)
 
         # Smooth cosine decay
-        return self.min_lr_ratio + 0.5 * (1.0 - self.min_lr_ratio) * (1.0 + math.cos(math.pi * progress))
+        return min_ratio + 0.5 * (1.0 - min_ratio) * (1.0 + math.cos(math.pi * progress))
 
     def get_lr(self) -> List[float]:
         """Compute scheduled learning rates for all parameter groups."""

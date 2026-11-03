@@ -150,16 +150,21 @@ class SweepController:
 
     def __init__(
         self,
-        base_model_or_adapter: Union[str, nn.Module, BaseModelAdapter],
+        base_model_or_adapter: Optional[Union[str, nn.Module, BaseModelAdapter]] = None,
         output_dir: Optional[str] = None,
         saver: Optional[MultiFormatSaver] = None,
         device: Optional[Union[str, torch.device]] = None,
+        base_model: Optional[Union[str, nn.Module, BaseModelAdapter]] = None,
     ) -> None:
-        if isinstance(base_model_or_adapter, BaseModelAdapter):
-            self.base_adapter = base_model_or_adapter
+        target = base_model_or_adapter if base_model_or_adapter is not None else base_model
+        if target is None:
+            raise ValueError("Either base_model_or_adapter or base_model must be provided.")
+
+        if isinstance(target, BaseModelAdapter):
+            self.base_adapter = target
         else:
             self.base_adapter = UniversalModelAdapter.from_pretrained(
-                base_model_or_adapter, device=device
+                target, device=device
             )
         self.output_dir = output_dir or "results/sweep/"
         os.makedirs(self.output_dir, exist_ok=True)

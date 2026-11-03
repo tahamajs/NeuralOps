@@ -27,6 +27,56 @@ from neuralops.distributed.megatron_hooks import ColumnParallelLinear, RowParall
 logger = logging.getLogger(__name__)
 
 
+def compute_tp_sp_communication_volume(
+    batch_size: int,
+    seq_len: int,
+    hidden_size: int,
+    tp_size: int,
+    dtype_bytes: int = 2,
+) -> dict[str, float]:
+    """Calculate Megatron Tensor Parallel and Sequence Parallel communication volume.
+
+    In Megatron-LM TP, each Transformer layer has:
+    - 1 all-reduce (or reduce-scatter + all-gather in Sequence Parallel) in self-attention:
+      All-reduce volume = 2 * ((TP - 1) / TP) * B * S * H * dtype_bytes
+    - 1 all-reduce (or reduce-scatter + all-gather in Sequence Parallel) in MLP:
+      All-reduce volume = 2 * ((TP - 1) / TP) * B * S * H * dtype_bytes
+
+    Total communication volume per layer for forward pass:
+      2 * (2 * ((TP - 1) / TP) * B * S * H * dtype_bytes)
+
+    Args:
+        batch_size: Micro-batch size.
+        seq_len: Sequence length per batch.
+        hidden_size: Model hidden dimension.
+        tp_size: Tensor Parallel world size.
+        dtype_bytes: Bytes per element (2 for FP16/BF16, 4 for FP32).
+
+    Returns:
+        Dictionary with per-step and per-layer theoretical communication volumes in MB.
+    """
+    if tp_size <= 1:
+        factor = 0.0
+    else:
+        factor = 2.0 * float(tp_size - 1) / float(tp_size)
+
+    # Volume per all-reduce in bytes: 2 * ((TP - 1) / TP) * B * S * H * bytes
+    tokens = float(batch_size * seq_len)
+    allreduce_volume_bytes = factor * tokens * float(hidden_size) * float(dtype_bytes)
+    # Forward pass: 2 all-reduces per Transformer layer (Self-Attention + MLP)
+    layer_fwd_volume_bytes = 2.0 * allreduce_volume_bytes
+    # Backward pass has matching gradient communication volume (2x for fwd + bwd)
+    layer_total_volume_bytes = 2.0 * layer_fwd_volume_bytes
+
+    return {
+        "allreduce_volume_bytes": allreduce_volume_bytes,
+        "allreduce_volume_mb": allreduce_volume_bytes / (1024.0 * 1024.0),
+        "layer_fwd_volume_mb": layer_fwd_volume_bytes / (1024.0 * 1024.0),
+        "layer_total_volume_mb": layer_total_volume_bytes / (1024.0 * 1024.0),
+        "factor": factor,
+    }
+
+
 def compute_megatron_mfu(
     params_count: int,
     tokens_per_sec: float,
@@ -163,6 +213,14 @@ def benchmark_megatron_tp_sp(
         num_gpus=tp_size,
     )
 
+    comm_volume = compute_tp_sp_communication_volume(
+        batch_size=batch_size,
+        seq_len=seq_len,
+        hidden_size=hidden_size,
+        tp_size=tp_size,
+        dtype_bytes=2 if dtype == torch.float16 else 4,
+    )
+
     return {
         "benchmark": "megatron_tp_sp",
         "latency_ms": latency_ms,
@@ -176,9 +234,18 @@ def benchmark_megatron_tp_sp(
         "tflops_per_device": mfu_stats["tflops_per_device"],
         "actual_tflops_total": mfu_stats["actual_tflops_total"],
         "peak_gpu_tflops": peak_gpu_tflops,
+        "allreduce_volume_mb": comm_volume["allreduce_volume_mb"],
+        "layer_fwd_comm_mb": comm_volume["layer_fwd_volume_mb"],
+        "layer_total_comm_mb": comm_volume["layer_total_volume_mb"],
     }
 
 
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
     """Standard entrypoint wrapper for benchmark runner."""
     return benchmark_megatron_tp_sp(**kwargs)
+
+
+# Canonical Aliases for Multi-Agent Implementation Plan contract compliance
+run_megatron_tp_sp_benchmark = benchmark_megatron_tp_sp
+CoreModule = benchmark_megatron_tp_sp
+

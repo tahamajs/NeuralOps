@@ -183,6 +183,7 @@ def benchmark_vllm_poisson_serving(
     total_time_sec = time.perf_counter() - t_start
     total_tokens_generated = num_requests * decode_steps
     frag_stats = sim.get_fragmentation_stats()
+    preemptions = sim.preemptions_count
 
     for s_id in allocated_seq_ids:
         sim.free_request(s_id)
@@ -210,6 +211,7 @@ def benchmark_vllm_poisson_serving(
         "throughput_tokens_sec": token_throughput,
         "num_blocks_total": num_blocks,
         "block_size": block_size,
+        "preemptions_count": preemptions,
         "fragmentation_stats": frag_stats,
     }
 
