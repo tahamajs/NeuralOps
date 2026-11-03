@@ -76,6 +76,10 @@ if HAS_TRITON and tl is not None:
         offs_k = tl.arange(0, D_K)
         offs_v = tl.arange(0, D_V)
 
+        # In-register S state matrix: S is [D_V, D_K] maintained in fast on-chip SRAM register tiles.
+        # Plastic error-correction delta rule update:
+        #   S_t = alpha_t * S_{t-1} + beta_t * (v_t - S_{t-1} k_t) k_t^T
+        # computed directly inside SRAM register tiles without round-tripping to DRAM.
         S = tl.zeros((D_V, D_K), dtype=tl.float32)
 
         for t in range(L):
@@ -90,13 +94,19 @@ if HAS_TRITON and tl is not None:
             alpha_val = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(tl.float32)
             beta_val = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl).to(tl.float32)
 
+            # 1. State decay in-register
             S = alpha_val * S
 
+            # 2. Memory readout: retrieval prediction pred_v = S * k_t
             pred_v = tl.sum(S * k_t[None, :], axis=1)
+
+            # 3. Plastic prediction error err_v = v_t - pred_v
             err_v = v_t - pred_v
 
+            # 4. Plastic delta error-correction update directly inside SRAM register tiles
             S = S + beta_val * (err_v[:, None] * k_t[None, :])
 
+            # 5. Associative query retrieval: o_t = S * q_t
             o_t = tl.sum(S * q_t[None, :], axis=1)
 
             o_ptrs = o_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_v * stride_od
