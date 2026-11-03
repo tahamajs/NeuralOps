@@ -241,9 +241,14 @@ class FisherMicroHealer:
         """Instantiates an FMicroOptimizer conditioned on the computed Fisher diagonal."""
         damp = damping if damping is not None else self.damping
         trainable_params = [p for p in self.model.parameters() if p.requires_grad]
+        fisher_by_param: Dict[Any, torch.Tensor] = {}
+        for p_name, p in self.model.named_parameters():
+            if p.requires_grad and p_name in self.fisher_diag:
+                fisher_by_param[p] = self.fisher_diag[p_name]
+
         return FMicroOptimizer(
             trainable_params,
-            fisher_diag=self.fisher_diag,
+            fisher_diag=fisher_by_param,
             lr=lr,
             damping=damp,
             weight_decay=weight_decay,

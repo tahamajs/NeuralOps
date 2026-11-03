@@ -2056,9 +2056,9 @@ The complete directory and model synchronization utilities are documented in [`s
 
 ---
 
-## 24. Examples Suite (20 Scripts)
+## 24. Examples Suite (35 Production Scripts)
 
-NeuralOps provides 20 self-contained, offline-friendly, CPU/MPS/CUDA runnable demonstration scripts located in [`examples/`](examples/). Each script runs deterministically without network calls and demonstrates end-to-end functionality of a distinct subsystem:
+NeuralOps provides an exhaustive suite of **35 self-contained, reproducible, offline-friendly demonstration scripts** located in [`examples/`](examples/). Every script supports universal CPU/MPS fallback as well as physical hardware acceleration via `--device cuda`, executing deterministically without external network calls:
 
 | Range | Subsystem Focus | Key Demonstrations |
 | :--- | :--- | :--- |
@@ -2067,11 +2067,11 @@ NeuralOps provides 20 self-contained, offline-friendly, CPU/MPS/CUDA runnable de
 | **09 – 12** | Advanced Model Compression & Sparsity | Fluent multi-stage surgery pipelines, SVD compression zoo (Standard, Whitened, Fisher, HNC), multi-precision quantization (FP8, INT4, MX), and 2:4 structured pruning. |
 | **13 – 16** | Scaling, Optimizers & Serving | 6-pillar knowledge distillation, non-Euclidean optimizers (Muon & Riemannian Stiefel), production serving shims (vLLM, SGLang, TRT-LLM), and Megatron-style TP / Context Parallelism. |
 | **17 – 20** | Systems, Diagnostics & Evaluation | Declarative YAML recipe DSL with transactional state rollback, 3-level kernel dispatch verification, Lanczos Hessian eigenspectrum diagnostics, and Needle-in-a-Haystack (NIAH) context evaluation. |
+| **21 – 22** | Full Model Surgery & Integrity Verification | Full model layerwise surgery with finite gradient verification, and automated pre/post surgery integrity JSON benchmarking. |
+| **23 – 28** | Modern Surgery & Core Engines | Universal Surgery Director enforcing the Ten Inviolable Laws, DeepSeek Multi-Head Latent Attention (MLA), Torch FX symbolic rewriter compiler, zero-OOM streaming shadow twin distillation, HuggingFace polymorphic cache bridge, and AutoMax VRAM smart trainer. |
+| **29 – 35** | Adaptation, Hardware & Resilience | DoRA directional adaptation, online Test-Time Training (TTT) with transactional rollback, Fisher natural gradient damping, SimPO/ORPO reference-free alignment, 62-kernel unified Triton catalog verification, autonomous 3-state circuit breaker FSM, and CUDA Graph decode acceleration. |
 
-For detailed documentation, arguments, and templates, see [`examples/README.md`](examples/README.md).
-
----
-
+For detailed documentation, arguments, and individual CLI commands, see [`examples/README.md`](examples/README.md).
 ## 25. PyPI Package Quality Checklist
 
 The `neuralops` package is verified against strict packaging standards prior to every release:

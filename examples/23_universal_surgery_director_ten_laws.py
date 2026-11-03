@@ -122,17 +122,18 @@ def run_demonstration(device: torch.device, target_attention: str = "cosformer")
         "Law_10_Master_Integration": "Master Universal Surgery Integration",
     }
 
-    report_rows: list[dict[str, str]] = []
+    headers = ["Law Code", "Description", "Certified"]
+    report_rows: list[list[str]] = []
     for law_key, description in law_descriptions.items():
         status = laws_status.get(law_key, False)
-        report_rows.append({
-            "Law": law_key.replace("_", " "),
-            "Description": description,
-            "Certified": "PASSED" if status else "FAILED",
-        })
+        report_rows.append([
+            law_key.replace("_", " "),
+            description,
+            "PASSED" if status else "FAILED",
+        ])
 
     print()
-    table(report_rows)
+    table(report_rows, headers=headers)
 
     is_certified = bool(cert_report.get("certified", False))
     pass_fail("Ten Laws Certification Score", is_certified, cert_report.get("score", "N/A"))

@@ -64,7 +64,7 @@ def test_dispatch_level2_triton_forcing():
         try:
             out = cosformer_linear_attention(q, k, v)
             assert torch.isfinite(out).all().item()
-            backend = get_last_dispatch_backend("cosformer")
+            backend = get_last_dispatch_backend("cosformer_linear_attention")
             assert backend == "triton", f"Expected 'triton' execution backend, got '{backend}'"
         except RuntimeError as exc:
             # Must explicitly fail-closed with Triton error, NOT silent fallback to CPU
@@ -87,7 +87,7 @@ def test_dispatch_level1_cuda_forcing():
         try:
             out = cosformer_linear_attention(q, k, v)
             assert torch.isfinite(out).all().item()
-            backend = get_last_dispatch_backend("cosformer")
+            backend = get_last_dispatch_backend("cosformer_linear_attention")
             assert backend == "cuda", f"Expected 'cuda' execution backend, got '{backend}'"
         except RuntimeError as exc:
             err_msg = str(exc)
