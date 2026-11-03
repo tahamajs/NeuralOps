@@ -540,7 +540,7 @@ def fused_dsa_sparse_attn_triton(
     if sm_scale is None:
         sm_scale = 1.0 / math.sqrt(d)
 
-    if not HAS_TRITON or not q.is_cuda or "_dsa_sparse_fwd_kernel" not in globals() or not hasattr(globals()["_dsa_sparse_fwd_kernel"], "__getitem__"):
+    if not HAS_TRITON or not q.is_cuda:
         return fused_dsa_sparse_attn_pytorch_ref(
             q, k, v, block_mask, block_size=block_size, sm_scale=sm_scale
         )

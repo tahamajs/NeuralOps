@@ -1697,7 +1697,7 @@ NeuralOps is engineered specifically for subquadratic attention transplantation,
 4. **Compression Boundaries & Mathematical Limits**:
    - Direct SVD with rank $r < 4$ collapses transformer representations, discarding $> 88\%$ spectral energy; `DirectSVDCompressor` enforces $r \ge 4$ (raises `ValueError`) and warns on $r < 8$.
    - Activation-aware compressors (`aa_svd_factory`, `adasvd_compressor`) require activation covariance estimation; uncalibrated random fallbacks diverge and are guarded against.
-   - For full failure mode taxonomy, see [`results/known_failures.md`](results/known_failures.md) and forensic analysis in [`audit/CODE_FIX_PROPOSALS_2026-11-02.md`](audit/CODE_FIX_PROPOSALS_2026-11-02.md).
+   - For full failure mode taxonomy, consult the generated `results/known_failures.md` and audit report when those ignored artifacts are present in the evidence bundle; they are not shipped in the source checkout.
 
 ---
 
@@ -1793,13 +1793,52 @@ Benchmark tables dated October 2026 below are archival artifacts from the RTX 40
 | 131 Attention + 72 Compression Capabilities | `results/neuralops_exhaustive_job.log` | NVIDIA RTX 3090 SM 8.6 | Nov 3 2026 |
 | 108 Native CUDA C++ Kernels | Native Kernel Benchmark Report ([Section 2](#2-cuda-kernel-packages--3-level-fallback-dispatch)) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | 26 Triton Kernels Benchmark | `results/triton_26_integrity.json` | NVIDIA RTX 3090 SM 8.6 | Nov 2 2026 |
-| 131 Attention Mechanisms Sweep | [`results/triton_all_131_attentions_benchmark.json`](results/triton_all_131_attentions_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| 72 Compression Engines Sweep | [`results/triton_all_72_compressors_benchmark.json`](results/triton_all_72_compressors_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| GPT-2 End-to-End Speedup | [`results/triton_e2e_gpt2_benchmark.json`](results/triton_e2e_gpt2_benchmark.json) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| SST-2 Knowledge Distillation | [`results/sst2_kd_v2/sst2_kd_benchmark_v2.csv`](results/sst2_kd_v2/sst2_kd_benchmark_v2.csv) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| 131 Attention Mechanisms Sweep | `results/triton_all_131_attentions_benchmark.json` (evidence-bundle only) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| 72 Compression Engines Sweep | `results/triton_all_72_compressors_benchmark.json` (evidence-bundle only) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| GPT-2 End-to-End Speedup | `results/triton_e2e_gpt2_benchmark.json` (evidence-bundle only) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
+| SST-2 Knowledge Distillation | `results/sst2_kd_v2/sst2_kd_benchmark_v2.csv` (evidence-bundle only) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | Comprehensive Release Report | NeuralOps v2.0.3 Release Verification ([Section 16](#16-honest-performance-claims--fused-kernel-spectrum)) | NVIDIA RTX 4070 SM 8.9 | Nov 2026 |
 
 ---
+
+### 22.1 Results layout and provenance
+
+All benchmark output belongs under `results/`. The directory is intentionally
+ignored by Git because it contains machine-specific telemetry, logs, SQLite
+state, generated tables, and figures. The repository tracks only the small,
+reviewed summary artifacts that are required for source-level documentation.
+
+| Category | Location | Contents | Publication status |
+| :--- | :--- | :--- | :--- |
+| Canonical ledger | `results/registry/master_ledger.sqlite` | Structured benchmark records and provenance fields | Local/generated; do not commit |
+| Summary data | `results/*.json`, `results/*.jsonl`, `results/*.csv`, `results/*.parquet` | Aggregated and machine-readable benchmark exports | Local/generated; verify before citing |
+| Kernel reports | `results/reports/`, `results/*kernel*.md` | Human-readable CUDA/Triton audit and benchmark reports | Local/generated; verify hardware and date |
+| Raw execution logs | `results/*.log`, `results/screen_logs/` | PBS, screen, validation, and exhaustive-suite logs | Local/generated; evidence only when complete |
+| Tables | `results/tables/` | LaTeX tables for downstream papers and reports | Local/generated |
+| Figures | `results/figures/` | SVG plots and diagnostic figures | Local/generated |
+
+The two ledger paths `results/master_ledger.sqlite` and
+`results/registry/master_ledger.sqlite` are currently byte-for-byte identical;
+the registry path is the canonical location. Do not merge or delete either
+copy without first recording a checksum and checking all consumers.
+
+The README distinguishes three evidence states:
+
+1. **Tracked summary** — committed JSON summaries that can be reviewed with
+   the source tree.
+2. **Local/generated** — files present in a working tree or on an HPC node,
+   but ignored by Git and therefore not release artifacts.
+3. **Verified citation** — a result whose log/report identifies the exact
+   commit, device, dtype, shape, command, and completion status. A filename
+   alone is not sufficient evidence.
+
+Before synchronizing an HPC result set, compare manifests and checksums. The
+safe direction is to copy verified result artifacts into the local
+`results/` tree while preserving local source code; never use a destructive
+`rsync --delete` until both manifests have been reviewed. The HPC checkout
+must also be identified explicitly: `/home/tahamajlesi.ut/NeuralOps` is not a
+Git checkout in the current audit, so it must not be treated as the canonical
+source tree.
 
 ## 23. Hugging Face Model Zoo Audit
 

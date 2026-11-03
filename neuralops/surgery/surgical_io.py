@@ -16,4 +16,11 @@ from __future__ import annotations
 from neuralops.models.surgical_io import *  # noqa: F403
 import neuralops.models.surgical_io as _mod
 
+try:
+    from neuralops.export.exporter import export_model
+except ImportError:
+    pass
+
 __all__ = [name for name in dir(_mod) if not name.startswith("_")]
+if "export_model" in locals() and "export_model" not in __all__:
+    __all__.append("export_model")
