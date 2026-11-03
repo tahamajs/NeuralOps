@@ -193,6 +193,11 @@ def transfer_pretrained_qkv_weights(
     Copies pretrained Q, K, V, and O projections from the host model into the newly
     instantiated NeuralOps attention module without random re-initialization.
     """
+    if isinstance(new_module, DeepSeekMLASurgeryBridge):
+        if spec.target_module is not None:
+            new_module.inherit_from_mla_module(spec.target_module)
+            return
+
     if spec.extracted_qkv is None:
         if strict:
             raise ValueError(f"No pretrained Q/K/V/O projections were extracted for {spec.module_path!r}")
@@ -483,7 +488,10 @@ class UniversalAttentionBridge(nn.Module):
         self._orig_sig = inspect.signature(orig_module.forward)
 
         if inherit_weights:
-            transfer_pretrained_qkv_weights(spec, self.new_attention)
+            if isinstance(self.new_attention, DeepSeekMLASurgeryBridge):
+                self.new_attention.inherit_from_mla_module(self.orig_module)
+            else:
+                transfer_pretrained_qkv_weights(spec, self.new_attention)
 
         self.sidecar = (
             SidecarGateBranch(d_model=self.embed_dim, num_heads=self.num_heads)
@@ -509,19 +517,31 @@ class UniversalAttentionBridge(nn.Module):
             if hasattr(self.orig_module, "kv_a_proj_with_mqa"):
                 hs = args[0] if len(args) > 0 else kwargs.get("hidden_states")
                 if hs is not None:
-                    kv_comp = self.orig_module.kv_a_proj_with_mqa(hs)
-                    c_kv = kv_comp[..., : self.new_attention.latent_kv_dim]
-                    k_rope = kv_comp[..., self.new_attention.latent_kv_dim :]
+                    c_kv, k_rope = self.new_attention.separate_mla_projections(
+                        self.orig_module.kv_a_proj_with_mqa(hs)
+                    )
                     if hasattr(self.orig_module, "q_a_proj"):
-                        q_comp = self.orig_module.q_a_proj(hs)
-                        q_content = q_comp[..., : self.new_attention.latent_kv_dim]
-                        q_rope = q_comp[..., self.new_attention.latent_kv_dim :]
+                        q_content, q_rope = self.new_attention.separate_query_projections(
+                            self.orig_module.q_a_proj(hs)
+                        )
                     else:
                         q_content = c_kv
                         q_rope = k_rope
                     past_state = kwargs.get("past_key_value", kwargs.get("past_state", None))
+                    is_decode = kwargs.get("is_decode", False) or hs.shape[1] == 1
                     out, new_state = self.new_attention(
-                        c_kv, k_rope, q_content, q_rope, past_state=past_state
+                        c_kv, k_rope, q_content, q_rope, past_state=past_state, is_decode=is_decode
+                    )
+                    if kwargs.get("use_cache", False) or "past_key_value" in kwargs:
+                        return out, None, new_state
+                    return out
+            elif self.new_attention.kv_latent_proj is not None:
+                hs = args[0] if len(args) > 0 else kwargs.get("hidden_states")
+                if hs is not None:
+                    past_state = kwargs.get("past_key_value", kwargs.get("past_state", None))
+                    is_decode = kwargs.get("is_decode", False) or hs.shape[1] == 1
+                    out, new_state = self.new_attention(
+                        hs, past_state=past_state, is_decode=is_decode
                     )
                     if kwargs.get("use_cache", False) or "past_key_value" in kwargs:
                         return out, None, new_state

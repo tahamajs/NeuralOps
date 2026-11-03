@@ -23,7 +23,9 @@ import torch.nn.functional as F
 from neuralops.surgery.endoskeletal_shell import UniversalAttentionBridge
 from neuralops.surgery.streaming_distill import (
     CheckpointedTeacherBridge,
+    MicroChunkedShadowTwinDistiller,
     StreamingCKALoss,
+    get_vram_utilization,
 )
 
 logger = logging.getLogger("NeuralOps.Surgery.ShadowTwin")
@@ -310,4 +312,6 @@ __all__ = [
     "finalize_surgery",
     "patch_bridge_for_shadow_twin",
     "check_surgery_divergence",
+    "MicroChunkedShadowTwinDistiller",
+    "get_vram_utilization",
 ]

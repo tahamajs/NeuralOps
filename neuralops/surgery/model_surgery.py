@@ -232,10 +232,33 @@ class ModelSurgery:
         else:
             raise ValueError(f"Unknown surgery engine '{engine}'. Choose 'shell' or 'fx'.")
 
-    def compile(self, mode: str = "max-autotune", fullgraph: bool = True, **kwargs: Any) -> nn.Module:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Invokes the underlying model's forward pass."""
+        return self.model(*args, **kwargs)
+
+    def compile(
+        self,
+        mode: str = "max-autotune",
+        fullgraph: bool = True,
+        backend: str = "inductor",
+        options: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> nn.Module:
         """Compiles the surgical model with PyTorch Inductor for maximum fusion and throughput."""
-        logger.info("Compiling model via torch.compile(mode='%s', fullgraph=%s)...", mode, fullgraph)
-        self.model = torch.compile(self.model, mode=mode, fullgraph=fullgraph, **kwargs)
+        logger.info(
+            "Compiling model via torch.compile(mode='%s', fullgraph=%s, backend='%s')...",
+            mode,
+            fullgraph,
+            backend,
+        )
+        self.model = torch.compile(
+            self.model,
+            mode=mode,
+            fullgraph=fullgraph,
+            backend=backend,
+            options=options,
+            **kwargs,
+        )
         return self.model
 
     def validate(

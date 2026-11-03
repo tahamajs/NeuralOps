@@ -235,9 +235,36 @@ def apply_fx_attention_surgery(
     return rewriter.rewrite(model)
 
 
+@register_surgery(
+    name="fx_transplant",
+    category="attention",
+    compat=["llama", "qwen", "gpt2", "mistral", "gemma", "phi", "toy"],
+    requires_gpu=False,
+    requires_calibration=False,
+    reversibility="none",
+    cost_estimate="low",
+)
+def apply_fx_transplant_surgery(
+    model: Any,
+    target_attention: str = "cosformer",
+    head_dim: int = 64,
+    is_causal: bool = True,
+    **kwargs: Any,
+) -> Any:
+    """Alias for apply_fx_attention_surgery."""
+    return apply_fx_attention_surgery(
+        model=model,
+        target_attention=target_attention,
+        head_dim=head_dim,
+        is_causal=is_causal,
+        **kwargs,
+    )
+
+
 __all__ = [
     "SurgeryOp",
     "SurgeryRecipe",
     "ApplyReport",
     "apply_fx_attention_surgery",
+    "apply_fx_transplant_surgery",
 ]

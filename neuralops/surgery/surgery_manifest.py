@@ -8,12 +8,16 @@
 """
 Surgery Manifest Facade
 
-Direct interface to surgery manifest exporters and serialization data structures.
+Direct interface to surgery manifest exporters, serialization data structures,
+and UniversalSurgeryDirector integration.
 """
 
 from __future__ import annotations
 
-from neuralops.export.surgery_manifest import *  # noqa: F403
 import neuralops.export.surgery_manifest as _mod
+from neuralops.export.surgery_manifest import *  # noqa: F403
+from neuralops.surgery.director import UniversalSurgeryDirector
 
 __all__ = [name for name in dir(_mod) if not name.startswith("_")]
+if "UniversalSurgeryDirector" not in __all__:
+    __all__.append("UniversalSurgeryDirector")

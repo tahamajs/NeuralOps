@@ -13,6 +13,7 @@ Bridges NeuralOps recurrent and hybrid state caches with HuggingFace DynamicCach
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import time
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
@@ -552,8 +553,26 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         return cache
 
 
+def _compute_prefix_hash(tokens: Sequence[int] | torch.Tensor) -> str:
+    """
+    Computes a deterministic SHA-256 hash for a token sequence prefix (Phase 091).
+    Guarantees collision-free matching for shared prompt prefix caching in SGLang radix trees.
+    """
+    if isinstance(tokens, torch.Tensor):
+        if tokens.ndim > 1:
+            tokens = tokens.squeeze()
+        token_tuple = tuple(int(t) for t in tokens.tolist())
+    else:
+        token_tuple = tuple(int(t) for t in tokens)
+
+    hasher = hashlib.sha256()
+    for tid in token_tuple:
+        hasher.update(int(tid).to_bytes(4, byteorder="big", signed=True))
+    return hasher.hexdigest()
+
+
 class RadixTreeNode:
-    """A node in the SGLang Radix Tree storing recurrent associative state."""
+    """A node in the SGLang Radix Tree storing recurrent associative state (Phase 090)."""
 
     def __init__(
         self,
@@ -567,6 +586,20 @@ class RadixTreeNode:
         self.children: Dict[int, RadixTreeNode] = {}
         self.access_count: int = 0
         self.last_accessed: float = time.time()
+
+    @property
+    def token_ids(self) -> Tuple[int, ...]:
+        """Alias for token_chunk adhering to Phase 090 specification."""
+        return self.token_chunk
+
+    @token_ids.setter
+    def token_ids(self, val: Sequence[int]) -> None:
+        self.token_chunk = tuple(int(v) for v in val)
+
+    @property
+    def prefix_hash(self) -> str:
+        """Deterministic SHA-256 prefix hash of this node's token chunk."""
+        return _compute_prefix_hash(self.token_chunk)
 
     def is_leaf(self) -> bool:
         return len(self.children) == 0
@@ -765,6 +798,27 @@ class SGLangRadixStateAdapter:
 
         return 0, None, None
 
+    @staticmethod
+    def _compute_prefix_hash(tokens: Sequence[int] | torch.Tensor) -> str:
+        """Deterministic prefix hash generator for shared system prompts (Phase 091)."""
+        return _compute_prefix_hash(tokens)
+
+    def compute_prefix_hash(self, tokens: Sequence[int] | torch.Tensor) -> str:
+        """Deterministic prefix hash generator for shared system prompts (Phase 091)."""
+        return _compute_prefix_hash(tokens)
+
+    def lookup_prefix_state(
+        self,
+        token_ids: Sequence[int] | torch.Tensor,
+    ) -> Optional[Dict[int, torch.Tensor]]:
+        """
+        Looks up associative state matrix S_prefix in O(1) time (Phase 092).
+        If matching prefix with cached state is found, returns the recurrent state dict
+        to bypass prompt prefill computation.
+        """
+        _, state_dict, _ = self.match_prefix(token_ids)
+        return state_dict
+
     def cache_prefix_state(
         self,
         prompt_tokens: Sequence[int] | torch.Tensor,
@@ -798,27 +852,51 @@ class SGLangRadixStateAdapter:
         if self._node_count > self.max_cached_nodes:
             self.evict_lru(num_nodes=max(1, self.max_cached_nodes // 10))
 
-    def evict_lru(self, num_nodes: int = 1) -> int:
-        """Evicts the least-recently used leaf nodes from the Radix Tree."""
-        leaves: List[RadixTreeNode] = []
+    def evict_lru(
+        self,
+        max_nodes: Optional[int] = None,
+        num_nodes: Optional[int] = None,
+    ) -> int:
+        """
+        Evicts the least-recently used leaf nodes from the Radix Tree (Phase 094).
+        If max_nodes is specified, prunes until total node count <= max_nodes.
+        If num_nodes is specified, prunes up to num_nodes leaf nodes.
+        """
+        if max_nodes is not None:
+            target_evict = max(0, self._node_count - max_nodes)
+        elif num_nodes is not None:
+            target_evict = num_nodes
+        else:
+            target_evict = 1
 
-        def collect_leaves(node: RadixTreeNode) -> None:
-            if node is not self.root and node.is_leaf():
-                leaves.append(node)
-            for child in node.children.values():
-                collect_leaves(child)
-
-        collect_leaves(self.root)
-        leaves.sort(key=lambda n: n.last_accessed)
+        if target_evict <= 0:
+            return 0
 
         evicted = 0
-        for node in leaves[:num_nodes]:
-            if node.parent is not None and len(node.token_chunk) > 0:
-                first_tok = node.token_chunk[0]
-                if first_tok in node.parent.children:
-                    del node.parent.children[first_tok]
-                    self._node_count -= 1
-                    evicted += 1
+        while evicted < target_evict:
+            leaves: List[RadixTreeNode] = []
+
+            def collect_leaves(node: RadixTreeNode) -> None:
+                if node is not self.root and node.is_leaf():
+                    leaves.append(node)
+                for child in node.children.values():
+                    collect_leaves(child)
+
+            collect_leaves(self.root)
+            if not leaves:
+                break
+
+            leaves.sort(key=lambda n: n.last_accessed)
+            batch_to_remove = leaves[: target_evict - evicted]
+            for node in batch_to_remove:
+                if node.parent is not None and len(node.token_chunk) > 0:
+                    first_tok = node.token_chunk[0]
+                    if first_tok in node.parent.children:
+                        del node.parent.children[first_tok]
+                        self._node_count -= 1
+                        evicted += 1
+                        if evicted >= target_evict:
+                            break
 
         return evicted
 
@@ -867,6 +945,7 @@ __all__ = [
     "NeuralOpsHybridHFCache",
     "RadixTreeNode",
     "SGLangRadixStateAdapter",
+    "_compute_prefix_hash",
     "validate_cache_format",
     "wrap_model_for_generation",
 ]

@@ -125,6 +125,31 @@ def sanitize_kv_for_padding_mask(
     return k_sanitized, v_sanitized
 
 
+def sanitize_output_for_padding_mask(
+    out: torch.Tensor,
+    attention_mask: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """
+    Enforces Law 3: Padded output positions evaluate strictly to 0.0:
+    forall t in padding: ||O_t||_infty == 0.0.
+    """
+    if attention_mask is None:
+        return out
+    seq_len = out.shape[-2]
+    keep_mask = extract_binary_token_mask(
+        attention_mask, seq_len=seq_len, device=out.device, dtype=out.dtype
+    )
+    if keep_mask is None:
+        return out
+    if out.ndim == 4:
+        mask_shape = (out.shape[0], 1, out.shape[-2], 1)
+    else:
+        mask_shape = (out.shape[0], out.shape[-2], 1)
+        keep_mask = keep_mask.squeeze(1)
+    keep_mask = keep_mask.reshape(mask_shape)
+    return out * keep_mask
+
+
 class BiDirectionalScanWrapper(nn.Module):
     """
     Wraps any unidirectional causal recurrent/linear attention module to execute
@@ -309,6 +334,7 @@ class AsymmetricCrossAttentionRouter(nn.Module):
 __all__ = [
     "extract_binary_token_mask",
     "sanitize_kv_for_padding_mask",
+    "sanitize_output_for_padding_mask",
     "BiDirectionalScanWrapper",
     "AsymmetricCrossAttentionRouter",
 ]

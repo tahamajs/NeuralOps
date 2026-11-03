@@ -6,8 +6,17 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Attention Surgery and Layer Replacement Infrastructure.
+Attention Surgery and Layer Replacement Infrastructure (Legacy Shim).
+
+This module provides backwards compatibility for legacy attention replacement call sites.
+New implementations should directly utilize neuralops.surgery.director.UniversalSurgeryDirector.
 """
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+import torch.nn as nn
 
 from neuralops.core._attention_surgery import (
     FUSED_QKV_REGEX,
@@ -27,7 +36,24 @@ from neuralops.core._attention_surgery import (
     split_and_set_qkv_weights,
 )
 from neuralops.core.replace_attention import replace_attention_in_model
+from neuralops.surgery.director import UniversalSurgeryDirector
 from neuralops.surgery.layer_replacement import replace_attention_recursive
+
+logger = logging.getLogger("neuralops.surgery.attention_replace")
+
+
+def replace_attention(
+    model: nn.Module,
+    target_attention: str = "cosformer",
+    **kwargs: Any,
+) -> nn.Module:
+    """
+    Backwards-compatible attention replacement forwarding to UniversalSurgeryDirector.
+    """
+    logger.debug("Forwarding legacy replace_attention call to UniversalSurgeryDirector.")
+    director = UniversalSurgeryDirector(model)
+    return director.execute_surgery(target_attention=target_attention, **kwargs)
+
 
 __all__ = [
     "PROJ_REGEX_PATTERNS",
@@ -47,4 +73,6 @@ __all__ = [
     "_heal_replaced_model_impl",
     "replace_attention_in_model",
     "replace_attention_recursive",
+    "replace_attention",
+    "UniversalSurgeryDirector",
 ]

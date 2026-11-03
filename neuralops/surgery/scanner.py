@@ -306,6 +306,11 @@ class UniversalArchitectureScanner:
         return targets
 
     @classmethod
+    def find_attention_targets(cls, model: nn.Module) -> List[AttentionTargetSpec]:
+        """Discovers all attention targets across model hierarchy (alias for scan)."""
+        return cls.scan(model)
+
+    @classmethod
     def _inspect_module(
         cls, root_model: nn.Module, path: str, module: nn.Module
     ) -> Optional[AttentionTargetSpec]:
