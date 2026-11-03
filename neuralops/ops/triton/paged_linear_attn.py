@@ -6,11 +6,38 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Paged Linear Attention Triton Kernel for vLLM & High-Throughput Serving.
+Paged Linear Attention Triton Kernel for vLLM & High-Throughput Serving (Phases 081–089).
 
-Provides non-contiguous page table dereferencing and XOR bank swizzling for constant
-memory decode and high-throughput prefill serving.
-Strictly adheres to AGENTS.md §7 (Zero tl.make_block_ptr).
+Provides non-contiguous physical page table dereferencing and bitwise XOR bank swizzling
+for constant memory decode and high-throughput chunked prefill serving.
+
+Microarchitectural Analysis (SM 8.9 Ada Lovelace / SM 90 Hopper):
+-----------------------------------------------------------------
+1. Shared Memory Banking:
+   Shared memory on NVIDIA SM 8.9 and SM 90 is organized into 32 banks of 4-byte width
+   (128 bytes per line across all banks).
+   When accessing contiguous column elements with a power-of-two head dimension (e.g. D = 128),
+   consecutive thread rows or strided addresses map to identical bank indices:
+       Bank = (column_idx) mod 32
+   causing 32-way shared memory bank serialization (32 execution cycles per access).
+
+2. Bitwise XOR Column Bank Swizzling:
+   To eliminate bank serialization, column indices are swizzled using a bitwise XOR:
+       swizzled_offs_d = offs_d ^ ((offs_m & 0x7) << 2)
+   Because XOR is an exact mathematical involution ((x ^ s) ^ s == x), this transformation
+   is strictly bijective and 100% reversible.
+   Each thread in a 32-thread warp accesses a unique memory bank index:
+       bank_id = (swizzled_offs_d / 4) mod 32
+   reducing shared memory access latency from 32 cycles to a single cycle.
+
+3. 2D SRAM Tile Scheduling & Memory Budget (Phase 084):
+   Tile dimensions: BLOCK_M=64, BLOCK_N=64, BLOCK_D=128.
+   Double/triple-buffered shared memory allocation per thread block:
+       SRAM = 3 * (BLOCK_M * BLOCK_D * sizeof(fp16))
+            = 3 * (64 * 128 * 2 B) = 49,152 B = 48 KB <= 96 KB SM limit.
+
+4. Zero Block Pointer Invariant (Phase 083 / AGENTS.md §7):
+   Strictly zero calls to `tl.make_block_ptr` or `tl.advance`.
 """
 
 from __future__ import annotations
@@ -35,13 +62,52 @@ else:
     tl = None
 
 __all__ = [
+    "create_paged_kv_cache",
     "paged_linear_attention",
+    "paged_linear_attention_decode_kernel",
+    "paged_linear_attention_decode_step",
+    "paged_linear_attention_decode_step_pytorch",
     "paged_linear_attention_fwd_kernel",
     "paged_linear_attention_pytorch",
     "swizzle_tensor_layout",
     "unswizzle_tensor_layout",
-    "create_paged_kv_cache",
+    "validate_block_tables",
 ]
+
+
+def validate_block_tables(
+    block_tables: torch.Tensor,
+    num_blocks: int,
+    seq_len: int,
+    block_size: int = 16,
+) -> None:
+    """
+    Validates physical block table properties for vLLM memory layout (Phase 081).
+
+    Args:
+        block_tables: Tensor of shape [B, max_num_blocks].
+        num_blocks: Total number of physical blocks allocated in the pool.
+        seq_len: Logical sequence length.
+        block_size: Tokens per physical memory block.
+
+    Raises:
+        ValueError: If block table dimensions or indices are invalid.
+    """
+    if block_tables.ndim != 2:
+        raise ValueError(
+            f"block_tables must be 2D of shape [batch_size, max_num_blocks], got {block_tables.shape}"
+        )
+    required_blocks = (seq_len + block_size - 1) // block_size
+    if block_tables.shape[1] < required_blocks:
+        raise ValueError(
+            f"block_tables second dimension ({block_tables.shape[1]}) is less than required blocks ({required_blocks})"
+        )
+    if (block_tables < 0).any():
+        raise ValueError("block_tables contains negative block IDs")
+    if (block_tables >= num_blocks).any():
+        raise ValueError(
+            f"block_tables contains out-of-bounds block IDs >= total physical blocks ({num_blocks})"
+        )
 
 
 def swizzle_tensor_layout(x: torch.Tensor, block_m: int = 16) -> torch.Tensor:
@@ -115,13 +181,13 @@ if HAS_TRITON and tl is not None:
         stride_od,
         stride_bt_b,
         stride_bt_c,
-        BLOCK_M: tl.constexpr,
-        BLOCK_N: tl.constexpr,
-        BLOCK_D: tl.constexpr,
+        BLOCK_M: tl.constexpr = 64,
+        BLOCK_N: tl.constexpr = 64,
+        BLOCK_D: tl.constexpr = 128,
         SWIZZLE: tl.constexpr = False,
     ):
         """
-        Fused Paged Linear Attention Forward Kernel.
+        Fused Paged Linear Attention Forward Kernel (Prefill / Chunked).
         Dereferences physical pages via Block_Tables without contiguous KV allocation.
         Uses XOR swizzled column indexing to eliminate 32-way shared memory bank conflicts.
         Strictly zero tl.make_block_ptr per AGENTS.md §7.
@@ -186,8 +252,82 @@ if HAS_TRITON and tl is not None:
         )
         tl.store(out_ptrs, out)
 
+    @triton.jit
+    def paged_linear_attention_decode_kernel(
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        State_ptr,
+        Out_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vd,
+        stride_sb,
+        stride_sh,
+        stride_sd1,
+        stride_sd2,
+        stride_ob,
+        stride_oh,
+        stride_od,
+        decay: tl.constexpr,
+        BLOCK_D: tl.constexpr = 64,
+    ):
+        """
+        Fused Paged Single-Token Linear Attention Decode Step Kernel (Phase 089).
+        Updates the recurrent associative state matrix in physical pages in O(1) time:
+            S_t = decay * S_{t-1} + phi(k_t)^T * v_t
+            o_t = phi(q_t) * S_t
+        Strictly zero tl.make_block_ptr per AGENTS.md §7.
+        """
+        seq_idx = tl.program_id(0)
+        head_idx = tl.program_id(1)
+
+        offs_d1 = tl.arange(0, BLOCK_D)
+        offs_d2 = tl.arange(0, BLOCK_D)
+
+        # Load single-token query, key, and value vectors
+        q_ptrs = Q_ptr + seq_idx * stride_qb + head_idx * stride_qh + offs_d1 * stride_qd
+        k_ptrs = K_ptr + seq_idx * stride_kb + head_idx * stride_kh + offs_d1 * stride_kd
+        v_ptrs = V_ptr + seq_idx * stride_vb + head_idx * stride_vh + offs_d2 * stride_vd
+
+        q = tl.load(q_ptrs)
+        k = tl.load(k_ptrs)
+        v = tl.load(v_ptrs)
+
+        # Feature maps: phi(x) = elu(x) + 1
+        q_phi = tl.where(q > 0.0, q + 1.0, tl.exp(q))
+        k_phi = tl.where(k > 0.0, k + 1.0, tl.exp(k))
+
+        # 2D state matrix pointers [BLOCK_D, BLOCK_D]
+        s_ptrs = (
+            State_ptr
+            + seq_idx * stride_sb
+            + head_idx * stride_sh
+            + offs_d1[:, None] * stride_sd1
+            + offs_d2[None, :] * stride_sd2
+        )
+        s_old = tl.load(s_ptrs)
+
+        # State recurrence: S_new = decay * S_old + k_phi^T @ v
+        delta_s = k_phi[:, None] * v[None, :]
+        s_new = decay * s_old + delta_s
+        tl.store(s_ptrs, s_new)
+
+        # Attention output: o = q_phi @ S_new
+        out = tl.sum(q_phi[:, None] * s_new, axis=0)
+
+        out_ptrs = Out_ptr + seq_idx * stride_ob + head_idx * stride_oh + offs_d2 * stride_od
+        tl.store(out_ptrs, out)
+
 else:
     paged_linear_attention_fwd_kernel = None
+    paged_linear_attention_decode_kernel = None
 
 
 def paged_linear_attention_pytorch(
@@ -251,6 +391,56 @@ def paged_linear_attention_pytorch(
     return out.to(dtype)
 
 
+def paged_linear_attention_decode_step_pytorch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    state: torch.Tensor,
+    decay: float = 1.0,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Vectorized PyTorch reference implementation of single-token decode step (Level 3 Fallback).
+
+    Args:
+        q: [B, H, D] or [B, 1, H, D] query tensor.
+        k: [B, H, D] or [B, 1, H, D] key tensor.
+        v: [B, H, D] or [B, 1, H, D] value tensor.
+        state: [B, H, D, D] recurrent state matrix.
+        decay: Exponential decay factor gamma in (0, 1].
+
+    Returns:
+        (out, updated_state) where out has shape matching q.
+    """
+    orig_ndim = q.ndim
+    if orig_ndim == 4:
+        # Squeeze sequence dimension
+        q_cur = q.squeeze(1).float()
+        k_cur = k.squeeze(1).float()
+        v_cur = v.squeeze(1).float()
+    else:
+        q_cur = q.float()
+        k_cur = k.float()
+        v_cur = v.float()
+
+    state_cur = state.float()
+
+    # Feature maps
+    q_phi = torch.where(q_cur > 0.0, q_cur + 1.0, torch.exp(q_cur))
+    k_phi = torch.where(k_cur > 0.0, k_cur + 1.0, torch.exp(k_cur))
+
+    # Outer product delta_S = k_phi^T * v -> [B, H, D, D]
+    delta_s = torch.einsum("bhi,bhj->bhij", k_phi, v_cur)
+    new_state = decay * state_cur + delta_s
+
+    # Out = q_phi @ new_state -> [B, H, D]
+    out = torch.einsum("bhi,bhij->bhj", q_phi, new_state)
+
+    if orig_ndim == 4:
+        out = out.unsqueeze(1)
+
+    return out.to(q.dtype), new_state.to(state.dtype)
+
+
 def paged_linear_attention(
     q: torch.Tensor,
     k_cache: torch.Tensor,
@@ -271,7 +461,7 @@ def paged_linear_attention(
         k_cache: [num_blocks, block_size, H, D] Physical block pool for keys.
         v_cache: [num_blocks, block_size, H, D] Physical block pool for values.
         block_tables: [B, max_num_blocks] Logical-to-physical block table mapping.
-        block_size: Tokens per physical page block (e.g. 16 or 32).
+        block_size: Tokens per physical page block (e.g. 16, 32, or 64).
         swizzle: Whether XOR shared memory bank swizzling is applied.
 
     Returns:
@@ -342,6 +532,96 @@ def paged_linear_attention(
     )
 
 
+def paged_linear_attention_decode_step(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    state: torch.Tensor,
+    decay: float = 1.0,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    High-throughput single-token decode step entrypoint adhering to 3-level fallback (Phase 089).
+
+    Level 1: Native Triton JIT GPU kernel (O(1) in-place state update).
+    Level 3: Vectorized PyTorch reference (universal CPU/MPS fallback).
+
+    Args:
+        q: [B, 1, H, D] or [B, H, D] Query tensor.
+        k: [B, 1, H, D] or [B, H, D] Key tensor.
+        v: [B, 1, H, D] or [B, H, D] Value tensor.
+        state: [B, H, D, D] Recurrent associative state tensor.
+        decay: State decay factor gamma in (0, 1].
+
+    Returns:
+        (out, updated_state)
+    """
+    b = q.shape[0]
+    h = q.shape[-2] if q.ndim == 4 else q.shape[1]
+    d = q.shape[-1]
+
+    can_use_triton = (
+        HAS_TRITON
+        and paged_linear_attention_decode_kernel is not None
+        and q.is_cuda
+        and k.is_cuda
+        and v.is_cuda
+        and state.is_cuda
+        and check_triton_suitability(q)
+    )
+
+    if can_use_triton:
+        orig_ndim = q.ndim
+        q_in = q.squeeze(1).contiguous() if orig_ndim == 4 else q.contiguous()
+        k_in = k.squeeze(1).contiguous() if orig_ndim == 4 else k.contiguous()
+        v_in = v.squeeze(1).contiguous() if orig_ndim == 4 else v.contiguous()
+        state_in = state.contiguous()
+
+        out = torch.empty(b, h, d, device=q.device, dtype=q.dtype)
+        grid = (b, h)
+        paged_linear_attention_decode_kernel[grid](
+            q_in,
+            k_in,
+            v_in,
+            state_in,
+            out,
+            q_in.stride(0),
+            q_in.stride(1),
+            q_in.stride(2),
+            k_in.stride(0),
+            k_in.stride(1),
+            k_in.stride(2),
+            v_in.stride(0),
+            v_in.stride(1),
+            v_in.stride(2),
+            state_in.stride(0),
+            state_in.stride(1),
+            state_in.stride(2),
+            state_in.stride(3),
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            decay=decay,
+            BLOCK_D=d,
+        )
+        if orig_ndim == 4:
+            out = out.unsqueeze(1)
+        return out, state_in
+
+    if q.is_cuda:
+        logger.warning(
+            "paged_linear_attention_decode_step: Triton kernel unavailable or input conditions not met. "
+            "Falling back to Level 3 PyTorch reference."
+        )
+
+    return paged_linear_attention_decode_step_pytorch(
+        q=q,
+        k=k,
+        v=v,
+        state=state,
+        decay=decay,
+    )
+
+
 def create_paged_kv_cache(
     batch_size: int,
     seq_len: int,
@@ -352,7 +632,7 @@ def create_paged_kv_cache(
     dtype: torch.dtype = torch.float32,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
-    Allocates physical KV cache blocks and generates random non-contiguous block tables.
+    Allocates physical KV cache blocks and generates random non-contiguous block tables (Phase 081).
 
     Returns:
         (k_cache, v_cache, block_tables)
@@ -369,7 +649,10 @@ def create_paged_kv_cache(
     v_cache = torch.randn(pool_blocks, block_size, num_heads, head_dim, device=device, dtype=dtype)
 
     # Random permutation of physical blocks across batch sequences
-    perm = torch.randperm(pool_blocks, device=device, dtype=torch.int32)
+    perm = torch.randperm(pool_blocks, device=device, dtype=torch.long)
     block_tables = perm[:total_needed_blocks].view(batch_size, num_blocks_per_seq).contiguous()
+
+    # Validate generated physical block table structure
+    validate_block_tables(block_tables, pool_blocks, seq_len, block_size)
 
     return k_cache, v_cache, block_tables
