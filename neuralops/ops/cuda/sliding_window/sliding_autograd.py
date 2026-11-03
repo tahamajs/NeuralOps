@@ -21,7 +21,7 @@ import torch
 import torch.nn.functional as F
 
 from neuralops.ops.cuda._bindings import load_cuda_module
-from neuralops.ops.cuda._fallback import dispatch
+from neuralops.ops.cuda._fallback import dispatch, get_last_dispatch_backend, set_last_dispatch_backend
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ def _sliding_window_forward_dispatch(
     mod = _get_module()
     cuda_fn = mod.sliding_window_attn_fwd if mod is not None else None
 
-    return dispatch(
+    res = dispatch(
         cuda_fn,
         _sliding_window_triton_fallback,
         sliding_window_pytorch_ref,
@@ -123,6 +123,9 @@ def _sliding_window_forward_dispatch(
         scale,
         kernel_name="sliding_window_attn",
     )
+    # Also register alias for callers querying 'sliding_window'
+    set_last_dispatch_backend("sliding_window", get_last_dispatch_backend("sliding_window_attn"))
+    return res
 
 
 class _SlidingWindowAttnFunction(torch.autograd.Function):
