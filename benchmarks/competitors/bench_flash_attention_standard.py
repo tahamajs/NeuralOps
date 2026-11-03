@@ -16,6 +16,7 @@ Originating standard: Stanford / Tri Dao.
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 import torch
@@ -23,6 +24,28 @@ from neuralops.benchmarks.registry import register_benchmark
 from neuralops.kernels.cuda import flash_decoding_attention
 
 logger = logging.getLogger(__name__)
+
+
+def compute_peak_tflops_ratio(
+    flops: float,
+    latency_ms: float,
+    peak_tflops: float,
+) -> tuple[float, float]:
+    """Calculate attained TFLOPS and percentage of physical theoretical peak hardware FLOPS.
+
+    Args:
+        flops: Total floating point operations performed.
+        latency_ms: Execution duration in milliseconds.
+        peak_tflops: Hardware theoretical peak TFLOPS.
+
+    Returns:
+        Tuple of (attained_tflops, pct_peak).
+    """
+    if latency_ms <= 0.0 or peak_tflops <= 0.0:
+        raise ValueError("latency_ms and peak_tflops must be strictly positive.")
+    attained_tflops = (flops / (latency_ms * 1e-3)) / 1e12
+    pct_peak = (attained_tflops / peak_tflops) * 100.0
+    return attained_tflops, pct_peak
 
 
 @register_benchmark(name="flash_attention_standard", mode="flash-compute", hardware="cuda")
@@ -92,16 +115,13 @@ def benchmark_flash_attn_tflops(
         torch.cuda.synchronize(dev)
         latency_ms = start_evt.elapsed_time(end_evt) / iters
     else:
-        import time
-
         t0 = time.perf_counter()
         for _ in range(iters):
             out = flash_decoding_attention(q, k, v)
         elapsed_sec = time.perf_counter() - t0
         latency_ms = (elapsed_sec / iters) * 1000.0
 
-    tflops = (fwd_flops / (latency_ms * 1e-3)) / 1e12
-    pct_peak = (tflops / peak_tflops) * 100.0
+    tflops, pct_peak = compute_peak_tflops_ratio(fwd_flops, latency_ms, peak_tflops)
 
     return {
         "benchmark": "flash_attention_standard",
@@ -115,6 +135,11 @@ def benchmark_flash_attn_tflops(
         "fwd_flops": fwd_flops,
         "peak_theoretical_tflops": peak_tflops,
     }
+
+
+def run_flash_attention_benchmark(**kwargs: Any) -> dict[str, Any]:
+    """Compatibility alias matching implementation plan symbol."""
+    return benchmark_flash_attn_tflops(**kwargs)
 
 
 def run_benchmark(**kwargs: Any) -> dict[str, Any]:
