@@ -30,6 +30,25 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+
+# Inject compatibility shim for torch.distributed._tensor on PyTorch 1.12
+try:
+    import torch.distributed._tensor
+except (ImportError, ModuleNotFoundError):
+    import types
+    mod = types.ModuleType("torch.distributed._tensor")
+    class DTensor: pass
+    class Shard: pass
+    class Replicate: pass
+    mod.DTensor = DTensor
+    mod.Shard = Shard
+    mod.Replicate = Replicate
+    mod.distribute_tensor = lambda t, *a, **kw: t
+    mod.distribute_module = lambda m, *a, **kw: m
+    sys.modules["torch.distributed._tensor"] = mod
+    if "torch.distributed" in sys.modules:
+        sys.modules["torch.distributed"]._tensor = mod
+
 import torch
 
 
@@ -116,7 +135,35 @@ def execute_notebook(nb_path: str | Path) -> bool:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python run_ipynb_cells.py <notebook_path>")
+        print("Usage: python run_ipynb_cells.py <notebook_path_or_--all>")
         sys.exit(1)
-    success = execute_notebook(sys.argv[1])
-    sys.exit(0 if success else 1)
+
+    if sys.argv[1] == "--all":
+        nb_dir = REPO_ROOT / "notebooks"
+        all_nbs = sorted(list(nb_dir.glob("*.ipynb")))
+        print(f"\nDiscovered {len(all_nbs)} notebooks to execute in batch mode.\n")
+        results = []
+        for nb in all_nbs:
+            try:
+                ok = execute_notebook(nb)
+                results.append((nb.name, "PASSED" if ok else "FAILED"))
+            except Exception as e:
+                print(f"[FATAL] Notebook {nb.name} crashed runner: {e}")
+                results.append((nb.name, "CRASHED"))
+
+        print("\n" + "=" * 70)
+        print("FINAL BATCH NOTEBOOK EXECUTION SUMMARY:")
+        print("=" * 70)
+        for name, status in results:
+            print(f"  {name:<60}: {status}")
+        total_failed = sum(1 for _, s in results if s != "PASSED")
+        print(f"\nTotal: {len(results)} | Passed: {len(results) - total_failed} | Failed/Crashed: {total_failed}\n")
+        sys.exit(0 if total_failed == 0 else 1)
+    else:
+        success = True
+        for arg in sys.argv[1:]:
+            nb_path = Path(arg)
+            ok = execute_notebook(nb_path)
+            if not ok:
+                success = False
+        sys.exit(0 if success else 1)
