@@ -14,7 +14,7 @@ Routes attention topologies and sanitizes masks for causal, bidirectional, and c
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -331,10 +331,175 @@ class AsymmetricCrossAttentionRouter(nn.Module):
         self._cached_z_cross = None
 
 
+class TopologyRouter(nn.Module):
+    """
+    Phase 055: Dynamic Topology Router & Path Divergence Handler for Hybrid Architectures.
+
+    Enables dynamic execution across heterogeneous attention layers:
+      1. 'alternating': Alternates between layer types across depth (e.g. even=linear, odd=full).
+      2. 'layer_schedule': Explicit per-layer list or dictionary mapping layer indices to branch names.
+      3. 'sliding_window': Routes based on sequence length T vs window_size threshold.
+      4. 'dynamic_gate': Dynamic Mixture-of-Attentions (MoA) soft routing using learned projection gate.
+      5. 'passthrough': Direct execution of the primary branch.
+
+    DoD Gate: Guarantees zero shape mismatch across layer transitions (strictly preserving [B, T, D] or [B, H, T, D]).
+    """
+
+    def __init__(
+        self,
+        branches: Optional[Union[Dict[str, nn.Module], nn.ModuleDict, nn.ModuleList]] = None,
+        routing_strategy: str = "alternating",
+        schedule: Optional[Union[List[str], Dict[int, str]]] = None,
+        window_size: Optional[int] = None,
+        d_model: Optional[int] = None,
+        default_branch: Optional[str] = None,
+    ) -> None:
+        super().__init__()
+        self.routing_strategy = routing_strategy
+        self.schedule = schedule
+        self.window_size = window_size
+        self.d_model = d_model
+
+        # Register branches in ModuleDict
+        self.branches = nn.ModuleDict()
+        if branches is not None:
+            if isinstance(branches, dict):
+                for k, v in branches.items():
+                    self.branches[str(k)] = v
+            elif isinstance(branches, nn.ModuleDict):
+                self.branches = branches
+            elif isinstance(branches, (list, nn.ModuleList)):
+                for idx, mod in enumerate(branches):
+                    self.branches[f"branch_{idx}"] = mod
+
+        self.branch_names: List[str] = list(self.branches.keys())
+        self.default_branch = default_branch or (self.branch_names[0] if self.branch_names else "default")
+
+        # Dynamic Gating Network for MoA (if strategy is dynamic_gate)
+        if routing_strategy == "dynamic_gate" and d_model is not None and len(self.branch_names) > 1:
+            self.gate: Optional[nn.Linear] = nn.Linear(d_model, len(self.branch_names), bias=False)
+        else:
+            self.gate = None
+
+    def register_branch(self, name: str, module: nn.Module) -> None:
+        """Dynamically registers or updates an attention branch."""
+        self.branches[name] = module
+        if name not in self.branch_names:
+            self.branch_names.append(name)
+        if self.default_branch not in self.branches:
+            self.default_branch = name
+
+    def select_branch_name(
+        self,
+        layer_idx: Optional[int] = None,
+        seq_len: Optional[int] = None,
+    ) -> str:
+        """Determines the target branch name based on routing strategy and invocation context."""
+        if not self.branch_names:
+            raise RuntimeError("TopologyRouter has zero registered branches.")
+
+        if self.routing_strategy == "passthrough":
+            return self.default_branch
+
+        if self.routing_strategy == "alternating":
+            idx = layer_idx if layer_idx is not None else 0
+            branch_idx = idx % len(self.branch_names)
+            return self.branch_names[branch_idx]
+
+        if self.routing_strategy == "layer_schedule" and self.schedule is not None:
+            idx = layer_idx if layer_idx is not None else 0
+            if isinstance(self.schedule, dict):
+                if idx in self.schedule:
+                    return self.schedule[idx]
+            elif isinstance(self.schedule, list):
+                if 0 <= idx < len(self.schedule):
+                    return self.schedule[idx]
+            return self.default_branch
+
+        if self.routing_strategy == "sliding_window":
+            if self.window_size is not None and seq_len is not None:
+                if seq_len <= self.window_size and "window" in self.branches:
+                    return "window"
+                elif seq_len > self.window_size and "linear" in self.branches:
+                    return "linear"
+            return self.default_branch
+
+        return self.default_branch
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        *args: Any,
+        layer_idx: Optional[int] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Dispatches hidden states through designated branch(es), strictly enforcing shape invariants.
+        Expects hidden_states of shape [B, T, D] or [B, H, T, D].
+        """
+        expected_shape = hidden_states.shape
+        seq_len = hidden_states.shape[-2]
+
+        if self.routing_strategy == "dynamic_gate" and self.gate is not None and len(self.branch_names) > 1:
+            # Mixture-of-Attentions Soft Dynamic Gating
+            gate_logits = self.gate(hidden_states)
+            gate_weights = F.softmax(gate_logits, dim=-1)
+
+            accum_out = None
+            for idx, name in enumerate(self.branch_names):
+                mod = self.branches[name]
+                out_branch = mod(hidden_states, *args, attention_mask=attention_mask, **kwargs)
+                if isinstance(out_branch, tuple):
+                    branch_tensor = out_branch[0]
+                else:
+                    branch_tensor = out_branch
+
+                w = gate_weights[..., idx : idx + 1]
+                weighted = branch_tensor * w
+                if accum_out is None:
+                    accum_out = weighted
+                else:
+                    accum_out = accum_out + weighted
+
+            if accum_out.shape != expected_shape:
+                raise ValueError(
+                    f"TopologyRouter shape mismatch: expected {expected_shape}, got {accum_out.shape}"
+                )
+            return accum_out
+
+        # Discrete branch selection
+        target_name = self.select_branch_name(layer_idx=layer_idx, seq_len=seq_len)
+        if target_name not in self.branches:
+            target_name = self.default_branch
+
+        selected_module = self.branches[target_name]
+        out = selected_module(hidden_states, *args, attention_mask=attention_mask, **kwargs)
+
+        # Enforce shape consistency
+        if isinstance(out, tuple):
+            main_out = out[0]
+            extra = out[1:]
+            if main_out.shape != expected_shape:
+                raise ValueError(
+                    f"TopologyRouter branch '{target_name}' output shape mismatch: "
+                    f"expected {expected_shape}, got {main_out.shape}"
+                )
+            return (main_out, *extra)
+        else:
+            if out.shape != expected_shape:
+                raise ValueError(
+                    f"TopologyRouter branch '{target_name}' output shape mismatch: "
+                    f"expected {expected_shape}, got {out.shape}"
+                )
+            return out
+
+
 __all__ = [
     "extract_binary_token_mask",
     "sanitize_kv_for_padding_mask",
     "sanitize_output_for_padding_mask",
     "BiDirectionalScanWrapper",
     "AsymmetricCrossAttentionRouter",
+    "TopologyRouter",
 ]

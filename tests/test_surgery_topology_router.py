@@ -16,6 +16,7 @@ from neuralops.surgery.topology_router import (
     sanitize_kv_for_padding_mask,
     BiDirectionalScanWrapper,
     AsymmetricCrossAttentionRouter,
+    TopologyRouter,
 )
 from neuralops.attentions.linear.cosformer import CosformerAttention
 
@@ -74,3 +75,92 @@ def test_asymmetric_cross_attention_router():
 
     out, _ = router(q_hidden, encoder_hidden_states=kv_hidden)
     assert out.shape == (B, T_q, D)
+
+
+def test_topology_router_alternating_execution():
+    """Phase 055: Tests TopologyRouter alternating routing without shape mismatches."""
+    linear_branch = nn.Identity()
+    full_attn_branch = nn.Linear(64, 64)
+    router = TopologyRouter(
+        branches={"linear": linear_branch, "full": full_attn_branch},
+        routing_strategy="alternating",
+    )
+
+    B, T, D = 2, 8, 64
+    x = torch.randn(B, T, D)
+
+    # Even layer -> 'linear'
+    out_even = router(x, layer_idx=0)
+    assert out_even.shape == (B, T, D)
+    assert torch.allclose(out_even, x)
+
+    # Odd layer -> 'full'
+    out_odd = router(x, layer_idx=1)
+    assert out_odd.shape == (B, T, D)
+
+
+def test_topology_router_layer_schedule_and_sliding_window():
+    """Phase 055: Tests TopologyRouter layer schedule mapping and sliding window thresholding."""
+    branch_a = nn.Identity()
+    branch_b = nn.Linear(32, 32)
+    schedule = {0: "window", 1: "linear", 2: "window"}
+    router = TopologyRouter(
+        branches={"window": branch_a, "linear": branch_b},
+        routing_strategy="layer_schedule",
+        schedule=schedule,
+        window_size=16,
+    )
+
+    B, T, D = 2, 10, 32
+    x = torch.randn(B, T, D)
+
+    # Scheduled layer 0 -> window
+    out_0 = router(x, layer_idx=0)
+    assert out_0.shape == (B, T, D)
+    assert torch.allclose(out_0, x)
+
+    # Scheduled layer 1 -> linear
+    out_1 = router(x, layer_idx=1)
+    assert out_1.shape == (B, T, D)
+
+    # Switch to sliding window strategy
+    router.routing_strategy = "sliding_window"
+    # T=10 <= window_size=16 -> window (identity)
+    out_short = router(x)
+    assert torch.allclose(out_short, x)
+
+    # T=32 > window_size=16 -> linear
+    x_long = torch.randn(B, 32, D)
+    out_long = router(x_long)
+    assert out_long.shape == (B, 32, D)
+
+
+def test_topology_router_dynamic_gate_moa():
+    """Phase 055: Tests Dynamic Mixture-of-Attentions gating."""
+    branch_1 = nn.Linear(32, 32)
+    branch_2 = nn.Linear(32, 32)
+    router = TopologyRouter(
+        branches={"branch_1": branch_1, "branch_2": branch_2},
+        routing_strategy="dynamic_gate",
+        d_model=32,
+    )
+
+    B, T, D = 2, 8, 32
+    x = torch.randn(B, T, D)
+    out = router(x)
+    assert out.shape == (B, T, D)
+
+
+def test_topology_router_shape_mismatch_exception():
+    """Phase 055: Guarantees TopologyRouter raises ValueError upon shape mismatch."""
+    invalid_branch = nn.Linear(32, 16)  # outputs D=16 instead of 32
+    router = TopologyRouter(
+        branches={"bad_branch": invalid_branch},
+        routing_strategy="passthrough",
+    )
+
+    B, T, D = 2, 8, 32
+    x = torch.randn(B, T, D)
+    with pytest.raises(ValueError, match="output shape mismatch"):
+        router(x)
+

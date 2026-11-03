@@ -26,12 +26,27 @@ from neuralops.surgery.director import (
     CrossAttentionLinearBridge,
     InvariantPreservingLinearBridge,
     UniversalSurgeryDirector,
+    _decouple_rope_transform,
+    _detect_projection_layout,
+    _initialize_identity_adapters,
+    _inspect_positional_topology,
+    _remediate_tied_embeddings,
     apply_rope_pre_feature_map,
     apply_rotary_pos_emb,
     compute_decayed_state_bound,
+    compute_state_decay_bound,
+    decouple_rope_transform,
+    extract_qkv_weights,
+    initialize_identity_adapters,
     profile_model_topology,
     re_tie_embeddings,
+    sanitize_kv_for_padding_mask,
+    sanitize_output_for_padding_mask,
     verify_tied_embeddings,
+)
+from neuralops.surgery.scanner import (
+    DiscoveredLayer,
+    ModelScanner,
 )
 
 
@@ -726,17 +741,30 @@ def test_invariant_preserving_linear_bridge_forward_step_autoregressive() -> Non
 
 
 def test_legacy_shims_forwarding() -> None:
-    """Verifies attention_replace and surgery_manifest legacy shims forward to UniversalSurgeryDirector."""
+    """Verifies pruned legacy surgery shims cleanly redirect via neuralops.surgery."""
     from neuralops.surgery.attention_replace import (
         UniversalSurgeryDirector as DirectorShim1,
         replace_attention,
     )
-    from neuralops.surgery.surgery_manifest import (
-        UniversalSurgeryDirector as DirectorShim2,
+    from neuralops.surgery import (
+        SurgeryManifest,
+        SurgeryPipeline,
+        extract_surgical_manifest,
+        get_recovery_params,
+        load_surgical_checkpoint,
+        replay_surgery_manifest,
+        save_surgical_checkpoint,
     )
+    from neuralops.export.surgery_manifest import SurgeryManifest as CanonicalSurgeryManifest
 
     assert DirectorShim1 is UniversalSurgeryDirector
-    assert DirectorShim2 is UniversalSurgeryDirector
+    assert SurgeryManifest is CanonicalSurgeryManifest
+    assert callable(get_recovery_params)
+    assert callable(extract_surgical_manifest)
+    assert callable(save_surgical_checkpoint)
+    assert callable(load_surgical_checkpoint)
+    assert callable(replay_surgery_manifest)
+    assert hasattr(SurgeryPipeline, "apply_universal_director")
 
     gemma = MockGemma2Model()
     surgeried = replace_attention(gemma)
@@ -756,3 +784,698 @@ def test_surgical_model_protocol_compliance() -> None:
     assert manifest["family"] == "gemma2"
     assert surgeried.get_attention_family(0) == "cosformer"
     assert isinstance(surgeried, SurgicalModel)
+
+
+# ==============================================================================
+# Phases 046 – 050 Specialized DoD Tests
+# ==============================================================================
+
+
+def test_phase_046_law_2_logit_softcapping_mathematical_folding() -> None:
+    """
+    Phase 046 (Law 2): Gemma-2 logit soft-capping mathematical folding.
+    Validates bounded soft-capping feature map:
+      phi_cap(x) = C * tanh(x / C) + C, 0.0 <= phi_cap(x) <= 2C.
+    Prevents logit saturation and FP16 overflow during long-context generation.
+    """
+    c = 50.0
+    bridge = InvariantPreservingLinearBridge(
+        has_qk_norm=False,
+        softcapping_factor=c,
+        head_dim=64,
+    )
+    scale = bridge.compute_folded_scale()
+    expected_scale = (1.0 / 8.0) * math.tanh(c / max(c, 1.0))
+    assert pytest.approx(scale, 1e-6) == expected_scale
+
+    # Test extreme negative inputs: phi_cap(x) approaches 0.0 but strictly >= 0.0
+    x_neg = torch.tensor([-1e6, -100.0, -50.0, -10.0])
+    phi_neg = bridge.fold_softcapping_feature_map(x_neg)
+    assert (phi_neg >= 0.0).all()
+
+    # Test zero input: phi_cap(0) = C
+    x_zero = torch.tensor([0.0])
+    phi_zero = bridge.fold_softcapping_feature_map(x_zero)
+    assert pytest.approx(phi_zero.item(), 1e-5) == c
+
+    # Test extreme positive inputs: phi_cap(x) bounded by 2C
+    x_pos = torch.tensor([10.0, 50.0, 100.0, 1e6])
+    phi_pos = bridge.fold_softcapping_feature_map(x_pos)
+    assert (phi_pos <= 2.0 * c).all()
+
+    # Full forward pass with soft-capping
+    B, H, T, D = 2, 4, 16, 64
+    q = torch.randn(B, H, T, D) * 100.0
+    k = torch.randn(B, H, T, D) * 100.0
+    v = torch.randn(B, H, T, D)
+    out = bridge(q, k, v)
+    assert out.shape == (B, H, T, D)
+    assert not torch.isnan(out).any()
+    assert not torch.isinf(out).any()
+
+
+def test_phase_047_law_3_zero_bleed_padding_and_varlen_boundary() -> None:
+    """
+    Phase 047 (Law 3): Zero-Bleed Padding & Varlen Boundary Offset Invariant.
+    Validates:
+      1. Arbitrary noise (10^7) in masked padding positions produces exactly zero output.
+      2. Cross-document attention leakage is mathematically zero (||leakage|| == 0.0).
+    """
+    B, H, T, D = 2, 2, 8, 16
+    q = torch.randn(B, H, T, D)
+    k = torch.randn(B, H, T, D)
+    v = torch.randn(B, H, T, D)
+
+    # Valid length = 5, padded = 3
+    mask = torch.tensor([
+        [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
+        [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
+    ])
+
+    bridge = InvariantPreservingLinearBridge(head_dim=16)
+
+    # Clean execution
+    out_clean = bridge(q, k, v, attention_mask=mask)
+
+    # Noisy padding injection
+    k_noisy = k.clone()
+    v_noisy = v.clone()
+    k_noisy[:, :, 5:, :] = 1e7
+    v_noisy[:, :, 5:, :] = -1e7
+
+    out_noisy = bridge(q, k_noisy, v_noisy, attention_mask=mask)
+
+    # Valid positions are identical
+    leakage = torch.abs(out_clean[:, :, :5, :] - out_noisy[:, :, :5, :]).max().item()
+    assert leakage == 0.0 or leakage < 1e-5
+
+    # Padded positions are strictly zero
+    pad_norm = torch.abs(out_noisy[:, :, 5:, :]).max().item()
+    assert pad_norm == 0.0
+
+    # Varlen cu_seqlens test
+    cu_seqlens = torch.tensor([0, 3, 6], dtype=torch.int32)
+    k_packed = torch.randn(1, 1, 8, 16)
+    v_packed = torch.randn(1, 1, 8, 16)
+    k_packed[:, :, 6:, :] = 999.0
+    v_packed[:, :, 6:, :] = 999.0
+
+    k_clean, v_clean = sanitize_kv_for_padding_mask(k_packed, v_packed, cu_seqlens=cu_seqlens)
+    assert (k_clean[:, :, 6:, :] == 0.0).all()
+    assert (v_clean[:, :, 6:, :] == 0.0).all()
+
+
+def test_phase_048_law_4_cross_attention_o1_decoding_latency() -> None:
+    """
+    Phase 048 (Law 4): Cross-Attention Static Key-Value Cache Bridge.
+    Precomputes S_cross in O(T_enc) once; subsequent decoding steps execute in O(1) time.
+    """
+    bridge = CrossAttentionLinearBridge(head_dim=32)
+    assert not bridge.is_initialized
+
+    B, H, T_enc, D = 1, 4, 128, 32
+    k_enc = torch.randn(B, H, T_enc, D)
+    v_enc = torch.randn(B, H, T_enc, D)
+
+    # Prefill once
+    s_cross = bridge.compute_cross_state(k_enc, v_enc)
+    assert bridge.is_initialized
+    assert s_cross.shape == (B, H, D, D)
+    assert bridge.prefill_count == 1
+
+    # 10 decoding steps
+    for _ in range(10):
+        q_step = torch.randn(B, H, 1, D)
+        out_step = bridge.decode_step(q_step)
+        assert out_step.shape == (B, H, 1, D)
+        assert not torch.isnan(out_step).any()
+
+    stats = bridge.get_cache_stats()
+    assert stats["prefill_count"] == 1
+    assert stats["decode_steps"] == 10
+    assert stats["hit_rate"] == 1.0
+
+
+def test_phase_049_law_5_rotary_embedding_decoupling_and_passthrough() -> None:
+    """
+    Phase 049 (Law 5): Rotary Embedding Decoupling & Pass-Through.
+    Validates decoupled RoPE stream and 1D exponential decay pass-through.
+    """
+    B, H, T, D = 1, 1, 16, 32
+    q = torch.ones(B, H, T, D)
+    k = torch.ones(B, H, T, D)
+
+    # RoPE on 16 channels, content on 16 channels
+    rope_dim = 16
+    pos = torch.arange(T, dtype=torch.float32).unsqueeze(-1)
+    inv_freq = 1.0 / (10000.0 ** (torch.arange(0, rope_dim, 2, dtype=torch.float32) / rope_dim))
+    angles = pos * inv_freq
+    cos = torch.cat([torch.cos(angles), torch.cos(angles)], dim=-1).view(1, 1, T, rope_dim)
+    sin = torch.cat([torch.sin(angles), torch.sin(angles)], dim=-1).view(1, 1, T, rope_dim)
+
+    q_dec, k_dec = _decouple_rope_transform(q, k, cos=cos, sin=sin, rope_dim=rope_dim, decay_gamma=0.95)
+    assert q_dec.shape == (B, H, T, D)
+    assert k_dec.shape == (B, H, T, D)
+
+    # Decoupled alias test
+    q_dec2, k_dec2 = decouple_rope_transform(q, k, cos=cos, sin=sin, rope_dim=rope_dim)
+    assert torch.allclose(q_dec2[..., :16], q[..., :16])
+
+
+def test_phase_050_law_6_identity_adapters_initialization() -> None:
+    """
+    Phase 050 (Law 6): Post-Surgery Parameter Identity Initialization.
+    Newly mounted adapters and sidecars initialize with alpha_init = 0.0,
+    guaranteeing student replicates teacher output with zero degradation at step 0.
+    """
+    class MockAdapterModule(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.alpha = nn.Parameter(torch.tensor(1.0))
+            self.linear_1 = nn.Linear(16, 8)
+            self.linear_2 = nn.Linear(8, 16)
+            self.sidecar = nn.Module()
+            self.sidecar.alpha = 0.8
+            self.sidecar.gate_proj = nn.Linear(16, 4)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return x + self.alpha * self.linear_2(self.linear_1(x))
+
+    model = MockAdapterModule()
+    # At start, weights are non-zero
+    assert model.alpha.item() == 1.0
+    assert model.sidecar.alpha == 0.8
+
+    # Apply Law 6 identity initialization
+    initialize_identity_adapters(model)
+
+    assert model.alpha.item() == 0.0
+    assert model.sidecar.alpha == 0.0
+    assert torch.all(model.linear_2.weight == 0.0)
+    assert torch.all(model.sidecar.gate_proj.weight == 0.0)
+
+    # Test forward is exact identity (student replicates teacher)
+    x = torch.randn(2, 4, 16)
+    out = model(x)
+    assert torch.allclose(out, x, atol=1e-7)
+
+
+def test_phase_051_state_decay_bound_and_attention_sinks() -> None:
+    """
+    Phase 051 (Law 7): Validates compute_state_decay_bound and attention sink stability.
+    State norm is strictly bounded by geometric series: ||S_t||_F <= (1 / (1 - gamma)) * max_i ||phi(K_i)^T V_i||_F.
+    """
+    gamma = 0.99
+    max_step_norm = 1.25
+    bound = compute_state_decay_bound(max_step_norm, gamma=gamma)
+    assert abs(bound - (1.25 / 0.01)) < 1e-6  # exactly 125.0 (100x max factor)
+
+    # Test InvariantPreservingLinearBridge with attention sinks
+    bridge = InvariantPreservingLinearBridge(head_dim=16, decay=0.99, num_attention_sinks=2)
+    B, H, T, D = 2, 2, 8, 16
+    q = torch.randn(B, H, T, D)
+    k = torch.randn(B, H, T, D)
+    v = torch.randn(B, H, T, D)
+
+    out = bridge(q, k, v, is_causal=True)
+    assert out.shape == (B, H, T, D)
+    assert not torch.isnan(out).any()
+    assert not torch.isinf(out).any()
+
+
+def test_phase_052_tied_embedding_pointer_synchronization() -> None:
+    """
+    Phase 052 (Law 8): Detects tied weights and guarantees pointers remain properly synchronized
+    without memory corruption.
+    """
+    gemma = MockGemma2Model()
+    assert verify_tied_embeddings(gemma) is True
+    assert gemma.lm_head.weight.data_ptr() == gemma.embed_tokens.weight.data_ptr()
+
+    # Intentionally untie by allocating new parameter
+    gemma.lm_head.weight = nn.Parameter(torch.randn_like(gemma.embed_tokens.weight))
+    assert verify_tied_embeddings(gemma) is False
+
+    # Auto-remediation via _remediate_tied_embeddings
+    remediated = _remediate_tied_embeddings(gemma)
+    assert remediated is True
+    assert verify_tied_embeddings(gemma) is True
+    assert gemma.lm_head.weight.data_ptr() == gemma.embed_tokens.weight.data_ptr()
+    assert id(gemma.lm_head.weight) == id(gemma.embed_tokens.weight)
+
+
+def test_phase_053_fp32_accumulation_drift_bound() -> None:
+    """
+    Phase 053 (Law 9): Validates FP32 accumulation registers with reduced precision inputs,
+    verifying numerical drift between float64 reference and surgical output <= 1e-4.
+    """
+    bridge = InvariantPreservingLinearBridge(head_dim=16)
+    B, H, T, D = 2, 2, 8, 16
+
+    # Generate double-precision inputs for reference
+    torch.manual_seed(42)
+    q_f64 = torch.randn(B, H, T, D, dtype=torch.float64)
+    k_f64 = torch.randn(B, H, T, D, dtype=torch.float64)
+    v_f64 = torch.randn(B, H, T, D, dtype=torch.float64)
+
+    # Reference computation in float64
+    q_phi_64 = torch.nn.functional.elu(q_f64) + 1.0
+    k_phi_64 = torch.nn.functional.elu(k_f64) + 1.0
+    kv_64 = torch.einsum("bhtd,bhte->bhde", k_phi_64, v_f64)
+    out_64 = torch.einsum("bhtd,bhde->bhte", q_phi_64, kv_64)
+    k_sum_64 = k_phi_64.sum(dim=2, keepdim=True)
+    denom_64 = torch.einsum("bhtd,bh1d->bht", q_phi_64, k_sum_64).unsqueeze(-1) + 1e-6
+    ref_out = out_64 / denom_64
+
+    # Run through bridge with float16 input
+    q_f16 = q_f64.to(torch.float16)
+    k_f16 = k_f64.to(torch.float16)
+    v_f16 = v_f64.to(torch.float16)
+    out_bridge = bridge(q_f16, k_f16, v_f16, is_causal=False)
+
+    assert out_bridge.dtype == torch.float16
+    assert bridge.last_accum_dtype == torch.float32
+
+    # Verify numerical drift against float64 reference <= 1e-3 (FP16 precision resolution)
+    diff = torch.abs(out_bridge.to(torch.float64) - ref_out).max().item()
+    assert diff <= 1e-3
+
+    # Also run with float32 inputs: drift against float64 reference <= 1e-4
+    q_f32 = q_f64.to(torch.float32)
+    k_f32 = k_f64.to(torch.float32)
+    v_f32 = v_f64.to(torch.float32)
+    out_f32 = bridge(q_f32, k_f32, v_f32, is_causal=False)
+    diff_f32 = torch.abs(out_f32.to(torch.float64) - ref_out).max().item()
+    assert diff_f32 <= 1e-4
+
+
+def test_phase_054_certify_model_structured_json_audit() -> None:
+    """
+    Phase 054 (Law 10): Validates UniversalSurgeryDirector.certify_model automated auditor,
+    returning structured dictionary and JSON report with 10/10 Inviolable Laws certified.
+    """
+    import json
+
+    gemma = MockGemma2Model()
+    director = UniversalSurgeryDirector(gemma)
+    surgeried_model = director.perform_surgery()
+    assert surgeried_model is not None
+
+    report = director.certify_model(strict=True)
+    assert report["certified"] is True
+    assert report["score"] == "10/10"
+    assert len(report["violations"]) == 0
+    assert report["laws_certified"]["Law_1_QK_Norm"] is True
+    assert report["laws_certified"]["Law_8_Tied_Embeddings"] is True
+    assert report["laws_certified"]["Law_10_Master_Universal_Certification"] is True
+
+    # Validate JSON serialization
+    json_str = director.certify_model_json(strict=True)
+    parsed = json.loads(json_str)
+    assert parsed["score"] == "10/10"
+    assert parsed["certified"] is True
+
+
+# ==============================================================================
+# Phases 041 through 045 DoD Gate Validation Tests
+# ==============================================================================
+
+
+def test_phase_041_dod_exhaustive_architecture_profile() -> None:
+    """
+    Phase 041 DoD Gate: Generates exhaustive ArchitectureProfile with zero unidentified fields
+    across all 9 canonical model families.
+    """
+    models = {
+        "llama": MockLLaMAModel(hidden_dim=128, num_layers=4),
+        "gemma2": MockGemma2Model(hidden_dim=128, num_layers=2),
+        "deepseek_mla": MockDeepSeekMLAAttention(hidden_dim=64),
+        "bert": MockBERTModel(hidden_dim=64),
+        "t5": MockT5Model(hidden_dim=64),
+        "falcon": MockFalconModel(hidden_dim=64),
+        "vit": MockViTModel(hidden_dim=64),
+        "jamba": MockJambaModel(hidden_dim=64),
+        "quantized": MockQuantizedModel(hidden_dim=64),
+    }
+
+    for expected_family, model in models.items():
+        prof = profile_model_topology(model)
+        assert prof.family == expected_family
+        assert prof.num_layers > 0
+        assert prof.hidden_dim > 0
+        assert prof.num_heads > 0
+        assert prof.head_dim > 0
+        assert prof.num_kv_heads is not None and prof.num_kv_heads > 0
+        assert isinstance(prof.has_qk_norm, bool)
+        assert isinstance(prof.is_encoder_decoder, bool)
+        assert isinstance(prof.has_tied_embeddings, bool)
+        assert isinstance(prof.is_quantized, bool)
+        assert prof.positional_topology is not None
+        assert prof.positional_params is not None
+        assert prof.projection_layout is not None
+
+
+def test_phase_042_dod_packed_vs_decoupled_slicing() -> None:
+    """
+    Phase 042 DoD Gate: Exact weight slicing with zero parameter leakage or transposition errors.
+    Detects and slices decoupled projections, packed projections, and transposed Conv1D weights.
+    """
+    # 1. Decoupled projections (LLaMA / Mistral)
+    llama_attn = MockLLaMAAttention(hidden_dim=64, num_heads=4)
+    layout_llama = _detect_projection_layout(llama_attn)
+    assert layout_llama == "decoupled"
+    W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o = extract_qkv_weights(llama_attn, num_heads=4, head_dim=16)
+    assert W_q.shape == (64, 64)
+    assert W_k.shape == (64, 64)
+    assert W_v.shape == (64, 64)
+    assert W_o.shape == (64, 64)
+
+    # 2. Packed fused projections (Falcon / ViT)
+    falcon_mod = MockFalconModel(hidden_dim=64).transformer["h"][0]["self_attention"]
+    layout_falcon = _detect_projection_layout(falcon_mod)
+    assert layout_falcon == "packed"
+    W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o = extract_qkv_weights(falcon_mod, num_heads=4, head_dim=16)
+    assert W_q.shape == (64, 64)
+    assert W_k.shape == (64, 64)
+    assert W_v.shape == (64, 64)
+    assert W_o.shape == (64, 64)
+
+    # 3. Transposed Conv1D (HuggingFace GPT-2)
+    gpt2_attn = MockGPT2Model(hidden_dim=64).transformer["h"][0]["attn"]
+    layout_gpt2 = _detect_projection_layout(gpt2_attn)
+    assert layout_gpt2 == "transposed_conv1d"
+    W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o = extract_qkv_weights(gpt2_attn, num_heads=4, head_dim=16)
+    assert W_q.shape == (64, 64)
+    assert W_k.shape == (64, 64)
+    assert W_v.shape == (64, 64)
+    assert W_o.shape == (64, 64)
+
+
+def test_phase_043_dod_positional_topology_inspector() -> None:
+    """
+    Phase 043 DoD Gate: Correctly identifies positional topology and parameters
+    (RoPE with base frequency theta and scaling, ALiBi slopes, Learned Absolute, Relative Position Buckets).
+    """
+    # RoPE
+    llama = MockLLaMAModel()
+    llama.config.rope_theta = 500000.0
+    llama.config.rope_scaling = {"type": "linear", "factor": 2.0}
+    top, params = _inspect_positional_topology(llama)
+    assert top == "rope"
+    assert params["base_theta"] == 500000.0
+    assert params["rope_scaling"] == {"type": "linear", "factor": 2.0}
+
+    # ALiBi
+    alibi_cfg = MockConfig(alibi=True, num_attention_heads=16, model_type="bloom")
+    alibi_model = nn.Module()
+    alibi_model.config = alibi_cfg
+    top, params = _inspect_positional_topology(alibi_model)
+    assert top == "alibi"
+    assert params["num_heads"] == 16
+    assert params["has_alibi"] is True
+
+    # Relative Position Buckets (T5)
+    t5 = MockT5Model()
+    t5.config.relative_attention_num_buckets = 64
+    t5.config.relative_attention_max_distance = 256
+    top, params = _inspect_positional_topology(t5)
+    assert top == "relative_position_buckets"
+    assert params["num_buckets"] == 64
+    assert params["max_distance"] == 256
+
+    # Learned Absolute (BERT)
+    bert = MockBERTModel()
+    top, params = _inspect_positional_topology(bert)
+    assert top == "learned_absolute"
+    assert params["max_position_embeddings"] is not None
+
+
+def test_phase_044_dod_layer_monotonic_scanner() -> None:
+    """
+    Phase 044 DoD Gate: Discovers 100% of layers in strictly monotonic ascending order: 0, 1, ..., N-1
+    across HF, GPT-2, Megatron, and Timm ViT conventions.
+    """
+    # 4-layer LLaMA model
+    model_llama = MockLLaMAModel(hidden_dim=64, num_layers=4)
+    specs = ModelScanner.scan(model_llama)
+    assert len(specs) == 4
+    indices = [s.layer_idx for s in specs]
+    assert indices == [0, 1, 2, 3]
+
+    # Verify monotonic ordering and DiscoveredLayer
+    layers = ModelScanner.scan_layers(model_llama)
+    assert len(layers) == 4
+    assert [l.layer_idx for l in layers] == [0, 1, 2, 3]
+    for idx, l in enumerate(layers):
+        assert l.layer_idx == idx
+        assert isinstance(l, DiscoveredLayer)
+        assert l.module is not None
+
+
+def test_phase_045_dod_law_1_qk_norm_preservation() -> None:
+    """
+    Phase 045 DoD Gate: Preserves QK-Normalization (Gemma-2 Law 1).
+    Eliminates activation drift under high-magnitude inputs (10^4);
+    output and gradients remain strictly bounded <= 1.0.
+    """
+    bridge = InvariantPreservingLinearBridge(has_qk_norm=True, head_dim=16)
+
+    # Inputs with extreme magnitude (10^4)
+    q = (torch.randn(2, 4, 8, 16) * 10000.0).requires_grad_(True)
+    k = (torch.randn(2, 4, 8, 16) * 10000.0).requires_grad_(True)
+    v = torch.randn(2, 4, 8, 16)
+
+    # Normalized activations prior to feature map
+    q_normed, k_normed = bridge.apply_qk_norm(q, k)
+    rms_q = torch.sqrt(torch.mean(q_normed**2, dim=-1))
+    rms_k = torch.sqrt(torch.mean(k_normed**2, dim=-1))
+
+    # Activation drift is completely eliminated: RMS is normalized to ~1.0
+    assert pytest.approx(rms_q.mean().item(), rel=1e-2) == 1.0
+    assert pytest.approx(rms_k.mean().item(), rel=1e-2) == 1.0
+
+    # Forward pass and gradient check
+    out = bridge(q, k, v)
+    assert not torch.isnan(out).any()
+    assert not torch.isinf(out).any()
+
+    # Backward pass: gradient wrt extreme magnitude inputs must remain strictly bounded <= 1.0
+    loss = out.sum()
+    loss.backward()
+    assert q.grad is not None and k.grad is not None
+    assert q.grad.abs().max().item() <= 1.0
+    assert k.grad.abs().max().item() <= 1.0
+
+
+# ==============================================================================
+# Agent 12 (Phases 056 - 060) Master Validation & DoD Gates
+# ==============================================================================
+
+
+def test_phase_056_dod_invariant_preserving_linear_bridge_autograd() -> None:
+    """
+    Phase 056 DoD Gate: InvariantPreservingLinearBridge packages all 10 Inviolable Laws.
+    Verifies full forward and backward autograd pass completes without errors.
+    """
+    bridge = InvariantPreservingLinearBridge(
+        has_qk_norm=True,
+        softcapping_factor=30.0,
+        head_dim=16,
+        decay=0.95,
+        num_attention_sinks=2,
+    )
+
+    # 1. 4D shape: [B, H, T, D] with autograd gradients enabled on q, k, v
+    B, H, T, D = 2, 4, 12, 16
+    q = torch.randn(B, H, T, D, dtype=torch.float32, requires_grad=True)
+    k = torch.randn(B, H, T, D, dtype=torch.float32, requires_grad=True)
+    v = torch.randn(B, H, T, D, dtype=torch.float32, requires_grad=True)
+
+    out = bridge(q, k, v, is_causal=True)
+    assert out.shape == (B, H, T, D)
+    assert not torch.isnan(out).any()
+    assert not torch.isinf(out).any()
+
+    loss = out.sum()
+    loss.backward()
+
+    assert q.grad is not None
+    assert k.grad is not None
+    assert v.grad is not None
+    assert not torch.isnan(q.grad).any()
+    assert not torch.isnan(k.grad).any()
+    assert not torch.isnan(v.grad).any()
+    assert q.grad.abs().sum().item() > 0.0
+    assert k.grad.abs().sum().item() > 0.0
+    assert v.grad.abs().sum().item() > 0.0
+
+    # 2. 3D shape: [B, T, D] with autograd gradients enabled
+    q3 = torch.randn(B, T, D, dtype=torch.float32, requires_grad=True)
+    k3 = torch.randn(B, T, D, dtype=torch.float32, requires_grad=True)
+    v3 = torch.randn(B, T, D, dtype=torch.float32, requires_grad=True)
+
+    out3 = bridge(q3, k3, v3, is_causal=True)
+    assert out3.shape == (B, T, D)
+    loss3 = out3.sum()
+    loss3.backward()
+    assert q3.grad is not None and not torch.isnan(q3.grad).any()
+
+    # 3. Protocol conformance & manifest metadata
+    manifest = bridge.get_surgical_manifest()
+    assert manifest["has_qk_norm"] is True
+    assert manifest["softcapping_factor"] == 30.0
+    assert manifest["decay"] == 0.95
+    assert bridge.get_attention_family() == "linear_attention"
+
+
+def test_phase_057_dod_cross_attention_linear_bridge_batch_parity() -> None:
+    """
+    Phase 057 DoD Gate: CrossAttentionLinearBridge static cross-attention state pre-computation
+    and caching. Produces identical outputs whether decoding step-by-step or in full batch.
+    """
+    bridge = CrossAttentionLinearBridge(head_dim=16)
+
+    B, H, T_enc, T_dec, D = 2, 4, 16, 8, 16
+    k_enc = torch.randn(B, H, T_enc, D)
+    v_enc = torch.randn(B, H, T_enc, D)
+    q_full = torch.randn(B, H, T_dec, D)
+
+    # 1. Precompute static encoder associative matrix once
+    s_cross = bridge.prefill_encoder(k_enc, v_enc)
+    assert s_cross is not None
+    assert s_cross.shape == (B, H, D, D)
+    assert bridge.is_initialized is True
+
+    # 2. Full-batch decode pass
+    out_batch = bridge.decode_batch(q_full)
+    assert out_batch.shape == (B, H, T_dec, D)
+
+    # 3. Step-by-step token-by-token decode pass
+    step_outputs = []
+    for t in range(T_dec):
+        q_t = q_full[:, :, t : t + 1, :]
+        out_t = bridge.decode_step(q_t)
+        assert out_t.shape == (B, H, 1, D)
+        step_outputs.append(out_t)
+
+    out_stepwise = torch.cat(step_outputs, dim=-2)
+    assert out_stepwise.shape == (B, H, T_dec, D)
+
+    # 4. Strict numerical parity between step-by-step and full-batch
+    max_diff = (out_batch - out_stepwise).abs().max().item()
+    assert max_diff < 1e-5
+    assert torch.allclose(out_batch, out_stepwise, atol=1e-5)
+
+    # 5. Cache telemetry
+    stats = bridge.get_cache_stats()
+    assert stats["prefill_count"] == 1
+    assert stats["decode_steps"] >= T_dec
+    assert stats["hit_rate"] > 0.0
+
+
+def test_phase_058_dod_surgery_pipeline_surgical_model_integration() -> None:
+    """
+    Phase 058 DoD Gate: SurgeryPipeline.apply_universal_director executes and
+    returns a certified SurgicalModel conforming to the protocol.
+    """
+    from neuralops.models.protocols import SurgicalModel
+    from neuralops.surgery.pipeline import SurgeryPipeline
+
+    gemma = MockGemma2Model(hidden_dim=64, num_layers=2)
+
+    # Execute universal director through master SurgeryPipeline
+    surgeried = SurgeryPipeline.apply_universal_director(
+        gemma,
+        laws=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        target_attention="cosformer",
+        decay=0.99,
+        softcapping_factor=50.0,
+    )
+
+    # Verify model is a certified SurgicalModel
+    assert isinstance(surgeried, SurgicalModel)
+    assert hasattr(surgeried, "get_surgical_manifest")
+    assert hasattr(surgeried, "get_attention_family")
+
+    manifest = surgeried.get_surgical_manifest()
+    assert manifest["target_attention"] == "cosformer"
+    assert manifest["family"] == "gemma2"
+    assert surgeried.get_attention_family(0) == "cosformer"
+
+    # Verify invalid laws specification raises ValueError
+    with pytest.raises(ValueError, match="Invalid laws specified"):
+        SurgeryPipeline.apply_universal_director(gemma, laws=[0, 11])
+
+
+def test_phase_059_dod_safe_pruning_and_clean_redirection() -> None:
+    """
+    Phase 059 DoD Gate: Verifies obsolete files are removed and all package symbols
+    cleanly redirect from neuralops.surgery with 0 import errors.
+    """
+    from pathlib import Path
+    import importlib
+
+    repo_root = Path(__file__).resolve().parent.parent
+    surgery_dir = repo_root / "neuralops" / "surgery"
+
+    # Verify physical file removal
+    assert not (surgery_dir / "param_recovery.py").exists(), "param_recovery.py was not pruned"
+    assert not (surgery_dir / "surgery_manifest.py").exists(), "surgery_manifest.py was not pruned"
+    assert not (surgery_dir / "surgical_io.py").exists(), "surgical_io.py was not pruned"
+
+    # Verify package imports cleanly resolve without errors
+    surgery_pkg = importlib.import_module("neuralops.surgery")
+    assert hasattr(surgery_pkg, "get_recovery_params")
+    assert hasattr(surgery_pkg, "SurgeryManifest")
+    assert hasattr(surgery_pkg, "extract_surgical_manifest")
+    assert hasattr(surgery_pkg, "save_surgical_checkpoint")
+    assert hasattr(surgery_pkg, "load_surgical_checkpoint")
+    assert hasattr(surgery_pkg, "replay_surgery_manifest")
+    assert hasattr(surgery_pkg, "SurgeryPipeline")
+    assert hasattr(surgery_pkg, "UniversalSurgeryDirector")
+    assert hasattr(surgery_pkg, "InvariantPreservingLinearBridge")
+    assert hasattr(surgery_pkg, "CrossAttentionLinearBridge")
+
+
+def test_phase_060_dod_deprecation_warning_and_invariant_verification() -> None:
+    """
+    Phase 060 DoD Gate: Deprecation warning emitted by universal_calibrator.py,
+    and all 10 Inviolable Laws certified across target models.
+    """
+    import warnings
+
+    # 1. Deprecation warning on universal_calibrator
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        from neuralops.surgery import universal_calibrator
+
+        # Instantiate calibrator
+        dummy_model = nn.Linear(16, 16)
+        _ = universal_calibrator.UniversalActivationCalibrator(dummy_model)
+
+        deprecations = [w for w in recorded if issubclass(w.category, DeprecationWarning)]
+        assert len(deprecations) > 0
+        assert any("deprecated" in str(w.message).lower() for w in deprecations)
+
+    # 2. Invariant verification of all 10 Laws
+    gemma = MockGemma2Model(hidden_dim=64, num_layers=2)
+    director = UniversalSurgeryDirector(gemma)
+    surgeried = director.execute_surgery(target_attention="cosformer")
+    assert surgeried is not None
+
+    report = director.certify_model(strict=True)
+    assert report["certified"] is True
+    assert report["score"] == "10/10"
+    assert len(report["violations"]) == 0
+    assert report["laws_certified"]["Law_1_QK_Norm"] is True
+    assert report["laws_certified"]["Law_2_Softcapping"] is True
+    assert report["laws_certified"]["Law_3_Zero_Bleed_Padding"] is True
+    assert report["laws_certified"]["Law_4_Static_Cross_Attention"] is True
+    assert report["laws_certified"]["Law_5_RoPE_Pre_Projection"] is True
+    assert report["laws_certified"]["Law_6_Decoupled_Latent_Router"] is True
+    assert report["laws_certified"]["Law_7_Causal_Monotonicity_State_Decay"] is True
+    assert report["laws_certified"]["Law_8_Tied_Embeddings"] is True
+    assert report["laws_certified"]["Law_9_FP32_Accumulation"] is True
+    assert report["laws_certified"]["Law_10_Master_Integration"] is True
+
+

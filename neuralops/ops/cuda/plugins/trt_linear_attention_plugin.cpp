@@ -79,6 +79,12 @@ struct PluginFieldCollection {
     const PluginField* fields{nullptr};
 };
 
+struct Dims {
+    static constexpr int32_t MAX_DIMS = 8;
+    int32_t nbDims{0};
+    int64_t d[MAX_DIMS]{0};
+};
+
 struct DimsExprs {
     int32_t nbDims{0};
     const void* d[8]{nullptr};
@@ -86,7 +92,7 @@ struct DimsExprs {
 
 struct PluginTensorDesc {
     DataType type{DataType::kFLOAT};
-    DimsExprs dims;
+    Dims dims;
     TensorFormat format{TensorFormat::kLINEAR};
     float scale{-1.0f};
     int32_t zeroPoint{0};
@@ -226,17 +232,91 @@ public:
         (void)nbOutputs;
     }
 
+    /**
+     * @brief Computes workspace scratchpad size without integer overflow (Phase 090).
+     * Exact Formula: Workspace = B * H * D_k * D_v * sizeof(float).
+     *
+     * @param inputs Input tensor descriptors.
+     * @param nbInputs Number of input tensors.
+     * @param outputs Output tensor descriptors.
+     * @param nbOutputs Number of output tensors.
+     * @return Required workspace size in bytes, or 0 if inputs invalid or overflow detected.
+     */
     size_t getWorkspaceSize(
         const nvinfer1::PluginTensorDesc* inputs,
         int32_t nbInputs,
         const nvinfer1::PluginTensorDesc* outputs,
         int32_t nbOutputs) const noexcept override {
-        (void)inputs;
-        (void)nbInputs;
         (void)outputs;
         (void)nbOutputs;
-        // Scratchpad workspace for dynamic intermediate state accumulation
-        return 0;
+
+        if (inputs == nullptr || nbInputs <= 0) {
+            return 0;
+        }
+
+        const auto& q_dims = inputs[0].dims;
+        if (q_dims.nbDims < 3) {
+            return 0;
+        }
+
+        int64_t b = q_dims.d[0];
+        int64_t h = m_num_heads;
+        int64_t d_k = (m_num_heads > 0) ? (m_hidden_dim / m_num_heads) : 64;
+        int64_t d_v = d_k;
+
+        if (q_dims.nbDims >= 4) {
+            h = q_dims.d[2];
+            d_k = q_dims.d[3];
+            d_v = d_k;
+        } else if (q_dims.nbDims == 3) {
+            int64_t hidden = q_dims.d[2];
+            if (m_num_heads > 0) {
+                h = m_num_heads;
+                d_k = hidden / m_num_heads;
+            } else {
+                h = 1;
+                d_k = hidden;
+            }
+            d_v = d_k;
+        }
+
+        // If V tensor is explicitly provided as 3rd input
+        if (nbInputs >= 3 && inputs[2].dims.nbDims >= 3) {
+            const auto& v_dims = inputs[2].dims;
+            d_v = (v_dims.nbDims >= 4) ? v_dims.d[3] : (v_dims.d[2] / (h > 0 ? h : 1));
+        }
+
+        if (b <= 0 || h <= 0 || d_k <= 0 || d_v <= 0) {
+            return 0;
+        }
+
+        // Exact non-overflowing calculation:
+        // Workspace = B * H * D_k * D_v * sizeof(float)
+        size_t total_elements = 0;
+        size_t workspace_bytes = 0;
+
+        auto safe_mul = [](size_t x, size_t y, size_t& res) -> bool {
+#if defined(__GNUC__) || defined(__clang__)
+            return __builtin_mul_overflow(x, y, &res);
+#else
+            if (x == 0 || y == 0) {
+                res = 0;
+                return false;
+            }
+            if (x > SIZE_MAX / y) {
+                return true;
+            }
+            res = x * y;
+            return false;
+#endif
+        };
+
+        if (safe_mul(static_cast<size_t>(b), static_cast<size_t>(h), total_elements)) return 0;
+        if (safe_mul(total_elements, static_cast<size_t>(d_k), total_elements)) return 0;
+        if (safe_mul(total_elements, static_cast<size_t>(d_v), total_elements)) return 0;
+        if (safe_mul(total_elements, sizeof(float), workspace_bytes)) return 0;
+
+        return workspace_bytes;
     }
 
     int32_t enqueue(

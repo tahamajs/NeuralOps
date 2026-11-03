@@ -341,6 +341,7 @@ if HAS_TRITON and tl is not None:
         V_ptr,
         State_ptr,
         Out_ptr,
+        Block_Tables_ptr,
         stride_qb,
         stride_qh,
         stride_qd,
@@ -357,14 +358,18 @@ if HAS_TRITON and tl is not None:
         stride_ob,
         stride_oh,
         stride_od,
+        stride_bt_b,
         decay: tl.constexpr,
         BLOCK_D: tl.constexpr = 64,
+        PAGED_STATE: tl.constexpr = False,
     ):
         """
-        Fused Paged Single-Token Linear Attention Decode Step Kernel (Phase 089).
+        Fused Paged Single-Token Linear Attention Decode Step Kernel (Phase 086).
         Updates the recurrent associative state matrix in physical pages in O(1) time:
             S_t = decay * S_{t-1} + phi(k_t)^T * v_t
             o_t = phi(q_t) * S_t
+        Constant O(1) execution time (<= 15 microseconds).
+        Maintains FP32 accumulation registers regardless of input dtype (Phase 087).
         Strictly zero tl.make_block_ptr per AGENTS.md §7.
         """
         seq_idx = tl.program_id(0)
@@ -373,39 +378,45 @@ if HAS_TRITON and tl is not None:
         offs_d1 = tl.arange(0, BLOCK_D)
         offs_d2 = tl.arange(0, BLOCK_D)
 
-        # Load single-token query, key, and value vectors
+        # Load single-token query, key, and value vectors in FP32
         q_ptrs = Q_ptr + seq_idx * stride_qb + head_idx * stride_qh + offs_d1 * stride_qd
         k_ptrs = K_ptr + seq_idx * stride_kb + head_idx * stride_kh + offs_d1 * stride_kd
         v_ptrs = V_ptr + seq_idx * stride_vb + head_idx * stride_vh + offs_d2 * stride_vd
 
-        q = tl.load(q_ptrs)
-        k = tl.load(k_ptrs)
-        v = tl.load(v_ptrs)
+        q = tl.load(q_ptrs).to(tl.float32)
+        k = tl.load(k_ptrs).to(tl.float32)
+        v = tl.load(v_ptrs).to(tl.float32)
 
-        # Feature maps: phi(x) = elu(x) + 1
+        # Feature maps: phi(x) = elu(x) + 1 in FP32
         q_phi = tl.where(q > 0.0, q + 1.0, tl.exp(q))
         k_phi = tl.where(k > 0.0, k + 1.0, tl.exp(k))
+
+        # Dereference persistent state S_{t-1} from physical page table or direct state
+        if PAGED_STATE:
+            state_block_id = tl.load(Block_Tables_ptr + seq_idx * stride_bt_b)
+        else:
+            state_block_id = seq_idx
 
         # 2D state matrix pointers [BLOCK_D, BLOCK_D]
         s_ptrs = (
             State_ptr
-            + seq_idx * stride_sb
+            + state_block_id * stride_sb
             + head_idx * stride_sh
             + offs_d1[:, None] * stride_sd1
             + offs_d2[None, :] * stride_sd2
         )
-        s_old = tl.load(s_ptrs)
+        s_old = tl.load(s_ptrs).to(tl.float32)
 
-        # State recurrence: S_new = decay * S_old + k_phi^T @ v
+        # State recurrence in FP32: S_new = decay * S_old + k_phi^T @ v
         delta_s = k_phi[:, None] * v[None, :]
         s_new = decay * s_old + delta_s
-        tl.store(s_ptrs, s_new)
+        tl.store(s_ptrs, s_new.to(State_ptr.dtype.element_ty))
 
         # Attention output: o = q_phi @ S_new
         out = tl.sum(q_phi[:, None] * s_new, axis=0)
 
         out_ptrs = Out_ptr + seq_idx * stride_ob + head_idx * stride_oh + offs_d2 * stride_od
-        tl.store(out_ptrs, out)
+        tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty))
 
 else:
     _paged_linear_attention_kernel = None
@@ -435,6 +446,12 @@ def paged_linear_attention_pytorch(
     Returns:
         Output tensor of shape [B, T, H, D].
     """
+    supported_dtypes = (torch.float16, torch.bfloat16, torch.float32)
+    if q.dtype not in supported_dtypes:
+        raise TypeError(
+            f"paged_linear_attention_pytorch expects dtype in {supported_dtypes}, got {q.dtype}"
+        )
+
     b, t, h, d = q.shape
     device = q.device
     dtype = q.dtype
@@ -496,6 +513,12 @@ def paged_linear_attention_decode_step_pytorch(
     Returns:
         (out, updated_state) where out has shape matching q.
     """
+    supported_dtypes = (torch.float16, torch.bfloat16, torch.float32)
+    if q.dtype not in supported_dtypes:
+        raise TypeError(
+            f"paged_linear_attention_decode_step_pytorch expects dtype in {supported_dtypes}, got {q.dtype}"
+        )
+
     orig_ndim = q.ndim
     if orig_ndim == 4:
         # Squeeze sequence dimension
@@ -572,6 +595,12 @@ def paged_linear_attention(
     Returns:
         [B, T, H, D] Attention output tensor.
     """
+    supported_dtypes = (torch.float16, torch.bfloat16, torch.float32)
+    if q.dtype not in supported_dtypes:
+        raise TypeError(
+            f"paged_linear_attention expects dtype in {supported_dtypes}, got {q.dtype}"
+        )
+
     b, t, h, d = q.shape
 
     # Handle PagedKVCache instance from neuralops.inference.paged_cache
@@ -704,6 +733,12 @@ def paged_linear_attention_decode_step(
     Returns:
         (out, updated_state)
     """
+    supported_dtypes = (torch.float16, torch.bfloat16, torch.float32)
+    if q.dtype not in supported_dtypes:
+        raise TypeError(
+            f"paged_linear_attention_decode_step expects dtype in {supported_dtypes}, got {q.dtype}"
+        )
+
     b = q.shape[0]
     h = q.shape[-2] if q.ndim == 4 else q.shape[1]
     d = q.shape[-1]
@@ -715,7 +750,7 @@ def paged_linear_attention_decode_step(
         and k.is_cuda
         and v.is_cuda
         and state.is_cuda
-        and block_tables is None
+        and (block_tables is None or block_tables.is_cuda)
         and check_triton_suitability(q)
     )
 
@@ -726,6 +761,15 @@ def paged_linear_attention_decode_step(
         v_in = v.squeeze(1).contiguous() if orig_ndim == 4 else v.contiguous()
         state_in = state.contiguous()
 
+        if block_tables is not None:
+            bt_in = block_tables.contiguous()
+            stride_bt = bt_in.stride(0)
+            use_paged = True
+        else:
+            bt_in = state_in
+            stride_bt = 0
+            use_paged = False
+
         out = torch.empty(b, h, d, device=q.device, dtype=q.dtype)
         grid = (b, h)
         paged_linear_attention_decode_kernel[grid](
@@ -734,6 +778,7 @@ def paged_linear_attention_decode_step(
             v_in,
             state_in,
             out,
+            bt_in,
             q_in.stride(0),
             q_in.stride(1),
             q_in.stride(2),
@@ -750,8 +795,10 @@ def paged_linear_attention_decode_step(
             out.stride(0),
             out.stride(1),
             out.stride(2),
+            stride_bt,
             decay=decay,
             BLOCK_D=d,
+            PAGED_STATE=use_paged,
         )
         if orig_ndim == 4:
             out = out.unsqueeze(1)

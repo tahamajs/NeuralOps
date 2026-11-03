@@ -14,6 +14,7 @@ Discovers attention blocks and projection topologies across neural network archi
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
@@ -38,6 +39,7 @@ class AttentionTargetSpec:
     head_dim: int
     is_causal: bool = False
     has_bias: bool = True
+    layer_idx: Optional[int] = None
 
     extracted_qkv: Optional[
         Tuple[
@@ -71,6 +73,31 @@ class AttentionTargetSpec:
                 self.head_dim,
                 self.module_path,
             )
+
+    @property
+    def module(self) -> nn.Module:
+        """Alias returning the underlying target attention module."""
+        return self.target_module
+
+    @property
+    def name(self) -> str:
+        """Alias returning the module path identifier."""
+        return self.module_path
+
+    @property
+    def spec(self) -> AttentionTargetSpec:
+        """Self-referential spec accessor for polymorphic inspection."""
+        return self
+
+
+@dataclass
+class DiscoveredLayer:
+    """Structured representation of a discovered model layer block."""
+
+    layer_idx: int
+    name: str
+    module: nn.Module
+    spec: Optional[AttentionTargetSpec] = None
 
 
 class Conv1DLinearAdapter(nn.Module):
@@ -303,6 +330,16 @@ class UniversalArchitectureScanner:
                     # Root module itself is the target attention block; prune all its descendant submodules
                     break
 
+        # Phase 044: Universal monotonic ordering by discovered layer index
+        layer_regex = re.compile(r"\b(?:layers?|h|block|blocks)\.(\d+)\b")
+        for idx, target in enumerate(targets):
+            m = layer_regex.search(target.module_path)
+            target.layer_idx = int(m.group(1)) if m else idx
+            if target.extra_metadata is None:
+                target.extra_metadata = {}
+            target.extra_metadata["layer_idx"] = target.layer_idx
+
+        targets.sort(key=lambda s: (s.layer_idx if s.layer_idx is not None else 0))
         return targets
 
     @classmethod
@@ -682,8 +719,82 @@ class UniversalArchitectureScanner:
         return None
 
 
+class ModelScanner:
+    r"""
+    Phase 044: Layer-to-Module Resolution Scanner Engine.
+    Universal layer regex r"\b(?:layers?|h|block|blocks)\.(\d+)\b" across HF, GPT-2,
+    Megatron, and Timm ViT conventions. Discovers and sorts layers strictly monotonically:
+    0, 1, ..., N-1.
+    """
+
+    LAYER_REGEX = re.compile(r"\b(?:layers?|h|block|blocks)\.(\d+)\b")
+
+    @classmethod
+    def extract_layer_index(cls, path: str) -> Optional[int]:
+        """Extracts numeric layer index from module path using universal layer regex."""
+        m = cls.LAYER_REGEX.search(path)
+        return int(m.group(1)) if m else None
+
+    @classmethod
+    def scan(cls, model: nn.Module) -> List[AttentionTargetSpec]:
+        """
+        Discovers attention layers in model and returns them strictly sorted monotonically:
+        0, 1, ..., N-1.
+        """
+        targets = UniversalArchitectureScanner.scan(model)
+        for idx, target in enumerate(targets):
+            extracted = cls.extract_layer_index(target.module_path)
+            target.layer_idx = extracted if extracted is not None else idx
+            if target.extra_metadata is None:
+                target.extra_metadata = {}
+            target.extra_metadata["layer_idx"] = target.layer_idx
+
+        targets.sort(key=lambda s: (s.layer_idx if s.layer_idx is not None else 0))
+        return targets
+
+    @classmethod
+    def scan_layers(cls, model: nn.Module) -> List[DiscoveredLayer]:
+        """
+        Discovers layer container modules matching universal layer regex across model
+        hierarchy and returns them in strictly monotonic ascending order: 0, 1, ..., N-1.
+        """
+        discovered: Dict[int, DiscoveredLayer] = {}
+        specs_by_idx: Dict[int, AttentionTargetSpec] = {}
+        for spec in cls.scan(model):
+            if spec.layer_idx is not None:
+                specs_by_idx[spec.layer_idx] = spec
+
+        for name, mod in model.named_modules():
+            m = cls.LAYER_REGEX.search(name)
+            if m:
+                layer_idx = int(m.group(1))
+                prefix = name[: m.end()]
+                if name == prefix and layer_idx not in discovered:
+                    discovered[layer_idx] = DiscoveredLayer(
+                        layer_idx=layer_idx,
+                        name=name,
+                        module=mod,
+                        spec=specs_by_idx.get(layer_idx, None),
+                    )
+
+        if not discovered:
+            for spec in cls.scan(model):
+                l_idx = spec.layer_idx if spec.layer_idx is not None else 0
+                if l_idx not in discovered:
+                    discovered[l_idx] = DiscoveredLayer(
+                        layer_idx=l_idx,
+                        name=spec.module_path,
+                        module=spec.target_module,
+                        spec=spec,
+                    )
+
+        return [discovered[k] for k in sorted(discovered.keys())]
+
+
 __all__ = [
     "AttentionTargetSpec",
     "Conv1DLinearAdapter",
+    "DiscoveredLayer",
+    "ModelScanner",
     "UniversalArchitectureScanner",
 ]

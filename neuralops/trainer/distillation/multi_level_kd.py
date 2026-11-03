@@ -304,50 +304,53 @@ def _get_streaming_cka_loss_cls() -> Any:
 
 
 class LinearCKALoss(nn.Module):
-    """Centered Kernel Alignment loss for orthogonal-invariant representation matching."""
+    """Centered Kernel Alignment loss for orthogonal-invariant representation matching across heterogeneous dimensions."""
 
     def __init__(
         self,
         eps: float = 1e-8,
         use_streaming: bool = False,
         chunk_size: int = 128,
-        hidden_dim: Optional[int] = None,
+        hidden_dim: Optional[Union[int, Tuple[int, int]]] = None,
+        hidden_dim_teacher: Optional[int] = None,
     ) -> None:
         super().__init__()
         self.eps = float(eps)
         self.use_streaming = bool(use_streaming)
         self.chunk_size = int(chunk_size)
         self.hidden_dim = hidden_dim
+        self.hidden_dim_teacher = hidden_dim_teacher
+        streaming_dim = hidden_dim
+        if hidden_dim is not None and hidden_dim_teacher is not None and not isinstance(hidden_dim, (tuple, list)):
+            streaming_dim = (hidden_dim, hidden_dim_teacher)
         self._streaming_cka_engine: Optional[Any] = (
-            _get_streaming_cka_loss_cls()(hidden_dim=hidden_dim, eps=eps, exact=True)
-            if hidden_dim is not None
+            _get_streaming_cka_loss_cls()(hidden_dim=streaming_dim, eps=eps, exact=True)
+            if streaming_dim is not None
             else None
         )
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        hidden_dim = x.size(-1)
+        dim_x = x.size(-1)
+        dim_y = y.size(-1)
         if self.use_streaming or (
             x.dim() >= 2 and x.size(1) > self.chunk_size and x.numel() > 65536
         ):
             if (
                 self._streaming_cka_engine is None
-                or self._streaming_cka_engine.hidden_dim != hidden_dim
+                or getattr(self._streaming_cka_engine, "hidden_dim_x", getattr(self._streaming_cka_engine, "hidden_dim", None)) != dim_x
+                or getattr(self._streaming_cka_engine, "hidden_dim_y", getattr(self._streaming_cka_engine, "hidden_dim", None)) != dim_y
                 or self._streaming_cka_engine.G_xy.device != x.device
             ):
                 streaming_cls = _get_streaming_cka_loss_cls()
                 self._streaming_cka_engine = streaming_cls(
-                    hidden_dim=hidden_dim,
+                    hidden_dim=(dim_x, dim_y),
                     eps=self.eps,
                     exact=True,
                 ).to(x.device)
             return self._streaming_cka_engine(x, y, chunk_size=self.chunk_size)
 
-        X = x.view(-1, hidden_dim).float()
-        Y = y.view(-1, hidden_dim).float()
-
-        if X.size(1) > X.size(0):
-            X = X.t()
-            Y = Y.t()
+        X = x.view(-1, dim_x).float()
+        Y = y.view(-1, dim_y).float()
 
         X = X - X.mean(dim=0, keepdim=True)
         Y = Y - Y.mean(dim=0, keepdim=True)
@@ -357,10 +360,10 @@ class LinearCKALoss(nn.Module):
         XtY = torch.matmul(X.t(), Y)
 
         hsic_xy = (XtY ** 2).sum()
-        hsic_xx = (XtX ** 2).sum()
-        hsic_yy = (YtY ** 2).sum()
+        hsic_xx = torch.sqrt((XtX ** 2).sum()).clamp(min=self.eps)
+        hsic_yy = torch.sqrt((YtY ** 2).sum()).clamp(min=self.eps)
 
-        denom = torch.sqrt(hsic_xx * hsic_yy).clamp(min=self.eps)
+        denom = (hsic_xx * hsic_yy).clamp(min=self.eps)
         cka = hsic_xy / denom
         return 1.0 - cka.clamp(min=0.0, max=1.0)
 
@@ -538,23 +541,25 @@ class MultiLevelKDTrainer:
         total_loss = torch.tensor(0.0, device=self.device)
         losses_tracked: Dict[str, Any] = {}
 
-        # Pillar 1 & 2: Logit KL Divergence & Hidden/Logit MSE
+        # Pillar 1: Logit Divergence (L_KD) & Logit MSE
         if s_logits is not None and t_logits is not None:
             kd_loss = self.logit_loss_fn(s_logits, t_logits)
             total_loss = total_loss + self.lambda_kd * kd_loss
             losses_tracked["kd_loss"] = kd_loss.item()
+            losses_tracked["pillar1_loss"] = kd_loss.item()
 
             if self.lambda_mse > 0.0:
                 mse_loss = F.mse_loss(s_logits.float(), t_logits.float())
                 total_loss = total_loss + self.lambda_mse * mse_loss
                 losses_tracked["mse_loss"] = mse_loss.item()
 
-        # Pillar 3 & 4: Centered Kernel Alignment (CKA) & MiniLM Relation Distillation
+        # Pillar 2: Centered Kernel Alignment (CKA) Hidden-State Representation Distillation
         if s_hidden is not None and t_hidden is not None:
             if self.lambda_cka > 0.0:
                 cka_loss = self.cka_loss_fn(s_hidden, t_hidden)
                 total_loss = total_loss + self.lambda_cka * cka_loss
                 losses_tracked["cka_loss"] = cka_loss.item()
+                losses_tracked["pillar2_loss"] = cka_loss.item()
 
             if self.lambda_rel > 0.0 and len(s_hidden) > 0 and len(t_hidden) > 0:
                 rel_loss = self.rel_loss_fn(s_hidden[-1], t_hidden[-1])
@@ -567,6 +572,9 @@ class MultiLevelKDTrainer:
             t_last = t_hidden[-1].float()
             if s_last.shape == t_last.shape:
                 frob_loss = torch.linalg.vector_norm(s_last - t_last) / max(1, s_last.numel())
+            elif s_last.size(-1) != t_last.size(-1):
+                min_d = min(s_last.size(-1), t_last.size(-1))
+                frob_loss = torch.linalg.vector_norm(s_last[..., :min_d] - t_last[..., :min_d]) / max(1, min_d * s_last.size(0) * s_last.size(1))
             else:
                 frob_loss = F.mse_loss(s_last, t_last)
             total_loss = total_loss + self.lambda_frob * frob_loss

@@ -28,7 +28,7 @@ Trigger when performing in-place replacement of standard transformer attention l
 3. **Apply Post-Transplant Healing**:
    Execute distillation healing for 30 optimization steps using `heal_replaced_model()`:
    ```python
-   from neuralops.surgery.healing import heal_replaced_model
+   from neuralops.surgery import heal_replaced_model
 
    heal_replaced_model(model, dataloader=calibration_loader, steps=30, lr=1e-5)
    ```

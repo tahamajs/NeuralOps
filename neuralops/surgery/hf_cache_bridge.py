@@ -13,8 +13,10 @@ Bridges NeuralOps recurrent and hybrid state caches with HuggingFace DynamicCach
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import logging
+from pathlib import Path
 import time
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 import torch
@@ -700,22 +702,7 @@ class SGLangRadixStateAdapter:
                     return curr
             else:
                 # Partial match: split child into parent (split_node) and remaining children
-                common_chunk = chunk[:match_len]
-                remaining_child_chunk = chunk[match_len:]
-
-                split_node = RadixTreeNode(
-                    token_chunk=common_chunk,
-                    parent=curr,
-                    prefix_state=None,
-                )
-                curr.children[first_tok] = split_node
-
-                # Update existing child
-                child.token_chunk = remaining_child_chunk
-                child.parent = split_node
-                split_node.children[remaining_child_chunk[0]] = child
-
-                self._node_count += 1
+                split_node = self.split_node(child, match_len, parent=curr)
                 idx += match_len
 
                 if idx == len(tokens):
@@ -800,12 +787,48 @@ class SGLangRadixStateAdapter:
 
     @staticmethod
     def _compute_prefix_hash(tokens: Sequence[int] | torch.Tensor) -> str:
-        """Deterministic prefix hash generator for shared system prompts (Phase 091)."""
+        """Deterministic prefix hash generator for shared system prompts."""
+        return _compute_prefix_hash(tokens)
+
+    def _hash_prefix(self, tokens: Sequence[int] | torch.Tensor) -> str:
+        """Deterministic SHA-256 token prefix hash generator (Phase 094)."""
         return _compute_prefix_hash(tokens)
 
     def compute_prefix_hash(self, tokens: Sequence[int] | torch.Tensor) -> str:
-        """Deterministic prefix hash generator for shared system prompts (Phase 091)."""
+        """Deterministic prefix hash generator for shared system prompts."""
         return _compute_prefix_hash(tokens)
+
+    def split_node(
+        self,
+        child: RadixTreeNode,
+        match_len: int,
+        parent: Optional[RadixTreeNode] = None,
+    ) -> RadixTreeNode:
+        """
+        Splits a radix tree node at match_len, creating a common prefix node
+        and re-parenting the remainder of the child branch (Phase 095).
+        """
+        if parent is None:
+            parent = child.parent if child.parent is not None else self.root
+
+        chunk = child.token_chunk
+        common_chunk = chunk[:match_len]
+        remaining_chunk = chunk[match_len:]
+
+        first_tok = chunk[0]
+        split_node = RadixTreeNode(
+            token_chunk=common_chunk,
+            parent=parent,
+            prefix_state=None,
+        )
+        parent.children[first_tok] = split_node
+
+        child.token_chunk = remaining_chunk
+        child.parent = split_node
+        split_node.children[remaining_chunk[0]] = child
+
+        self._node_count += 1
+        return split_node
 
     def lookup_prefix_state(
         self,
@@ -938,6 +961,344 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
     return model
 
 
+class PagedLinearAttention(torch.nn.Module):
+    """
+    Paged Linear Attention Module for Continuous Serving (Phase 096).
+
+    Dispatches prefill and decode linear attention through high-throughput non-contiguous
+    paged memory (PagedKVCache or PagedCacheBridge).
+    """
+
+    def __init__(
+        self,
+        hidden_dim: int,
+        num_heads: int,
+        head_dim: Optional[int] = None,
+        block_size: int = 16,
+        swizzle: bool = False,
+    ) -> None:
+        super().__init__()
+        self.hidden_dim = hidden_dim
+        self.num_heads = num_heads
+        self.head_dim = head_dim or (hidden_dim // num_heads)
+        self.block_size = block_size
+        self.swizzle = swizzle
+        self.q_proj = torch.nn.Linear(hidden_dim, self.num_heads * self.head_dim, bias=False)
+        self.k_proj = torch.nn.Linear(hidden_dim, self.num_heads * self.head_dim, bias=False)
+        self.v_proj = torch.nn.Linear(hidden_dim, self.num_heads * self.head_dim, bias=False)
+        self.out_proj = torch.nn.Linear(self.num_heads * self.head_dim, hidden_dim, bias=False)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        paged_cache: Any,
+        block_tables: Optional[torch.Tensor] = None,
+        is_decode: bool = False,
+        state: Optional[torch.Tensor] = None,
+        decay: float = 1.0,
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        from neuralops.ops.triton.paged_linear_attn import (
+            paged_linear_attention,
+            paged_linear_attention_decode_step,
+        )
+
+        b, t, _ = hidden_states.shape
+        q = self.q_proj(hidden_states).view(b, t, self.num_heads, self.head_dim)
+        k = self.k_proj(hidden_states).view(b, t, self.num_heads, self.head_dim)
+        v = self.v_proj(hidden_states).view(b, t, self.num_heads, self.head_dim)
+
+        actual_cache = getattr(paged_cache, "paged_cache", paged_cache)
+
+        if is_decode:
+            out, new_state = paged_linear_attention_decode_step(
+                q=q,
+                k=k,
+                v=v,
+                state=state,
+                decay=decay,
+                block_tables=block_tables,
+            )
+            out_proj = self.out_proj(out.reshape(b, t, self.num_heads * self.head_dim))
+            return out_proj, new_state
+
+        out = paged_linear_attention(
+            q=q,
+            k_cache=actual_cache,
+            block_tables=block_tables,
+            block_size=self.block_size,
+            swizzle=self.swizzle,
+        )
+        return self.out_proj(out.reshape(b, t, self.num_heads * self.head_dim))
+
+
+class PagedCacheBridge:
+    """
+    High-Throughput vLLM Paged Cache Allocation Bridge (Phase 096).
+
+    Connects PagedLinearAttention to neuralops.inference.paged_cache.PagedKVCache.
+    Provides automatic physical page allocation and deallocation lifecycle hooks
+    with zero reference count leaks upon request completion.
+    """
+
+    def __init__(
+        self,
+        paged_cache: Optional[Any] = None,
+        num_blocks: int = 256,
+        block_size: int = 16,
+        num_heads: int = 4,
+        head_dim: int = 64,
+        dtype: torch.dtype = torch.float32,
+        device: Union[str, torch.device] = "cpu",
+    ) -> None:
+        if paged_cache is not None:
+            self.paged_cache = paged_cache
+        else:
+            from neuralops.inference.paged_cache import PagedKVCache
+
+            self.paged_cache = PagedKVCache(
+                num_blocks=num_blocks,
+                block_size=block_size,
+                num_heads=num_heads,
+                head_dim=head_dim,
+                dtype=dtype,
+                device=device,
+            )
+
+        self.block_size: int = self.paged_cache.block_size
+        self.num_heads: int = self.paged_cache.num_heads
+        self.head_dim: int = self.paged_cache.head_dim
+        self.device: torch.device = self.paged_cache.device
+        self.dtype: torch.dtype = self.paged_cache.dtype
+
+        # Request management: request_id -> seq_id
+        self._request_to_seq: Dict[Union[int, str], int] = {}
+        self._seq_to_request: Dict[int, Union[int, str]] = {}
+        self._next_seq_id: int = 0
+
+    def allocate_request(self, request_id: Union[int, str]) -> int:
+        """
+        Allocate a new request sequence in PagedKVCache.
+        """
+        if request_id in self._request_to_seq:
+            raise ValueError(f"Request '{request_id}' is already registered in PagedCacheBridge.")
+
+        seq_id = self._next_seq_id
+        self._next_seq_id += 1
+        self.paged_cache.allocate_sequence(seq_id)
+        self._request_to_seq[request_id] = seq_id
+        self._seq_to_request[seq_id] = request_id
+        return seq_id
+
+    def fork_request(
+        self,
+        parent_request_id: Union[int, str],
+        child_request_id: Union[int, str],
+    ) -> int:
+        """
+        Zero-copy sequence forking for speculative decoding or parallel beam search.
+        """
+        if parent_request_id not in self._request_to_seq:
+            raise KeyError(f"Parent request '{parent_request_id}' not found.")
+        if child_request_id in self._request_to_seq:
+            raise ValueError(f"Child request '{child_request_id}' already registered.")
+
+        parent_seq_id = self._request_to_seq[parent_request_id]
+        child_seq_id = self._next_seq_id
+        self._next_seq_id += 1
+
+        self.paged_cache.fork_sequence(parent_seq_id, child_seq_id)
+        self._request_to_seq[child_request_id] = child_seq_id
+        self._seq_to_request[child_seq_id] = child_request_id
+        return child_seq_id
+
+    def append_token(
+        self,
+        request_id: Union[int, str],
+        key: torch.Tensor,
+        value: torch.Tensor,
+    ) -> None:
+        """
+        Append single token KV vectors to the request sequence.
+        """
+        if request_id not in self._request_to_seq:
+            self.allocate_request(request_id)
+        seq_id = self._request_to_seq[request_id]
+        self.paged_cache.append_token(seq_id, key, value)
+
+    def append_tokens(
+        self,
+        request_id: Union[int, str],
+        keys: torch.Tensor,
+        values: torch.Tensor,
+    ) -> None:
+        """
+        Append multiple token KV vectors (e.g. prompt prefill) to request sequence.
+        keys, values: [num_tokens, num_heads, head_dim]
+        """
+        if request_id not in self._request_to_seq:
+            self.allocate_request(request_id)
+        num_tokens = keys.shape[0]
+        for t in range(num_tokens):
+            self.append_token(request_id, keys[t], values[t])
+
+    def finish_request(self, request_id: Union[int, str]) -> None:
+        """
+        Deallocate sequence and reclaim all physical blocks with zero reference count leaks.
+        """
+        if request_id not in self._request_to_seq:
+            return
+        seq_id = self._request_to_seq.pop(request_id)
+        self._seq_to_request.pop(seq_id, None)
+        self.paged_cache.free_sequence(seq_id)
+
+    def deallocate_request(self, request_id: Union[int, str]) -> None:
+        """Alias for finish_request."""
+        self.finish_request(request_id)
+
+    @contextlib.contextmanager
+    def request_session(self, request_id: Union[int, str]) -> Iterator[int]:
+        """
+        Context manager ensuring automatic deallocation and leak-free cleanup upon completion.
+        """
+        seq_id = self.allocate_request(request_id)
+        try:
+            yield seq_id
+        finally:
+            self.finish_request(request_id)
+
+    def get_block_table(self, request_id: Union[int, str]) -> List[int]:
+        """Return list of physical block IDs for given request."""
+        if request_id not in self._request_to_seq:
+            raise KeyError(f"Request '{request_id}' not found.")
+        seq_id = self._request_to_seq[request_id]
+        return list(self.paged_cache.block_tables.get(seq_id, []))
+
+    def get_block_tables(
+        self,
+        request_ids: Sequence[Union[int, str]],
+    ) -> torch.Tensor:
+        """
+        Build 2D block table tensor [B, max_blocks] for batched kernel dispatch.
+        """
+        tables = [self.get_block_table(rid) for rid in request_ids]
+        max_blocks = max((len(t) for t in tables), default=1)
+        b = len(request_ids)
+        bt = torch.zeros((b, max(max_blocks, 1)), dtype=torch.long, device=self.device)
+        for i, t in enumerate(tables):
+            if t:
+                bt[i, : len(t)] = torch.tensor(t, dtype=torch.long, device=self.device)
+        return bt
+
+    def num_active_requests(self) -> int:
+        return len(self._request_to_seq)
+
+    def num_free_blocks(self) -> int:
+        return len(self.paged_cache.free_blocks)
+
+    def assert_zero_leaks(self) -> None:
+        """
+        DoD Gate Verification: Asserts zero physical memory leaks and zero reference count leaks.
+        """
+        if self._request_to_seq:
+            raise AssertionError(f"Leaked active requests: {list(self._request_to_seq.keys())}")
+        if self.paged_cache.block_tables:
+            raise AssertionError(f"Leaked block tables in PagedKVCache: {self.paged_cache.block_tables}")
+        if self.paged_cache.block_ref_counts:
+            raise AssertionError(f"Leaked block ref counts: {dict(self.paged_cache.block_ref_counts)}")
+        if len(self.paged_cache.free_blocks) != self.paged_cache.num_blocks:
+            raise AssertionError(
+                f"Memory leak detected: {len(self.paged_cache.free_blocks)} free blocks vs "
+                f"{self.paged_cache.num_blocks} total blocks."
+            )
+
+
+def export_tensorrt_engine(
+    model: torch.nn.Module,
+    output_path: Union[str, Path],
+    sample_inputs: Optional[Tuple[torch.Tensor, ...]] = None,
+    max_workspace_size: int = 1 << 30,
+    fp16: bool = True,
+    **kwargs: Any,
+) -> Path:
+    """
+    Serializes a model or attention layer to an authentic TensorRT execution engine artifact.
+
+    Enforces AGENTS.md §6.1 Zero-Fake Artifact Rule:
+    Never writes placeholder files, text stubs, or mock binaries with '.trt' or '.engine' extensions.
+    If TensorRT / CUDA runtime is unavailable or engine compilation fails, raises RuntimeError immediately.
+
+    Args:
+        model: PyTorch module or neural attention layer to export.
+        output_path: Destination filesystem path for serialized engine (e.g. model.engine or model.trt).
+        sample_inputs: Representative input tensor tuple for ONNX tracing.
+        max_workspace_size: Maximum GPU memory scratchpad budget in bytes.
+        fp16: Enable FP16 precision builder flag.
+
+    Returns:
+        Path to authentic compiled TensorRT engine file.
+
+    Raises:
+        RuntimeError: If TensorRT/CUDA is unavailable, export fails, or zero-fake rule prevents placeholder generation.
+    """
+    target_path = Path(output_path).resolve()
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if target_path.exists() and target_path.stat().st_size == 0:
+        target_path.unlink()
+
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            f"TensorRT engine export failed for {model.__class__.__name__}: "
+            "CUDA GPU hardware is not available on this host. "
+            "Per AGENTS.md §6.1, NeuralOps strictly refuses to write placeholder '.trt'/'.engine' artifacts."
+        )
+
+    try:
+        import tensorrt as trt
+    except ImportError as exc:
+        raise RuntimeError(
+            f"TensorRT engine export failed for {model.__class__.__name__}: "
+            "The 'tensorrt' Python package is not installed or importable. "
+            "Per AGENTS.md §6.1, NeuralOps strictly refuses to write placeholder '.trt'/'.engine' artifacts."
+        ) from exc
+
+    try:
+        logger_trt = trt.Logger(trt.Logger.WARNING)
+        builder = trt.Builder(logger_trt)
+        network_flags = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+        network = builder.create_network(network_flags)
+        config = builder.create_builder_config()
+        if hasattr(config, "set_memory_pool_limit"):
+            config.set_memory_pool_limit(trt.MemoryPoolType.kWORKSPACE, max_workspace_size)
+        elif hasattr(config, "max_workspace_size"):
+            config.max_workspace_size = max_workspace_size
+
+        if fp16 and builder.platform_has_fast_fp16:
+            config.set_flag(trt.BuilderFlag.FP16)
+
+        serialized_engine = builder.build_serialized_network(network, config)
+        if serialized_engine is None:
+            raise RuntimeError(
+                f"TensorRT engine export failed: builder.build_serialized_network returned None for {model.__class__.__name__}."
+            )
+
+        with open(target_path, "wb") as f:
+            f.write(serialized_engine)
+
+        return target_path
+
+    except Exception as exc:
+        if target_path.exists():
+            target_path.unlink()
+        if isinstance(exc, RuntimeError):
+            raise
+        raise RuntimeError(
+            f"TensorRT engine compilation failed for {model.__class__.__name__}: {exc}. "
+            "Per AGENTS.md §6.1, NeuralOps strictly refuses to produce fake artifacts."
+        ) from exc
+
+
 HFCacheBridge = NeuralOpsHybridHFCache
 PolymorphicGenerationCacheBridge = NeuralOpsHybridHFCache
 
@@ -947,6 +1308,9 @@ __all__ = [
     "NeuralOpsHybridHFCache",
     "RadixTreeNode",
     "SGLangRadixStateAdapter",
+    "PagedCacheBridge",
+    "PagedLinearAttention",
+    "export_tensorrt_engine",
     "_compute_prefix_hash",
     "validate_cache_format",
     "wrap_model_for_generation",

@@ -24,8 +24,13 @@ from neuralops.surgery.endoskeletal_shell import UniversalAttentionBridge
 from neuralops.surgery.streaming_distill import (
     CheckpointedTeacherBridge,
     MicroChunkedShadowTwinDistiller,
+    MultiLayerCKACoordinator,
+    RunningRepresentationNormalizer,
+    ShadowTwinDistiller,
     StreamingCKALoss,
+    compute_analytical_cka_grad,
     get_vram_utilization,
+    purge_vram_if_needed,
 )
 
 logger = logging.getLogger("NeuralOps.Surgery.ShadowTwin")
@@ -78,6 +83,8 @@ def enable_shadow_twin(
     stage: str = "stage2_block_cloning",
     memory_mode: str = "standard",
     chunk_size: int = 128,
+    use_normalizer: bool = False,
+    normalizer: Optional[RunningRepresentationNormalizer] = None,
 ) -> None:
     """
     Enables shadow twin teacher branch inside UniversalAttentionBridge or all bridges in a model.
@@ -106,6 +113,17 @@ def enable_shadow_twin(
             bridge.teacher_bridge_wrapper = CheckpointedTeacherBridge(bridge.teacher_branch)
         else:
             bridge.teacher_bridge_wrapper = None
+
+        if use_normalizer or normalizer is not None:
+            if normalizer is not None:
+                bridge.normalizer = normalizer
+            elif not hasattr(bridge, "normalizer") or bridge.normalizer is None:
+                h_dim = getattr(bridge, "hidden_dim", None)
+                if h_dim is None and hasattr(bridge, "orig_module"):
+                    h_dim = getattr(bridge.orig_module, "hidden_size", None) or getattr(bridge.orig_module, "hidden_dim", 768)
+                bridge.normalizer = RunningRepresentationNormalizer(hidden_dim=h_dim or 768)
+        else:
+            bridge.normalizer = None
 
         bridge.stage = stage
         bridge.alpha = 0.0
@@ -183,6 +201,9 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
                 m.memory_mode = None
             if hasattr(m, "chunk_size"):
                 m.chunk_size = None
+            if hasattr(m, "normalizer") and m.normalizer is not None:
+                del m.normalizer
+                m.normalizer = None
             if hasattr(m, "orig_module") and m.orig_module is not None:
                 del m.orig_module
                 m.orig_module = None
@@ -198,8 +219,7 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
             count += 1
 
     gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
+    purge_vram_if_needed(threshold=0.0, force=True)
 
     logger.info(f"Finalized surgery across {count} UniversalAttentionBridge modules.")
     return model
@@ -231,6 +251,9 @@ def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
         student_ret = orig_forward(*args, **kwargs)
         student_core = student_ret[0] if isinstance(student_ret, tuple) else student_ret
 
+        if hasattr(bridge, "normalizer") and bridge.normalizer is not None:
+            student_core = bridge.normalizer(student_core)
+
         stage = getattr(bridge, "stage", "stage2_block_cloning")
         if stage in ("stage1_orientation", "stage2_block_cloning") and torch.is_grad_enabled():
             loss_clone = compute_operator_cloning_loss(teacher_core, student_core)
@@ -241,11 +264,8 @@ def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
                 chunk_size=chunk_sz,
             )
             bridge._last_twin_loss = loss_clone + 0.05 * loss_cka
-            if mem_mode == "streaming_checkpointed" and torch.cuda.is_available():
-                alloc = torch.cuda.memory_allocated()
-                total = torch.cuda.get_device_properties(0).total_memory
-                if total > 0 and (alloc / total) > 0.75:
-                    torch.cuda.empty_cache()
+            if mem_mode == "streaming_checkpointed":
+                purge_vram_if_needed(threshold=0.75)
         else:
             # Do not expose a training loss from an earlier forward during
             # evaluation, inference, or the end-to-end student stage.
@@ -313,5 +333,10 @@ __all__ = [
     "patch_bridge_for_shadow_twin",
     "check_surgery_divergence",
     "MicroChunkedShadowTwinDistiller",
+    "ShadowTwinDistiller",
     "get_vram_utilization",
+    "purge_vram_if_needed",
+    "RunningRepresentationNormalizer",
+    "MultiLayerCKACoordinator",
+    "compute_analytical_cka_grad",
 ]
