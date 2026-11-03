@@ -13,6 +13,7 @@ Routes attention topologies and sanitizes masks for causal, bidirectional, and c
 
 from __future__ import annotations
 
+import inspect
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
@@ -20,6 +21,29 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 logger = logging.getLogger("NeuralOps.Surgery.TopologyRouter")
+
+
+def _call_branch_module(
+    module: nn.Module,
+    hidden_states: torch.Tensor,
+    *args: Any,
+    attention_mask: Optional[torch.Tensor] = None,
+    **kwargs: Any,
+) -> Any:
+    """Invokes module forward, safely passing attention_mask only if accepted."""
+    try:
+        sig = inspect.signature(module.forward)
+        accepts_kwargs = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+        if "attention_mask" in sig.parameters or accepts_kwargs:
+            return module(hidden_states, *args, attention_mask=attention_mask, **kwargs)
+        else:
+            return module(hidden_states, *args, **kwargs)
+    except Exception:
+        # Fallback for modules where inspect.signature might fail (e.g. C-extensions)
+        try:
+            return module(hidden_states, *args, attention_mask=attention_mask, **kwargs)
+        except TypeError:
+            return module(hidden_states, *args, **kwargs)
 
 
 def extract_binary_token_mask(
@@ -449,7 +473,9 @@ class TopologyRouter(nn.Module):
             accum_out = None
             for idx, name in enumerate(self.branch_names):
                 mod = self.branches[name]
-                out_branch = mod(hidden_states, *args, attention_mask=attention_mask, **kwargs)
+                out_branch = _call_branch_module(
+                    mod, hidden_states, *args, attention_mask=attention_mask, **kwargs
+                )
                 if isinstance(out_branch, tuple):
                     branch_tensor = out_branch[0]
                 else:
@@ -474,7 +500,9 @@ class TopologyRouter(nn.Module):
             target_name = self.default_branch
 
         selected_module = self.branches[target_name]
-        out = selected_module(hidden_states, *args, attention_mask=attention_mask, **kwargs)
+        out = _call_branch_module(
+            selected_module, hidden_states, *args, attention_mask=attention_mask, **kwargs
+        )
 
         # Enforce shape consistency
         if isinstance(out, tuple):

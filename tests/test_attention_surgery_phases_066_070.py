@@ -56,7 +56,7 @@ def test_phase_066_up_projection_weight_folding_w_ukv() -> None:
     initial_gemms = bridge.get_gemm_count()
     assert initial_gemms["unfolded_gemms"] == 5
     assert initial_gemms["folded_gemms"] == 4
-    assert initial_gemms["reduction"] == 1
+    assert initial_gemms["gemm_reduction"] == 1
 
     # Define synthetic up-projection weights W_UK, W_UV, and output projection W_O
     w_uk = torch.randn(d_k, latent_kv_dim)
@@ -97,7 +97,7 @@ def test_phase_066_up_projection_weight_folding_w_ukv() -> None:
 # Phase 067: Weight Inheritance & SVD Adapter Initialization
 # =========================================================================
 def test_phase_067_svd_adapter_weight_inheritance() -> None:
-    """Certifies Phase 067: Truncated SVD on teacher KV weights.
+    r"""Certifies Phase 067: Truncated SVD on teacher KV weights.
 
     Formula: W_{KV}^{teacher} \approx U \Sigma V^T \implies W_{DKV} = \Sigma^{1/2} V^T, W_{UK} = U \Sigma^{1/2}.
     DoD Gate: Preserves >= 92% spectral energy and initial perplexity degradation < 0.15.
@@ -194,18 +194,22 @@ def test_phase_068_dynamic_dispatch_hook_and_latency() -> None:
     # 1. Test dispatch_mode="full" dispatches to orig_module
     out_full = bridge(x, dispatch_mode="full")
     expected_full = mock_orig(x)
-    assert torch.allclose(out_full, expected_full)
+    tensor_full = out_full[0] if isinstance(out_full, tuple) else out_full
+    assert torch.allclose(tensor_full, expected_full)
 
     # 2. Test dispatch_mode="linear" dispatches to new_attention
     out_linear = bridge(x, dispatch_mode="linear")
     expected_linear = mock_linear(x)
-    assert torch.allclose(out_linear, expected_linear)
+    tensor_linear = out_linear[0] if isinstance(out_linear, tuple) else out_linear
+    assert torch.allclose(tensor_linear, expected_linear)
 
     # 3. Test bridge.set_dispatch_mode override
     bridge.set_dispatch_mode("full")
-    assert torch.allclose(bridge(x), expected_full)
+    res_full = bridge(x)
+    assert torch.allclose(res_full[0] if isinstance(res_full, tuple) else res_full, expected_full)
     bridge.set_dispatch_mode("linear")
-    assert torch.allclose(bridge(x), expected_linear)
+    res_linear = bridge(x)
+    assert torch.allclose(res_linear[0] if isinstance(res_linear, tuple) else res_linear, expected_linear)
     bridge.set_dispatch_mode("auto")
 
     # 4. Measure dispatch overhead latency (DoD Gate: <= 2 microseconds per call)
