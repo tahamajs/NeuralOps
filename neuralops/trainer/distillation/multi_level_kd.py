@@ -150,6 +150,56 @@ class LogitDistillationLoss(nn.Module):
             raise ValueError(f"Unknown distillation mode '{self.mode}'")
 
 
+SoftKLDivergenceLoss = LogitDistillationLoss
+
+
+class AttentionStabilityReg(nn.Module):
+    """
+    Attention Stability Regularizer and Gate Saturation Penalty.
+
+    Penalizes recurrent decay and forget gates approaching 0.0 or 1.0 during
+    early micro-training steps, preventing catastrophic vanishing/exploding gradients:
+        L_Stab = lambda_sat * sum_l ||sigma(g_l) - 0.5||^2 + lambda_sink * L_sink
+    """
+
+    def __init__(
+        self,
+        lambda_sat: float = 1.0,
+        lambda_sink: float = 0.0,
+        penalty_type: str = "l2_deviation",
+    ) -> None:
+        super().__init__()
+        self.lambda_sat = float(lambda_sat)
+        self.lambda_sink = float(lambda_sink)
+        self.penalty_type = penalty_type
+
+    def forward(
+        self,
+        gate_parameters: list[torch.Tensor] | tuple[torch.Tensor, ...],
+        sink_loss: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        if not gate_parameters:
+            zero_loss = torch.tensor(0.0)
+            if sink_loss is not None:
+                return self.lambda_sink * sink_loss
+            return zero_loss
+
+        penalties = []
+        for g_param in gate_parameters:
+            g = torch.sigmoid(g_param.float())
+            if self.penalty_type == "barrier":
+                g_clamped = g.clamp(min=1e-5, max=1.0 - 1e-5)
+                penalties.append(-torch.log(g_clamped * (1.0 - g_clamped)).mean())
+            else:
+                penalties.append(torch.mean((g - 0.5) ** 2))
+
+        sat_loss = torch.stack(penalties).mean()
+        total_reg = self.lambda_sat * sat_loss
+        if sink_loss is not None:
+            total_reg = total_reg + self.lambda_sink * sink_loss
+        return total_reg
+
+
 class SpikyFeatureMap(nn.Module):
     """Dual positive learnable feature map for spiky linear attention alignment."""
 
@@ -425,6 +475,7 @@ class MultiLevelKDTrainer:
         )
         self.rel_loss_fn = MiniLMValueRelationKDLoss()
         self.feature_loss_fn = HedgehogFeatureMapKDLoss(chunk_size=64, temperature=temperature)
+        self.stab_reg_fn = AttentionStabilityReg(lambda_sat=1.0)
 
     def _extract_logits_and_hidden(
         self,
@@ -526,10 +577,9 @@ class MultiLevelKDTrainer:
             stab_penalties = []
             for name, param in self.student.named_parameters():
                 if "gate" in name.lower() and param.requires_grad:
-                    g = torch.sigmoid(param.float())
-                    stab_penalties.append(torch.mean((g - 0.5) ** 2))
+                    stab_penalties.append(param)
             if stab_penalties:
-                stab_loss = torch.stack(stab_penalties).mean()
+                stab_loss = self.stab_reg_fn(stab_penalties)
                 total_loss = total_loss + self.lambda_stab * stab_loss
                 losses_tracked["stab_loss"] = stab_loss.item()
 
@@ -557,6 +607,8 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "LogitDistillationLoss",
+    "SoftKLDivergenceLoss",
+    "AttentionStabilityReg",
     "SpikyFeatureMap",
     "HedgehogFeatureMapKDLoss",
     "MiniLMValueRelationKDLoss",
