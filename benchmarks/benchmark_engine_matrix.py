@@ -15,4 +15,4 @@ from scripts.benchmark_serving import main
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
