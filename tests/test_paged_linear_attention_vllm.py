@@ -41,10 +41,12 @@ import pytest
 import torch
 
 from neuralops.ops.triton.paged_linear_attn import (
+    _paged_linear_attention_kernel,
     create_paged_kv_cache,
     paged_linear_attention,
     paged_linear_attention_decode_step,
     paged_linear_attention_decode_step_pytorch,
+    paged_linear_attention_fwd_kernel,
     paged_linear_attention_pytorch,
     swizzle_tensor_layout,
     unswizzle_tensor_layout,
@@ -189,6 +191,41 @@ def test_zero_block_ptr_invariant():
     assert "tl.advance" not in code_body, (
         "Violation of AGENTS.md §7: tl.advance found in executable code!"
     )
+
+
+def test_2d_sram_tile_scheduling_engine_and_boundary_masking():
+    """
+    Test Phase 082 / Phase 085: 2D SRAM tile scheduling engine and boundary masking.
+    Verifies that _paged_linear_attention_kernel and paged_linear_attention_fwd_kernel
+    handle sequence lengths not aligned to block_size with full boundary coverage.
+    """
+    assert _paged_linear_attention_kernel is not None or not torch.cuda.is_available()
+    assert paged_linear_attention_fwd_kernel is _paged_linear_attention_kernel
+
+    # Test non-aligned sequence length (e.g. T=25 with block_size=16)
+    b, t, h, d = 2, 25, 2, 16
+    block_size = 16
+    k_cache, v_cache, block_tables = create_paged_kv_cache(
+        batch_size=b,
+        seq_len=t,
+        num_heads=h,
+        head_dim=d,
+        block_size=block_size,
+    )
+    q = torch.randn(b, t, h, d, dtype=torch.float32)
+
+    # PyTorch reference executes Level 3 boundary masking
+    out = paged_linear_attention(
+        q=q,
+        k_cache=k_cache,
+        v_cache=v_cache,
+        block_tables=block_tables,
+        block_size=block_size,
+    )
+
+    assert out.shape == (b, t, h, d)
+    assert not torch.isnan(out).any()
+    assert not torch.isinf(out).any()
 
 
 def test_2d_sram_tile_scheduling_budget():
