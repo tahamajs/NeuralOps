@@ -54,9 +54,27 @@ except (ImportError, ModuleNotFoundError):
     if "torch.distributed" in sys.modules:
         sys.modules["torch.distributed"]._tensor = mod
 
-# Safe triton mock if triton is not installed
+# Safe triton configuration and mocks
 try:
     import triton
+    if not hasattr(triton, "__version__"):
+        triton.__version__ = "2.0.0"
+    try:
+        import triton.language as tl
+        if not hasattr(tl, "constexpr"):
+            tl.constexpr = int
+        if not hasattr(tl, "int32"):
+            tl.int32 = torch.int32
+        if not hasattr(tl, "int64"):
+            tl.int64 = torch.int64
+        if not hasattr(tl, "float32"):
+            tl.float32 = torch.float32
+        if not hasattr(tl, "float16"):
+            tl.float16 = torch.float16
+        if not hasattr(tl, "bfloat16"):
+            tl.bfloat16 = torch.bfloat16
+    except Exception:
+        pass
 except (ImportError, ModuleNotFoundError):
     triton_mock = types.ModuleType("triton")
     triton_mock.__version__ = "2.0.0"
@@ -69,6 +87,7 @@ except (ImportError, ModuleNotFoundError):
     triton_lang = types.ModuleType("triton.language")
     triton_lang.constexpr = int
     triton_lang.int32 = torch.int32
+    triton_lang.int64 = torch.int64
     triton_lang.float32 = torch.float32
     triton_lang.float16 = torch.float16
     triton_lang.bfloat16 = torch.bfloat16
@@ -107,9 +126,14 @@ def execute_notebook(nb_path: str | Path) -> bool:
         "__file__": str(nb_path.resolve()),
         "display": print,
         "get_ipython": lambda: None,
-        "export_test_dir": tempfile.mkdtemp(),
-        "compute_chunk_prefix_scan": lambda x: torch.cumsum(x, dim=-2),
+        "export_test_dir": Path(tempfile.mkdtemp()),
     }
+
+    try:
+        from neuralops.distributed.context_parallel import compute_chunk_prefix_scan
+        nb_globals["compute_chunk_prefix_scan"] = compute_chunk_prefix_scan
+    except Exception:
+        nb_globals["compute_chunk_prefix_scan"] = lambda q, *a, **kws: (torch.cumsum(q, dim=-2), None)
 
     # Pre-populate commonly expected modules in notebooks
     try:

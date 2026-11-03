@@ -19,6 +19,15 @@ from neuralops.ops.triton.cosformer_triton_kernel import triton_cosformer_linear
 from neuralops.ops.triton.block_sparse import fused_dsa_sparse_attn_triton
 from neuralops.ops.triton.linear_attn import fwd as fast_linear_attention
 
+__all__ = [
+    "HAS_TRITON",
+    "triton_dispatch",
+    "triton_cosformer_linear_attention",
+    "triton_cosformer_linear_attention_pytorch_ref",
+    "fused_dsa_sparse_attn_triton",
+    "fast_linear_attention",
+]
+
 def __getattr__(name: str) -> Any:
     if name == "HAS_TRITON":
         return True
