@@ -46,11 +46,19 @@ from benchmarks.competitors import (
     benchmark_ruler_long_context,
     benchmark_tensorrt_sqnr,
     benchmark_vllm_poisson_serving,
+    build_few_shot_prompt,
     compute_megatron_mfu,
     evaluate_choice_loglikelihoods,
     evaluate_medusa_tree_acceptance,
+    generate_dataset_reproducibility_manifest,
     generate_lighteval_manifest,
     generate_ruler_multi_needle_prompt,
+    quantize_simulate,
+    run_lighteval_fast_stream_benchmark,
+    run_lm_eval_benchmark,
+    run_medusa_speculative_benchmark,
+    run_ruler_benchmark,
+    run_tensorrt_quant_benchmark,
     run_tensorrt_quant_sqnr_suite,
 )
 
@@ -66,15 +74,23 @@ def test_package_exports() -> None:
         "benchmark_deepspeed_zero3_overhead",
         "benchmark_pcie_offload_bandwidth",
         "benchmark_tensorrt_sqnr",
+        "quantize_simulate",
+        "run_tensorrt_quant_benchmark",
         "run_tensorrt_quant_sqnr_suite",
         "benchmark_lm_eval_mmlu_gsm8k",
+        "build_few_shot_prompt",
         "evaluate_choice_loglikelihoods",
+        "run_lm_eval_benchmark",
         "benchmark_lighteval_fast_stream",
+        "generate_dataset_reproducibility_manifest",
         "generate_lighteval_manifest",
+        "run_lighteval_fast_stream_benchmark",
         "benchmark_ruler_long_context",
         "generate_ruler_multi_needle_prompt",
+        "run_ruler_benchmark",
         "benchmark_medusa_speculative_tree",
         "evaluate_medusa_tree_acceptance",
+        "run_medusa_speculative_benchmark",
     ]
     for sym in expected_callables:
         assert hasattr(competitors, sym), f"Missing symbol {sym} in benchmarks.competitors"
@@ -243,13 +259,22 @@ def test_tensorrt_quant_sqnr() -> None:
     # Full suite execution
     suite_res = run_tensorrt_quant_sqnr_suite(
         layer_shapes=[(64, 64)],
-        formats=["fp8_e4m3", "int8", "int4"],
+        formats=["fp8_e4m3", "fp8_e5m2", "int8", "int4", "int4_mx"],
         device="cpu",
         seed=42,
     )
     assert suite_res["benchmark"] == "tensorrt_quant_sqnr"
     assert suite_res["evaluated_layers_count"] == 1
     assert "all_standard_gates_passed" in suite_res
+
+    # Test individual formats via quantize_simulate
+    t = torch.randn(32, 32)
+    for fmt in ["fp8_e4m3", "fp8_e5m2", "int8", "int4", "int4_mx"]:
+        q = quantize_simulate(t, format_type=fmt)
+        res = benchmark_tensorrt_sqnr(t, q)
+        assert res["sqnr_db"] > 0.0
+        assert res["rel_frobenius"] >= 0.0
+
 
 
 def test_lm_eval_mmlu_gsm8k() -> None:
@@ -269,21 +294,37 @@ def test_lm_eval_mmlu_gsm8k() -> None:
     cand_a = torch.tensor([[4, 5]], dtype=torch.long)
     cand_b = torch.tensor([[6, 7]], dtype=torch.long)
 
-    chosen_idx = evaluate_choice_loglikelihoods(model, prompt, [cand_a, cand_b], device="cpu")
+    chosen_idx = evaluate_choice_loglikelihoods(
+        model, prompt, [cand_a, cand_b], device="cpu", length_normalization=True
+    )
     assert chosen_idx in (0, 1)
 
-    # Full benchmark runner
+    chosen_idx_raw, scores = evaluate_choice_loglikelihoods(
+        model, prompt, [cand_a, cand_b], device="cpu", length_normalization=False, return_scores=True
+    )
+    assert chosen_idx_raw in (0, 1)
+    assert len(scores) == 2
+
+    few_shot = build_few_shot_prompt([{"question": "Q1", "answer": "A1"}], "Q2")
+    assert "Question: Q1" in few_shot
+    assert "Question: Q2" in few_shot
+
+    # Full benchmark runner with few-shot and length normalization
     res = benchmark_lm_eval_mmlu_gsm8k(
         model=None,
         num_samples=5,
         vocab_size=1000,
         hidden_size=64,
         num_choices=3,
+        num_shots=1,
+        length_normalization=True,
         device="cpu",
         seed=42,
     )
     assert res["benchmark"] == "lm_eval_mmlu_gsm8k"
     assert res["num_samples"] == 5
+    assert res["num_shots"] == 1
+    assert res["length_normalization"] is True
     assert 0.0 <= res["accuracy_pct"] <= 100.0
 
 
@@ -300,6 +341,14 @@ def test_lighteval_fast_stream() -> None:
     assert manifest["primary_score"] == 85.5
     assert len(manifest["manifest_hash"]) == 64
 
+    data_manifest = generate_dataset_reproducibility_manifest(
+        samples=["item 1", "item 2", "item 3"],
+        dataset_name="test_dataset",
+    )
+    assert data_manifest["dataset_name"] == "test_dataset"
+    assert data_manifest["sample_count"] == 3
+    assert len(data_manifest["dataset_sha256"]) == 64
+
     res = benchmark_lighteval_fast_stream(
         num_samples=10,
         seq_len=32,
@@ -312,26 +361,46 @@ def test_lighteval_fast_stream() -> None:
     assert res["samples_per_sec"] > 0
     assert res["tokens_per_sec"] > 0
     assert "manifest" in res
+    assert "dataset_manifest" in res
+    assert len(res["dataset_manifest"]["dataset_sha256"]) == 64
 
 
 def test_ruler_long_context() -> None:
     """Test RULER multi-needle prompt synthesis and long context evaluation."""
+    # Test standard prompt synthesis
     text, needles = generate_ruler_multi_needle_prompt(context_length=500, num_needles=3)
     assert len(needles) == 3
     for n in needles:
         assert n["key"] in text
         assert n["value"] in text
 
-    res = benchmark_ruler_long_context(
-        context_lengths=[200, 400],
-        num_needles=2,
+    # Test explicit depth percentiles (10%, 25%, 50%, 75%, 90%)
+    depth_pcts = [10.0, 25.0, 50.0, 75.0, 90.0]
+    text_pct, needles_pct = generate_ruler_multi_needle_prompt(
+        context_length=1000,
+        depth_percentiles=depth_pcts,
+    )
+    assert len(needles_pct) == 5
+    for i, n in enumerate(needles_pct):
+        assert n["depth_pct"] == depth_pcts[i]
+        assert n["key"] in text_pct
+        assert n["value"] in text_pct
+
+    # Run benchmark across multi-needle depths and context lengths up to 32k/128k emulation
+    res = run_ruler_benchmark(
+        context_lengths=[512, 1024, 2048],
+        depth_percentiles=depth_pcts,
         device="cpu",
         seed=42,
     )
     assert res["benchmark"] == "ruler_long_context"
-    assert res["total_needles_evaluated"] == 4
+    assert res["total_needles_evaluated"] == 15
     assert res["overall_retrieval_accuracy_pct"] == 100.0
-    assert len(res["length_profiles"]) == 2
+    assert len(res["length_profiles"]) == 3
+    assert "accuracy_matrix" in res
+    assert "512" in res["accuracy_matrix"]
+    assert "10.0%" in res["accuracy_matrix"]["512"]
+    assert res["accuracy_matrix"]["512"]["10.0%"] == 100.0
 
 
 def test_medusa_speculative_tree() -> None:
@@ -350,7 +419,7 @@ def test_medusa_speculative_tree() -> None:
     assert stats["perfect_match"] is False
 
     # Full benchmark runner
-    res = benchmark_medusa_speculative_tree(
+    res = run_medusa_speculative_benchmark(
         num_heads=3,
         tree_depth=3,
         num_steps=10,

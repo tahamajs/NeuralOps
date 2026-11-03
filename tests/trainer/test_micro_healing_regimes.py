@@ -30,7 +30,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from neuralops.benchmarks.eval_with_training import TrainAndBenchmarkPipeline
-from neuralops.surgery.calibration import compute_ridge_calibration, ridge_regression_solve
+from neuralops.surgery.calibration import (
+    align_output_projections,
+    compute_ridge_calibration,
+    ridge_regression_solve,
+)
 from neuralops.trainer.distillation.multi_level_kd import (
     LinearCKALoss,
     LogitDistillationLoss,
@@ -43,7 +47,11 @@ from neuralops.trainer.optimizers.muon import (
     zeropower_via_newtonschulz5,
 )
 from neuralops.trainer.regimes.dora_healing import DoRAHealingHealer, DoRAProjectionWrapper
-from neuralops.trainer.regimes.fisher_micro import FisherMicroHealer, FMicroOptimizer
+from neuralops.trainer.regimes.fisher_micro import (
+    FisherMicroHealer,
+    FMicroOptimizer,
+    compute_empirical_diagonal_fisher,
+)
 from neuralops.trainer.regimes.spectral_annealing import SpectralAnnealer
 from neuralops.trainer.regimes.ttt_online import TTTOnlineAdapter
 from neuralops.trainer.schedulers import WSDScheduler
@@ -102,6 +110,15 @@ def test_ridge_calibration_and_damping_escalation():
     w_ill, b_ill = ridge_regression_solve(x_ill, y_ill, ridge_lambda=1e-5, device="cpu")
     assert not torch.isnan(w_ill).any()
     assert not torch.isnan(b_ill).any()
+
+    # 3. align_output_projections execution test
+    teacher = SimpleToyModel()
+    student = copy.deepcopy(teacher)
+    # perturb student classifier
+    student.classifier.weight.data.add_(0.5 * torch.randn_like(student.classifier.weight.data))
+    calib_batches = [torch.randn(8, 16) for _ in range(3)]
+    align_output_projections(teacher, student, calib_batches, damping=1e-4, device="cpu")
+    assert not torch.isnan(student.classifier.weight).any()
 
 
 def test_6pillar_multilevel_kd_loss():
@@ -212,6 +229,10 @@ def test_fisher_micro_regime():
     dataset = TensorDataset(torch.randn(16, 5, 16))
     loader = DataLoader(dataset, batch_size=4)
 
+    # Test standalone compute_empirical_diagonal_fisher
+    f_diag_standalone = compute_empirical_diagonal_fisher(model, loader, num_samples=16, device="cpu")
+    assert len(f_diag_standalone) > 0
+
     healer = FisherMicroHealer(model, damping=1e-3, device="cpu")
     f_diag = healer.compute_empirical_fisher(loader, num_samples=16)
     assert len(f_diag) > 0
@@ -231,6 +252,11 @@ def test_dora_healing_regime():
     healer = DoRAHealingHealer(model, rank=4, lora_alpha=8.0)
     injected_count = healer.inject_dora_adapters()
     assert injected_count > 0
+
+    # Test single wrapper collapse_adapters
+    wrapper = next(iter(healer.injected_wrappers.values()))
+    collapsed_linear = wrapper.collapse_adapters()
+    assert isinstance(collapsed_linear, nn.Linear)
 
     x = torch.randn(2, 5, 16)
     out_adapted = model(x)

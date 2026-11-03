@@ -162,6 +162,27 @@ def test_benchmark_registry_and_decorator() -> None:
     listed = list_benchmarks(mode="checkpoint")
     assert "mock_unit_benchmark" in listed
 
+    # Duplicate registration raises ValueError
+    with pytest.raises(ValueError, match="Conflicting benchmark registration"):
+        @register_benchmark("mock_unit_benchmark", mode="checkpoint")
+        class AnotherBench(BaseBenchmark):
+            def run(self, model_adapter: Any, **kwargs: Any) -> Dict[str, Any]:
+                return {}
+
+    # Invalid mode raises ValueError
+    with pytest.raises(ValueError, match="Invalid benchmark mode"):
+        @register_benchmark("invalid_mode_bench", mode="nonexistent_mode")
+        class InvalidModeBench(BaseBenchmark):
+            def run(self, model_adapter: Any, **kwargs: Any) -> Dict[str, Any]:
+                return {}
+
+    # Verify operational modes
+    modes = BenchmarkRegistry.get_operational_modes()
+    assert len(modes) == 12
+    for mode in modes:
+        assert BenchmarkRegistry.is_valid_mode(mode)
+    assert not BenchmarkRegistry.is_valid_mode("invalid_mode")
+
     # Benchmark Pipeline execution
     model = MockModel()
     adapter = UniversalModelAdapter.from_pretrained(model)
