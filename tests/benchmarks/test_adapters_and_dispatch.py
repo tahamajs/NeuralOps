@@ -19,7 +19,11 @@ import pytest
 import torch
 import torch.nn as nn
 
-from neuralops.benchmarks.adapters.cuda_adapter import CUDAKernelAdapter
+from neuralops.benchmarks.adapters.cuda_adapter import (
+    CANONICAL_CUDA_MODULES,
+    CUDAKernelAdapter,
+    CUDA_KERNEL_ALIASES,
+)
 from neuralops.benchmarks.adapters.model import (
     BaseModelAdapter,
     HuggingFaceModelAdapter,
@@ -100,6 +104,17 @@ def test_base_and_hf_model_adapter() -> None:
     assert isinstance(hidden, torch.Tensor)
     assert hidden.shape == (2, 8, 32)
 
+    # Test layer_indices sequence
+    states = adapter.get_hidden_states(input_ids, layer_indices=[0, 1])
+    assert isinstance(states, tuple)
+    assert len(states) == 2
+
+    # Test extract_pooled_output
+    pooled_mean = adapter.extract_pooled_output(input_ids, pooling_mode="mean")
+    assert pooled_mean.shape == (2, 32)
+    pooled_cls = adapter.extract_pooled_output(input_ids, pooling_mode="cls")
+    assert pooled_cls.shape == (2, 32)
+
     gen = adapter.generate(input_ids, max_new_tokens=4)
     assert gen.shape == (2, 12)
 
@@ -111,13 +126,30 @@ def test_surgerized_model_adapter(tmp_path: Path) -> None:
         "compressor_key": "svd",
         "calibrated": True,
         "damping": 1e-4,
+        "pre_train_healed": "true",
     }
     adapter = SurgerizedModelAdapter(model=model, model_name="surgerized_test", surgery_manifest=manifest)
     lineage = adapter.get_surgery_lineage()
     assert lineage["is_transplanted"] is True
     assert lineage["transplanted_attention"] == "linear_attention"
     assert lineage["compressor_key"] == "svd"
-    assert lineage["calibrated"] is True
+    assert lineage["calibrated"] == "true"
+    assert lineage["pre_train_healed"] == "true"
+    assert float(lineage["ridge_damping"]) == 1e-4
+
+    # Test checkpoint dir validation
+    ckpt_dir = tmp_path / "test_ckpt"
+    ckpt_dir.mkdir()
+    manifest_file = ckpt_dir / "neuralops_surgery_manifest.json"
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+
+    # Missing weights should raise RuntimeError when calling from_checkpoint_dir
+    with pytest.raises(RuntimeError):
+        SurgerizedModelAdapter.from_checkpoint_dir(ckpt_dir)
+
+    # Nonexistent dir raises FileNotFoundError
+    with pytest.raises(FileNotFoundError):
+        SurgerizedModelAdapter.from_checkpoint_dir(tmp_path / "nonexistent")
 
 
 def test_universal_model_adapter_factory() -> None:
@@ -125,6 +157,11 @@ def test_universal_model_adapter_factory() -> None:
     adapter = UniversalModelAdapter.from_pretrained(model, model_name="factory_test")
     assert isinstance(adapter, BaseModelAdapter)
     assert adapter.model_name == "factory_test"
+
+    # Test create alias
+    adapter2 = UniversalModelAdapter.create(model, model_name="factory_test2")
+    assert isinstance(adapter2, BaseModelAdapter)
+    assert adapter2.model_name == "factory_test2"
 
 
 def test_triton_adapter_catalogs() -> None:
@@ -138,16 +175,35 @@ def test_triton_adapter_catalogs() -> None:
     adapter = TritonKernelAdapter("linear_attn", is_extension=False, device="cpu")
     assert adapter.kernel_name == "linear_attn"
 
+    # Verify 2D SRAM tiling contract across canonical modules
+    assert TritonKernelAdapter.verify_tiling_contract() is True
+
 
 def test_cuda_adapter_catalogs() -> None:
+    assert len(CANONICAL_CUDA_MODULES) == 110
     modules = CUDAKernelAdapter.list_all_modules()
     assert len(modules) == 110
+    assert len(CUDAKernelAdapter.list_modules()) == 110
     kernels = CUDAKernelAdapter.list_all_kernels()
     assert len(kernels) >= 114
 
     # Adapter instantiation on CPU
     adapter = CUDAKernelAdapter("layernorm", device="cpu")
     assert adapter.kernel_name == "layernorm"
+    assert adapter._pytorch_ref_fn is not None
+
+    # Test execution through Level 3 PyTorch CPU reference
+    x = torch.randn(2, 4, 16)
+    w = torch.ones(16)
+    b = torch.zeros(16)
+    out = adapter.dispatch_kernel(x, w, b)
+    assert out.shape == (2, 4, 16)
+    out_call = adapter(x, w, b)
+    assert out_call.shape == (2, 4, 16)
+
+    # Telemetry check
+    telemetry = CUDAKernelAdapter.get_dispatch_telemetry()
+    assert "stats" in telemetry
 
 
 def test_benchmark_registry_and_decorator() -> None:

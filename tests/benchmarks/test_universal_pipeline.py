@@ -59,7 +59,7 @@ class DummyBenchmarkModel(nn.Module):
         return Output(logits)
 
 
-@register_benchmark(name="dummy_mock_eval", mode="offline", hardware="cpu")
+@register_benchmark(name="dummy_mock_eval", mode="checkpoint", hardware="cpu")
 class DummyMockBenchmark(BaseBenchmark):
     """Registered mock benchmark runner."""
 
