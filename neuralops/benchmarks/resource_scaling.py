@@ -39,12 +39,21 @@ def _percentile(values: list[float], percentile: float) -> float:
     return ordered[index]
 
 
+def _resolve_dtype(name: str) -> torch.dtype:
+    aliases = {"fp32": "float32", "fp16": "float16", "bf16": "bfloat16"}
+    canonical = aliases.get(name.lower(), name.lower())
+    try:
+        return getattr(torch, canonical)
+    except AttributeError as exc:
+        raise ValueError(f"Unsupported benchmark precision: {name}") from exc
+
+
 def run_resource_scaling(config: BenchmarkConfig) -> list[BenchmarkResult]:
     """Measure latency, throughput, and peak VRAM for configured shapes."""
     if config.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested for resource scaling, but CUDA is unavailable.")
     device = torch.device("cuda" if config.device == "cuda" else config.device)
-    dtype = getattr(torch, config.precision)
+    dtype = _resolve_dtype(config.precision)
     output_dir = Path(config.output_dir)
     results: list[BenchmarkResult] = []
 
@@ -53,13 +62,13 @@ def run_resource_scaling(config: BenchmarkConfig) -> list[BenchmarkResult]:
             q = torch.randn(batch_size, 4, seq_len, 64, device=device, dtype=dtype)
             k = torch.randn_like(q)
             v = torch.randn_like(q)
-            for _ in range(config.extra.get("warmup", 3)):
+            for _ in range(config.warmup):
                 _attention_reference(q, k, v)
             _synchronize(device)
             if device.type == "cuda":
                 torch.cuda.reset_peak_memory_stats(device)
             samples: list[float] = []
-            for _ in range(config.extra.get("iters", 10)):
+            for _ in range(config.iters):
                 start = time.perf_counter()
                 output = _attention_reference(q, k, v)
                 _synchronize(device)
@@ -80,7 +89,7 @@ def run_resource_scaling(config: BenchmarkConfig) -> list[BenchmarkResult]:
                     "p95_ms": p95,
                     "tokens_per_second": batch_size * seq_len / (statistics.mean(samples) / 1000.0),
                 },
-                resources={"peak_vram_mb": peak_vram, "warmup": config.extra.get("warmup", 3), "iterations": len(samples)},
+                resources={"peak_vram_mb": peak_vram, "warmup": config.warmup, "iterations": len(samples)},
                 status="success",
             )
             save_all_formats(result, output_dir)

@@ -17,7 +17,9 @@ import torch
 
 def run_benchmark(device: str = "cuda", output: str | None = None) -> dict[str, Any]:
     """Measure candidate launch configurations for a GEMM tuning harness."""
-    target = torch.device(device if device == "cpu" or torch.cuda.is_available() else "cpu")
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    target = torch.device(device)
     torch.manual_seed(42)
     a, b = torch.randn(128, 256, device=target), torch.randn(256, 256, device=target)
     rows = []

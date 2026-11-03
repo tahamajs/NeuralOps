@@ -39,7 +39,9 @@ def _int4_dequantize(weight: torch.Tensor) -> torch.Tensor:
 
 def run_benchmark(device: str = "cuda", size: int = 512) -> dict[str, Any]:
     """Benchmark a real dequantized INT4 GEMM against FP16/FP32."""
-    target = torch.device(device if device == "cpu" or torch.cuda.is_available() else "cpu")
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    target = torch.device(device)
     torch.manual_seed(42)
     dtype = torch.float16 if target.type == "cuda" else torch.float32
     x = torch.randn(32, size, device=target, dtype=dtype)

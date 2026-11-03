@@ -17,7 +17,9 @@ import torch
 
 def run_benchmark(device: str = "cuda", tokens: int = 256, experts: int = 8, top_k: int = 2) -> dict[str, Any]:
     """Benchmark router selection, load variance, and grouped expert GEMM."""
-    target = torch.device(device if device == "cpu" or torch.cuda.is_available() else "cpu")
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    target = torch.device(device)
     torch.manual_seed(42)
     hidden = 256
     x = torch.randn(tokens, hidden, device=target)

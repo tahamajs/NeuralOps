@@ -22,7 +22,9 @@ def _rotate(x: torch.Tensor) -> torch.Tensor:
 
 def run_benchmark(device: str = "cuda", sequence_lengths: tuple[int, ...] = (512, 1024, 2048, 4096)) -> dict[str, Any]:
     """Benchmark a vectorized rotary transform over context lengths."""
-    target = torch.device(device if device == "cpu" or torch.cuda.is_available() else "cpu")
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    target = torch.device(device)
     torch.manual_seed(42)
     rows = []
     for seq_len in sequence_lengths:

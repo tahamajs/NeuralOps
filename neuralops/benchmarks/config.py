@@ -14,6 +14,7 @@ Implements config functionality for NeuralOps.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+import json
 from pathlib import Path
 from typing import Any, Optional
 
@@ -38,6 +39,12 @@ class BenchmarkConfig:
     lr: float = 2e-5
     seq_len: int = 128
     seq_lens: list[int] = field(default_factory=lambda: [128])
+    warmup: int = 3
+    iters: int = 10
+    categories: list[str] = field(default_factory=lambda: ["attention", "compressor", "kernel"])
+    parallel_workers: int = 1
+    enable_backward: bool = True
+    enable_vram_tracking: bool = True
     max_length: int = 128
     precision: str = "float32"
     eval_only: bool = False
@@ -90,9 +97,36 @@ class BenchmarkConfig:
         return data
 
     @classmethod
+    def from_file(cls, path: str | Path) -> "BenchmarkConfig":
+        """Load a benchmark configuration from JSON or YAML."""
+        config_path = Path(path)
+        if not config_path.exists():
+            raise FileNotFoundError(f"Benchmark configuration not found: {config_path}")
+        text = config_path.read_text(encoding="utf-8")
+        if config_path.suffix in {".yaml", ".yml"}:
+            try:
+                import yaml  # type: ignore[import-untyped]
+            except ImportError as exc:
+                raise RuntimeError("YAML config requires PyYAML; use JSON or install PyYAML.") from exc
+            data = yaml.safe_load(text)
+        else:
+            data = json.loads(text)
+        if not isinstance(data, dict):
+            raise ValueError(f"Benchmark configuration must contain an object: {config_path}")
+        return cls.from_dict(data)
+
+    def save(self, path: str | Path) -> None:
+        """Persist the complete configuration as JSON."""
+        config_path = Path(path)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
+
+    @classmethod
     def from_dict(cls, data: dict[str, Any]) -> BenchmarkConfig:
         """Create config from dictionary."""
         d = dict(data)
+        if "dtype" in d and "precision" not in d:
+            d["precision"] = d.pop("dtype")
         if "output_dir" in d and isinstance(d["output_dir"], (str, Path)):
             d["output_dir"] = Path(d["output_dir"])
         return cls(**d)

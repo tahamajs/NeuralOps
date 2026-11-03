@@ -17,7 +17,9 @@ import torch
 
 def run_benchmark(device: str = "cuda", lengths: tuple[int, ...] = (128, 256, 512, 384)) -> dict[str, Any]:
     """Compare valid-token work in a ragged list with padded batching."""
-    target = torch.device(device if device == "cpu" or torch.cuda.is_available() else "cpu")
+    if device.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+    target = torch.device(device)
     torch.manual_seed(42)
     hidden = 128
     ragged = [torch.randn(1, n, hidden, device=target) for n in lengths]

@@ -21,7 +21,7 @@ neuralops/
 │   ├── quantization/       # Microscaled & low-bit quantization (INT4, FP8, SmoothQuant, K-Means VQ)
 │   └── pruning/            # Structured channel & head pruning (FLAP, Bonsai, Wanda, ADMM)
 ├── ops/                    # Hardware-Aware Acceleration & Dispatch Hierarchy
-│   ├── cuda/               # 130 Native CUDA C++ NVCC packages (132 native kernel implementations)
+│   ├── cuda/               # 110 canonical CUDA modules (114 native implementations)
 │   ├── triton/             # 26 Triton kernel modules housing 62 unified operators across 4 tiers
 │   └── pytorch/            # Vectorized PyTorch reference implementations for CPU and Apple Silicon
 ├── trainer/                # Unified Distillation, Surgery Recovery & Training Engine
@@ -45,7 +45,9 @@ NeuralOps enforces strict mathematical and architectural invariants certified co
 - **131 canonical attention mechanisms** (`neuralops.layers.ATTENTION_REGISTRY`)
 - **72 compression engines** (`neuralops.compression.COMPRESSOR_REGISTRY`)
 - **26 Triton hardware kernel modules** housing **62 unified operators**
-- **130 native CUDA C++ kernel packages** housing **132 native kernel implementations**
+- **110 canonical CUDA modules** housing **114 native kernel implementations**. The raw
+  `neuralops/ops/cuda` tree also contains compatibility and support directories; those
+  filesystem entries are not canonical registry modules.
 - **29 master demonstration notebooks** verified across compute platforms
 
 ---
