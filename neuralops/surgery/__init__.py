@@ -49,6 +49,39 @@ from neuralops.surgery.hf_cache_bridge import (
     wrap_model_for_generation,
 )
 
+from neuralops.surgery.director import (
+    ArchitectureProfile,
+    CrossAttentionLinearBridge,
+    GatheredParametersContext,
+    InvariantPreservingLinearBridge,
+    UniversalSurgeryDirector,
+    apply_rope_pre_feature_map,
+    apply_rotary_pos_emb,
+    compute_decayed_state_bound,
+    profile_model_topology,
+    re_tie_embeddings,
+    verify_tied_embeddings,
+)
+from neuralops.surgery.fx_surgery import (
+    FXAttentionGraphRewriter,
+    NeuralOpsAttentionTracer,
+    compile_linear_surgery,
+    rewriter_linear_attention_fx,
+)
+from neuralops.surgery.streaming_distill import (
+    CheckpointedTeacherBridge,
+    MicroChunkedShadowTwinDistiller,
+    StreamingCKALoss,
+    get_vram_utilization,
+)
+from neuralops.surgery.mla_surgery import (
+    DeepSeekMLASurgeryBridge,
+    DualStreamLatentState,
+)
+from neuralops.surgery.moa_router import (
+    AttentionEntropyProfile,
+    MoARouter,
+)
 from neuralops.surgery.universal_calibrator import (
     UniversalActivationCalibrator,
     compress_model_universal,
@@ -183,4 +216,27 @@ __all__ = [
     "heal_replaced_model",
     "calibrate_attention_subspace",
     "ModelSurgery",
+    "ArchitectureProfile",
+    "CrossAttentionLinearBridge",
+    "GatheredParametersContext",
+    "InvariantPreservingLinearBridge",
+    "UniversalSurgeryDirector",
+    "apply_rope_pre_feature_map",
+    "apply_rotary_pos_emb",
+    "compute_decayed_state_bound",
+    "profile_model_topology",
+    "re_tie_embeddings",
+    "verify_tied_embeddings",
+    "FXAttentionGraphRewriter",
+    "NeuralOpsAttentionTracer",
+    "compile_linear_surgery",
+    "rewriter_linear_attention_fx",
+    "CheckpointedTeacherBridge",
+    "MicroChunkedShadowTwinDistiller",
+    "StreamingCKALoss",
+    "get_vram_utilization",
+    "DeepSeekMLASurgeryBridge",
+    "DualStreamLatentState",
+    "AttentionEntropyProfile",
+    "MoARouter",
 ]

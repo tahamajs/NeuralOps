@@ -263,10 +263,69 @@ def apply_fx_transplant_surgery(
     )
 
 
+@register_surgery(
+    name="attention.universal_director",
+    category="attention",
+    compat=["llama", "gemma2", "deepseek_mla", "bert", "t5", "falcon", "vit", "jamba", "quantized"],
+    requires_gpu=False,
+    requires_calibration=False,
+    reversibility="high",
+    cost_estimate="low",
+)
+def apply_universal_director_surgery(
+    model: Any,
+    decay: float = 0.99,
+    softcapping_factor: float | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Execute Universal Surgery Director invariant compliance across 9 canonical model families."""
+    from neuralops.surgery.director import UniversalSurgeryDirector
+
+    director = UniversalSurgeryDirector(model)
+    director.apply_universal_transplant(decay=decay, softcapping_factor=softcapping_factor, **kwargs)
+    return director.certify_model()
+
+
+@register_surgery(
+    name="attention.mla",
+    category="attention",
+    compat=["deepseek", "deepseek_mla", "llama", "qwen"],
+    requires_gpu=False,
+    requires_calibration=False,
+    reversibility="medium",
+    cost_estimate="medium",
+)
+def apply_mla_attention_surgery(
+    model: Any,
+    latent_kv_dim: int = 512,
+    decoupled_rope_dim: int = 64,
+    decay: float = 0.99,
+    **kwargs: Any,
+) -> Any:
+    """Execute DeepSeek Multi-Head Latent Attention (MLA) dual-stream surgery."""
+    from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge
+    from neuralops.surgery.scanner import UniversalArchitectureScanner
+
+    scanner = UniversalArchitectureScanner(model)
+    targets = scanner.scan()
+    for spec in targets:
+        mla_bridge = DeepSeekMLASurgeryBridge(
+            latent_kv_dim=latent_kv_dim,
+            decoupled_rope_dim=decoupled_rope_dim,
+            decay=decay,
+            hidden_dim=spec.hidden_dim,
+            **kwargs,
+        )
+        spec.parent_module.register_module(spec.child_name, mla_bridge)
+    return model
+
+
 __all__ = [
     "SurgeryOp",
     "SurgeryRecipe",
     "ApplyReport",
     "apply_fx_attention_surgery",
     "apply_fx_transplant_surgery",
+    "apply_universal_director_surgery",
+    "apply_mla_attention_surgery",
 ]
