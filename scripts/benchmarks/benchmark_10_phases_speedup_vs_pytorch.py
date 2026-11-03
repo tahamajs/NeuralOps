@@ -74,7 +74,7 @@ def main():
         q = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
         k = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
         v = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
-        g = torch.sigmoid(torch.randn(2, 4, 512, device=device, dtype=torch.float16))
+        g = torch.sigmoid(torch.randn(4, device=device, dtype=torch.float16))
         cuda_ms = time_fn(fms_scan, q, k, v, g)
         py_ms = time_fn(fms_scan_pytorch_ref, q, k, v, g)
         speedup = py_ms / (cuda_ms + 1e-9)
