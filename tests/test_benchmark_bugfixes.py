@@ -21,7 +21,7 @@ from neuralops.benchmarks.core.data_loader import (
 )
 from neuralops.benchmarks.core.model_loader import count_parameters
 from neuralops.benchmarks.executor import execute_single
-from neuralops.benchmarks.logging import JSONLHandler, setup_run_logger
+from neuralops.benchmarks.run_logging import JSONLHandler, setup_run_logger
 from neuralops.benchmarks.result import BenchmarkResult
 from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
 
