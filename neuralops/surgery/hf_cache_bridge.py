@@ -850,7 +850,7 @@ class SGLangRadixStateAdapter:
 
     def _check_capacity(self) -> None:
         if self._node_count > self.max_cached_nodes:
-            self.evict_lru(num_nodes=max(1, self.max_cached_nodes // 10))
+            self.evict_lru(max_nodes=self.max_cached_nodes)
 
     def evict_lru(
         self,

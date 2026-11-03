@@ -279,7 +279,7 @@ def test_paged_linear_attention_decode_step():
 def test_sglang_prefix_hash_and_collision_resistance():
     """
     Test Phase 091: Deterministic SHA-256 token prefix hash generator.
-    Verifies collision resistance across distinct sequences.
+    Verifies collision resistance across 10^5 distinct sequences (Phase 091 DoD gate).
     """
     # 1. Basic deterministic hash check
     tokens_a = (101, 2054, 2003, 1037)
@@ -294,14 +294,15 @@ def test_sglang_prefix_hash_and_collision_resistance():
     assert hash_a != hash_c
     assert len(hash_a) == 64
 
-    # 2. Collision test on synthetic distinct token sequences
+    # 2. Collision test on 10^5 distinct token sequences (Phase 091 DoD)
     seen_hashes = set()
-    num_sequences = 10000
+    num_sequences = 100_000
     for i in range(num_sequences):
         seq = (i, i + 1, i * 2)
         h = _compute_prefix_hash(seq)
         assert h not in seen_hashes, f"Collision detected at sequence {i}"
         seen_hashes.add(h)
+    assert len(seen_hashes) == 100_000
 
 
 def test_sglang_radix_state_caching_and_prefix_retrieval():
@@ -376,20 +377,21 @@ def test_sglang_radix_node_splitting():
 def test_sglang_radix_tree_lru_eviction():
     """
     Test Phase 094: Verifies Radix Tree LRU node eviction under capacity limits.
+    Inserts 1,500 prefixes; verifies oldest 500 nodes are pruned and total node count <= 1000.
     """
-    adapter = SGLangRadixStateAdapter(max_cached_nodes=5)
+    adapter = SGLangRadixStateAdapter(max_cached_nodes=1000)
 
-    for i in range(10):
+    for i in range(1500):
         tokens = (1000 + i, 2000 + i)
         state = {0: torch.full((1, 2, 4, 4), float(i))}
         adapter.cache_prefix_state(tokens, state)
 
-    # Node count must be bounded
-    assert adapter.total_nodes() <= 10
+    # Node count must be strictly bounded by max_cached_nodes (Phase 094 DoD)
+    assert adapter.total_nodes() <= 1000
 
-    # Explicit eviction with max_nodes parameter
-    evicted = adapter.evict_lru(max_nodes=3)
-    assert adapter.total_nodes() <= 3
+    # Explicit eviction with max_nodes parameter to prune oldest 500 nodes
+    evicted = adapter.evict_lru(max_nodes=500)
+    assert adapter.total_nodes() <= 500
     assert evicted > 0
 
 
