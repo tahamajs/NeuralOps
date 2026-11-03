@@ -291,7 +291,7 @@ class ResSVDLinear(nn.Module):
         """Forward execution: y = Base(x) + scaling * (x @ A^T) @ B^T + bias."""
         if self.factorize_base and x.is_cuda:
             try:
-                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
                 return fused_svd_lora_sparse_attn_triton(
                     x,
                     w_down=self.base_V,

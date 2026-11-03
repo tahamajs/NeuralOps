@@ -199,15 +199,37 @@ class SVDLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
         if (
-            self.use_triton
-            and triton_dispatch is not None
-            and x.is_cuda
+            x.is_cuda
             and not (self.use_rms_norm and self.norm_weight is not None)
             and self.rank <= 128
         ):
-            V_eff = self.S.view(-1, 1) * self.V if self.S is not None else self.V
             b = self.bias.to(target_dtype) if self.bias is not None else None
-            out = triton_dispatch(self.triton_kernel, x, self.U, V_eff, bias=b)
+            V_eff = self.S.view(-1, 1) * self.V if self.S is not None else self.V
+            dispatched = False
+            out = None
+
+            # Level 1: Native CUDA C++ in-register fused Down-Up GEMM
+            try:
+                from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+                out = fused_lowrank_gated_gemm(x, V_eff, self.U, bias=b)
+                dispatched = True
+            except Exception:
+                pass
+
+            # Level 2: Triton JIT kernel
+            if not dispatched and self.use_triton and triton_dispatch is not None:
+                try:
+                    out = triton_dispatch(self.triton_kernel, x, self.U, V_eff, bias=b)
+                    dispatched = True
+                except Exception:
+                    pass
+
+            # Level 3: Fallback PyTorch matmul
+            if not dispatched:
+                Vx = F.linear(x, self.V.to(target_dtype))
+                if self.S is not None:
+                    Vx = Vx * self.S.to(target_dtype)
+                out = F.linear(Vx, self.U.to(target_dtype), b)
         else:
             Vx = F.linear(x, self.V.to(target_dtype))
             if self.S is not None:
