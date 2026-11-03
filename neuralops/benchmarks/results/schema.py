@@ -356,10 +356,19 @@ class BenchmarkResult:
 
     run_id: str = ""
     run_name: str = ""
+    timestamp: str = ""
     timestamp_start: str = ""
     timestamp_end: str = ""
     git_commit: str = ""
     git_dirty: bool = False
+
+    # Normalized fields for unified benchmarking & persistence
+    model_name: str = ""
+    transplanted_attention: str = ""
+    pre_train_steps: int = 0
+    benchmark_suite: str = ""
+    device_type: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def compute_checksum(self) -> str:
         """Calculate SHA256 checksum of run output to detect corruption."""
@@ -394,12 +403,62 @@ class BenchmarkResult:
         else:
             self.run_metadata.timestamp_end = self.timestamp_end
 
+        if not self.timestamp:
+            self.timestamp = self.timestamp_end or self.timestamp_start
+        else:
+            if not self.timestamp_end:
+                self.timestamp_end = self.timestamp
+                self.run_metadata.timestamp_end = self.timestamp
+
         if not self.git_commit:
             self.git_commit = self.run_metadata.git_commit
         else:
             self.run_metadata.git_commit = self.git_commit
 
         self.git_dirty = self.run_metadata.git_dirty
+
+        # Synchronize normalized model & transplant metadata
+        if not self.model_name:
+            if isinstance(self.model, dict):
+                self.model_name = self.model.get("name", "")
+            elif hasattr(self.model, "name"):
+                self.model_name = getattr(self.model, "name", "")
+            elif self.model:
+                self.model_name = str(self.model)
+
+        if not self.transplanted_attention:
+            if isinstance(self.module, dict):
+                self.transplanted_attention = self.module.get("name", "")
+            elif hasattr(self.module, "name"):
+                self.transplanted_attention = getattr(self.module, "name", "")
+            elif self.module:
+                self.transplanted_attention = str(self.module)
+
+        if not self.benchmark_suite:
+            if isinstance(self.config, dict) and "benchmark_suite" in self.config:
+                self.benchmark_suite = str(self.config["benchmark_suite"])
+            elif isinstance(self.dataset, dict) and "name" in self.dataset:
+                self.benchmark_suite = str(self.dataset["name"])
+
+        if not self.device_type:
+            if isinstance(self.environment, EnvironmentMetadata) and self.environment.device:
+                self.device_type = self.environment.device
+            elif isinstance(self.config, dict) and "device" in self.config:
+                self.device_type = str(self.config["device"])
+            else:
+                self.device_type = "cpu"
+
+        if not self.pre_train_steps:
+            if isinstance(self.config, dict) and "pre_train_steps" in self.config:
+                try:
+                    self.pre_train_steps = int(self.config["pre_train_steps"])
+                except (ValueError, TypeError):
+                    self.pre_train_steps = 0
+            elif isinstance(self.config, dict) and "steps" in self.config:
+                try:
+                    self.pre_train_steps = int(self.config["steps"])
+                except (ValueError, TypeError):
+                    self.pre_train_steps = 0
 
     def compute_run_key(self) -> str:
         """Compute unique deterministic run key for deduplication."""
@@ -422,6 +481,16 @@ class BenchmarkResult:
         d["run_key"] = self.compute_run_key()
         return d
 
+    def to_json(self, indent: int = 2) -> str:
+        """Serialize benchmark result to JSON string."""
+        return json.dumps(self.to_dict(), indent=indent, default=str)
+
+    @classmethod
+    def from_json(cls, json_str: str) -> BenchmarkResult:
+        """Deserialize benchmark result from JSON string."""
+        data = json.loads(json_str)
+        return cls.from_dict(data)
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> BenchmarkResult:
         """Construct BenchmarkResult with robust legacy fallback."""
@@ -433,8 +502,8 @@ class BenchmarkResult:
             run_metadata = RunMetadata(
                 run_id=data_copy.get("run_id", str(uuid.uuid4())),
                 run_name=data_copy.get("run_name", "benchmark_run"),
-                timestamp_start=data_copy.get("timestamp_start", datetime.now(timezone.utc).isoformat()),
-                timestamp_end=data_copy.get("timestamp_end", datetime.now(timezone.utc).isoformat()),
+                timestamp_start=data_copy.get("timestamp_start", data_copy.get("timestamp", datetime.now(timezone.utc).isoformat())),
+                timestamp_end=data_copy.get("timestamp_end", data_copy.get("timestamp", datetime.now(timezone.utc).isoformat())),
                 git_commit=data_copy.get("git_commit", "unknown"),
                 git_dirty=data_copy.get("git_dirty", False),
             )
@@ -456,6 +525,11 @@ class BenchmarkResult:
 
         push_dict = data_copy.pop("push_info", {})
         push_info = PushInfo(**{k: v for k, v in push_dict.items() if k in PushInfo.__dataclass_fields__}) if isinstance(push_dict, dict) and push_dict else PushInfo()
+
+        # Handle normalized metadata dictionary
+        meta = data_copy.get("metadata", {})
+        if not isinstance(meta, dict):
+            meta = {}
 
         res = cls(
             run_metadata=run_metadata,
@@ -488,10 +562,17 @@ class BenchmarkResult:
             checksum=data_copy.get("checksum", ""),
             run_id=data_copy.get("run_id", run_metadata.run_id),
             run_name=data_copy.get("run_name", run_metadata.run_name),
+            timestamp=data_copy.get("timestamp", run_metadata.timestamp_end or run_metadata.timestamp_start),
             timestamp_start=data_copy.get("timestamp_start", run_metadata.timestamp_start),
             timestamp_end=data_copy.get("timestamp_end", run_metadata.timestamp_end),
             git_commit=data_copy.get("git_commit", run_metadata.git_commit),
             git_dirty=data_copy.get("git_dirty", run_metadata.git_dirty),
+            model_name=data_copy.get("model_name", ""),
+            transplanted_attention=data_copy.get("transplanted_attention", ""),
+            pre_train_steps=data_copy.get("pre_train_steps", 0),
+            benchmark_suite=data_copy.get("benchmark_suite", ""),
+            device_type=data_copy.get("device_type", ""),
+            metadata=meta,
         )
         return res
 

@@ -11,16 +11,36 @@ NeuralOps Benchmarks Adapters Subpackage.
 
 from neuralops.benchmarks.adapters.classification import ClassificationAdapter
 from neuralops.benchmarks.adapters.compressor import CompressorModuleAdapter
+from neuralops.benchmarks.adapters.cuda_adapter import CUDAKernelAdapter
+from neuralops.benchmarks.adapters.model import (
+    BaseModelAdapter,
+    HuggingFaceModelAdapter,
+    SurgerizedModelAdapter,
+    UniversalModelAdapter,
+)
 from neuralops.benchmarks.adapters.perplexity import PerplexityAdapter
 from neuralops.benchmarks.adapters.ruler import RulerAdapter
+from neuralops.benchmarks.adapters.triton_adapter import (
+    CANONICAL_TRITON_MODULES,
+    EXTENSION_TRITON_MODULES,
+    TritonKernelAdapter,
+)
 from neuralops.benchmarks.adapters.zeroshot import ZeroShotAdapter
 
 __all__ = [
+    "BaseModelAdapter",
+    "HuggingFaceModelAdapter",
+    "SurgerizedModelAdapter",
+    "UniversalModelAdapter",
     "ClassificationAdapter",
     "PerplexityAdapter",
     "ZeroShotAdapter",
     "RulerAdapter",
     "CompressorModuleAdapter",
+    "TritonKernelAdapter",
+    "CANONICAL_TRITON_MODULES",
+    "EXTENSION_TRITON_MODULES",
+    "CUDAKernelAdapter",
 ]
 
 from neuralops.benchmarks.adapters import classification
