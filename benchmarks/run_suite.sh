@@ -17,12 +17,13 @@ case "${MODE}" in
     attention) exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_torch_compile_131_attentions.py" "$@" ;;
     systems) exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_engine_matrix.py" "$@" ;;
     numerics) exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/measure_multiprecision.py" "$@" ;;
+    resources) exec "${PYTHON_BIN}" -m neuralops.benchmarks.resource_scaling "$@" ;;
     dispatch) exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_dispatch_integrity.py" "$@" ;;
     all)
         "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_dispatch_integrity.py" "$@"
         "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_all_26_comprehensive.py" "$@"
         exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_torch_compile_131_attentions.py" "$@"
         ;;
-    help|-h|--help) echo "Usage: benchmarks/run_suite.sh <kernels|cuda|attention|systems|numerics|dispatch|all> [options]" ;;
+    help|-h|--help) echo "Usage: benchmarks/run_suite.sh <kernels|cuda|attention|systems|numerics|resources|dispatch|all> [options]" ;;
     *) echo "Unknown benchmark group: ${MODE}" >&2; exit 2 ;;
 esac

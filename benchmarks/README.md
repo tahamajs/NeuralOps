@@ -59,6 +59,7 @@ bash benchmarks/run_suite.sh cuda --quick
 bash benchmarks/run_suite.sh attention --limit 10
 bash benchmarks/run_suite.sh systems --engine pytorch
 bash benchmarks/run_suite.sh numerics --quick
+bash benchmarks/run_suite.sh resources --config benchmarks/configs/quick_cuda.json
 ```
 
 New benchmark logic belongs in `neuralops/benchmarks`; root files should remain
