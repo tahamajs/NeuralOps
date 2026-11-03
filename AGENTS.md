@@ -122,6 +122,16 @@ The primary remote GPU host for NeuralOps is **Sharif University HPC Center** (`
   ```
 - Establish one master connection with `ssh hpc`; subsequent commands MUST use `ssh hpc "command"` so they reuse it.
 - Verify reuse with `ssh -O check hpc`. Close the master only when the work is complete with `ssh -O exit hpc`.
+- **Connection-rate limit:** Batch related remote operations into one SSH command. Do not issue more than one independent `ssh hpc` status/control call within 30 seconds. Prefer one shell block or one `while` loop inside a single SSH session for polling.
+- **No SSH polling spam:** Do not repeatedly open SSH sessions to check a job. After submission, use one bounded remote polling loop or inspect the job's log with an interval of at least 30 seconds. If the connection times out, stop polling, wait, and report the timeout rather than retrying rapidly.
+- **Single-session command pattern:** Use `ssh hpc 'cd /home/<user>/NeuralOps && command_a && command_b'` for related commands. Do not split `cd`, inspection, environment checks, and execution into separate SSH calls.
+- **Persistent long-running command pattern:** Run long commands in a detached `screen`/`tmux` session or PBS job with a log file, for example:
+  ```bash
+  ssh hpc "screen -dmS <name> bash -lc 'cd /home/<user>/NeuralOps && <command> > /home/<user>/logs/<name>.log 2>&1'"
+  ```
+  Reattach with `ssh -t hpc 'screen -r <name>'`; for non-interactive monitoring, read the log no more than once per 30 seconds.
+- **ControlMaster is connection reuse, not permission to spam:** Multiplexing avoids new TCP handshakes but does not remove university rate limits. Rule 1 batching and the 30-second minimum still apply.
+- Before starting a new background process, inspect existing sessions/jobs in the same batched command and reuse or report them. Never create duplicate benchmark/KD/download workers without explicit authorization.
 - Long-running processes MUST run inside PBS, `screen`, or `tmux`; disconnecting the client must not terminate them.
 - `hpc` is the login gateway, not the GPU execution host. Agents MUST submit work through PBS (`qsub -q N3090 ...`) and may SSH to `GPU-3090-1` only after `qstat`/`qstat -f` confirms an active allocation for that job. Never assume that a direct login-node-to-GPU-node SSH session grants a valid GPU allocation.
 - Never run benchmarks, model inference, CUDA/Triton compilation, or other heavy workloads directly on the login node. Submit GPU work through PBS; use `screen` or `tmux` on the login node only for lightweight control processes such as monitoring or resumable downloads.
@@ -460,6 +470,7 @@ When updating this file, append an entry here. Version number follows `major.min
 - **v1.3.3** — Clarified that `hpc` is the login gateway and that `GPU-3090-1` may be used only after PBS confirms an active GPU allocation.
 - **v1.3.4** — Documented the HPC Conda installation, the `neuralops` environment path, non-interactive interpreter usage, and separation from the local Mac `.venv`.
 - **v1.3.5** — Separated canonical CUDA catalog counts (110 modules / 114 implementations) from raw filesystem directory counts and corrected the invariant checklist.
+- **v1.3.6** — Added strict SSH connection-rate protection: batch remote commands, wait at least 30 seconds between control/status calls, use persistent screen/PBS logging for long jobs, and distinguish ControlMaster reuse from permission to poll rapidly.
 
 ---
 ## 14. Versioning, Releases & Changelog
