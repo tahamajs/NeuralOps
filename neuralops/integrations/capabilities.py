@@ -108,7 +108,7 @@ def query_serving_capabilities() -> Dict[str, BackendCapabilities]:
     capabilities["neuralops_native"] = BackendCapabilities(
         name="neuralops_native",
         is_available=True,
-        version="2.0.2",
+        version="2.0.3",
         supports_paged_attention=True,
         supports_speculative_decoding=True,
         install_hint="Already included in NeuralOps",

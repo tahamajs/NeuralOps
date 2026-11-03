@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-11-03
+
+### Changed
+- Synchronized the package, project metadata, citation metadata, README, and integration capability version to `2.0.3`.
+- Added the repository-wide scaling and SSH/HPC operational contracts for reproducible GPU execution.
+
+### Verification
+- Static validation completed with `ruff check .` and `git diff --check`.
+
 ## [2.0.2] - 2026-11-03
 
 ### Added
