@@ -255,25 +255,41 @@ class LinearCKALoss(nn.Module):
 
     def __init__(
         self,
-        eps: float = 1e-6,
+        eps: float = 1e-8,
         use_streaming: bool = False,
         chunk_size: int = 128,
+        hidden_dim: Optional[int] = None,
     ) -> None:
         super().__init__()
-        self.eps = eps
-        self.use_streaming = use_streaming
-        self.chunk_size = chunk_size
+        self.eps = float(eps)
+        self.use_streaming = bool(use_streaming)
+        self.chunk_size = int(chunk_size)
+        self.hidden_dim = hidden_dim
+        self._streaming_cka_engine: Optional[StreamingCKALoss] = (
+            StreamingCKALoss(hidden_dim=hidden_dim, eps=eps, exact=True)
+            if hidden_dim is not None
+            else None
+        )
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        hidden_dim = x.size(-1)
         if self.use_streaming or (
             x.dim() >= 2 and x.size(1) > self.chunk_size and x.numel() > 65536
         ):
-            hidden_dim = x.size(-1)
-            cka_mod = StreamingCKALoss(hidden_dim=hidden_dim, eps=self.eps).to(x.device)
-            return cka_mod(x, y, chunk_size=self.chunk_size)
+            if (
+                self._streaming_cka_engine is None
+                or self._streaming_cka_engine.hidden_dim != hidden_dim
+                or self._streaming_cka_engine.G_xy.device != x.device
+            ):
+                self._streaming_cka_engine = StreamingCKALoss(
+                    hidden_dim=hidden_dim,
+                    eps=self.eps,
+                    exact=True,
+                ).to(x.device)
+            return self._streaming_cka_engine(x, y, chunk_size=self.chunk_size)
 
-        X = x.view(-1, x.size(-1)).float()
-        Y = y.view(-1, y.size(-1)).float()
+        X = x.view(-1, hidden_dim).float()
+        Y = y.view(-1, hidden_dim).float()
 
         if X.size(1) > X.size(0):
             X = X.t()
@@ -292,7 +308,7 @@ class LinearCKALoss(nn.Module):
 
         denom = torch.sqrt(hsic_xx * hsic_yy).clamp(min=self.eps)
         cka = hsic_xy / denom
-        return 1.0 - cka
+        return 1.0 - cka.clamp(min=0.0, max=1.0)
 
 
 class SmoothMaxOverLayersCKASteeringLoss(nn.Module):

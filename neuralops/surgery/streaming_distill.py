@@ -242,9 +242,19 @@ class CheckpointedTeacherBridge(nn.Module):
             return res.detach()
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
-        """Executes full teacher forward pass under torch.no_grad()."""
+        """
+        Executes teacher forward pass under non-reentrant activation checkpointing
+        and ensures intermediate layer activations are immediately detached.
+        """
+        if len(args) > 0 and isinstance(args[0], torch.Tensor):
+            return self.forward_layer(self.teacher, *args, **kwargs)
         with torch.no_grad():
-            return self.teacher(*args, **kwargs)
+            res = self.teacher(*args, **kwargs)
+            if isinstance(res, torch.Tensor):
+                return res.detach()
+            if isinstance(res, tuple):
+                return tuple(x.detach() if isinstance(x, torch.Tensor) else x for x in res)
+            return res
 
 
 class MicroChunkedShadowTwinDistiller:
@@ -418,7 +428,8 @@ class MicroChunkedShadowTwinDistiller:
         # Task cross-entropy loss if labels are provided (Phase 036)
         task_loss = None
         if labels is not None and all_student_logits:
-            full_logits = torch.cat(all_student_logits, dim=1)
+            cat_dim = 1 if all_student_logits[0].dim() >= 3 else 0
+            full_logits = torch.cat(all_student_logits, dim=cat_dim)
             task_loss = F.cross_entropy(
                 full_logits.view(-1, full_logits.size(-1)),
                 labels.view(-1),

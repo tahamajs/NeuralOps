@@ -18,7 +18,7 @@ Mathematical Formulation:
     Decoupled RoPE Stream (z_t^R \in \mathbb{R}^{d_R \times d_R}):
         z_t^R = z_{t-1}^R + (k_t^R)^\top q_t^R \in \mathbb{R}^{64 \times 64}
     Output Reconstruction via W_{UKV} Fusion:
-        O_t = W_{UKV} \left( S_t^C \phi(q_t^C) \right) + \left( z_t^R q_t^R \right)
+        O_t = W_{UKV} \left( S_t^C \phi(q_t^C) \right) + W_R \left( z_t^R q_t^R \right) \in \mathbb{R}^{D_{model}}
 """
 
 from __future__ import annotations
@@ -125,6 +125,33 @@ class DeepSeekMLASurgeryBridge(nn.Module):
             raise ValueError(f"uncompressed_kv_dim must be positive, got {uncompressed_kv_dim}")
         return 1.0 - (self.latent_kv_dim / float(uncompressed_kv_dim))
 
+    @staticmethod
+    def apply_rotary_embedding(
+        x: torch.Tensor,
+        cos: Optional[torch.Tensor] = None,
+        sin: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        r"""Applies rotary position embedding (RoPE) to decoupled key/query representations.
+
+        Formula:
+            \text{RoPE}(x) = (x_1 \cos \theta - x_2 \sin \theta, x_1 \sin \theta + x_2 \cos \theta)
+
+        Args:
+            x: Input tensor of shape [B, T, D_R] where D_R is even (default: 64).
+            cos: Precomputed cosine frequencies of shape [B, T, D_R] or [1, T, D_R].
+            sin: Precomputed sine frequencies of shape [B, T, D_R] or [1, T, D_R].
+
+        Returns:
+            Rotated key/query tensor of identical shape [B, T, D_R].
+        """
+        if cos is None or sin is None:
+            return x
+        d = x.shape[-1]
+        x1 = x[..., : d // 2]
+        x2 = x[..., d // 2 :]
+        rotated = torch.cat([-x2, x1], dim=-1)
+        return (x * cos) + (rotated * sin)
+
     def separate_mla_projections(
         self,
         kv_compressed: torch.Tensor,
@@ -223,15 +250,16 @@ class DeepSeekMLASurgeryBridge(nn.Module):
         q_content: torch.Tensor,
         q_rope: torch.Tensor,
         chunk_size: Optional[int] = None,
+        causal: bool = True,
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         r"""Parallel chunkwise associative scan on compressed latent space.
 
-        Computes the sequence representation in parallel for prompt prefill:
-            S^C = (c^{KV})^\top \phi(q^C) \in \mathbb{R}^{d_{kv} \times d_q}
-            z^R = (k^R)^\top q^R \in \mathbb{R}^{d_R \times d_R}
-            O_{content} = \phi(q^C) (S^C)^\top \in \mathbb{R}^{B \times T \times d_{kv}}
-            O_{rope} = q^R (z^R)^\top \in \mathbb{R}^{B \times T \times d_R}
-            O = O_{content} + O_{rope} (or reconstructed via W_{UKV})
+        Computes the sequence representation for prompt prefill in O(T) complexity:
+            S_t^C = \gamma S_{t-1}^C + (c_t^{KV})^\top \phi(q_t^C) \in \mathbb{R}^{d_{kv} \times d_q}
+            z_t^R = z_{t-1}^R + (k_t^R)^\top q_t^R \in \mathbb{R}^{d_R \times d_R}
+            O_{content, t} = \phi(q_t^C) (S_t^C)^\top \in \mathbb{R}^{B \times 1 \times d_{kv}}
+            O_{rope, t} = q_t^R (z_t^R)^\top \in \mathbb{R}^{B \times 1 \times d_R}
+            O_t = O_{content, t} + O_{rope, t}
 
         Args:
             c_kv: Compressed KV latent states of shape [B, T, latent_kv_dim].
@@ -239,6 +267,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
             q_content: Content query representations of shape [B, T, q_dim].
             q_rope: Decoupled rotary query representations of shape [B, T, decoupled_rope_dim].
             chunk_size: Optional chunk size for long-sequence chunked evaluation.
+            causal: Whether to apply causal masking (default: True for autoregressive LLMs).
 
         Returns:
             Tuple of (output_tensor [B, T, latent_kv_dim], (state_c, state_r)).
@@ -256,7 +285,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
         target_q_dim = q_content.shape[-1]
         batch_size, seq_len, _ = c_kv.shape
 
-        if chunk_size is not None and seq_len > chunk_size:
+        if causal:
             outputs = []
             s_c = torch.zeros(
                 batch_size,
@@ -273,31 +302,54 @@ class DeepSeekMLASurgeryBridge(nn.Module):
                 dtype=torch.float32,
             )
 
-            for start in range(0, seq_len, chunk_size):
-                end = min(start + chunk_size, seq_len)
-                c_chunk = k_phi[:, start:end]
-                q_chunk = q_phi[:, start:end]
-                kr_chunk = k_rope_f32[:, start:end]
-                qr_chunk = q_rope_f32[:, start:end]
+            if chunk_size is not None and seq_len > chunk_size:
+                # Parallel chunkwise associative scan
+                for start in range(0, seq_len, chunk_size):
+                    end = min(start + chunk_size, seq_len)
+                    for t in range(start, end):
+                        kt = k_phi[:, t : t + 1]
+                        qt = q_phi[:, t : t + 1]
+                        krt = k_rope_f32[:, t : t + 1]
+                        qrt = q_rope_f32[:, t : t + 1]
 
-                chunk_s_c = torch.matmul(c_chunk.transpose(-2, -1), q_chunk)
-                chunk_z_r = torch.matmul(kr_chunk.transpose(-2, -1), qr_chunk)
+                        delta_sc = torch.matmul(kt.transpose(-2, -1), qt)
+                        delta_zr = torch.matmul(krt.transpose(-2, -1), qrt)
 
-                s_c = self.decay * s_c + chunk_s_c
-                z_r = z_r + chunk_z_r
+                        s_c = self.decay * s_c + delta_sc
+                        z_r = z_r + delta_zr
 
-                if s_c.shape[-2] != q_chunk.shape[-1]:
-                    chunk_out_c = torch.matmul(q_chunk, s_c.transpose(-2, -1))
-                else:
-                    chunk_out_c = torch.matmul(q_chunk, s_c)
+                        if s_c.shape[-2] != qt.shape[-1]:
+                            out_c = torch.matmul(qt, s_c.transpose(-2, -1))
+                        else:
+                            out_c = torch.matmul(qt, s_c)
 
-                chunk_out_r = torch.matmul(qr_chunk, z_r.transpose(-2, -1))
-                outputs.append(chunk_out_c + chunk_out_r)
+                        out_r = torch.matmul(qrt, z_r.transpose(-2, -1))
+                        outputs.append(out_c + out_r)
+            else:
+                for t in range(seq_len):
+                    kt = k_phi[:, t : t + 1]
+                    qt = q_phi[:, t : t + 1]
+                    krt = k_rope_f32[:, t : t + 1]
+                    qrt = q_rope_f32[:, t : t + 1]
+
+                    delta_sc = torch.matmul(kt.transpose(-2, -1), qt)
+                    delta_zr = torch.matmul(krt.transpose(-2, -1), qrt)
+
+                    s_c = self.decay * s_c + delta_sc
+                    z_r = z_r + delta_zr
+
+                    if s_c.shape[-2] != qt.shape[-1]:
+                        out_c = torch.matmul(qt, s_c.transpose(-2, -1))
+                    else:
+                        out_c = torch.matmul(qt, s_c)
+
+                    out_r = torch.matmul(qrt, z_r.transpose(-2, -1))
+                    outputs.append(out_c + out_r)
 
             total_out = torch.cat(outputs, dim=1).to(orig_dtype)
             return total_out, (s_c.to(orig_dtype), z_r.to(orig_dtype))
 
-        # Direct prefill: outer product updates
+        # Bidirectional prefill: unmasked global outer product updates
         s_c = torch.matmul(k_phi.transpose(-2, -1), q_phi)
         z_r = torch.matmul(k_rope_f32.transpose(-2, -1), q_rope_f32)
 
@@ -432,7 +484,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
 
         Can accept:
             Option A (explicit 4 tensors): (c_kv, k_rope, q_content, q_rope)
-            Option B (single hidden_states tensor): [B, T, hidden_dim] when projection weights exist.
+            Option B (single hidden_states tensor): [B, T, hidden_dim] when projection layers exist.
         """
         if len(args) == 4:
             c_kv, k_rope, q_content, q_rope = args
