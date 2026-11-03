@@ -11,14 +11,14 @@ and Hybrid Mixture of Attentions (MoA) Pareto Router (Phases 061 – 080).
 
 Comprehensive Certification Matrix:
     - Phase 061: Low-Rank KV Compression (c_t^{KV} in R^512, 87.5% memory reduction).
-    - Phase 062: Decoupled Rotary Key (k_t^R in R^64) separation pipeline.
+    - Phase 062: Decoupled Rotary Key (k_t^R in R^64) separation pipeline & RoPE rotation.
     - Phase 063: Latent Content State (S_t^C in R^{512 x 128}) recurrence.
     - Phase 064: Decoupled Positional State (z_t^R in R^{64 x 64}) recurrence.
     - Phase 065: State Decay Exponential Smoothing (gamma = 0.99).
     - Phase 066: Parallel Prefill Chunk Associative Scan Operator.
     - Phase 067: Autoregressive Decode Step O(1) State Transition.
     - Phase 068: Compressed Output Reconstruction with W_{UKV} Fusion ([B, T, D_model]).
-    - Phase 069: Prefill vs Decode Step-1 Numerical Boundary Parity Gate (|diff| < 1e-6).
+    - Phase 069: Prefill vs Decode Step-1 Numerical Boundary Parity Gate (|diff| < 1e-6) & multi-step causal parity.
     - Phase 070: 100-Step Autoregressive Memory Invariance Certification (0.0% growth).
     - Phase 071: Attention Distribution Entropy Metric (H_l) Formulator (ln(T) and 0.0 bounds).
     - Phase 072: Layer Sensitivity Profiler for Syntactic vs Semantic Routing.
@@ -27,9 +27,9 @@ Comprehensive Certification Matrix:
     - Phase 075: Intermediate Bulk Linear Attention Router (Layers 4-29, exactly 26 layers).
     - Phase 076: Pareto Frontier Latency-vs-Perplexity Solver (Delta PPL <= 0.15).
     - Phase 077: Dynamic Heterogeneous Layer Schedule Generator (12, 24, 32, 48 layers).
-    - Phase 078: Endoskeletal Shell Bridge Dispatch Hook.
+    - Phase 078: Endoskeletal Shell Bridge Dispatch Hook (full 32-layer heterogeneous model execution).
     - Phase 079: Weight Inheritance Engine for Low-Rank Projections (zero shape mismatch).
-    - Phase 080: Multi-Seed Statistical Significance Test Suite (3 seeds: 42, 123, 999).
+    - Phase 080: Multi-Seed Statistical Significance Test Suite (mean < 1e-6, var < 1e-12 across seeds).
 """
 
 from __future__ import annotations
@@ -69,7 +69,7 @@ def test_phase_061_mla_low_rank_kv_compression() -> None:
 # Phase 062: Decoupled Rotary Key Separation Pipeline (k_t^R in R^64)
 # =========================================================================
 def test_phase_062_decoupled_rope_key_separation() -> None:
-    """Certifies Phase 062: RoPE key is cleanly separated with dimension strictly 64."""
+    """Certifies Phase 062: RoPE key is cleanly separated with dimension strictly 64 and rotated."""
     bridge = DeepSeekMLASurgeryBridge(latent_kv_dim=512, decoupled_rope_dim=64)
     batch_size = 2
     seq_len = 4
@@ -80,6 +80,17 @@ def test_phase_062_decoupled_rope_key_separation() -> None:
     assert c_kv.shape == (batch_size, seq_len, 512)
     assert k_rope.shape == (batch_size, seq_len, 64)
     assert k_rope.shape[-1] == 64, f"RoPE key dimension must be strictly 64, got {k_rope.shape[-1]}"
+
+    # Test rotary embedding application
+    angles = torch.linspace(0, math.pi, 64)
+    cos = torch.cos(angles).unsqueeze(0).unsqueeze(0).repeat(batch_size, seq_len, 1)
+    sin = torch.sin(angles).unsqueeze(0).unsqueeze(0).repeat(batch_size, seq_len, 1)
+    k_rotated = DeepSeekMLASurgeryBridge.apply_rotary_embedding(k_rope, cos=cos, sin=sin)
+    assert k_rotated.shape == (batch_size, seq_len, 64)
+    # Norm preservation under orthogonal rotation
+    norm_before = torch.norm(k_rope, dim=-1)
+    norm_after = torch.norm(k_rotated, dim=-1)
+    assert torch.allclose(norm_before, norm_after, atol=1e-4)
 
 
 # =========================================================================
@@ -179,7 +190,7 @@ def test_phase_066_parallel_prefill_chunk_scan() -> None:
     qc = torch.randn(batch_size, seq_len, 64)
     qr = torch.randn(batch_size, seq_len, 32)
 
-    out, (sc, sr) = bridge.forward_prefill(c_kv, k_rope, qc, qr, chunk_size=chunk_size)
+    out, (sc, sr) = bridge.forward_prefill(c_kv, k_rope, qc, qr, chunk_size=chunk_size, causal=True)
     assert out.shape == (batch_size, seq_len, 64)
     assert sc.shape == (batch_size, 64, 64)
     assert sr.shape == (batch_size, 32, 32)
@@ -243,7 +254,7 @@ def test_phase_068_compressed_output_reconstruction_w_ukv() -> None:
 # Phase 069: Prefill vs Decode Step-1 Numerical Boundary Parity Gate (< 1e-6)
 # =========================================================================
 def test_phase_069_prefill_decode_step1_parity_gate() -> None:
-    """Certifies Phase 069: Step-1 numerical difference |out_prefill - out_decode| < 1e-6."""
+    """Certifies Phase 069: Step-1 numerical difference |out_prefill - out_decode| < 1e-6 and multi-token parity."""
     torch.manual_seed(42)
     latent_kv_dim = 128
     decoupled_rope_dim = 32
@@ -254,16 +265,16 @@ def test_phase_069_prefill_decode_step1_parity_gate() -> None:
     )
 
     batch_size = 2
-    # Single token T=1 in FP64 for precision certification
+    # Single token T=1 in FP32
     c_kv = torch.randn(batch_size, 1, latent_kv_dim, dtype=torch.float32)
     k_rope = torch.randn(batch_size, 1, decoupled_rope_dim, dtype=torch.float32)
     q_content = torch.randn(batch_size, 1, latent_kv_dim, dtype=torch.float32)
     q_rope = torch.randn(batch_size, 1, decoupled_rope_dim, dtype=torch.float32)
 
-    # 1. Parallel prefill
+    # 1. Parallel prefill at T=1
     out_prefill, (sc_pref, sr_pref) = bridge.forward_prefill(c_kv, k_rope, q_content, q_rope)
 
-    # 2. Decode step from zero state
+    # 2. Decode step from zero state at T=1
     init_state = bridge.init_latent_state(batch_size=batch_size, device=c_kv.device)
     out_decode, (sc_dec, sr_dec) = bridge.forward_decode_step(
         c_kv, k_rope, q_content, q_rope, init_state.state_c, init_state.state_r
@@ -276,6 +287,34 @@ def test_phase_069_prefill_decode_step1_parity_gate() -> None:
     assert diff_out < 1e-6, f"Step 1 output parity exceeded 1e-6: diff={diff_out}"
     assert diff_sc < 1e-6, f"Step 1 content state parity exceeded 1e-6: diff={diff_sc}"
     assert diff_sr < 1e-6, f"Step 1 RoPE state parity exceeded 1e-6: diff={diff_sr}"
+
+    # Multi-token causal parity verification across T=8 tokens
+    seq_len = 8
+    c_seq = torch.randn(batch_size, seq_len, latent_kv_dim)
+    k_seq = torch.randn(batch_size, seq_len, decoupled_rope_dim)
+    qc_seq = torch.randn(batch_size, seq_len, latent_kv_dim)
+    qr_seq = torch.randn(batch_size, seq_len, decoupled_rope_dim)
+
+    prefill_out, (pref_sc, pref_sr) = bridge.forward_prefill(c_seq, k_seq, qc_seq, qr_seq, causal=True)
+
+    curr_sc, curr_sr = init_state.state_c, init_state.state_r
+    decode_outs = []
+    for t in range(seq_len):
+        step_out, (curr_sc, curr_sr) = bridge.forward_decode_step(
+            c_seq[:, t : t + 1],
+            k_seq[:, t : t + 1],
+            qc_seq[:, t : t + 1],
+            qr_seq[:, t : t + 1],
+            curr_sc,
+            curr_sr,
+        )
+        decode_outs.append(step_out)
+    all_decode_out = torch.cat(decode_outs, dim=1)
+
+    multi_step_diff = torch.max(torch.abs(prefill_out - all_decode_out)).item()
+    assert multi_step_diff < 1e-5, f"Multi-step causal prefill vs decode mismatch: {multi_step_diff}"
+    assert torch.max(torch.abs(pref_sc - curr_sc)).item() < 1e-5
+    assert torch.max(torch.abs(pref_sr - curr_sr)).item() < 1e-5
 
 
 # =========================================================================
@@ -470,6 +509,48 @@ def test_phase_078_endoskeletal_shell_bridge_dispatch_hook() -> None:
     assert torch.allclose(b0(x), x * 100.0)
     assert torch.allclose(b5(x), x * 2.0)
 
+    # Construct entire 32-layer heterogeneous model pipeline
+    layers = []
+    for l_idx in range(32):
+        layer_spec = AttentionTargetSpec(
+            module_path=f"model.layers.{l_idx}.self_attn",
+            parent_module=nn.Module(),
+            attr_name="self_attn",
+            target_module=MockFull(),
+            pattern_type="split_4proj",
+            embed_dim=d_model,
+            num_heads=num_heads,
+            num_kv_heads=num_heads,
+            head_dim=d_model // num_heads,
+            is_causal=True,
+            has_bias=False,
+        )
+        bridge_layer = UniversalAttentionBridge(
+            orig_module=MockFull(),
+            spec=layer_spec,
+            new_attention=MockLinear(),
+            inherit_weights=False,
+            moa_router=router,
+            layer_idx=l_idx,
+        )
+        layers.append(bridge_layer)
+
+    # Execute 32-layer pipeline pass
+    cur = torch.ones(1, 2, d_model)
+    full_count = 0
+    linear_count = 0
+    for l_idx, layer in enumerate(layers):
+        out = layer(cur)
+        if router.is_full_attention(l_idx):
+            full_count += 1
+            assert torch.allclose(out, cur * 100.0)
+        else:
+            linear_count += 1
+            assert torch.allclose(out, cur * 2.0)
+
+    assert full_count == 6
+    assert linear_count == 26
+
 
 # =========================================================================
 # Phase 079: Weight Inheritance Engine for Low-Rank Projections
@@ -554,3 +635,31 @@ def test_phase_080_multi_seed_statistical_significance(seed: int) -> None:
     router = HybridMoARouter(num_layers=32)
     assert len(router.get_full_attention_layers()) == 6
     assert len(router.get_linear_attention_layers()) == 26
+
+
+def test_phase_080_aggregate_variance_across_seeds() -> None:
+    """Certifies Phase 080 aggregate statistics: mean error < 1e-6, variance < 1e-12."""
+    seeds = [42, 123, 999]
+    diffs = []
+    latent_kv_dim = 64
+    decoupled_rope_dim = 32
+    bridge = DeepSeekMLASurgeryBridge(latent_kv_dim=latent_kv_dim, decoupled_rope_dim=decoupled_rope_dim)
+
+    for s in seeds:
+        torch.manual_seed(s)
+        c_kv = torch.randn(1, 1, latent_kv_dim)
+        k_rope = torch.randn(1, 1, decoupled_rope_dim)
+        qc = torch.randn(1, 1, latent_kv_dim)
+        qr = torch.randn(1, 1, decoupled_rope_dim)
+
+        out_pref, _ = bridge.forward_prefill(c_kv, k_rope, qc, qr)
+        init_state = bridge.init_latent_state(batch_size=1, device=c_kv.device)
+        out_dec, _ = bridge.forward_decode_step(c_kv, k_rope, qc, qr, init_state.state_c, init_state.state_r)
+        diff = torch.max(torch.abs(out_pref - out_dec)).item()
+        diffs.append(diff)
+
+    mean_diff = sum(diffs) / len(diffs)
+    variance_diff = sum((d - mean_diff) ** 2 for d in diffs) / len(diffs)
+
+    assert mean_diff < 1e-6, f"Mean error across seeds exceeded threshold: {mean_diff}"
+    assert variance_diff < 1e-12, f"Variance across seeds exceeded threshold: {variance_diff}"
