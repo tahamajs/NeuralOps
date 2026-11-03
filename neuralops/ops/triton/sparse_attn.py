@@ -819,7 +819,14 @@ def fused_expert_choice_scatter_gather_triton(
     gate_scores: torch.Tensor,
     top_k_experts: int,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Fused Expert Choice top-k routing dispatch."""
+    """Fused Expert Choice top-k routing dispatch with Level 1 CUDA acceleration."""
+    if gate_scores.is_cuda:
+        try:
+            from neuralops.ops.cuda.moe_routing import moe_topk_routing_fused
+            topk_vals, topk_indices = moe_topk_routing_fused(gate_scores, top_k_experts)
+            return topk_vals, topk_indices, gate_scores
+        except Exception:
+            pass
     return fused_expert_choice_scatter_gather_pytorch(x_flat, gate_scores, top_k_experts)
 
 

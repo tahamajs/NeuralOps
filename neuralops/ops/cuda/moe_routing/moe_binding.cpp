@@ -42,6 +42,15 @@ void moe_fused_dispatch_cuda(
     int top_k
 );
 
+void moe_topk_routing_cuda(
+    torch::Tensor& routing_weights,
+    torch::Tensor& topk_indices,
+    const torch::Tensor& gate_logits,
+    int num_tokens,
+    int num_experts,
+    int top_k
+);
+
 
 torch::Tensor moe_dispatch(
     torch::Tensor tokens,
@@ -180,5 +189,37 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> moe_fused_dispatch(
     );
 
     return std::make_tuple(dispatched, routing_weights, topk_indices);
+}
+
+std::tuple<torch::Tensor, torch::Tensor> moe_topk_routing(
+    torch::Tensor gate_logits,
+    int64_t top_k
+) {
+    TORCH_CHECK(gate_logits.is_cuda(), "moe_topk_routing: gate_logits must be a CUDA tensor");
+    TORCH_CHECK(gate_logits.dim() == 2, "moe_topk_routing: expected 2D tensor [num_tokens, num_experts]");
+    TORCH_CHECK(top_k > 0 && top_k <= gate_logits.size(1), "moe_topk_routing: invalid top_k");
+
+    const int num_tokens = static_cast<int>(gate_logits.size(0));
+    const int num_experts = static_cast<int>(gate_logits.size(1));
+    const int k = static_cast<int>(top_k);
+
+    auto routing_weights = torch::empty({num_tokens, k}, gate_logits.options());
+    auto topk_indices = torch::empty({num_tokens, k}, gate_logits.options().dtype(torch::kInt32));
+
+    if (num_tokens == 0) {
+        return std::make_tuple(routing_weights, topk_indices);
+    }
+
+    auto gate_logits_c = gate_logits.contiguous();
+    moe_topk_routing_cuda(
+        routing_weights,
+        topk_indices,
+        gate_logits_c,
+        num_tokens,
+        num_experts,
+        k
+    );
+
+    return std::make_tuple(routing_weights, topk_indices);
 }
 

@@ -201,13 +201,14 @@ class UnifiedMoE(nn.Module):
         if self.training and self.noise_std > 0:
             logits = logits + torch.randn_like(logits) * self.noise_std
 
-        all_probs = F.softmax(logits, dim=-1)
-        topk_scores, topk_idx = torch.topk(all_probs, self.top_k, dim=-1)
+        from neuralops.ops.cuda.moe_routing import moe_topk_routing_fused
+
+        topk_scores, topk_idx = moe_topk_routing_fused(logits, self.top_k)
         scores = topk_scores / topk_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
         scores = torch.nan_to_num(scores, nan=0.0)
 
         if self.training and self.num_experts > 1:
-            router_probs = all_probs.view(-1, self.num_experts)
+            router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.num_experts)
             expert_mask = F.one_hot(topk_idx, num_classes=self.num_experts).float()
             density = expert_mask.sum(dim=2).view(-1, self.num_experts).mean(dim=0)
             prob_mean = router_probs.mean(dim=0)

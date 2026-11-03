@@ -43,7 +43,7 @@ def _get_module():
             name="cuda_moe_routing",
             cpp_sources=cpp_src,
             cuda_sources=r_src + "\n" + d_src,
-            functions=["moe_dispatch", "moe_gather", "moe_fused_dispatch"],
+            functions=["moe_dispatch", "moe_gather", "moe_fused_dispatch", "moe_topk_routing"],
         )
     return _MODULE
 
@@ -318,6 +318,46 @@ def moe_gather(
     )
 
 
+def moe_topk_routing_fused(
+    gate_logits: torch.Tensor,
+    top_k: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Fused MoE Top-K Routing with 3-level fallback (CUDA -> Triton -> PyTorch)."""
+    orig_shape = gate_logits.shape
+    if gate_logits.dim() > 2:
+        gate_logits_2d = gate_logits.reshape(-1, orig_shape[-1])
+    else:
+        gate_logits_2d = gate_logits
+
+    def _triton_topk_routing(logits, k):
+        from neuralops.ops.triton.sparse_attn import fused_reap_moe_router_triton
+        weights, indices = fused_reap_moe_router_triton(logits, k)
+        return weights, indices
+
+    def _pytorch_topk_routing(logits, k):
+        probs = F.softmax(logits.float(), dim=-1)
+        topk_weights, topk_indices = torch.topk(probs, k, dim=-1)
+        topk_weights = topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)
+        return topk_weights.to(logits.dtype), topk_indices.to(torch.int32)
+
+    mod = _get_module()
+    cuda_topk = mod.moe_topk_routing if mod is not None and hasattr(mod, "moe_topk_routing") else None
+
+    weights_2d, indices_2d = dispatch(
+        cuda_topk,
+        _triton_topk_routing,
+        _pytorch_topk_routing,
+        gate_logits_2d,
+        top_k,
+        kernel_name="moe_topk_routing",
+    )
+
+    if gate_logits.dim() > 2:
+        out_shape = list(orig_shape[:-1]) + [top_k]
+        return weights_2d.reshape(out_shape), indices_2d.reshape(out_shape)
+    return weights_2d, indices_2d
+
+
 moe_routing = moe_dispatch_gather
 moe_routing_ref = moe_dispatch_gather_pytorch_ref
 moe_routing_pytorch_ref = moe_dispatch_gather_pytorch_ref
@@ -327,6 +367,7 @@ __all__ = [
     "moe_dispatch_gather",
     "moe_dispatch",
     "moe_gather",
+    "moe_topk_routing_fused",
     "moe_routing",
     "moe_routing_ref",
     "moe_routing_pytorch_ref",
