@@ -79,15 +79,16 @@ class BenchmarkConfig(BaseModel):
         data = self.model_dump() if hasattr(self, "model_dump") else self.__dict__.copy()
         data["precision"] = data.pop("dtype", "float32")
         data["output_dir"] = Path(data.get("output_dir", "results"))
-        data["extra"] = {
-            "batch_sizes": data.pop("batch_sizes", [2, 4, 8]),
-            "seq_lens": data.pop("seq_lens", [16, 64, 256]),
-            "parallel_workers": data.pop("parallel_workers", 4),
-            "enable_backward": data.pop("enable_backward", True),
-            "enable_vram_tracking": data.pop("enable_vram_tracking", True),
-        }
         allowed = set(CanonicalConfig.__dataclass_fields__)
-        return CanonicalConfig(**{key: value for key, value in data.items() if key in allowed})
+        extra = {}
+        filtered = {}
+        for key, value in data.items():
+            if key in allowed:
+                filtered[key] = value
+            else:
+                extra[key] = value
+        filtered["extra"] = extra
+        return CanonicalConfig(**filtered)
 
     @classmethod
     def from_file(cls, path: str | Path) -> BenchmarkConfig:
