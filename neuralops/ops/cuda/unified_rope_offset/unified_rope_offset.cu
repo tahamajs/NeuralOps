@@ -12,6 +12,34 @@
 
 namespace neuralops { namespace cuda {
 
+// 128-bit vector memory operations (ld.global.v4.f32 / st.global.v4.f32)
+__device__ __forceinline__ float4 load_float4(const float* __restrict__ ptr) {
+#if defined(__CUDA_ARCH__)
+    float4 val;
+    asm volatile(
+        "ld.global.v4.f32 {%0, %1, %2, %3}, [%4];"
+        : "=f"(val.x), "=f"(val.y), "=f"(val.z), "=f"(val.w)
+        : "l"(ptr)
+    );
+    return val;
+#else
+    return *reinterpret_cast<const float4*>(ptr);
+#endif
+}
+
+__device__ __forceinline__ void store_float4(float* __restrict__ ptr, float4 val) {
+#if defined(__CUDA_ARCH__)
+    asm volatile(
+        "st.global.v4.f32 [%0], {%1, %2, %3, %4};"
+        :
+        : "l"(ptr), "f"(val.x), "f"(val.y), "f"(val.z), "f"(val.w)
+        : "memory"
+    );
+#else
+    *reinterpret_cast<float4*>(ptr) = val;
+#endif
+}
+
 template <typename scalar_t>
 __global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
     scalar_t* __restrict__ out,
@@ -29,9 +57,9 @@ __global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
     if (bhn >= B * H * N) return;
 
     const int n = bhn % N;
-    const int pos = n + offset;
-    const int base_idx = bhn * D;
-    const int tab_base = pos * half_rope;
+    const int64_t pos = static_cast<int64_t>(n) + offset;
+    const int64_t base_idx = static_cast<int64_t>(bhn) * D;
+    const int64_t tab_base = pos * half_rope;
 
     const int num_vec = half_rope / 4;
     const int tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -39,18 +67,21 @@ __global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
     for (int vi = tid; vi < num_vec; vi += blockDim.x * gridDim.x) {
         const int i = vi * 4;
         if constexpr (std::is_same_v<scalar_t, float>) {
-            const float4 c4 = *reinterpret_cast<const float4*>(cos_tab + tab_base + i);
-            const float4 s4 = *reinterpret_cast<const float4*>(sin_tab + tab_base + i);
+            const float* __restrict__ x_ptr = reinterpret_cast<const float*>(x);
+            float* __restrict__ out_ptr = reinterpret_cast<float*>(out);
 
-            const float4 x0_4 = *reinterpret_cast<const float4*>(x + base_idx + i);
-            const float4 x1_4 = *reinterpret_cast<const float4*>(x + base_idx + half_rope + i);
+            const float4 c4 = load_float4(cos_tab + tab_base + i);
+            const float4 s4 = load_float4(sin_tab + tab_base + i);
+
+            const float4 x0_4 = load_float4(x_ptr + base_idx + i);
+            const float4 x1_4 = load_float4(x_ptr + base_idx + half_rope + i);
 
             float4 r0_4;
             float4 r1_4;
 
             #define ROTATE_ROPE(x0, x1, c, s, r0, r1) { \
-                r0 = fmaf(x0, c, -(x1 * s)); \
-                r1 = fmaf(x0, s, x1 * c); \
+                r0 = __fmaf_rn(x0, c, -(x1 * s)); \
+                r1 = __fmaf_rn(x0, s, x1 * c); \
             }
             ROTATE_ROPE(x0_4.x, x1_4.x, c4.x, s4.x, r0_4.x, r1_4.x);
             ROTATE_ROPE(x0_4.y, x1_4.y, c4.y, s4.y, r0_4.y, r1_4.y);
@@ -58,8 +89,8 @@ __global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
             ROTATE_ROPE(x0_4.w, x1_4.w, c4.w, s4.w, r0_4.w, r1_4.w);
             #undef ROTATE_ROPE
 
-            *reinterpret_cast<float4*>(out + base_idx + i) = r0_4;
-            *reinterpret_cast<float4*>(out + base_idx + half_rope + i) = r1_4;
+            store_float4(out_ptr + base_idx + i, r0_4);
+            store_float4(out_ptr + base_idx + half_rope + i, r1_4);
         } else {
             #pragma unroll
             for (int k = 0; k < 4; ++k) {
@@ -69,8 +100,8 @@ __global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
                 const float x0 = to_float(x[base_idx + curr_i]);
                 const float x1 = to_float(x[base_idx + half_rope + curr_i]);
 
-                const float r0 = fmaf(x0, c, -(x1 * s));
-                const float r1 = fmaf(x0, s, x1 * c);
+                const float r0 = __fmaf_rn(x0, c, -(x1 * s));
+                const float r1 = __fmaf_rn(x0, s, x1 * c);
 
                 out[base_idx + curr_i] = from_float<scalar_t>(r0);
                 out[base_idx + half_rope + curr_i] = from_float<scalar_t>(r1);
@@ -85,8 +116,8 @@ __global__ void __launch_bounds__(128) unified_rope_offset_vectorized_kernel(
         const float x0 = to_float(x[base_idx + i]);
         const float x1 = to_float(x[base_idx + half_rope + i]);
 
-        const float r0 = fmaf(x0, c, -(x1 * s));
-        const float r1 = fmaf(x0, s, x1 * c);
+        const float r0 = __fmaf_rn(x0, c, -(x1 * s));
+        const float r1 = __fmaf_rn(x0, s, x1 * c);
 
         out[base_idx + i] = from_float<scalar_t>(r0);
         out[base_idx + half_rope + i] = from_float<scalar_t>(r1);

@@ -40,23 +40,34 @@ __global__ void based_taylor_attention_fwd_kernel(
         q_reg[k_d] = (k_d < D) ? to_float(q[t_offset + k_d]) : 0.0f;
     }
 
-    for (int d = 0; d < D; ++d) {
-        float num_acc = 0.0f;
-        float denom_acc = 0.0f;
-        for (int s = 0; s <= t; ++s) {
-            const int s_offset = head_offset + s * D;
-            float dot = 0.0f;
-            #pragma unroll 8
-            for (int k_d = 0; k_d < D; ++k_d) {
-                dot += q_reg[k_d] * to_float(k[s_offset + k_d]);
-            }
-            dot *= scale;
-            float weight = 1.0f + dot + 0.5f * dot * dot;
-            denom_acc += weight;
-            num_acc += weight * to_float(v[s_offset + d]);
+    float num_acc[MAX_D];
+    #pragma unroll
+    for (int d = 0; d < MAX_D; ++d) {
+        num_acc[d] = 0.0f;
+    }
+    float denom_acc = 0.0f;
+
+    for (int s = 0; s <= t; ++s) {
+        const int s_offset = head_offset + s * D;
+        float dot = 0.0f;
+        #pragma unroll 8
+        for (int k_d = 0; k_d < D; ++k_d) {
+            dot += q_reg[k_d] * to_float(k[s_offset + k_d]);
         }
-        denom_acc = fmaxf(denom_acc, 1e-6f);
-        out[t_offset + d] = from_float<scalar_t>(num_acc / denom_acc);
+        dot *= scale;
+        // 2nd-order Taylor expansion: 1 + qk^T + 0.5(qk^T)^2 directly in registers
+        float weight = 1.0f + dot + 0.5f * dot * dot;
+        denom_acc += weight;
+        #pragma unroll 8
+        for (int d = 0; d < D; ++d) {
+            num_acc[d] += weight * to_float(v[s_offset + d]);
+        }
+    }
+
+    const float inv_denom = 1.0f / fmaxf(denom_acc, 1e-6f);
+    #pragma unroll 8
+    for (int d = 0; d < D; ++d) {
+        out[t_offset + d] = from_float<scalar_t>(num_acc[d] * inv_denom);
     }
 }
 

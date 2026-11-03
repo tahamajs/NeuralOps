@@ -61,6 +61,18 @@ def lightning_attention_pytorch_ref(
     return out.to(q.dtype)
 
 
+def _get_triton_impl():
+    try:
+        from neuralops.ops.triton.lightning_scan import lightning_scan
+
+        def _triton_lightning_fn(q, k, v, decay_rate=0.1, scale=None, **kwargs):
+            return lightning_scan(q, k, v, s=decay_rate)
+
+        return _triton_lightning_fn
+    except (ImportError, AttributeError):
+        return None
+
+
 def _lightning_attention_dispatch(q, k, v, decay_rate=0.1, scale=None) -> torch.Tensor:
     """3-Level Dispatched Lightning Attention."""
     def cuda_fn(q, k, v, decay_rate=0.1, scale=None, **kwargs):
@@ -68,9 +80,11 @@ def _lightning_attention_dispatch(q, k, v, decay_rate=0.1, scale=None) -> torch.
         sc = scale if "scale" in kwargs or "scale" in locals() and locals().get("scale") is not None else 1.0 / math.sqrt(q.shape[-1])
         return mod.lightning_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous(), float(decay_rate), sc)
 
+    triton_fn = _get_triton_impl()
+
     return dispatch(
         cuda_fn,
-        None,
+        triton_fn,
         lightning_attention_pytorch_ref,
         q, k, v, decay_rate, scale,
         kernel_name="lightning_attention",

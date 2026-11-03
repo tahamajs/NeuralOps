@@ -42,10 +42,10 @@ __global__ void __launch_bounds__(128) hgrn2_bidirectional_scan_kernel(
                 const float4 x_t = *reinterpret_cast<const float4*>(x + idx);
                 const float4 g_t = *reinterpret_cast<const float4*>(g + idx);
 
-                h_fwd.x = fmaf(g_t.x, h_fwd.x, (1.0f - g_t.x) * x_t.x);
-                h_fwd.y = fmaf(g_t.y, h_fwd.y, (1.0f - g_t.y) * x_t.y);
-                h_fwd.z = fmaf(g_t.z, h_fwd.z, (1.0f - g_t.z) * x_t.z);
-                h_fwd.w = fmaf(g_t.w, h_fwd.w, (1.0f - g_t.w) * x_t.w);
+                h_fwd.x = __fmaf_rn(g_t.x, h_fwd.x, (1.0f - g_t.x) * x_t.x);
+                h_fwd.y = __fmaf_rn(g_t.y, h_fwd.y, (1.0f - g_t.y) * x_t.y);
+                h_fwd.z = __fmaf_rn(g_t.z, h_fwd.z, (1.0f - g_t.z) * x_t.z);
+                h_fwd.w = __fmaf_rn(g_t.w, h_fwd.w, (1.0f - g_t.w) * x_t.w);
 
                 *reinterpret_cast<float4*>(out + idx) = h_fwd;
             }
@@ -57,10 +57,10 @@ __global__ void __launch_bounds__(128) hgrn2_bidirectional_scan_kernel(
                 const float4 x_t = *reinterpret_cast<const float4*>(x + idx);
                 const float4 g_t = *reinterpret_cast<const float4*>(g + idx);
 
-                h_bwd.x = fmaf(g_t.x, h_bwd.x, (1.0f - g_t.x) * x_t.x);
-                h_bwd.y = fmaf(g_t.y, h_bwd.y, (1.0f - g_t.y) * x_t.y);
-                h_bwd.z = fmaf(g_t.z, h_bwd.z, (1.0f - g_t.z) * x_t.z);
-                h_bwd.w = fmaf(g_t.w, h_bwd.w, (1.0f - g_t.w) * x_t.w);
+                h_bwd.x = __fmaf_rn(g_t.x, h_bwd.x, (1.0f - g_t.x) * x_t.x);
+                h_bwd.y = __fmaf_rn(g_t.y, h_bwd.y, (1.0f - g_t.y) * x_t.y);
+                h_bwd.z = __fmaf_rn(g_t.z, h_bwd.z, (1.0f - g_t.z) * x_t.z);
+                h_bwd.w = __fmaf_rn(g_t.w, h_bwd.w, (1.0f - g_t.w) * x_t.w);
 
                 const float4 fwd_val = *reinterpret_cast<const float4*>(out + idx);
                 float4 combined;
@@ -87,7 +87,7 @@ __global__ void __launch_bounds__(128) hgrn2_bidirectional_scan_kernel(
         const float x_t = to_float(x[idx]);
         const float g_t = to_float(g[idx]);
 
-        h_fwd = fmaf(g_t, h_fwd, (1.0f - g_t) * x_t);
+        h_fwd = __fmaf_rn(g_t, h_fwd, (1.0f - g_t) * x_t);
         out[idx] = from_float<scalar_t>(h_fwd);
     }
 
@@ -98,7 +98,7 @@ __global__ void __launch_bounds__(128) hgrn2_bidirectional_scan_kernel(
         const float x_t = to_float(x[idx]);
         const float g_t = to_float(g[idx]);
 
-        h_bwd = fmaf(g_t, h_bwd, (1.0f - g_t) * x_t);
+        h_bwd = __fmaf_rn(g_t, h_bwd, (1.0f - g_t) * x_t);
         const float fwd_val = to_float(out[idx]);
         const float combined = 0.5f * (fwd_val + h_bwd);
         out[idx] = from_float<scalar_t>(combined);

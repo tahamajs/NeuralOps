@@ -62,17 +62,17 @@ __global__ void rwkv6_state_scan_fwd_kernel(
                 const float4 kv = make_float4(k_val.x * v_val.x, k_val.y * v_val.y, k_val.z * v_val.z, k_val.w * v_val.w);
 
                 float4 y_val;
-                y_val.x = r_val.x * (u_val.x * kv.x + state.x);
-                y_val.y = r_val.y * (u_val.y * kv.y + state.y);
-                y_val.z = r_val.z * (u_val.z * kv.z + state.z);
-                y_val.w = r_val.w * (u_val.w * kv.w + state.w);
+                y_val.x = r_val.x * __fmaf_rn(u_val.x, kv.x, state.x);
+                y_val.y = r_val.y * __fmaf_rn(u_val.y, kv.y, state.y);
+                y_val.z = r_val.z * __fmaf_rn(u_val.z, kv.z, state.z);
+                y_val.w = r_val.w * __fmaf_rn(u_val.w, kv.w, state.w);
 
                 *reinterpret_cast<float4*>(out + idx) = y_val;
 
-                state.x = state.x * decay.x + kv.x;
-                state.y = state.y * decay.y + kv.y;
-                state.z = state.z * decay.z + kv.z;
-                state.w = state.w * decay.w + kv.w;
+                state.x = __fmaf_rn(state.x, decay.x, kv.x);
+                state.y = __fmaf_rn(state.y, decay.y, kv.y);
+                state.z = __fmaf_rn(state.z, decay.z, kv.z);
+                state.w = __fmaf_rn(state.w, decay.w, kv.w);
             }
             return;
         }
@@ -86,9 +86,10 @@ __global__ void rwkv6_state_scan_fwd_kernel(
         float r_val = static_cast<float>(r[idx]); float k_val = static_cast<float>(k[idx]);
         float v_val = static_cast<float>(v[idx]); float w_val = static_cast<float>(w[idx]);
         float decay = expf(-expf(w_val));
-        float y_val = r_val * (u_val * k_val * v_val + state);
+        float kv = k_val * v_val;
+        float y_val = r_val * __fmaf_rn(u_val, kv, state);
         out[idx] = static_cast<scalar_t>(y_val);
-        state = state * decay + k_val * v_val;
+        state = __fmaf_rn(state, decay, kv);
     }
 }
 

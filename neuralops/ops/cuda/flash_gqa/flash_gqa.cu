@@ -38,12 +38,13 @@ __global__ void flash_gqa_kernel(
     const int cur_q_idx = q_tile_idx * TILE_Q + tid;
 
     // Storage layout with padding and swizzle helper to eliminate bank conflicts:
-    // bank_idx = (kt ^ kd) & 31
+    // Padded shared memory arrays s_k / s_v (in vectorized float4 elements)
+    // with swizzled column indexing: col ^ ((row & 3) << 2)
     __shared__ float4 K_smem[BLOCK_N][NUM_VECS + 1];
     __shared__ float4 V_smem[BLOCK_N][NUM_VECS + 1];
 
     auto swizzle_col = [](int row, int col) -> int {
-        return (col ^ (row & 3)) % NUM_VECS;
+        return (col ^ ((row & 3) << 2)) % NUM_VECS;
     };
 
     float4 q_vec[NUM_VECS];

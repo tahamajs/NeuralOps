@@ -42,6 +42,9 @@ __global__ void retnet_chunk_retention_fwd_kernel(
         q_reg[k_d] = (k_d < D) ? to_float(q[tid_offset + k_d]) : 0.0f;
     }
 
+    // Precompute base-2 logarithm of gamma for single-cycle __exp2f decay: gamma^(tid - s) = 2^((tid - s) * log2(gamma))
+    const float log2_gamma = log2f(gamma);
+
     for (int d = 0; d < D; ++d) {
         float acc = 0.0f;
         for (int s = 0; s <= tid; ++s) {
@@ -52,7 +55,7 @@ __global__ void retnet_chunk_retention_fwd_kernel(
                 qk += q_reg[k_d] * to_float(k[s_offset + k_d]);
             }
             qk *= scale;
-            float decay = powf(gamma, static_cast<float>(tid - s));
+            const float decay = __exp2f(static_cast<float>(tid - s) * log2_gamma);
             acc += qk * decay * to_float(v[s_offset + d]);
         }
         out[tid_offset + d] = from_float<scalar_t>(acc);

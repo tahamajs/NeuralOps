@@ -48,15 +48,15 @@ __device__ inline void cross_attention_core(
             for (int v_idx = 0; v_idx < num_vec4; ++v_idx) {
                 float4 qv = q4[v_idx];
                 float4 kv = k4[v_idx];
-                dot = fmaf(qv.x, kv.x, dot);
-                dot = fmaf(qv.y, kv.y, dot);
-                dot = fmaf(qv.z, kv.z, dot);
-                dot = fmaf(qv.w, kv.w, dot);
+                dot = __fmaf_rn(qv.x, kv.x, dot);
+                dot = __fmaf_rn(qv.y, kv.y, dot);
+                dot = __fmaf_rn(qv.z, kv.z, dot);
+                dot = __fmaf_rn(qv.w, kv.w, dot);
             }
         } else {
             #pragma unroll 4
             for (int d = 0; d < D; ++d) {
-                dot = fmaf(q_m[d], k_n[d], dot);
+                dot = __fmaf_rn(q_m[d], k_n[d], dot);
             }
         }
         dot *= scale;
@@ -84,15 +84,15 @@ __device__ inline void cross_attention_core(
             for (int v_idx = 0; v_idx < num_vec4; ++v_idx) {
                 float4 qv = q4[v_idx];
                 float4 kv = k4[v_idx];
-                dot = fmaf(qv.x, kv.x, dot);
-                dot = fmaf(qv.y, kv.y, dot);
-                dot = fmaf(qv.z, kv.z, dot);
-                dot = fmaf(qv.w, kv.w, dot);
+                dot = __fmaf_rn(qv.x, kv.x, dot);
+                dot = __fmaf_rn(qv.y, kv.y, dot);
+                dot = __fmaf_rn(qv.z, kv.z, dot);
+                dot = __fmaf_rn(qv.w, kv.w, dot);
             }
         } else {
             #pragma unroll 4
             for (int d = 0; d < D; ++d) {
-                dot = fmaf(q_m[d], k_n[d], dot);
+                dot = __fmaf_rn(q_m[d], k_n[d], dot);
             }
         }
         dot *= scale;
@@ -107,15 +107,15 @@ __device__ inline void cross_attention_core(
             #pragma unroll 4
             for (int v_idx = 0; v_idx < num_vec4; ++v_idx) {
                 float4 vv = v4[v_idx];
-                acc4[v_idx].x = fmaf(p, vv.x, acc4[v_idx].x);
-                acc4[v_idx].y = fmaf(p, vv.y, acc4[v_idx].y);
-                acc4[v_idx].z = fmaf(p, vv.z, acc4[v_idx].z);
-                acc4[v_idx].w = fmaf(p, vv.w, acc4[v_idx].w);
+                acc4[v_idx].x = __fmaf_rn(p, vv.x, acc4[v_idx].x);
+                acc4[v_idx].y = __fmaf_rn(p, vv.y, acc4[v_idx].y);
+                acc4[v_idx].z = __fmaf_rn(p, vv.z, acc4[v_idx].z);
+                acc4[v_idx].w = __fmaf_rn(p, vv.w, acc4[v_idx].w);
             }
         } else {
             #pragma unroll 4
             for (int d = 0; d < D; ++d) {
-                acc[d] = fmaf(p, v_n[d], acc[d]);
+                acc[d] = __fmaf_rn(p, v_n[d], acc[d]);
             }
         }
     }
