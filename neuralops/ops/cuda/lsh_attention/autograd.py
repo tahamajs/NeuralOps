@@ -11,9 +11,12 @@ Autograd Function for LSH Attention CUDA Kernel.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 import torch
 from torch.autograd import Function
+
+logger = logging.getLogger(__name__)
 
 _OPS = None
 
@@ -61,18 +64,32 @@ class LSHAttentionFunction(Function):
     ) -> torch.Tensor:
         ctx.save_for_backward(q, k, v)
 
+        # Level 1: Native CUDA C++ compiled extension
         ops = _get_lsh_ops()
         if ops is not None and hasattr(ops, "lsh_attention_forward_cuda"):
-            return ops.lsh_attention_forward_cuda(
-                q.contiguous().float(),
-                k.contiguous().float(),
-                v.contiguous().float(),
-                q_hash.contiguous().to(torch.int32),
-                k_hash.contiguous().to(torch.int32),
-                float(scale),
-            )
+            try:
+                return ops.lsh_attention_forward_cuda(
+                    q.contiguous().float(),
+                    k.contiguous().float(),
+                    v.contiguous().float(),
+                    q_hash.contiguous().to(torch.int32),
+                    k_hash.contiguous().to(torch.int32),
+                    float(scale),
+                )
+            except Exception as e:
+                logger.warning("Level 1 CUDA C++ lsh_attention_forward_cuda failed (%s); attempting Level 2 Triton fallback.", e)
+        else:
+            logger.debug("Level 1 CUDA C++ lsh_ops not available; proceeding to Level 2 Triton fallback.")
 
-        # Level 3 PyTorch fallback
+        # Level 2: Triton JIT kernel
+        try:
+            from neuralops.ops.triton.lsh_attention_triton import lsh_attention_forward
+
+            return lsh_attention_forward(q, k, v)
+        except Exception as e:
+            logger.warning("Level 2 Triton lsh_attention_forward failed (%s); using Level 3 PyTorch reference.", e)
+
+        # Level 3: Vectorized PyTorch reference fallback
         from neuralops.ops.triton.lsh_attention_triton import _lsh_attention_pytorch
 
         return _lsh_attention_pytorch(q, k, v)

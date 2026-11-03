@@ -10,7 +10,7 @@
 #include <c10/cuda/CUDAStream.h>
 #include <cmath>
 
-__global__ void lsh_hash_kernel(
+__global__ __launch_bounds__(128) void lsh_hash_kernel(
     const float* __restrict__ x,
     const float* __restrict__ R,
     int* __restrict__ hashes,
@@ -57,7 +57,7 @@ __global__ void lsh_hash_kernel(
     hashes[bh * L + l] = bucket;
 }
 
-__global__ void lsh_bucket_attention_kernel(
+__global__ __launch_bounds__(128) void lsh_bucket_attention_kernel(
     const float* __restrict__ q,
     const float* __restrict__ k,
     const float* __restrict__ v,
