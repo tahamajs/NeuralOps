@@ -1493,7 +1493,18 @@ def quick_benchmark(
         dev = torch.device(dev)
     model = model.to(dev).eval()
 
-    sample = torch.randint(0, 1000, (2, 64), device=dev)
+    vocab_size = getattr(getattr(model, "config", None), "vocab_size", None)
+    if vocab_size is None and hasattr(model, "vocab_size"):
+        vocab_size = model.vocab_size
+    if vocab_size is None:
+        for m in model.modules():
+            if isinstance(m, nn.Embedding):
+                vocab_size = m.num_embeddings
+                break
+    if vocab_size is None or vocab_size <= 0:
+        vocab_size = 1000
+
+    sample = torch.randint(0, vocab_size, (2, 64), device=dev)
     with torch.no_grad():
         for _ in range(2):
             try:
