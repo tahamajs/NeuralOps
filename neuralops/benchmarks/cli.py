@@ -647,22 +647,26 @@ def handle_run(args: argparse.Namespace) -> None:
         from neuralops.benchmarks.config import BenchmarkConfig
 
         config = BenchmarkConfig.from_file(config_path)
-        for field_name in (
-            "device",
-            "seed",
-            "seq_len",
-            "precision",
-            "timeout_s",
-            "training_type",
-            "batch_size",
-        ):
-            if hasattr(args, field_name) and hasattr(config, field_name):
+        for field_name in config.__dataclass_fields__:
+            if hasattr(config, field_name):
                 setattr(args, field_name, getattr(config, field_name))
         args.device = config.device
         args.dtype = config.precision
+        args.precision = config.precision
         args.output_dir = str(config.output_dir)
+        args.effective_config = config.to_dict()
         if getattr(args, "output", None) is None:
             args.output = str(Path(config.output_dir) / "benchmark_ops.json")
+
+    req_dev = getattr(args, "device", None)
+    if req_dev and req_dev.startswith("cuda"):
+        import torch
+
+        if not torch.cuda.is_available():
+            raise RuntimeError(
+                f"CUDA device '{req_dev}' was requested, but CUDA is unavailable on this host. "
+                "Failing closed to prevent invalid latency/throughput claims."
+            )
 
     compare_target = getattr(args, "compare_with", None)
     if compare_target == "fla":

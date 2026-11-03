@@ -58,15 +58,7 @@ def benchmark_single_kernel(
         torch.cuda.empty_cache()
 
     try:
-        try:
-            out_tri = triton_fn(*args, **kwargs)
-        except Exception as triton_exc:
-            if "device kernel image is invalid" in str(triton_exc) or "CUDA" in str(triton_exc):
-                # PTX architecture mismatch or driver limitation: fall back cleanly to PyTorch reference
-                out_tri = pytorch_fn(*args, **kwargs)
-                triton_fn = pytorch_fn
-            else:
-                raise triton_exc
+        out_tri = triton_fn(*args, **kwargs)
         out_pt = pytorch_fn(*args, **kwargs)
 
         out_tri_t = out_tri[0] if isinstance(out_tri, tuple) else out_tri
@@ -147,14 +139,12 @@ def benchmark_single_kernel(
         pytorch_gpu_ms = (t1 - t0) / reps * 1000.0
 
     speedup = pytorch_gpu_ms / max(triton_gpu_ms, 1e-6)
-    # Numerical tolerance check:
-    # In FP16/BF16, machine epsilon is ~9.77e-4, and multi-step reductions, transcendental
-    # intrinsics (exp/sin/cos), or matrix multiplications accumulate roundoff up to 2e-2,
-    # while maintaining cosine similarity > 0.999.
+    # Numerical tolerance check per Bug 5 specification:
+    # max_diff <= tolerance -> PASS; otherwise -> FAIL_NUMERICS
     tolerance = 1e-3 if out_pt_t.dtype == torch.float32 else 2e-2
     if has_nan_ref or has_inf_ref or has_nan_tri or has_inf_tri:
         status = "FAIL_NAN"
-    elif max_diff >= tolerance and cos_sim < 0.999:
+    elif max_diff > tolerance:
         status = "FAIL_NUMERICS"
     else:
         status = "PASS"

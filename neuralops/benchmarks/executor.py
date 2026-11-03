@@ -27,7 +27,7 @@ from neuralops.benchmarks.adapters.perplexity import PerplexityAdapter
 from neuralops.benchmarks.adapters.ruler import RulerAdapter
 from neuralops.benchmarks.adapters.zeroshot import SUPPORTED_ZEROSHOT_DATASETS, ZeroShotAdapter
 from neuralops.benchmarks.discovery import discover_modules
-from neuralops.benchmarks.logging import setup_run_logger
+from neuralops.benchmarks.run_logging import setup_run_logger
 from neuralops.benchmarks.result import BenchmarkResult
 
 logger = logging.getLogger(__name__)

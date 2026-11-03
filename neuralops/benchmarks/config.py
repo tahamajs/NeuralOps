@@ -83,11 +83,50 @@ class BenchmarkConfig:
     regenerate_summaries_every: int = 1
     extra: dict[str, Any] = field(default_factory=dict)
 
+    PRECISION_MAP = {
+        "fp32": "float32",
+        "float32": "float32",
+        "fp16": "float16",
+        "float16": "float16",
+        "half": "float16",
+        "bf16": "bfloat16",
+        "bfloat16": "bfloat16",
+    }
+
     def __post_init__(self) -> None:
+        norm_prec = str(self.precision).lower().strip()
+        if norm_prec in self.PRECISION_MAP:
+            self.precision = self.PRECISION_MAP[norm_prec]
+        else:
+            raise ValueError(
+                f"Unsupported precision '{self.precision}'. "
+                f"Supported precisions: {sorted(set(self.PRECISION_MAP.keys()))}"
+            )
         if self.eval_only:
             LOG.warning(
                 "eval_only=True specified: evaluating with a freshly initialized "
                 "classification head without fine-tuning may yield random accuracy."
+            )
+
+    def resolve_torch_dtype(self) -> Any:
+        """Resolve canonical precision string to torch.dtype."""
+        import torch
+
+        mapping = {
+            "float32": torch.float32,
+            "float16": torch.float16,
+            "bfloat16": torch.bfloat16,
+        }
+        return mapping[self.precision]
+
+    def validate_device(self) -> None:
+        """Fail closed if CUDA device is requested but unavailable."""
+        import torch
+
+        if self.device.startswith("cuda") and not torch.cuda.is_available():
+            raise RuntimeError(
+                f"CUDA device '{self.device}' was requested, but CUDA is unavailable on this host. "
+                "Failing closed to prevent invalid latency/throughput artifacts."
             )
 
     def to_dict(self) -> dict[str, Any]:
@@ -129,7 +168,16 @@ class BenchmarkConfig:
             d["precision"] = d.pop("dtype")
         if "output_dir" in d and isinstance(d["output_dir"], (str, Path)):
             d["output_dir"] = Path(d["output_dir"])
-        return cls(**d)
+        valid_fields = set(cls.__dataclass_fields__)
+        extra = dict(d.get("extra", {}))
+        filtered: dict[str, Any] = {}
+        for k, v in d.items():
+            if k in valid_fields:
+                filtered[k] = v
+            else:
+                extra[k] = v
+        filtered["extra"] = extra
+        return cls(**filtered)
 
 
 @dataclass
