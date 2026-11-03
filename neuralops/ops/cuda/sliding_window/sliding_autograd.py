@@ -86,11 +86,15 @@ def _sliding_window_triton_fallback(
     num_sinks: int = 4,
     scale: float | None = None,
 ) -> torch.Tensor | None:
-    if num_sinks > 0:
-        return None
-
     try:
-        from neuralops.ops.triton.sliding_window import sliding_window_triton
+        from neuralops.ops.triton.sliding_window import (
+            sliding_window_triton,
+            fused_tri_branch_hybrid_attention_triton,
+        )
+        if num_sinks > 0:
+            return fused_tri_branch_hybrid_attention_triton(
+                q, k, v, sink_tokens=num_sinks, window_size=window_size
+            )
         return sliding_window_triton(q, k, v, window_size=window_size)
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed in Triton fallback for sliding_window: %s", exc, exc_info=True)
