@@ -198,15 +198,26 @@ class SVDLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        Vx = F.linear(x, self.V.to(target_dtype))
-        if self.S is not None:
-            Vx = Vx * self.S.to(target_dtype)
-        if self.use_rms_norm and self.norm_weight is not None:
-            norm = torch.rsqrt(Vx.pow(2).mean(-1, keepdim=True) + self.eps)
-            Vx = Vx * norm * self.norm_weight.to(target_dtype)
+        if (
+            self.use_triton
+            and triton_dispatch is not None
+            and x.is_cuda
+            and not (self.use_rms_norm and self.norm_weight is not None)
+            and self.rank <= 128
+        ):
+            V_eff = self.S.view(-1, 1) * self.V if self.S is not None else self.V
+            b = self.bias.to(target_dtype) if self.bias is not None else None
+            out = triton_dispatch(self.triton_kernel, x, self.U, V_eff, bias=b)
+        else:
+            Vx = F.linear(x, self.V.to(target_dtype))
+            if self.S is not None:
+                Vx = Vx * self.S.to(target_dtype)
+            if self.use_rms_norm and self.norm_weight is not None:
+                norm = torch.rsqrt(Vx.pow(2).mean(-1, keepdim=True) + self.eps)
+                Vx = Vx * norm * self.norm_weight.to(target_dtype)
 
-        b = self.bias.to(target_dtype) if self.bias is not None else None
-        out = F.linear(Vx, self.U.to(target_dtype), b)
+            b = self.bias.to(target_dtype) if self.bias is not None else None
+            out = F.linear(Vx, self.U.to(target_dtype), b)
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_out = F.linear(

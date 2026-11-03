@@ -308,6 +308,15 @@ def fused_asymmetric_cross_attention_triton(
 
 
 if HAS_TRITON:
+    @triton.autotune(
+        configs=[
+            triton.Config({"BLOCK_M": 32, "BLOCK_N": 32}, num_stages=2, num_warps=2),
+            triton.Config({"BLOCK_M": 64, "BLOCK_N": 32}, num_stages=3, num_warps=4),
+            triton.Config({"BLOCK_M": 64, "BLOCK_N": 64}, num_stages=3, num_warps=4),
+            triton.Config({"BLOCK_M": 128, "BLOCK_N": 64}, num_stages=4, num_warps=4),
+        ],
+        key=["N_Q", "N_K", "D"],
+    )
     @triton.jit
     def _triton_gqa_online_softmax_fwd_kernel(
         Q_ptr, K_ptr, V_ptr, HeadWeights_ptr, Out_ptr,
@@ -360,7 +369,7 @@ if HAS_TRITON:
             k_ptrs = K_ptr + b_id * stride_kb + h_kv * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
             k = tl.load(k_ptrs, mask=(mask_n[:, None] & mask_d[None, :]), other=0.0).to(tl.float32)
 
-            qk = tl.dot(q, tl.trans(k)) * sm_scale
+            qk = tl.dot(q, tl.trans(k), allow_tf32=True) * sm_scale
 
             if IS_CAUSAL:
                 causal_mask = offs_m[:, None] >= offs_n[None, :]
@@ -373,7 +382,7 @@ if HAS_TRITON:
             v_ptrs = V_ptr + b_id * stride_vb + h_kv * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
             v = tl.load(v_ptrs, mask=(mask_n[:, None] & mask_d[None, :]), other=0.0).to(tl.float32)
 
-            acc = acc * alpha[:, None] + tl.dot(p.to(v.dtype), v)
+            acc = acc * alpha[:, None] + tl.dot(p.to(v.dtype), v, allow_tf32=True)
             l_i = l_i * alpha + tl.sum(p, 1)
             m_i = m_curr
 
@@ -445,11 +454,9 @@ def fused_weighted_gqa_online_softmax_triton(
         sm_scale = scale if scale is not None else (1.0 / math.sqrt(D))
         out = torch.empty((B, H_Q, N_Q, D), device=q.device, dtype=q.dtype)
 
-        BLOCK_M = 32
-        BLOCK_N = 32
         BLOCK_D = triton.next_power_of_2(D)
 
-        grid = (triton.cdiv(N_Q, BLOCK_M), B * H_Q)
+        grid = lambda META: (triton.cdiv(N_Q, META["BLOCK_M"]), B * H_Q)
 
         _triton_gqa_online_softmax_fwd_kernel[grid](
             q.contiguous(), k.contiguous(), v.contiguous(),
@@ -463,8 +470,6 @@ def fused_weighted_gqa_online_softmax_triton(
             B, H_Q, H_KV, N_Q, N_K, D, sm_scale,
             HAS_HEAD_WEIGHTS=(head_weights is not None),
             IS_CAUSAL=is_causal,
-            BLOCK_M=BLOCK_M,
-            BLOCK_N=BLOCK_N,
             BLOCK_D=BLOCK_D,
         )
         return out
