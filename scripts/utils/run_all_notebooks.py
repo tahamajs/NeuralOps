@@ -351,6 +351,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="NeuralOps Master Notebook Suite Runner")
     parser.add_argument("--dir", type=str, default="notebooks", help="Path to notebooks directory")
     parser.add_argument("--pattern", type=str, default="*.ipynb", help="Glob pattern for notebooks")
+    parser.add_argument("--files", nargs="+", default=None, help="Explicit list of notebook paths to run")
     parser.add_argument("--summary-file", type=str, default="results/NOTEBOOKS_EXECUTION_SUMMARY.md")
     parser.add_argument("--single-notebook", type=str, default=None, help="Execute single notebook and exit")
     parser.add_argument("--output-json", type=str, default=None, help="Write execution result dictionary to JSON file")
@@ -367,8 +368,12 @@ def main() -> int:
                 json.dump(res, f_json)
         return 0 if res["status"] == "PASS" else 1
 
-    nb_dir = os.path.abspath(args.dir)
-    nb_files = sorted(glob.glob(os.path.join(nb_dir, args.pattern)))
+    if args.files:
+        nb_files = [os.path.abspath(f) for f in args.files]
+        nb_dir = "custom list"
+    else:
+        nb_dir = os.path.abspath(args.dir)
+        nb_files = sorted(glob.glob(os.path.join(nb_dir, args.pattern)))
     if not nb_files:
         print(f"No notebooks found in {nb_dir} matching {args.pattern}")
         return 1
