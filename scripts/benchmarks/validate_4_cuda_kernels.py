@@ -163,8 +163,9 @@ def main() -> int:
     try:
         b, d, seq, dstate = 2, 32, 64, 16
         u = torch.randn(b, d, seq, device="cuda", dtype=torch.float32, requires_grad=True)
-        delta = torch.randn(b, d, seq, device="cuda", dtype=torch.float32, requires_grad=True)
-        a = -torch.rand(d, dstate, device="cuda", dtype=torch.float32)
+        # S6 requires strictly positive step sizes (delta > 0) to avoid explosive recurrence
+        delta = (torch.rand(b, d, seq, device="cuda", dtype=torch.float32) * 0.1 + 0.01).requires_grad_(True)
+        a = -(torch.rand(d, dstate, device="cuda", dtype=torch.float32) * 0.5 + 0.5)
         b_t = torch.randn(b, dstate, seq, device="cuda", dtype=torch.float32, requires_grad=True)
         c = torch.randn(b, dstate, seq, device="cuda", dtype=torch.float32, requires_grad=True)
         d_param = torch.randn(d, device="cuda", dtype=torch.float32)
