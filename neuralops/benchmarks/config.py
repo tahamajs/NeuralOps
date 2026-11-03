@@ -34,8 +34,10 @@ class BenchmarkConfig:
     seed: int = 42
     epochs: int = 3
     batch_size: int = 32
+    batch_sizes: list[int] = field(default_factory=lambda: [32])
     lr: float = 2e-5
     seq_len: int = 128
+    seq_lens: list[int] = field(default_factory=lambda: [128])
     max_length: int = 128
     precision: str = "float32"
     eval_only: bool = False

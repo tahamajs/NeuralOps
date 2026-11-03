@@ -642,6 +642,28 @@ def handle_results(args: argparse.Namespace) -> None:
 
 
 def handle_run(args: argparse.Namespace) -> None:
+    config_path = getattr(args, "config", None)
+    if config_path:
+        from neuralops.benchmarks.config import BenchmarkConfig
+
+        config = BenchmarkConfig.from_file(config_path)
+        for field_name in (
+            "device",
+            "seed",
+            "seq_len",
+            "precision",
+            "timeout_s",
+            "training_type",
+            "batch_size",
+        ):
+            if hasattr(args, field_name) and hasattr(config, field_name):
+                setattr(args, field_name, getattr(config, field_name))
+        args.device = config.device
+        args.dtype = config.precision
+        args.output_dir = str(config.output_dir)
+        if getattr(args, "output", None) is None:
+            args.output = str(Path(config.output_dir) / "benchmark_ops.json")
+
     compare_target = getattr(args, "compare_with", None)
     if compare_target == "fla":
         from neuralops.integrations.fla import fla_is_available
