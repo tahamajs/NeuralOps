@@ -158,7 +158,8 @@ __global__ void block_sparse_attn_warp_kernel(
                 l_prev[qi] = __fmaf_rn(l_prev[qi], alpha, p);
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    acc[qi][e] = __fmaf_rn(acc[qi][e], alpha, p * V_smem[kt * STRIDE + lane + e * 32]);
+                    const float pv = p * V_smem[kt * STRIDE + lane + e * 32];
+                    acc[qi][e] = __fmaf_rn(acc[qi][e], alpha, pv);
                 }
                 m_prev[qi] = m_curr;
             }
@@ -338,7 +339,8 @@ __global__ void sparse_attention_bwd_kernel(
                 l_prev[qi] = __fmaf_rn(l_prev[qi], alpha, p);
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    acc[qi][e] = __fmaf_rn(acc[qi][e], alpha, p * V_smem[kt * STRIDE + lane + e * 32]);
+                    const float pv = p * V_smem[kt * STRIDE + lane + e * 32];
+                    acc[qi][e] = __fmaf_rn(acc[qi][e], alpha, pv);
                 }
                 m_prev[qi] = m_curr;
             }
