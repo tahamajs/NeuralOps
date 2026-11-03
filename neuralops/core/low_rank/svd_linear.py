@@ -65,7 +65,7 @@ class SVDLinear(nn.Module):
         self.out_features = int(out_features)
         self.rank = int(rank) if rank is not None else max(1, min(self.in_features, self.out_features) // 4)
         self.freeze_svd = bool(freeze or freeze_base or freeze_svd)
-        eff_lora = int(lora_r) if (lora_r is not None and lora_r > 0) else (int(lora_rank) if lora_rank is not None else 0)
+        eff_lora = int(lora_r) if lora_r is not None else (int(lora_rank) if lora_rank is not None else 0)
         self.lora_rank = max(0, eff_lora)
         self.lora_r = self.lora_rank
         self.lora_alpha = float(lora_alpha)

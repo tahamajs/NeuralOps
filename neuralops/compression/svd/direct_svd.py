@@ -409,7 +409,7 @@ class DirectSVDCompressor(BaseCompressor):
 
             best_svd_layer = svd_layer
 
-            if err <= self.max_error or r >= max_r:
+            if err <= self.max_error or r >= max_r or getattr(self, "target_ratio", None) is not None:
                 break
 
             if attempt < self.max_retries:
