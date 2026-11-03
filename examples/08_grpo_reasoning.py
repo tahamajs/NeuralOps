@@ -155,9 +155,9 @@ def run_grpo_simulation(device: str) -> bool:
         has_trl = False
 
     if has_trl:
-        kv("Official TRL Package", "Installed — ready for trl.GRPOTrainer production training.")
+        kv("Official TRL Package", "Installed -- ready for trl.GRPOTrainer production training.")
     else:
-        kv("Official TRL Package", "Optional — NeuralOps provides self-contained native GRPO without third-party dependencies.")
+        kv("Official TRL Package", "Optional -- NeuralOps provides self-contained native GRPO without third-party dependencies.")
 
     return bool(format_adv_mean and length_adv_mean and loss_finite)
 

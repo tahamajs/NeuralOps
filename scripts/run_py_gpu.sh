@@ -8,4 +8,6 @@
 
 export LD_LIBRARY_PATH=/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/Anaconda/anaconda3.8/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}
 export PATH=/usr/local/cuda/bin:${PATH:-}
+export PYTHONIOENCODING=utf-8
+export LC_ALL=C.UTF-8
 exec /home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python "$@"
