@@ -8,7 +8,9 @@
 set -u
 cd /home/tahamajlesi.ut/NeuralOps
 PY=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python
-export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+unset PYTHONPATH PYTHONHOME
+export PYTHONNOUSERSITE=1
+export PYTHONPATH="${PWD}"
 "$PY" - <<'PY'
 import torch
 
