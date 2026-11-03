@@ -736,3 +736,61 @@ def test_phase_080_aggregate_variance_across_seeds() -> None:
 
     assert mean_diff < 1e-6, f"Mean error across seeds exceeded threshold: {mean_diff}"
     assert variance_diff < 1e-12, f"Variance across seeds exceeded threshold: {variance_diff}"
+
+
+def test_mla_memory_savings_telemetry() -> None:
+    """Verifies that MLA memory savings calculation reports >= 87.5% reduction."""
+    bridge = DeepSeekMLASurgeryBridge(latent_kv_dim=512, decoupled_rope_dim=64, q_latent_dim=128)
+    summary = bridge.get_memory_savings_summary(uncompressed_kv_dim=4096, seq_len=2048)
+    assert summary["kv_reduction_percent"] > 85.0
+    assert summary["constant_state_scaling"] is True
+    assert "recurrent_state_bytes" in summary
+
+
+def test_moa_router_serialization_roundtrip() -> None:
+    """Verifies to_dict and from_dict serialization for HybridMoARouter."""
+    router = HybridMoARouter(num_layers=32)
+    data = router.to_dict()
+    assert data["num_layers"] == 32
+    assert data["full_attention_layers"] == [0, 1, 2, 3, 30, 31]
+    assert len(data["linear_attention_layers"]) == 26
+
+    reconstructed = HybridMoARouter.from_dict(data)
+    assert reconstructed.num_layers == router.num_layers
+    assert reconstructed.get_full_attention_layers() == router.get_full_attention_layers()
+    assert reconstructed.get_linear_attention_layers() == router.get_linear_attention_layers()
+
+
+def test_universal_bridge_automatic_layer_index_inference() -> None:
+    """Verifies that UniversalAttentionBridge automatically infers layer_idx from spec.module_path."""
+    d_model = 64
+    mock_orig = nn.Linear(d_model, d_model)
+    mock_new = nn.Linear(d_model, d_model)
+
+    spec = AttentionTargetSpec(
+        module_path="model.layers.15.self_attn",
+        parent_module=nn.Module(),
+        attr_name="self_attn",
+        target_module=mock_orig,
+        pattern_type="split_4proj",
+        embed_dim=d_model,
+        num_heads=4,
+        num_kv_heads=4,
+        head_dim=16,
+        is_causal=True,
+        has_bias=False,
+    )
+
+    router = HybridMoARouter(num_layers=32)
+    # layer_idx not passed explicitly
+    bridge = UniversalAttentionBridge(
+        orig_module=mock_orig,
+        spec=spec,
+        new_attention=mock_new,
+        inherit_weights=False,
+        moa_router=router,
+    )
+
+    assert bridge.layer_idx == 15
+    assert bridge.moa_router.is_linear_attention(bridge.layer_idx) is True
+

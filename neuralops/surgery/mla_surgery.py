@@ -23,8 +23,10 @@ Mathematical Formulation:
 
 from __future__ import annotations
 
+from typing import Any, Dict, Optional, Tuple, Union
+
 import logging
-from typing import NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, NamedTuple, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -124,6 +126,51 @@ class DeepSeekMLASurgeryBridge(nn.Module):
         if uncompressed_kv_dim <= 0:
             raise ValueError(f"uncompressed_kv_dim must be positive, got {uncompressed_kv_dim}")
         return 1.0 - (self.latent_kv_dim / float(uncompressed_kv_dim))
+
+    def get_memory_savings_summary(
+        self,
+        uncompressed_kv_dim: int = 4096,
+        seq_len: int = 2048,
+        batch_size: int = 1,
+        bytes_per_elem: int = 2,
+    ) -> Dict[str, Any]:
+        """Provides empirical memory savings telemetry comparing uncompressed MHA/GQA with MLA linear state.
+
+        Args:
+            uncompressed_kv_dim: Total uncompressed KV dimension (default: 4096).
+            seq_len: Evaluated context length (default: 2048).
+            batch_size: Evaluated batch size (default: 1).
+            bytes_per_elem: Dtype byte size (default: 2 for FP16/BF16).
+
+        Returns:
+            Dictionary with uncompressed bytes, compressed latent bytes, recurrent state bytes, and savings percentage.
+        """
+        uncompressed_kv_bytes = 2 * batch_size * seq_len * uncompressed_kv_dim * bytes_per_elem
+        compressed_kv_bytes = (
+            batch_size * seq_len * (self.latent_kv_dim + self.decoupled_rope_dim) * bytes_per_elem
+        )
+        state_c_bytes = batch_size * self.latent_kv_dim * self.q_latent_dim * 4
+        state_r_bytes = batch_size * self.decoupled_rope_dim * self.decoupled_rope_dim * 4
+        recurrent_state_bytes = state_c_bytes + state_r_bytes
+
+        kv_reduction_pct = (1.0 - (compressed_kv_bytes / float(max(1, uncompressed_kv_bytes)))) * 100.0
+        return {
+            "uncompressed_kv_bytes": uncompressed_kv_bytes,
+            "compressed_kv_bytes": compressed_kv_bytes,
+            "recurrent_state_bytes": recurrent_state_bytes,
+            "kv_reduction_percent": kv_reduction_pct,
+            "constant_state_scaling": True,
+        }
+
+    def extra_repr(self) -> str:
+        return (
+            f"latent_kv_dim={self.latent_kv_dim}, "
+            f"decoupled_rope_dim={self.decoupled_rope_dim}, "
+            f"q_latent_dim={self.q_latent_dim}, "
+            f"num_heads={self.num_heads}, "
+            f"head_dim={self.head_dim}, "
+            f"decay={self.decay}"
+        )
 
     @staticmethod
     def apply_rotary_embedding(

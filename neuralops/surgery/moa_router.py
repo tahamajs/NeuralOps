@@ -342,6 +342,24 @@ class HybridMoARouter:
         )
         return cls(num_layers=num_layers, full_attention_layers=full_layers)
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Serializes MoA router configuration and partition schedule to dictionary."""
+        return {
+            "num_layers": self.num_layers,
+            "full_attention_layers": list(self.full_attention_layers),
+            "linear_attention_layers": list(self._linear_layers),
+            "schedule": self.partition_schedule(),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> HybridMoARouter:
+        """Instantiates MoA router from serialized dictionary configuration."""
+        num_layers = int(data["num_layers"])
+        full_layers = data.get("full_attention_layers", None)
+        if full_layers is not None:
+            full_layers = [int(x) for x in full_layers]
+        return cls(num_layers=num_layers, full_attention_layers=full_layers)
+
     def summary(self) -> str:
         """Returns human-readable summary of the MoA partition schedule."""
         full_cnt = len(self.full_attention_layers)

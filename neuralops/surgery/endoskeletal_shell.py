@@ -21,8 +21,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge
-from neuralops.surgery.moa_router import HybridMoARouter
+from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge, DualStreamLatentState
+from neuralops.surgery.moa_router import (
+    HybridMoARouter,
+    compute_attention_entropy,
+    profile_layer_sensitivity,
+)
 from neuralops.surgery.scanner import AttentionTargetSpec
 
 logger = logging.getLogger("NeuralOps.Surgery.EndoskeletalShell")
@@ -441,7 +445,18 @@ class UniversalAttentionBridge(nn.Module):
         self.embed_dim = spec.embed_dim
         self.num_heads = spec.num_heads
         self.moa_router = moa_router
-        self.layer_idx = layer_idx
+        if self.moa_router is None and spec.extra_metadata and "moa_router" in spec.extra_metadata:
+            self.moa_router = spec.extra_metadata["moa_router"]
+
+        if layer_idx is not None:
+            self.layer_idx = layer_idx
+        elif hasattr(spec, "module_path") and spec.module_path:
+            import re
+
+            m = re.search(r"\b(?:layers?|h|block|blocks)\.(\d+)\b", spec.module_path)
+            self.layer_idx = int(m.group(1)) if m else None
+        else:
+            self.layer_idx = None
 
         # Unwrap base layer if orig_module is a PEFT/LoRA wrapper
         self.base_module: nn.Module = getattr(orig_module, "base_layer", orig_module)
@@ -637,5 +652,8 @@ __all__ = [
     "transfer_pretrained_qkv_weights",
     "UniversalAttentionBridge",
     "DeepSeekMLASurgeryBridge",
+    "DualStreamLatentState",
     "HybridMoARouter",
+    "compute_attention_entropy",
+    "profile_layer_sensitivity",
 ]
