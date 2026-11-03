@@ -15,28 +15,34 @@ export CUDA_VISIBLE_DEVICES=0
 PY=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python
 
 case "${GROUP:?GROUP must be 1, 2, 3, or 4}" in
-  1) patterns=(examples/0[1-6]_*.py) ;;
-  2) patterns=(examples/0[7-9]_*.py examples/1[0-2]_*.py) ;;
-  3) patterns=(examples/1[3-8]_*.py) ;;
-  4) patterns=(examples/19_*.py examples/2[0-2]_*.py) ;;
+  1) patterns="examples/01_*.py examples/02_*.py examples/03_*.py examples/04_*.py examples/05_*.py examples/06_*.py" ;;
+  2) patterns="examples/07_*.py examples/08_*.py examples/09_*.py examples/10_*.py examples/11_*.py examples/12_*.py" ;;
+  3) patterns="examples/13_*.py examples/14_*.py examples/15_*.py examples/16_*.py examples/17_*.py examples/18_*.py" ;;
+  4) patterns="examples/19_*.py examples/20_*.py examples/21_*.py examples/22_*.py" ;;
   *) echo "Invalid GROUP=${GROUP}" >&2; exit 2 ;;
 esac
-
-if (( ${#patterns[@]} == 0 )); then
-  echo "No example files matched GROUP=${GROUP}" >&2
-  exit 2
-fi
 
 echo "GPU_CHECK"
 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader
 "$PY" -c 'import torch; assert torch.cuda.is_available(), "CUDA requested but unavailable"; print(torch.__version__, torch.version.cuda, torch.cuda.get_device_name(0))'
 failures=0
-for script in "${patterns[@]}"; do
+matched=0
+for pattern in ${patterns}; do
+  script="${pattern}"
+  if [ ! -f "${script}" ]; then
+    echo "Missing expected example: ${script}" >&2
+    exit 2
+  fi
+  matched=$((matched + 1))
   echo "=== BEGIN ${script} ==="
   "$PY" "$script"
   rc=$?
   echo "=== END ${script} rc=${rc} ==="
   if (( rc != 0 )); then failures=$((failures + 1)); fi
 done
+if [ "${matched}" -eq 0 ]; then
+  echo "No examples matched GROUP=${GROUP}" >&2
+  exit 2
+fi
 echo "SUMMARY_FAILURES=${failures}"
 exit "$failures"

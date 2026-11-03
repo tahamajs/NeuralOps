@@ -13,6 +13,7 @@ import json
 import pytest
 
 from neuralops.benchmarks.config import BenchmarkConfig as CanonicalConfig
+from neuralops.benchmarks.regression_gate import compare_results
 from neuralops.benchmarks.runner import BaseRunner
 from scripts.benchmarks.benchmark_config import BenchmarkConfig as LegacyConfig
 
@@ -36,7 +37,16 @@ def test_canonical_config_roundtrip(tmp_path: Path):
     assert restored.to_dict() == original.to_dict()
 
 
-def test_cuda_runner_verification_is_fail_closed(monkeypatch):
+def test_canonical_config_loads_accelerator_preset():
+    config = CanonicalConfig.from_file(Path("benchmarks/configs/quick_cuda.json"))
+
+    assert config.device == "cuda"
+    assert config.precision == "float32"
+    assert config.batch_sizes == [1, 2]
+    assert config.seq_lens == [128, 512]
+
+
+def test_requested_accelerator_is_fail_closed(monkeypatch):
     class ProbeRunner(BaseRunner):
         def run(self):
             return []
@@ -46,3 +56,17 @@ def test_cuda_runner_verification_is_fail_closed(monkeypatch):
 
     with pytest.raises(RuntimeError, match="CUDA was requested"):
         runner.verify()
+
+
+def test_regression_gate_requires_real_metrics(tmp_path: Path):
+    baseline = tmp_path / "baseline.json"
+    candidate = tmp_path / "candidate.json"
+    baseline.write_text('{"run_id":"base","metrics":{"p95_ms":10.0}}', encoding="utf-8")
+    candidate.write_text('{"run_id":"candidate","metrics":{"p95_ms":11.0}}', encoding="utf-8")
+
+    result = compare_results(baseline, candidate, "p95_ms", max_regression=2.0)
+    assert result["status"] == "PASS"
+    assert result["regression"] == 1.0
+
+    with pytest.raises(KeyError):
+        compare_results(baseline, candidate, "throughput", max_regression=2.0)

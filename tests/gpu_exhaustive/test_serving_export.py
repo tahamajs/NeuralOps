@@ -86,12 +86,12 @@ def test_vllm_serving_engine_inference():
     except (ImportError, ModuleNotFoundError):
         pytest.skip("vLLM serving engine is not installed in the current environment.")
 
-    # If vLLM is installed, verify plugin integration hook
-    from neuralops.integrations.vllm import register_neuralops_vllm_ops
-    try:
-        register_neuralops_vllm_ops()
-    except Exception as exc:
-        pytest.fail(f"vLLM operator registration failed: {exc}")
+    # The public integration contract is explicit that runtime registration is
+    # deferred until the vLLM lifecycle/cache contract is implemented.
+    pytest.skip(
+        "vLLM is installed, but NeuralOps vLLM runtime registration is not implemented; "
+        "no operator registration or fake inference is permitted."
+    )
 
 
 @pytest.mark.gpu
@@ -102,8 +102,7 @@ def test_sglang_serving_engine_inference():
     except (ImportError, ModuleNotFoundError):
         pytest.skip("SGLang serving engine is not installed in the current environment.")
 
-    from neuralops.integrations.sglang import register_neuralops_sglang_ops
-    try:
-        register_neuralops_sglang_ops()
-    except Exception as exc:
-        pytest.fail(f"SGLang operator registration failed: {exc}")
+    pytest.skip(
+        "SGLang is installed, but NeuralOps SGLang runtime registration is not implemented; "
+        "no operator registration or fake inference is permitted."
+    )

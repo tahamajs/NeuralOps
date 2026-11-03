@@ -104,8 +104,8 @@ The primary remote GPU host for NeuralOps is **Sharif University HPC Center** (`
 
 **Mandatory workflow:**
 1. Load the skill: `.agents/skills/hpc-sharif-cluster/SKILL.md`
-2. Verify wallet credit via `grep 'credit Quota' /etc/motd` (or the dashboard at `https://ssh.hpc.sharif.ir`)
-3. Run CPU-only tests locally first — do NOT waste GPU credit on tests that work on CPU
+2. Run CPU-only tests locally first — do NOT waste GPU credit on tests that work on CPU
+3. Check `qstat -u "$USER"` before submitting and do not duplicate an existing queued or running job without explicit authorization.
 4. Submit GPU job with `qsub run.sh` from the skill's template
 5. Paste `qstat -f <JOB_ID>` (before and after) plus full `.o<JOB_ID>` and `.e<JOB_ID>` in the report
 
@@ -124,7 +124,30 @@ The primary remote GPU host for NeuralOps is **Sharif University HPC Center** (`
 - Verify reuse with `ssh -O check hpc`. Close the master only when the work is complete with `ssh -O exit hpc`.
 - Long-running processes MUST run inside PBS, `screen`, or `tmux`; disconnecting the client must not terminate them.
 - `hpc` is the login gateway, not the GPU execution host. Agents MUST submit work through PBS (`qsub -q N3090 ...`) and may SSH to `GPU-3090-1` only after `qstat`/`qstat -f` confirms an active allocation for that job. Never assume that a direct login-node-to-GPU-node SSH session grants a valid GPU allocation.
+- Never run benchmarks, model inference, CUDA/Triton compilation, or other heavy workloads directly on the login node. Submit GPU work through PBS; use `screen` or `tmux` on the login node only for lightweight control processes such as monitoring or resumable downloads.
+- PBS job scripts MUST begin work from the submission directory with `cd "$PBS_O_WORKDIR" || exit 1`.
+- Interpret PBS state codes explicitly: `R` means running, `Q` means queued, `H` means held, `E` means exiting, and `C` means completed. A `C` job is not an active GPU allocation.
 - Never print, commit, or place SSH private keys, HPC passwords, or access tokens in repository files, logs, prompts, or command output.
+
+**Python environment on HPC:**
+- `/share/apps/Anaconda/anaconda3.8` is the shared Conda installation and environment manager; it is not the project environment itself.
+- The project environment is `neuralops`, normally located at `$HOME/.conda/envs/neuralops`.
+- Activate it in an interactive HPC shell with:
+  ```bash
+  source /share/apps/Anaconda/anaconda3.8/bin/activate neuralops
+  ```
+- For non-interactive SSH commands and PBS scripts, prefer the absolute interpreter path:
+  ```bash
+  "$HOME/.conda/envs/neuralops/bin/python" <command-or-script>
+  ```
+- Verify the selected environment before Python work with:
+  ```bash
+  which python
+  echo "$CONDA_PREFIX"
+  conda env list
+  ```
+  The expected interpreter is `$HOME/.conda/envs/neuralops/bin/python` and the expected prefix is `$HOME/.conda/envs/neuralops`.
+- The local Mac `.venv` is a separate environment and MUST NOT be used for GPU, CUDA, Triton, or remote HPC verification.
 
 **Forbidden:**
 - Submitting GPU jobs with `credit = 0.0` (silently fails, wastes time)
@@ -306,7 +329,7 @@ Allowed only when:
   - `COMPRESSOR_REGISTRY` must contain exactly **72** logical compression keys.
   - These are registry-key counts, not source-file counts: one implementation file may register multiple keys, aliases are excluded from canonical totals, and compatibility mirrors are separate from the canonical package. In this checkout, the measured non-`__init__.py` source-file counts are 128 under `neuralops/layers/` and 89 under `neuralops/compression/`; those values are expected to differ from 131/72. The checked-in `neuralops/benchmarks/static_catalog.json` is the static 131/72 catalog.
   - `neuralops/core/triton_kernels/` must contain exactly **26** canonical Triton kernel modules (housing 62 unified operators across 4 tiers) + 24 extension modules in `neuralops/ops/triton/`.
-  - `neuralops/core/cuda_kernels/` contains **130** native CUDA C++ kernel packages (housing 132 native kernel implementations).
+  - The canonical CUDA catalog exposes **110** unique modules and **114** native kernel implementations through `neuralops.kernels.list_cuda_kernels()`. The raw `neuralops/ops/cuda/` filesystem contains compatibility and support directories in addition to the catalog; raw directory counts are not canonical implementation counts.
   - `notebooks/` contains **29** Jupyter notebooks.
 - **Ignored Directories Law**:
   - `audit/`, `docs/`, `results/`, `academic/`, `paper/`, `thesis_final/`, `logs/`, `scratch/`, and `grading.log` are strictly ignored in `.gitignore`.
@@ -435,6 +458,8 @@ When updating this file, append an entry here. Version number follows `major.min
 - **v1.3.1** — Clarified that the 131/72 invariants count canonical registry keys rather than implementation files, and recorded the current source-file counts.
 - **v1.3.2** — Added the SSH multiplexing and persistent-session policy for the `hpc` alias so agents reuse one master connection and do not create repeated independent login sessions.
 - **v1.3.3** — Clarified that `hpc` is the login gateway and that `GPU-3090-1` may be used only after PBS confirms an active GPU allocation.
+- **v1.3.4** — Documented the HPC Conda installation, the `neuralops` environment path, non-interactive interpreter usage, and separation from the local Mac `.venv`.
+- **v1.3.5** — Separated canonical CUDA catalog counts (110 modules / 114 implementations) from raw filesystem directory counts and corrected the invariant checklist.
 
 ---
 ## 14. Versioning, Releases & Changelog
@@ -581,7 +606,7 @@ This is the only correct way to bump. Editing version strings by hand is banned.
 
 ### 14.9 Registry Invariant Versioning
 
-The canonical counts (§8) — 131 attention, 72 compressor, 26 Triton kernels, 114 CUDA kernels, 27 notebooks — are **invariants**, not versions. They must be preserved across all version bumps unless the user explicitly approves a count change.
+The canonical counts (§8) — 131 attention, 72 compressor, 26 Triton modules, 62 unified Triton operators, 110 CUDA modules, 114 native CUDA implementations, and 29 notebooks — are **invariants**, not versions. They must be preserved across all version bumps unless the user explicitly approves a count change.
 
 When adding a new attention mechanism:
 
@@ -691,7 +716,7 @@ Before pushing a tag `v<version>`, the agent must paste this checklist into the 
 [ ] pytest tests/ -v → all pass (or GPU tests deferred with authorization note)
 [ ] No file in §14.4 still has an old version
 [ ] Paper and thesis reviewed for stale numbers (if code minor/major bump)
-[ ] Registry invariants unchanged: 131/72/26/114/27 (or user approved change)
+[ ] Registry and kernel invariants unchanged: 131/72/26/62/110/114/29 (or user approved change)
 [ ] Pre-commit hooks run without --no-verify
 [ ] Tag message includes summary + closing commit SHA
 ```
@@ -712,16 +737,4 @@ A release with any unchecked box must not be tagged. Ask the user for help befor
 
 ---
 
-## 15. Version History & Change Log
-
-When updating this file, append an entry here. Version number follows `major.minor.patch`. Major: rule added that retroactively invalidates prior practice. Minor: clarification or new section. Patch: typo or wording fix.
-
-- **v1.3.0** — Added §3.4 (Sharif University HPC Cluster as primary remote GPU host). Added skill `.agents/skills/hpc-sharif-cluster/` (SKILL.md, run.sh template, setup_env.sh, README). Updated §12 skill index to reference the HPC skill. Replaced legacy host references with Sharif HPC.
-- **v1.3.3** — Clarified SSH multiplexing and PBS allocation requirements for access to `GPU-3090-1`.
-- **v1.2.0** — Added §14 (Versioning, Releases & Changelog): source of truth, SemVer rules, PEP 440 string formats, files that must stay in sync, git tag conventions, sub-package versioning, version consistency gate, paper/thesis versioning, registry invariant versioning, changelog format, pre-commit hook, release checklist, and versioning failure modes.
-- **v1.1.0** — Added §0 (Core Operating Principles), §4 (Verification Contract), §5 (Scope Discipline), §6 (Silent Failure Policy), §10 (Blocker Escalation & Honest Reporting). Expanded §3 with user authorization exception (§3.2) and tool discovery protocol (§3.3). Added regression test requirement (§5.4). Added report format (§10.2). Added quality gate checklist to §11.
-- **v1.0.0** — Initial agent guidelines.
-
----
-
-*Last updated: 2026-10-21*
+*Last updated: 2026-11-03*

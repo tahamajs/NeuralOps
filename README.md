@@ -6,7 +6,7 @@
 
 ### **A correctness-gated platform for attention surgery, compression, and hardware-aware benchmarking**
 
-> **131 registered attention mechanisms · 72 compression engines · 112 CUDA kernel packages (114 native implementations) · 26 Triton kernel modules (62 registered unified operators) · 29 notebooks present in the checkout**
+> **131 registered attention mechanisms · 72 compression engines · 110 canonical CUDA modules (114 native implementations) · 26 Triton kernel modules (62 registered unified operators) · 29 notebooks present in the checkout**
 
 > **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
 
@@ -46,7 +46,7 @@
 | --- | --- |
 | **Attention registry** | 131 mechanisms across dense, linear, gated, SSM, sparse, and hybrid families |
 | **Compression registry** | 72 engines covering SVD, quantization, pruning, and tensor decompositions |
-| **Hardware source inventory** | 130 CUDA package directories, 132 native implementations, 26 Triton modules, 62 registered Triton operators |
+| **Hardware catalog inventory** | 110 canonical CUDA modules, 114 native implementations, 26 Triton modules, 62 registered Triton operators |
 | **Notebook suite** | 27 master notebooks plus 2 integration notebooks present in the checkout (29 total) |
 | **Academic publications** | Master's Thesis (317 pages, 205 MB), Defense Slides (50 slides, 172 MB), 3 conference papers |
 
@@ -63,18 +63,18 @@ flowchart LR
 
 The dispatch hierarchy is intentionally conservative: a source file is not counted as an accelerated result unless the operation actually dispatches, passes correctness checks, and produces a measured latency.
 
-### 🛡️ GPU Verified on RTX 3090 (v2.0.2 Release Certification)
+### 🛡️ Historical GPU Evidence on RTX 3090 (v2.0.2)
 
-The entire NeuralOps suite has undergone rigorous dynamic execution and numerical verification on the Sharif University HPC cluster (`GPU-3090-1`, NVIDIA RTX 3090 24GB, CUDA 11.3):
+The following table is a historical evidence record from the Sharif University HPC cluster (`GPU-3090-1`, NVIDIA RTX 3090 24GB, CUDA 11.3). It is not the current release gate; current results must be regenerated and must not be promoted to certification when failures are present.
 
 | Validation Subsystem | Target / Scope | Status | Measured Verification Evidence |
 | :--- | :--- | :---: | :--- |
-| **Attention Registry & Causal Masking** | All 131 registered attention mechanisms | **PASS (130/130 causal, 1 skipped)** | 130 passed, 1 skipped (334.73s). Future-token leakage strictly eliminated with `max_diff < 1e-6`. |
-| **Compression Engines** | All 72 registered compressor algorithms | **PASS (72/72 verified)** | 72 passed, 0 failed (103.73s). Parameter reduction and weight reconstruction certified. |
+| **Attention Registry & Causal Masking** | All 131 registered attention mechanisms | **HISTORICAL PASS** | 130 passed, 1 skipped (334.73s); not a current certification. |
+| **Compression Engines** | All 72 registered compressor algorithms | **HISTORICAL PASS** | 72 passed, 0 failed (103.73s); not a current certification. |
 | **Foundation Model Surgery (SVD)** | DistilBERT (`distilbert-base-uncased`) | **PASS (49.95% reduction)** | Linear params: 42,508,800 → 21,274,212 in 31.08s. Loss finite and verified. |
 | **Production Scale Surgery (7B)** | Qwen2.5-7B-Instruct | **PASS (Transplant + Micro-Heal)** | Layer 14 transplanted to `chunk_gla`; 10-step micro-healing converged without OOM (<24GB). |
-| **Native CUDA C++ Kernels** | Layernorm, RMSNorm, GELU, SwiGLU, Ternary GEMM | **PASS (5/5 parity)** | CUDA output matches PyTorch reference with `max_diff < 1e-4` on SM 8.6 hardware. |
-| **Triton JIT Kernels** | 26 canonical modules (62 unified operators) | **PASS (Benchmark & Parity)** | Cold-cache microbenchmarked; subquadratic speedup up to 184x verified. |
+| **Native CUDA C++ Kernels** | Layernorm, RMSNorm, GELU, SwiGLU, Ternary GEMM | **HISTORICAL PASS** | CUDA output matched PyTorch reference with `max_diff < 1e-4`; not a current certification. |
+| **Triton JIT Kernels** | 26 canonical modules (62 unified operators) | **HISTORICAL EVIDENCE** | Earlier cold-cache measurements reported speedups; current parity must be checked by the fail-closed runner. |
 | **Serving Integrations** | vLLM PagedAttention Adapter | **PASS (Fail-Closed Contract)** | Raises `IntegrationNotImplementedError` when vLLM is unavailable; zero fake stubs. |
 | **Master Notebook Suite** | 29 Jupyter demonstration tutorials | **PASS (29 verified)** | Invariant verified (29 total notebooks covering all workflows). |
 
@@ -208,7 +208,7 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 ### 🛡️ Hardware & Verification Scope
 
 - **Registry Counts**: 131 attention mechanisms in `neuralops.layers` and 72 compression engines in `neuralops.compression`.
-- **Kernel Inventory**: 112 CUDA package directories (housing 114 native implementations) in `neuralops.ops.cuda` and 26 Triton kernel modules (housing 62 unified operators) in `neuralops.ops.triton`.
+- **Kernel Inventory**: 110 canonical CUDA modules (housing 114 native implementations) in the CUDA catalog and 26 Triton kernel modules (housing 62 unified operators) in `neuralops.ops.triton`. The raw CUDA tree additionally contains compatibility/support directories.
 - **Hardware Fallback Hierarchy**: Level 1 (Native CUDA C++ / HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Vectorized PyTorch Reference on CPU/MPS).
 - **PEP 562 Lazy Loading**: Bare imports execute in `<30ms` with zero heavy dependencies loaded upfront.
 - **Serving Adapters**: Integration stubs for vLLM, SGLang, TensorRT-LLM, and TGI provide explicit interface boundaries and error messaging when running without optional acceleration engines.
@@ -310,7 +310,7 @@ NeuralOps v2.0.2 retains the complete **27-notebook master suite** (00–25 plus
 | **02** | [`02_roofline_and_triton_kernels.ipynb`](notebooks/02_roofline_and_triton_kernels.ipynb) | 23 | **Hardware Roofline & Arithmetic Intensity**<br>Interactive empirical roofline modeling across Ada Lovelace SM 8.9 compute units. | • Hardware roofline plots: Arithmetic Intensity vs. Bandwidth<br>• DRAM saturation analysis (up to 256 GB/s GDDR6)<br>• Tensor Core FP16 throughput profiling (up to 30 TFLOPS) |
 | **03** | [`03_custom_plugins_and_extensibility.ipynb`](notebooks/03_custom_plugins_and_extensibility.ipynb) | 23 | **Custom Plugins & Extensibility Guide**<br>Developer tutorial for registering custom attention mechanisms, compressors, and composable pipelines. | • Step-by-step `@register_custom_attention` walkthrough<br>• Contract validation harness verifying forward & backward shapes<br>• Composable 4-stage pipeline builder ($P \to \phi \to M \to E$) |
 | **04** | [`04_end_to_end_3level_benchmarking.ipynb`](notebooks/04_end_to_end_3level_benchmarking.ipynb) | 23 | **End-to-End 3-Level Benchmarking**<br>Empirical latency, memory footprint, and throughput profiling across Level 1 $\to$ Level 2 $\to$ Level 3 fallback. | • Real-time dispatch switching via `force_kernel_backend`<br>• Subprocess-isolated memory profiling avoiding GPU leak artifacts<br>• Latency speedup and VRAM reduction tables |
-| **05A** | [`05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb`](notebooks/05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb) | 23 | **Master 112 CUDA C++ & 26 Triton Benchmark**<br>Complete isolated benchmark sweep of all 114 native CUDA C++ and 26 Triton hardware kernels. | • Micro-benchmarking all 114 CUDA extensions via NVCC<br>• High-resolution timing via CUDA Events (`torch.cuda.Event`)<br>• Numerical parity verification ($\Delta_{\max} < 0.01$) vs. PyTorch |
+| **05A** | [`05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb`](notebooks/05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb) | 23 | **Master CUDA & 26 Triton Benchmark (historical title)**<br>Complete isolated benchmark sweep of the canonical CUDA catalog and 26 Triton hardware kernels. | • Micro-benchmarking canonical CUDA extensions via NVCC<br>• High-resolution timing via CUDA Events (`torch.cuda.Event`)<br>• Numerical parity verification ($\Delta_{\max} < 0.01$) vs. PyTorch |
 | **05B** | [`05_paper_empirical_results_master.ipynb`](notebooks/05_paper_empirical_results_master.ipynb) | 22 | **Paper Empirical Results Master Notebook**<br>Reproducibility master generating publication figures, Pareto frontiers, and LaTeX booktabs tables. | • Direct ingestion of 2,432 empirical benchmark records<br>• Pareto frontier generation (PPL vs. Compression, VRAM vs. Speed)<br>• Camera-ready vector graphics (.pdf, .svg, .png) export |
 | **06** | [`06_master_all_131_attention_mechanisms_interactive.ipynb`](notebooks/06_master_all_131_attention_mechanisms_interactive.ipynb) | 45 | **Master Attention Zoo Interactive Showcase**<br>Interactive deep-dive across all 131 canonical subquadratic attention mechanisms. | • Architectural categorization across 8 distinct families<br>• FP16 / BF16 / FP32 precision & backward autograd check<br>• Constant-memory autoregressive state cache demonstration |
 | **07** | [`07_master_all_72_compression_engines_quant_and_svd.ipynb`](notebooks/07_master_all_72_compression_engines_quant_and_svd.ipynb) | 45 | **Master 72 Compression Engines Suite**<br>Comprehensive evaluation of SVD, Tensor-Train, quantization (FP8, INT4, KMeans), and dynamic pruning. | • Parameter reduction profiling (up to 256x via KMeans)<br>• Reconstruction Frobenius error quantification<br>• Activation-aware SVD (ASVD, SVD-LLM v2, Fisher SVD) |
@@ -337,7 +337,7 @@ NeuralOps v2.0.2 retains the complete **27-notebook master suite** (00–25 plus
 
 ## 2. CUDA Kernel Packages & 3-Level Fallback Dispatch
 
-NeuralOps includes **112 CUDA kernel package directories** (housing 114 native implementations) containing 229 `.cu`/`.cpp` source files. These are available to the Level-1 dispatcher when their contracts and compiled extensions are compatible; source presence is not treated as a performance certification.
+NeuralOps includes **110 canonical CUDA modules** (housing 114 native implementations) and 229 `.cu`/`.cpp` source files. The raw CUDA tree also contains compatibility/support directories. These sources are available to the Level-1 dispatcher when their contracts and compiled extensions are compatible; source presence is not treated as a performance certification.
 
 ```mermaid
 flowchart TD
@@ -367,7 +367,7 @@ flowchart TD
 
 ### Production-Certified Native CUDA C++ Acceleration & 3-Level Fallback
 
-In accordance with strict systems engineering protocol, all 114 native CUDA C++ kernels across 112 modular packages are rigorously integrated into NeuralOps' zero-overhead 3-level fallback hierarchy. Production-certified operators execute directly via native CUDA C++ machine code on NVIDIA GPUs (SM $\ge$ 7.0), achieving up to **13.33x** speedup over standard PyTorch references, with zero-overhead dispatch caching and automatic, seamless fallback to autotuned Triton JIT or vectorized PyTorch references where required.
+In accordance with strict systems engineering protocol, all 114 native CUDA C++ kernels across 110 canonical modules are integrated into NeuralOps' 3-level fallback hierarchy. Production-certified operators execute directly via native CUDA C++ machine code on NVIDIA GPUs (SM $\ge$ 7.0), achieving up to **13.33x** speedup over standard PyTorch references, with dispatch caching and fallback to autotuned Triton JIT or vectorized PyTorch references where required.
 
 #### The 16 Production-Certified Native CUDA C++ Kernels
 
@@ -1060,7 +1060,7 @@ flowchart TD
 
     subgraph Layer4 ["4. Execution & Hardware Dispatch"]
         BackendCheck{"Hardware Backend Detection"}
-        CUDACPP["112 CUDA Package Directories (NVCC when available)"]
+        CUDACPP["110 Canonical CUDA Modules (NVCC when available)"]
         Triton["26 Categorized Triton Modules (62 Unified Operators)"]
         Fallback["Vectorized Native PyTorch Fallbacks (Apple MPS / CPU)"]
     end
@@ -1750,7 +1750,7 @@ Every table and figure in this repository is reproducible from scratch on physic
 
 ### Benchmark Execution Commands
 
-The framework-native implementation is the single source of truth under `neuralops.benchmarks`; the legacy `scripts/benchmarks` drivers have been removed. Evaluation modules likewise live under `neuralops.evaluation`.
+The framework-native implementation is the primary source of truth under `neuralops.benchmarks`; `scripts/benchmarks` remains as a compatibility and orchestration layer. Evaluation modules likewise live under `neuralops.evaluation`.
 
 
 To reproduce the physical GPU benchmarks exactly as certified, execute on the remote GPU cluster (Sharif HPC Center `hpc.itc.sharif.edu` within `~/NeuralOps`) using the production environment:

@@ -13,6 +13,13 @@ from torch import nn
 
 from neuralops.benchmarks.benchmark_all_26_comprehensive import benchmark_single_kernel
 from neuralops.benchmarks.benchmark_all_26_kernels import run_all_26_kernels
+from neuralops.benchmarks.quantization import run_benchmark as run_quantization_benchmark
+from neuralops.benchmarks.moe import run_benchmark as run_moe_benchmark
+from neuralops.benchmarks.rope import run_benchmark as run_rope_benchmark
+from neuralops.benchmarks.sampling import run_benchmark as run_sampling_benchmark
+from neuralops.benchmarks.serving import run_benchmark as run_serving_benchmark
+from neuralops.benchmarks.ssm import run_benchmark as run_ssm_benchmark
+from neuralops.benchmarks.verify_ops import _make_inputs
 from scripts.benchmarks.gpu_master_suite import _resolve_requested_device
 from scripts.benchmarks.gpu_master_suite import benchmark_single_attention, benchmark_single_compressor
 
@@ -47,6 +54,35 @@ def test_direct_kernel_marks_numerical_mismatch_as_failure():
 def test_26_kernel_runner_rejects_cpu_fallback():
     with pytest.raises(RuntimeError, match="GPU-only"):
         run_all_26_kernels(device_str="cpu")
+
+
+@pytest.mark.parametrize(
+    "benchmark",
+    [
+        run_quantization_benchmark,
+        run_moe_benchmark,
+        run_rope_benchmark,
+        run_sampling_benchmark,
+        run_serving_benchmark,
+        run_ssm_benchmark,
+    ],
+)
+def test_simple_benchmarks_reject_unavailable_cuda(monkeypatch, benchmark):
+    monkeypatch.setattr("torch.cuda.is_available", lambda: False)
+    with pytest.raises(RuntimeError, match="CUDA was requested"):
+        benchmark(device="cuda")
+
+
+def test_operation_input_factory_rejects_unavailable_cuda(monkeypatch):
+    monkeypatch.setattr("torch.cuda.is_available", lambda: False)
+
+    class Config:
+        input_factory = lambda specs: ((), {})
+        tensor_specs = {}
+        unavailable_reason = ""
+
+    with pytest.raises(RuntimeError, match="CUDA was requested"):
+        _make_inputs(Config(), device="cuda")
 
 
 def test_failed_compressor_is_not_replaced_by_svd():
