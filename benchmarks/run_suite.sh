@@ -18,12 +18,16 @@ case "${MODE}" in
     systems) exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_engine_matrix.py" "$@" ;;
     numerics) exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/measure_multiprecision.py" "$@" ;;
     resources) exec "${PYTHON_BIN}" -m neuralops.benchmarks.resource_scaling "$@" ;;
+    precision) exec "${PYTHON_BIN}" -m neuralops.benchmarks.precision_parity "$@" ;;
+    reproducibility) exec "${PYTHON_BIN}" -m neuralops.benchmarks.reproducibility "$@" ;;
+    regression) exec "${PYTHON_BIN}" -m neuralops.benchmarks.regression_gate "$@" ;;
+    serving) exec "${PYTHON_BIN}" -m neuralops.benchmarks.serving_matrix "$@" ;;
     dispatch) exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_dispatch_integrity.py" "$@" ;;
     all)
         "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_dispatch_integrity.py" "$@"
         "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_all_26_comprehensive.py" "$@"
         exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_torch_compile_131_attentions.py" "$@"
         ;;
-    help|-h|--help) echo "Usage: benchmarks/run_suite.sh <kernels|cuda|attention|systems|numerics|resources|dispatch|all> [options]" ;;
+    help|-h|--help) echo "Usage: benchmarks/run_suite.sh <kernels|cuda|attention|systems|numerics|resources|precision|reproducibility|regression|serving|dispatch|all> [options]" ;;
     *) echo "Unknown benchmark group: ${MODE}" >&2; exit 2 ;;
 esac

@@ -5,7 +5,8 @@
     "kernels": ["benchmark_all_108_cuda_isolated.py", "benchmark_all_26_comprehensive.py", "benchmark_all_26_kernels.py", "benchmark_dispatch_integrity.py"],
     "attention": ["benchmark_torch_compile_131_attentions.py", "benchmark_extrapolation_32k.py", "benchmark_dynamic_range_stress.py"],
     "compression": ["multi_seed_stress_test_131_72.py", "stress_test_seeds_100_200_300.py", "stress_test_seeds_404_777_999.py"],
-    "systems": ["bench_llm_bandwidth.py", "benchmark_engine_matrix.py", "benchmark_torch_compile.py", "benchmark_resource_scaling.py"],
-    "numerics": ["measure_multiprecision.py", "benchmark_dynamic_range_stress.py"]
+    "systems": ["bench_llm_bandwidth.py", "benchmark_engine_matrix.py", "benchmark_torch_compile.py", "benchmark_resource_scaling.py", "benchmark_serving_matrix.py"],
+    "serving": ["benchmark_serving_matrix.py"],
+    "numerics": ["measure_multiprecision.py", "benchmark_dynamic_range_stress.py", "benchmark_precision_parity.py", "benchmark_reproducibility.py", "benchmark_regression_gate.py"]
   }
 }
