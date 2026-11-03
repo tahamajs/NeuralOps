@@ -80,7 +80,13 @@ class BenchmarkConfig(BaseModel):
         data["precision"] = data.pop("dtype", "float32")
         data["output_dir"] = Path(data.get("output_dir", "results"))
         allowed = set(CanonicalConfig.__dataclass_fields__)
-        extra = {}
+        extra = {
+            "batch_sizes": data.get("batch_sizes", [2, 4, 8]),
+            "seq_lens": data.get("seq_lens", [16, 64, 256]),
+            "parallel_workers": data.get("parallel_workers", 4),
+            "enable_backward": data.get("enable_backward", True),
+            "enable_vram_tracking": data.get("enable_vram_tracking", True),
+        }
         filtered = {}
         for key, value in data.items():
             if key in allowed:
