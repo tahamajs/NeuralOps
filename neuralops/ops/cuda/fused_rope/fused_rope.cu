@@ -49,6 +49,39 @@ __global__ void fused_rope_fwd_kernel(
     if (b >= B || h >= H || n >= N) return;
 
     const int tid = threadIdx.x;
+
+    // Vectorized 128-bit load fast path if memory is contiguous along D and half_d is divisible by 4
+    if (stride_xd == 1 && stride_cd == 1 && stride_sd == 1 && stride_od == 1 && (half_d % 4 == 0) && std::is_same_v<scalar_t, float>) {
+        const int num_vec = half_d / 4;
+        const int x_base = b * stride_xb + h * stride_xh + n * stride_xn;
+        const int c_base = b * stride_cb + h * stride_ch + n * stride_cn;
+        const int s_base = b * stride_sb + h * stride_sh + n * stride_sn;
+        const int o_base = b * stride_ob + h * stride_oh + n * stride_on;
+
+        for (int vi = tid; vi < num_vec; vi += blockDim.x) {
+            const int idx = vi * 4;
+            const float4 x1_4 = *reinterpret_cast<const float4*>(x + x_base + idx);
+            const float4 x2_4 = *reinterpret_cast<const float4*>(x + x_base + half_d + idx);
+            const float4 c_4  = *reinterpret_cast<const float4*>(cos + c_base + idx);
+            const float4 s_4  = *reinterpret_cast<const float4*>(sin + s_base + idx);
+
+            float4 o1_4, o2_4;
+            o1_4.x = fmaf(x1_4.x, c_4.x, -(x2_4.x * s_4.x));
+            o1_4.y = fmaf(x1_4.y, c_4.y, -(x2_4.y * s_4.y));
+            o1_4.z = fmaf(x1_4.z, c_4.z, -(x2_4.z * s_4.z));
+            o1_4.w = fmaf(x1_4.w, c_4.w, -(x2_4.w * s_4.w));
+
+            o2_4.x = fmaf(x2_4.x, c_4.x, x1_4.x * s_4.x);
+            o2_4.y = fmaf(x2_4.y, c_4.y, x1_4.y * s_4.y);
+            o2_4.z = fmaf(x2_4.z, c_4.z, x1_4.z * s_4.z);
+            o2_4.w = fmaf(x2_4.w, c_4.w, x1_4.w * s_4.w);
+
+            *reinterpret_cast<float4*>(out + o_base + idx) = o1_4;
+            *reinterpret_cast<float4*>(out + o_base + half_d + idx) = o2_4;
+        }
+        return;
+    }
+
     if (tid >= half_d) return;
 
     const int x1_idx = b * stride_xb + h * stride_xh + n * stride_xn + tid * stride_xd;
@@ -108,6 +141,39 @@ __global__ void fused_rope_bwd_kernel(
     if (b >= B || h >= H || n >= N) return;
 
     const int tid = threadIdx.x;
+
+    // Vectorized 128-bit backward fast path
+    if (stride_xb == stride_ob && stride_xd == 1 && stride_cd == 1 && stride_sd == 1 && stride_od == 1 && (half_d % 4 == 0) && std::is_same_v<scalar_t, float>) {
+        const int num_vec = half_d / 4;
+        const int dx_base = b * stride_xb + h * stride_xh + n * stride_xn;
+        const int do_base = b * stride_ob + h * stride_oh + n * stride_on;
+        const int c_base  = b * stride_cb + h * stride_ch + n * stride_cn;
+        const int s_base  = b * stride_sb + h * stride_sh + n * stride_sn;
+
+        for (int vi = tid; vi < num_vec; vi += blockDim.x) {
+            const int idx = vi * 4;
+            const float4 do1_4 = *reinterpret_cast<const float4*>(dout + do_base + idx);
+            const float4 do2_4 = *reinterpret_cast<const float4*>(dout + do_base + half_d + idx);
+            const float4 c_4   = *reinterpret_cast<const float4*>(cos + c_base + idx);
+            const float4 s_4   = *reinterpret_cast<const float4*>(sin + s_base + idx);
+
+            float4 dx1_4, dx2_4;
+            dx1_4.x = fmaf(do1_4.x, c_4.x, do2_4.x * s_4.x);
+            dx1_4.y = fmaf(do1_4.y, c_4.y, do2_4.y * s_4.y);
+            dx1_4.z = fmaf(do1_4.z, c_4.z, do2_4.z * s_4.z);
+            dx1_4.w = fmaf(do1_4.w, c_4.w, do2_4.w * s_4.w);
+
+            dx2_4.x = fmaf(do2_4.x, c_4.x, -(do1_4.x * s_4.x));
+            dx2_4.y = fmaf(do2_4.y, c_4.y, -(do1_4.y * s_4.y));
+            dx2_4.z = fmaf(do2_4.z, c_4.z, -(do1_4.z * s_4.z));
+            dx2_4.w = fmaf(do2_4.w, c_4.w, -(do1_4.w * s_4.w));
+
+            *reinterpret_cast<float4*>(dx + dx_base + idx) = dx1_4;
+            *reinterpret_cast<float4*>(dx + dx_base + half_d + idx) = dx2_4;
+        }
+        return;
+    }
+
     if (tid >= half_d) return;
 
     const int do1_idx = b * stride_ob + h * stride_oh + n * stride_on + tid * stride_od;
