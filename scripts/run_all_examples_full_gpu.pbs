@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
+#PBS -N full_examples_gpu
+#PBS -q N3090
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=00:30:00
+#PBS -o /home/tahamajlesi.ut/examples_full_gpu_v2.out
+#PBS -e /home/tahamajlesi.ut/examples_full_gpu_v2.err
+
+set -u
+cd /home/tahamajlesi.ut/NeuralOps
+
+export PY="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python"
+unset PYTHONPATH PYTHONHOME
+export PYTHONNOUSERSITE=1
+export PYTHONPATH="${PWD}"
+export LD_LIBRARY_PATH="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/lib:${LD_LIBRARY_PATH:-}"
+
+echo "START=$(date -Iseconds)"
+"$PY" - <<'PY'
+import sys, torch
+print("TORCH=", torch.__version__)
+print("CUDA=", torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else "NONE")
+if not torch.cuda.is_available():
+    sys.exit(1)
+PY
+
+echo "NVIDIA_SMI_BEGIN"
+nvidia-smi
+echo "NVIDIA_SMI_END"
+
+FAILURES=0
+for script in $(ls examples/[0-9]*.py | sort); do
+    base=$(basename "$script")
+    echo "=== BEGIN $base $(date -Iseconds) ==="
+    "$PY" "$script"
+    rc=$?
+    echo "=== END $base rc=$rc $(date -Iseconds) ==="
+    if [ $rc -ne 0 ]; then
+        FAILURES=$((FAILURES + 1))
+    fi
+done
+
+echo "END=$(date -Iseconds) TOTAL_FAILURES=$FAILURES"
+exit $FAILURES

@@ -50,4 +50,38 @@ class WeightsQuantizeOperation(Operation):
         super().__init__(contract=CONTRACT)
 
     def apply(self, model: nn.Module, config: Dict[str, Any]) -> Tuple[nn.Module, Dict[str, Any]]:
-        raise IntegrationNotImplementedError("weights.quantize requires GPU calibration and is deferred to Phase 2.")
+        method = config.get("method", "fp8")
+        bits = config.get("bits", 8)
+        if method == "fp8" or bits == 8:
+            from neuralops.compression.quantization.fp8_compressor import FP8Compressor
+
+            fp8_format = config.get("fp8_format", "e4m3")
+            scale_type = config.get("scale_type", "per_tensor")
+            compressor = FP8Compressor(model, scale_type=scale_type, fp8_format=fp8_format)
+            compressed_model, stats = compressor.compress()
+            evidence = {
+                "operation": "weights.quantize",
+                "method": method,
+                "bits": bits,
+                "layers_quantized": len(stats.get("layers", [])),
+                "stats": stats,
+            }
+            return compressed_model, evidence
+        elif method in ("int4_awq", "int4_gptq") or bits == 4:
+            from neuralops.compression.quantization.awq import AWQCompressor
+
+            group_size = config.get("group_size", 128)
+            compressor = AWQCompressor(model, bits=4, group_size=group_size)
+            compressed_model, stats = compressor.compress()
+            evidence = {
+                "operation": "weights.quantize",
+                "method": method,
+                "bits": 4,
+                "group_size": group_size,
+                "stats": stats,
+            }
+            return compressed_model, evidence
+
+        raise IntegrationNotImplementedError(
+            f"weights.quantize method '{method}' (bits={bits}) is not supported."
+        )

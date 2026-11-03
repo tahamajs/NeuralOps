@@ -70,9 +70,9 @@ def main() -> int:
     # Deterministic test tensors: B=2, H=4, L=16, D=32
     torch.manual_seed(42)
     b, h, seq_len, d_head = 2, 4, 16, 32
-    q = torch.randn(b, h, seq_len, d_head)
-    k = torch.randn(b, h, seq_len, d_head)
-    v = torch.randn(b, h, seq_len, d_head)
+    q = torch.randn(b, h, seq_len, d_head, device=device)
+    k = torch.randn(b, h, seq_len, d_head, device=device)
+    v = torch.randn(b, h, seq_len, d_head, device=device)
 
     kv("Operator Under Test", "cosformer_linear_attention")
     kv("Tensor Dimensions", f"B={b}, H={h}, L={seq_len}, D={d_head}")
