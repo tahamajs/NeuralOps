@@ -306,6 +306,11 @@ if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
 
 def _patch_torch_compat():
     """Install PyTorch 1.12 backward compatibility polyfills (SDPA, torch.compile, torch.amp)."""
+    if "torch" not in sys.modules:
+        try:
+            import torch  # noqa: F401
+        except Exception:
+            return
     if "torch" in sys.modules:
         try:
             import contextlib
