@@ -741,9 +741,9 @@ tr_baseline = 520.0 * np.exp(-0.20 * epochs) + 110.0
 
 axs[1, 0].plot(epochs, tr_baseline, 'b--o', label="Standard Baseline $\\text{tr}(H)$", linewidth=1.8)
 axs[1, 0].plot(epochs, tr_healed, 'g-s', label="Distilled Healed $\\text{tr}(H)$", linewidth=2.2)
-axs[1, 0].set_title("(c) Hessian Trace $\\text{tr}(H)$ Decay (Curvature Reduction)", fontsize=11, fontweight='bold')
+axs[1, 0].set_title("(c) Hessian Trace $\\mathrm{tr}(H)$ Decay (Curvature Reduction)", fontsize=11, fontweight='bold')
 axs[1, 0].set_xlabel("Training Epochs", fontsize=10)
-axs[1, 0].set_ylabel("Hessian Trace $\\text{tr}(H)$", fontsize=10)
+axs[1, 0].set_ylabel("Hessian Trace $\\mathrm{tr}(H)$", fontsize=10)
 axs[1, 0].grid(True, linestyle="--", alpha=0.5)
 axs[1, 0].legend(loc="upper right", fontsize=8)
 
@@ -754,7 +754,7 @@ gen_gap = [0.8, 1.1, 1.8, 3.2, 5.4, 8.9] # Validation Loss - Train Loss
 axs[1, 1].plot(lambda_max_vals, gen_gap, 'm-d', markersize=7, linewidth=2.2, label="Empirical Generalization Gap")
 axs[1, 1].set_title("(d) Generalization Gap vs Spectral Sharpness $\\lambda_{\\max}$", fontsize=11, fontweight='bold')
 axs[1, 1].set_xlabel("Maximum Hessian Curvature $\\lambda_{\\max}$", fontsize=10)
-axs[1, 1].set_ylabel("Generalization Gap ($\\mathcal{L}_{\\text{val}} - \\mathcal{L}_{\\text{train}}$)", fontsize=10)
+axs[1, 1].set_ylabel("Generalization Gap ($\\mathcal{L}_{\\mathrm{val}} - \\mathcal{L}_{\\mathrm{train}}$)", fontsize=10)
 axs[1, 1].grid(True, linestyle="--", alpha=0.5)
 axs[1, 1].legend(loc="upper left", fontsize=8)
 

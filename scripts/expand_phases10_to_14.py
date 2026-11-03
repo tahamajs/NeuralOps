@@ -146,7 +146,7 @@ axs[1, 1].plot(head_dims, bw_triton, 'b-s', label="Triton 2D Block Pipelined", l
 axs[1, 1].plot(head_dims, bw_pytorch, 'r--^', label="PyTorch Intermediate Alloc", linewidth=1.8)
 axs[1, 1].axhline(y=504.0, color='red', linestyle=':', label="RTX 4070 Peak DRAM Bandwidth (504 GB/s)")
 axs[1, 1].set_title("(d) DRAM Bandwidth Saturation vs Head Dimension", fontsize=11, fontweight='bold')
-axs[1, 1].set_xlabel("Head Dimension ($D_{\\text{head}}$)", fontsize=10)
+axs[1, 1].set_xlabel("Head Dimension ($D_{\\mathrm{head}}$)", fontsize=10)
 axs[1, 1].set_ylabel("Effective Bandwidth (GB/s)", fontsize=10)
 axs[1, 1].grid(True, linestyle="--", alpha=0.5)
 axs[1, 1].legend(loc="lower right", fontsize=8)
