@@ -154,7 +154,10 @@ __global__ void flash_gqa_kernel(
                 for (int d = 0; d < NUM_VECS; ++d) {
                     const int swizzled_d = swizzle_col(kt, d);
                     const float4 k_v = K_smem[kt][swizzled_d];
-                    dot += q_vec[d].x * k_v.x + q_vec[d].y * k_v.y + q_vec[d].z * k_v.z + q_vec[d].w * k_v.w;
+                    dot = __fmaf_rn(q_vec[d].x, k_v.x, dot);
+                    dot = __fmaf_rn(q_vec[d].y, k_v.y, dot);
+                    dot = __fmaf_rn(q_vec[d].z, k_v.z, dot);
+                    dot = __fmaf_rn(q_vec[d].w, k_v.w, dot);
                 }
                 const float s = dot * scale;
                 scores[kt] = s;
@@ -166,7 +169,7 @@ __global__ void flash_gqa_kernel(
 
         if (m_tile > -1e29f) {
             const float m_new = fmaxf(m_prev, m_tile);
-            const float alpha = (m_prev == -1e30f) ? 0.0f : expf(m_prev - m_new);
+            const float alpha = (m_prev == -1e30f) ? 0.0f : __expf(m_prev - m_new);
             m_prev = m_new;
             l_prev *= alpha;
 
@@ -181,16 +184,16 @@ __global__ void flash_gqa_kernel(
             #pragma unroll
             for (int kt = 0; kt < BLOCK_N; ++kt) {
                 if (scores[kt] > -1e29f) {
-                    const float p = expf(scores[kt] - m_new);
+                    const float p = __expf(scores[kt] - m_new);
                     l_prev += p;
                     #pragma unroll
                     for (int d = 0; d < NUM_VECS; ++d) {
                         const int swizzled_d = swizzle_col(kt, d);
                         const float4 v_v = V_smem[kt][swizzled_d];
-                        acc_vec[d].x += p * v_v.x;
-                        acc_vec[d].y += p * v_v.y;
-                        acc_vec[d].z += p * v_v.z;
-                        acc_vec[d].w += p * v_v.w;
+                        acc_vec[d].x = __fmaf_rn(p, v_v.x, acc_vec[d].x);
+                        acc_vec[d].y = __fmaf_rn(p, v_v.y, acc_vec[d].y);
+                        acc_vec[d].z = __fmaf_rn(p, v_v.z, acc_vec[d].z);
+                        acc_vec[d].w = __fmaf_rn(p, v_v.w, acc_vec[d].w);
                     }
                 }
             }
