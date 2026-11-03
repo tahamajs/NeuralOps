@@ -2,7 +2,7 @@
 #PBS -N qwen_transplant
 #PBS -q N3090
 #PBS -l nodes=1:ppn=1
-#PBS -l walltime=00:45:00
+#PBS -l walltime=01:15:00
 #PBS -j oe
 #PBS -o /home/tahamajlesi.ut/NeuralOps/qwen_transplant.log
 

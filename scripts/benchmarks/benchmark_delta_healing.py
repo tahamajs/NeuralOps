@@ -127,8 +127,8 @@ def run_delta_healing(
     device_str: str = "cuda:0",
     max_duration_sec: float = 120.0,
     peak_lr: float = 1e-3,
-    batch_size: int = 32,
-    seq_len: int = 256,
+    batch_size: int = 2,
+    seq_len: int = 64,
     output_json: str = "results/delta_healing_result.json",
 ) -> dict[str, Any]:
     device = torch.device(device_str if torch.cuda.is_available() else "cpu")
@@ -173,7 +173,9 @@ def run_delta_healing(
     teacher = teacher.to(device)
     teacher.eval()
     teacher_ppl = eval_ppl(teacher, tokenizer, eval_dataset, eval_args)
-    logger.info(f"Teacher Baseline GPT-2 PPL: {teacher_ppl:.2f}")
+    logger.info(f"Teacher Baseline PPL: {teacher_ppl:.2f}")
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     # 3. Create Student and Transplant Attention Module
     logger.info(f"Transplanting {module_name} into GPT-2 student...")
@@ -188,6 +190,8 @@ def run_delta_healing(
     # 4. Measure Initial Unhealed PPL
     pre_healing_ppl = eval_ppl(student, tokenizer, eval_dataset, eval_args)
     logger.info(f"Initial Pre-Healing Student PPL: {pre_healing_ppl:.2f}")
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     # 5. Initialize 6-Pillar KD Suite & Optimizer
     l_logit = LogitDistillationLoss(mode="forward_kl", temperature=2.0)
@@ -311,8 +315,8 @@ def main() -> int:
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--duration", type=float, default=120.0)
     parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--seq-len", type=int, default=256)
+    parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--seq-len", type=int, default=64)
     parser.add_argument("--output", type=str, default="results/delta_healing_result.json")
     args = parser.parse_args()
 

@@ -74,7 +74,7 @@ def main() -> None:
     print(f"Target Layer: {args.target_layer} | Attention: {args.target_attention}")
     print_gpu_memory("Initial")
 
-    # 0. PyTorch < 2.0 Compatibility Shim for Transformers / Accelerate
+    # 0. PyTorch < 2.0 Compatibility Shim for Transformers / Accelerate / BFloat16 CUDA ops
     _orig_named_parameters = torch.nn.Module.named_parameters
 
     def _compat_named_parameters(self, prefix="", recurse=True, remove_duplicate=True):
@@ -88,6 +88,36 @@ def main() -> None:
         return _orig_named_buffers(self, prefix=prefix, recurse=recurse)
 
     torch.nn.Module.named_buffers = _compat_named_buffers
+
+    _orig_triu = torch.triu
+
+    def _compat_triu(input, diagonal=0, *, out=None):
+        if input.is_cuda and input.dtype == torch.bfloat16:
+            res = _orig_triu(input.float(), diagonal=diagonal).to(torch.bfloat16)
+            if out is not None:
+                out.copy_(res)
+                return out
+            return res
+        if out is not None:
+            return _orig_triu(input, diagonal=diagonal, out=out)
+        return _orig_triu(input, diagonal=diagonal)
+
+    torch.triu = _compat_triu
+
+    _orig_tril = torch.tril
+
+    def _compat_tril(input, diagonal=0, *, out=None):
+        if input.is_cuda and input.dtype == torch.bfloat16:
+            res = _orig_tril(input.float(), diagonal=diagonal).to(torch.bfloat16)
+            if out is not None:
+                out.copy_(res)
+                return out
+            return res
+        if out is not None:
+            return _orig_tril(input, diagonal=diagonal, out=out)
+        return _orig_tril(input, diagonal=diagonal)
+
+    torch.tril = _compat_tril
 
     # 1. Load Tokenizer & Model
     print("\n[1/6] Loading model and tokenizer in bfloat16...")
