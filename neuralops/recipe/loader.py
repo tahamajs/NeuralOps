@@ -6,14 +6,15 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Recipe Loader with YAML/JSON Auto-Detection and Syntax Error Handling.
+Recipe Loader with YAML/JSON Auto-Detection, Line Diagnostics, and Helpful Hints.
 """
 
 from __future__ import annotations
 
+import difflib
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from neuralops.core.errors import IntegrationNotImplementedError
 from neuralops.recipe.errors import (
@@ -30,13 +31,33 @@ def _json_check_dup_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     res: dict[str, Any] = {}
     for k, v in pairs:
         if k in res:
-            raise RecipeParseError(f"Duplicate key '{k}' detected in JSON payload", E_PARSE_DUP_KEY, k)
+            raise RecipeParseError(
+                f"Duplicate key '{k}' detected in JSON payload", E_PARSE_DUP_KEY, k
+            )
         res[k] = v
     return res
 
 
+def _format_syntax_error(
+    raw_text: str, line: Optional[int], col: Optional[int], message: str
+) -> str:
+    """Formats a user-friendly error frame with line and column pointers."""
+    if line is None:
+        return message
+    lines = raw_text.splitlines()
+    snippet = lines[line - 1] if 0 <= line - 1 < len(lines) else ""
+    col_idx = max(0, (col or 1) - 1)
+    pointer = " " * col_idx + "^"
+    return (
+        f"\n  Line {line}, Col {col or 1}:\n"
+        f"    {line} | {snippet}\n"
+        f"      | {pointer}\n"
+        f"  Syntax Error: {message}"
+    )
+
+
 def loads_recipe(text: str, format: Optional[str] = None) -> Recipe:
-    """Parse recipe from raw text (YAML or JSON)."""
+    """Parse recipe from raw text (YAML or JSON) with line-level diagnostics."""
     stripped = text.strip()
     if not stripped:
         raise RecipeParseError("Recipe payload is empty", E_PARSE_JSON_SYNTAX)
@@ -52,11 +73,19 @@ def loads_recipe(text: str, format: Optional[str] = None) -> Recipe:
             data = json.loads(stripped, object_pairs_hook=_json_check_dup_keys)
         except RecipeParseError:
             raise
+        except json.JSONDecodeError as exc:
+            msg = _format_syntax_error(stripped, exc.lineno, exc.colno, exc.msg)
+            raise RecipeParseError(
+                f"Failed to parse recipe JSON:{msg}", E_PARSE_JSON_SYNTAX
+            ) from exc
         except Exception as exc:
-            raise RecipeParseError(f"Failed to parse recipe JSON: {exc}", E_PARSE_JSON_SYNTAX) from exc
+            raise RecipeParseError(
+                f"Failed to parse recipe JSON: {exc}", E_PARSE_JSON_SYNTAX
+            ) from exc
     else:
         try:
             import yaml
+
             try:
                 from yaml import CSafeLoader as SafeLoader
             except ImportError:
@@ -72,13 +101,17 @@ def loads_recipe(text: str, format: Optional[str] = None) -> Recipe:
             class UniqueKeyLoader(SafeLoader):
                 pass
 
-            def construct_mapping(loader, node, deep=False):
+            def construct_mapping(loader: Any, node: Any, deep: bool = False) -> Dict[str, Any]:
                 loader.flatten_mapping(node)
-                mapping = {}
+                mapping: Dict[str, Any] = {}
                 for key_node, value_node in node.value:
                     key = loader.construct_object(key_node, deep=deep)
                     if key in mapping:
-                        raise RecipeParseError(f"Duplicate key '{key}' detected in YAML mapping", E_PARSE_DUP_KEY, str(key))
+                        raise RecipeParseError(
+                            f"Duplicate key '{key}' detected in YAML mapping",
+                            E_PARSE_DUP_KEY,
+                            str(key),
+                        )
                     mapping[key] = loader.construct_object(value_node, deep=deep)
                 return mapping
 
@@ -89,11 +122,26 @@ def loads_recipe(text: str, format: Optional[str] = None) -> Recipe:
 
             data = yaml.load(stripped, Loader=UniqueKeyLoader)
             if not isinstance(data, dict):
-                raise RecipeParseError(f"YAML root must be a mapping, got {type(data).__name__}", E_PARSE_YAML_SYNTAX)
+                raise RecipeParseError(
+                    f"YAML root must be a mapping, got {type(data).__name__}",
+                    E_PARSE_YAML_SYNTAX,
+                )
         except RecipeParseError:
             raise
+        except yaml.YAMLError as exc:
+            line_no = None
+            col_no = None
+            if hasattr(exc, "problem_mark") and exc.problem_mark is not None:
+                line_no = exc.problem_mark.line + 1
+                col_no = exc.problem_mark.column + 1
+            msg = _format_syntax_error(stripped, line_no, col_no, str(exc))
+            raise RecipeParseError(
+                f"Failed to parse recipe YAML:{msg}", E_PARSE_YAML_SYNTAX
+            ) from exc
         except Exception as exc:
-            raise RecipeParseError(f"Failed to parse recipe YAML: {exc}", E_PARSE_YAML_SYNTAX) from exc
+            raise RecipeParseError(
+                f"Failed to parse recipe YAML: {exc}", E_PARSE_YAML_SYNTAX
+            ) from exc
 
     check_language_version(data)
     recipe = Recipe.from_dict(data)
@@ -101,11 +149,15 @@ def loads_recipe(text: str, format: Optional[str] = None) -> Recipe:
 
 
 def load_recipe(path_or_str: str | Path) -> Recipe:
-    """Load a Recipe from a file path or direct string."""
+    """Load a Recipe from a file path or direct string with automatic format resolution."""
     candidate_path = Path(path_or_str)
     if candidate_path.is_file():
         text = candidate_path.read_text(encoding="utf-8")
-        fmt = "json" if candidate_path.suffix.lower() == ".json" else ("yaml" if candidate_path.suffix.lower() in (".yaml", ".yml") else None)
+        fmt = (
+            "json"
+            if candidate_path.suffix.lower() == ".json"
+            else ("yaml" if candidate_path.suffix.lower() in (".yaml", ".yml") else None)
+        )
         return loads_recipe(text, format=fmt)
     elif "\n" in str(path_or_str) or str(path_or_str).strip().startswith(("{", "apiVersion:")):
         return loads_recipe(str(path_or_str))

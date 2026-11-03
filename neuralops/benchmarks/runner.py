@@ -54,9 +54,7 @@ class BaseRunner(ABC):
     def verify(self) -> bool:
         """Verify device, model, and dataset readiness before executing long sweeps."""
         self.logger.info("Verifying benchmark environment readiness...")
-        if hasattr(self.config, "validate_device"):
-            self.config.validate_device()
-        elif self.config.device.startswith("cuda") and not torch.cuda.is_available():
+        if self.config.device.startswith("cuda") and not torch.cuda.is_available():
             raise RuntimeError(
                 f"CUDA device '{self.config.device}' was requested for the benchmark, but CUDA is unavailable. "
                 "Refusing to continue on CPU because that would invalidate GPU results."

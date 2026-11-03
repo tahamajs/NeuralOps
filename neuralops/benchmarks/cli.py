@@ -207,9 +207,9 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("recipe_cmd", nargs="?", default=None, help="Optional subcommand, e.g. 'recipe'")
     run_p.add_argument("recipe_file", nargs="?", default=None, help="Recipe file when recipe_cmd is 'recipe'")
 
-    res_p = subparsers.add_parser("resume", help="Resume interrupted sweep")
-    res_p.add_argument("--output-dir", type=str, default="results", help="Output directory of interrupted run")
-    res_p.add_argument("--run-id", type=str, default=None, help="Run ID to resume")
+    resume_p = subparsers.add_parser("resume", help="Resume interrupted sweep")
+    resume_p.add_argument("--output-dir", type=str, default="results", help="Output directory of interrupted run")
+    resume_p.add_argument("--run-id", type=str, default=None, help="Run ID to resume")
 
     plan_p = subparsers.add_parser("plan", help="Dry-run and estimate execution grid")
     plan_p.add_argument("--module", type=str, default=None)
@@ -641,22 +641,28 @@ def handle_results(args: argparse.Namespace) -> None:
         print(df.to_string(index=False))
 
 
-def handle_run(args: argparse.Namespace) -> None:
+def apply_config_to_args(args: argparse.Namespace) -> None:
+    """Deeply apply all settings from the config preset file to the args namespace."""
     config_path = getattr(args, "config", None)
-    if config_path:
-        from neuralops.benchmarks.config import BenchmarkConfig
+    if not config_path:
+        return
+    from neuralops.benchmarks.config import BenchmarkConfig
 
-        config = BenchmarkConfig.from_file(config_path)
-        for field_name in config.__dataclass_fields__:
-            if hasattr(config, field_name):
-                setattr(args, field_name, getattr(config, field_name))
-        args.device = config.device
-        args.dtype = config.precision
-        args.precision = config.precision
-        args.output_dir = str(config.output_dir)
-        args.effective_config = config.to_dict()
-        if getattr(args, "output", None) is None:
-            args.output = str(Path(config.output_dir) / "benchmark_ops.json")
+    config = BenchmarkConfig.from_file(config_path)
+    for field_name in config.__dataclass_fields__:
+        if hasattr(config, field_name):
+            setattr(args, field_name, getattr(config, field_name))
+    args.device = config.device
+    args.dtype = config.precision
+    args.precision = config.precision
+    args.output_dir = str(config.output_dir)
+    args.effective_config = config.to_dict()
+    if getattr(args, "output", None) is None:
+        args.output = str(Path(config.output_dir) / "benchmark_ops.json")
+
+
+def handle_run(args: argparse.Namespace) -> None:
+    apply_config_to_args(args)
 
     req_dev = getattr(args, "device", None)
     if req_dev and req_dev.startswith("cuda"):

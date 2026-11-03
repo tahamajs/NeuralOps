@@ -35,6 +35,18 @@ import torch
 import torch.nn.functional as F
 
 
+def _flatten_tensors(out):
+    """Recursively collect all tensors from output (tensor, tuple, list)."""
+    if isinstance(out, torch.Tensor):
+        return [out]
+    elif isinstance(out, (tuple, list)):
+        res = []
+        for item in out:
+            res.extend(_flatten_tensors(item))
+        return res
+    return []
+
+
 def benchmark_single_kernel(
     name: str,
     category: str,
@@ -45,9 +57,15 @@ def benchmark_single_kernel(
     warmup: int = 10,
     reps: int = 50,
     device: torch.device = None,
+    impl_module: str = "neuralops.ops.triton",
+    ref_module: str = "torch",
+    differentiable: bool = False,
+    backward_args_idx: list[int] | None = None,
     **kwargs,
 ):
-    """Benchmark a single kernel pair (Triton vs PyTorch) with timing and numerical checks."""
+    """Benchmark a single kernel pair (Triton vs PyTorch) with strict timing, quality gates, and parity checks."""
+    import traceback
+
     if device is None:
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -57,38 +75,129 @@ def benchmark_single_kernel(
         gc.collect()
         torch.cuda.empty_cache()
 
+    tolerance_forward = 1e-3
+    tolerance_backward = 2e-3
+    max_diff_fwd = 0.0
+    max_diff_bwd = 0.0
+    cos_sim = 1.0
+    output_finite = True
+    gradients_finite = True
+    has_nan_tri = False
+    has_inf_tri = False
+    has_nan_ref = False
+    has_inf_ref = False
+    parity_error_str = None
+    tb_str = None
+
     try:
         out_tri = triton_fn(*args, **kwargs)
         out_pt = pytorch_fn(*args, **kwargs)
 
-        out_tri_t = out_tri[0] if isinstance(out_tri, tuple) else out_tri
-        out_pt_t = out_pt[0] if isinstance(out_pt, tuple) else out_pt
+        tri_tensors = _flatten_tensors(out_tri)
+        pt_tensors = _flatten_tensors(out_pt)
 
-        has_nan_tri = bool(torch.isnan(out_tri_t).any().item())
-        has_inf_tri = bool(torch.isinf(out_tri_t).any().item())
-        has_nan_ref = bool(torch.isnan(out_pt_t).any().item())
-        has_inf_ref = bool(torch.isinf(out_pt_t).any().item())
+        if len(tri_tensors) != len(pt_tensors):
+            raise ValueError(f"Tensor count mismatch between Triton ({len(tri_tensors)}) and PyTorch ({len(pt_tensors)})")
 
-        ref_f = out_pt_t.float().reshape(-1)
-        tri_f = out_tri_t.float().reshape(-1)
-        max_diff = (ref_f - tri_f).abs().max().item()
-        cos_sim = F.cosine_similarity(ref_f.unsqueeze(0), tri_f.unsqueeze(0)).item() if ref_f.numel() > 1 else 1.0
+        if pt_tensors:
+            tolerance_forward = 1e-3 if pt_tensors[0].dtype in (torch.float32, torch.float64) else 2e-2
+
+        diffs = []
+        for t_tri, t_pt in zip(tri_tensors, pt_tensors):
+            if t_tri.shape != t_pt.shape:
+                raise ValueError(f"Shape mismatch: {t_tri.shape} vs {t_pt.shape}")
+
+            nan_tri = bool(torch.isnan(t_tri).any().item())
+            inf_tri = bool(torch.isinf(t_tri).any().item())
+            nan_ref = bool(torch.isnan(t_pt).any().item())
+            inf_ref = bool(torch.isinf(t_pt).any().item())
+
+            has_nan_tri = has_nan_tri or nan_tri
+            has_inf_tri = has_inf_tri or inf_tri
+            has_nan_ref = has_nan_ref or nan_ref
+            has_inf_ref = has_inf_ref or inf_ref
+
+            t_diff = (t_pt.float() - t_tri.float()).abs().max().item()
+            diffs.append(t_diff)
+
+        max_diff_fwd = max(diffs) if diffs else 0.0
+        output_finite = not (has_nan_tri or has_inf_tri or has_nan_ref or has_inf_ref)
+
+        if pt_tensors and pt_tensors[0].numel() > 1:
+            ref_f = pt_tensors[0].float().reshape(-1)
+            tri_f = tri_tensors[0].float().reshape(-1)
+            cos_sim = F.cosine_similarity(ref_f.unsqueeze(0), tri_f.unsqueeze(0)).item()
     except Exception as exc:
-        print(f"[FAIL] {name:<36s} | Parity check exception: {exc}")
+        parity_error_str = str(exc)
+        tb_str = traceback.format_exc()
+        print(f"[FAIL] {name:<36s} | Forward Parity Exception: {exc}")
         return {
             "kernel": name,
             "category": category,
             "shape": shape_str,
+            "implementation_module": impl_module,
+            "reference_module": ref_module,
+            "device": str(device),
+            "gpu_name": torch.cuda.get_device_name(device) if is_cuda else "CPU",
             "pytorch_ms": 0.0,
             "triton_ms": 0.0,
             "launch_overhead_ms": 0.0,
             "speedup": 0.0,
             "cosine_sim": 0.0,
             "max_diff": float("inf"),
-            "has_nan": True,
-            "has_inf": True,
+            "max_diff_forward": float("inf"),
+            "tolerance_forward": tolerance_forward,
+            "max_diff_backward": float("inf"),
+            "tolerance_backward": tolerance_backward,
+            "output_finite": False,
+            "gradients_finite": False,
+            "backend_identity": "triton",
+            "fallback_used": False,
             "status": f"ERROR: {exc}",
+            "error": parity_error_str,
+            "traceback": tb_str,
         }
+
+    # Backward gradient parity check where differentiable
+    if differentiable and is_cuda:
+        try:
+            # Clone input args with requires_grad=True
+            diff_args_tri = []
+            diff_args_pt = []
+            for i, arg in enumerate(args):
+                if isinstance(arg, torch.Tensor) and arg.is_floating_point() and (backward_args_idx is None or i in backward_args_idx):
+                    a_tri = arg.detach().clone().requires_grad_(True)
+                    a_pt = arg.detach().clone().requires_grad_(True)
+                else:
+                    a_tri = arg
+                    a_pt = arg
+                diff_args_tri.append(a_tri)
+                diff_args_pt.append(a_pt)
+
+            out_tri_b = triton_fn(*diff_args_tri, **kwargs)
+            out_pt_b = pytorch_fn(*diff_args_pt, **kwargs)
+
+            loss_tri = sum(t.sum() for t in _flatten_tensors(out_tri_b) if t.requires_grad)
+            loss_pt = sum(t.sum() for t in _flatten_tensors(out_pt_b) if t.requires_grad)
+
+            if isinstance(loss_tri, torch.Tensor) and loss_tri.requires_grad:
+                loss_tri.backward()
+            if isinstance(loss_pt, torch.Tensor) and loss_pt.requires_grad:
+                loss_pt.backward()
+
+            bwd_diffs = []
+            for a_tri, a_pt in zip(diff_args_tri, diff_args_pt):
+                if isinstance(a_tri, torch.Tensor) and a_tri.grad is not None and isinstance(a_pt, torch.Tensor) and a_pt.grad is not None:
+                    if not torch.isfinite(a_tri.grad).all().item() or not torch.isfinite(a_pt.grad).all().item():
+                        gradients_finite = False
+                    b_diff = (a_pt.grad.float() - a_tri.grad.float()).abs().max().item()
+                    bwd_diffs.append(b_diff)
+
+            max_diff_bwd = max(bwd_diffs) if bwd_diffs else 0.0
+        except Exception as exc_bwd:
+            gradients_finite = False
+            parity_error_str = f"Backward parity error: {exc_bwd}"
+            tb_str = traceback.format_exc()
 
     for _ in range(warmup):
         _ = triton_fn(*args, **kwargs)
@@ -139,13 +248,18 @@ def benchmark_single_kernel(
         pytorch_gpu_ms = (t1 - t0) / reps * 1000.0
 
     speedup = pytorch_gpu_ms / max(triton_gpu_ms, 1e-6)
-    # Numerical tolerance check per Bug 5 specification:
-    # max_diff <= tolerance -> PASS; otherwise -> FAIL_NUMERICS
-    tolerance = 1e-3 if out_pt_t.dtype == torch.float32 else 2e-2
-    if has_nan_ref or has_inf_ref or has_nan_tri or has_inf_tri:
+
+    # Strict performance and quality gates per NeuralOps Kernel Audit Contract
+    if not output_finite or not gradients_finite:
         status = "FAIL_NAN"
-    elif max_diff > tolerance:
+    elif max_diff_fwd > tolerance_forward or max_diff_bwd > tolerance_backward:
         status = "FAIL_NUMERICS"
+    elif pytorch_gpu_ms < 0.01:
+        status = "NO_BASELINE"
+    elif speedup < 1.0:
+        status = "FAIL_SLOW"
+    elif triton_gpu_ms > 20.0:
+        status = "FAIL_LATENCY"
     else:
         status = "PASS"
 
@@ -153,21 +267,62 @@ def benchmark_single_kernel(
         "kernel": name,
         "category": category,
         "shape": shape_str,
+        "implementation_module": impl_module,
+        "reference_module": ref_module,
+        "device": str(device),
+        "gpu_name": torch.cuda.get_device_name(device) if is_cuda else "CPU",
         "pytorch_ms": round(pytorch_gpu_ms, 4),
         "triton_ms": round(triton_gpu_ms, 4),
         "launch_overhead_ms": round(launch_overhead_ms, 4),
         "speedup": round(speedup, 2),
         "cosine_sim": round(cos_sim, 6),
-        "max_diff": round(max_diff, 6),
-        "has_nan": has_nan_tri,
-        "has_inf": has_inf_tri,
-        "reference_finite": not has_nan_ref and not has_inf_ref,
+        "max_diff": round(max_diff_fwd, 6),
+        "max_diff_forward": round(max_diff_fwd, 6),
+        "tolerance_forward": tolerance_forward,
+        "max_diff_backward": round(max_diff_bwd, 6),
+        "tolerance_backward": tolerance_backward,
+        "output_finite": output_finite,
+        "gradients_finite": gradients_finite,
+        "backend_identity": "triton",
+        "fallback_used": False,
         "status": status,
+        "error": parity_error_str,
+        "traceback": tb_str,
     }
 
-    status_flag = "[PASS]" if status == "PASS" else "[FAIL]"
-    print(f"{status_flag} {name:<36s} | Tri: {triton_gpu_ms:6.3f}ms | PT: {pytorch_gpu_ms:6.3f}ms | Speedup: {speedup:6.2f}x | Launch: {launch_overhead_ms:5.3f}ms | Diff: {max_diff:.2e}")
+    status_flag = "[PASS]" if status == "PASS" else f"[{status}]"
+    print(f"{status_flag:<15} {name:<36s} | Tri: {triton_gpu_ms:6.3f}ms | PT: {pytorch_gpu_ms:6.3f}ms | Speedup: {speedup:6.2f}x | Diff: {max_diff_fwd:.2e}")
     return entry
+
+
+CANONICAL_26_TRITON_KERNELS: list[str] = [
+    "fused_hnc_nullspace_step",
+    "fused_linformer_seq_proj",
+    "fused_kronecker_gemm",
+    "fused_nystrom_landmark_pinv",
+    "sliding_window_attention",
+    "gla_scan",
+    "gdn_scan",
+    "hgrn2_scan",
+    "softplus",
+    "fused_norm_linear",
+    "cosformer",
+    "fused_ce",
+    "fused_kd",
+    "selective_scan",
+    "fms_scan",
+    "paged_attention",
+    "fused_mqa_bias_scale",
+    "fused_hamming_scores",
+    "fused_favor_plus",
+    "fused_rope",
+    "fused_moba_block_router",
+    "fused_rala_augmented_scan",
+    "fused_recurrent_linear_step",
+    "fused_jamba_hybrid_gate",
+    "fused_goldfinch_hopfield",
+    "flash_decode",
+]
 
 
 def run_all_26_comprehensive(
@@ -235,6 +390,8 @@ def run_all_26_comprehensive(
             "fused_hnc_nullspace_step", "low_rank", "2048x2048",
             fused_hnc_nullspace_step_triton, fused_hnc_nullspace_step_pytorch,
             w1, g1, r1, 0.05, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.low_rank.fused_hnc_nullspace_step_triton",
+            ref_module="neuralops.ops.triton.low_rank.fused_hnc_nullspace_step_pytorch",
         ))
 
     if should_run("fused_linformer_seq_proj"):
@@ -248,6 +405,8 @@ def run_all_26_comprehensive(
             "fused_linformer_seq_proj", "low_rank", f"B={B},H={H},N={N},D={D}",
             fused_linformer_seq_proj_triton, fused_linformer_seq_proj_pytorch,
             proj_lin, x_lin, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.low_rank.fused_linformer_seq_proj_triton",
+            ref_module="neuralops.ops.triton.low_rank.fused_linformer_seq_proj_pytorch",
         ))
 
     if should_run("fused_kronecker_gemm"):
@@ -262,6 +421,8 @@ def run_all_26_comprehensive(
             "fused_kronecker_gemm", "low_rank", "dim=256, r=16",
             fused_kronecker_batched_gemm_triton, fused_kronecker_batched_gemm_pytorch,
             x_kron, A_kron, B_kron, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.low_rank.fused_kronecker_batched_gemm_triton",
+            ref_module="neuralops.ops.triton.low_rank.fused_kronecker_batched_gemm_pytorch",
         ))
 
     if should_run("fused_nystrom_landmark_pinv"):
@@ -278,6 +439,8 @@ def run_all_26_comprehensive(
             "fused_nystrom_landmark_pinv", "low_rank", f"B={B},H={H},N={N},m={m_nys}",
             fused_nystrom_landmark_pinv_step_triton, fused_nystrom_landmark_pinv_step_pytorch,
             F1, F2_pinv, F3, V_nys, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.low_rank.fused_nystrom_landmark_pinv_step_triton",
+            ref_module="neuralops.ops.triton.low_rank.fused_nystrom_landmark_pinv_step_pytorch",
         ))
 
     if should_run("sliding_window_attention"):
@@ -292,6 +455,10 @@ def run_all_26_comprehensive(
             "sliding_window_attention", "sliding_window", f"B={B},H={H},N={N},W=128",
             sliding_window_attention, sliding_window_pytorch,
             q_sw, k_sw, v_sw, 128, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.sliding_window.sliding_window_attention",
+            ref_module="neuralops.ops.triton.sliding_window.sliding_window_pytorch",
+            differentiable=True,
+            backward_args_idx=[0, 1, 2],
         ))
 
     if should_run("gla_scan"):
@@ -304,6 +471,10 @@ def run_all_26_comprehensive(
             "gla_scan", "linear_attention", f"B={B},H={H},N={N},D={D}",
             gla_scan, gla_scan_pytorch,
             q_gla, k_gla, v_gla, g_gla, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.gla_scan.gla_scan",
+            ref_module="neuralops.ops.triton.gla_scan.gla_scan_pytorch",
+            differentiable=True,
+            backward_args_idx=[0, 1, 2],
         ))
 
     if should_run("gdn_scan"):
@@ -317,6 +488,10 @@ def run_all_26_comprehensive(
             "gdn_scan", "linear_attention", f"B={B},H={H},N={N},D={D}",
             gdn_scan, gdn_scan_pytorch,
             q_gdn, k_gdn, v_gdn, beta_gdn, alpha_gdn, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.gdn_scan.gdn_scan",
+            ref_module="neuralops.ops.triton.gdn_scan.gdn_scan_pytorch",
+            differentiable=True,
+            backward_args_idx=[0, 1, 2],
         ))
 
     if should_run("hgrn2_scan"):
@@ -328,6 +503,10 @@ def run_all_26_comprehensive(
             lambda f, iv: hgrn2_scan(f, iv, res_clip=1.0),
             lambda f, iv: hgrn2_scan_pytorch(f, iv, res_clip=1.0),
             f_hgrn, iv_hgrn, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.hgrn2_scan.hgrn2_scan",
+            ref_module="neuralops.ops.triton.hgrn2_scan.hgrn2_scan_pytorch",
+            differentiable=True,
+            backward_args_idx=[0, 1],
         ))
 
     if should_run("softplus"):
@@ -338,6 +517,10 @@ def run_all_26_comprehensive(
             "softplus", "elementwise", f"{num_elem}",
             softplus_fwd, softplus_pytorch,
             x_sp, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.softplus.softplus_fwd",
+            ref_module="neuralops.ops.triton.softplus.softplus_pytorch",
+            differentiable=True,
+            backward_args_idx=[0],
         ))
 
     if should_run("fused_norm_linear"):
@@ -353,6 +536,10 @@ def run_all_26_comprehensive(
             "fused_norm_linear", "norm_linear", f"B={B},N={N},dim={dim_fnl}",
             fused_rmsnorm_gate_triton, fused_rmsnorm_gate,
             x_fnl, g_fnl, w_fnl, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.fused_norm_linear.fused_rmsnorm_gate_triton",
+            ref_module="neuralops.ops.triton.fused_norm_linear.fused_rmsnorm_gate",
+            differentiable=True,
+            backward_args_idx=[0, 1],
         ))
 
     if should_run("cosformer"):
@@ -368,6 +555,8 @@ def run_all_26_comprehensive(
             lambda q, k, v: triton_cosformer_linear_attention(q, k, v, is_causal=False),
             lambda q, k, v: triton_cosformer_linear_attention_pytorch_ref(q, k, v, is_causal=False),
             q_cos, k_cos, v_cos, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.cosformer_triton_kernel.triton_cosformer_linear_attention",
+            ref_module="neuralops.ops.triton.cosformer_triton_kernel.triton_cosformer_linear_attention_pytorch_ref",
         ))
 
     if should_run("fused_ce"):
@@ -383,6 +572,10 @@ def run_all_26_comprehensive(
             "fused_ce", "loss", f"B*N={B*N_ce},V={vocab}",
             fused_cross_entropy, fused_cross_entropy_pytorch,
             logits_ce, targets_ce, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.fused_ce.fused_cross_entropy",
+            ref_module="neuralops.ops.triton.fused_ce.fused_cross_entropy_pytorch",
+            differentiable=True,
+            backward_args_idx=[0],
         ))
 
     if should_run("fused_kd"):
@@ -398,6 +591,10 @@ def run_all_26_comprehensive(
             "fused_kd", "loss", f"B*N={B*N_kd},V={vocab_kd}",
             fused_kd_loss, fused_kd_loss_pytorch,
             s_logits, t_logits, 2.0, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.fused_kd.fused_kd_loss",
+            ref_module="neuralops.ops.triton.fused_kd.fused_kd_loss_pytorch",
+            differentiable=True,
+            backward_args_idx=[0],
         ))
 
     if should_run("selective_scan"):
@@ -414,6 +611,8 @@ def run_all_26_comprehensive(
             "selective_scan", "state_space", f"B={B},D=64,N={N}",
             selective_scan_fn, selective_scan_ref,
             u_ssm, delta_ssm, A_ssm, B_ssm, C_ssm, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.selective_scan.selective_scan_fn",
+            ref_module="neuralops.ops.triton.selective_scan.selective_scan_ref",
         ))
 
     if should_run("fms_scan"):
@@ -426,6 +625,10 @@ def run_all_26_comprehensive(
             "fms_scan", "state_space", f"B={B},H={H},N={N},D={D}",
             fms_scan, fms_scan_pytorch,
             q_fms, k_fms, v_fms, decay_fms, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.fms_scan.fms_scan",
+            ref_module="neuralops.ops.triton.fms_scan.fms_scan_pytorch",
+            differentiable=True,
+            backward_args_idx=[0, 1, 2],
         ))
 
     if should_run("paged_attention"):
@@ -444,6 +647,8 @@ def run_all_26_comprehensive(
             paged_attention_kernel, paged_attention_pytorch,
             q_pa, k_cache, v_cache, block_tables, context_lens, block_size=block_size,
             warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.paged_attention.paged_attention_kernel",
+            ref_module="neuralops.ops.triton.paged_attention.paged_attention_pytorch",
         ))
 
     if should_run("fused_mqa_bias_scale"):
@@ -456,6 +661,8 @@ def run_all_26_comprehensive(
             "fused_mqa_bias_scale", "attention_head", f"B={B},H={H},256x256",
             fused_mqa_bias_scale_triton, fused_mqa_bias_scale_pytorch,
             scores_gqa, 0.25, is_causal=True, past_len=4, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.gqa.fused_mqa_bias_scale_triton",
+            ref_module="neuralops.ops.triton.gqa.fused_mqa_bias_scale_pytorch",
         ))
 
     if should_run("fused_hamming_scores"):
@@ -472,6 +679,8 @@ def run_all_26_comprehensive(
             "fused_hamming_scores", "sparse_attn", f"B={B},H={H},256x{D}",
             fused_hamming_scores_triton, fused_hamming_scores_pytorch,
             Q_ham, K_ham, lora_q, lora_k, temp, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.sparse_attn.fused_hamming_scores_triton",
+            ref_module="neuralops.ops.triton.sparse_attn.fused_hamming_scores_pytorch",
         ))
 
     if should_run("fused_favor_plus"):
@@ -486,6 +695,8 @@ def run_all_26_comprehensive(
             fused_favor_plus_feature_map_triton, fused_favor_plus_feature_map_pytorch,
             x_fav, omega_fav, num_features=128, kernel_type="favor_plus",
             warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.elementwise.fused_favor_plus_feature_map_triton",
+            ref_module="neuralops.ops.triton.elementwise.fused_favor_plus_feature_map_pytorch",
         ))
 
     if should_run("fused_rope"):
@@ -496,30 +707,32 @@ def run_all_26_comprehensive(
         sin_r = torch.sin(torch.randn(N, D // 2, device=device, dtype=dtype))
 
         def tri_rope_bench(q, k, cos, sin):
-            try:
-                out_q = torch.empty_like(q)
-                out_k = torch.empty_like(k)
-                BLOCK_M = 32
-                grid = (triton.cdiv(N, BLOCK_M), B * H)
-                fused_rope_fwd_kernel[grid](
-                    q, k, cos, sin, out_q, out_k,
-                    q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                    k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                    0, cos.stride(0), cos.stride(1),
-                    0, sin.stride(0), sin.stride(1),
-                    out_q.stride(0), out_q.stride(1), out_q.stride(2), out_q.stride(3),
-                    out_k.stride(0), out_k.stride(1), out_k.stride(2), out_k.stride(3),
-                    H, N, D=D, HALF_D=D // 2,
-                    BLOCK_M=BLOCK_M,
-                )
-                return out_q
-            except Exception:
-                return apply_rope_rotation(q, cos, sin)
+            out_q = torch.empty_like(q)
+            out_k = torch.empty_like(k)
+            BLOCK_M = 32
+            grid = (triton.cdiv(N, BLOCK_M), B * H)
+            fused_rope_fwd_kernel[grid](
+                q, k, cos, sin, out_q, out_k,
+                q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+                k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+                0, cos.stride(0), cos.stride(1),
+                0, sin.stride(0), sin.stride(1),
+                out_q.stride(0), out_q.stride(1), out_q.stride(2), out_q.stride(3),
+                out_k.stride(0), out_k.stride(1), out_k.stride(2), out_k.stride(3),
+                H, N, D=D, HALF_D=D // 2,
+                BLOCK_M=BLOCK_M,
+            )
+            return out_q, out_k
+
+        def pt_rope_bench(q, k, cos, sin):
+            return apply_rope_rotation(q, cos, sin), apply_rope_rotation(k, cos, sin)
 
         results.append(benchmark_single_kernel(
             "fused_rope", "positional_embedding", f"B={B},H={H},N={N},D={D}",
-            tri_rope_bench, lambda q, k, c, s: apply_rope_rotation(q, c, s),
+            tri_rope_bench, pt_rope_bench,
             q_r, k_r, cos_r, sin_r, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.fused_rope",
+            ref_module="neuralops.ops.triton.fused_rope._apply_rope_rotation",
         ))
 
     if should_run("fused_moba_block_router"):
@@ -535,6 +748,8 @@ def run_all_26_comprehensive(
             lambda q, k, v: fused_moba_block_router_combine_triton(q, k, v, 0.25, 2, True),
             lambda q, k, v: fused_moba_block_router_combine_pytorch(q, k, v, 0.25, 2, True),
             Qb_moba, Kb_moba, Vb_moba, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.block_sparse.fused_moba_block_router_combine_triton",
+            ref_module="neuralops.ops.triton.block_sparse.fused_moba_block_router_combine_pytorch",
         ))
 
     if should_run("fused_rala_augmented_scan"):
@@ -552,28 +767,28 @@ def run_all_26_comprehensive(
             lambda q, k, v, u, w: fused_rala_augmented_scan_triton(q, k, v, u, w, is_causal=True),
             lambda q, k, v, u, w: fused_rala_augmented_scan_pytorch(q, k, v, u, w, is_causal=True),
             q_rala, k_rala, v_rala, lora_U, lora_V, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.linear_attn.fused_rala_augmented_scan_triton",
+            ref_module="neuralops.ops.triton.linear_attn.fused_rala_augmented_scan_pytorch",
+            differentiable=True,
+            backward_args_idx=[0, 1, 2],
         ))
 
     if should_run("fused_recurrent_linear_step"):
         from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
+        from neuralops.ops.cuda.state_update.state_autograd import recurrent_linear_step_pytorch_ref
         q_rec = F.elu(torch.randn(2, 4, 64, device=device, dtype=dtype)) + 1.0
         k_rec = F.elu(torch.randn(2, 4, 64, device=device, dtype=dtype)) + 1.0
         v_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
         kv_state_rec = torch.randn(2, 4, 64, 64, device=device, dtype=dtype)
         z_state_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
 
-        def py_rec_step(q_t, k_t, v_t, kv_s, z_s, eps=1e-6):
-            kv = kv_s + torch.einsum("bhk,bhv->bhkv", k_t.float(), v_t.float()).to(kv_s.dtype)
-            z = z_s + k_t
-            num = torch.einsum("bhk,bhkv->bhv", q_t.float(), kv.float())
-            den = torch.einsum("bhk,bhk->bh", q_t.float(), z.float()).unsqueeze(-1) + eps
-            return (num / den).to(q_t.dtype), kv, z
-
         results.append(benchmark_single_kernel(
             "fused_recurrent_linear_step", "recurrent_cell", "B=2, H=4, D=64",
             lambda q, k, v, kv, z: fused_recurrent_linear_step(q, k, v, kv.clone(), z.clone()),
-            lambda q, k, v, kv, z: py_rec_step(q, k, v, kv.clone(), z.clone()),
+            lambda q, k, v, kv, z: recurrent_linear_step_pytorch_ref(q, k, v, kv.clone(), z.clone()),
             q_rec, k_rec, v_rec, kv_state_rec, z_state_rec, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.state_update.fused_recurrent_linear_step",
+            ref_module="neuralops.ops.cuda.state_update.state_autograd.recurrent_linear_step_pytorch_ref",
         ))
 
     if should_run("fused_jamba_hybrid_gate"):
@@ -588,6 +803,8 @@ def run_all_26_comprehensive(
             "fused_jamba_hybrid_gate", "hybrid_gating", f"B={B},N={N},1024,H={H}",
             fused_jamba_hybrid_ssm_attn_gate_triton, fused_jamba_hybrid_ssm_attn_gate_pytorch,
             attn_out_j, ssm_out_j, alpha_j, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.selective_scan.fused_jamba_hybrid_ssm_attn_gate_triton",
+            ref_module="neuralops.ops.triton.selective_scan.fused_jamba_hybrid_ssm_attn_gate_pytorch",
         ))
 
     if should_run("fused_goldfinch_hopfield"):
@@ -601,6 +818,8 @@ def run_all_26_comprehensive(
             "fused_goldfinch_hopfield", "hopfield", f"B={B},N={N},128,chunk=16",
             fused_goldfinch_hopfield_lookup_triton, fused_goldfinch_hopfield_lookup_pytorch,
             g_gf, v_gf, chunk_size=16, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.fms_scan.fused_goldfinch_hopfield_lookup_triton",
+            ref_module="neuralops.ops.triton.fms_scan.fused_goldfinch_hopfield_lookup_pytorch",
         ))
 
     if should_run("flash_decode"):
@@ -615,6 +834,8 @@ def run_all_26_comprehensive(
             "flash_decode", "inference_attention", f"B={B},H={H},N_kv=1024,D={D}",
             flash_decode_kernel, flash_decoding_pytorch,
             q_fd, k_fd, v_fd, chunk_size=64, warmup=warmup, reps=repeat, device=device,
+            impl_module="neuralops.ops.triton.flash_decoding.flash_decode_kernel",
+            ref_module="neuralops.ops.triton.flash_decoding.flash_decoding_pytorch",
         ))
 
     if output_json:
@@ -627,12 +848,15 @@ def run_all_26_comprehensive(
     if output_csv:
         csv_p = Path(output_csv)
         csv_p.parent.mkdir(parents=True, exist_ok=True)
+        csv_fieldnames = [
+            "kernel", "category", "shape", "implementation_module", "reference_module",
+            "device", "gpu_name", "pytorch_ms", "triton_ms", "launch_overhead_ms",
+            "speedup", "cosine_sim", "max_diff", "max_diff_forward", "tolerance_forward",
+            "max_diff_backward", "tolerance_backward", "output_finite", "gradients_finite",
+            "backend_identity", "fallback_used", "status", "error"
+        ]
         with open(csv_p, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=[
-                "kernel", "category", "shape", "pytorch_ms", "triton_ms",
-                "launch_overhead_ms", "speedup", "cosine_sim", "max_diff",
-                "has_nan", "has_inf", "reference_finite", "status"
-            ])
+            writer = csv.DictWriter(f, fieldnames=csv_fieldnames, extrasaction="ignore")
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
@@ -702,7 +926,7 @@ def main(argv=None):
         output_json = args.output
         output_csv = args.output[:-5] + ".csv"
 
-    run_all_26_comprehensive(
+    results = run_all_26_comprehensive(
         device_str=args.device,
         dtype_str=dtype_str,
         warmup=warmup,
@@ -712,6 +936,30 @@ def main(argv=None):
         report_md=args.report_md,
         selected_kernels=selected,
     )
+
+    # Fail-closed process exit check: verify target coverage and absence of errors
+    expected_set = selected if selected is not None else set(CANONICAL_26_TRITON_KERNELS)
+    actual_set = {r["kernel"] for r in results}
+
+    coverage_ok = (actual_set == expected_set)
+    failed_rows = [
+        r for r in results
+        if r.get("status") in ("FAIL_NAN", "FAIL_NUMERICS", "FAIL_SLOW", "FAIL_LATENCY", "NO_BASELINE")
+        or str(r.get("status", "")).startswith("ERROR")
+    ]
+
+    if not coverage_ok:
+        missing = expected_set - actual_set
+        print(f"\n[FAIL] Target coverage check failed! Missing kernels: {missing}", file=sys.stderr)
+        return 1
+
+    if failed_rows:
+        print(f"\n[FAIL] {len(failed_rows)} kernel benchmark(s) failed strict audit gates:", file=sys.stderr)
+        for fr in failed_rows:
+            print(f"  * {fr['kernel']}: status={fr.get('status')} | error={fr.get('error')}", file=sys.stderr)
+        return 1
+
+    print("\n[PASS] All canonical Triton kernels passed strict benchmark and parity gates!")
     return 0
 
 
