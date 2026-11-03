@@ -152,7 +152,7 @@ def main() -> int:
     for name, weight in lambdas.items():
         kv(f"Weight {name}", f"{weight:.2f}")
 
-    optimizer = torch.optim.AdamW(student.parameters(), lr=5e-3, weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(student.parameters(), lr=1e-3, weight_decay=1e-4)
     # WSD Scheduler: 2 warmup, 8 stable, 10 decay steps over 20 iterations.
     scheduler = WSDScheduler(
         optimizer,
@@ -205,6 +205,7 @@ def main() -> int:
         )
 
         total_loss.backward()
+        torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
         optimizer.step()
         scheduler.step()
 
@@ -228,7 +229,7 @@ def main() -> int:
     # Invariant checks
     loss_decreased = bool(total_losses[-1] < total_losses[0])
     pass_fail(
-        "Total Loss Convergence Check (L_step5 < L_step1)",
+        "Total Loss Convergence Check (L_step20 < L_step1)",
         loss_decreased,
         f"{total_losses[0]:.4f} -> {total_losses[-1]:.4f}",
     )
