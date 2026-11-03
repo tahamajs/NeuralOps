@@ -32,6 +32,24 @@ In October 2026, legacy benchmark scripts were consolidated into `neuralops.benc
 
 ## 3. Canonical Package Entry Points
 
+### Standard layout
+
+Use `run_standard.sh` as the stable script entry point. It separates correctness
+validation from performance runs and routes benchmark execution through the
+canonical package CLI:
+
+```bash
+bash scripts/benchmarks/run_standard.sh validate
+bash scripts/benchmarks/run_standard.sh attention --limit 10 --output results/attention.json
+bash scripts/benchmarks/run_standard.sh compressor --limit 10 --output results/compressors.json
+bash scripts/benchmarks/run_standard.sh cuda --verify-only
+bash scripts/benchmarks/run_standard.sh triton --verify-only
+```
+
+The machine-readable ownership map is [benchmark_manifest.json](benchmark_manifest.json).
+Scripts listed as legacy redirectors remain available for reproducibility, but
+new experiments should use the standard runner or `neuralops.benchmarks.cli`.
+
 For scripting and automation, prefer the canonical package CLI:
 
 ```bash
