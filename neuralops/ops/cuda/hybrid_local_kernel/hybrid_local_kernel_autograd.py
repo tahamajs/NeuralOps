@@ -107,7 +107,7 @@ def hybrid_local_attn(
             suitable, _ = check_triton_suitability(q, "hybrid_local_attn")
             if not suitable:
                 return None
-            from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_local_attn_triton
+            from neuralops.ops.triton.standalone.hybrid_local_kernel_triton import hybrid_local_attn_triton
             return hybrid_local_attn_triton(q, k, v, radius=radius, is_causal=is_causal)
         except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
             logger.warning("Failed in Triton hybrid_local_attn: %s", exc)
@@ -151,7 +151,7 @@ def hybrid_two_branch_blend(
             suitable, _ = check_triton_suitability(b0, "hybrid_two_branch_blend")
             if not suitable:
                 return None
-            from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_two_branch_blend_triton
+            from neuralops.ops.triton.standalone.hybrid_local_kernel_triton import hybrid_two_branch_blend_triton
             return hybrid_two_branch_blend_triton(b0, b1, alpha)
         except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
             logger.warning("Failed in Triton hybrid_two_branch_blend: %s", exc)
@@ -201,7 +201,7 @@ def hybrid_three_branch_blend(
 
     def triton_fn(b0, b1, b2, alpha):
         try:
-            from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_three_branch_blend_triton
+            from neuralops.ops.triton.standalone.hybrid_local_kernel_triton import hybrid_three_branch_blend_triton
             return hybrid_three_branch_blend_triton(b0, b1, b2, alpha)
         except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
             logger.warning("Failed in Triton hybrid_three_branch_blend: %s", exc, exc_info=True)
@@ -268,7 +268,7 @@ def hybrid_heterogeneous_branch(
 
     def triton_fn(q, k, v, num_dense_heads=1, radius=32, is_causal=True):
         try:
-            from neuralops.kernels.triton.hybrid_local_kernel_triton import hybrid_heterogeneous_branch_triton
+            from neuralops.ops.triton.standalone.hybrid_local_kernel_triton import hybrid_heterogeneous_branch_triton
             return hybrid_heterogeneous_branch_triton(
                 q, k, v, num_dense_heads=int(num_dense_heads), radius=int(radius), is_causal=bool(is_causal)
             )
