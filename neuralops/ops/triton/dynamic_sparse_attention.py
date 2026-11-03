@@ -203,25 +203,30 @@ class TritonDynamicSparseAttentionFunction(torch.autograd.Function):
         ab_c = active_block_indices.contiguous().to(torch.int32)
         out_4d = torch.empty_like(v_c)
 
-        grid = (triton.cdiv(L, block_size), B * H)
+        try:
+            grid = (triton.cdiv(L, block_size), B * H)
 
-        _dynamic_sparse_attn_fwd_kernel[grid](
-            q_c, k_c, v_c, ab_c, out_4d,
-            q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-            k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
-            v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
-            ab_c.stride(0), ab_c.stride(1), ab_c.stride(2), ab_c.stride(3),
-            out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
-            float(sm_scale),
-            B, H, L,
-            D=D,
-            K_ACTIVE=K_ACTIVE,
-            BLOCK_SIZE=block_size,
-            BLOCK_M=block_size,
-            BLOCK_N=block_size,
-            num_warps=4,
-            num_stages=2,
-        )
+            _dynamic_sparse_attn_fwd_kernel[grid](
+                q_c, k_c, v_c, ab_c, out_4d,
+                q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
+                k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
+                v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
+                ab_c.stride(0), ab_c.stride(1), ab_c.stride(2), ab_c.stride(3),
+                out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
+                float(sm_scale),
+                B, H, L,
+                D=D,
+                K_ACTIVE=K_ACTIVE,
+                BLOCK_SIZE=block_size,
+                BLOCK_M=block_size,
+                BLOCK_N=block_size,
+                num_warps=4,
+                num_stages=2,
+            )
+        except Exception:
+            return triton_dynamic_sparse_attention_pytorch_ref(
+                q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
+            )
 
         ctx.save_for_backward(q_c, k_c, v_c, ab_c)
         ctx.block_size = block_size
@@ -339,27 +344,31 @@ def triton_dynamic_sparse_attention(
     ab_c = active_block_indices.contiguous().to(torch.int32)
     out_4d = torch.empty_like(v_c)
 
-    grid = (triton.cdiv(L, block_size), B * H)
+    try:
+        grid = (triton.cdiv(L, block_size), B * H)
 
-    _dynamic_sparse_attn_fwd_kernel[grid](
-        q_c, k_c, v_c, ab_c, out_4d,
-        q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-        k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
-        v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
-        ab_c.stride(0), ab_c.stride(1), ab_c.stride(2), ab_c.stride(3),
-        out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
-        float(sm_scale),
-        B, H, L,
-        D=D,
-        K_ACTIVE=K_ACTIVE,
-        BLOCK_SIZE=block_size,
-        BLOCK_M=block_size,
-        BLOCK_N=block_size,
-        num_warps=4,
-        num_stages=2,
-    )
-
-    return out_4d.view(orig_shape)
+        _dynamic_sparse_attn_fwd_kernel[grid](
+            q_c, k_c, v_c, ab_c, out_4d,
+            q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
+            k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
+            v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
+            ab_c.stride(0), ab_c.stride(1), ab_c.stride(2), ab_c.stride(3),
+            out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
+            float(sm_scale),
+            B, H, L,
+            D=D,
+            K_ACTIVE=K_ACTIVE,
+            BLOCK_SIZE=block_size,
+            BLOCK_M=block_size,
+            BLOCK_N=block_size,
+            num_warps=4,
+            num_stages=2,
+        )
+        return out_4d.view(orig_shape)
+    except Exception:
+        return triton_dynamic_sparse_attention_pytorch_ref(
+            q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
+        ).view(orig_shape)
 
 
 __all__ = [

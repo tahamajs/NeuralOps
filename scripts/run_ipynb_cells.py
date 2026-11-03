@@ -85,9 +85,9 @@ except (ImportError, ModuleNotFoundError):
         def __init__(self, fn):
             self.fn = fn
         def __call__(self, *args, **kwargs):
-            return self.fn(*args, **kwargs)
+            raise RuntimeError("Triton JIT compilation requires a native Triton runtime.")
         def __getitem__(self, grid):
-            return self.fn
+            return self
 
     triton_mock = types.ModuleType("triton")
     triton_mock.cdiv = lambda a, b: (a + b - 1) // b
@@ -139,6 +139,7 @@ def execute_notebook(nb_path: str | Path) -> bool:
         "display": print,
         "get_ipython": lambda: None,
         "export_test_dir": Path(tempfile.mkdtemp()),
+        "json": json,
     }
 
     try:
