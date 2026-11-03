@@ -95,9 +95,10 @@ def test_phase_062_decoupled_rope_key_separation() -> None:
     assert k_rope.shape[-1] == 64, f"RoPE key dimension must be strictly 64, got {k_rope.shape[-1]}"
 
     # Test rotary embedding application
-    angles = torch.linspace(0, math.pi, 64)
-    cos = torch.cos(angles).unsqueeze(0).unsqueeze(0).repeat(batch_size, seq_len, 1)
-    sin = torch.sin(angles).unsqueeze(0).unsqueeze(0).repeat(batch_size, seq_len, 1)
+    angles = torch.linspace(0, math.pi, 32)
+    angles_full = torch.cat([angles, angles], dim=-1)
+    cos = torch.cos(angles_full).unsqueeze(0).unsqueeze(0).repeat(batch_size, seq_len, 1)
+    sin = torch.sin(angles_full).unsqueeze(0).unsqueeze(0).repeat(batch_size, seq_len, 1)
     k_rotated = DeepSeekMLASurgeryBridge.apply_rotary_embedding(k_rope, cos=cos, sin=sin)
     assert k_rotated.shape == (batch_size, seq_len, 64)
     # Norm preservation under orthogonal rotation
@@ -638,8 +639,10 @@ def test_phase_078_endoskeletal_shell_bridge_dispatch_hook() -> None:
     b5 = UniversalAttentionBridge(orig, spec, lin, inherit_weights=False, moa_router=router, layer_idx=5)
 
     x = torch.ones(2, 4, d_model)
-    assert torch.allclose(b0(x), x * 100.0)
-    assert torch.allclose(b5(x), x * 2.0)
+    res_b0 = b0(x)
+    res_b5 = b5(x)
+    assert torch.allclose(res_b0[0] if isinstance(res_b0, tuple) else res_b0, x * 100.0)
+    assert torch.allclose(res_b5[0] if isinstance(res_b5, tuple) else res_b5, x * 2.0)
 
     # Construct entire 32-layer heterogeneous model pipeline
     layers = []

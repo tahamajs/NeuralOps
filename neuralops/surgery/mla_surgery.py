@@ -554,7 +554,8 @@ class DeepSeekMLASurgeryBridge(nn.Module):
             out_inter_c = torch.matmul(qc_decayed, s_c.transpose(-2, -1))  # [B, L, d_c]
 
             # 2. Content Stream: Intra-chunk attention
-            a_c = torch.matmul(qc_chunk, qc_chunk.transpose(-2, -1))  # [B, L, L]
+            # (Q_i K_i^T) * Gamma_causal * K_i
+            a_c = torch.matmul(qc_chunk, kc_chunk.transpose(-2, -1))  # [B, L, L]
             idx = torch.arange(length, device=c_kv.device)
             diff = idx.unsqueeze(1) - idx.unsqueeze(0)  # j - k
             gamma_powers = self.decay ** diff.float()
@@ -577,7 +578,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
             out_inter_r = torch.matmul(qr_chunk, z_r.transpose(-2, -1))  # [B, L, d_r]
 
             # 4. Decoupled RoPE Stream: Intra-chunk attention
-            a_r = torch.matmul(qr_chunk, qr_chunk.transpose(-2, -1))  # [B, L, L]
+            a_r = torch.matmul(qr_chunk, kr_chunk.transpose(-2, -1))  # [B, L, L]
             tril_mask = torch.tril(torch.ones(length, length, device=c_kv.device, dtype=torch.float32)).unsqueeze(0)
             m_r = a_r * tril_mask  # [B, L, L]
             out_intra_r = torch.matmul(m_r, kr_chunk)  # [B, L, d_r]
