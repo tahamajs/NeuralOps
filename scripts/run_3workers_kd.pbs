@@ -7,20 +7,22 @@
 
 set -euo pipefail
 export PYTHONIOENCODING=utf-8
-export PYTHONPATH="/home/tahamajlesi.ut/venv_cu113/lib/python3.10/site-packages:/home/tahamajlesi.ut/NeuralOps:${PYTHONPATH:-}"
-export LD_LIBRARY_PATH="/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:/share/apps/gcc/gcc-8.2.0/lib64:/home/tahamajlesi.ut/venv_cu113/lib:${LD_LIBRARY_PATH:-}"
+export PATH="/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:${PATH:-}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="/home/tahamajlesi.ut/NeuralOps:${PYTHONPATH:-}"
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 
 cd /home/tahamajlesi.ut/NeuralOps
 mkdir -p results/screen_logs results/csv
 
-PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops/bin/python
+PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python
 
 echo "======================================================================"
 echo "  STARTING 3 CONCURRENT WORKERS (6-PILLAR KD BENCHMARK) ON GPU"
 echo "  Timestamp: $(date -u)"
 echo "  Node     : $(hostname)"
+echo "  Python   : $($PYTHON_EXEC -c 'import sys, torch; print(sys.executable, torch.__version__, torch.cuda.is_available())')"
 echo "======================================================================"
 
 # Launch Worker 0 in background

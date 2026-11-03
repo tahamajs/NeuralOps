@@ -27,6 +27,48 @@ import traceback
 from typing import Any
 
 
+def _setup_runtime_environment() -> None:
+    """Setup environment variables and compatibility shims for remote execution."""
+    # Ensure modern GCC and Binutils are prioritized
+    home_bin = os.path.expanduser("~/bin")
+    gcc_bin = "/share/apps/gcc/gcc-8.2.0/bin"
+    gcc_lib = "/share/apps/gcc/gcc-8.2.0/lib64"
+    cuda_lib = "/usr/local/cuda-11.3/lib64"
+    conda_lib = os.path.expanduser("~/.conda/envs/neuralops_cu113/lib")
+
+    cur_path = os.environ.get("PATH", "")
+    os.environ["PATH"] = f"{home_bin}:{gcc_bin}:{cur_path}"
+
+    cur_ld = os.environ.get("LD_LIBRARY_PATH", "")
+    os.environ["LD_LIBRARY_PATH"] = f"{gcc_lib}:{cuda_lib}:{conda_lib}:{cur_ld}"
+    os.environ["LDFLAGS"] = f"-B{home_bin}"
+    os.environ["COMPILER_PATH"] = home_bin
+
+    # Forward legacy serving paths to inference
+    try:
+        import neuralops.inference.paged_cache as _paged_cache
+        import neuralops.inference.speculative_decoding as _spec_dec
+
+        sys.modules["neuralops.serving.cache"] = _paged_cache
+        sys.modules["neuralops.serving.speculative"] = _spec_dec
+    except Exception:
+        pass
+
+    # Forward legacy core.cuda_kernels autograd paths to canonical ops.cuda
+    cuda_shims = [
+        ("gdn_scan", "gdn_autograd"),
+        ("gla_scan", "gla_autograd"),
+        ("linear_attention", "linear_attn_autograd"),
+        ("selective_scan", "selective_scan_autograd"),
+    ]
+    for pkg, mod_name in cuda_shims:
+        try:
+            m = __import__(f"neuralops.ops.cuda.{pkg}.{mod_name}", fromlist=[mod_name])
+            sys.modules[f"neuralops.core.cuda_kernels.{pkg}.{mod_name}"] = m
+        except Exception:
+            pass
+
+
 def _preprocess_code(source_lines: list[str]) -> str:
     """Preprocess notebook cell source lines, stripping IPython magics safely."""
     cleaned_lines = []
@@ -243,6 +285,8 @@ def main() -> int:
 
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     nb_dir = os.path.abspath(args.dir)
+
+    _setup_runtime_environment()
 
     nb_files = sorted(glob.glob(os.path.join(nb_dir, args.pattern)))
     if not nb_files:

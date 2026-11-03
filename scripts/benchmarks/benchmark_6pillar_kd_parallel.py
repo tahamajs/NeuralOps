@@ -307,18 +307,25 @@ def main() -> int:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         f.flush()
+        import os
 
         for idx, (m_name, m_type) in enumerate(worker_modules, 1):
+            sys.stdout.flush()
+            sys.stderr.flush()
             logger.info(f"[Worker {args.worker_id}] [{idx}/{len(worker_modules)}] Starting 6-Pillar KD + PPL: {m_name} ({m_type})...")
+            sys.stdout.flush()
             res = train_module_kd(m_name, m_type, teacher, kd_suite, dev, max_duration_sec=args.max_duration)
             writer.writerow(res)
             f.flush()
+            os.fsync(f.fileno())
             logger.info(
                 f"[Worker {args.worker_id}]   -> Status: {res['status']} | Steps: {res['steps_completed']} | "
                 f"PPL: {res['initial_ppl']} -> {res['final_ppl']} (Drop: {res['ppl_drop_pct']}%) | "
                 f"CE Loss: {res['initial_ce_loss']} -> {res['final_ce_loss']} | "
                 f"Throughput: {res['throughput_tokens_per_sec']} tok/s"
             )
+            sys.stdout.flush()
+            sys.stderr.flush()
 
     logger.info(f"[Worker {args.worker_id}] Finished all assigned modules.")
     return 0
