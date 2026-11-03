@@ -578,6 +578,8 @@ class UniversalModelAdapter:
 
         raise TypeError(f"Unsupported model input type: {type(model_or_path)}")
 
+    create = from_pretrained
+
 
 __all__ = [
     "BaseModelAdapter",

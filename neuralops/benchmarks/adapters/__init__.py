@@ -11,7 +11,11 @@ NeuralOps Benchmarks Adapters Subpackage.
 
 from neuralops.benchmarks.adapters.classification import ClassificationAdapter
 from neuralops.benchmarks.adapters.compressor import CompressorModuleAdapter
-from neuralops.benchmarks.adapters.cuda_adapter import CUDAKernelAdapter
+from neuralops.benchmarks.adapters.cuda_adapter import (
+    CANONICAL_CUDA_MODULES,
+    CUDAKernelAdapter,
+    CUDA_KERNEL_ALIASES,
+)
 from neuralops.benchmarks.adapters.model import (
     BaseModelAdapter,
     HuggingFaceModelAdapter,
@@ -41,6 +45,8 @@ __all__ = [
     "CANONICAL_TRITON_MODULES",
     "EXTENSION_TRITON_MODULES",
     "CUDAKernelAdapter",
+    "CANONICAL_CUDA_MODULES",
+    "CUDA_KERNEL_ALIASES",
 ]
 
 from neuralops.benchmarks.adapters import classification

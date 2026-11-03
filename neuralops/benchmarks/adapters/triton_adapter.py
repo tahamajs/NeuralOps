@@ -16,8 +16,11 @@ and strictly bans deprecated tl.make_block_ptr usage per AGENTS.md Section 7.
 
 from __future__ import annotations
 
+import ast
 import importlib
 import logging
+import os
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -84,8 +87,8 @@ class TritonKernelAdapter:
     """Adapter bridging canonical and extension Triton kernels to benchmark runners.
     
     Provides standardized forward invocations, shape inference, device management,
-    and automatic CPU reference fallback routing with explicit logger warnings when
-    running on hardware without native Triton runtime support.
+    2D SRAM tile contract verification, and automatic CPU reference fallback routing
+    with explicit logger warnings when running on hardware without native Triton support.
     """
 
     def __init__(
@@ -129,6 +132,11 @@ class TritonKernelAdapter:
                 f"triton_{self.kernel_name}",
                 f"{self.kernel_name}_triton",
                 f"{self.kernel_name}_fwd",
+                f"{self.kernel_name}_forward",
+                f"{self.kernel_name}_attention",
+                f"{self.kernel_name}_kernel",
+                f"{self.kernel_name}_fn",
+                f"fused_{self.kernel_name}",
                 "fwd",
                 "forward",
                 self.kernel_name,
@@ -144,8 +152,10 @@ class TritonKernelAdapter:
             ref_candidates = [
                 f"triton_{self.kernel_name}_pytorch_ref",
                 f"{self.kernel_name}_pytorch_ref",
+                f"{self.kernel_name}_pytorch",
                 f"{self.kernel_name}_ref",
                 f"{self.kernel_name}_pytorch_fallback",
+                f"{self.kernel_name}_fallback",
                 "ref_forward",
                 "pytorch_ref",
             ]
@@ -160,6 +170,56 @@ class TritonKernelAdapter:
     def is_available(self) -> bool:
         """Return True if kernel callable is loaded and device is CUDA."""
         return self._kernel_fn is not None and self.device.type == "cuda" and torch.cuda.is_available()
+
+    @staticmethod
+    def verify_tiling_contract(module_name: Optional[str] = None) -> bool:
+        """Enforce architectural standard: verify zero occurrences of deprecated
+        `tl.make_block_ptr` or `tl.advance` in mainline Triton kernel source files,
+        mandating explicit 2D SRAM tile pointer offsets per AGENTS.md Section 7.
+
+        Args:
+            module_name: Specific Triton module name to verify, or None to scan all
+                26 canonical modules.
+
+        Returns:
+            True if all scanned modules adhere strictly to the 2D tiling contract.
+
+        Raises:
+            ValueError: If any disallowed block-pointer construct is detected.
+        """
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        targets: List[str] = [module_name] if module_name else CANONICAL_TRITON_MODULES
+        violations: List[str] = []
+
+        for name in targets:
+            # Check both core and ops directories
+            candidates = [
+                repo_root / "neuralops" / "core" / "triton_kernels" / f"{name}.py",
+                repo_root / "neuralops" / "ops" / "triton" / f"{name}.py",
+            ]
+            for path in candidates:
+                if not path.is_file():
+                    continue
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        source = f.read()
+                        tree = ast.parse(source, filename=str(path))
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.Attribute) and node.attr in ("make_block_ptr", "advance"):
+                            violations.append(f"{path.name}:{getattr(node, 'lineno', '?')} ({node.attr})")
+                        elif isinstance(node, ast.Name) and node.id in ("make_block_ptr", "advance"):
+                            violations.append(f"{path.name}:{getattr(node, 'lineno', '?')} ({node.id})")
+                except Exception as exc:
+                    logger.debug("Failed to parse AST for %s: %s", path, exc)
+
+        if violations:
+            msg = (
+                f"Triton 2D SRAM Tiling Contract Violation: tl.make_block_ptr / tl.advance "
+                f"detected in mainline Triton kernels per AGENTS.md §7: {', '.join(violations)}"
+            )
+            logger.error(msg)
+            raise ValueError(msg)
+        return True
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Execute kernel with zero-overhead dispatch and fail-closed warnings on fallback."""
