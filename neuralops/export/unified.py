@@ -102,8 +102,11 @@ def export(
         exported_path = export_to_gguf(
             model=model,
             output_path=out,
+            architecture=kwargs.get("architecture", "llama"),
             model_name=kwargs.get("model_name", "model"),
             quantization=kwargs.get("quantization", "f16"),
+            fuse_low_rank=kwargs.get("fuse_low_rank", False),
+            metadata=kwargs.get("metadata", None),
         )
         return str(exported_path)
 

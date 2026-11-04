@@ -13,6 +13,7 @@ Specification Section 6.13: export.model@1.0.0
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Dict, Tuple
 
 import torch.nn as nn

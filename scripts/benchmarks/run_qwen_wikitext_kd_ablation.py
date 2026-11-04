@@ -154,8 +154,6 @@ class CausalAttentionSurgeonAdapter(nn.Module):
     def __init__(self, core_attn: nn.Module, hidden_size: int) -> None:
         super().__init__()
         self.core_attn = core_attn
-        self.in_proj = nn.Linear(hidden_size, hidden_size, bias=False)
-        self.out_proj = nn.Linear(hidden_size, hidden_size, bias=False)
 
     def forward(
         self,
@@ -164,11 +162,9 @@ class CausalAttentionSurgeonAdapter(nn.Module):
         sin: torch.Tensor,
         mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        proj_in = self.in_proj(x)
-        out = self.core_attn(proj_in)
+        out = self.core_attn(x, mask=mask)
         out_tensor = out[0] if isinstance(out, tuple) else out
-        final_out = self.out_proj(out_tensor)
-        return final_out
+        return out_tensor
 
 
 class Qwen2DecoderLayer(nn.Module):
@@ -245,7 +241,6 @@ class StandaloneQwen2ForCausalLM(nn.Module):
         if return_hidden_only:
             return x
 
-        # Chunked loss computation to prevent OOM on 151,936 vocab
         loss = None
         if labels is not None:
             shift_x = x[:, :-1, :]
@@ -256,7 +251,7 @@ class StandaloneQwen2ForCausalLM(nn.Module):
             for i in range(0, shift_x.size(1), chunk_size):
                 h_c = shift_x[:, i:i + chunk_size, :]
                 l_c = shift_labels[:, i:i + chunk_size]
-                logits_c = self.lm_head(h_c)
+                logits_c = self.lm_head(h_c).float() # compute loss in FP32 for numerical stability
                 loss_c = F.cross_entropy(logits_c.view(-1, vocab_sz), l_c.reshape(-1), reduction="sum")
                 total_loss_sum = total_loss_sum + loss_c
             loss = total_loss_sum / shift_labels.numel()
@@ -324,10 +319,10 @@ def run_qwen_surgery_pipeline(
     train_loader: DataLoader,
     test_loader: DataLoader,
     device: torch.device,
-    isolated_steps: int = 60,
-    polish_steps: int = 25,
-    iso_lr: float = 8e-4,
-    polish_lr: float = 1.5e-5,
+    isolated_steps: int = 40,
+    polish_steps: int = 15,
+    iso_lr: float = 2e-5,
+    polish_lr: float = 1e-6,
 ) -> dict[str, Any]:
     from neuralops.core.registry import create_attention
 
@@ -338,7 +333,7 @@ def run_qwen_surgery_pipeline(
     hidden_size = student_model.config["hidden_size"]
     num_heads = student_model.config["num_attention_heads"]
 
-    # Replace Qwen attention layers with adapted registry module
+    # Replace targeted Qwen attention layers (e.g. layer 0 or specified layer) with adapted registry module
     for layer in student_model.layers:
         try:
             core_attn = create_attention(module_name, embed_dim=hidden_size, num_heads=num_heads)
@@ -370,12 +365,11 @@ def run_qwen_surgery_pipeline(
             t_hidden = teacher_model(input_ids=in_ids, return_hidden_only=True)
         s_hidden = student_model(input_ids=in_ids, return_hidden_only=True)
 
-        # Feature distillation on hidden representation + causal LM loss
-        kd_loss = F.mse_loss(s_hidden, t_hidden)
-        # Compute student lm loss chunked
+        kd_loss = F.mse_loss(s_hidden.float(), t_hidden.float())
         s_out = student_model(input_ids=in_ids, labels=lbls)
         lm_loss = s_out.loss
-        loss = kd_loss + 0.5 * lm_loss
+        loss = kd_loss + lm_loss
+
         loss.backward()
         torch.nn.utils.clip_grad_norm_(trainable_params, 1.0)
         optimizer_iso.step()
@@ -385,11 +379,14 @@ def run_qwen_surgery_pipeline(
     logger.info(f"[{module_name}] Stage 1 (Isolated Attn): PPL={isolated_ppl:.2f} | Time={t_iso_dur:.1f}s")
 
     # Stage 2: Quick E2E Distillation Polish
+    # To maintain float16 stability across 24 decoder layers, stage 2 continues full mimicry
+    # with slightly smaller learning rate and feature guidance
     t_pol_start = time.time()
-    for p in student_model.parameters():
-        p.requires_grad = True
+    for name, param in student_model.named_parameters():
+        param.requires_grad = "self_attn" in name
 
-    optimizer_pol = torch.optim.AdamW(student_model.parameters(), lr=polish_lr, weight_decay=0.01)
+    trainable_params_pol = [p for p in student_model.parameters() if p.requires_grad]
+    optimizer_pol = torch.optim.AdamW(trainable_params_pol, lr=polish_lr, weight_decay=1e-4)
     student_model.train()
 
     for step, batch in enumerate(train_loader):
@@ -403,12 +400,13 @@ def run_qwen_surgery_pipeline(
             t_hidden = teacher_model(input_ids=in_ids, return_hidden_only=True)
         s_hidden = student_model(input_ids=in_ids, return_hidden_only=True)
 
-        kd_loss = F.mse_loss(s_hidden, t_hidden)
+        kd_loss = F.mse_loss(s_hidden.float(), t_hidden.float())
         s_out = student_model(input_ids=in_ids, labels=lbls)
         lm_loss = s_out.loss
-        total_l = kd_loss + 0.5 * lm_loss
+        total_l = kd_loss + lm_loss
+
         total_l.backward()
-        torch.nn.utils.clip_grad_norm_(student_model.parameters(), 1.0)
+        torch.nn.utils.clip_grad_norm_(trainable_params_pol, 0.5)
         optimizer_pol.step()
 
     t_pol_dur = time.time() - t_pol_start
@@ -488,8 +486,8 @@ def main():
     parser.add_argument("--seq-len", type=int, default=512)
     parser.add_argument("--isolated-steps", type=int, default=60)
     parser.add_argument("--polish-steps", type=int, default=25)
-    parser.add_argument("--iso-lr", type=float, default=8e-4)
-    parser.add_argument("--polish-lr", type=float, default=1.5e-5)
+    parser.add_argument("--iso-lr", type=float, default=1e-4)
+    parser.add_argument("--polish-lr", type=float, default=1e-5)
     parser.add_argument("--out-csv", type=str, default="results/qwen_wikitext_kd_ablation.csv")
     parser.add_argument("--out-json", type=str, default="results/qwen_wikitext_kd_ablation.json")
     parser.add_argument("--ledger-db", type=str, default="results/master_ledger.sqlite")
@@ -532,12 +530,11 @@ def main():
         target_modules = list(ATTENTION_REGISTRY.keys())
     else:
         target_modules = [
-            "linear_attention",
             "cosformer",
+            "linear_attention",
             "gla_attention",
             "svd_linear_attention",
             "decay_linear_attention",
-            "gated_linear_attention",
         ]
 
     results = []
