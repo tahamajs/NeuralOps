@@ -23,7 +23,6 @@ import asyncio
 import json
 import pytest
 import torch
-import torch.nn as nn
 from transformers import GPT2Config, GPT2LMHeadModel
 
 from neuralops.core.errors import IntegrationNotImplementedError
@@ -142,8 +141,7 @@ def test_tgi_slot_eviction_upon_completion(small_gpt2_model):
     assert req_queued.slot_id is not None
 
 
-@pytest.mark.asyncio
-async def test_tgi_stream_generate_sse(small_gpt2_model):
+def test_tgi_stream_generate_sse(small_gpt2_model):
     """Verify async stream_generate yields valid Server-Sent Events (SSE) payloads."""
     adapter = TGIServingAdapter(
         model=small_gpt2_model,
@@ -153,30 +151,32 @@ async def test_tgi_stream_generate_sse(small_gpt2_model):
         device="cpu",
     )
 
-    chunks = []
-    async for chunk in adapter.stream_generate(
-        request_id="stream_req_1",
-        prompt=[5, 15, 25],
-        max_new_tokens=4,
-        sse_format=True,
-    ):
-        assert chunk.startswith("data: ")
-        assert chunk.endswith("\n\n")
-        data = json.loads(chunk[len("data: ") : -2])
-        assert "token" in data
-        assert "id" in data["token"]
-        assert "finished" in data
-        assert data["request_id"] == "stream_req_1"
-        chunks.append(data)
+    async def run_test():
+        chunks = []
+        async for chunk in adapter.stream_generate(
+            request_id="stream_req_1",
+            prompt=[5, 15, 25],
+            max_new_tokens=4,
+            sse_format=True,
+        ):
+            assert chunk.startswith("data: ")
+            assert chunk.endswith("\n\n")
+            data = json.loads(chunk[len("data: ") : -2])
+            assert "token" in data
+            assert "id" in data["token"]
+            assert "finished" in data
+            assert data["request_id"] == "stream_req_1"
+            chunks.append(data)
+        return chunks
 
+    chunks = asyncio.run(run_test())
     assert len(chunks) == 4
     assert chunks[-1]["finished"] is True
     assert adapter.stats()["active_slots"] == 0
     assert "stream_req_1" in adapter.batch_manager.completed_slots
 
 
-@pytest.mark.asyncio
-async def test_tgi_stream_generate_tuples(small_gpt2_model):
+def test_tgi_stream_generate_tuples(small_gpt2_model):
     """Verify async stream_generate yields (token_id, text, is_final) tuples when sse_format=False."""
     adapter = TGIServingAdapter(
         model=small_gpt2_model,
@@ -186,25 +186,27 @@ async def test_tgi_stream_generate_tuples(small_gpt2_model):
         device="cpu",
     )
 
-    tokens = []
-    async for tok_id, tok_text, is_final in adapter.stream_generate(
-        request_id="stream_req_2",
-        prompt=[1, 2],
-        max_new_tokens=3,
-        sse_format=False,
-    ):
-        assert isinstance(tok_id, int)
-        assert isinstance(tok_text, str)
-        assert isinstance(is_final, bool)
-        tokens.append((tok_id, tok_text, is_final))
+    async def run_test():
+        tokens = []
+        async for tok_id, tok_text, is_final in adapter.stream_generate(
+            request_id="stream_req_2",
+            prompt=[1, 2],
+            max_new_tokens=3,
+            sse_format=False,
+        ):
+            assert isinstance(tok_id, int)
+            assert isinstance(tok_text, str)
+            assert isinstance(is_final, bool)
+            tokens.append((tok_id, tok_text, is_final))
+        return tokens
 
+    tokens = asyncio.run(run_test())
     assert len(tokens) == 3
     assert tokens[-1][2] is True
     assert adapter.stats()["active_slots"] == 0
 
 
-@pytest.mark.asyncio
-async def test_tgi_eos_and_stop_termination(small_gpt2_model):
+def test_tgi_eos_and_stop_termination(small_gpt2_model):
     """Verify exact sequence termination upon encountering eos_token_id."""
     eos_id = 42
     adapter = TGIServingAdapter(
@@ -227,12 +229,10 @@ async def test_tgi_eos_and_stop_termination(small_gpt2_model):
         stop_sequences=["<stop>"],
     )
     req_stop.generated_ids.append(999)  # mock decode would be "<999>" or similar
-    # Check stop check logic
     assert adapter.check_stop(req_stop, 10) is False
 
 
-@pytest.mark.asyncio
-async def test_tgi_50_concurrent_requests_staggered(small_gpt2_model):
+def test_tgi_50_concurrent_requests_staggered(small_gpt2_model):
     """
     Stress test: 50 concurrent simulated requests with staggered arrival times.
     Verifies zero deadlocks, complete token emissions, and full slot eviction on termination.
@@ -258,16 +258,18 @@ async def test_tgi_50_concurrent_requests_staggered(small_gpt2_model):
             received.append(chunk)
         return req_id, len(received)
 
-    tasks = []
-    num_requests = 50
-    for i in range(num_requests):
-        max_tokens = 2 + (i % 4)  # 2, 3, 4, or 5 tokens
-        delay = (i % 10) * 0.002  # staggered arrival
-        tasks.append(single_client(i, max_tokens, delay))
+    async def run_benchmark():
+        tasks = []
+        num_requests = 50
+        for i in range(num_requests):
+            max_tokens = 2 + (i % 4)  # 2, 3, 4, or 5 tokens
+            delay = (i % 10) * 0.002  # staggered arrival
+            tasks.append(single_client(i, max_tokens, delay))
+        return await asyncio.gather(*tasks)
 
-    results = await asyncio.gather(*tasks)
+    results = asyncio.run(run_benchmark())
 
-    assert len(results) == num_requests
+    assert len(results) == 50
     for i, (req_id, tok_count) in enumerate(results):
         expected_count = 2 + (i % 4)
         assert tok_count == expected_count, f"Client {req_id} received {tok_count} != expected {expected_count}"
@@ -275,5 +277,5 @@ async def test_tgi_50_concurrent_requests_staggered(small_gpt2_model):
     # Verify complete slot eviction & zero memory leaks
     assert adapter.stats()["active_slots"] == 0
     assert adapter.stats()["queued_requests"] == 0
-    assert adapter.stats()["completed_requests"] == num_requests
+    assert adapter.stats()["completed_requests"] == 50
     assert adapter.stats()["free_slots"] == 8
