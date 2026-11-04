@@ -27,7 +27,8 @@ import pytest
 import torch
 import torch.nn as nn
 from neuralops.attentions.factorised_matrix_state import (
-    FactorisedMatrixState, _rotate_half, inject_factorised_matrix_state)
+    FactorisedMatrixState, inject_factorised_matrix_state)
+from neuralops.core.utils.rope import _rotate_half
 
 class DummyRobertaSelfAttention(nn.Module):
     def __init__(self, dim: int = 64):

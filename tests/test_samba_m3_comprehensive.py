@@ -11,9 +11,9 @@ import types
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.attentions.samba_m3 import (LoRALinear, SAMBAM3Block,
-                                           _rotate_half, apply_rotary_pos_emb,
+from neuralops.attentions.samba_m3 import (LoRALinear, SAMBAM3Block, apply_rotary_pos_emb,
                                            inject_samba_m3)
+from neuralops.core.utils.rope import _rotate_half
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

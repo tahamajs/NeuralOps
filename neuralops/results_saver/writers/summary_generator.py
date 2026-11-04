@@ -137,13 +137,6 @@ class BenchmarkSummaryGenerator:
                 json.dump(payload, f, indent=2, default=str)
 
         return payload
-            "manifest": manifest or {},
-            "total_iterations": len(iterations),
-        }
-
-        with open(target, "w", encoding="utf-8") as f:
-            json.dump(payload, f, indent=2, default=str)
-        return target
 
     @classmethod
     def generate_summary_csv(
@@ -183,20 +176,17 @@ class BenchmarkSummaryGenerator:
         run_id: str,
         benchmark_name: str,
         aggregates: Dict[str, Any],
-        manifest: Optional[Dict[str, Any]],
-        iterations: List[Dict[str, Any]],
-        target_path: Path | str,
-    ) -> Path:
+        manifest: Optional[Dict[str, Any]] = None,
+        iterations: Optional[List[Dict[str, Any]]] = None,
+        target_path: Optional[Path | str] = None,
+    ) -> str:
         """Generate GitHub-flavored Markdown report."""
-        target = Path(target_path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-
         device_name = "Unknown"
         if manifest and "hardware" in manifest:
             device_name = manifest["hardware"].get("device_name", "Unknown")
 
         lines = [
-            f"# Benchmark Report: {benchmark_name}",
+            f"# Benchmark Execution Report: {benchmark_name}",
             "",
             f"- **Run ID**: `{run_id}`",
             f"- **Device**: `{device_name}`",
@@ -235,6 +225,10 @@ class BenchmarkSummaryGenerator:
                     lines.append("| " + " | ".join(row_vals) + " |")
                 lines.append("")
 
-        with open(target, "w", encoding="utf-8") as f:
-            f.write("\n".join(lines) + "\n")
-        return target
+        content = "\n".join(lines) + "\n"
+        if target_path is not None:
+            target = Path(target_path)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with open(target, "w", encoding="utf-8") as f:
+                f.write(content)
+        return content

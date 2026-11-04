@@ -12,8 +12,9 @@ from types import SimpleNamespace
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.attentions.eat import (EATBlock, LoRALinear, _rotate_half,
+from neuralops.attentions.eat import (EATBlock, LoRALinear,
                                       inject_eat)
+from neuralops.core.utils.rope import _rotate_half
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 
