@@ -203,6 +203,7 @@ test_results/
 !scripts/
 !scripts/**/*.py
 !scripts/**/*.sh
+!scripts/**/*.pbs
 
 # Final absolute overrides
 **/__pycache__/
