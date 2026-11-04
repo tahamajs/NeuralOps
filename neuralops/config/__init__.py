@@ -9,6 +9,13 @@
 NeuralOps Config Core Modules.
 """
 
+from .benchmark_schema import (
+    AttentionSweepParameters,
+    BenchmarkRunConfig,
+    CompressionSweepParameters,
+    HardwareExecutionTarget,
+    TrackingSubsystemConfig,
+)
 from .config import (
     CompressionConfig,
     Config,
@@ -31,6 +38,7 @@ from .config import (
 )
 from .loader import (
     load_attention_sweep_config,
+    load_benchmark_config,
     load_config,
     load_experiment_config,
     load_yaml,
@@ -39,6 +47,11 @@ from .loader import (
 from .sweep_config import AttentionSweepConfig
 
 __all__ = [
+    "BenchmarkRunConfig",
+    "HardwareExecutionTarget",
+    "TrackingSubsystemConfig",
+    "AttentionSweepParameters",
+    "CompressionSweepParameters",
     "Config",
     "ModelConfig",
     "DataConfig",
@@ -57,6 +70,7 @@ __all__ = [
     "MixoutConfig",
     "DisLoRAConfig",
     "DatasetConfig",
+    "load_benchmark_config",
     "load_config",
     "load_experiment_config",
     "load_yaml",

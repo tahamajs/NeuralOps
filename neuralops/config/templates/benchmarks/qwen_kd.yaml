@@ -1,0 +1,35 @@
+version: "1.0.0"
+benchmark_suite: "qwen_kd"
+name: "qwen_kd_wikitext"
+description: "3-Stage Causal Language Model Perplexity and KD Ablation on Qwen2.5-0.5B"
+tag: "qwen_kd_wikitext"
+output_root_directory: "results/benchmarks"
+
+hardware:
+  device: "${CUDA_VISIBLE_DEVICES:-cuda:0}"
+  backend_preference: "auto"
+  enforce_deterministic: false
+  allow_tf32: true
+  memory_fraction_limit: null
+
+tracking:
+  enabled: true
+  enable_tensorboard: true
+  enable_local_jsonl: true
+  log_frequency_steps: 1
+  capture_gpu_telemetry: true
+  telemetry_sample_interval_ms: 250
+  tensorboard_flush_secs: 10
+  export_formats:
+    - "jsonl"
+    - "csv"
+    - "summary"
+
+custom_parameters:
+  model_name: "Qwen/Qwen2.5-0.5B"
+  model_type: "causal_lm"
+  torch_dtype: "float16"
+  dataset: "wikitext2"
+  context_length: 2048
+  kd_temperature: 2.0
+  kd_alpha: 0.5

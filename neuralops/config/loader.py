@@ -11,14 +11,18 @@ from __future__ import annotations
 
 import argparse
 import copy
+import json
+import os
+import re
 import types
 from collections.abc import Mapping, Sequence
 from dataclasses import fields, is_dataclass
 from pathlib import Path
-from typing import Any, TypeVar, Union, get_args, get_origin, get_type_hints
+from typing import Any, Dict, Optional, TypeVar, Union, get_args, get_origin, get_type_hints
 
 import yaml
 
+from .benchmark_schema import BenchmarkRunConfig
 from .config import Config
 from .experiment_config import ExperimentConfig
 from .sweep_config import AttentionSweepConfig
@@ -173,10 +177,100 @@ def load_attention_sweep_config(yaml_path: str | Path) -> AttentionSweepConfig:
     return _load_typed_config(AttentionSweepConfig, yaml_path, None)
 
 
+_ENV_VAR_PATTERN = re.compile(r"\$\{([^}^{]+)\}")
+
+
+def _interpolate_env_vars(raw: Any) -> Any:
+    """Recursively interpolate ${VAR:-default} and ${VAR} patterns into strings."""
+    if isinstance(raw, str):
+
+        def replacer(match: re.Match[str]) -> str:
+            expression = match.group(1).strip()
+            if ":-" in expression:
+                var_name, default_val = expression.split(":-", 1)
+                return os.environ.get(var_name.strip(), default_val.strip())
+            return os.environ.get(expression, "")
+
+        return _ENV_VAR_PATTERN.sub(replacer, raw)
+    elif isinstance(raw, dict):
+        return {k: _interpolate_env_vars(v) for k, v in raw.items()}
+    elif isinstance(raw, list):
+        return [_interpolate_env_vars(item) for item in raw]
+    return raw
+
+
+def _deep_merge(base: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
+    """Recursively merge dictionary overrides over base dictionary."""
+    merged = dict(base)
+    for k, v in overrides.items():
+        if k in merged and isinstance(merged[k], dict) and isinstance(v, dict):
+            merged[k] = _deep_merge(merged[k], v)
+        else:
+            merged[k] = v
+    return merged
+
+
+def _expand_dotted_keys(flat_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Expand flat dictionary with dotted keys into nested dictionary."""
+    nested: Dict[str, Any] = {}
+    for key, value in flat_dict.items():
+        if "." in key:
+            parts = key.split(".")
+            current = nested
+            for part in parts[:-1]:
+                if part not in current or not isinstance(current[part], dict):
+                    current[part] = {}
+                current = current[part]
+            current[parts[-1]] = value
+        else:
+            if isinstance(value, dict):
+                nested[key] = _expand_dotted_keys(value)
+            else:
+                nested[key] = value
+    return nested
+
+
+def load_benchmark_config(
+    source: Union[str, Path, Dict[str, Any]],
+    overrides: Optional[Dict[str, Any]] = None,
+) -> BenchmarkRunConfig:
+    """
+    Load, interpolate, override, and validate a BenchmarkRunConfig instance.
+    """
+    raw_dict: Dict[str, Any] = {}
+    if isinstance(source, (str, Path)):
+        path = Path(source)
+        if not path.exists():
+            raise FileNotFoundError(f"Benchmark configuration file not found: {path}")
+        with open(path, "r", encoding="utf-8") as f:
+            if path.suffix in [".yaml", ".yml"]:
+                raw_dict = yaml.safe_load(f) or {}
+            elif path.suffix == ".json":
+                raw_dict = json.load(f) or {}
+            else:
+                raise ValueError(f"Unsupported configuration extension: {path.suffix}")
+    elif isinstance(source, dict):
+        raw_dict = dict(source)
+    else:
+        raise TypeError(f"Invalid source type for configuration: {type(source)}")
+
+    # Step 1: Interpolate POSIX environment variables
+    interpolated = _interpolate_env_vars(raw_dict)
+
+    # Step 2: Apply runtime CLI overrides
+    if overrides:
+        expanded_overrides = _expand_dotted_keys(overrides)
+        interpolated = _deep_merge(interpolated, expanded_overrides)
+
+    # Step 3: Validate via Pydantic V2 schema
+    return BenchmarkRunConfig(**interpolated)
+
+
 __all__ = [
     "load_yaml",
     "merge_cli_args",
     "load_config",
     "load_experiment_config",
     "load_attention_sweep_config",
+    "load_benchmark_config",
 ]
