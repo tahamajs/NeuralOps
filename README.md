@@ -972,6 +972,9 @@ neuralops benchmark run --suite attention --config neuralops/config/templates/be
 neuralops benchmark list --attentions      # Lists exactly the 131 registered attention mechanisms
 neuralops benchmark list --compressors     # Lists exactly the 72 registered compression engines
 neuralops benchmark list --suites          # Lists available benchmark suites
+neuralops benchmark show latest            # Show human-readable report of latest benchmark run
+neuralops benchmark show latest --metrics  # Display summary metrics JSON from latest run
+neuralops benchmark show <run_id> --manifest # Output provenance manifest JSON for run
 
 # 1. System Health & Environment Doctor (CUDA 12.8, Triton 3.6.0, SM 8.9 verification)
 neuralops doctor
@@ -2064,6 +2067,8 @@ neuralops benchmark run --suite attention --config neuralops/config/templates/be
 neuralops benchmark list --attentions
 neuralops benchmark list --compressors
 neuralops benchmark list --suites
+neuralops benchmark show latest
+neuralops benchmark show latest --metrics
 ```
 
 
