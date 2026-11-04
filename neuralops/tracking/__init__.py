@@ -14,6 +14,7 @@ from .backends import (
     MLFLOW_BACKEND,
     TENSORBOARD_BACKEND,
     WANDB_BACKEND,
+    LocalTracker,
     TrackingBackend,
 )
 from .callbacks import TrackerCallback
@@ -21,6 +22,7 @@ from .tracker import ExperimentTracker
 
 __all__ = [
     "ExperimentTracker",
+    "LocalTracker",
     "TrackingBackend",
     "TrackerCallback",
     "LOCAL_BACKEND",
