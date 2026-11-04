@@ -9,7 +9,7 @@
 #include <cuda_runtime.h>
 #include <c10/cuda/CUDAStream.h>
 #include <math.h>
-#include "../_common.cuh"
+#include "_common.cuh"
 
 namespace neuralops {
 namespace cuda {

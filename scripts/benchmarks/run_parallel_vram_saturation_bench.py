@@ -291,9 +291,11 @@ def main():
                         lat_str = f"{res.get('latency_ms', 0):.2f} ms"
                         status_str = str(res.get("status", ""))[:12]
                         
-                        print(f"{target_str:<40} | {type_str:<15} | {lat_str:<12} | {cur_vram:6.2f} GB | {status_str}")
+                        print(f"{target_str:<40} | {type_str:<15} | {lat_str:<12} | {cur_vram:6.2f} GB | {status_str}", flush=True)
+                        if len(all_results) % 5 == 0 or len(all_results) == len(tasks_queue):
+                            pd.DataFrame(all_results).to_csv(out_csv, index=False)
                     except Exception as err:
-                        print(f"Task {idx} Error: {err}")
+                        print(f"Task {idx} Error: {err}", flush=True)
                         
             # Periodically empty cache if memory pressure is high
             if res_g > (VRAM_TARGET_CAP_GB - 1.0):
