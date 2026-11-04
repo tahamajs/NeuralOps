@@ -227,3 +227,4 @@ __pycache__/
 kaggle_*.txt
 hpc_results/
 results/*.sqlite
+.cleanup_base_sha
