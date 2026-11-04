@@ -668,10 +668,10 @@ class UniversalArchitectureScanner:
                 num_heads = candidate_heads
             elif (
                 getattr(module, "head_dim", None) is not None
-                and getattr(module, "head_dim") > 0
-                and q_width % getattr(module, "head_dim") == 0
+                and module.head_dim > 0
+                and q_width % module.head_dim == 0
             ):
-                head_dim = getattr(module, "head_dim")
+                head_dim = module.head_dim
                 num_heads = q_width // head_dim
             else:
                 # Infer standard head count where head_dim divides q_width

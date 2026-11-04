@@ -635,7 +635,7 @@ class MoARouter:
     # =========================================================================
     # Phase 072: Multi-Objective Pareto Frontier Solver
     # =========================================================================
-    @classmethod
+    @class_or_instance_method
     def solve_pareto_schedule(
         cls_or_self,
         num_layers: Optional[int] = None,

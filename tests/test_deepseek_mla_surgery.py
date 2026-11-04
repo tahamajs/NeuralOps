@@ -786,9 +786,10 @@ def test_endoskeletal_shell_apply_moa_schedule() -> None:
         def __init__(self) -> None:
             super().__init__()
             self.self_attn = MockAttnBlock()
+            self.norm = nn.LayerNorm(embed_dim)
 
         def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
-            return self.self_attn(x)
+            return x + self.self_attn(self.norm(x))
 
     class Mock32LayerModel(nn.Module):
         def __init__(self) -> None:
