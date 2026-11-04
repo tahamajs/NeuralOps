@@ -112,10 +112,21 @@ class ExperimentTracker:
         else:
             backend_names = [str(resolved_backend).lower()]
 
-        # Respect config_dict flags if present
-        if self.config_dict.get("enable_local_jsonl") is True and LOCAL_BACKEND not in backend_names:
+        # Respect config_dict flags if present (both flat and nested 'tracking' config)
+        tracking_cfg = (
+            self.config_dict.get("tracking", {})
+            if isinstance(self.config_dict.get("tracking"), dict)
+            else {}
+        )
+        if (
+            self.config_dict.get("enable_local_jsonl") is True
+            or tracking_cfg.get("enable_local_jsonl") is True
+        ) and LOCAL_BACKEND not in backend_names:
             backend_names.append(LOCAL_BACKEND)
-        if self.config_dict.get("enable_tensorboard") is True and TENSORBOARD_BACKEND not in backend_names:
+        if (
+            self.config_dict.get("enable_tensorboard") is True
+            or tracking_cfg.get("enable_tensorboard") is True
+        ) and TENSORBOARD_BACKEND not in backend_names:
             backend_names.append(TENSORBOARD_BACKEND)
 
         if not backend_names:
