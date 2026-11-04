@@ -16,11 +16,21 @@ from typing import Dict, List, Type
 from neuralops.benchmarks.core.base import AbstractBaseBenchmark
 from neuralops.benchmarks.suites.attention import AttentionBenchmark
 from neuralops.benchmarks.suites.compression import CompressionBenchmark
+from neuralops.benchmarks.suites.cuda_ops import CudaOpsBenchmark
+from neuralops.benchmarks.suites.e2e_serving import ServingBenchmark
+from neuralops.benchmarks.suites.niah import NeedleInAHaystackBenchmark
+from neuralops.benchmarks.suites.qwen_kd import QwenKDBenchmark
+from neuralops.benchmarks.suites.roofline import RooflineBenchmark
 from neuralops.benchmarks.suites.triton_ops import TritonOpsBenchmark
 
 BENCHMARK_SUITES: Dict[str, Type[AbstractBaseBenchmark]] = {
     "attention": AttentionBenchmark,
     "compression": CompressionBenchmark,
+    "cuda_ops": CudaOpsBenchmark,
+    "e2e_serving": ServingBenchmark,
+    "niah": NeedleInAHaystackBenchmark,
+    "qwen_kd": QwenKDBenchmark,
+    "roofline": RooflineBenchmark,
     "triton_ops": TritonOpsBenchmark,
 }
 
@@ -42,6 +52,11 @@ __all__ = [
     "AbstractBaseBenchmark",
     "AttentionBenchmark",
     "CompressionBenchmark",
+    "CudaOpsBenchmark",
+    "NeedleInAHaystackBenchmark",
+    "QwenKDBenchmark",
+    "RooflineBenchmark",
+    "ServingBenchmark",
     "TritonOpsBenchmark",
     "BENCHMARK_SUITES",
     "get_benchmark_suite",
