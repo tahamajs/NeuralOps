@@ -1,0 +1,6 @@
+module,zero_shot_ppl,isolated_ppl,polished_ppl,isolated_time_s,polish_time_s,total_time_s,status,teacher_ppl
+cosformer,14744804.6,4033629.73,4033629.73,53.6,19.9,91.5,PASSED,16.06
+linear_attention,3613504.33,,,72.3,27.0,132.1,PASSED,16.06
+gla_attention,9398350.43,,,2485.5,888.3,3480.8,PASSED,16.06
+svd_linear_attention,4240084.32,,,71.4,26.8,130.6,PASSED,16.06
+decay_linear_attention,999.9,999.9,999.9,,,0.0,FAILED: CUDA out of memory. Tried to allocate 20.00 MiB (GPU 0; 23.70 GiB total capacity; 21.98 GiB already allocated; 12.56 MiB free; 22.58 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF,16.06

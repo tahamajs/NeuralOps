@@ -14,6 +14,7 @@ batch assembly, and streaming iterators for high-throughput serving inference.
 
 from __future__ import annotations
 
+import asyncio
 import collections
 import inspect
 import json
@@ -21,7 +22,7 @@ import logging
 import math
 import queue
 import time
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -560,6 +561,77 @@ class TGIServingAdapter:
             except queue.Empty:
                 if slot.finished:
                     break
+
+    async def stream_generate(
+        self,
+        request_id: str,
+        prompt: Optional[Union[str, List[int], torch.Tensor]] = None,
+        max_new_tokens: int = 16,
+        sse_format: bool = True,
+        **kwargs: Any,
+    ) -> AsyncIterator[Union[str, Tuple[int, str, bool]]]:
+        """
+        Asynchronous streaming generator yielding tokens and SSE-compatible chunks for a request.
+
+        If `prompt` is provided and the request has not yet been registered, enqueues
+        the request into continuous batch scheduling. If `request_id` is already queued
+        or active, generation advances step-wise.
+
+        Args:
+            request_id: Unique request identifier.
+            prompt: Input text prompt or token tensor (optional if already enqueued).
+            max_new_tokens: Maximum tokens to generate.
+            sse_format: When True, yields Server-Sent Event formatted chunks ("data: {...}\\n\\n").
+                        When False, yields (token_id, token_text, is_final) tuples.
+
+        Yields:
+            SSE payload strings or (token_id, token_text, is_final) tuples per generated token.
+        """
+        slot = self.batch_manager.active_slots.get(request_id)
+        if slot is None:
+            # Check queued
+            for queued in self.batch_manager.queued_slots:
+                if queued.request_id == request_id:
+                    slot = queued
+                    break
+
+        if slot is None:
+            if prompt is None:
+                raise ValueError(f"Request {request_id!r} not found in batch manager and no prompt was provided")
+            slot = self.add_request(request_id, prompt, max_new_tokens=max_new_tokens, **kwargs)
+
+        while not slot.finished or not slot.stream_queue.empty():
+            if not slot.finished and slot.request_id in self.batch_manager.active_slots:
+                self.decode_step([slot.request_id])
+            elif not slot.finished and slot in self.batch_manager.queued_slots:
+                self.batch_manager.admit_queued()
+
+            while not slot.stream_queue.empty():
+                try:
+                    item = slot.stream_queue.get_nowait()
+                except queue.Empty:
+                    break
+                if item is None:
+                    break
+                tok, text, is_final = item
+                if sse_format:
+                    payload = json.dumps({
+                        "token": {"id": tok, "text": text},
+                        "generated_text": text if is_final else None,
+                        "finished": is_final,
+                        "request_id": request_id,
+                    })
+                    yield f"data: {payload}\n\n"
+                else:
+                    yield (tok, text, is_final)
+
+            if slot.finished and slot.stream_queue.empty():
+                break
+
+            await asyncio.sleep(0.001)
+
+        # Final slot eviction guarantee
+        self.clear_finished()
 
     def standalone_server_hook(self) -> Any:
         """

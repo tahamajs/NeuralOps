@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = ["export"]
 
-SUPPORTED_FORMATS: tuple[str, ...] = ("safetensors", "torchscript", "onnx", "pt", "vllm")
+SUPPORTED_FORMATS: tuple[str, ...] = ("safetensors", "torchscript", "onnx", "pt", "vllm", "gguf")
 
 
 def export(
@@ -96,6 +96,19 @@ def export(
             opset_version=kwargs.get("opset_version", 17),
         )
         return str(out)
+
+    elif fmt == "gguf":
+        from neuralops.export.gguf_exporter import export_to_gguf
+        exported_path = export_to_gguf(
+            model=model,
+            output_path=out,
+            architecture=kwargs.get("architecture", "llama"),
+            model_name=kwargs.get("model_name", "model"),
+            quantization=kwargs.get("quantization", "f16"),
+            fuse_low_rank=kwargs.get("fuse_low_rank", False),
+            metadata=kwargs.get("metadata", None),
+        )
+        return str(exported_path)
 
     elif fmt == "vllm":
         raise IntegrationNotImplementedError(

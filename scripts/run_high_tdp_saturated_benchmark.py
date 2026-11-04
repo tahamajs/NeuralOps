@@ -13,7 +13,7 @@ Saturates NVIDIA RTX 3090 Tensor Cores & Memory Subsystem (250W - 350W TDP):
     2. Zero Python CPU-overhead via non-blocking CUDA streams and warm GPU execution.
     3. Multi-model real backbones: DistilBERT, RoBERTa, GPT-2, LLaMA-Proxy.
     4. Hardware Telemetry: Instantaneous Power (Watts), Energy per Token (uJ/tok), Peak VRAM (MB), Throughput (tok/s).
-    5. Isolated process-level execution to prevent CUDA memory fragmentation.
+    5. Fail-safe isolated execution to prevent OOM/abort.
 """
 
 import os
@@ -24,6 +24,12 @@ import gc
 import json
 import csv
 import subprocess
+
+# Ensure repo root is on sys.path
+repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 import torch
 import torch.nn as nn
 from transformers import (
@@ -38,9 +44,10 @@ from neuralops import transplant_attention
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-torch.backends.cuda.matmul.allow_tf32 = True
-torch.backends.cudnn.allow_tf32 = True
-torch.backends.cudnn.benchmark = True
+if torch.cuda.is_available():
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
+    torch.backends.cudnn.benchmark = True
 
 def get_gpu_power():
     """Query instantaneous GPU power draw in Watts via nvidia-smi."""
@@ -87,63 +94,67 @@ for reg in SATURATED_REGIMES:
     print(f"| {'Architecture':<26} | {'Latency':<12} | {'Throughput (tok/s)':<20} | {'Peak Power':<12} | {'Energy/Tok':<14} | {'Peak VRAM':<12} | {'Speedup':<8} |")
     print("-" * 125)
 
-    # Preallocate contiguous input tensor on GPU
-    x = torch.randn(b, s, d, device=device, dtype=torch.float16)
+    if torch.cuda.is_available():
+        x = torch.randn(b, s, d, device=device, dtype=torch.float16)
+    else:
+        x = torch.randn(b, s, d, device=device)
 
     # Establish Baseline
     base_lat = None
     try:
         base_cls = ATTENTION_REGISTRY.get("full_attention")
-        base_mod = base_cls(dim=d, num_heads=h).to(device, dtype=torch.float16)
+        base_mod = base_cls(dim=d, num_heads=h).to(device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32)
         base_mod.eval()
         with torch.no_grad():
-            for _ in range(10): _ = base_mod(x)
-            torch.cuda.synchronize()
+            for _ in range(5): _ = base_mod(x)
+            if torch.cuda.is_available(): torch.cuda.synchronize()
             t0 = time.perf_counter()
-            iters = 50
+            iters = 30
             for _ in range(iters): _ = base_mod(x)
-            torch.cuda.synchronize()
+            if torch.cuda.is_available(): torch.cuda.synchronize()
             base_lat = (time.perf_counter() - t0) / iters * 1000.0
         del base_mod
         gc.collect()
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available(): torch.cuda.empty_cache()
     except Exception:
         base_lat = 1.0
 
     for display_name, key, fam in ATTENTION_CANDIDATES:
         gc.collect()
-        torch.cuda.empty_cache()
-        torch.cuda.reset_peak_memory_stats()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.reset_peak_memory_stats()
 
         try:
             cls = ATTENTION_REGISTRY.get(key)
+            if cls is None:
+                continue
             try:
-                mod = cls(dim=d, num_heads=h).to(device, dtype=torch.float16)
+                mod = cls(dim=d, num_heads=h).to(device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32)
             except Exception:
                 try:
-                    mod = cls(embed_dim=d, num_heads=h).to(device, dtype=torch.float16)
+                    mod = cls(embed_dim=d, num_heads=h).to(device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32)
                 except Exception:
-                    mod = cls().to(device, dtype=torch.float16)
+                    mod = cls().to(device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32)
             mod.eval()
 
             # Warmup
             with torch.no_grad():
-                for _ in range(10): _ = mod(x)
-                torch.cuda.synchronize()
+                for _ in range(5): _ = mod(x)
+                if torch.cuda.is_available(): torch.cuda.synchronize()
 
-                # Sustained Benchmark Loop to measure true Power & Throughput
-                iters = 100
+                # Sustained Benchmark Loop
+                iters = 50
                 t0 = time.perf_counter()
                 for _ in range(iters):
                     _ = mod(x)
-                torch.cuda.synchronize()
+                if torch.cuda.is_available(): torch.cuda.synchronize()
                 t_total = time.perf_counter() - t0
                 avg_lat = (t_total / iters) * 1000.0
 
             power_w = get_gpu_power()
             throughput = total_tokens / (avg_lat / 1000.0)
-            vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
-            # Energy per token in micro-Joules (uJ = W * sec / tokens * 1e6)
+            vram_mb = (torch.cuda.max_memory_allocated() / (1024 * 1024)) if torch.cuda.is_available() else 0.0
             energy_uj = (power_w * (avg_lat / 1000.0) / total_tokens) * 1e6 if power_w > 0 else 0.0
             speedup = (base_lat / avg_lat) if base_lat else 1.0
 
@@ -226,24 +237,26 @@ for m_spec in MODELS:
 
     for meth_name, attn_key in BACKBONE_SURGERY_TARGETS:
         gc.collect()
-        torch.cuda.empty_cache()
-        torch.cuda.reset_peak_memory_stats()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.reset_peak_memory_stats()
 
         try:
-            model = cls_(cfg).to(device, dtype=torch.float16)
+            dtype_model = torch.float16 if torch.cuda.is_available() else torch.float32
+            model = cls_(cfg).to(device, dtype=dtype_model)
             if attn_key is not None:
                 transplant_attention(model, target_attention=attn_key)
             model.eval()
 
             with torch.no_grad():
-                for _ in range(5): _ = model(input_ids)
-                torch.cuda.synchronize()
+                for _ in range(3): _ = model(input_ids)
+                if torch.cuda.is_available(): torch.cuda.synchronize()
 
-                iters = 40
+                iters = 25
                 t0 = time.perf_counter()
                 for _ in range(iters):
                     _ = model(input_ids)
-                torch.cuda.synchronize()
+                if torch.cuda.is_available(): torch.cuda.synchronize()
                 avg_lat = ((time.perf_counter() - t0) / iters) * 1000.0
 
             if attn_key is None:
@@ -251,7 +264,7 @@ for m_spec in MODELS:
 
             power_w = get_gpu_power()
             throughput = total_tokens / (avg_lat / 1000.0)
-            vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
+            vram_mb = (torch.cuda.max_memory_allocated() / (1024 * 1024)) if torch.cuda.is_available() else 0.0
             energy_uj = (power_w * (avg_lat / 1000.0) / total_tokens) * 1e6 if power_w > 0 else 0.0
             speedup = (base_m_lat / avg_lat) if base_m_lat else 1.0
 
@@ -274,7 +287,9 @@ for m_spec in MODELS:
             print(f"| {meth_name:<26} | {'FAILED / OOM':<12} | {'-':<20} | {'-':<12} | {'-':<14} | {'-':<12} | {'-':<8} |", flush=True)
 
 # --- SAVE CAMERA-READY ARTIFACTS ---
-csv_file = "/home/tahamajlesi.ut/NeuralOps/master_high_tdp_benchmarks.csv"
+out_dir = os.path.join(repo_root, "results")
+os.makedirs(out_dir, exist_ok=True)
+csv_file = os.path.join(out_dir, "master_high_tdp_benchmarks.csv")
 with open(csv_file, "w", newline="") as f:
     if benchmark_records:
         writer = csv.DictWriter(f, fieldnames=list(benchmark_records[0].keys()))
@@ -282,7 +297,7 @@ with open(csv_file, "w", newline="") as f:
         writer.writerows(benchmark_records)
 print(f"\n[OK] Saved Master CSV: {csv_file}")
 
-tex_file = "/home/tahamajlesi.ut/NeuralOps/master_high_tdp_benchmarks.tex"
+tex_file = os.path.join(out_dir, "master_high_tdp_benchmarks.tex")
 with open(tex_file, "w") as f:
     f.write("% Publication-Grade Master High-TDP Benchmark Table for MLSys/NeurIPS\n")
     f.write("\\begin{table*}[t]\n\\centering\\small\n")

@@ -21,6 +21,7 @@ from neuralops.integrations.vllm_backend.backend import (
 from neuralops.integrations.vllm_backend.kv_cache_spec import (
     NeuralOpsRecurrentSpec,
 )
+from neuralops.integrations.vllm.state_table import PagedStateTable
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,7 @@ __all__ = [
     "NeuralOpsAttentionBackend",
     "NeuralOpsImpl",
     "NeuralOpsRecurrentSpec",
+    "PagedStateTable",
     "register",
 ]
 

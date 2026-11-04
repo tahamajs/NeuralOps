@@ -332,6 +332,9 @@ def export_model(
             model_name=kwargs.get("model_name", "neuralops_model"),
             context_length=kwargs.get("context_length", 2048),
             embedding_length=kwargs.get("embedding_length", None),
+            quantization=kwargs.get("quantization", "f16"),
+            fuse_low_rank=kwargs.get("fuse_low_rank", False),
+            metadata=kwargs.get("metadata", None),
         )
         with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2)

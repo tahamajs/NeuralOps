@@ -6,53 +6,72 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-SGLang Serving Integration Bridge (v2.0 Roadmap)
+SGLang Serving Integration Bridge
 
-Architectural Role & Forward Contract (NeuralOps v1.6.0 -> v2.0):
-This module defines the integration bridge for SGLang runtime serving.
-
-In NeuralOps v1.6.0:
-1. SGLang Runtime Engine Plugin: Deep integration with SGLang's internal scheduler,
-   KV cache page allocator, and C++/Triton dispatch hooks is scheduled for v2.0.
-   `register_neuralops_sglang_plugin` fails closed with `IntegrationNotImplementedError`
-   specifying the roadmap bridge contract (`docs/roadmap/SGLANG_PLAN.md`).
-2. Standalone Prefix Caching: Fully functional Radix Trie prefix caching is provided
-   via `RadixPrefixNode` and `SGLangRadixAdapter` (re-exported here from
-   `neuralops.integrations.radix_prefix_cache`), supporting exact/longest prefix matching,
-   dynamic node branching, token reuse, and LRU eviction.
+Provides runtime integration and Radix prefix caching adapters for SGLang.
 """
 
 from __future__ import annotations
 
+import importlib.util
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from neuralops.core.errors import IntegrationNotImplementedError
 from neuralops.integrations.radix_prefix_cache import (
     RadixPrefixNode,
     SGLangRadixAdapter,
 )
-
-logger = logging.getLogger("NeuralOps.SGLang")
-
-
-def register_neuralops_sglang_plugin(*args: Any, **kwargs: Any) -> Any:
-    """Register NeuralOps plugin within SGLang runtime (deferred to v2.0)."""
-    raise IntegrationNotImplementedError(
-        "SGLang runtime engine plugin registration is not implemented in NeuralOps v1.6.0 "
-        "and is deferred to v2.0. For standalone prefix caching and Radix Trie management, "
-        "use `neuralops.integrations.radix_prefix_cache` or `SGLangRadixAdapter`. "
-        "See docs/roadmap/SGLANG_PLAN.md for details."
-    )
-
-
 from neuralops.integrations.sglang.radix_recurrent import (
     RadixRecurrentNode,
     RadixRecurrentTree,
 )
 
+logger = logging.getLogger("NeuralOps.SGLang")
+
+
+def sglang_is_available() -> bool:
+    """Return True if SGLang or sgl_kernel is importable in current environment."""
+    return (
+        importlib.util.find_spec("sglang") is not None
+        or importlib.util.find_spec("sgl_kernel") is not None
+    )
+
+
+def register_neuralops_sglang_plugin(
+    config_class: Optional[type] = None,
+    arch_names: Optional[list[str]] = None,
+    **kwargs: Any,
+) -> bool:
+    """
+    Register NeuralOps Linear Attention Backend within SGLang runtime.
+
+    If sglang or sgl_kernel is installed, registers NeuralOpsLinearAttnBackend with SGLang
+    linear attention model registry with uses_mamba_radix_cache=True.
+    If sglang is not installed, raises an actionable IntegrationNotImplementedError specifying
+    how to install sglang (`pip install sglang>=0.4.0`).
+    """
+    if not sglang_is_available():
+        raise IntegrationNotImplementedError(
+            "SGLang is not installed. To register NeuralOps linear attention plugins into SGLang, "
+            "install SGLang with:\n"
+            "    pip install 'sglang>=0.4.0'\n"
+            "Or see https://github.com/sgl-project/sglang for platform-specific instructions."
+        )
+
+    try:
+        from neuralops.integrations.sglang_backend.registry import register
+
+        return register(config_class=config_class, arch_names=arch_names, **kwargs)
+    except Exception as exc:
+        raise IntegrationNotImplementedError(
+            f"Failed to register NeuralOps plugin in SGLang runtime: {exc}"
+        ) from exc
+
+
 __all__ = [
     "register_neuralops_sglang_plugin",
+    "sglang_is_available",
     "RadixPrefixNode",
     "RadixRecurrentNode",
     "RadixRecurrentTree",

@@ -30,6 +30,7 @@ from benchmarks.competitors.bench_deepspeed_zero3_overhead import (
 )
 from benchmarks.competitors.bench_flash_attention_standard import (
     benchmark_flash_attn_tflops,
+    run_flash_attention_benchmark,
 )
 from benchmarks.competitors.bench_lighteval_fast_stream import (
     benchmark_lighteval_fast_stream,
@@ -77,6 +78,7 @@ from benchmarks.competitors.bench_vllm_poisson_serving import (
 __all__ = [
     # FlashAttention
     "benchmark_flash_attn_tflops",
+    "run_flash_attention_benchmark",
     # vLLM
     "benchmark_vllm_poisson_serving",
     "run_vllm_serving_benchmark",

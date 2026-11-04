@@ -1,0 +1,46 @@
+#!/bin/bash
+#PBS -N nops_serving_all
+#PBS -q N3090
+#PBS -l nodes=1:ppn=8
+#PBS -l walltime=00:30:00
+#PBS -j oe
+#PBS -o /home/tahamajlesi.ut/NeuralOps/logs/hpc_serving_run.log
+
+cd "$PBS_O_WORKDIR" || exit 1
+
+echo "========================================================================"
+echo "Job ID: $PBS_JOBID on $(hostname)"
+echo "Cluster Node Allocation: $(cat $PBS_NODEFILE | sort -u)"
+echo "Start Time: $(date)"
+echo "========================================================================"
+
+# Activate Conda Environment
+source /share/apps/Anaconda/anaconda3.8/bin/activate neuralops
+export PYTHONPATH="$PWD:$PYTHONPATH"
+
+# Verify GPU Allocation
+nvidia-smi --query-gpu=name,driver_version,memory.total,memory.free --format=csv
+
+# Phase 1: vLLM Adapter & Paged Attention Kernel on GPU
+echo ">>> [Phase 1/4] Running vLLM Paged Attention Tests..."
+pytest tests/serving/test_vllm_adapter.py -v --tb=short
+
+# Phase 2: SGLang Recurrent Radix Prefix Cache on GPU
+echo ">>> [Phase 2/4] Running SGLang Radix Recurrent Tree Tests..."
+pytest tests/test_sglang_recurrent_radix.py -v --tb=short
+
+# Phase 3: TGI Continuous Batching Serving Adapter on GPU
+echo ">>> [Phase 3/4] Running TGI Serving Adapter Stream Tests..."
+pytest tests/test_tgi_continuous_serving.py -v --tb=short
+
+# Phase 4: GGUF v3 Binary Container Export Tests
+echo ">>> [Phase 4/4] Running GGUF Container Export Tests..."
+pytest tests/test_gguf_edge_export.py -v --tb=short
+
+# Full Nine-Engine Integration Matrix
+echo ">>> [Full Matrix] Running 9-Engine Master Verification..."
+pytest tests/test_serving_matrix_all_nine.py -v --tb=short
+
+echo "========================================================================"
+echo "HPC Verification Run Completed Successfully at $(date)"
+echo "========================================================================"

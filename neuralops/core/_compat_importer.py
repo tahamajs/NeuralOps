@@ -63,7 +63,6 @@ class NeuralOpsCompatibilityRedirectFinder(MetaPathFinder):
         "neuralops.attentions": ("neuralops.layers", True),
         "neuralops.compression_engine": ("neuralops.compression", True),
         "neuralops.training": ("neuralops.trainer", True),
-        "neuralops.serving": ("neuralops.export.serving", True),
         "neuralops.backward_compat": ("neuralops.core", True),
     }
 
@@ -71,7 +70,6 @@ class NeuralOpsCompatibilityRedirectFinder(MetaPathFinder):
         "neuralops.attentions.": "neuralops.layers.",
         "neuralops.compression_engine.": "neuralops.compression.",
         "neuralops.training.": "neuralops.trainer.",
-        "neuralops.serving.": "neuralops.export.serving.",
         "neuralops.backward_compat.attentions.": "neuralops.layers.",
         "neuralops.backward_compat.compression_engine.": "neuralops.compression.",
     }

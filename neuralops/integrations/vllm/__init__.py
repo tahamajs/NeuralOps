@@ -9,13 +9,16 @@
 vLLM Runtime Integration for NeuralOps.
 """
 
+import sys
+import types
 from typing import Any, Optional
 from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.integrations.vllm.state_table import PagedStateTable
+from neuralops.integrations.vllm_backend.backend import NeuralOpsAttentionBackend
+from neuralops.integrations.vllm_backend.kv_cache_spec import NeuralOpsRecurrentSpec
 from neuralops.integrations.vllm.backend import (
-    NeuralOpsAttentionBackend,
     NeuralOpsAttentionImpl,
 )
-from neuralops.integrations.vllm.state_table import PagedStateTable
 
 try:
     import vllm
@@ -44,10 +47,49 @@ class VLLMAdapter:
         return self.model.generate(prompts, **kwargs)
 
 
+def _load_flat_vllm_symbols():
+    from pathlib import Path
+    import importlib.util
+    import sys
+    _flat_file = Path(__file__).parent.parent / "vllm.py"
+    spec = importlib.util.spec_from_file_location("neuralops.integrations.vllm_module", _flat_file)
+    if spec and spec.loader:
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["neuralops.integrations.vllm_module"] = mod
+        spec.loader.exec_module(mod)
+        return mod
+    return None
+
+_flat_vllm = _load_flat_vllm_symbols()
+if _flat_vllm is not None:
+    NeuralOpsvLLMMetadata = getattr(_flat_vllm, "NeuralOpsvLLMMetadata", None)
+    NeuralOpsvLLMImpl = getattr(_flat_vllm, "NeuralOpsvLLMImpl", None)
+    NeuralOpsvLLMAttentionBackend = getattr(_flat_vllm, "NeuralOpsvLLMAttentionBackend", None)
+    NeuralOpsForCausalLMvLLM = getattr(_flat_vllm, "NeuralOpsForCausalLMvLLM", None)
+    register_neuralops_vllm_plugin = getattr(_flat_vllm, "register_neuralops_vllm_plugin", None)
+    vllm_is_available = getattr(_flat_vllm, "vllm_is_available", None)
+
+
+class _VLLMModule(types.ModuleType):
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "HAS_VLLM" and _flat_vllm is not None:
+            _flat_vllm.HAS_VLLM = value
+        super().__setattr__(name, value)
+
+sys.modules[__name__].__class__ = _VLLMModule
+
+
 __all__ = [
     "NeuralOpsAttentionBackend",
     "NeuralOpsAttentionImpl",
+    "NeuralOpsForCausalLMvLLM",
+    "NeuralOpsRecurrentSpec",
+    "NeuralOpsvLLMAttentionBackend",
+    "NeuralOpsvLLMImpl",
+    "NeuralOpsvLLMMetadata",
     "PagedStateTable",
     "VLLMAdapter",
+    "register_neuralops_vllm_plugin",
+    "vllm_is_available",
     "HAS_VLLM",
 ]

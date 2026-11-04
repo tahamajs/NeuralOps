@@ -25,8 +25,14 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
-import triton
-import triton.testing
+
+try:
+    import triton
+    import triton.testing
+    _TRITON_AVAILABLE = True
+except ImportError:
+    triton = None  # type: ignore
+    _TRITON_AVAILABLE = False
 
 logger = logging.getLogger("neuralops.benchmarks.ops_runner")
 
@@ -189,7 +195,7 @@ def run_benchmark_worker(
     fwd_fn, fwdbwd_fn = OP_REGISTRY[op_name](B, T, H, D, dtype, device)
     target_fn = fwd_fn if mode == "fwd" else fwdbwd_fn
 
-    if device.type == "cuda":
+    if device.type == "cuda" and _TRITON_AVAILABLE:
         ms, min_ms, max_ms = triton.testing.do_bench(
             target_fn,
             warmup=warmup,
@@ -197,6 +203,21 @@ def run_benchmark_worker(
             quantiles=[0.5, 0.2, 0.8],
             return_mode="all",
         )
+    elif device.type == "cuda" and not _TRITON_AVAILABLE:
+        # CUDA benchmark fallback without Triton
+        for _ in range(warmup):
+            target_fn()
+        torch.cuda.synchronize()
+        times = []
+        for _ in range(rep):
+            torch.cuda.synchronize()
+            t0 = time.perf_counter()
+            target_fn()
+            torch.cuda.synchronize()
+            times.append((time.perf_counter() - t0) * 1000.0)
+        ms = float(sum(times) / len(times))
+        min_ms = float(min(times))
+        max_ms = float(max(times))
     else:
         for _ in range(warmup):
             target_fn()
