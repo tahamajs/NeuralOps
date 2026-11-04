@@ -56,7 +56,7 @@ def execute_notebook(nb_path, out_path):
         clean_lines = []
         for line in code_str.split("\n"):
             line_strip = line.strip()
-            if line_strip.startswith("!") or line_strip.startswith("%"):
+            if line_strip.startswith(("!", "%")):
                 clean_lines.append("# " + line)
             else:
                 clean_lines.append(line)
