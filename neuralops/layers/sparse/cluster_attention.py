@@ -732,70 +732,62 @@ class ClusterAttention(BaseAttention):
                 else torch.ones((B, 1, 1, L), dtype=torch.bool, device=device)
             )
 
-            if False:
-                scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
-                scores = scores.masked_fill(~key_valid_4d, -10000.0)
-                attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
-                attn = self.dropout(attn)
-                out_context = torch.matmul(attn, V)
-                attn_ret = attn if output_attentions else None
-            else:
-                K_num = min(max(1, self.num_clusters), L)
+            K_num = min(max(1, self.num_clusters), L)
 
-                centroids, cluster_ids, counts = self._kmeans_cluster(
-                    Q.detach(), K_num, self.n_iters, valid_mask=valid_mask_2d
+            centroids, cluster_ids, counts = self._kmeans_cluster(
+                Q.detach(), K_num, self.n_iters, valid_mask=valid_mask_2d
+            )
+            centroids = torch.nan_to_num(centroids, nan=0.0).detach()
+
+            scores_cent = torch.matmul(centroids, K.transpose(-2, -1).contiguous()) * scale
+            scores_cent = scores_cent.clamp(min=-10000.0, max=10000.0)
+            scores_cent = scores_cent.masked_fill(~key_valid_4d, -10000.0)
+            attn_cent = torch.nan_to_num(F.softmax(scores_cent.float(), dim=-1), nan=0.0).to(
+                dtype
+            )
+            attn_cent = self.dropout(attn_cent)
+
+            V_cent = torch.matmul(attn_cent, V)
+            V_cent = torch.nan_to_num(V_cent, nan=0.0)
+
+            scores_assign = torch.matmul(Q, centroids.transpose(-2, -1).contiguous()) * scale
+            empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
+            scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
+            scores_assign = scores_assign.clamp(min=-10000.0, max=10000.0)
+            temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
+            attn_assign = torch.nan_to_num(
+                F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0
+            ).to(dtype)
+            assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1e-6)
+            attn_assign = attn_assign / assign_denom
+            attn_assign = torch.nan_to_num(attn_assign, nan=0.0)
+            global_context = torch.matmul(attn_assign, V_cent)
+            global_context = torch.nan_to_num(global_context, nan=0.0)
+
+            if self.window_size > 0 and self.window_size < L:
+                scores_loc = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
+                idx = (
+                    self._seq_idx[:L].to(device)
+                    if hasattr(self, "_seq_idx") and len(self._seq_idx) >= L
+                    else torch.arange(L, device=device)
                 )
-                centroids = torch.nan_to_num(centroids, nan=0.0).detach()
-
-                scores_cent = torch.matmul(centroids, K.transpose(-2, -1).contiguous()) * scale
-                scores_cent = scores_cent.clamp(min=-10000.0, max=10000.0)
-                scores_cent = scores_cent.masked_fill(~key_valid_4d, -10000.0)
-                attn_cent = torch.nan_to_num(F.softmax(scores_cent.float(), dim=-1), nan=0.0).to(
+                if is_decoder:
+                    band_mask = (idx.unsqueeze(1) >= idx.unsqueeze(0)) & ((idx.unsqueeze(1) - idx.unsqueeze(0)) <= self.window_size)
+                else:
+                    band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
+                band_mask_4d = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
+                scores_loc = scores_loc.masked_fill(~band_mask_4d, -10000.0)
+                attn_loc = torch.nan_to_num(F.softmax(scores_loc.float(), dim=-1), nan=0.0).to(
                     dtype
                 )
-                attn_cent = self.dropout(attn_cent)
+                attn_loc = self.dropout(attn_loc)
+                local_context = torch.matmul(attn_loc, V)
+                alpha = torch.sigmoid(self.local_residual)
+                out_context = (1.0 - alpha) * global_context + alpha * local_context
+            else:
+                out_context = global_context
 
-                V_cent = torch.matmul(attn_cent, V)
-                V_cent = torch.nan_to_num(V_cent, nan=0.0)
-
-                scores_assign = torch.matmul(Q, centroids.transpose(-2, -1).contiguous()) * scale
-                empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
-                scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
-                scores_assign = scores_assign.clamp(min=-10000.0, max=10000.0)
-                temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
-                attn_assign = torch.nan_to_num(
-                    F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0
-                ).to(dtype)
-                assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1e-6)
-                attn_assign = attn_assign / assign_denom
-                attn_assign = torch.nan_to_num(attn_assign, nan=0.0)
-                global_context = torch.matmul(attn_assign, V_cent)
-                global_context = torch.nan_to_num(global_context, nan=0.0)
-
-                if self.window_size > 0 and self.window_size < L:
-                    scores_loc = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
-                    idx = (
-                        self._seq_idx[:L].to(device)
-                        if hasattr(self, "_seq_idx") and len(self._seq_idx) >= L
-                        else torch.arange(L, device=device)
-                    )
-                    if is_decoder:
-                        band_mask = (idx.unsqueeze(1) >= idx.unsqueeze(0)) & ((idx.unsqueeze(1) - idx.unsqueeze(0)) <= self.window_size)
-                    else:
-                        band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
-                    band_mask_4d = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
-                    scores_loc = scores_loc.masked_fill(~band_mask_4d, -10000.0)
-                    attn_loc = torch.nan_to_num(F.softmax(scores_loc.float(), dim=-1), nan=0.0).to(
-                        dtype
-                    )
-                    attn_loc = self.dropout(attn_loc)
-                    local_context = torch.matmul(attn_loc, V)
-                    alpha = torch.sigmoid(self.local_residual)
-                    out_context = (1.0 - alpha) * global_context + alpha * local_context
-                else:
-                    out_context = global_context
-
-                attn_ret = attn_cent if output_attentions else None
+            attn_ret = attn_cent if output_attentions else None
 
             if head_mask is not None:
                 if head_mask.dim() == 1:

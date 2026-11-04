@@ -533,8 +533,8 @@ def render_architecture_card(spec: ArchitectureSpec, plain: bool = False) -> str
     w = 74
 
     header = f"{spec.name} ({spec.class_name}) — {spec.family}"
-    lines.append(header)
-    lines.append("─" * w)
+    lines.append(header if not plain else header.replace(" — ", " - "))
+    lines.append("─" * w if not plain else "-" * w)
     lines.append(f"category: {spec.category}")
     lines.append(f"path:     {spec.source_file}")
     lines.append(f"kernel:   {spec.triton_kernel_module}")
