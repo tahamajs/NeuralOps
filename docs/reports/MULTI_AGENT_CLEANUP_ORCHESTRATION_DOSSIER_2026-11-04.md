@@ -3,7 +3,7 @@
 **Author / Orchestrator:** Master Principal Systems Architect  
 **Classification:** Operational Master Execution Dossier  
 **Target Subsystems:** `neuralops/` package & `scripts/` automation tree  
-**Invariant Mandate:** 131 Attentions | 72 Compressors | 26 Triton Kernels | 110 CUDA Kernels | 29 Notebooks  
+**Invariant Mandate:** 131 Attentions | 72 Compressors | 58 Triton Kernels | 141 CUDA Kernels | 94 Notebooks  
 
 ---
 
@@ -60,14 +60,14 @@ This runbook directly operationalizes the findings of:
 | **Agent 7** | High-Reference Shim Migrator | Wave 3 | `surgery.py`, `serving.py`, `replace_attention.py`, `registry.py` | 75 | HIGH | `refactor(architecture): migrate high-reference root shims via AST rewriting` |
 | **Agent 8** | Scripts Directory Reorganizer | Wave 3 | 19 `.pbs` files -> `hpc/`, 3 root benchmarks -> `benchmarks/` | ~3,500 | MEDIUM | `chore(scripts): reorganize hpc cluster jobs and benchmark runners` |
 | **Agent 9** | Test Suite Reconciliation | Wave 4 | Full test suite imports & collection audit | N/A | MEDIUM | `test(suite): reconcile all test imports with modernized package layout` |
-| **Agent 10** | Documentation, Version, Release | Wave 4 | README, CHANGELOG, pyproject.toml, version sync, release tag | N/A | LOW | `chore(release): bump version to v2.0.2 and update architecture docs` |
+| **Agent 10** | Documentation, Version, Release | Wave 4 | README, CHANGELOG, pyproject.toml, version sync, release tag | N/A | LOW | `chore(release): bump version to v2.0.6 and update architecture docs` |
 
 ### 1.4 The 4 Waves and Their Dependencies
 The execution follows an uncompromising unidirectional dependency flow:
 1. **Wave 1 (Foundation - Sequential):** Agents 1 & 2 eliminate zero-risk root clutter and legacy runtime import hooks.
 2. **Wave 2 (Parallel Safe - Concurrent):** Agents 3, 4, 5, and 6 operate concurrently on strictly isolated, non-overlapping directory trees (`validator`, `operations`, `experiment_logging`, `scripts`).
 3. **Wave 3 (High Risk - Sequential):** Agents 7 & 8 execute complex AST rewriting of 395 reference sites and physical directory relocations with git history preservation.
-4. **Wave 4 (Final Consolidation - Sequential):** Agents 9 & 10 execute repository-wide test suite reconciliation, version bumping to v2.0.2, and camera-ready documentation updates.
+4. **Wave 4 (Final Consolidation - Sequential):** Agents 9 & 10 execute repository-wide test suite reconciliation, version bumping to v2.0.6, and camera-ready documentation updates.
 
 ### 1.5 Global Invariant Contract
 The following five invariant metrics represent the non-negotiable architectural bedrock of NeuralOps. Every single phase of every agent must verify that these counts remain 100% frozen:
@@ -75,7 +75,7 @@ The following five invariant metrics represent the non-negotiable architectural 
 - **72 Matrix Compressors:** `grep -rE "@register_compressor" neuralops/ | wc -l == 72`
 - **26 Triton JIT Kernels:** `find neuralops/ops/triton -maxdepth 1 -name "*.py" -not -name "__init__.py" | wc -l == 26`
 - **110 CUDA C++ Kernels:** `find neuralops/ops/cuda -mindepth 1 -maxdepth 1 -type d | wc -l == 110`
-- **29 Jupyter Notebook Tutorials:** `find notebooks -maxdepth 1 -name "*.ipynb" | wc -l == 29`
+- **94 Jupyter Notebook Tutorials (29 canonical + 65 advanced expansions):** `find notebooks -maxdepth 1 -name "*.ipynb" | wc -l == 94`
 
 ### 1.6 Expected Final Outcome
 - **Total Files Deleted / Consolidated:** 51+ files removed from `neuralops/` and `scripts/`.
@@ -110,7 +110,7 @@ Uncontrolled parallel execution across 10 agents on a shared repository causes d
 
 ### 2.5 Wave 4: Final Consolidation (Sequential — Agents 9, 10)
 - **Agent 9 (Test Suite Reconciliation):** Runs `pytest --collect-only` across the entire test suite, resolves any redirected imports in test fixtures, and runs the full CPU regression suite.
-- **Agent 10 (Documentation & Release):** Updates `README.md`, `CHANGELOG.md`, bumps version to `2.0.2` across `pyproject.toml`, `CITATION.cff`, and `neuralops/__init__.py`, runs `audit_dead_code.py`, and creates local release tag `v2.0.2-cleanup`.
+- **Agent 10 (Documentation & Release):** Updates `README.md`, `CHANGELOG.md`, bumps version to `2.0.6` across `pyproject.toml`, `CITATION.cff`, and `neuralops/__init__.py`, runs `audit_dead_code.py`, and creates local release tag `v2.0.6-cleanup`.
 
 ### 2.6 Inter-Wave Verification Gate Protocol
 Before any wave transition, the orchestrator executes the 5-point verification gate:
@@ -131,7 +131,7 @@ If any agent fails or corrupts state:
 
 1. **NO FABRICATION OF TERMINAL OUTPUT:** Every claim of a passed test or created file must be backed by pasted raw terminal output. If not run, state: `I did not run it.`
 2. **NO GIT PUSH, NO REMOTE TAGGING:** All commits and tags must remain strictly local. Do not push to remote origin.
-3. **INVARIANT PRESERVATION (131/72/26/110/29):** The canonical registry counts must never change under any circumstance.
+3. **INVARIANT PRESERVATION (131/72/58/141/94):** The canonical registry counts must never change under any circumstance.
 4. **STRICT SCOPE DISCIPLINE:** Each agent is strictly confined to its assigned file list. Zero drive-by refactoring of unrelated modules.
 5. **MANDATORY 5-GATE VERIFICATION:** Every phase must pass the 5-gate schema before proceeding.
 6. **ATOMIC ROLLBACK DISCIPLINE:** Immediately rollback on error. Never attempt ad-hoc patch-ups on broken intermediate states.
@@ -489,7 +489,7 @@ python3 -c "from neuralops.trainer import Trainer, TrainingConfig; print('Traine
 - **Rollback if failed:** `git reset --hard HEAD`.
 - **Evidence to paste:** Python execution output.
 
-**Phase 4.2.4.7 — Invariant Verification (131/72/26/110/29)**
+**Phase 4.2.4.7 — Invariant Verification (131/72/58/141/94)**
 - **Objective:** Verify global architectural metrics.
 - **Commands:**
 ```bash
@@ -737,7 +737,7 @@ git rm -rf neuralops/validator/
 - **Rollback:** `git checkout HEAD -- neuralops/validator/`.
 - **Evidence to paste:** Output of `git rm`.
 
-**Phase 4.3.4.9 — Verify Invariant Contract (131/72/26/110/29)**
+**Phase 4.3.4.9 — Verify Invariant Contract (131/72/58/141/94)**
 - **Objective:** Verify global metrics.
 - **Commands:**
 ```bash
@@ -991,7 +991,7 @@ git rm -rf neuralops/operations/
 - **Rollback:** `git checkout HEAD -- neuralops/operations/`.
 - **Evidence to paste:** Git rm output.
 
-**Phase 4.4.4.9 — Verify Invariant Contract (131/72/26/110/29)**
+**Phase 4.4.4.9 — Verify Invariant Contract (131/72/58/141/94)**
 - **Objective:** Confirm registries and operator counts untouched.
 - **Commands:**
 ```bash
@@ -1214,7 +1214,7 @@ python3 -c "from neuralops.tracking import ExperimentTracker, LocalTracker; prin
 - **Rollback:** `git reset --hard HEAD`.
 - **Evidence to paste:** Python output.
 
-**Phase 4.5.4.8 — Invariant Verification (131/72/26/110/29)**
+**Phase 4.5.4.8 — Invariant Verification (131/72/58/141/94)**
 - **Objective:** Verify global metrics.
 - **Commands:**
 ```bash
@@ -1416,7 +1416,7 @@ print('Successfully parameterized qwen_7b_transplant.py')
 - **Rollback:** `git checkout HEAD -- scripts/benchmarks/qwen_7b_transplant.py`.
 - **Evidence to paste:** Compilation output.
 
-**Phase 4.6.4.8 — Invariant Verification (131/72/26/110/29)**
+**Phase 4.6.4.8 — Invariant Verification (131/72/58/141/94)**
 - **Objective:** Verify global metrics.
 - **Commands:**
 ```bash
@@ -1716,7 +1716,7 @@ rm -f scripts/tools/migrate_surgery_ast.py
 - **Rollback:** `git checkout HEAD -- neuralops/surgery.py neuralops/serving.py neuralops/replace_attention.py neuralops/registry.py`.
 - **Evidence to paste:** Git rm output.
 
-**Phase 4.7.4.15 — Invariant Verification (131/72/26/110/29)**
+**Phase 4.7.4.15 — Invariant Verification (131/72/58/141/94)**
 - **Objective:** Verify global metrics.
 - **Commands:**
 ```bash
@@ -1898,7 +1898,7 @@ for p in glob.glob('scripts/hpc/*.pbs'):
 - **Rollback:** `git reset --hard HEAD`.
 - **Evidence to paste:** Python output.
 
-**Phase 4.8.4.7 — Invariant Verification (131/72/26/110/29)**
+**Phase 4.8.4.7 — Invariant Verification (131/72/58/141/94)**
 - **Objective:** Verify global metrics.
 - **Commands:**
 ```bash
@@ -2094,7 +2094,7 @@ pytest --collect-only -q
 - **Rollback:** `git reset --hard HEAD`.
 - **Evidence to paste:** Terminal output.
 
-**Phase 4.9.4.5 — Invariant Verification (131/72/26/110/29)**
+**Phase 4.9.4.5 — Invariant Verification (131/72/58/141/94)**
 - **Objective:** Verify global metrics.
 - **Commands:**
 ```bash
@@ -2209,16 +2209,16 @@ git status --porcelain
 ### 4.10 Agent 10: Documentation, Version, Release
 
 #### 4.10.1 Mission
-Agent 10 performs the final consolidation and camera-ready release engineering: (1) updates `README.md` and `CHANGELOG.md` to reflect the modernized directory hierarchy, (2) bumps the project version string from `2.0.1` to `2.0.2` synchronously across `neuralops/__init__.py`, `pyproject.toml`, and `CITATION.cff`, (3) verifies version synchronization via `scripts/utils/sync_version.py`, (4) runs the final dead-code audit via `scripts/utils/audit_dead_code.py`, and (5) tags the local release commit as `v2.0.2-cleanup`.
+Agent 10 performs the final consolidation and camera-ready release engineering: (1) updates `README.md` and `CHANGELOG.md` to reflect the modernized directory hierarchy, (2) bumps the project version string from `2.0.1` to `2.0.6` synchronously across `neuralops/__init__.py`, `pyproject.toml`, and `CITATION.cff`, (3) verifies version synchronization via `scripts/utils/sync_version.py`, (4) runs the final dead-code audit via `scripts/utils/audit_dead_code.py`, and (5) tags the local release commit as `v2.0.6-cleanup`.
 
 #### 4.10.2 File Scope
 | File Path | Action | Purpose / Rationale |
 | :--- | :--- | :--- |
-| `neuralops/__init__.py` | VERSION BUMP | Set `__version__ = "2.0.2"` |
-| `pyproject.toml` | VERSION BUMP | Set `version = "2.0.2"` |
-| `CITATION.cff` | VERSION BUMP | Set `version: "2.0.2"` |
+| `neuralops/__init__.py` | VERSION BUMP | Set `__version__ = "2.0.6"` |
+| `pyproject.toml` | VERSION BUMP | Set `version = "2.0.6"` |
+| `CITATION.cff` | VERSION BUMP | Set `version: "2.0.6"` |
 | `README.md` | DOC UPDATE | Modernize package architecture map |
-| `CHANGELOG.md` | DOC UPDATE | Document v2.0.2 cleanup release notes |
+| `CHANGELOG.md` | DOC UPDATE | Document v2.0.6 cleanup release notes |
 | `scripts/utils/sync_version.py` | RUN CHECK | Enforce synchronous versioning |
 
 #### 4.10.3 Wave & Dependencies
@@ -2244,56 +2244,56 @@ git log -1 --oneline
 - **Evidence to paste:** Git status.
 
 **Phase 4.10.4.2 — Update Version in `neuralops/__init__.py`**
-- **Objective:** Bump version to 2.0.2.
+- **Objective:** Bump version to 2.0.6.
 - **Commands:**
 ```bash
 python3 -c "
 p = 'neuralops/__init__.py'
 c = open(p).read()
-c = c.replace('__version__ = \"2.0.1\"', '__version__ = \"2.0.2\"')
+c = c.replace('__version__ = \"2.0.1\"', '__version__ = \"2.0.6\"')
 with open(p, 'w') as fp: fp.write(c)
 print('Updated neuralops/__init__.py')
 "
 ```
 - **Expected Output Pattern:** `Updated neuralops/__init__.py`.
 - **Verification Gate:**
-  - [x] `python3 -c "import neuralops; print(neuralops.__version__)"` prints `2.0.2`.
+  - [x] `python3 -c "import neuralops; print(neuralops.__version__)"` prints `2.0.6`.
 - **Rollback:** `git checkout HEAD -- neuralops/__init__.py`.
 - **Evidence to paste:** Terminal output.
 
 **Phase 4.10.4.3 — Update Version in `pyproject.toml`**
-- **Objective:** Bump pyproject.toml to 2.0.2.
+- **Objective:** Bump pyproject.toml to 2.0.6.
 - **Commands:**
 ```bash
 python3 -c "
 p = 'pyproject.toml'
 c = open(p).read()
-c = c.replace('version = \"2.0.1\"', 'version = \"2.0.2\"')
+c = c.replace('version = \"2.0.1\"', 'version = \"2.0.6\"')
 with open(p, 'w') as fp: fp.write(c)
 print('Updated pyproject.toml')
 "
 ```
 - **Expected Output Pattern:** `Updated pyproject.toml`.
 - **Verification Gate:**
-  - [x] `grep "version = \"2.0.2\"" pyproject.toml` returns match.
+  - [x] `grep "version = \"2.0.6\"" pyproject.toml` returns match.
 - **Rollback:** `git checkout HEAD -- pyproject.toml`.
 - **Evidence to paste:** Grep output.
 
 **Phase 4.10.4.4 — Update Version in `CITATION.cff`**
-- **Objective:** Bump CITATION.cff to 2.0.2.
+- **Objective:** Bump CITATION.cff to 2.0.6.
 - **Commands:**
 ```bash
 python3 -c "
 p = 'CITATION.cff'
 c = open(p).read()
-c = c.replace('version: 2.0.1', 'version: 2.0.2')
+c = c.replace('version: 2.0.1', 'version: 2.0.6')
 with open(p, 'w') as fp: fp.write(c)
 print('Updated CITATION.cff')
 "
 ```
 - **Expected Output Pattern:** `Updated CITATION.cff`.
 - **Verification Gate:**
-  - [x] `grep "version: 2.0.2" CITATION.cff` returns match.
+  - [x] `grep "version: 2.0.6" CITATION.cff` returns match.
 - **Rollback:** `git checkout HEAD -- CITATION.cff`.
 - **Evidence to paste:** Grep output.
 
@@ -2303,20 +2303,20 @@ print('Updated CITATION.cff')
 ```bash
 python3 scripts/utils/sync_version.py --check
 ```
-- **Expected Output Pattern:** `All version strings are in sync: 2.0.2`.
+- **Expected Output Pattern:** `All version strings are in sync: 2.0.6`.
 - **Verification Gate:**
   - [x] Exit code 0.
 - **Rollback:** `git reset --hard HEAD`.
 - **Evidence to paste:** Output of `sync_version.py`.
 
 **Phase 4.10.4.6 — Document Release Notes in `CHANGELOG.md`**
-- **Objective:** Add comprehensive v2.0.2 entry.
+- **Objective:** Add comprehensive v2.0.6 entry.
 - **Commands:**
 ```bash
 python3 -c "
 p = 'CHANGELOG.md'
 entry = '''
-## [2.0.2] - 2026-11-04
+## [2.0.6] - 2026-11-04
 
 ### Changed
 - **Directory Modernization:** Consolidated legacy duality directories: merged `validator/` into `validation/`, eliminated `operations/` in favor of `ops/`, merged `experiment_logging/` into `tracking/`, and removed `training/` MetaPathFinder shim.
@@ -2331,7 +2331,7 @@ print('Updated CHANGELOG.md')
 ```
 - **Expected Output Pattern:** `Updated CHANGELOG.md`.
 - **Verification Gate:**
-  - [x] CHANGELOG contains v2.0.2 header.
+  - [x] CHANGELOG contains v2.0.6 header.
 - **Rollback:** `git checkout HEAD -- CHANGELOG.md`.
 - **Evidence to paste:** Head of CHANGELOG.
 
@@ -2352,7 +2352,7 @@ print('Verified README.md')
 - **Rollback:** `git checkout HEAD -- README.md`.
 - **Evidence to paste:** Output.
 
-**Phase 4.10.4.8 — Invariant Verification (131/72/26/110/29)**
+**Phase 4.10.4.8 — Invariant Verification (131/72/58/141/94)**
 - **Objective:** Verify global metrics.
 - **Commands:**
 ```bash
@@ -2409,7 +2409,7 @@ ruff check neuralops/ scripts/ tests/
 - **Commands:**
 ```bash
 git add neuralops/__init__.py pyproject.toml CITATION.cff README.md CHANGELOG.md
-git commit -m "chore(release): bump version to v2.0.2 and update architecture docs" --author="taha <tahamaj4@gmail.com>"
+git commit -m "chore(release): bump version to v2.0.6 and update architecture docs" --author="taha <tahamaj4@gmail.com>"
 git log -1 --stat
 ```
 - **Expected Output Pattern:** Commit SHA created; 5 files changed.
@@ -2418,17 +2418,17 @@ git log -1 --stat
 - **Rollback:** `git reset --soft HEAD~1`.
 - **Evidence to paste:** Git log output.
 
-**Phase 4.10.4.13 — Create Local Release Tag `v2.0.2-cleanup`**
+**Phase 4.10.4.13 — Create Local Release Tag `v2.0.6-cleanup`**
 - **Objective:** Tag the release locally.
 - **Commands:**
 ```bash
-git tag -a "v2.0.2-cleanup" -m "NeuralOps v2.0.2: Clean Architecture and Multi-Agent Consolidation"
-git tag -l -n1 "v2.0.2-cleanup"
+git tag -a "v2.0.6-cleanup" -m "NeuralOps v2.0.6: Clean Architecture and Multi-Agent Consolidation"
+git tag -l -n1 "v2.0.6-cleanup"
 ```
 - **Expected Output Pattern:** Tag created locally; displays annotation.
 - **Verification Gate:**
   - [x] Tag points to Agent 10 commit.
-- **Rollback:** `git tag -d "v2.0.2-cleanup"`.
+- **Rollback:** `git tag -d "v2.0.6-cleanup"`.
 - **Evidence to paste:** Tag output.
 
 **Phase 4.10.4.14 — Final Handoff & Release Summary**
@@ -2451,7 +2451,7 @@ git log -10 --oneline
 Every operational phase executed by any sub-agent must satisfy the five mandatory verification gates:
 - **Gate A (Execution):** The shell command exits with return code 0.
 - **Gate B (Pattern):** Output matches the defined expected pattern (e.g. expected deletion count, AST compile confirmation).
-- **Gate C (Invariants):** The five invariant counts (131/72/26/110/29) are verified and unchanged.
+- **Gate C (Invariants):** The five invariant counts (131/72/58/141/94) are verified and unchanged.
 - **Gate D (Package Load):** `python3 -c "import neuralops"` successfully imports without warnings or exceptions.
 - **Gate E (Test Parity):** Relevant unit tests pass, or are explicitly marked `DEFERRED` to Agent 9.
 
@@ -2521,7 +2521,7 @@ flowchart TD
     end
 
     subgraph Wave4 ["Wave 4: Final Consolidation (Sequential)"]
-        A9["Agent 9: Test Suite Reconciliation (Full pytest audit)"] --> A10["Agent 10: Release & Version Tag (v2.0.2-cleanup)"]
+        A9["Agent 9: Test Suite Reconciliation (Full pytest audit)"] --> A10["Agent 10: Release & Version Tag (v2.0.6-cleanup)"]
     end
 
     Wave1 --> Wave2
@@ -2589,12 +2589,12 @@ echo "=== ALL GLOBAL GATES PASSED SUCCESSFULLY ==="
 | **Benchmark Runners in `scripts/` Root** | 3 files | 0 files | **100% moved to `scripts/benchmarks/`** |
 | **Registered Attention Mechanisms** | 131 | 131 | **100% Frozen Invariant** |
 | **Registered Matrix Compressors** | 72 | 72 | **100% Frozen Invariant** |
-| **Project Release Version** | v2.0.1 | v2.0.2 | **Bumped with clean changelog** |
+| **Project Release Version** | v2.0.1 | v2.0.6 | **Bumped with clean changelog** |
 
 ### 8.2 Expected Git Log Shape (10 Atomic Commits)
 Upon completion, `git log --oneline -10` will display:
 ```text
-abcdef1 chore(release): bump version to v2.0.2 and update architecture docs
+abcdef1 chore(release): bump version to v2.0.6 and update architecture docs
 abcdef2 test(suite): reconcile all test imports with modernized package layout
 abcdef3 chore(scripts): reorganize hpc cluster jobs and benchmark runners
 abcdef4 refactor(architecture): migrate high-reference root shims via AST rewriting
@@ -2669,8 +2669,8 @@ git status --porcelain
 
 ### 10.5 Wave 4 Gates
 - [ ] Agent 9 committed: full test collection and CPU test suite green.
-- [ ] Agent 10 committed: version bumped to 2.0.2, CHANGELOG documented.
-- [ ] Local release tag `v2.0.2-cleanup` verified.
+- [ ] Agent 10 committed: version bumped to 2.0.6, CHANGELOG documented.
+- [ ] Local release tag `v2.0.6-cleanup` verified.
 - [ ] Global verification suite 100% green.
 
 ---
@@ -2692,8 +2692,8 @@ Includes: `git rm`, `git mv`, `git commit`, `pytest`, `ruff check`, `python3 -m 
 === NEURALOPS MULTI-AGENT CLEANUP SIGN-OFF ===
 Orchestrator: Master Principal Systems Architect
 Date of Completion: 2026-11-04
-Final Version: v2.0.2
-Final Tag: v2.0.2-cleanup
+Final Version: v2.0.6
+Final Tag: v2.0.6-cleanup
 Total Commits: 10
 Invariants Preserved: 131 / 72 / 26 / 110 / 29 (VERIFIED)
 Working Tree: Clean
