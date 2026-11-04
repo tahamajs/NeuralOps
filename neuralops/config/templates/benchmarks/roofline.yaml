@@ -1,0 +1,32 @@
+version: "1.0.0"
+benchmark_suite: "roofline"
+name: "cuda_triton_roofline"
+description: "Microbenchmark configuration for native CUDA (110 modules) and Triton (26 modules) kernels with cache flushing"
+tag: "roofline"
+output_root_directory: "results/benchmarks"
+
+hardware:
+  device: "${CUDA_VISIBLE_DEVICES:-cuda:0}"
+  backend_preference: "auto"
+  enforce_deterministic: false
+  allow_tf32: true
+  memory_fraction_limit: null
+
+tracking:
+  enabled: true
+  enable_tensorboard: true
+  enable_local_jsonl: true
+  log_frequency_steps: 1
+  capture_gpu_telemetry: true
+  telemetry_sample_interval_ms: 250
+  tensorboard_flush_secs: 10
+  export_formats:
+    - "jsonl"
+    - "csv"
+    - "summary"
+
+custom_parameters:
+  measure_arithmetic_intensity: true
+  flush_l2_cache: true
+  l2_cache_size_mb: 48
+  iterations: 100
