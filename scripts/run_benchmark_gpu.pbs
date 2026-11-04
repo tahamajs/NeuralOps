@@ -13,8 +13,10 @@
 
 set -euo pipefail
 cd "${PBS_O_WORKDIR:-$HOME/NeuralOps}"
-export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/Anaconda/anaconda3.8/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}"
+export PATH="/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:${PATH:-}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/gcc/gcc-8.2.0/lib:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
 PY="${NEURALOPS_PYTHON:-$HOME/.conda/envs/neuralops_cu113/bin/python}"
 MODE="${NEURALOPS_BENCHMARK_MODE:-serving}"
 CONFIG="${NEURALOPS_BENCHMARK_CONFIG:-benchmarks/configs/quick_cuda.json}"

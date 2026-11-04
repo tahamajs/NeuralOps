@@ -57,6 +57,12 @@ echo "=========================================================="
 # 1. Enforce PBS_O_WORKDIR standard per AGENTS.md §3.4
 cd "${PBS_O_WORKDIR:-$(pwd)}" || exit 1
 
+export PATH="/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:${PATH:-}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/gcc/gcc-8.2.0/lib:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
+
+
 # 2. Activate centralized Sharif HPC Conda environment
 CENTRAL_ANACONDA="/share/apps/Anaconda/anaconda3.8"
 NEURALOPS_ENV="${HOME}/.conda/envs/neuralops"

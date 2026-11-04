@@ -9,8 +9,9 @@
 cd "$PBS_O_WORKDIR" || exit 1
 
 export PATH="/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:${PATH:-}"
-export LD_LIBRARY_PATH="/home/tahamajlesi.ut/.conda/envs/neuralops/lib:/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
-export PYTHONPATH="$PWD:${PYTHONPATH:-}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/gcc/gcc-8.2.0/lib:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
 
 PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops/bin/python
 

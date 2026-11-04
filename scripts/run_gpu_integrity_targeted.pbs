@@ -7,8 +7,10 @@
 
 set -euo pipefail
 cd "$PBS_O_WORKDIR" || exit 1
-export PATH="/usr/local/cuda-11.3/bin:/share/apps/gcc/gcc-8.2.0/bin:$PATH"
-export LD_LIBRARY_PATH="/usr/local/cuda-11.3/lib64:/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
+export PATH="/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:${PATH:-}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/gcc/gcc-8.2.0/lib:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 source /share/apps/Anaconda/anaconda3.8/bin/activate neuralops_cu113
 exec python -m pytest \
