@@ -116,6 +116,10 @@ def run_single_kd_session(
     seq_len: int = 64,
     vocab_size: int = 1000,
     learning_rate: float = 3e-4,
+    kd_temperature: float = 2.0,
+    kd_weight: float = 0.5,
+    weight_decay: float = 0.01,
+    grad_clip: float = 1.0,
 ) -> dict[str, Any]:
     """Train student model with knowledge distillation for at most max_duration_sec."""
     if module_type == "attention":
@@ -126,8 +130,8 @@ def run_single_kd_session(
     student_model.train()
     teacher_model.eval()
 
-    optimizer = torch.optim.AdamW(student_model.parameters(), lr=learning_rate, weight_decay=0.01)
-    kd_loss_fn = LogitDistillationLoss(mode="forward_kl", temperature=2.0)
+    optimizer = torch.optim.AdamW(student_model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    kd_loss_fn = LogitDistillationLoss(mode="forward_kl", temperature=kd_temperature)
 
     total_tokens = 0
     step = 0
@@ -163,14 +167,14 @@ def run_single_kd_session(
 
             ce_loss = F.cross_entropy(s_logits_flat, targets)
             kd_loss = kd_loss_fn(s_logits_flat, t_logits.view(-1, vocab_size))
-            total_loss = ce_loss + 0.5 * kd_loss
+            total_loss = ce_loss + kd_weight * kd_loss
 
             if torch.isnan(total_loss) or torch.isinf(total_loss):
                 logger.warning("[%s] NaN/Inf loss encountered at step %d, terminating early", module_name, step)
                 break
 
             total_loss.backward()
-            torch.nn.utils.clip_grad_norm_(student_model.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm_(student_model.parameters(), grad_clip)
             optimizer.step()
 
             loss_val = float(total_loss.item())
@@ -228,7 +232,30 @@ def main() -> None:
     parser.add_argument("--output-sqlite", type=Path, default=_REPO_ROOT / "results" / "master_ledger.sqlite")
     parser.add_argument("--category", choices=["attention", "compressor", "all"], default="all")
     parser.add_argument("--limit", type=int, default=None, help="Optional limit for smoke testing")
+    parser.add_argument("--batch-size", type=int, default=8, help="Training batch size per module")
+    parser.add_argument("--seq-len", type=int, default=64, help="Attention sequence length")
+    parser.add_argument("--compressor-seq-len", type=int, default=32, help="Compressor sequence length")
+    parser.add_argument("--learning-rate", type=float, default=3e-4, help="AdamW learning rate")
+    parser.add_argument("--kd-temperature", type=float, default=2.0, help="KD temperature")
+    parser.add_argument("--kd-weight", type=float, default=0.5, help="KD loss weight")
+    parser.add_argument("--weight-decay", type=float, default=0.01, help="AdamW weight decay")
+    parser.add_argument("--grad-clip", type=float, default=1.0, help="Maximum gradient norm")
     args = parser.parse_args()
+
+    settings = {
+        "max-duration": args.max_duration,
+        "batch-size": args.batch_size,
+        "seq-len": args.seq_len,
+        "compressor-seq-len": args.compressor_seq_len,
+        "learning-rate": args.learning_rate,
+        "kd-temperature": args.kd_temperature,
+        "kd-weight": args.kd_weight,
+        "weight-decay": args.weight_decay,
+        "grad-clip": args.grad_clip,
+    }
+    invalid = [name for name, value in settings.items() if value <= 0]
+    if invalid:
+        raise ValueError(f"Training settings must be > 0; invalid: {', '.join(invalid)}")
 
     device = torch.device(args.device)
     logger.info("Initializing KD benchmark on device: %s (Max duration per module: %.1fs)", device, args.max_duration)
@@ -255,7 +282,14 @@ def main() -> None:
                 attn_layer = create_attention(name, embed_dim=128, num_heads=4)
                 rec = run_single_kd_session(
                     name, "attention", attn_layer, teacher_model, device,
-                    max_duration_sec=args.max_duration
+                    max_duration_sec=args.max_duration,
+                    batch_size=args.batch_size,
+                    seq_len=args.seq_len,
+                    learning_rate=args.learning_rate,
+                    kd_temperature=args.kd_temperature,
+                    kd_weight=args.kd_weight,
+                    weight_decay=args.weight_decay,
+                    grad_clip=args.grad_clip,
                 )
             except Exception as e:
                 rec = {
@@ -307,7 +341,14 @@ def main() -> None:
 
                 rec = run_single_kd_session(
                     name, "compressor", comp_model, teacher_model, device,
-                    max_duration_sec=args.max_duration, seq_len=32
+                    max_duration_sec=args.max_duration,
+                    batch_size=args.batch_size,
+                    seq_len=args.compressor_seq_len,
+                    learning_rate=args.learning_rate,
+                    kd_temperature=args.kd_temperature,
+                    kd_weight=args.kd_weight,
+                    weight_decay=args.weight_decay,
+                    grad_clip=args.grad_clip,
                 )
             except Exception as e:
                 rec = {

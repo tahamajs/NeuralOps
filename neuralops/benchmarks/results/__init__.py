@@ -10,6 +10,7 @@ NeuralOps Benchmarks Results Subpackage.
 """
 
 from __future__ import annotations
+from .schema import normalize_legacy_result_dict
 
 import importlib
 from typing import Any
@@ -26,6 +27,7 @@ __all__ = [
     "ReproducibilityInfo",
     "ArtifactPaths",
     "PushInfo",
+    "MultiFormatSaver",
     "save_all_formats",
     "save_json",
     "save_jsonl_index",
@@ -33,6 +35,10 @@ __all__ = [
     "save_markdown_summary",
     "save_parquet_index",
     "compute_result_path",
+    "save_surgerized_safetensors",
+    "load_surgerized_safetensors",
+    "BenchmarkSweepResumer",
+    "dedup_results_ledger",
     "Deduplicator",
     "GitCommitter",
     "HFHubPusher",
@@ -40,9 +46,12 @@ __all__ = [
     "ResultsIndex",
     "generate_reproduction_command",
     "generate_reproduction_script",
+    "normalize_legacy_result_dict",
 ]
 
 _LAZY_RESULTS_MAP: dict[str, tuple[str, str]] = {
+    "BenchmarkSweepResumer": ("neuralops.benchmarks.results.resumer", "BenchmarkSweepResumer"),
+    "dedup_results_ledger": ("neuralops.benchmarks.results.resumer", "dedup_results_ledger"),
     "Deduplicator": ("neuralops.benchmarks.results.dedup", "Deduplicator"),
     "GitCommitter": ("neuralops.benchmarks.results.git_sync", "GitCommitter"),
     "HFHubPusher": ("neuralops.benchmarks.results.hf_sync", "HFHubPusher"),
@@ -50,12 +59,15 @@ _LAZY_RESULTS_MAP: dict[str, tuple[str, str]] = {
     "generate_reproduction_command": ("neuralops.benchmarks.results.reproduce", "generate_reproduction_command"),
     "generate_reproduction_script": ("neuralops.benchmarks.results.reproduce", "generate_reproduction_script"),
     "compute_result_path": ("neuralops.benchmarks.results.saver", "compute_result_path"),
+    "MultiFormatSaver": ("neuralops.benchmarks.results.saver", "MultiFormatSaver"),
     "save_all_formats": ("neuralops.benchmarks.results.saver", "save_all_formats"),
     "save_csv_index": ("neuralops.benchmarks.results.saver", "save_csv_index"),
     "save_json": ("neuralops.benchmarks.results.saver", "save_json"),
     "save_jsonl_index": ("neuralops.benchmarks.results.saver", "save_jsonl_index"),
     "save_markdown_summary": ("neuralops.benchmarks.results.saver", "save_markdown_summary"),
     "save_parquet_index": ("neuralops.benchmarks.results.saver", "save_parquet_index"),
+    "save_surgerized_safetensors": ("neuralops.benchmarks.results.safetensors_io", "save_surgerized_safetensors"),
+    "load_surgerized_safetensors": ("neuralops.benchmarks.results.safetensors_io", "load_surgerized_safetensors"),
     "ArtifactPaths": ("neuralops.benchmarks.results.schema", "ArtifactPaths"),
     "BaselineComparison": ("neuralops.benchmarks.results.schema", "BaselineComparison"),
     "BenchmarkResult": ("neuralops.benchmarks.results.schema", "BenchmarkResult"),
@@ -64,6 +76,7 @@ _LAZY_RESULTS_MAP: dict[str, tuple[str, str]] = {
     "HardwareUsage": ("neuralops.benchmarks.results.schema", "HardwareUsage"),
     "ModelMetadata": ("neuralops.benchmarks.results.schema", "ModelMetadata"),
     "ModuleMetadata": ("neuralops.benchmarks.results.schema", "ModuleMetadata"),
+    "normalize_legacy_result_dict": ("neuralops.benchmarks.results.schema", "normalize_legacy_result_dict"),
     "PushInfo": ("neuralops.benchmarks.results.schema", "PushInfo"),
     "ReproducibilityInfo": ("neuralops.benchmarks.results.schema", "ReproducibilityInfo"),
     "RunMetadata": ("neuralops.benchmarks.results.schema", "RunMetadata"),

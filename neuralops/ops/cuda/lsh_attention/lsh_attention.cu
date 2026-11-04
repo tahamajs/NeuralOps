@@ -10,7 +10,7 @@
 #include <c10/cuda/CUDAStream.h>
 #include <cmath>
 
-__global__ void lsh_hash_kernel(
+__global__ __launch_bounds__(128) void lsh_hash_kernel(
     const float* __restrict__ x,
     const float* __restrict__ R,
     int* __restrict__ hashes,
@@ -26,22 +26,38 @@ __global__ void lsh_hash_kernel(
 
     const float* x_l = x + (bh * L + l) * D;
 
+    // Vectorized 128-bit float4 loads and bitwise hash accumulation
     int bucket = 0;
+    const int d_vec4 = D / 4;
+
     for (int p = 0; p < num_hashes; ++p) {
         float dot = 0.0f;
+        const float* r_p = R + p; // stride in column-major R is num_hashes
+
         #pragma unroll 4
-        for (int d = 0; d < D; ++d) {
-            dot += x_l[d] * R[d * num_hashes + p];
+        for (int v = 0; v < d_vec4; ++v) {
+            float4 xv = reinterpret_cast<const float4*>(x_l)[v];
+            int d_idx = v * 4;
+            dot = __fmaf_rn(xv.x, r_p[(d_idx + 0) * num_hashes], dot);
+            dot = __fmaf_rn(xv.y, r_p[(d_idx + 1) * num_hashes], dot);
+            dot = __fmaf_rn(xv.z, r_p[(d_idx + 2) * num_hashes], dot);
+            dot = __fmaf_rn(xv.w, r_p[(d_idx + 3) * num_hashes], dot);
         }
-        if (dot >= 0.0f) {
-            bucket |= (1 << p);
+
+        // Remainder loop for unaligned tail
+        for (int d = d_vec4 * 4; d < D; ++d) {
+            dot = __fmaf_rn(x_l[d], r_p[d * num_hashes], dot);
         }
+
+        // Bitwise branchless bucket population without conditional branching
+        int sign_bit = !__signbit(dot);
+        bucket |= (sign_bit << p);
     }
 
     hashes[bh * L + l] = bucket;
 }
 
-__global__ void lsh_bucket_attention_kernel(
+__global__ __launch_bounds__(128) void lsh_bucket_attention_kernel(
     const float* __restrict__ q,
     const float* __restrict__ k,
     const float* __restrict__ v,
@@ -66,16 +82,28 @@ __global__ void lsh_bucket_attention_kernel(
 
     float max_score = -1e9f;
 
+    const int d_vec4 = D / 4;
+
     for (int n = 0; n < L; ++n) {
         int hash_n = kv_hashes[bh_offset_l + n];
-        bool match = (hash_m == hash_n);
+        // Single-cycle hardware POPC (__popc) for bitwise Hamming distance matching
+        // Exact bucket match: __popc(hash_m ^ hash_n) == 0
+        bool match = (__popc(static_cast<unsigned int>(hash_m ^ hash_n)) == 0);
         float dot = -1e4f;
         if (match) {
             const float* k_n = k + bh_offset_ld + n * D;
             float d_val = 0.0f;
             #pragma unroll 4
-            for (int d = 0; d < D; ++d) {
-                d_val += q_m[d] * k_n[d];
+            for (int v = 0; v < d_vec4; ++v) {
+                float4 qv = reinterpret_cast<const float4*>(q_m)[v];
+                float4 kv = reinterpret_cast<const float4*>(k_n)[v];
+                d_val = __fmaf_rn(qv.x, kv.x, d_val);
+                d_val = __fmaf_rn(qv.y, kv.y, d_val);
+                d_val = __fmaf_rn(qv.z, kv.z, d_val);
+                d_val = __fmaf_rn(qv.w, kv.w, d_val);
+            }
+            for (int d = d_vec4 * 4; d < D; ++d) {
+                d_val = __fmaf_rn(q_m[d], k_n[d], d_val);
             }
             dot = d_val * scale;
         }
@@ -93,24 +121,40 @@ __global__ void lsh_bucket_attention_kernel(
 
     for (int n = 0; n < L; ++n) {
         int hash_n = kv_hashes[bh_offset_l + n];
-        bool match = (hash_m == hash_n);
+        bool match = (__popc(static_cast<unsigned int>(hash_m ^ hash_n)) == 0);
         float dot = -1e4f;
         if (match) {
             const float* k_n = k + bh_offset_ld + n * D;
             float d_val = 0.0f;
             #pragma unroll 4
-            for (int d = 0; d < D; ++d) {
-                d_val += q_m[d] * k_n[d];
+            for (int v = 0; v < d_vec4; ++v) {
+                float4 qv = reinterpret_cast<const float4*>(q_m)[v];
+                float4 kv = reinterpret_cast<const float4*>(k_n)[v];
+                d_val = __fmaf_rn(qv.x, kv.x, d_val);
+                d_val = __fmaf_rn(qv.y, kv.y, d_val);
+                d_val = __fmaf_rn(qv.z, kv.z, d_val);
+                d_val = __fmaf_rn(qv.w, kv.w, d_val);
+            }
+            for (int d = d_vec4 * 4; d < D; ++d) {
+                d_val = __fmaf_rn(q_m[d], k_n[d], d_val);
             }
             dot = d_val * scale;
         }
-        float p = expf(dot - max_score);
+        float p = __expf(dot - max_score);
         sum_exp += p;
 
         const float* v_n = v + bh_offset_ld + n * D;
         #pragma unroll 4
-        for (int d = 0; d < D; ++d) {
-            acc[d] += p * v_n[d];
+        for (int v = 0; v < d_vec4; ++v) {
+            float4 vv = reinterpret_cast<const float4*>(v_n)[v];
+            int d_idx = v * 4;
+            acc[d_idx + 0] = __fmaf_rn(p, vv.x, acc[d_idx + 0]);
+            acc[d_idx + 1] = __fmaf_rn(p, vv.y, acc[d_idx + 1]);
+            acc[d_idx + 2] = __fmaf_rn(p, vv.z, acc[d_idx + 2]);
+            acc[d_idx + 3] = __fmaf_rn(p, vv.w, acc[d_idx + 3]);
+        }
+        for (int d = d_vec4 * 4; d < D; ++d) {
+            acc[d] = __fmaf_rn(p, v_n[d], acc[d]);
         }
     }
 

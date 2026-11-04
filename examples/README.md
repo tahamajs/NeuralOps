@@ -6,17 +6,17 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 #
-# NeuralOps examples suite (v2.0.1)
+# NeuralOps examples suite (v2.0.3)
 
 # NeuralOps Examples Suite
 
-The NeuralOps examples suite provides 22 self-contained, reproducible, offline-friendly demonstration scripts covering all subsystems of the framework: model surgery, low-rank compression, quantization, distillation, distributed training, high-throughput serving, kernel dispatch, and evaluation.
+The NeuralOps examples suite provides **35 self-contained, reproducible, offline-friendly demonstration scripts** covering all subsystems of the framework: model surgery, low-rank compression, quantization, distillation, distributed training, high-throughput serving, kernel dispatch, compiler graphs, and runtime resilience.
 
-Examples 01–20 are designed to execute reliably on CPU (macOS/Linux) without external network calls or GPU requirements. Examples 21–22 add explicit full-model surgery and integrity-report workflows; when `--device cuda` is requested, they fail closed if CUDA is unavailable.
+All scripts are engineered to execute reliably on CPU (macOS/Linux) without external network calls or GPU requirements, while fully supporting GPU acceleration via `--device cuda` when available (with strict fail-closed verification).
 
 ---
 
-## Suite Summary Table (22 Examples)
+## Suite Summary Table (35 Examples)
 
 | Script | Subsystem | Demonstrates | Target Device | Execution Command |
 |---|---|---|---|---|
@@ -26,7 +26,7 @@ Examples 01–20 are designed to execute reliably on CPU (macOS/Linux) without e
 | [`04_knowledge_distillation.py`](04_knowledge_distillation.py) | Distillation Recovery | Teacher-student KL-divergence distillation and logits matching | CPU / MPS / CUDA | `python examples/04_knowledge_distillation.py` |
 | [`05_fla_style_benchmarking.py`](05_fla_style_benchmarking.py) | Microbenchmarking | Cold-cache latency benchmarking across attention mechanisms | CPU / MPS / CUDA | `python examples/05_fla_style_benchmarking.py` |
 | [`06_export_and_push.py`](06_export_and_push.py) | Model Serialization | SafeTensors, ONNX, and GGUF export with surgery manifest verification | CPU / MPS / CUDA | `python examples/06_export_and_push.py` |
-| [`07_custom_attention.py`](07_custom_attention.py) | Extensibility Engine | `@register_attention` registration of custom attention mechanisms | CPU / MPS / CUDA | `python examples/07_custom_attention.py` |
+| [`07_custom_attention.py`](07_custom_attention.py) | Extensibility Engine | @register_attention registration of custom attention mechanisms | CPU / MPS / CUDA | `python examples/07_custom_attention.py` |
 | [`08_grpo_reasoning.py`](08_grpo_reasoning.py) | Post-Training RL | GRPO loss computation and group relative policy optimization | CPU / MPS / CUDA | `python examples/08_grpo_reasoning.py` |
 | [`09_multi_stage_model_surgery.py`](09_multi_stage_model_surgery.py) | Fluent Surgery DSL | Multi-stage pipeline: attention surgery -> SVD compression -> MLP surgery | CPU / MPS / CUDA | `python examples/09_multi_stage_model_surgery.py` |
 | [`10_advanced_compression_zoo.py`](10_advanced_compression_zoo.py) | SVD Compression Zoo | Comparative analysis of 4 SVD algorithms (Standard, Whitened, Fisher, HNC) | CPU / MPS / CUDA | `python examples/10_advanced_compression_zoo.py` |
@@ -40,8 +40,21 @@ Examples 01–20 are designed to execute reliably on CPU (macOS/Linux) without e
 | [`18_three_level_kernel_dispatch.py`](18_three_level_kernel_dispatch.py) | Kernel Dispatch Architecture | 3-level fallback hierarchy: CUDA C++ -> Triton JIT -> Vectorized PyTorch | CPU / MPS / CUDA | `python examples/18_three_level_kernel_dispatch.py` |
 | [`19_spectral_and_hessian_diagnostics.py`](19_spectral_and_hessian_diagnostics.py) | Landscape Diagnostics | Lanczos Hessian eigenspectrum estimation, top eigenvalue, and stable rank | CPU / MPS / CUDA | `python examples/19_spectral_and_hessian_diagnostics.py` |
 | [`20_long_context_niah_eval.py`](20_long_context_niah_eval.py) | Long-Context Evaluation | Needle-in-a-Haystack (NIAH) retrieval evaluation across context lengths | CPU / MPS / CUDA | `python examples/20_long_context_niah_eval.py` |
-| [`21_full_model_surgery.py`](21_full_model_surgery.py) | Full-Model Surgery | Replace attention in every model layer, then verify finite forward output and finite backward gradients | CPU / MPS / CUDA | `python examples/21_full_model_surgery.py --device cuda` |
-| [`22_surgery_baseline_report.py`](22_surgery_baseline_report.py) | Surgery Integrity Report | Compare pre/post-surgery outputs and write a machine-readable JSON report | CUDA required by default | `python examples/22_surgery_baseline_report.py` |
+| [`21_full_model_surgery.py`](21_full_model_surgery.py) | Full-Model Surgery | Replace attention in every model layer, then verify finite forward and backward gradients | CPU / MPS / CUDA | `python examples/21_full_model_surgery.py` |
+| [`22_surgery_baseline_report.py`](22_surgery_baseline_report.py) | Surgery Integrity Report | Compare pre/post-surgery outputs and generate a machine-readable JSON report | CPU / MPS / CUDA | `python examples/22_surgery_baseline_report.py` |
+| [`23_universal_surgery_director_ten_laws.py`](23_universal_surgery_director_ten_laws.py) | Universal Surgery Director | Automated compliance enforcement of the Ten Inviolable Laws of Attention Surgery | CPU / MPS / CUDA | `python examples/23_universal_surgery_director_ten_laws.py` |
+| [`24_deepseek_mla_surgery_and_healing.py`](24_deepseek_mla_surgery_and_healing.py) | DeepSeek MLA Surgery | Dual-stream latent projection, decoupled RoPE preservation, and micro-healing | CPU / MPS / CUDA | `python examples/24_deepseek_mla_surgery_and_healing.py` |
+| [`25_fx_graph_rewriter_compiler.py`](25_fx_graph_rewriter_compiler.py) | Torch FX Rewriter | Graph capture, symbolic subgraph pattern matching, and dead-code elimination | CPU / MPS / CUDA | `python examples/25_fx_graph_rewriter_compiler.py` |
+| [`26_streaming_shadow_twin_distillation.py`](26_streaming_shadow_twin_distillation.py) | Zero-OOM Streaming Distillation | Shadow twin detached teacher caching and sequence micro-chunking | CPU / MPS / CUDA | `python examples/26_streaming_shadow_twin_distillation.py` |
+| [`27_huggingface_polymorphic_cache_bridge.py`](27_huggingface_polymorphic_cache_bridge.py) | Polymorphic Generation Bridge | Seamless inter-framework cache bridge for HuggingFace model.generate() integration | CPU / MPS / CUDA | `python examples/27_huggingface_polymorphic_cache_bridge.py` |
+| [`28_smart_trainer_automax_vram.py`](28_smart_trainer_automax_vram.py) | AutoMax VRAM Smart Trainer | Hardware headroom saturation probe and adaptive gradient accumulation | CPU / MPS / CUDA | `python examples/28_smart_trainer_automax_vram.py` |
+| [`29_dora_healing_directional_adaptation.py`](29_dora_healing_directional_adaptation.py) | DoRA Directional Adaptation | Weight-decomposed low-rank adaptation for accelerated post-surgery recovery | CPU / MPS / CUDA | `python examples/29_dora_healing_directional_adaptation.py` |
+| [`30_ttt_online_test_time_training.py`](30_ttt_online_test_time_training.py) | Online Test-Time Training (TTT) | Adaptive self-supervised sequence fine-tuning with instant transactional rollback | CPU / MPS / CUDA | `python examples/30_ttt_online_test_time_training.py` |
+| [`31_fisher_damping_natural_gradient.py`](31_fisher_damping_natural_gradient.py) | Fisher Natural Gradient Damping | Empirical Fisher diagonal damping for ill-conditioned surgical layers | CPU / MPS / CUDA | `python examples/31_fisher_damping_natural_gradient.py` |
+| [`32_simpo_orpo_preference_alignment.py`](32_simpo_orpo_preference_alignment.py) | Preference Alignment (SimPO/ORPO) | Reference-free policy alignment cutting 50% training VRAM overhead | CPU / MPS / CUDA | `python examples/32_simpo_orpo_preference_alignment.py` |
+| [`33_triton_26_hardware_kernels.py`](33_triton_26_hardware_kernels.py) | Unified Triton 26 Kernels | Hardware profiling across 62 registered unified Triton operators with zero-fake fallbacks | CPU / MPS / CUDA | `python examples/33_triton_26_hardware_kernels.py` |
+| [`34_circuit_breaker_runtime_resilience.py`](34_circuit_breaker_runtime_resilience.py) | Circuit Breaker Runtime FSM | Autonomous 3-state failure mitigation FSM with automatic 25ms cooldown recovery | CPU / MPS / CUDA | `python examples/34_circuit_breaker_runtime_resilience.py` |
+| [`35_cuda_graph_decode_runner.py`](35_cuda_graph_decode_runner.py) | CUDA Graph Decode Runner | Static 1-token decode graph runner eliminating host launch overhead | CPU / MPS / CUDA | `python examples/35_cuda_graph_decode_runner.py` |
 
 ---
 
@@ -49,20 +62,35 @@ Examples 01–20 are designed to execute reliably on CPU (macOS/Linux) without e
 
 To guarantee standard verification protocols and avoid code duplication across examples, all scripts utilize the `examples/_shared/` package:
 
-- **`mock_models.py`**: Provides `TinyClassifier` (a fast, deterministic transformer architecture with multi-head attention and MLPs), `tiny_inputs()` (synthetic token sequences), and reference logits.
-- **`offline_data.py`**: Deterministic synthetic token generators, calibration dataset loaders, and streaming batches without internet access or Hugging Face downloads.
-- **`benchmark.py`**: Robust CPU/GPU benchmarking functions, including `measure_latency()` with warmups, and `measure_vram_if_available()`.
-- **`assertions.py`**: Parity gates and assertions (`assert_parity`, `assert_shape`, `assert_finite`) enforcing tight numerical tolerances (`atol`, `rtol`).
-- **`report.py`**: Clean, formatted console reporting utilities (`section`, `table`, `kv`, `pass_fail`).
-- **`device.py`**: Accelerator preference resolver (`get_backend_preference()`, `has_cuda()`, `has_mps()`).
+- **`mock_models.py`**: Lightweight, deterministically initialized transformer architectures (`TinyTransformerConfig`, `TinyTransformerForCausalLM`, `TinyTransformerBlock`).
+- **`offline_data.py`**: Synthetic deterministic text tokens and embeddings generated with fixed PRNG seeds (`make_synthetic_batch`, `make_synthetic_dataset`).
+- **`verification.py`**: Rigorous finite checks, forward/backward gradient assertions, numerical tolerance bounds (`assert_finite`, `assert_close`, `check_subspace_orthogonality`).
+- **`benchmark.py`**: High-precision cold-cache and warm-cache latency profiling with standard deviation error bars (`ColdCacheBenchmark`).
+- **`gpu.py`**: Safe hardware discovery and fail-closed accelerator guards (`resolve_device`, `require_cuda`).
+- **`report.py`**: Standardized console printing and structured JSON report persistence (`print_header`, `print_metrics_table`, `save_report_json`).
 
-## Authoring New Examples
+---
 
-When contributing new examples, always follow the canonical template provided in:
-👉 [`examples/_template.py`](_template.py)
+## Quickstart Run
 
-Key authoring rules:
-1. Always inherit standard header license blocks referencing contributors.
-2. Ensure strict offline CPU execution fallback so the script runs cleanly on any developer machine.
-3. Use `examples._shared` helpers for models, metrics, and reporting.
-4. If an optional third-party library or accelerator is absent, skip gracefully with `skip_if_missing()` and exit 0.
+Run any example script directly from the repository root:
+
+```bash
+# Architecture Surgery
+python examples/01_attention_surgery.py
+
+# Universal Surgery Director & Ten Laws
+python examples/23_universal_surgery_director_ten_laws.py
+
+# DeepSeek Multi-Head Latent Attention (MLA) Surgery
+python examples/24_deepseek_mla_surgery_and_healing.py
+
+# Advanced Optimizers (Muon & Stiefel)
+python examples/14_advanced_optimizers_muon_stiefel.py
+
+# Autonomous Circuit Breaker Runtime Resilience
+python examples/34_circuit_breaker_runtime_resilience.py
+
+# CUDA Graph Decode Engine
+python examples/35_cuda_graph_decode_runner.py
+```

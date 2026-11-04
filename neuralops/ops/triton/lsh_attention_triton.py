@@ -63,10 +63,12 @@ if HAS_TRITON and triton is not None and tl is not None:
         max_score = -1e9
         sum_exp = 0.0
 
-        # First pass: find max score among matching bucket keys
+        # First pass: find max score among matching bucket keys (bitwise XOR matching)
         for n in range(N_k):
             b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
-            match = b_q == b_k
+            # Bitwise matching: identical bucket codes have 0 difference under XOR
+            diff = b_q ^ b_k
+            match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
@@ -85,7 +87,8 @@ if HAS_TRITON and triton is not None and tl is not None:
         acc = tl.zeros((D,), dtype=tl.float32)
         for n in range(N_k):
             b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
-            match = b_q == b_k
+            diff = b_q ^ b_k
+            match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
@@ -149,7 +152,8 @@ if HAS_TRITON and triton is not None and tl is not None:
 
         for n in range(N_k):
             b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
-            match = b_q == b_k
+            diff = b_q ^ b_k
+            match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
@@ -167,7 +171,8 @@ if HAS_TRITON and triton is not None and tl is not None:
         acc = tl.zeros((D,), dtype=tl.float32)
         for n in range(N_k):
             b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
-            match = b_q == b_k
+            diff = b_q ^ b_k
+            match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
@@ -194,6 +199,14 @@ if HAS_TRITON and triton is not None and tl is not None:
 
 def _compute_lsh_buckets(vectors: torch.Tensor, proj: torch.Tensor, num_buckets: int) -> torch.Tensor:
     """Computes integer bucket indices using random hyperplane projections."""
+    if vectors.is_cuda and HAS_TRITON and proj.shape[-1] <= 32 and vectors.shape[-1] <= 256:
+        try:
+            from neuralops.ops.triton.sparse_attn import fused_lsh_hash_and_bin_triton
+
+            return fused_lsh_hash_and_bin_triton(vectors, proj, num_buckets)
+        except Exception:
+            pass
+
     norm = F.normalize(vectors.float(), p=2, dim=-1)
     dots = torch.matmul(norm, proj.float())
     signs = (dots >= 0).long()

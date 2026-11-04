@@ -577,12 +577,6 @@ class MultiQueryAttention(BaseAttention):
 
         N_k = k.shape[-2]
 
-        if self.kv_repeat > 1:
-            k_full = repeat_kv(k, self.kv_repeat)
-            v_full = repeat_kv(v, self.kv_repeat)
-        else:
-            k_full, v_full = k, v
-
         present_key_value: Any | None = None
         if not is_cross:
             if past_key_value is not None or kwargs.get("use_cache", False):
@@ -604,24 +598,57 @@ class MultiQueryAttention(BaseAttention):
         attn_weights: torch.Tensor | None = None
 
         if use_sdpa:
-            try:
-                _qs = maybe_half(q)
-                _ks = maybe_half(k_full)
-                _vs = maybe_half(v_full)
-                context = F.scaled_dot_product_attention(
-                    _qs, _ks, _vs,
-                    attn_mask=None,
-                    dropout_p=self.dropout_p if self.training else 0.0,
-                    is_causal=is_causal,
-                )
-                context = context.to(dtype)
-            except Exception as e:
-                logger.debug("MQA SDPA fast-path failed (%s); falling back", e)
-                use_sdpa = False
+            scale_val = 1.0 / math.sqrt(d)
+            dispatched = False
+            if q.is_cuda and not self.training and d in (32, 64, 128, 256):
+                # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM & warp KV broadcast
+                try:
+                    from neuralops.ops.cuda.flash_gqa import flash_gqa
+                    context = flash_gqa(q, k, v, is_causal=is_causal, scale=scale_val).to(dtype)
+                    dispatched = True
+                except Exception as e_cuda:
+                    logger.debug("MQA Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
+
+            if not dispatched and q.is_cuda and not self.training and d <= 128:
+                # Level 2: Triton JIT autotuned online softmax kernel with in-register head broadcast
+                try:
+                    from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+                    context = fused_weighted_gqa_online_softmax_triton(
+                        q, k, v, head_weights=None, is_causal=is_causal, scale=scale_val
+                    ).to(dtype)
+                    dispatched = True
+                except Exception as e_triton:
+                    logger.debug("MQA Level 2 Triton dispatch failed (%s), falling back to SDPA", e_triton)
+
+            if not dispatched:
+                try:
+                    # Level 3 fastpath: PyTorch SDPA with zero-copy expand broadcast
+                    _qs = maybe_half(q)
+                    if self.kv_repeat > 1:
+                        # Zero-copy view expansion to eliminate physical tensor replication loops
+                        _b, _h_kv, _s_kv, _d = k.shape
+                        _ks_exp = k[:, :, None, :, :].expand(_b, _h_kv, self.kv_repeat, _s_kv, _d).reshape(_b, _h_kv * self.kv_repeat, _s_kv, _d)
+                        _vs_exp = v[:, :, None, :, :].expand(_b, _h_kv, self.kv_repeat, _s_kv, _d).reshape(_b, _h_kv * self.kv_repeat, _s_kv, _d)
+                    else:
+                        _ks_exp, _vs_exp = k, v
+                    _ks = maybe_half(_ks_exp)
+                    _vs = maybe_half(_vs_exp)
+                    context = F.scaled_dot_product_attention(
+                        _qs, _ks, _vs,
+                        attn_mask=None,
+                        dropout_p=self.dropout_p if self.training else 0.0,
+                        is_causal=is_causal,
+                    )
+                    context = context.to(dtype)
+                except Exception as e:
+                    logger.debug("MQA SDPA fast-path failed (%s); falling back", e)
+                    use_sdpa = False
 
         if not use_sdpa:
             scale = 1.0 / math.sqrt(d)
-            raw_scores = torch.matmul(q.float(), k_full.float().transpose(-2, -1).contiguous())
+            # Elimination of physical DRAM replication: compute q @ k^T with 1 KV head directly via broadcast
+            # q: (B, H, N_q, d), k: (B, 1, N_k, d) -> matmul broadcast over H without expanding k
+            raw_scores = torch.matmul(q.float(), k.float().transpose(-2, -1))
 
             try:
                 from neuralops.ops.triton.gqa import fused_mqa_bias_scale_triton
@@ -661,7 +688,8 @@ class MultiQueryAttention(BaseAttention):
                     hm = hm.unsqueeze(1)
                 attn = attn * hm
 
-            context = torch.matmul(attn, v_full)
+            # Elimination of physical DRAM replication: attn @ v broadcasts over single V head
+            context = torch.matmul(attn, v.to(dtype))
             if output_attentions:
                 attn_weights = attn
 

@@ -14,7 +14,12 @@ from __future__ import annotations
 import copy
 import fnmatch
 import logging
+import os
+import shutil
+import tempfile
+import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import torch
@@ -45,7 +50,7 @@ def _matches_any_path(name: str, state_paths: Optional[List[str]]) -> bool:
 
 @dataclass
 class Snapshot:
-    """In-memory selective snapshot of model parameters, buffers, and structure."""
+    """In-memory or disk-backed selective snapshot of model parameters, buffers, and structure."""
 
     state_paths: Optional[List[str]] = None
     params: Dict[str, torch.Tensor] = field(default_factory=dict)
@@ -53,9 +58,13 @@ class Snapshot:
     submodules: Dict[str, nn.Module] = field(default_factory=dict)
     config_attrs: Dict[str, Any] = field(default_factory=dict)
     rng_state: Optional[Dict[str, Any]] = None
+    disk_path: Optional[str] = None
+    _temp_dir: Optional[str] = None
 
     def size_bytes(self) -> int:
         """Calculate total memory size in bytes of captured tensors."""
+        if self.disk_path and os.path.exists(self.disk_path):
+            return os.path.getsize(self.disk_path)
         total = 0
         for p in self.params.values():
             total += p.numel() * p.element_size()
@@ -63,11 +72,23 @@ class Snapshot:
             total += b.numel() * b.element_size()
         return total
 
+    def cleanup(self) -> None:
+        """Clean up temporary disk artifacts if spilled to disk."""
+        if self._temp_dir and os.path.exists(self._temp_dir):
+            try:
+                shutil.rmtree(self._temp_dir, ignore_errors=True)
+            except Exception as e:
+                logger.debug("Failed cleaning snapshot temp dir %s: %s", self._temp_dir, e)
+            self._temp_dir = None
+            self.disk_path = None
+
 
 def capture(
     model: nn.Module,
     state_paths: Optional[List[str]] = None,
     capture_rng: bool = False,
+    spill_to_disk: bool = False,
+    disk_dir: Optional[str] = None,
 ) -> Snapshot:
     """Capture a selective, memory-efficient snapshot of the model.
 
@@ -76,6 +97,9 @@ def capture(
         state_paths: Dotted path patterns of modules/parameters to capture.
                      If None or ['*'], all model parameters and buffers are captured.
         capture_rng: Whether to capture PyTorch and CUDA RNG states.
+        spill_to_disk: If True, writes tensor state dictionaries to disk using SafeTensors
+                       to minimize host RAM pressure and enable zero-copy mmap during restore.
+        disk_dir: Directory where temporary SafeTensors snapshot files are written.
 
     Returns:
         Snapshot instance containing copied tensors and module structures.
@@ -135,6 +159,37 @@ def capture(
         if torch.cuda.is_available():
             rng_state["cuda"] = torch.cuda.get_rng_state_all()
 
+    disk_path: Optional[str] = None
+    temp_dir_to_track: Optional[str] = None
+
+    if spill_to_disk:
+        try:
+            from safetensors.torch import save_file
+
+            temp_dir = tempfile.mkdtemp(prefix="neuralops_snap_", dir=disk_dir)
+            temp_dir_to_track = temp_dir
+            snap_file = os.path.join(temp_dir, f"snapshot_{uuid.uuid4().hex}.safetensors")
+
+            # Combine params and buffers with prefixes for SafeTensors storage
+            tensors_to_save: Dict[str, torch.Tensor] = {}
+            for k, v in params.items():
+                tensors_to_save[f"p:{k}"] = v.contiguous()
+            for k, v in buffers.items():
+                tensors_to_save[f"b:{k}"] = v.contiguous()
+
+            save_file(tensors_to_save, snap_file)
+            disk_path = snap_file
+            # Release in-memory tensor dictionaries to free host RAM
+            params = {}
+            buffers = {}
+            logger.info("Spilled snapshot to disk SafeTensors: %s", snap_file)
+        except Exception as e:
+            logger.warning("Failed to spill snapshot to disk SafeTensors: %s; keeping in RAM", e)
+            if temp_dir_to_track and os.path.exists(temp_dir_to_track):
+                shutil.rmtree(temp_dir_to_track, ignore_errors=True)
+                temp_dir_to_track = None
+            disk_path = None
+
     return Snapshot(
         state_paths=state_paths,
         params=params,
@@ -142,6 +197,8 @@ def capture(
         submodules=submodules,
         config_attrs=config_attrs,
         rng_state=rng_state,
+        disk_path=disk_path,
+        _temp_dir=temp_dir_to_track,
     )
 
 
@@ -184,25 +241,50 @@ def restore(model: nn.Module, snapshot: Snapshot) -> None:
                     logger.debug("Submodule reattachment failed for path '%s': %s", path, exc)
 
         # 2. Restore parameters
-        for name, tensor in snapshot.params.items():
-            param_found = False
-            for p_name, p in model.named_parameters():
-                if p_name == name:
-                    p.data.copy_(tensor.to(p.device))
-                    param_found = True
-                    break
+        if snapshot.disk_path and os.path.exists(snapshot.disk_path):
+            from safetensors import safe_open
 
-            if not param_found:
-                # Re-attach parameter if removed during mutation
-                parent, attr = _get_parent_and_attr(model, name)
-                setattr(parent, attr, nn.Parameter(tensor.to(device).clone()))
+            with safe_open(snapshot.disk_path, framework="pt") as f:
+                for full_key in f.keys():
+                    if full_key.startswith("p:"):
+                        name = full_key[2:]
+                        tensor = f.get_tensor(full_key)
+                        param_found = False
+                        for p_name, p in model.named_parameters():
+                            if p_name == name:
+                                p.data.copy_(tensor.to(p.device))
+                                param_found = True
+                                break
+                        if not param_found:
+                            parent, attr = _get_parent_and_attr(model, name)
+                            setattr(parent, attr, nn.Parameter(tensor.to(device).clone()))
+                    elif full_key.startswith("b:"):
+                        name = full_key[2:]
+                        tensor = f.get_tensor(full_key)
+                        for b_name, b in model.named_buffers():
+                            if b_name == name:
+                                b.data.copy_(tensor.to(b.device))
+                                break
+        else:
+            for name, tensor in snapshot.params.items():
+                param_found = False
+                for p_name, p in model.named_parameters():
+                    if p_name == name:
+                        p.data.copy_(tensor.to(p.device))
+                        param_found = True
+                        break
 
-        # 3. Restore buffers
-        for name, tensor in snapshot.buffers.items():
-            for b_name, b in model.named_buffers():
-                if b_name == name:
-                    b.data.copy_(tensor.to(b.device))
-                    break
+                if not param_found:
+                    # Re-attach parameter if removed during mutation
+                    parent, attr = _get_parent_and_attr(model, name)
+                    setattr(parent, attr, nn.Parameter(tensor.to(device).clone()))
+
+            # 3. Restore buffers
+            for name, tensor in snapshot.buffers.items():
+                for b_name, b in model.named_buffers():
+                    if b_name == name:
+                        b.data.copy_(tensor.to(b.device))
+                        break
 
         # 4. Restore config attributes
         if snapshot.config_attrs and hasattr(model, "config") and model.config is not None:

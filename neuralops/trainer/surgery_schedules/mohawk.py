@@ -46,7 +46,12 @@ class AttentionHomotopyScheduler:
         self.warmup_steps = max(0, warmup_steps)
 
     def get_alpha(self, step: int) -> float:
-        progress = min(1.0, max(0.0, step / self.total_steps))
+        if self.warmup_steps > 0 and step < self.warmup_steps:
+            return 0.0
+
+        effective_step = max(0, step - self.warmup_steps)
+        effective_total = max(1, self.total_steps - self.warmup_steps)
+        progress = min(1.0, max(0.0, effective_step / effective_total))
         if self.schedule == "linear":
             return progress
         elif self.schedule == "cosine":

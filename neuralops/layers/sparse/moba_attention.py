@@ -621,41 +621,79 @@ class MoBAAttention(BaseAttention):
                     Qb, Kb, Vb, scale, self.top_k, is_causal
                 )
 
-            valid_b_exp = valid_mask_padded.view(B, 1, nb, bs).expand(-1, H, -1, -1)
+            # Fastpath Level 2: Fused Triton Streaming Block Attention
+            triton_attn_success = False
+            if (
+                Q_pad.is_cuda
+                and valid_mask is None
+                and not self.training
+                and d in (32, 64, 128)
+            ):
+                try:
+                    if is_causal:
+                        from neuralops.ops.triton.sparse_attn import fwd as triton_sparse_fwd
+                        b_mask = torch.zeros(B, nb, nb, device=device, dtype=torch.int32)
+                        # top_idx: [B, H, nb, top_k] -> take union or broadcast across heads
+                        top_idx_any = top_idx.view(B, -1, nb, top_idx.shape[-1])
+                        for h_idx in range(top_idx_any.shape[1]):
+                            b_mask.scatter_(-1, top_idx_any[:, h_idx, :, :], 1)
+                        # Ensure causal condition on block level
+                        causal_tril_b = torch.tril(torch.ones(nb, nb, device=device, dtype=torch.int32)).unsqueeze(0)
+                        b_mask = b_mask * causal_tril_b
+                        stream_out = triton_sparse_fwd(
+                            Q_pad, K_pad, V_pad,
+                            block_mask=b_mask,
+                            block_size=bs,
+                            is_causal=True,
+                        )
+                    else:
+                        from neuralops.ops.triton.block_sparse import triton_block_sparse_streaming_attn
+                        stream_out = triton_block_sparse_streaming_attn(
+                            Q_pad, K_pad, V_pad, top_idx, block_size=bs, sm_scale=scale
+                        )
+                    out_pad = stream_out[:, :, :L, :]
+                    out = out_pad.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+                    triton_attn_success = True
+                except Exception as exc:
+                    logger.debug("MoBA Triton block sparse streaming dispatch failed: %s", exc)
+                    triton_attn_success = False
 
-            out_blocks = torch.zeros_like(Qb)
-            for i in range(nb):
-                idx = top_idx[:, :, i, :]
-                idx_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, bs, d)
-                K_sel = torch.gather(Kb, 2, idx_exp).view(B, H, top_k * bs, d)
-                V_sel = torch.gather(Vb, 2, idx_exp).view(B, H, top_k * bs, d)
+            if not triton_attn_success:
+                valid_b_exp = valid_mask_padded.view(B, 1, nb, bs).expand(-1, H, -1, -1)
 
-                idx_mask_exp = idx.unsqueeze(-1).expand(-1, -1, -1, bs)
-                k_valid = torch.gather(valid_b_exp, 2, idx_mask_exp).reshape(B, H, 1, top_k * bs)
+                out_blocks = torch.zeros_like(Qb)
+                for i in range(nb):
+                    idx = top_idx[:, :, i, :]
+                    idx_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, bs, d)
+                    K_sel = torch.gather(Kb, 2, idx_exp).view(B, H, top_k * bs, d)
+                    V_sel = torch.gather(Vb, 2, idx_exp).view(B, H, top_k * bs, d)
 
-                Q_i = Qb[:, :, i]
-                scores_i = (
-                    torch.matmul(Q_i.float(), K_sel.float().transpose(-2, -1).contiguous()) * scale
-                )
-                scores_i = scores_i.masked_fill(~k_valid, -1e4)
+                    idx_mask_exp = idx.unsqueeze(-1).expand(-1, -1, -1, bs)
+                    k_valid = torch.gather(valid_b_exp, 2, idx_mask_exp).reshape(B, H, 1, top_k * bs)
 
-                if is_causal:
-                    q_pos = (i * bs + torch.arange(bs, device=device)).view(1, 1, bs, 1)
-                    k_offsets = idx.unsqueeze(-1) * bs + torch.arange(bs, device=device).view(
-                        1, 1, 1, bs
+                    Q_i = Qb[:, :, i]
+                    scores_i = (
+                        torch.matmul(Q_i.float(), K_sel.float().transpose(-2, -1).contiguous()) * scale
                     )
-                    k_pos = k_offsets.reshape(B, H, 1, top_k * bs)
-                    invalid = k_pos > q_pos
-                    scores_i = scores_i.masked_fill(invalid, -1e4)
+                    scores_i = scores_i.masked_fill(~k_valid, -1e4)
 
-                scores_i = torch.nan_to_num(scores_i, nan=-1e4, posinf=1e4, neginf=-1e4)
-                attn_i = F.softmax(scores_i, dim=-1).to(dtype)
-                attn_i = torch.nan_to_num(attn_i, nan=0.0)
-                attn_i = self.dropout(attn_i)
-                out_blocks[:, :, i] = torch.matmul(attn_i, V_sel)
+                    if is_causal:
+                        q_pos = (i * bs + torch.arange(bs, device=device)).view(1, 1, bs, 1)
+                        k_offsets = idx.unsqueeze(-1) * bs + torch.arange(bs, device=device).view(
+                            1, 1, 1, bs
+                        )
+                        k_pos = k_offsets.reshape(B, H, 1, top_k * bs)
+                        invalid = k_pos > q_pos
+                        scores_i = scores_i.masked_fill(invalid, -1e4)
 
-            out_pad = out_blocks.view(B, H, Lp, d)[:, :, :L, :]
-            out = out_pad.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+                    scores_i = torch.nan_to_num(scores_i, nan=-1e4, posinf=1e4, neginf=-1e4)
+                    attn_i = F.softmax(scores_i, dim=-1).to(dtype)
+                    attn_i = torch.nan_to_num(attn_i, nan=0.0)
+                    attn_i = self.dropout(attn_i)
+                    out_blocks[:, :, i] = torch.matmul(attn_i, V_sel)
+
+                out_pad = out_blocks.view(B, H, Lp, d)[:, :, :L, :]
+                out = out_pad.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 

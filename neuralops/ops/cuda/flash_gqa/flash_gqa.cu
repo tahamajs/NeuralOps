@@ -37,8 +37,15 @@ __global__ void flash_gqa_kernel(
     const int total_threads = blockDim.x * blockDim.y;
     const int cur_q_idx = q_tile_idx * TILE_Q + tid;
 
+    // Storage layout with padding and swizzle helper to eliminate bank conflicts:
+    // Padded shared memory arrays s_k / s_v (in vectorized float4 elements)
+    // with swizzled column indexing: col ^ ((row & 3) << 2)
     __shared__ float4 K_smem[BLOCK_N][NUM_VECS + 1];
     __shared__ float4 V_smem[BLOCK_N][NUM_VECS + 1];
+
+    auto swizzle_col = [](int row, int col) -> int {
+        return (col ^ ((row & 3) << 2)) % NUM_VECS;
+    };
 
     float4 q_vec[NUM_VECS];
     float4 acc_vec[NUM_VECS];
@@ -86,30 +93,47 @@ __global__ void flash_gqa_kernel(
             const int kt = idx / NUM_VECS;
             const int kd = idx % NUM_VECS;
             const int global_tok = k_start + kt;
+            const int swizzled_d = swizzle_col(kt, kd);
 
+            float4 k_val = make_float4(0.f, 0.f, 0.f, 0.f);
+            float4 v_val = make_float4(0.f, 0.f, 0.f, 0.f);
+
+            // Fetch singular KV head with 128-bit float4 loads from lane 0 and broadcast via __shfl_sync
             if (global_tok < N_KV) {
                 const int g_off = k_base + global_tok * HEAD_DIM + kd * 4;
-                if constexpr (std::is_same<scalar_t, float>::value) {
-                    K_smem[kt][kd] = reinterpret_cast<const float4*>(k + g_off)[0];
-                    V_smem[kt][kd] = reinterpret_cast<const float4*>(v + g_off)[0];
-                } else {
-                    K_smem[kt][kd] = make_float4(
-                        static_cast<float>(k[g_off + 0]),
-                        static_cast<float>(k[g_off + 1]),
-                        static_cast<float>(k[g_off + 2]),
-                        static_cast<float>(k[g_off + 3])
-                    );
-                    V_smem[kt][kd] = make_float4(
-                        static_cast<float>(v[g_off + 0]),
-                        static_cast<float>(v[g_off + 1]),
-                        static_cast<float>(v[g_off + 2]),
-                        static_cast<float>(v[g_off + 3])
-                    );
+                if ((tid & 31) == 0) {
+                    if constexpr (std::is_same<scalar_t, float>::value) {
+                        k_val = reinterpret_cast<const float4*>(k + g_off)[0];
+                        v_val = reinterpret_cast<const float4*>(v + g_off)[0];
+                    } else {
+                        k_val = make_float4(
+                            static_cast<float>(k[g_off + 0]),
+                            static_cast<float>(k[g_off + 1]),
+                            static_cast<float>(k[g_off + 2]),
+                            static_cast<float>(k[g_off + 3])
+                        );
+                        v_val = make_float4(
+                            static_cast<float>(v[g_off + 0]),
+                            static_cast<float>(v[g_off + 1]),
+                            static_cast<float>(v[g_off + 2]),
+                            static_cast<float>(v[g_off + 3])
+                        );
+                    }
                 }
-            } else {
-                K_smem[kt][kd] = make_float4(0.f, 0.f, 0.f, 0.f);
-                V_smem[kt][kd] = make_float4(0.f, 0.f, 0.f, 0.f);
+                // Warp broadcast across all query warps / lanes using __shfl_sync without redundant DRAM fetches
+                k_val.x = __shfl_sync(0xffffffff, k_val.x, 0);
+                k_val.y = __shfl_sync(0xffffffff, k_val.y, 0);
+                k_val.z = __shfl_sync(0xffffffff, k_val.z, 0);
+                k_val.w = __shfl_sync(0xffffffff, k_val.w, 0);
+
+                v_val.x = __shfl_sync(0xffffffff, v_val.x, 0);
+                v_val.y = __shfl_sync(0xffffffff, v_val.y, 0);
+                v_val.z = __shfl_sync(0xffffffff, v_val.z, 0);
+                v_val.w = __shfl_sync(0xffffffff, v_val.w, 0);
             }
+
+            K_smem[kt][swizzled_d] = k_val;
+            V_smem[kt][swizzled_d] = v_val;
         }
         __syncthreads();
 
@@ -128,8 +152,12 @@ __global__ void flash_gqa_kernel(
                 float dot = 0.0f;
                 #pragma unroll
                 for (int d = 0; d < NUM_VECS; ++d) {
-                    const float4 k_v = K_smem[kt][d];
-                    dot += q_vec[d].x * k_v.x + q_vec[d].y * k_v.y + q_vec[d].z * k_v.z + q_vec[d].w * k_v.w;
+                    const int swizzled_d = swizzle_col(kt, d);
+                    const float4 k_v = K_smem[kt][swizzled_d];
+                    dot = __fmaf_rn(q_vec[d].x, k_v.x, dot);
+                    dot = __fmaf_rn(q_vec[d].y, k_v.y, dot);
+                    dot = __fmaf_rn(q_vec[d].z, k_v.z, dot);
+                    dot = __fmaf_rn(q_vec[d].w, k_v.w, dot);
                 }
                 const float s = dot * scale;
                 scores[kt] = s;
@@ -141,7 +169,7 @@ __global__ void flash_gqa_kernel(
 
         if (m_tile > -1e29f) {
             const float m_new = fmaxf(m_prev, m_tile);
-            const float alpha = (m_prev == -1e30f) ? 0.0f : expf(m_prev - m_new);
+            const float alpha = (m_prev == -1e30f) ? 0.0f : __expf(m_prev - m_new);
             m_prev = m_new;
             l_prev *= alpha;
 
@@ -156,15 +184,16 @@ __global__ void flash_gqa_kernel(
             #pragma unroll
             for (int kt = 0; kt < BLOCK_N; ++kt) {
                 if (scores[kt] > -1e29f) {
-                    const float p = expf(scores[kt] - m_new);
+                    const float p = __expf(scores[kt] - m_new);
                     l_prev += p;
                     #pragma unroll
                     for (int d = 0; d < NUM_VECS; ++d) {
-                        const float4 v_v = V_smem[kt][d];
-                        acc_vec[d].x += p * v_v.x;
-                        acc_vec[d].y += p * v_v.y;
-                        acc_vec[d].z += p * v_v.z;
-                        acc_vec[d].w += p * v_v.w;
+                        const int swizzled_d = swizzle_col(kt, d);
+                        const float4 v_v = V_smem[kt][swizzled_d];
+                        acc_vec[d].x = __fmaf_rn(p, v_v.x, acc_vec[d].x);
+                        acc_vec[d].y = __fmaf_rn(p, v_v.y, acc_vec[d].y);
+                        acc_vec[d].z = __fmaf_rn(p, v_v.z, acc_vec[d].z);
+                        acc_vec[d].w = __fmaf_rn(p, v_v.w, acc_vec[d].w);
                     }
                 }
             }

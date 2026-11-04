@@ -15,6 +15,8 @@
 namespace neuralops {
 namespace cuda {
 
+// Gated Linear Attention Scan Kernel with Column Register Accumulation
+// Optimized for SM 8.9 / SM 90 with warp-level synchronization and zero shared memory bank conflicts.
 template <typename scalar_t, int MAX_D>
 __launch_bounds__(128)
 __global__ void gla_scan_fwd_kernel(
@@ -35,6 +37,7 @@ __global__ void gla_scan_fwd_kernel(
 
     const int j = threadIdx.x;
 
+    // Fast register tile for state column S[:, j]
     float S_col[MAX_D];
     #pragma unroll
     for (int i = 0; i < MAX_D; ++i) {
@@ -63,7 +66,7 @@ __global__ void gla_scan_fwd_kernel(
         const float v_j = (j < D) ? to_float(V[tok_offset + j]) : 0.0f;
 
         float y_acc = 0.0f;
-        #pragma unroll
+        #pragma unroll 8
         for (int i = 0; i < D && i < MAX_D; ++i) {
             S_col[i] = a_val * S_col[i] + s_k[i] * v_j;
             y_acc += s_q[i] * S_col[i];
@@ -100,7 +103,7 @@ torch::Tensor gla_scan_fwd(
     const bool has_alpha = alpha.has_value() && alpha.value().defined();
 
     const dim3 grid(1, B * H);
-    const int threads = (D <= 64) ? 64 : 128;
+    const int threads = (D <= 32) ? 32 : ((D <= 64) ? 64 : 128);
     auto stream = c10::cuda::getCurrentCUDAStream();
 
     auto q_c = q.contiguous();

@@ -13,8 +13,12 @@ Bridges NeuralOps recurrent and hybrid state caches with HuggingFace DynamicCach
 
 from __future__ import annotations
 
+import contextlib
+import hashlib
 import logging
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from pathlib import Path
+import time
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 import torch
 
 logger = logging.getLogger("NeuralOps.Surgery.HFCacheBridge")
@@ -551,6 +555,382 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         return cache
 
 
+def _compute_prefix_hash(tokens: Sequence[int] | torch.Tensor) -> str:
+    """
+    Computes a deterministic SHA-256 hash for a token sequence prefix (Phase 091).
+    Guarantees collision-free matching for shared prompt prefix caching in SGLang radix trees.
+    """
+    if isinstance(tokens, torch.Tensor):
+        if tokens.ndim > 1:
+            tokens = tokens.squeeze()
+        token_tuple = tuple(int(t) for t in tokens.tolist())
+    else:
+        token_tuple = tuple(int(t) for t in tokens)
+
+    hasher = hashlib.sha256()
+    for tid in token_tuple:
+        hasher.update(int(tid).to_bytes(4, byteorder="big", signed=True))
+    return hasher.hexdigest()
+
+
+class RadixTreeNode:
+    """A node in the SGLang Radix Tree storing recurrent associative state (Phase 090)."""
+
+    def __init__(
+        self,
+        token_chunk: Tuple[int, ...] = (),
+        parent: Optional[RadixTreeNode] = None,
+        prefix_state: Optional[Dict[int, torch.Tensor]] = None,
+    ) -> None:
+        self.token_chunk = token_chunk
+        self.parent = parent
+        self.prefix_state: Optional[Dict[int, torch.Tensor]] = prefix_state
+        self.children: Dict[int, RadixTreeNode] = {}
+        self.access_count: int = 0
+        self.last_accessed: float = time.time()
+
+    @property
+    def token_ids(self) -> Tuple[int, ...]:
+        """Alias for token_chunk adhering to Phase 090 specification."""
+        return self.token_chunk
+
+    @token_ids.setter
+    def token_ids(self, val: Sequence[int]) -> None:
+        self.token_chunk = tuple(int(v) for v in val)
+
+    @property
+    def prefix_hash(self) -> str:
+        """Deterministic SHA-256 prefix hash of this node's token chunk."""
+        return _compute_prefix_hash(self.token_chunk)
+
+    def is_leaf(self) -> bool:
+        return len(self.children) == 0
+
+
+class SGLangRadixStateAdapter:
+    """
+    SGLang Radix Tree Recurrent State Adapter.
+
+    Caches associative state matrices S_prefix at radix tree prefix nodes to allow O(1) state recovery
+    and zero-prefill multi-turn serving for linear attention models.
+    """
+
+    def __init__(self, max_cached_nodes: int = 1000) -> None:
+        self.root = RadixTreeNode()
+        self.max_cached_nodes = max_cached_nodes
+        self._node_count: int = 1
+
+    @staticmethod
+    def _normalize_tokens(tokens: Sequence[int] | torch.Tensor) -> Tuple[int, ...]:
+        if isinstance(tokens, torch.Tensor):
+            if tokens.ndim > 1:
+                tokens = tokens.squeeze()
+            return tuple(int(t) for t in tokens.tolist())
+        return tuple(int(t) for t in tokens)
+
+    @staticmethod
+    def _extract_state_dict(
+        state: Union[Dict[int, torch.Tensor], NeuralOpsHybridHFCache, torch.Tensor],
+    ) -> Dict[int, torch.Tensor]:
+        if isinstance(state, NeuralOpsHybridHFCache):
+            state_dict = {}
+            for l_idx, s in state.recurrent_state_cache.items():
+                if isinstance(s, torch.Tensor):
+                    state_dict[l_idx] = s.detach().clone()
+            for l_idx, (k, _) in enumerate(state.key_cache):
+                if l_idx not in state_dict and isinstance(k, torch.Tensor) and k.numel() > 0:
+                    state_dict[l_idx] = k.detach().clone()
+            return state_dict
+        elif isinstance(state, dict):
+            return {k: v.detach().clone() for k, v in state.items() if isinstance(v, torch.Tensor)}
+        elif isinstance(state, torch.Tensor):
+            return {0: state.detach().clone()}
+        else:
+            raise TypeError(f"Unsupported state format: {type(state)}")
+
+    def insert(
+        self,
+        token_ids: Sequence[int] | torch.Tensor,
+        state: Union[Dict[int, torch.Tensor], NeuralOpsHybridHFCache, torch.Tensor],
+    ) -> RadixTreeNode:
+        """
+        Inserts a token sequence and its corresponding recurrent state S_prefix into the Radix Tree.
+        Handles radix node splitting when a common prefix diverges.
+        """
+        tokens = self._normalize_tokens(token_ids)
+        if len(tokens) == 0:
+            return self.root
+
+        state_dict = self._extract_state_dict(state)
+        curr = self.root
+        idx = 0
+
+        while idx < len(tokens):
+            first_tok = tokens[idx]
+            if first_tok not in curr.children:
+                # No child with this token, create new child with remaining tokens
+                new_node = RadixTreeNode(
+                    token_chunk=tokens[idx:],
+                    parent=curr,
+                    prefix_state=state_dict,
+                )
+                curr.children[first_tok] = new_node
+                self._node_count += 1
+                self._check_capacity()
+                return new_node
+
+            child = curr.children[first_tok]
+            chunk = child.token_chunk
+            # Find common prefix between chunk and tokens[idx:]
+            match_len = 0
+            while (
+                match_len < len(chunk)
+                and idx + match_len < len(tokens)
+                and chunk[match_len] == tokens[idx + match_len]
+            ):
+                match_len += 1
+
+            if match_len == len(chunk):
+                # Full match of child's chunk, continue deeper
+                idx += match_len
+                curr = child
+                if idx == len(tokens):
+                    # Exact match at this node, update state
+                    curr.prefix_state = state_dict
+                    curr.last_accessed = time.time()
+                    curr.access_count += 1
+                    return curr
+            else:
+                # Partial match: split child into parent (split_node) and remaining children
+                split_node = self.split_node(child, match_len, parent=curr)
+                idx += match_len
+
+                if idx == len(tokens):
+                    # The inserted sequence ends at the split node
+                    split_node.prefix_state = state_dict
+                    split_node.last_accessed = time.time()
+                    split_node.access_count += 1
+                    self._check_capacity()
+                    return split_node
+                else:
+                    # Create second child from split node
+                    new_child_chunk = tokens[idx:]
+                    new_node = RadixTreeNode(
+                        token_chunk=new_child_chunk,
+                        parent=split_node,
+                        prefix_state=state_dict,
+                    )
+                    split_node.children[new_child_chunk[0]] = new_node
+                    self._node_count += 1
+                    self._check_capacity()
+                    return new_node
+
+        curr.prefix_state = state_dict
+        curr.last_accessed = time.time()
+        curr.access_count += 1
+        return curr
+
+    def match_prefix(
+        self,
+        token_ids: Sequence[int] | torch.Tensor,
+    ) -> Tuple[int, Optional[Dict[int, torch.Tensor]], Optional[RadixTreeNode]]:
+        """
+        Finds the longest matching token prefix in the Radix Tree.
+
+        Returns:
+            (matched_length, prefix_state_dict, matching_node)
+        """
+        tokens = self._normalize_tokens(token_ids)
+        if len(tokens) == 0:
+            return 0, None, None
+
+        curr = self.root
+        idx = 0
+        deepest_node_with_state: Optional[RadixTreeNode] = None
+        matched_state_len = 0
+
+        while idx < len(tokens):
+            first_tok = tokens[idx]
+            if first_tok not in curr.children:
+                break
+
+            child = curr.children[first_tok]
+            chunk = child.token_chunk
+            match_len = 0
+            while (
+                match_len < len(chunk)
+                and idx + match_len < len(tokens)
+                and chunk[match_len] == tokens[idx + match_len]
+            ):
+                match_len += 1
+
+            if match_len == len(chunk):
+                idx += match_len
+                curr = child
+                curr.last_accessed = time.time()
+                curr.access_count += 1
+                if curr.prefix_state is not None:
+                    deepest_node_with_state = curr
+                    matched_state_len = idx
+            else:
+                # Partial match on edge does not yield state at intermediate chunk
+                break
+
+        if deepest_node_with_state is not None and deepest_node_with_state.prefix_state is not None:
+            # Clone states for return
+            res_state = {
+                k: v.clone() for k, v in deepest_node_with_state.prefix_state.items()
+            }
+            return matched_state_len, res_state, deepest_node_with_state
+
+        return 0, None, None
+
+    @staticmethod
+    def _compute_prefix_hash(tokens: Sequence[int] | torch.Tensor) -> str:
+        """Deterministic prefix hash generator for shared system prompts."""
+        return _compute_prefix_hash(tokens)
+
+    def _hash_prefix(self, tokens: Sequence[int] | torch.Tensor) -> str:
+        """Deterministic SHA-256 token prefix hash generator (Phase 094)."""
+        return _compute_prefix_hash(tokens)
+
+    def compute_prefix_hash(self, tokens: Sequence[int] | torch.Tensor) -> str:
+        """Deterministic prefix hash generator for shared system prompts."""
+        return _compute_prefix_hash(tokens)
+
+    def split_node(
+        self,
+        child: RadixTreeNode,
+        match_len: int,
+        parent: Optional[RadixTreeNode] = None,
+    ) -> RadixTreeNode:
+        """
+        Splits a radix tree node at match_len, creating a common prefix node
+        and re-parenting the remainder of the child branch (Phase 095).
+        """
+        if parent is None:
+            parent = child.parent if child.parent is not None else self.root
+
+        chunk = child.token_chunk
+        common_chunk = chunk[:match_len]
+        remaining_chunk = chunk[match_len:]
+
+        first_tok = chunk[0]
+        split_node = RadixTreeNode(
+            token_chunk=common_chunk,
+            parent=parent,
+            prefix_state=None,
+        )
+        parent.children[first_tok] = split_node
+
+        child.token_chunk = remaining_chunk
+        child.parent = split_node
+        split_node.children[remaining_chunk[0]] = child
+
+        self._node_count += 1
+        return split_node
+
+    def lookup_prefix_state(
+        self,
+        token_ids: Sequence[int] | torch.Tensor,
+    ) -> Optional[Dict[int, torch.Tensor]]:
+        """
+        Looks up associative state matrix S_prefix in O(1) time (Phase 092).
+        If matching prefix with cached state is found, returns the recurrent state dict
+        to bypass prompt prefill computation.
+        """
+        _, state_dict, _ = self.match_prefix(token_ids)
+        return state_dict
+
+    def cache_prefix_state(
+        self,
+        prompt_tokens: Sequence[int] | torch.Tensor,
+        cache: Union[Dict[int, torch.Tensor], NeuralOpsHybridHFCache, torch.Tensor],
+    ) -> RadixTreeNode:
+        """Stores associative state matrix S_prefix at radix tree prefix node."""
+        return self.insert(prompt_tokens, cache)
+
+    def retrieve_prefix_state(
+        self,
+        prompt_tokens: Sequence[int] | torch.Tensor,
+    ) -> Tuple[int, Optional[NeuralOpsHybridHFCache]]:
+        """
+        Retrieves matching prefix state in O(1) time and initializes a NeuralOpsHybridHFCache.
+
+        Returns:
+            (matched_length, populated_hybrid_cache_or_none)
+        """
+        matched_len, state_dict, _ = self.match_prefix(prompt_tokens)
+        if state_dict is None or matched_len == 0:
+            return 0, None
+
+        cache = NeuralOpsHybridHFCache()
+        cache._seen_tokens = matched_len
+        for layer_idx, s in state_dict.items():
+            cache.update_recurrent_state(layer_idx, s, num_tokens=0)
+
+        return matched_len, cache
+
+    def _check_capacity(self) -> None:
+        if self._node_count > self.max_cached_nodes:
+            self.evict_lru(max_nodes=self.max_cached_nodes)
+
+    def evict_lru(
+        self,
+        max_nodes: Optional[int] = None,
+        num_nodes: Optional[int] = None,
+    ) -> int:
+        """
+        Evicts the least-recently used leaf nodes from the Radix Tree (Phase 094).
+        If max_nodes is specified, prunes until total node count <= max_nodes.
+        If num_nodes is specified, prunes up to num_nodes leaf nodes.
+        """
+        if max_nodes is not None:
+            target_evict = max(0, self._node_count - max_nodes)
+        elif num_nodes is not None:
+            target_evict = num_nodes
+        else:
+            target_evict = 1
+
+        if target_evict <= 0:
+            return 0
+
+        evicted = 0
+        while evicted < target_evict:
+            leaves: List[RadixTreeNode] = []
+
+            def collect_leaves(node: RadixTreeNode) -> None:
+                if node is not self.root and node.is_leaf():
+                    leaves.append(node)
+                for child in node.children.values():
+                    collect_leaves(child)
+
+            collect_leaves(self.root)
+            if not leaves:
+                break
+
+            leaves.sort(key=lambda n: n.last_accessed)
+            batch_to_remove = leaves[: target_evict - evicted]
+            for node in batch_to_remove:
+                if node.parent is not None and len(node.token_chunk) > 0:
+                    first_tok = node.token_chunk[0]
+                    if first_tok in node.parent.children:
+                        del node.parent.children[first_tok]
+                        self._node_count -= 1
+                        evicted += 1
+                        if evicted >= target_evict:
+                            break
+
+        return evicted
+
+    def total_nodes(self) -> int:
+        return self._node_count
+
+    def clear(self) -> None:
+        self.root = RadixTreeNode()
+        self._node_count = 1
+
+
 def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
     """
     Wraps model's prepare_inputs_for_generation or injects NeuralOpsHybridHFCache
@@ -581,11 +961,357 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
     return model
 
 
+class PagedLinearAttention(torch.nn.Module):
+    """
+    Paged Linear Attention Module for Continuous Serving (Phase 096).
+
+    Dispatches prefill and decode linear attention through high-throughput non-contiguous
+    paged memory (PagedKVCache or PagedCacheBridge).
+    """
+
+    def __init__(
+        self,
+        hidden_dim: int,
+        num_heads: int,
+        head_dim: Optional[int] = None,
+        block_size: int = 16,
+        swizzle: bool = False,
+    ) -> None:
+        super().__init__()
+        self.hidden_dim = hidden_dim
+        self.num_heads = num_heads
+        self.head_dim = head_dim or (hidden_dim // num_heads)
+        self.block_size = block_size
+        self.swizzle = swizzle
+        self.q_proj = torch.nn.Linear(hidden_dim, self.num_heads * self.head_dim, bias=False)
+        self.k_proj = torch.nn.Linear(hidden_dim, self.num_heads * self.head_dim, bias=False)
+        self.v_proj = torch.nn.Linear(hidden_dim, self.num_heads * self.head_dim, bias=False)
+        self.out_proj = torch.nn.Linear(self.num_heads * self.head_dim, hidden_dim, bias=False)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        paged_cache: Any,
+        block_tables: Optional[torch.Tensor] = None,
+        is_decode: bool = False,
+        state: Optional[torch.Tensor] = None,
+        decay: float = 1.0,
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        from neuralops.ops.triton.paged_linear_attn import (
+            paged_linear_attention,
+            paged_linear_attention_decode_step,
+        )
+
+        b, t, _ = hidden_states.shape
+        q = self.q_proj(hidden_states).view(b, t, self.num_heads, self.head_dim)
+        k = self.k_proj(hidden_states).view(b, t, self.num_heads, self.head_dim)
+        v = self.v_proj(hidden_states).view(b, t, self.num_heads, self.head_dim)
+
+        actual_cache = getattr(paged_cache, "paged_cache", paged_cache)
+
+        if is_decode:
+            out, new_state = paged_linear_attention_decode_step(
+                q=q,
+                k=k,
+                v=v,
+                state=state,
+                decay=decay,
+                block_tables=block_tables,
+            )
+            out_proj = self.out_proj(out.reshape(b, t, self.num_heads * self.head_dim))
+            return out_proj, new_state
+
+        out = paged_linear_attention(
+            q=q,
+            k_cache=actual_cache,
+            block_tables=block_tables,
+            block_size=self.block_size,
+            swizzle=self.swizzle,
+        )
+        return self.out_proj(out.reshape(b, t, self.num_heads * self.head_dim))
+
+
+class PagedCacheBridge:
+    """
+    High-Throughput vLLM Paged Cache Allocation Bridge (Phase 096).
+
+    Connects PagedLinearAttention to neuralops.inference.paged_cache.PagedKVCache.
+    Provides automatic physical page allocation and deallocation lifecycle hooks
+    with zero reference count leaks upon request completion.
+    """
+
+    def __init__(
+        self,
+        paged_cache: Optional[Any] = None,
+        num_blocks: int = 256,
+        block_size: int = 16,
+        num_heads: int = 4,
+        head_dim: int = 64,
+        dtype: torch.dtype = torch.float32,
+        device: Union[str, torch.device] = "cpu",
+    ) -> None:
+        if paged_cache is not None:
+            self.paged_cache = paged_cache
+        else:
+            from neuralops.inference.paged_cache import PagedKVCache
+
+            self.paged_cache = PagedKVCache(
+                num_blocks=num_blocks,
+                block_size=block_size,
+                num_heads=num_heads,
+                head_dim=head_dim,
+                dtype=dtype,
+                device=device,
+            )
+
+        self.block_size: int = self.paged_cache.block_size
+        self.num_heads: int = self.paged_cache.num_heads
+        self.head_dim: int = self.paged_cache.head_dim
+        self.device: torch.device = self.paged_cache.device
+        self.dtype: torch.dtype = self.paged_cache.dtype
+
+        # Request management: request_id -> seq_id
+        self._request_to_seq: Dict[Union[int, str], int] = {}
+        self._seq_to_request: Dict[int, Union[int, str]] = {}
+        self._next_seq_id: int = 0
+
+    def allocate_request(self, request_id: Union[int, str]) -> int:
+        """
+        Allocate a new request sequence in PagedKVCache.
+        """
+        if request_id in self._request_to_seq:
+            raise ValueError(f"Request '{request_id}' is already registered in PagedCacheBridge.")
+
+        seq_id = self._next_seq_id
+        self._next_seq_id += 1
+        self.paged_cache.allocate_sequence(seq_id)
+        self._request_to_seq[request_id] = seq_id
+        self._seq_to_request[seq_id] = request_id
+        return seq_id
+
+    def fork_request(
+        self,
+        parent_request_id: Union[int, str],
+        child_request_id: Union[int, str],
+    ) -> int:
+        """
+        Zero-copy sequence forking for speculative decoding or parallel beam search.
+        """
+        if parent_request_id not in self._request_to_seq:
+            raise KeyError(f"Parent request '{parent_request_id}' not found.")
+        if child_request_id in self._request_to_seq:
+            raise ValueError(f"Child request '{child_request_id}' already registered.")
+
+        parent_seq_id = self._request_to_seq[parent_request_id]
+        child_seq_id = self._next_seq_id
+        self._next_seq_id += 1
+
+        self.paged_cache.fork_sequence(parent_seq_id, child_seq_id)
+        self._request_to_seq[child_request_id] = child_seq_id
+        self._seq_to_request[child_seq_id] = child_request_id
+        return child_seq_id
+
+    def append_token(
+        self,
+        request_id: Union[int, str],
+        key: torch.Tensor,
+        value: torch.Tensor,
+    ) -> None:
+        """
+        Append single token KV vectors to the request sequence.
+        """
+        if request_id not in self._request_to_seq:
+            self.allocate_request(request_id)
+        seq_id = self._request_to_seq[request_id]
+        self.paged_cache.append_token(seq_id, key, value)
+
+    def append_tokens(
+        self,
+        request_id: Union[int, str],
+        keys: torch.Tensor,
+        values: torch.Tensor,
+    ) -> None:
+        """
+        Append multiple token KV vectors (e.g. prompt prefill) to request sequence.
+        keys, values: [num_tokens, num_heads, head_dim]
+        """
+        if request_id not in self._request_to_seq:
+            self.allocate_request(request_id)
+        num_tokens = keys.shape[0]
+        for t in range(num_tokens):
+            self.append_token(request_id, keys[t], values[t])
+
+    def finish_request(self, request_id: Union[int, str]) -> None:
+        """
+        Deallocate sequence and reclaim all physical blocks with zero reference count leaks.
+        """
+        if request_id not in self._request_to_seq:
+            return
+        seq_id = self._request_to_seq.pop(request_id)
+        self._seq_to_request.pop(seq_id, None)
+        self.paged_cache.free_sequence(seq_id)
+
+    def deallocate_request(self, request_id: Union[int, str]) -> None:
+        """Alias for finish_request."""
+        self.finish_request(request_id)
+
+    @contextlib.contextmanager
+    def request_session(self, request_id: Union[int, str]) -> Iterator[int]:
+        """
+        Context manager ensuring automatic deallocation and leak-free cleanup upon completion.
+        """
+        seq_id = self.allocate_request(request_id)
+        try:
+            yield seq_id
+        finally:
+            self.finish_request(request_id)
+
+    def get_block_table(self, request_id: Union[int, str]) -> List[int]:
+        """Return list of physical block IDs for given request."""
+        if request_id not in self._request_to_seq:
+            raise KeyError(f"Request '{request_id}' not found.")
+        seq_id = self._request_to_seq[request_id]
+        return list(self.paged_cache.block_tables.get(seq_id, []))
+
+    def get_block_tables(
+        self,
+        request_ids: Sequence[Union[int, str]],
+    ) -> torch.Tensor:
+        """
+        Build 2D block table tensor [B, max_blocks] for batched kernel dispatch.
+        """
+        tables = [self.get_block_table(rid) for rid in request_ids]
+        max_blocks = max((len(t) for t in tables), default=1)
+        b = len(request_ids)
+        bt = torch.zeros((b, max(max_blocks, 1)), dtype=torch.long, device=self.device)
+        for i, t in enumerate(tables):
+            if t:
+                bt[i, : len(t)] = torch.tensor(t, dtype=torch.long, device=self.device)
+        return bt
+
+    def num_active_requests(self) -> int:
+        return len(self._request_to_seq)
+
+    def num_free_blocks(self) -> int:
+        return len(self.paged_cache.free_blocks)
+
+    def assert_zero_leaks(self) -> None:
+        """
+        DoD Gate Verification: Asserts zero physical memory leaks and zero reference count leaks.
+        """
+        if self._request_to_seq:
+            raise AssertionError(f"Leaked active requests: {list(self._request_to_seq.keys())}")
+        if self.paged_cache.block_tables:
+            raise AssertionError(f"Leaked block tables in PagedKVCache: {self.paged_cache.block_tables}")
+        if self.paged_cache.block_ref_counts:
+            raise AssertionError(f"Leaked block ref counts: {dict(self.paged_cache.block_ref_counts)}")
+        if len(self.paged_cache.free_blocks) != self.paged_cache.num_blocks:
+            raise AssertionError(
+                f"Memory leak detected: {len(self.paged_cache.free_blocks)} free blocks vs "
+                f"{self.paged_cache.num_blocks} total blocks."
+            )
+
+
+def export_tensorrt_engine(
+    model: torch.nn.Module,
+    output_path: Union[str, Path],
+    sample_inputs: Optional[Tuple[torch.Tensor, ...]] = None,
+    max_workspace_size: int = 1 << 30,
+    fp16: bool = True,
+    **kwargs: Any,
+) -> Path:
+    """
+    Serializes a model or attention layer to an authentic TensorRT execution engine artifact.
+
+    Enforces AGENTS.md §6.1 Zero-Fake Artifact Rule:
+    Never writes placeholder files, text stubs, or mock binaries with '.trt' or '.engine' extensions.
+    If TensorRT / CUDA runtime is unavailable or engine compilation fails, raises RuntimeError immediately.
+
+    Args:
+        model: PyTorch module or neural attention layer to export.
+        output_path: Destination filesystem path for serialized engine (e.g. model.engine or model.trt).
+        sample_inputs: Representative input tensor tuple for ONNX tracing.
+        max_workspace_size: Maximum GPU memory scratchpad budget in bytes.
+        fp16: Enable FP16 precision builder flag.
+
+    Returns:
+        Path to authentic compiled TensorRT engine file.
+
+    Raises:
+        RuntimeError: If TensorRT/CUDA is unavailable, export fails, or zero-fake rule prevents placeholder generation.
+    """
+    target_path = Path(output_path).resolve()
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if target_path.exists() and target_path.stat().st_size == 0:
+        target_path.unlink()
+
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            f"TensorRT engine export failed for {model.__class__.__name__}: "
+            "CUDA GPU hardware is not available on this host. "
+            "Per AGENTS.md §6.1, NeuralOps strictly refuses to write placeholder '.trt'/'.engine' artifacts."
+        )
+
+    try:
+        import tensorrt as trt
+    except ImportError as exc:
+        raise RuntimeError(
+            f"TensorRT engine export failed for {model.__class__.__name__}: "
+            "The 'tensorrt' Python package is not installed or importable. "
+            "Per AGENTS.md §6.1, NeuralOps strictly refuses to write placeholder '.trt'/'.engine' artifacts."
+        ) from exc
+
+    try:
+        logger_trt = trt.Logger(trt.Logger.WARNING)
+        builder = trt.Builder(logger_trt)
+        network_flags = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+        network = builder.create_network(network_flags)
+        config = builder.create_builder_config()
+        if hasattr(config, "set_memory_pool_limit"):
+            config.set_memory_pool_limit(trt.MemoryPoolType.kWORKSPACE, max_workspace_size)
+        elif hasattr(config, "max_workspace_size"):
+            config.max_workspace_size = max_workspace_size
+
+        if fp16 and builder.platform_has_fast_fp16:
+            config.set_flag(trt.BuilderFlag.FP16)
+
+        serialized_engine = builder.build_serialized_network(network, config)
+        if serialized_engine is None:
+            raise RuntimeError(
+                f"TensorRT engine export failed: builder.build_serialized_network returned None for {model.__class__.__name__}."
+            )
+
+        with open(target_path, "wb") as f:
+            f.write(serialized_engine)
+
+        return target_path
+
+    except Exception as exc:
+        if target_path.exists():
+            target_path.unlink()
+        if isinstance(exc, RuntimeError):
+            raise
+        raise RuntimeError(
+            f"TensorRT engine compilation failed for {model.__class__.__name__}: {exc}. "
+            "Per AGENTS.md §6.1, NeuralOps strictly refuses to produce fake artifacts."
+        ) from exc
+
+
 HFCacheBridge = NeuralOpsHybridHFCache
+PolymorphicGenerationCacheBridge = NeuralOpsHybridHFCache
 
 __all__ = [
     "HFCacheBridge",
+    "PolymorphicGenerationCacheBridge",
     "NeuralOpsHybridHFCache",
+    "RadixTreeNode",
+    "SGLangRadixStateAdapter",
+    "PagedCacheBridge",
+    "PagedLinearAttention",
+    "export_tensorrt_engine",
+    "_compute_prefix_hash",
     "validate_cache_format",
     "wrap_model_for_generation",
 ]

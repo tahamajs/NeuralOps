@@ -15,7 +15,17 @@ import sys
 if __name__ == "logging":
     # If accidentally placed on sys.path and imported as stdlib 'logging', forward to real stdlib
     del sys.modules["logging"]
-    _stdlib_logging = importlib.import_module("logging")
+    # Remove script/benchmark dir from sys.path temporarily to break the recursion
+    _cur_dir = str(sys.path[0]) if sys.path else ""
+    _removed = False
+    if _cur_dir in sys.path:
+        sys.path.remove(_cur_dir)
+        _removed = True
+    try:
+        _stdlib_logging = importlib.import_module("logging")
+    finally:
+        if _removed and _cur_dir:
+            sys.path.insert(0, _cur_dir)
     sys.modules["logging"] = _stdlib_logging
     for _k, _v in _stdlib_logging.__dict__.items():
         globals()[_k] = _v

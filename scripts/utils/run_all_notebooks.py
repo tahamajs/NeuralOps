@@ -94,6 +94,39 @@ def _setup_runtime_environment() -> None:
         onnx_mock.checker = checker_mock
         sys.modules["onnx"] = onnx_mock
 
+    # Polyfill triton and triton.language if missing in runtime environment
+    try:
+        import triton
+    except ImportError:
+        import types
+
+        class _MockJitKernel:
+            def __init__(self, fn):
+                self.fn = fn
+            def __call__(self, *args, **kwargs):
+                raise RuntimeError("Triton JIT compilation requires a native Triton runtime.")
+            def __getitem__(self, grid):
+                return self
+
+        triton_mock = types.ModuleType("triton")
+        triton_mock.cdiv = lambda a, b: (a + b - 1) // b
+        triton_mock.jit = lambda f: _MockJitKernel(f)
+        triton_mock.autotune = lambda *a, **kw: lambda f: _MockJitKernel(f)
+        triton_mock.heuristics = lambda *a, **kw: lambda f: _MockJitKernel(f)
+        triton_mock.__version__ = "2.0.0"
+        triton_mock.Config = lambda *a, **k: None
+        sys.modules["triton"] = triton_mock
+
+        triton_lang = types.ModuleType("triton.language")
+        triton_lang.constexpr = int
+        triton_lang.int32 = int
+        triton_lang.int64 = int
+        triton_lang.float32 = float
+        triton_lang.float16 = float
+        triton_lang.bfloat16 = float
+        sys.modules["triton.language"] = triton_lang
+        triton_mock.language = triton_lang
+
     # Polyfill torch.distributed._tensor for PyTorch < 2.0 when modern accelerate / transformers imports it
     if "torch.distributed._tensor" not in sys.modules:
         try:
@@ -121,7 +154,8 @@ def _preprocess_code(source_lines: list[str]) -> str:
             cleaned_lines.append(f"# {line}")
         else:
             cleaned_lines.append(line)
-    return "".join(cleaned_lines)
+    code_str = "".join(cleaned_lines)
+    return code_str.replace(r"\text{", r"\mathrm{").replace(r"\\text{", r"\\mathrm{")
 
 
 def _capture_figures() -> list[dict[str, Any]]:
@@ -263,6 +297,22 @@ def execute_notebook(nb_path: str, repo_root: str) -> dict[str, Any]:
         "display": _display,
     }
 
+    try:
+        import pandas as pd
+        cell_globals["pd"] = pd
+    except ImportError:
+        pass
+    try:
+        import numpy as np
+        cell_globals["np"] = np
+    except ImportError:
+        pass
+    try:
+        import json as _json
+        cell_globals["json"] = _json
+    except ImportError:
+        pass
+
     # Pre-create standard directories expected by notebooks
     from pathlib import Path
     Path("results/plots").mkdir(parents=True, exist_ok=True)
@@ -334,6 +384,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="NeuralOps Master Notebook Suite Runner")
     parser.add_argument("--dir", type=str, default="notebooks", help="Path to notebooks directory")
     parser.add_argument("--pattern", type=str, default="*.ipynb", help="Glob pattern for notebooks")
+    parser.add_argument("--files", nargs="+", default=None, help="Explicit list of notebook paths to run")
     parser.add_argument("--summary-file", type=str, default="results/NOTEBOOKS_EXECUTION_SUMMARY.md")
     parser.add_argument("--single-notebook", type=str, default=None, help="Execute single notebook and exit")
     parser.add_argument("--output-json", type=str, default=None, help="Write execution result dictionary to JSON file")
@@ -350,8 +401,12 @@ def main() -> int:
                 json.dump(res, f_json)
         return 0 if res["status"] == "PASS" else 1
 
-    nb_dir = os.path.abspath(args.dir)
-    nb_files = sorted(glob.glob(os.path.join(nb_dir, args.pattern)))
+    if args.files:
+        nb_files = [os.path.abspath(f) for f in args.files]
+        nb_dir = "custom list"
+    else:
+        nb_dir = os.path.abspath(args.dir)
+        nb_files = sorted(glob.glob(os.path.join(nb_dir, args.pattern)))
     if not nb_files:
         print(f"No notebooks found in {nb_dir} matching {args.pattern}")
         return 1

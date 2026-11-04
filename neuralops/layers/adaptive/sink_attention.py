@@ -580,6 +580,33 @@ class SinkAttention(BaseAttention):
 
         N_k = k_att.shape[-2]
 
+        # Fastpath Level 1 (CUDA) / Level 2 (Triton) Hardware Dispatch
+        if (
+            q.is_cuda
+            and past_k is None
+            and N == N_k
+            and attention_mask is None
+            and head_mask is None
+            and not output_attentions
+            and self.is_decoder
+        ):
+            try:
+                from neuralops.ops.cuda.sliding_window import sliding_window_attn
+                attn_out = sliding_window_attn(
+                    q, k_att, v_att,
+                    window_size=self.window_size,
+                    num_sinks=self.num_sink_tokens,
+                )
+                attn_out = attn_out.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+                if self.is_nested_encoder:
+                    return attn_out, None
+                out = self.out_lin(attn_out)
+                if updated_cache is not None or past_key_value is not None:
+                    return out, None, updated_cache
+                return out, None
+            except Exception as exc:
+                logger.debug("SinkAttention Level 1/2 hardware dispatch fallback: %s", exc)
+
         use_sdpa = (
             not self.training
             and N_k <= self.window_size

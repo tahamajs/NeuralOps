@@ -21,6 +21,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.surgery.endoskeletal_shell import UniversalAttentionBridge
+from neuralops.surgery.streaming_distill import (
+    CheckpointedTeacherBridge,
+    MicroChunkedShadowTwinDistiller,
+    MultiLayerCKACoordinator,
+    RunningRepresentationNormalizer,
+    ShadowTwinDistiller,
+    StreamingCKALoss,
+    compute_analytical_cka_grad,
+    get_vram_utilization,
+    purge_vram_if_needed,
+)
 
 logger = logging.getLogger("NeuralOps.Surgery.ShadowTwin")
 
@@ -39,8 +50,19 @@ def compute_linear_cka_loss(
     teacher_act: torch.Tensor,
     student_act: torch.Tensor,
     eps: float = 1e-6,
+    use_streaming: bool = False,
+    chunk_size: int = 128,
 ) -> torch.Tensor:
     """Computes Linear Centered Kernel Alignment (CKA) difference loss: 1.0 - CKA."""
+    if use_streaming or (
+        teacher_act.dim() >= 2
+        and teacher_act.size(1) > chunk_size
+        and teacher_act.numel() > 65536
+    ):
+        hidden_dim = teacher_act.shape[-1]
+        cka_mod = StreamingCKALoss(hidden_dim=hidden_dim, eps=eps).to(teacher_act.device)
+        return cka_mod(student_act, teacher_act, chunk_size=chunk_size)
+
     X = teacher_act.reshape(-1, teacher_act.shape[-1]).float()
     Y = student_act.reshape(-1, student_act.shape[-1]).float()
 
@@ -59,8 +81,17 @@ def compute_linear_cka_loss(
 def enable_shadow_twin(
     bridge_or_model: nn.Module,
     stage: str = "stage2_block_cloning",
+    memory_mode: str = "standard",
+    chunk_size: int = 128,
+    use_normalizer: bool = False,
+    normalizer: Optional[RunningRepresentationNormalizer] = None,
 ) -> None:
-    """Enables shadow twin teacher branch inside UniversalAttentionBridge or all bridges in a model."""
+    """
+    Enables shadow twin teacher branch inside UniversalAttentionBridge or all bridges in a model.
+
+    Supports memory_mode='streaming_checkpointed' for constant O(D^2) memory footprint
+    under extreme sequence lengths.
+    """
     target_bridges = []
     if isinstance(bridge_or_model, UniversalAttentionBridge):
         target_bridges.append(bridge_or_model)
@@ -70,11 +101,29 @@ def enable_shadow_twin(
                 target_bridges.append(m)
 
     for bridge in target_bridges:
+        bridge.memory_mode = memory_mode
+        bridge.chunk_size = chunk_size
         if bridge.teacher_branch is None:
             bridge.teacher_branch = bridge.orig_module
             bridge.teacher_branch.eval()
             for p in bridge.teacher_branch.parameters():
                 p.requires_grad = False
+
+        if memory_mode == "streaming_checkpointed":
+            bridge.teacher_bridge_wrapper = CheckpointedTeacherBridge(bridge.teacher_branch)
+        else:
+            bridge.teacher_bridge_wrapper = None
+
+        if use_normalizer or normalizer is not None:
+            if normalizer is not None:
+                bridge.normalizer = normalizer
+            elif not hasattr(bridge, "normalizer") or bridge.normalizer is None:
+                h_dim = getattr(bridge, "hidden_dim", None)
+                if h_dim is None and hasattr(bridge, "orig_module"):
+                    h_dim = getattr(bridge.orig_module, "hidden_size", None) or getattr(bridge.orig_module, "hidden_dim", 768)
+                bridge.normalizer = RunningRepresentationNormalizer(hidden_dim=h_dim or 768)
+        else:
+            bridge.normalizer = None
 
         bridge.stage = stage
         bridge.alpha = 0.0
@@ -145,6 +194,16 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
             if m.teacher_branch is not None:
                 del m.teacher_branch
                 m.teacher_branch = None
+            if hasattr(m, "teacher_bridge_wrapper") and m.teacher_bridge_wrapper is not None:
+                del m.teacher_bridge_wrapper
+                m.teacher_bridge_wrapper = None
+            if hasattr(m, "memory_mode"):
+                m.memory_mode = None
+            if hasattr(m, "chunk_size"):
+                m.chunk_size = None
+            if hasattr(m, "normalizer") and m.normalizer is not None:
+                del m.normalizer
+                m.normalizer = None
             if hasattr(m, "orig_module") and m.orig_module is not None:
                 del m.orig_module
                 m.orig_module = None
@@ -160,8 +219,7 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
             count += 1
 
     gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
+    purge_vram_if_needed(threshold=0.0, force=True)
 
     logger.info(f"Finalized surgery across {count} UniversalAttentionBridge modules.")
     return model
@@ -178,18 +236,36 @@ def patch_bridge_for_shadow_twin(bridge: UniversalAttentionBridge) -> None:
         if bridge.teacher_branch is None or getattr(bridge, "stage", None) == "inference":
             return orig_forward(*args, **kwargs)
 
-        with torch.no_grad():
-            teacher_ret = bridge.teacher_branch(*args, **kwargs)
+        mem_mode = getattr(bridge, "memory_mode", "standard")
+        chunk_sz = getattr(bridge, "chunk_size", 128)
+        teacher_wrapper = getattr(bridge, "teacher_bridge_wrapper", None)
+
+        if mem_mode == "streaming_checkpointed" and teacher_wrapper is not None:
+            teacher_ret = teacher_wrapper(*args, **kwargs)
             teacher_core = teacher_ret[0] if isinstance(teacher_ret, tuple) else teacher_ret
+        else:
+            with torch.no_grad():
+                teacher_ret = bridge.teacher_branch(*args, **kwargs)
+                teacher_core = teacher_ret[0] if isinstance(teacher_ret, tuple) else teacher_ret
 
         student_ret = orig_forward(*args, **kwargs)
         student_core = student_ret[0] if isinstance(student_ret, tuple) else student_ret
 
+        if hasattr(bridge, "normalizer") and bridge.normalizer is not None:
+            student_core = bridge.normalizer(student_core)
+
         stage = getattr(bridge, "stage", "stage2_block_cloning")
         if stage in ("stage1_orientation", "stage2_block_cloning") and torch.is_grad_enabled():
             loss_clone = compute_operator_cloning_loss(teacher_core, student_core)
-            loss_cka = compute_linear_cka_loss(teacher_core, student_core)
+            loss_cka = compute_linear_cka_loss(
+                teacher_core,
+                student_core,
+                use_streaming=(mem_mode == "streaming_checkpointed"),
+                chunk_size=chunk_sz,
+            )
             bridge._last_twin_loss = loss_clone + 0.05 * loss_cka
+            if mem_mode == "streaming_checkpointed":
+                purge_vram_if_needed(threshold=0.75)
         else:
             # Do not expose a training loss from an earlier forward during
             # evaluation, inference, or the end-to-end student stage.
@@ -256,4 +332,11 @@ __all__ = [
     "finalize_surgery",
     "patch_bridge_for_shadow_twin",
     "check_surgery_divergence",
+    "MicroChunkedShadowTwinDistiller",
+    "ShadowTwinDistiller",
+    "get_vram_utilization",
+    "purge_vram_if_needed",
+    "RunningRepresentationNormalizer",
+    "MultiLayerCKACoordinator",
+    "compute_analytical_cka_grad",
 ]

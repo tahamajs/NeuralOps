@@ -16,10 +16,12 @@ from neuralops.reporting.evidence import (
     load_evidence,
     save_evidence,
 )
+from neuralops.reporting.latex_table_generator import LatexTableGenerator
 from neuralops.reporting.report import render_report, save_report
 
 __all__ = [
     "EvidenceRecord",
+    "LatexTableGenerator",
     "build_evidence",
     "capture_environment",
     "load_evidence",

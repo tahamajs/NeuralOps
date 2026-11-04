@@ -142,7 +142,7 @@ __global__ void block_sparse_attn_warp_kernel(
                 float dot = 0.0f;
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    dot += q_local[qi][e] * K_smem[kt * STRIDE + lane + e * 32];
+                    dot = __fmaf_rn(q_local[qi][e], K_smem[kt * STRIDE + lane + e * 32], dot);
                 }
 
                 #pragma unroll
@@ -152,13 +152,14 @@ __global__ void block_sparse_attn_warp_kernel(
 
                 const float qk = dot * scale;
                 const float m_curr = fmaxf(m_prev[qi], qk);
-                const float alpha = expf(m_prev[qi] - m_curr);
-                const float p = expf(qk - m_curr);
+                const float alpha = __expf(m_prev[qi] - m_curr);
+                const float p = __expf(qk - m_curr);
 
-                l_prev[qi] = l_prev[qi] * alpha + p;
+                l_prev[qi] = __fmaf_rn(l_prev[qi], alpha, p);
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    acc[qi][e] = acc[qi][e] * alpha + p * V_smem[kt * STRIDE + lane + e * 32];
+                    const float pv = p * V_smem[kt * STRIDE + lane + e * 32];
+                    acc[qi][e] = __fmaf_rn(acc[qi][e], alpha, pv);
                 }
                 m_prev[qi] = m_curr;
             }
@@ -322,7 +323,7 @@ __global__ void sparse_attention_bwd_kernel(
                 float dot = 0.0f;
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    dot += q_local[qi][e] * K_smem[kt * STRIDE + lane + e * 32];
+                    dot = __fmaf_rn(q_local[qi][e], K_smem[kt * STRIDE + lane + e * 32], dot);
                 }
 
                 #pragma unroll
@@ -332,13 +333,14 @@ __global__ void sparse_attention_bwd_kernel(
 
                 const float qk = dot * scale;
                 const float m_curr = fmaxf(m_prev[qi], qk);
-                const float alpha = expf(m_prev[qi] - m_curr);
-                const float p = expf(qk - m_curr);
+                const float alpha = __expf(m_prev[qi] - m_curr);
+                const float p = __expf(qk - m_curr);
 
-                l_prev[qi] = l_prev[qi] * alpha + p;
+                l_prev[qi] = __fmaf_rn(l_prev[qi], alpha, p);
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
-                    acc[qi][e] = acc[qi][e] * alpha + p * V_smem[kt * STRIDE + lane + e * 32];
+                    const float pv = p * V_smem[kt * STRIDE + lane + e * 32];
+                    acc[qi][e] = __fmaf_rn(acc[qi][e], alpha, pv);
                 }
                 m_prev[qi] = m_curr;
             }
@@ -355,7 +357,7 @@ __global__ void sparse_attention_bwd_kernel(
             #pragma unroll
             for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
                 const float out_d = acc[qi][e] * inv_l;
-                D_val[qi] += go_local[qi][e] * out_d;
+                D_val[qi] = __fmaf_rn(go_local[qi][e], out_d, D_val[qi]);
             }
             #pragma unroll
             for (int mask = 16; mask > 0; mask /= 2) {
@@ -417,8 +419,8 @@ __global__ void sparse_attention_bwd_kernel(
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
                     const int d = lane + e * 32;
-                    dot += q_local[qi][e] * K_smem[kt * STRIDE + d];
-                    dp  += go_local[qi][e] * V_smem[kt * STRIDE + d];
+                    dot = __fmaf_rn(q_local[qi][e], K_smem[kt * STRIDE + d], dot);
+                    dp  = __fmaf_rn(go_local[qi][e], V_smem[kt * STRIDE + d], dp);
                 }
 
                 #pragma unroll
@@ -428,7 +430,7 @@ __global__ void sparse_attention_bwd_kernel(
                 }
 
                 const float qk = dot * scale;
-                const float p = expf(qk - m_i) * inv_l;
+                const float p = __expf(qk - m_i) * inv_l;
                 const float dS = p * (dp - D_i) * scale;
 
                 const int global_j = k_start + kt;
@@ -437,7 +439,7 @@ __global__ void sparse_attention_bwd_kernel(
                 #pragma unroll
                 for (int e = 0; e < ELEMENTS_PER_THREAD; ++e) {
                     const int d = lane + e * 32;
-                    grad_q_acc[qi][e] += dS * K_smem[kt * STRIDE + d];
+                    grad_q_acc[qi][e] = __fmaf_rn(dS, K_smem[kt * STRIDE + d], grad_q_acc[qi][e]);
 
                     const float gk_val = dS * q_local[qi][e];
                     const float gv_val = p * go_local[qi][e];

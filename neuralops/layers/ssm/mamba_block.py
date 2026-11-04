@@ -33,6 +33,13 @@ except Exception as e:
     HAS_MAMBA_CUDA = False
 
 try:
+    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
+        selective_scan as cuda_selective_scan,
+    )
+except Exception:
+    cuda_selective_scan = None
+
+try:
     from neuralops.ops.triton.selective_scan import (
         selective_scan_fn as triton_selective_scan,
     )
@@ -488,21 +495,18 @@ class MambaBlock(nn.Module):
           Path 3: Fast chunked parallel scan (framework.core.selective_scan, O(1) ops per chunk)
           Path 4: Chunked recurrent scan with activation checkpointing (failsafe fallback)
         """
-        if HAS_MAMBA_CUDA and selective_scan is not None:
+        # Level 1 Native CUDA C++ (128-bit register cached)
+        if cuda_selective_scan is not None and u.is_cuda and A.shape[1] <= 128:
             try:
-                return selective_scan(
-                    u=u,
-                    delta=delta,
-                    A=A,
-                    B=B_ssm,
-                    C=C_ssm,
-                    D=D,
-                    delta_softplus=True,
-                )
+                # cuda_selective_scan expects raw delta (or delta if softplus handled inside/outside)
+                delta_sp = F.softplus(delta)
+                res = cuda_selective_scan(u, delta_sp, A, B_ssm, C_ssm, D)
+                return res[0] if isinstance(res, tuple) else res
             except Exception as e:
-                logger.debug("CUDA selective_scan failed: %s", e)
+                logger.debug("Level 1 CUDA selective_scan failed (%s); trying Level 2 Triton.", e)
 
-        if HAS_TRITON_MAMBA and triton_selective_scan is not None:
+        # Level 2 Triton JIT (In-SRAM zero-alloc)
+        if HAS_TRITON_MAMBA and triton_selective_scan is not None and u.is_cuda:
             try:
                 y = triton_selective_scan(
                     u.transpose(1, 2).contiguous(),
@@ -515,8 +519,9 @@ class MambaBlock(nn.Module):
                 )
                 return y.transpose(1, 2).contiguous()
             except Exception as e:
-                logger.warning("Triton selective_scan failed: %s", e)
+                logger.warning("Level 2 Triton selective_scan failed: %s; trying Level 3 fallback.", e)
 
+        # Level 3 PyTorch Reference / Core Dispatcher Fallback
         if selective_scan is not None:
             try:
                 return selective_scan(
@@ -529,7 +534,7 @@ class MambaBlock(nn.Module):
                     delta_softplus=True,
                 )
             except Exception as e:
-                logger.debug("Parallel selective_scan fallback failed: %s", e)
+                logger.debug("Core selective_scan dispatch failed (%s); trying recurrent scan.", e)
 
         y, _ = self._recurrent_scan(u, delta, A, B_ssm, C_ssm, D, None)
         return y

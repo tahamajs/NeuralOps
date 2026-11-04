@@ -129,8 +129,21 @@ class PerplexityGate(Gate):
         ctx = context or {}
         dataset = ctx.get("dataset") or self.config.get("dataset")
         eval_fn: Optional[Callable[[nn.Module], float]] = ctx.get("eval_fn") or self.config.get("eval_fn")
+        profile = str(ctx.get("profile", "")).lower()
+        allow_uncalibrated = bool(ctx.get("allow_uncalibrated", False))
 
         if dataset is None and eval_fn is None:
+            # In production sweeps/profiles, fail-closed unless explicitly allowed
+            if profile in ("production", "empirical") and not allow_uncalibrated:
+                return GateResult(
+                    gate_name=self.name,
+                    passed=False,
+                    skipped=False,
+                    severity=self.severity,
+                    message="Production validation requires empirical dataset or eval_fn; failing closed (--allow-uncalibrated not set)",
+                    duration_seconds=time.perf_counter() - t0,
+                    error_code="E_DATASET_MISSING",
+                )
             return GateResult(
                 gate_name=self.name,
                 passed=True,

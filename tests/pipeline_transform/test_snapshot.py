@@ -118,3 +118,34 @@ def test_b2_config_attribute_rollback():
 
     restore(model, snap)
     assert model.config.lr == 1e-4
+
+
+def test_b2_spill_to_disk_safetensors_and_restore():
+    """Verify disk-spilled SafeTensors snapshot frees RAM and restores bit-identical state."""
+    model = MultiLayerDummyModel()
+    hash_before = _hash_state_dict(model.state_dict())
+
+    # Capture snapshot with spill_to_disk=True
+    snap = capture(model, spill_to_disk=True)
+
+    assert snap.disk_path is not None
+    assert len(snap.params) == 0  # In-memory params released
+    assert snap.size_bytes() > 0
+
+    # Intentionally mutate weights
+    with torch.no_grad():
+        for p in model.parameters():
+            p.add_(9.876)
+
+    hash_mutated = _hash_state_dict(model.state_dict())
+    assert hash_mutated != hash_before
+
+    # Restore from disk SafeTensors
+    restore(model, snap)
+
+    hash_after = _hash_state_dict(model.state_dict())
+    assert hash_after == hash_before
+
+    # Cleanup disk resources
+    snap.cleanup()
+    assert snap.disk_path is None

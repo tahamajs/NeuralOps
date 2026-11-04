@@ -42,7 +42,7 @@ from neuralops.surgery.universal_calibrator import (
     compress_model_universal,
     transplant_and_compress,
 )
-from neuralops.surgery.healing import (
+from neuralops.core._attention_surgery import (
     calibrate_attention_subspace,
     heal_replaced_model,
 )

@@ -14,6 +14,20 @@
 namespace neuralops {
 namespace cuda {
 
+__device__ __forceinline__ float compute_alibi_slope(const int h, const int H) {
+    // If H is a power of 2: slope_h = 2^(-8 * (h + 1) / H)
+    // If H is not a power of 2, standard Press et al. ALiBi formulation:
+    // let n = 2^(floor(log2(H))). For h < n: 2^(-8 * (h + 1) / n)
+    // For h >= n: 2^(-8 * (2 * (h - n) + 1) / (2 * n))
+    // Optimized single-branch in-register evaluation:
+    const int n = 1 << (31 - __clz(H));
+    if (h < n) {
+        return __exp2f(-8.0f * static_cast<float>(h + 1) / static_cast<float>(n));
+    } else {
+        return __exp2f(-8.0f * static_cast<float>(2 * (h - n) + 1) / static_cast<float>(2 * n));
+    }
+}
+
 template <typename scalar_t, int ITEMS_PER_THREAD>
 __launch_bounds__(128)
 __global__ void alibi_attention_fwd_kernel(
@@ -39,7 +53,9 @@ __global__ void alibi_attention_fwd_kernel(
     const int h = rem / L;
     const int i = rem % L;
 
-    const float slope = slopes[h];
+    // Phase 1: In-register geometric slope coefficient generation
+    // Fall back to slopes pointer only if explicitly provided, else compute directly in registers
+    const float slope = (slopes != nullptr) ? slopes[h] : compute_alibi_slope(h, H);
     const int q_offset = b * (H * L * D) + h * (L * D) + i * D;
 
     float q_reg[ITEMS_PER_THREAD];
@@ -70,7 +86,9 @@ __global__ void alibi_attention_fwd_kernel(
                 local_dot += q_reg[k] * to_float(K[kv_offset + d]);
             }
         }
-        float score = warp_reduce_sum(local_dot) * scale - slope * fabsf(static_cast<float>(i - j));
+        // Phase 2: Online linear position penalty fused directly into softmax accumulator
+        const float pos_dist = is_causal ? static_cast<float>(i - j) : fabsf(static_cast<float>(i - j));
+        const float score = warp_reduce_sum(local_dot) * scale - slope * pos_dist;
 
         if (score > max_s) {
             const float rescale = expf(max_s - score);
@@ -136,7 +154,12 @@ torch::Tensor alibi_attention_fwd(
     auto q_c = q.contiguous();
     auto k_c = k.contiguous();
     auto v_c = v.contiguous();
-    auto slopes_c = slopes.contiguous().to(torch::kFloat32);
+    const float* slopes_ptr = nullptr;
+    torch::Tensor slopes_c;
+    if (slopes.defined() && slopes.numel() > 0) {
+        slopes_c = slopes.contiguous().to(torch::kFloat32);
+        slopes_ptr = slopes_c.data_ptr<float>();
+    }
 
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
@@ -147,7 +170,7 @@ torch::Tensor alibi_attention_fwd(
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
                     v_c.data_ptr<scalar_t>(),
-                    slopes_c.data_ptr<float>(),
+                    slopes_ptr,
                     B, H, L, D, scale, is_causal
                 );
             } else if (D <= 64) {
@@ -156,7 +179,7 @@ torch::Tensor alibi_attention_fwd(
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
                     v_c.data_ptr<scalar_t>(),
-                    slopes_c.data_ptr<float>(),
+                    slopes_ptr,
                     B, H, L, D, scale, is_causal
                 );
             } else {
@@ -165,7 +188,7 @@ torch::Tensor alibi_attention_fwd(
                     q_c.data_ptr<scalar_t>(),
                     k_c.data_ptr<scalar_t>(),
                     v_c.data_ptr<scalar_t>(),
-                    slopes_c.data_ptr<float>(),
+                    slopes_ptr,
                     B, H, L, D, scale, is_causal
                 );
             }

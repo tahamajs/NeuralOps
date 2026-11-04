@@ -69,10 +69,11 @@ except Exception:
 
 try:
     from neuralops.ops.triton import gla_scan
-    from neuralops.ops.triton.gla_scan import gla_scan_triton
+    from neuralops.ops.triton.gla_scan import gla_scan_triton, chunked_gla_scan
 except Exception:
     gla_scan = None
     gla_scan_triton = None
+    chunked_gla_scan = None
 
 try:
     from neuralops.ops.triton import hgrn2_scan
@@ -510,12 +511,19 @@ from neuralops.ops.triton import varlen_attention
 from neuralops.ops.triton import hardware_profile
 from neuralops.ops.triton import op_registry
 
-from neuralops.core.triton_linear_attn import fast_linear_attention, LinearAttentionTriton
-from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
-
 
 def __getattr__(name: str) -> Any:
-    """Resolve specialized Triton operators from the canonical standalone package."""
+    """Resolve specialized Triton operators from the canonical standalone package or core."""
+    if name in ("fast_linear_attention", "LinearAttentionTriton"):
+        from neuralops.core import triton_linear_attn
+        val = getattr(triton_linear_attn, name)
+        globals()[name] = val
+        return val
+    if name == "triton_block_sparse_attention":
+        from neuralops.core import triton_sparse_attn
+        val = getattr(triton_sparse_attn, name)
+        globals()[name] = val
+        return val
     try:
         from neuralops.ops.triton import standalone
 

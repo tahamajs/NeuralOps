@@ -628,6 +628,38 @@ class MLAAttention(BaseAttention):
             .transpose(1, 2)
             .contiguous()
         )
+        # Fastpath: Direct Latent KV Cache Attention
+        # If sequence is non-causal or single token decode, without masks or RoPE,
+        # compute attention directly in latent KV space without materializing uncompressed K/V in DRAM.
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        is_causal = bool(self.is_decoder and not is_cross and N > 1)
+        scale = 1.0 / math.sqrt(self.head_dim)
+
+        if (
+            eff_mask is None
+            and head_mask is None
+            and not output_attentions
+            and not is_causal
+            and self.k_up.bias is None
+            and self.v_up.bias is None
+            and position_embeddings is None
+            and past_key_value is None
+            and not kwargs.get("use_cache", False)
+        ):
+            try:
+                from neuralops.ops.cuda.latent_kv_attn import latent_kv_cache_attention
+                c_kv = self.kv_down(kv_input)  # (B, L_kv, R) in DRAM
+                u_k = self.k_up.weight  # (D_K, R)
+                u_v = self.v_up.weight.t().contiguous()  # (R, D_V)
+                out_lat = latent_kv_cache_attention(q, c_kv, u_k, u_v, sm_scale=scale)
+                out = out_lat.to(dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+                if self.is_nested_encoder:
+                    return out, None
+                return self.out_proj(out), None
+            except Exception as e_lat:
+                logger.debug("MLA direct latent_kv_cache_attention fastpath bypassed (%s), falling back to standard path", e_lat)
+
         k_new = _safe_low_rank(kv_input, self.k_up.weight, self.kv_down.weight)
         v_new = _safe_low_rank(kv_input, self.v_up.weight, self.kv_down.weight)
         if self.k_up.bias is not None:
@@ -684,6 +716,25 @@ class MLAAttention(BaseAttention):
         is_causal = bool(self.is_decoder and not is_cross and N > 1)
 
         if eff_mask is None and head_mask is None and not output_attentions:
+            dispatched = False
+            # Level 1/2 Hardware Latent KV Cache Attention fast path
+            # If sequence is non-causal or single token decode, and sizes match hardware limits
+            if q.is_cuda and not is_causal and self.k_up.bias is None and self.v_up.bias is None and position_embeddings is None:
+                try:
+                    from neuralops.ops.cuda.latent_kv_attn import latent_kv_cache_attention
+                    c_kv = self.kv_down(kv_input)  # (B, L_kv, R)
+                    # u_k: (d, R), u_v: (R, d)
+                    u_k = self.k_up.weight  # (d, R)
+                    u_v = self.v_up.weight.t().contiguous()  # (R, d)
+                    out_lat = latent_kv_cache_attention(q, c_kv, u_k, u_v, sm_scale=scale)
+                    out = out_lat.to(dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                    out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+                    if self.is_nested_encoder:
+                        return out, present_key_value
+                    return self.out_proj(out), present_key_value
+                except Exception as e_lat:
+                    logger.debug("MLA latent_kv_cache_attention hardware dispatch failed (%s), falling back to SDPA", e_lat)
+
             try:
                 _qs = maybe_half(q)
                 _ks = maybe_half(k)

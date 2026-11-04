@@ -16,20 +16,65 @@ from __future__ import annotations
 import copy
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
 
 from neuralops.executor.executor import execute_recipe
 from neuralops.executor.snapshot import ModelSnapshot
+from neuralops.models.protocols import SurgicalModel
 from neuralops.operations.registry import get_operation
 from neuralops.recipe.loader import load_recipe, loads_recipe
 from neuralops.recipe.schema import Recipe
+from neuralops.surgery.fx_surgery import compile_linear_surgery
 from neuralops.validation.result import ValidationResult
 from neuralops.validation.runner import run_validation_gates
 
 logger = logging.getLogger("NeuralOps.Surgery")
+
+
+class SurgicalModelWrapper(nn.Module, SurgicalModel):
+    """Certified wrapper implementing SurgicalModel protocol for models transformed via FX or shell surgery."""
+
+    def __init__(
+        self,
+        model: nn.Module,
+        engine: str = "fx",
+        target_attention: str = "cosformer",
+        manifest: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        super().__init__()
+        self.model = model
+        self.engine = engine
+        self.target_attention = target_attention
+        self._manifest: Dict[str, Any] = manifest or {
+            "engine": engine,
+            "target_attention": target_attention,
+            "status": "certified",
+        }
+        self.model._surgical_manifest = self._manifest
+
+    def forward(self, *args: Any, **kwargs: Any) -> Any:
+        return self.model(*args, **kwargs)
+
+    def get_surgical_manifest(self) -> Dict[str, Any]:
+        return getattr(self.model, "_surgical_manifest", self._manifest)
+
+    def get_attention_family(self, layer_idx: int) -> str:
+        return self.target_attention
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.model, name)
+
+
+try:
+    SurgicalModel.register(SurgicalModelWrapper)
+except Exception:
+    pass
 
 
 class ModelSurgery:
@@ -67,6 +112,7 @@ class ModelSurgery:
         logger.info("Loading model from pretrained '%s'...", model_name_or_path)
         try:
             from transformers import AutoModel
+
             model = AutoModel.from_pretrained(
                 model_name_or_path,
                 torch_dtype=dtype,
@@ -175,6 +221,10 @@ class ModelSurgery:
                         k, v = pair.split("=", 1)
                         config[k.strip()] = v.strip()
 
+            if op_name in ("attention.fx", "fx_transplant", "attention.rewrite_fx") or config.get("engine") == "fx":
+                target_att = config.get("target_attention", config.get("target", "cosformer"))
+                return self.replace_attention(target_attention=target_att, engine="fx", **config)
+
             # Capture snapshot before mutation for transactional rollback
             snapshot_before = ModelSnapshot.capture(self.model)
             self._history.append(snapshot_before)
@@ -196,6 +246,175 @@ class ModelSurgery:
             return self
 
         raise ValueError("Must provide operation name or Recipe to apply()")
+
+    def transplant(
+        self,
+        method: str = "linear",
+        engine: str = "fx",
+        target_attention: str = "cosformer",
+        **config: Any,
+    ) -> SurgicalModelWrapper:
+        """Transplants attention mechanisms using AST graph rewriting ('fx') or module replacement ('shell').
+
+        Returns a certified SurgicalModel wrapper adhering to the SurgicalModel protocol.
+        """
+        if engine == "fx":
+            from neuralops.surgery.fx_surgery import FXAttentionGraphRewriter
+
+            rewriter = FXAttentionGraphRewriter(
+                target_attention=target_attention,
+                head_dim=config.get("head_dim", 64),
+                is_causal=config.get("is_causal", True),
+                leaf_modules=config.get("leaf_modules", None),
+            )
+            rewritten = rewriter.rewrite(
+                self.model, concrete_args=config.get("concrete_args", None)
+            )
+            manifest = {
+                "operation": "attention.fx",
+                "method": method,
+                "engine": "fx",
+                "target_attention": target_attention,
+                "head_dim": config.get("head_dim", 64),
+                "is_causal": config.get("is_causal", True),
+                "status": "certified",
+            }
+            self._evidence_records.append(manifest)
+            wrapper = SurgicalModelWrapper(
+                model=rewritten,
+                engine="fx",
+                target_attention=target_attention,
+                manifest=manifest,
+            )
+            self.model = wrapper
+            return wrapper
+        elif engine == "shell":
+            self.apply(
+                "attention.transplant",
+                target_attention=target_attention,
+                **config,
+            )
+            manifest = {
+                "operation": "attention.transplant",
+                "method": method,
+                "engine": "shell",
+                "target_attention": target_attention,
+                "status": "certified",
+            }
+            self._evidence_records.append(manifest)
+            wrapper = SurgicalModelWrapper(
+                model=self.model,
+                engine="shell",
+                target_attention=target_attention,
+                manifest=manifest,
+            )
+            self.model = wrapper
+            return wrapper
+        else:
+            raise ValueError(f"Unknown surgery engine '{engine}'. Choose 'shell' or 'fx'.")
+
+    def apply_surgery(
+        self,
+        engine: str = "fx",
+        method: str = "linear",
+        target_attention: str = "cosformer",
+        **config: Any,
+    ) -> SurgicalModelWrapper:
+        """Applies neural attention surgery using specified engine ('fx' or 'shell').
+
+        Returns certified SurgicalModel wrapper.
+        """
+        return self.transplant(
+            method=method,
+            engine=engine,
+            target_attention=target_attention,
+            **config,
+        )
+
+    def compile_linear_surgery(
+        self,
+        backend: Union[str, Callable[..., Any]] = "inductor",
+        options: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> nn.Module:
+        """Compiles the surgical model with TorchDynamo and custom compiler backend hook."""
+        from neuralops.surgery.fx_surgery import compile_linear_surgery
+
+        self.model = compile_linear_surgery(
+            self.model, backend=backend, options=options, **kwargs
+        )
+        return self.model
+
+    def replace_attention(
+        self,
+        target_attention: str = "cosformer",
+        layer_indices: Optional[List[int]] = None,
+        engine: str = "shell",
+        **config: Any,
+    ) -> ModelSurgery:
+        """Replace quadratic attention mechanisms using Python module mutation ('shell')
+
+        or PyTorch FX AST graph rewriting ('fx').
+        """
+        if engine == "fx":
+            from neuralops.surgery.fx_surgery import FXAttentionGraphRewriter
+
+            rewriter = FXAttentionGraphRewriter(
+                target_attention=target_attention,
+                head_dim=config.get("head_dim", 64),
+                is_causal=config.get("is_causal", True),
+                leaf_modules=config.get("leaf_modules", None),
+            )
+            self.model = rewriter.rewrite(self.model, concrete_args=config.get("concrete_args", None))
+            self._evidence_records.append(
+                {
+                    "operation": "attention.fx",
+                    "engine": "fx",
+                    "target_attention": target_attention,
+                    "head_dim": config.get("head_dim", 64),
+                    "is_causal": config.get("is_causal", True),
+                    "status": "success",
+                }
+            )
+            return self
+        elif engine == "shell":
+            return self.apply(
+                "attention.transplant",
+                target_attention=target_attention,
+                layer_indices=layer_indices,
+                **config,
+            )
+        else:
+            raise ValueError(f"Unknown surgery engine '{engine}'. Choose 'shell' or 'fx'.")
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Invokes the underlying model's forward pass."""
+        return self.model(*args, **kwargs)
+
+    def compile(
+        self,
+        mode: str = "max-autotune",
+        fullgraph: bool = True,
+        backend: str = "inductor",
+        options: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> nn.Module:
+        """Compiles the surgical model with PyTorch Inductor for maximum fusion and throughput."""
+        logger.info(
+            "Compiling model via torch.compile(mode='%s', fullgraph=%s, backend='%s')...",
+            mode,
+            fullgraph,
+            backend,
+        )
+        self.model = torch.compile(
+            self.model,
+            mode=mode,
+            fullgraph=fullgraph,
+            backend=backend,
+            options=options,
+            **kwargs,
+        )
+        return self.model
 
     def validate(
         self,
@@ -243,4 +462,4 @@ class ModelSurgery:
         logger.info("Saved transformed model to %s", out_dir)
 
 
-__all__ = ["ModelSurgery"]
+__all__ = ["ModelSurgery", "SurgicalModelWrapper", "compile_linear_surgery"]

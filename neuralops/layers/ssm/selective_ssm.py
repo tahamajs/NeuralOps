@@ -26,6 +26,20 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.selective_scan import selective_scan
 
+try:
+    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
+        selective_scan as cuda_selective_scan,
+    )
+except Exception:
+    cuda_selective_scan = None
+
+try:
+    from neuralops.ops.triton.selective_scan import (
+        selective_scan_fn as triton_selective_scan,
+    )
+except Exception:
+    triton_selective_scan = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -274,14 +288,37 @@ class SelectiveSSM(BaseAttention):
             )
             y = y_step.unsqueeze(1)
         else:
-            y = selective_scan(
-                u=x_conv.transpose(1, 2).contiguous(),
-                delta=dt.transpose(1, 2).contiguous(),
-                A=A,
-                B=B_ssm.transpose(1, 2).contiguous(),
-                C=C_ssm.transpose(1, 2).contiguous(),
-                D=D_param,
-            )
+            u_t = x_conv.transpose(1, 2).contiguous()
+            delta_t = dt.transpose(1, 2).contiguous()
+            B_t = B_ssm.transpose(1, 2).contiguous()
+            C_t = C_ssm.transpose(1, 2).contiguous()
+
+            # Level 1 Native CUDA C++ (128-bit register cached)
+            y = None
+            if cuda_selective_scan is not None and u_t.is_cuda and A.shape[1] <= 128:
+                try:
+                    res = cuda_selective_scan(u_t, delta_t, A, B_t, C_t, D_param)
+                    y = res[0] if isinstance(res, tuple) else res
+                except Exception as exc:
+                    logger.debug("SelectiveSSM Level 1 CUDA scan failed (%s); trying Level 2 Triton.", exc)
+
+            # Level 2 Triton JIT (In-SRAM zero-alloc)
+            if y is None and triton_selective_scan is not None and u_t.is_cuda:
+                try:
+                    y = triton_selective_scan(u_t, delta_t, A, B_t, C_t, D_param, delta_softplus=False)
+                except Exception as exc:
+                    logger.debug("SelectiveSSM Level 2 Triton scan failed (%s); trying core dispatcher.", exc)
+
+            # Level 3 PyTorch Reference / Core Dispatcher Fallback
+            if y is None:
+                y = selective_scan(
+                    u=u_t,
+                    delta=delta_t,
+                    A=A,
+                    B=B_t,
+                    C=C_t,
+                    D=D_param,
+                )
             y = y.transpose(1, 2).contiguous()
 
             dt_last = dt[:, -1, :].unsqueeze(-1)

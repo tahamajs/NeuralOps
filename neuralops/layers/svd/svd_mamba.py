@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 from neuralops.core.low_rank.svd_linear import SVDLinear
+from neuralops.ops.cuda.svd_mamba_fused.svd_mamba_fused_autograd import svd_mamba_fused
 
 
 @ATTENTION_REGISTRY.register("svd_mamba", supports_causal=True)
@@ -587,54 +588,20 @@ class SVDMamba(BaseAttention):
 
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x_conv.dtype)
 
-        log_alpha = (delta.unsqueeze(-1) * A.view(1, 1, 1, -1)).float()
-        u = (delta.unsqueeze(-1) * B_ssm.unsqueeze(2) * x_conv.unsqueeze(-1)).float()
-        u_den = (delta.unsqueeze(-1) * B_ssm.unsqueeze(2).abs()).float()
-
-        chunk_size = 64
-        num_chunks = (seqlen + chunk_size - 1) // chunk_size
-        h_running = x_conv.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
-        h_den_running = x_conv.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
-        y_chunks = []
-
-        for c in range(num_chunks):
-            s_idx = c * chunk_size
-            e_idx = min(seqlen, s_idx + chunk_size)
-
-            u_c = u[:, s_idx:e_idx]
-            u_den_c = u_den[:, s_idx:e_idx]
-            log_a_c = log_alpha[:, s_idx:e_idx]
-            lambda_c = torch.clamp(torch.cumsum(log_a_c, dim=1), min=-25.0, max=0.0)
-
-            decay_c = torch.exp(lambda_c)
-            decay_inv_c = torch.exp(-lambda_c).clamp(max=1e10)
-
-            h_intra = decay_c * torch.cumsum(decay_inv_c * u_c, dim=1)
-            h_inter = decay_c * h_running.unsqueeze(1)
-            h_chunk = torch.clamp(h_intra + h_inter, min=-1e4, max=1e4)
-
-            h_den_intra = decay_c * torch.cumsum(decay_inv_c * u_den_c, dim=1)
-            h_den_inter = decay_c * h_den_running.unsqueeze(1)
-            h_den_chunk = torch.clamp(h_den_intra + h_den_inter, min=0.0, max=1e4)
-
-            denom_c = (
-                (C_ssm[:, s_idx:e_idx].abs().unsqueeze(2).float() * h_den_chunk)
-                .sum(dim=-1)
-                .clamp(min=1e-4)
-            )
-            num_c = (C_ssm[:, s_idx:e_idx].unsqueeze(2).float() * h_chunk).sum(dim=-1)
-            y_c = (num_c / denom_c).to(x_conv.dtype)
-            y_chunks.append(y_c)
-            h_running = h_chunk[:, -1]
-            h_den_running = h_den_chunk[:, -1]
-
-        y = torch.cat(y_chunks, dim=1)
-        y = y + self.D * x_conv
-        ssm_out = y * F.silu(z)
-
         global_scores = hidden_states @ self.global_V
         global_mix = self.global_out(global_scores)
-        ssm_out = ssm_out + global_mix
+
+        # Fused state-space recurrence across 3 fallback tiers (CUDA C++ -> Triton JIT -> Vectorized PyTorch)
+        ssm_out = svd_mamba_fused(
+            u=x_conv,
+            delta=delta,
+            A=A,
+            B_ssm=B_ssm,
+            C_ssm=C_ssm,
+            D=self.D,
+            z=z,
+            global_mix=global_mix,
+        )
 
         ssm_proj = self.out_proj(ssm_out)
 

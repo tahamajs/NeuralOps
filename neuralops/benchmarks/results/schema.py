@@ -190,6 +190,7 @@ class EnvironmentMetadata:
     gpu_model: Optional[str] = None
     gpu_count: int = 0
     gpu_vram_gb: float = 0.0
+    cuda_compute_capability: Optional[str] = None
     cuda_version: Optional[str] = None
     cudnn_version: Optional[str] = None
     torch_version: str = "unknown"
@@ -201,6 +202,7 @@ class EnvironmentMetadata:
     pandas_version: Optional[str] = None
     scipy_version: Optional[str] = None
     neuralops_version: str = "0.1.0"
+    git_commit: str = field(default_factory=_get_git_commit)
     all_installed_packages: Dict[str, str] = field(default_factory=dict)
     env_vars_used: Dict[str, str] = field(default_factory=dict)
 
@@ -209,6 +211,7 @@ class EnvironmentMetadata:
         """Capture active environment state."""
         import importlib.metadata
         env = cls()
+        env.git_commit = _get_git_commit()
         try:
             import torch
             env.torch_version = torch.__version__
@@ -216,6 +219,12 @@ class EnvironmentMetadata:
                 env.gpu_model = torch.cuda.get_device_name(0)
                 env.gpu_count = torch.cuda.device_count()
                 env.cuda_version = torch.version.cuda
+                try:
+                    cap = torch.cuda.get_device_capability(0)
+                    env.cuda_compute_capability = f"{cap[0]}.{cap[1]}"
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
                 if hasattr(torch.backends, "cudnn") and hasattr(torch.backends.cudnn, "version"):
                     env.cudnn_version = str(torch.backends.cudnn.version())
                 try:
@@ -356,10 +365,19 @@ class BenchmarkResult:
 
     run_id: str = ""
     run_name: str = ""
+    timestamp: str = ""
     timestamp_start: str = ""
     timestamp_end: str = ""
     git_commit: str = ""
     git_dirty: bool = False
+
+    # Normalized fields for unified benchmarking & persistence
+    model_name: str = ""
+    transplanted_attention: str = ""
+    pre_train_steps: int = 0
+    benchmark_suite: str = ""
+    device_type: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
     def compute_checksum(self) -> str:
         """Calculate SHA256 checksum of run output to detect corruption."""
@@ -372,12 +390,6 @@ class BenchmarkResult:
             self.run_id = self.run_metadata.run_id
         else:
             self.run_metadata.run_id = self.run_id
-
-        if not self.training_type and isinstance(self.config, dict):
-            self.training_type = self.config.get("training_type", "finetune")
-
-        if not self.checksum:
-            self.checksum = self.compute_checksum()
 
         if not self.run_name:
             self.run_name = self.run_metadata.run_name
@@ -394,6 +406,13 @@ class BenchmarkResult:
         else:
             self.run_metadata.timestamp_end = self.timestamp_end
 
+        if not self.timestamp:
+            self.timestamp = self.timestamp_end or self.timestamp_start
+        else:
+            if not self.timestamp_end:
+                self.timestamp_end = self.timestamp
+                self.run_metadata.timestamp_end = self.timestamp
+
         if not self.git_commit:
             self.git_commit = self.run_metadata.git_commit
         else:
@@ -401,12 +420,61 @@ class BenchmarkResult:
 
         self.git_dirty = self.run_metadata.git_dirty
 
+        if not self.training_type and isinstance(self.config, dict):
+            self.training_type = self.config.get("training_type", "finetune")
+
+        # Synchronize normalized model & transplant metadata
+        if not self.model_name:
+            if isinstance(self.model, dict):
+                self.model_name = self.model.get("name", "")
+            elif hasattr(self.model, "name"):
+                self.model_name = getattr(self.model, "name", "")
+            elif self.model:
+                self.model_name = str(self.model)
+
+        if not self.transplanted_attention:
+            if isinstance(self.module, dict):
+                self.transplanted_attention = self.module.get("name", "")
+            elif hasattr(self.module, "name"):
+                self.transplanted_attention = getattr(self.module, "name", "")
+            elif self.module:
+                self.transplanted_attention = str(self.module)
+
+        if not self.benchmark_suite:
+            if isinstance(self.config, dict) and "benchmark_suite" in self.config:
+                self.benchmark_suite = str(self.config["benchmark_suite"])
+            elif isinstance(self.dataset, dict) and "name" in self.dataset:
+                self.benchmark_suite = str(self.dataset["name"])
+
+        if not self.device_type:
+            if isinstance(self.environment, EnvironmentMetadata) and getattr(self.environment, "device", None):
+                self.device_type = getattr(self.environment, "device", "cpu")
+            elif isinstance(self.config, dict) and "device" in self.config:
+                self.device_type = str(self.config["device"])
+            else:
+                self.device_type = "cpu"
+
+        if not self.pre_train_steps:
+            if isinstance(self.config, dict) and "pre_train_steps" in self.config:
+                try:
+                    self.pre_train_steps = int(self.config["pre_train_steps"])
+                except (ValueError, TypeError):
+                    self.pre_train_steps = 0
+            elif isinstance(self.config, dict) and "steps" in self.config:
+                try:
+                    self.pre_train_steps = int(self.config["steps"])
+                except (ValueError, TypeError):
+                    self.pre_train_steps = 0
+
+        if not self.checksum:
+            self.checksum = self.compute_checksum()
+
     def compute_run_key(self) -> str:
         """Compute unique deterministic run key for deduplication."""
-        mod = self.module.get("name", "none")
-        mdl = self.model.get("name", "none")
-        ds = self.dataset.get("name", "none")
-        rk = self.config.get("rank", 0)
+        mod = self.module.get("name", "none") if isinstance(self.module, dict) else (getattr(self.module, "name", str(self.module)) if self.module else (self.transplanted_attention or "none"))
+        mdl = self.model.get("name", "none") if isinstance(self.model, dict) else (getattr(self.model, "name", str(self.model)) if self.model else (self.model_name or "none"))
+        ds = self.dataset.get("name", "none") if isinstance(self.dataset, dict) else (getattr(self.dataset, "name", str(self.dataset)) if self.dataset else (self.benchmark_suite or "none"))
+        rk = self.config.get("rank", 0) if isinstance(self.config, dict) else 0
 
         clean_cfg = {
             k: v for k, v in self.config.items()
@@ -422,6 +490,16 @@ class BenchmarkResult:
         d["run_key"] = self.compute_run_key()
         return d
 
+    def to_json(self, indent: int = 2) -> str:
+        """Serialize benchmark result to JSON string."""
+        return json.dumps(self.to_dict(), indent=indent, default=str)
+
+    @classmethod
+    def from_json(cls, json_str: str) -> BenchmarkResult:
+        """Deserialize benchmark result from JSON string."""
+        data = json.loads(json_str)
+        return cls.from_dict(data)
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> BenchmarkResult:
         """Construct BenchmarkResult with robust legacy fallback."""
@@ -433,8 +511,8 @@ class BenchmarkResult:
             run_metadata = RunMetadata(
                 run_id=data_copy.get("run_id", str(uuid.uuid4())),
                 run_name=data_copy.get("run_name", "benchmark_run"),
-                timestamp_start=data_copy.get("timestamp_start", datetime.now(timezone.utc).isoformat()),
-                timestamp_end=data_copy.get("timestamp_end", datetime.now(timezone.utc).isoformat()),
+                timestamp_start=data_copy.get("timestamp_start", data_copy.get("timestamp", datetime.now(timezone.utc).isoformat())),
+                timestamp_end=data_copy.get("timestamp_end", data_copy.get("timestamp", datetime.now(timezone.utc).isoformat())),
                 git_commit=data_copy.get("git_commit", "unknown"),
                 git_dirty=data_copy.get("git_dirty", False),
             )
@@ -456,6 +534,11 @@ class BenchmarkResult:
 
         push_dict = data_copy.pop("push_info", {})
         push_info = PushInfo(**{k: v for k, v in push_dict.items() if k in PushInfo.__dataclass_fields__}) if isinstance(push_dict, dict) and push_dict else PushInfo()
+
+        # Handle normalized metadata dictionary
+        meta = data_copy.get("metadata", {})
+        if not isinstance(meta, dict):
+            meta = {}
 
         res = cls(
             run_metadata=run_metadata,
@@ -488,12 +571,87 @@ class BenchmarkResult:
             checksum=data_copy.get("checksum", ""),
             run_id=data_copy.get("run_id", run_metadata.run_id),
             run_name=data_copy.get("run_name", run_metadata.run_name),
+            timestamp=data_copy.get("timestamp", run_metadata.timestamp_end or run_metadata.timestamp_start),
             timestamp_start=data_copy.get("timestamp_start", run_metadata.timestamp_start),
             timestamp_end=data_copy.get("timestamp_end", run_metadata.timestamp_end),
             git_commit=data_copy.get("git_commit", run_metadata.git_commit),
             git_dirty=data_copy.get("git_dirty", run_metadata.git_dirty),
+            model_name=data_copy.get("model_name", ""),
+            transplanted_attention=data_copy.get("transplanted_attention", ""),
+            pre_train_steps=data_copy.get("pre_train_steps", 0),
+            benchmark_suite=data_copy.get("benchmark_suite", ""),
+            device_type=data_copy.get("device_type", ""),
+            metadata=meta,
         )
         return res
+
+
+def normalize_legacy_result_dict(legacy_dict: Dict[str, Any]) -> BenchmarkResult:
+    """Map legacy benchmark result dictionary keys to canonical BenchmarkResult fields.
+
+    Ingests variations such as:
+      - 'suite' or 'dataset' -> benchmark_suite
+      - 'device' or 'device_type' -> device_type
+      - 'results' or 'metrics' -> metrics
+      - 'attention' or 'module' -> transplanted_attention
+      - 'model' -> model_name
+      - 'run_metadata' -> top-level metadata and run identification
+
+    Args:
+        legacy_dict: Raw dictionary from historical or legacy benchmark runs.
+
+    Returns:
+        Canonical BenchmarkResult instance.
+    """
+    d = dict(legacy_dict)
+
+    # 1. Benchmark suite
+    if "suite" in d and "benchmark_suite" not in d:
+        d["benchmark_suite"] = str(d["suite"])
+    elif "dataset" in d and isinstance(d["dataset"], dict) and "name" in d["dataset"] and "benchmark_suite" not in d:
+        d["benchmark_suite"] = str(d["dataset"]["name"])
+
+    # 2. Device type
+    if "device" in d and "device_type" not in d:
+        d["device_type"] = str(d["device"])
+
+    # 3. Model name
+    if "model" in d and "model_name" not in d:
+        if isinstance(d["model"], dict):
+            d["model_name"] = str(d["model"].get("name", ""))
+        else:
+            d["model_name"] = str(d["model"])
+
+    # 4. Attention / module name
+    if "attention" in d and "transplanted_attention" not in d:
+        d["transplanted_attention"] = str(d["attention"])
+    elif "module" in d and "transplanted_attention" not in d:
+        if isinstance(d["module"], dict):
+            d["transplanted_attention"] = str(d["module"].get("name", ""))
+        else:
+            d["transplanted_attention"] = str(d["module"])
+
+    # 5. Metrics & results
+    if "results" in d and "metrics" not in d:
+        d["metrics"] = d["results"] if isinstance(d["results"], dict) else {"raw": d["results"]}
+
+    # 6. Pre-train steps
+    if "steps" in d and "pre_train_steps" not in d:
+        try:
+            d["pre_train_steps"] = int(d["steps"])
+        except (ValueError, TypeError):
+            pass
+
+    # 7. Preserve extra unknown fields into metadata
+    known_fields = set(BenchmarkResult.__dataclass_fields__.keys())
+    existing_meta = dict(d.get("metadata", {})) if isinstance(d.get("metadata"), dict) else {}
+    for k, v in list(d.items()):
+        if k not in known_fields and k not in ("suite", "dataset", "device", "attention", "module", "results", "steps"):
+            existing_meta[k] = v
+    if existing_meta:
+        d["metadata"] = existing_meta
+
+    return BenchmarkResult.from_dict(d)
 
 
 __all__ = [
@@ -508,4 +666,5 @@ __all__ = [
     "ArtifactPaths",
     "PushInfo",
     "BenchmarkResult",
+    "normalize_legacy_result_dict",
 ]

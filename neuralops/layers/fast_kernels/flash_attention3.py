@@ -31,6 +31,20 @@ import torch.nn.functional as F
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
+# Denormalized float flush-to-zero threshold
+_FTZ_THRESHOLD: float = 1e-15
+
+
+def _flush_denormals(t: torch.Tensor) -> torch.Tensor:
+    r"""Flush denormalized floating-point values to zero to prevent hardware pipeline stalls.
+
+    Applies flush-to-zero (FTZ) semantics on floating-point tensors with magnitude below
+    1e-15 to ensure numerical stability and avoid subnormal microcode traps.
+    """
+    if t.is_floating_point():
+        return torch.where(t.abs() < _FTZ_THRESHOLD, torch.zeros_like(t), t)
+    return t
+
 try:
     from flash_attn_interface import flash_attn_func
 
@@ -626,6 +640,11 @@ class FlashAttention3(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
+        # Enforce flush-to-zero handling on projection activations
+        q = _flush_denormals(q)
+        k = _flush_denormals(k)
+        v = _flush_denormals(v)
+
         causal_flag = bool(self.is_decoder and not is_cross_attention and kv_len == L)
 
         if FLASH_ATTN_AVAILABLE and hidden_states.is_cuda:
@@ -647,21 +666,28 @@ class FlashAttention3(BaseAttention):
             out = None
 
         if out is None:
+            # Enforce FP32 accumulation registers for FP16 and BF16 inputs to maintain numerical precision
+            accum_dtype = torch.float32 if dtype in (torch.float16, torch.bfloat16) else dtype
+            q_acc = q.to(accum_dtype)
+            k_acc = k.to(accum_dtype)
+            v_acc = v.to(accum_dtype)
+
             eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
             attn_mask = None
             if eff_mask is not None:
                 if eff_mask.dim() == 2:
-                    attn_mask = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
+                    min_val = torch.finfo(accum_dtype).min if accum_dtype.is_floating_point else -1e4
+                    attn_mask = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).to(accum_dtype)) * min_val
                 elif eff_mask.dim() == 3:
-                    attn_mask = eff_mask.unsqueeze(1).float()
+                    attn_mask = eff_mask.unsqueeze(1).to(accum_dtype)
                 elif eff_mask.dim() == 4:
-                    attn_mask = eff_mask.float()
+                    attn_mask = eff_mask.to(accum_dtype)
 
             if causal_flag and attn_mask is None:
                 out_sdpa = F.scaled_dot_product_attention(
-                    q,
-                    k,
-                    v,
+                    q_acc,
+                    k_acc,
+                    v_acc,
                     attn_mask=None,
                     is_causal=True,
                     dropout_p=self.dropout.p if self.training else 0.0,
@@ -673,7 +699,7 @@ class FlashAttention3(BaseAttention):
                             (L, kv_len),
                             float("-inf"),
                             device=device,
-                            dtype=torch.float32,
+                            dtype=accum_dtype,
                         ),
                         diagonal=1 + max(0, kv_len - L),
                     )
@@ -684,13 +710,16 @@ class FlashAttention3(BaseAttention):
                     )
 
                 out_sdpa = F.scaled_dot_product_attention(
-                    q,
-                    k,
-                    v,
+                    q_acc,
+                    k_acc,
+                    v_acc,
                     attn_mask=attn_mask,
                     is_causal=False,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
+
+            # Cast back from FP32 accumulator to target output dtype and flush denormals
+            out_sdpa = _flush_denormals(out_sdpa.to(dtype))
 
             if head_mask is not None:
                 if head_mask.dim() == 1:
@@ -699,7 +728,7 @@ class FlashAttention3(BaseAttention):
                     head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(-1)
-                out_sdpa = out_sdpa * head_mask
+                out_sdpa = out_sdpa * head_mask.to(out_sdpa.dtype)
 
             out = out_sdpa.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 

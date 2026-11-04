@@ -15,13 +15,22 @@ from __future__ import annotations
 
 import inspect
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple
+import re
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.surgery.scanner import AttentionTargetSpec
+from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge, DualStreamLatentState
+from neuralops.surgery.moa_router import (
+    HybridMoARouter,
+    compute_attention_entropy,
+    profile_layer_sensitivity,
+)
+from neuralops.surgery.scanner import AttentionTargetSpec, UniversalArchitectureScanner
+
+MoARouter = HybridMoARouter
 
 logger = logging.getLogger("NeuralOps.Surgery.EndoskeletalShell")
 
@@ -191,6 +200,11 @@ def transfer_pretrained_qkv_weights(
     Copies pretrained Q, K, V, and O projections from the host model into the newly
     instantiated NeuralOps attention module without random re-initialization.
     """
+    if isinstance(new_module, DeepSeekMLASurgeryBridge):
+        if spec.target_module is not None:
+            new_module.inherit_from_mla_module(spec.target_module)
+            return
+
     if spec.extracted_qkv is None:
         if strict:
             raise ValueError(f"No pretrained Q/K/V/O projections were extracted for {spec.module_path!r}")
@@ -423,6 +437,8 @@ class UniversalAttentionBridge(nn.Module):
         new_attention: nn.Module,
         inherit_weights: bool = True,
         attach_sidecar: bool = False,
+        moa_router: Optional[HybridMoARouter] = None,
+        layer_idx: Optional[int] = None,
     ) -> None:
         super().__init__()
         self.orig_module = orig_module
@@ -431,6 +447,19 @@ class UniversalAttentionBridge(nn.Module):
         self.pattern_type = spec.pattern_type
         self.embed_dim = spec.embed_dim
         self.num_heads = spec.num_heads
+        self.moa_router = moa_router
+        if self.moa_router is None and spec.extra_metadata and "moa_router" in spec.extra_metadata:
+            self.moa_router = spec.extra_metadata["moa_router"]
+
+        if layer_idx is not None:
+            self.layer_idx = layer_idx
+        elif hasattr(spec, "module_path") and spec.module_path:
+            import re
+
+            m = re.search(r"\b(?:layers?|h|block|blocks)\.(\d+)\b", spec.module_path)
+            self.layer_idx = int(m.group(1)) if m else None
+        else:
+            self.layer_idx = None
 
         # Unwrap base layer if orig_module is a PEFT/LoRA wrapper
         self.base_module: nn.Module = getattr(orig_module, "base_layer", orig_module)
@@ -477,7 +506,10 @@ class UniversalAttentionBridge(nn.Module):
         self._orig_sig = inspect.signature(orig_module.forward)
 
         if inherit_weights:
-            transfer_pretrained_qkv_weights(spec, self.new_attention)
+            if isinstance(self.new_attention, DeepSeekMLASurgeryBridge):
+                self.new_attention.inherit_from_mla_module(self.orig_module)
+            else:
+                transfer_pretrained_qkv_weights(spec, self.new_attention)
 
         self.sidecar = (
             SidecarGateBranch(d_model=self.embed_dim, num_heads=self.num_heads)
@@ -488,8 +520,99 @@ class UniversalAttentionBridge(nn.Module):
         self.teacher_branch: Optional[nn.Module] = None
         self.alpha: float = 1.0
         self.stage: str = "stage3_end_to_end"
+        self.dispatch_mode: Optional[str] = None
+
+    def set_dispatch_mode(self, mode: Optional[str]) -> None:
+        """Sets runtime dynamic dispatch mode override ('full', 'linear', 'mla', or None for auto)."""
+        valid_modes = (
+            None,
+            "full",
+            "mha",
+            "full_attention",
+            "linear",
+            "linear_attention",
+            "mla",
+            "deepseek_mla",
+            "auto",
+        )
+        if mode is not None and mode not in valid_modes:
+            raise ValueError(f"Invalid dispatch mode {mode!r}. Must be one of {valid_modes}")
+        self.dispatch_mode = None if mode == "auto" else mode
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
+        # Phase 068: Dynamic Dispatch Hook (dispatch latency <= 2 us)
+        # Fast resolution of runtime routing flags
+        dispatch_mode = (
+            kwargs.pop("dispatch_mode", None)
+            or kwargs.pop("routing_flag", None)
+            or kwargs.pop("mode", None)
+            or self.dispatch_mode
+        )
+
+        if dispatch_mode in ("full", "mha", "full_attention"):
+            return self.orig_module(*args, **kwargs)
+
+        # Check Hybrid MoA routing if router is attached and layer_idx is provided
+        if dispatch_mode is None and self.moa_router is not None and self.layer_idx is not None:
+            if self.moa_router.is_full_attention(self.layer_idx):
+                # Preserve original quadratic Full Attention execution
+                return self.orig_module(*args, **kwargs)
+
+        # Route DeepSeek MLA blocks through DeepSeekMLASurgeryBridge
+        is_mla = dispatch_mode in ("mla", "deepseek_mla") or (
+            dispatch_mode not in ("linear", "linear_attention")
+            and isinstance(self.new_attention, DeepSeekMLASurgeryBridge)
+        )
+        if is_mla:
+            if len(args) == 4 or ("c_kv" in kwargs and "k_rope" in kwargs):
+                return self.new_attention(*args, **kwargs)
+
+            hf_cache = kwargs.get("past_key_value", kwargs.get("past_key_values", None))
+            layer_i = self.layer_idx if self.layer_idx is not None else 0
+            if hf_cache is not None and hasattr(hf_cache, "get_recurrent_state"):
+                past_state = hf_cache.get_recurrent_state(layer_i)
+            else:
+                past_state = kwargs.get(
+                    "past_state", hf_cache if not hasattr(hf_cache, "get_recurrent_state") else None
+                )
+
+            if hasattr(self.orig_module, "kv_a_proj_with_mqa"):
+                hs = args[0] if len(args) > 0 else kwargs.get("hidden_states")
+                if hs is not None:
+                    c_kv, k_rope = self.new_attention.separate_mla_projections(
+                        self.orig_module.kv_a_proj_with_mqa(hs)
+                    )
+                    if hasattr(self.orig_module, "q_a_proj"):
+                        q_content, q_rope = self.new_attention.separate_query_projections(
+                            self.orig_module.q_a_proj(hs)
+                        )
+                    else:
+                        q_content = c_kv
+                        q_rope = k_rope
+                    is_decode = kwargs.get("is_decode", False) or (past_state is not None and hs.shape[1] == 1)
+                    out, new_state = self.new_attention(
+                        c_kv, k_rope, q_content, q_rope, past_state=past_state, is_decode=is_decode
+                    )
+                    if hf_cache is not None and hasattr(hf_cache, "update_recurrent_state"):
+                        hf_cache.update_recurrent_state(layer_i, new_state, num_tokens=hs.shape[1])
+                        return out, None, hf_cache
+                    if kwargs.get("use_cache", False) or "past_key_value" in kwargs or "past_key_values" in kwargs:
+                        return out, None, new_state
+                    return out
+            elif self.new_attention.kv_latent_proj is not None:
+                hs = args[0] if len(args) > 0 else kwargs.get("hidden_states")
+                if hs is not None:
+                    is_decode = kwargs.get("is_decode", False) or (past_state is not None and hs.shape[1] == 1)
+                    out, new_state = self.new_attention(
+                        hs, past_state=past_state, is_decode=is_decode
+                    )
+                    if hf_cache is not None and hasattr(hf_cache, "update_recurrent_state"):
+                        hf_cache.update_recurrent_state(layer_i, new_state, num_tokens=hs.shape[1])
+                        return out, None, hf_cache
+                    if kwargs.get("use_cache", False) or "past_key_value" in kwargs or "past_key_values" in kwargs:
+                        return out, None, new_state
+                    return out
+
         kwargs_clean = dict(kwargs)
         if len(args) > 0:
             hidden_states = args[0]
@@ -539,6 +662,12 @@ class UniversalAttentionBridge(nn.Module):
                 return (core_tensor, attn_weights, present_kv)
             return (core_tensor, attn_weights)
 
+        if self.pattern_type == "deepseek_mla":
+            if kwargs.get("use_cache", False) or "past_key_value" in kwargs:
+                present_state = extra_outputs[0] if len(extra_outputs) > 0 else None
+                return (core_tensor, None, present_state)
+            return (core_tensor,)
+
         if len(extra_outputs) > 0:
             return (core_tensor, *extra_outputs)
 
@@ -554,9 +683,275 @@ class UniversalAttentionBridge(nn.Module):
         return dict(self.lora_adapters)
 
 
+class EndoskeletalShell(nn.Module):
+    """
+    Endoskeletal Shell for Transformer Backbones.
+
+    Executes surgical transplants, Hybrid Mixture of Attention (MoA) schedules,
+    and wraps transformer layers with UniversalAttentionBridge and DeepSeekMLASurgeryBridge
+    while guaranteeing device placement and tensor shape invariants.
+    """
+
+    def __init__(self, model: Optional[nn.Module] = None) -> None:
+        super().__init__()
+        self.model = model
+        self.router: Optional[HybridMoARouter] = None
+        self.wrapped_layers: Dict[int, UniversalAttentionBridge] = {}
+
+    def forward(self, *args: Any, **kwargs: Any) -> Any:
+        if self.model is None:
+            raise RuntimeError("EndoskeletalShell has no underlying model attached.")
+        return self.model(*args, **kwargs)
+
+    @classmethod
+    def apply_moa_schedule(
+        cls,
+        model: Optional[Union[EndoskeletalShell, nn.Module]] = None,
+        moa_router: Optional[HybridMoARouter] = None,
+        linear_attention_factory: Optional[Callable[[AttentionTargetSpec], nn.Module]] = None,
+        inherit_weights: bool = True,
+        attach_sidecar: bool = False,
+        use_mla: bool = False,
+        latent_kv_dim: int = 512,
+        decoupled_rope_dim: int = 64,
+        q_latent_dim: Optional[int] = None,
+        strict: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """
+        Integrates a HybridMoARouter schedule into the transformer model.
+
+        Scans the model hierarchy for attention targets, configures layer-wise routing,
+        and replaces targets with UniversalAttentionBridge instances wrapping the native
+        attention (for full attention layers) or sub-quadratic/MLA bridges (for linear attention layers).
+        Ensures strict device and dtype parity to eliminate tensor mismatch or device placement errors.
+
+        Args:
+            model: Transformer backbone or EndoskeletalShell instance.
+            moa_router: Optional HybridMoARouter instance specifying the partition schedule.
+                If None, automatically initializes the canonical Pareto optimal partition
+                based on the total layer count.
+            linear_attention_factory: Optional custom callable (AttentionTargetSpec) -> nn.Module
+                used to construct linear attention blocks.
+            inherit_weights: Whether to inherit pretrained projection weights.
+            attach_sidecar: Whether to attach SidecarGateBranch to sub-quadratic layers.
+            use_mla: Whether to use DeepSeek MLA as the sub-quadratic attention mechanism.
+            latent_kv_dim: KV latent compression dimension for MLA bridges.
+            decoupled_rope_dim: Decoupled RoPE dimension for MLA bridges.
+            q_latent_dim: Query latent compression dimension.
+            strict: Whether to enforce strict shape parity on weight inheritance.
+            **kwargs: Extra parameters passed to bridge construction.
+
+        Returns:
+            Dictionary containing metadata, router, and wrapped bridge layers.
+        """
+        shell_instance: Optional[EndoskeletalShell] = None
+        if isinstance(model, EndoskeletalShell):
+            shell_instance = model
+            target_model = model.model
+        else:
+            target_model = model
+
+        if target_model is None:
+            raise ValueError("A target model (nn.Module) must be provided to apply_moa_schedule.")
+
+        # 1. Scan model hierarchy for attention blocks
+        specs = UniversalArchitectureScanner.scan(target_model)
+
+        # Fallback inspection for custom modular backbones
+        if not specs:
+            candidate_specs: list[AttentionTargetSpec] = []
+            layers_attr = None
+            for attr in ("layers", "blocks", "h", "transformer"):
+                if hasattr(target_model, attr):
+                    layers_attr = getattr(target_model, attr)
+                    break
+            if isinstance(layers_attr, (nn.ModuleList, list, tuple)):
+                for idx, layer in enumerate(layers_attr):
+                    attn_mod = None
+                    attn_name = None
+                    for a_name in ("self_attn", "attn", "attention", "mha", "layer_0"):
+                        if hasattr(layer, a_name):
+                            attn_mod = getattr(layer, a_name)
+                            attn_name = a_name
+                            break
+                    if attn_mod is not None:
+                        embed_dim = getattr(attn_mod, "embed_dim", getattr(attn_mod, "hidden_size", 64))
+                        num_heads = getattr(attn_mod, "num_heads", getattr(attn_mod, "num_attention_heads", 4))
+                        head_dim = getattr(attn_mod, "head_dim", embed_dim // num_heads if num_heads > 0 else 16)
+                        pattern = (
+                            "deepseek_mla"
+                            if hasattr(attn_mod, "kv_a_proj_with_mqa")
+                            else ("split_4proj" if hasattr(attn_mod, "q_proj") else "native_mha")
+                        )
+                        candidate_specs.append(
+                            AttentionTargetSpec(
+                                module_path=f"layers.{idx}.{attn_name}",
+                                parent_module=layer,
+                                attr_name=attn_name,
+                                target_module=attn_mod,
+                                pattern_type=pattern,
+                                embed_dim=embed_dim,
+                                num_heads=num_heads,
+                                num_kv_heads=num_heads,
+                                head_dim=head_dim,
+                                is_causal=True,
+                                has_bias=False,
+                            )
+                        )
+                if candidate_specs:
+                    specs = candidate_specs
+
+        # 2. Extract layer indices
+        layer_indices: list[int] = []
+        for i, spec in enumerate(specs):
+            m = re.search(r"\b(?:layers?|h|block|blocks)\.(\d+)\b", spec.module_path)
+            idx = int(m.group(1)) if m else i
+            layer_indices.append(idx)
+
+        total_layers = max(len(specs), (max(layer_indices) + 1) if layer_indices else 0)
+
+        # 3. Router initialization
+        if moa_router is None:
+            moa_router = HybridMoARouter(num_layers=total_layers)
+
+        wrapped_bridges: Dict[int, UniversalAttentionBridge] = {}
+
+        # 4. Wrap and dispatch layers
+        for spec, l_idx in zip(specs, layer_indices):
+            # Discover target device and dtype
+            target_device: Optional[torch.device] = None
+            target_dtype: Optional[torch.dtype] = None
+            for p in spec.target_module.parameters():
+                target_device = p.device
+                target_dtype = p.dtype
+                break
+            if target_device is None:
+                for b in spec.target_module.buffers():
+                    target_device = b.device
+                    target_dtype = b.dtype
+                    break
+            if target_device is None:
+                for p in target_model.parameters():
+                    target_device = p.device
+                    target_dtype = p.dtype
+                    break
+
+            # Construct new attention module
+            if linear_attention_factory is not None:
+                new_attn = linear_attention_factory(spec)
+            elif use_mla or spec.pattern_type == "deepseek_mla":
+                new_attn = DeepSeekMLASurgeryBridge(
+                    latent_kv_dim=latent_kv_dim,
+                    decoupled_rope_dim=decoupled_rope_dim,
+                    q_latent_dim=q_latent_dim or spec.embed_dim,
+                    hidden_dim=spec.embed_dim,
+                )
+            else:
+                try:
+                    from neuralops.attentions.linear.cosformer import CosformerAttention
+
+                    new_attn = CosformerAttention(
+                        hidden_size=spec.embed_dim,
+                        num_heads=spec.num_heads,
+                    )
+                except (ImportError, Exception):
+                    new_attn = DeepSeekMLASurgeryBridge(
+                        latent_kv_dim=latent_kv_dim,
+                        decoupled_rope_dim=decoupled_rope_dim,
+                        q_latent_dim=q_latent_dim or spec.embed_dim,
+                        hidden_dim=spec.embed_dim,
+                    )
+
+            # Ensure device and dtype alignment
+            if target_device is not None:
+                new_attn.to(device=target_device)
+                if target_dtype is not None and target_dtype.is_floating_point:
+                    new_attn.to(dtype=target_dtype)
+
+            bridge = UniversalAttentionBridge(
+                orig_module=spec.target_module,
+                spec=spec,
+                new_attention=new_attn,
+                inherit_weights=inherit_weights,
+                attach_sidecar=attach_sidecar,
+                moa_router=moa_router,
+                layer_idx=l_idx,
+            )
+
+            if target_device is not None:
+                bridge.to(device=target_device)
+                if target_dtype is not None and target_dtype.is_floating_point:
+                    bridge.to(dtype=target_dtype)
+
+            # In-place transplantation into parent module
+            if hasattr(spec.parent_module, "__setitem__") and spec.attr_name.isdigit():
+                spec.parent_module[int(spec.attr_name)] = bridge
+            else:
+                setattr(spec.parent_module, spec.attr_name, bridge)
+
+            wrapped_bridges[l_idx] = bridge
+
+        if shell_instance is not None:
+            shell_instance.router = moa_router
+            shell_instance.wrapped_layers.update(wrapped_bridges)
+
+        logger.info(
+            "EndoskeletalShell: Applied MoA schedule to %d layers (%d full, %d linear)",
+            len(wrapped_bridges),
+            len(moa_router.get_full_attention_layers()),
+            len(moa_router.get_linear_attention_layers()),
+        )
+
+        return {
+            "model": target_model,
+            "moa_router": moa_router,
+            "num_layers": total_layers,
+            "full_attention_layers": moa_router.get_full_attention_layers(),
+            "linear_attention_layers": moa_router.get_linear_attention_layers(),
+            "wrapped_layers_count": len(wrapped_bridges),
+            "wrapped_bridges": wrapped_bridges,
+        }
+
+    def apply_schedule(
+        self,
+        moa_router: Optional[HybridMoARouter] = None,
+        linear_attention_factory: Optional[Callable[[AttentionTargetSpec], nn.Module]] = None,
+        inherit_weights: bool = True,
+        attach_sidecar: bool = False,
+        use_mla: bool = False,
+        latent_kv_dim: int = 512,
+        decoupled_rope_dim: int = 64,
+        q_latent_dim: Optional[int] = None,
+        strict: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Instance method applying MoA schedule to the attached model."""
+        return self.apply_moa_schedule(
+            model=self,
+            moa_router=moa_router,
+            linear_attention_factory=linear_attention_factory,
+            inherit_weights=inherit_weights,
+            attach_sidecar=attach_sidecar,
+            use_mla=use_mla,
+            latent_kv_dim=latent_kv_dim,
+            decoupled_rope_dim=decoupled_rope_dim,
+            q_latent_dim=q_latent_dim,
+            strict=strict,
+            **kwargs,
+        )
+
+
 __all__ = [
     "register_neuralops_with_huggingface",
     "SidecarGateBranch",
     "transfer_pretrained_qkv_weights",
     "UniversalAttentionBridge",
+    "DeepSeekMLASurgeryBridge",
+    "DualStreamLatentState",
+    "HybridMoARouter",
+    "MoARouter",
+    "EndoskeletalShell",
+    "compute_attention_entropy",
+    "profile_layer_sensitivity",
 ]

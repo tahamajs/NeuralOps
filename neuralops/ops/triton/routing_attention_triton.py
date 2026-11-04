@@ -59,25 +59,11 @@ if HAS_TRITON and triton is not None and tl is not None:
 
         q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
 
-        # Compute dot products with all keys in cluster
-        max_score = -1e9
-        sum_exp = 0.0
-
-        for n in range(M_k):
-            valid = 1.0
-            if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + m_idx * stride_mm + n * stride_mn).to(tl.float32)
-
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
-            dot = tl.sum(q * k) * scale
-            if valid <= 0.0:
-                dot = -1e4
-
-            if dot > max_score:
-                max_score = dot
-
-        # Second pass: compute softmax denominator and weighted sum of values
+        # Online softmax pass: numerically stable single-pass across cluster keys
+        m_prev = -1e9
+        l_prev = 0.0
         acc = tl.zeros((D,), dtype=tl.float32)
+
         for n in range(M_k):
             valid = 1.0
             if Mask_ptr is not None:
@@ -88,15 +74,17 @@ if HAS_TRITON and triton is not None and tl is not None:
             if valid <= 0.0:
                 dot = -1e4
 
-            p = tl.math.exp2(1.44269504 * (dot - max_score))
-            sum_exp += p
+            m_curr = tl.maximum(m_prev, dot)
+            alpha = tl.math.exp2(1.44269504 * (m_prev - m_curr))
+            p = tl.math.exp2(1.44269504 * (dot - m_curr))
+            l_prev = l_prev * alpha + p
+            acc = acc * alpha
+
             v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
             acc += p * v
+            m_prev = m_curr
 
-        if sum_exp > 0.0:
-            out = acc / sum_exp
-        else:
-            out = tl.zeros((D,), dtype=tl.float32)
+        out = acc / tl.maximum(l_prev, 1e-6)
 
         tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
 
@@ -134,23 +122,11 @@ if HAS_TRITON and triton is not None and tl is not None:
 
         q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
 
-        max_score = -1e9
-        sum_exp = 0.0
-
-        for n in range(M_k):
-            valid = 1.0
-            if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + m_idx * stride_mm + n * stride_mn).to(tl.float32)
-
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
-            dot = tl.sum(q * k) * scale
-            if valid <= 0.0:
-                dot = -1e4
-
-            if dot > max_score:
-                max_score = dot
-
+        # Online softmax pass: numerically stable single-pass across cluster keys
+        m_prev = -1e9
+        l_prev = 0.0
         acc = tl.zeros((D,), dtype=tl.float32)
+
         for n in range(M_k):
             valid = 1.0
             if Mask_ptr is not None:
@@ -161,15 +137,17 @@ if HAS_TRITON and triton is not None and tl is not None:
             if valid <= 0.0:
                 dot = -1e4
 
-            p = tl.math.exp2(1.44269504 * (dot - max_score))
-            sum_exp += p
+            m_curr = tl.maximum(m_prev, dot)
+            alpha = tl.math.exp2(1.44269504 * (m_prev - m_curr))
+            p = tl.math.exp2(1.44269504 * (dot - m_curr))
+            l_prev = l_prev * alpha + p
+            acc = acc * alpha
+
             v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
             acc += p * v
+            m_prev = m_curr
 
-        if sum_exp > 0.0:
-            out = acc / sum_exp
-        else:
-            out = tl.zeros((D,), dtype=tl.float32)
+        out = acc / tl.maximum(l_prev, 1e-6)
 
         tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
 

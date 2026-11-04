@@ -62,6 +62,8 @@ try:
     import triton
     if not hasattr(triton, "__version__"):
         triton.__version__ = "2.0.0"
+    if not hasattr(triton, "cdiv"):
+        triton.cdiv = lambda a, b: (a + b - 1) // b
     try:
         import triton.language as tl
         if not hasattr(tl, "constexpr"):
@@ -79,12 +81,22 @@ try:
     except Exception:
         pass
 except (ImportError, ModuleNotFoundError):
+    class _MockJitKernel:
+        def __init__(self, fn):
+            self.fn = fn
+        def __call__(self, *args, **kwargs):
+            raise RuntimeError("Triton JIT compilation requires a native Triton runtime.")
+        def __getitem__(self, grid):
+            return self
+
     triton_mock = types.ModuleType("triton")
+    triton_mock.cdiv = lambda a, b: (a + b - 1) // b
+    triton_mock.jit = lambda f: _MockJitKernel(f)
+    triton_mock.autotune = lambda *a, **kw: lambda f: _MockJitKernel(f)
+    triton_mock.heuristics = lambda *a, **kw: lambda f: _MockJitKernel(f)
+
     triton_mock.__version__ = "2.0.0"
-    triton_mock.jit = lambda f: f
-    triton_mock.autotune = lambda *a, **k: (lambda f: f)
     triton_mock.Config = lambda *a, **k: None
-    triton_mock.heuristics = lambda *a, **k: (lambda f: f)
     sys.modules["triton"] = triton_mock
 
     triton_lang = types.ModuleType("triton.language")
@@ -127,13 +139,28 @@ def execute_notebook(nb_path: str | Path) -> bool:
         "display": print,
         "get_ipython": lambda: None,
         "export_test_dir": Path(tempfile.mkdtemp()),
+        "json": json,
     }
 
     try:
-        from neuralops.distributed.context_parallel import compute_chunk_prefix_scan
+        from neuralops.distributed.context_parallel import compute_chunk_prefix_scan, context_parallel_recurrent_scan
         nb_globals["compute_chunk_prefix_scan"] = compute_chunk_prefix_scan
+        nb_globals["context_parallel_recurrent_scan"] = context_parallel_recurrent_scan
     except Exception:
         nb_globals["compute_chunk_prefix_scan"] = lambda q, *a, **kws: (torch.cumsum(q, dim=-2), None)
+        nb_globals["context_parallel_recurrent_scan"] = lambda q, *a, **kws: q
+
+    try:
+        from neuralops.models.export import export_model
+        nb_globals["export_model"] = export_model
+    except Exception:
+        pass
+
+    nb_globals["orig_model"] = torch.nn.Sequential(
+        torch.nn.Linear(128, 128),
+        torch.nn.ReLU(),
+        torch.nn.Linear(128, 128),
+    )
 
     # Pre-populate commonly expected modules in notebooks
     try:

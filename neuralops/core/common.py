@@ -290,8 +290,34 @@ class ResSVDLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward execution: y = Base(x) + scaling * (x @ A^T) @ B^T + bias."""
         if self.factorize_base and x.is_cuda:
+            # Level 1: Native CUDA C++ fused SVD projection
             try:
-                from neuralops.core.triton_kernels.low_rank import fused_svd_lora_sparse_attn_triton
+                from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
+
+                base = fused_svd_projection(x, self.base_V.t(), V_T=self.base_U.t(), bias=self.bias)
+                if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                    res_intermediate = F.linear(x, self.lora_A)
+                    res_out = self.scaling * F.linear(res_intermediate, self.lora_B)
+                    return base + res_out
+                return base
+            except Exception:
+                pass
+
+            # Level 2: Triton JIT kernel
+            try:
+                from neuralops.ops.triton.fused_svd_projection_triton import fused_svd_projection_triton
+
+                base = fused_svd_projection_triton(x, self.base_V.t(), V_T=self.base_U.t(), bias=self.bias)
+                if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                    res_intermediate = F.linear(x, self.lora_A)
+                    res_out = self.scaling * F.linear(res_intermediate, self.lora_B)
+                    return base + res_out
+                return base
+            except Exception:
+                pass
+
+            try:
+                from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
                 return fused_svd_lora_sparse_attn_triton(
                     x,
                     w_down=self.base_V,

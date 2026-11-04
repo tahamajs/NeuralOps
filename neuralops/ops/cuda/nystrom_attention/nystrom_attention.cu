@@ -12,6 +12,101 @@
 
 namespace neuralops { namespace cuda {
 
+// Maximum landmark size supported in fast SRAM kernel
+constexpr int MAX_M = 64;
+// Shared memory stride with +1 padding to eliminate bank conflicts across 32 banks
+constexpr int M_PAD = MAX_M + 1;
+
+// Computes 5th-order Newton-Schulz polynomial pseudoinverse of landmark kernel matrix A (M x M) in SRAM:
+// Iteration: X_{k+1} = X_k (a*I + b*A*X_k + c*(A*X_k)^2)
+// where a = 3.4445, b = -4.7750, c = 2.0315 (quintic coefficients).
+__device__ inline void newton_schulz5_pinv_sram(
+    const float* __restrict__ pinv_in,
+    float s_pinv[MAX_M][M_PAD],
+    float s_work1[MAX_M][M_PAD],
+    float s_work2[MAX_M][M_PAD],
+    const int M,
+    const int tid,
+    const int num_threads
+) {
+    const int total_elems = M * M;
+
+    // Load pinv / landmark kernel matrix into s_pinv with bank-conflict-free padding
+    for (int idx = tid; idx < total_elems; idx += num_threads) {
+        int r = idx / M;
+        int c = idx % M;
+        s_pinv[r][c] = pinv_in[idx];
+    }
+    __syncthreads();
+
+    // 5th-order Newton-Schulz quintic iteration coefficients
+    constexpr float c_a = 3.4445f;
+    constexpr float c_b = -4.7750f;
+    constexpr float c_c = 2.0315f;
+
+    // Estimate Frobenius norm squared for scaling
+    float local_sq = 0.0f;
+    for (int idx = tid; idx < total_elems; idx += num_threads) {
+        int r = idx / M;
+        int c = idx % M;
+        float val = s_pinv[r][c];
+        local_sq = __fmaf_rn(val, val, local_sq);
+    }
+    float norm_sq = block_reduce_sum(local_sq);
+    float inv_norm = rsqrtf(norm_sq + 1e-7f);
+
+    // Initial normalized candidate X_0 = (A / norm(A))
+    for (int idx = tid; idx < total_elems; idx += num_threads) {
+        int r = idx / M;
+        int c = idx % M;
+        s_work1[r][c] = s_pinv[r][c] * inv_norm;
+    }
+    __syncthreads();
+
+    // Run 5th-order Newton-Schulz iteration in SRAM for rapid convergence to Moore-Penrose pseudoinverse
+    #pragma unroll 1
+    for (int step = 0; step < 2; ++step) {
+        // s_work2 = s_pinv @ s_work1  (AX)
+        for (int idx = tid; idx < total_elems; idx += num_threads) {
+            int r = idx / M;
+            int c = idx % M;
+            float sum = 0.0f;
+            #pragma unroll 8
+            for (int k = 0; k < M; ++k) {
+                sum = __fmaf_rn(s_pinv[r][k], s_work1[k][c], sum);
+            }
+            s_work2[r][c] = sum;
+        }
+        __syncthreads();
+
+        // Quintic polynomial update into s_work1:
+        // P = a*I + b*AX + c*(AX)^2
+        // X_{new} = X @ P
+        for (int idx = tid; idx < total_elems; idx += num_threads) {
+            int r = idx / M;
+            int c = idx % M;
+            float sum = 0.0f;
+            #pragma unroll 8
+            for (int k = 0; k < M; ++k) {
+                float ax_val = s_work2[r][k];
+                float p_entry = (r == k) ? c_a : 0.0f;
+                p_entry = __fmaf_rn(c_b, ax_val, p_entry);
+                sum = __fmaf_rn(s_work1[r][k], p_entry, sum);
+            }
+            s_work1[r][c] = sum;
+        }
+        __syncthreads();
+    }
+
+    // Write final converged pseudoinverse to padded shared memory buffer
+    for (int idx = tid; idx < total_elems; idx += num_threads) {
+        int r = idx / M;
+        int c = idx % M;
+        s_pinv[r][c] = s_work1[r][c];
+    }
+    __syncthreads();
+}
+
 template <typename scalar_t>
 __global__ void __launch_bounds__(256) nystrom_attn_fwd_kernel(
     scalar_t* __restrict__ out,
@@ -28,24 +123,42 @@ __global__ void __launch_bounds__(256) nystrom_attn_fwd_kernel(
     const int bh = blockIdx.y;
     if (bh >= B * H) return;
 
+    // Landmark Shared Memory with +1 stride padding to eliminate 32-way bank conflicts
+    __shared__ float s_pinv[MAX_M][M_PAD];
+    __shared__ float s_v[MAX_M][M_PAD];
+
+    const int bound_m = (M < MAX_M) ? M : MAX_M;
+    const int pinv_offset = bh * (M * M);
+    const int v_offset = bh * (M * D);
+    const int tid = threadIdx.x;
+    const int num_threads = blockDim.x;
+
+    // Load pseudoinverse landmarks into padded shared memory to eliminate bank conflicts
+    const int total_pinv_elems = bound_m * bound_m;
+    for (int idx = tid; idx < total_pinv_elems; idx += num_threads) {
+        int m1 = idx / bound_m;
+        int m2 = idx % bound_m;
+        s_pinv[m1][m2] = to_float(pinv[pinv_offset + m1 * M + m2]);
+    }
+
+    __syncthreads();
+
     const int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= N) return;
 
     const int q_offset = bh * (N * M) + i * M;
-    const int pinv_offset = bh * (M * M);
-    const int v_offset = bh * (M * D);
 
-    float T[64];
-    const int bound_m = (M < 64) ? M : 64;
+    // In-register accumulation for intermediate landmark contraction T = Q @ Pinv
+    float T[MAX_M];
 
     #pragma unroll 4
     for (int m2 = 0; m2 < bound_m; ++m2) {
         float acc = 0.0f;
-        #pragma unroll 4
+        #pragma unroll 8
         for (int m1 = 0; m1 < bound_m; ++m1) {
             const float q_val = to_float(q_l[q_offset + m1]);
-            const float p_val = to_float(pinv[pinv_offset + m1 * M + m2]);
-            acc = fmaf(q_val, p_val, acc);
+            const float p_val = s_pinv[m1][m2];
+            acc = __fmaf_rn(q_val, p_val, acc);
         }
         T[m2] = acc;
     }
@@ -53,9 +166,9 @@ __global__ void __launch_bounds__(256) nystrom_attn_fwd_kernel(
     const int out_offset = bh * (N * D) + i * D;
     for (int d = 0; d < D; ++d) {
         float val_acc = 0.0f;
-        #pragma unroll 4
+        #pragma unroll 8
         for (int m2 = 0; m2 < bound_m; ++m2) {
-            val_acc = fmaf(T[m2], to_float(v_l[v_offset + m2 * D + d]), val_acc);
+            val_acc = __fmaf_rn(T[m2], to_float(v_l[v_offset + m2 * D + d]), val_acc);
         }
         out[out_offset + d] = from_float<scalar_t>(val_acc);
     }

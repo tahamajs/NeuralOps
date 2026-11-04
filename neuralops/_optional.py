@@ -43,6 +43,12 @@ def _require_torch(feature: str = "this operation") -> None:
             f"Install with: pip install 'neuralops[cpu]' "
             f"or 'neuralops[cuda]' for GPU support."
         )
+    try:
+        import neuralops
+        if hasattr(neuralops, "_patch_torch_compat"):
+            neuralops._patch_torch_compat()
+    except Exception:
+        pass
 
 
 def _triton_available() -> bool:

@@ -15,6 +15,7 @@ from __future__ import annotations
 from neuralops.ops.cuda.linear_attention.linear_attn_autograd import (
     LinearAttentionFunction,
     linear_attention,
+    linear_attention_pytorch_ref,
 )
 
-__all__ = ["LinearAttentionFunction", "linear_attention"]
+__all__ = ["LinearAttentionFunction", "linear_attention", "linear_attention_pytorch_ref"]

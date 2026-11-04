@@ -40,7 +40,7 @@ def _get_token_compressed_ops():
         _OPS = load(
             name="token_compressed_ops",
             sources=[str(pkg_dir / "token_compressed.cu"), str(pkg_dir / "binding.cpp")],
-            extra_cuda_cflags=["-gencode=arch=compute_75,code=sm_75", "-O3"],
+            extra_cuda_cflags=["-O3"],  # inherits torch nvcc arches including sm_80, sm_86, sm_89, sm_90
             verbose=False,
         )
         return _OPS

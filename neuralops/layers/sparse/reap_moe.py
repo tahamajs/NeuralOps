@@ -123,9 +123,9 @@ class REAPMoE(nn.Module):
         else:
             scores = logits
 
-        from neuralops.ops.triton.sparse_attn import fused_reap_moe_router_triton
+        from neuralops.ops.cuda.moe_routing import moe_topk_routing_fused
 
-        topk_weights, topk_indices = fused_reap_moe_router_triton(scores, self.top_k)
+        topk_weights, topk_indices = moe_topk_routing_fused(scores, self.top_k)
         topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(
             target_dtype
         )

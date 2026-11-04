@@ -23,7 +23,7 @@ import torch
 from transformers import AutoModel, AutoModelForCausalLM
 
 from neuralops.api import transplant_attention
-from neuralops.surgery.healing import heal_replaced_model
+from neuralops.core._attention_surgery import heal_replaced_model
 
 
 @pytest.fixture

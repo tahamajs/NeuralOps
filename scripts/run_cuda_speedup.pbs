@@ -1,0 +1,27 @@
+#!/bin/bash
+#PBS -N cuda_speedup
+#PBS -q N3090
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=00:30:00
+#PBS -j oe
+#PBS -o run_cuda_speedup.out
+
+cd "$PBS_O_WORKDIR" || exit 1
+
+export PATH="/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:${PATH:-}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="$PWD:${PYTHONPATH:-}"
+
+PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python
+
+echo "======================================================================"
+echo "  CUDA 10-PHASE SPEEDUP VS PYTORCH REFERENCE (RTX 3090)"
+echo "  Date: $(date -u)"
+echo "  Node: $(hostname)"
+nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader
+echo "======================================================================"
+
+$PYTHON_EXEC scripts/benchmarks/benchmark_10_phases_speedup_vs_pytorch.py --output results/cuda_10_phases_speedup_rtx3090.csv
+STATUS=$?
+echo "Exit code: $STATUS"
+exit $STATUS

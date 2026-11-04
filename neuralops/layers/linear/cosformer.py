@@ -429,22 +429,17 @@ class CosformerAttention(BaseAttention):
                 res = num / denom_safe
                 return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
 
-            if device.type == "cuda":
-                if N > 64:
-                    try:
-                        from fla.ops.linear_attn import chunk_linear_attn
-                        q_aug = torch.cat([Q_cos, Q_sin], dim=-1).transpose(1, 2).contiguous()
-                        k_aug = torch.cat([K_cos, K_sin], dim=-1).transpose(1, 2).contiguous()
-                        v_fla = V.transpose(1, 2).contiguous()
-
-                        num, _ = chunk_linear_attn(q_aug, k_aug, v_fla, scale=1.0, normalize=False)
-                        ones = torch.ones_like(v_fla[..., :1])
-                        denom, _ = chunk_linear_attn(q_aug, k_aug, ones, scale=1.0, normalize=False)
-
-                        out_triton = (num / denom.clamp(min=1e-4)).transpose(1, 2).contiguous()
-                        return torch.nan_to_num(out_triton, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
-                    except Exception as _triton_err:
-                        pass
+            try:
+                from neuralops.ops.cuda.cosformer.cosformer_autograd import cosformer_linear_attention
+                out = cosformer_linear_attention(
+                    Q_cos,
+                    K_cos,
+                    V,
+                    is_causal=True,
+                )
+                return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
+            except Exception:
+                pass
 
             chunk_size = 64
             num_chunks = (N + chunk_size - 1) // chunk_size

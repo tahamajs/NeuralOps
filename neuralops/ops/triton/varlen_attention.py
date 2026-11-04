@@ -69,7 +69,7 @@ if HAS_TRITON and tl is not None:
             k_ptrs = K_ptr + (k_start + offs_n[None, :]) * stride_kn + head_id * stride_kh + offs_d[:, None] * stride_kd
             k = tl.load(k_ptrs, mask=mask_n[None, :], other=0.0).to(tl.float32)
 
-            scores = tl.dot(q, k) * sm_scale
+            scores = tl.dot(q, k, allow_tf32=True) * sm_scale
             if IS_CAUSAL:
                 scores = tl.where(offs_m[:, None] >= offs_n[None, :], scores, -1e4)
 
@@ -85,7 +85,7 @@ if HAS_TRITON and tl is not None:
             v_ptrs = V_ptr + (k_start + offs_n[:, None]) * stride_vn + head_id * stride_vh + offs_d[None, :] * stride_vd
             v = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
 
-            acc += tl.dot(p.to(v.dtype), v)
+            acc += tl.dot(p.to(v.dtype), v, allow_tf32=True)
             m_i = m_curr
 
         out = acc / tl.maximum(l_i[:, None], 1e-6)

@@ -11,8 +11,8 @@ thesis_final/
 thesis_final/**
 academic/
 academic/**
-results/
-results/**
+/results/
+/results/**
 logs/
 logs/**
 site/
@@ -90,6 +90,8 @@ coverage.xml
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 *.ipynb
+!notebooks/*.ipynb
+!notebooks/extended/*.ipynb
 cache/
 **/cache/
 .cache/

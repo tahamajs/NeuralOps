@@ -310,7 +310,7 @@ def _get_gpu_telemetry_panel() -> Optional[Panel]:
 
 def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = False) -> None:
     """Minimalist, flat UNIX-style terminal inspector and interactive control center."""
-    from neuralops.core.inspector import inspect_architecture, render_architecture_card
+    from neuralops.analysis.inspector import inspect_architecture, render_architecture_card
 
     if snapshot:
         import torch

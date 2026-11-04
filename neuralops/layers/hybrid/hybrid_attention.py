@@ -210,6 +210,10 @@ class HybridAttention(BaseAttention):
         self.ensemble_gate.weight.requires_grad = True
         self.ensemble_gate.bias.requires_grad = True
 
+        self.use_heterogeneous: bool = kwargs.get("use_heterogeneous", False)
+        self.num_dense_heads: int = int(kwargs.get("num_dense_heads", max(1, self.num_heads // 2)))
+        self.sliding_window_radius: int = int(kwargs.get("sliding_window_radius", 32))
+
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
@@ -502,29 +506,51 @@ class HybridAttention(BaseAttention):
         else:
             valid_mask_full = valid_mask_new
 
-        out_standard = self._standard_branch(
-            Q,
-            K_cat,
-            V_cat,
-            eff_mask,
-            past_len=past_len,
-            valid_mask=valid_mask_full,
-        )
-        out_linear = self._linear_branch(
-            Q,
-            K_cat,
-            V_cat,
-            valid_mask_full,
-            past_len=past_len,
-        )
+        if self.use_heterogeneous and past_len == 0 and not is_cross:
+            from neuralops.ops.cuda.hybrid_local_kernel import hybrid_heterogeneous_branch
+            fused = hybrid_heterogeneous_branch(
+                Q,
+                K_cat,
+                V_cat,
+                num_dense_heads=self.num_dense_heads,
+                radius=self.sliding_window_radius,
+                is_causal=self.is_decoder,
+            )
+        else:
+            out_standard = self._standard_branch(
+                Q,
+                K_cat,
+                V_cat,
+                eff_mask,
+                past_len=past_len,
+                valid_mask=valid_mask_full,
+            )
+            out_linear = self._linear_branch(
+                Q,
+                K_cat,
+                V_cat,
+                valid_mask_full,
+                past_len=past_len,
+            )
 
-        gate = (
-            torch.sigmoid(self.ensemble_gate(hidden_states))
-            .view(B, N, self.num_heads, 1)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        fused = gate * out_standard + (1.0 - gate) * out_linear
+            gate = (
+                torch.sigmoid(self.ensemble_gate(hidden_states))
+                .view(B, N, self.num_heads, 1)
+                .transpose(1, 2)
+                .contiguous()
+            )
+            if out_standard.is_cuda and out_linear.is_cuda:
+                try:
+                    from neuralops.ops.cuda.hybrid_local_kernel import hybrid_two_branch_blend
+                    fused = hybrid_two_branch_blend(
+                        out_standard.contiguous(),
+                        out_linear.contiguous(),
+                        gate.expand_as(out_standard).contiguous().to(out_standard.dtype)
+                    )
+                except Exception:
+                    fused = gate * out_standard + (1.0 - gate) * out_linear
+            else:
+                fused = gate * out_standard + (1.0 - gate) * out_linear
 
         if head_mask is not None:
             if head_mask.dim() == 1:

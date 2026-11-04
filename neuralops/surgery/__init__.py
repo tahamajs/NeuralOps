@@ -14,9 +14,12 @@ from typing import Any
 from neuralops.surgery.scanner import (
     AttentionTargetSpec,
     Conv1DLinearAdapter,
+    DiscoveredLayer,
+    ModelScanner,
     UniversalArchitectureScanner,
 )
 from neuralops.surgery.endoskeletal_shell import (
+    EndoskeletalShell,
     SidecarGateBranch,
     UniversalAttentionBridge,
     register_neuralops_with_huggingface,
@@ -26,6 +29,7 @@ from neuralops.surgery.endoskeletal_shell import (
 from neuralops.surgery.topology_router import (
     AsymmetricCrossAttentionRouter,
     BiDirectionalScanWrapper,
+    TopologyRouter,
     extract_binary_token_mask,
     sanitize_kv_for_padding_mask,
 )
@@ -45,16 +49,60 @@ from neuralops.surgery.shadow_twin import (
 from neuralops.surgery.hf_cache_bridge import (
     HFCacheBridge,
     NeuralOpsHybridHFCache,
+    PolymorphicGenerationCacheBridge,
     wrap_model_for_generation,
 )
 
+from neuralops.surgery.director import (
+    ArchitectureProfile,
+    CrossAttentionLinearBridge,
+    GatheredParametersContext,
+    InvariantPreservingLinearBridge,
+    UniversalSurgeryDirector,
+    _detect_projection_layout,
+    _inspect_positional_topology,
+    _remediate_tied_embeddings,
+    apply_rope_pre_feature_map,
+    apply_rotary_pos_emb,
+    compute_decayed_state_bound,
+    compute_state_decay_bound,
+    extract_qkv_weights,
+    profile_model_topology,
+    re_tie_embeddings,
+    verify_tied_embeddings,
+)
+from neuralops.surgery.fx_surgery import (
+    FXAttentionGraphRewriter,
+    NeuralOpsAttentionTracer,
+    compile_linear_surgery,
+    rewriter_linear_attention_fx,
+)
+from neuralops.surgery.streaming_distill import (
+    CheckpointedTeacherBridge,
+    MicroChunkedShadowTwinDistiller,
+    MultiLayerCKACoordinator,
+    RunningRepresentationNormalizer,
+    ShadowTwinDistiller,
+    StreamingCKALoss,
+    compute_analytical_cka_grad,
+    get_vram_utilization,
+    purge_vram_if_needed,
+)
+from neuralops.surgery.mla_surgery import (
+    DeepSeekMLASurgeryBridge,
+    DualStreamLatentState,
+)
+from neuralops.surgery.moa_router import (
+    AttentionEntropyProfile,
+    MoARouter,
+)
 from neuralops.surgery.universal_calibrator import (
     UniversalActivationCalibrator,
     compress_model_universal,
     transplant_and_compress,
 )
-from neuralops.surgery.param_recovery import get_recovery_params
-from neuralops.surgery.surgery_manifest import (
+from neuralops.utils.compat.param_recovery import get_recovery_params
+from neuralops.export.surgery_manifest import (
     AttentionSurgeryEntry,
     CompressionSurgeryEntry,
     SurgeryManifest,
@@ -64,7 +112,7 @@ from neuralops.surgery.surgery_manifest import (
     record_compression_surgery,
     replay_surgery_manifest,
 )
-from neuralops.surgery.surgical_io import (
+from neuralops.models.surgical_io import (
     extract_surgical_manifest,
     load_surgical_checkpoint,
     save_surgical_checkpoint,
@@ -74,7 +122,7 @@ from neuralops.api import (
     replace_attention,
     transplant_attention,
 )
-from neuralops.surgery.healing import (
+from neuralops.core._attention_surgery import (
     calibrate_attention_subspace,
     heal_replaced_model,
 )
@@ -91,6 +139,7 @@ from neuralops.surgery.registry import (
 from neuralops.surgery.pipeline import (
     ApplyReport,
     SurgeryOp,
+    SurgeryPipeline,
     SurgeryRecipe,
 )
 from neuralops.surgery.validation import (
@@ -125,6 +174,7 @@ __all__ = [
     "get_surgeries_for_model",
     "SurgeryOp",
     "SurgeryRecipe",
+    "SurgeryPipeline",
     "ApplyReport",
     "CheckResult",
     "ValidationReport",
@@ -140,9 +190,12 @@ __all__ = [
     "distill_from_teacher",
     "AttentionTargetSpec",
     "Conv1DLinearAdapter",
+    "DiscoveredLayer",
+    "ModelScanner",
     "UniversalArchitectureScanner",
     "SidecarGateBranch",
     "UniversalAttentionBridge",
+    "EndoskeletalShell",
     "register_neuralops_with_huggingface",
     "transfer_pretrained_qkv_weights",
     "extract_binary_token_mask",
@@ -160,6 +213,7 @@ __all__ = [
     "check_surgery_divergence",
     "HFCacheBridge",
     "NeuralOpsHybridHFCache",
+    "PolymorphicGenerationCacheBridge",
     "wrap_model_for_generation",
     "UniversalActivationCalibrator",
     "compress_model_universal",
@@ -181,4 +235,38 @@ __all__ = [
     "heal_replaced_model",
     "calibrate_attention_subspace",
     "ModelSurgery",
+    "ArchitectureProfile",
+    "CrossAttentionLinearBridge",
+    "GatheredParametersContext",
+    "InvariantPreservingLinearBridge",
+    "UniversalSurgeryDirector",
+    "_detect_projection_layout",
+    "_inspect_positional_topology",
+    "extract_qkv_weights",
+    "apply_rope_pre_feature_map",
+    "apply_rotary_pos_emb",
+    "compute_decayed_state_bound",
+    "compute_state_decay_bound",
+    "profile_model_topology",
+    "re_tie_embeddings",
+    "_remediate_tied_embeddings",
+    "verify_tied_embeddings",
+    "TopologyRouter",
+    "FXAttentionGraphRewriter",
+    "NeuralOpsAttentionTracer",
+    "compile_linear_surgery",
+    "rewriter_linear_attention_fx",
+    "CheckpointedTeacherBridge",
+    "MicroChunkedShadowTwinDistiller",
+    "ShadowTwinDistiller",
+    "StreamingCKALoss",
+    "get_vram_utilization",
+    "purge_vram_if_needed",
+    "RunningRepresentationNormalizer",
+    "MultiLayerCKACoordinator",
+    "compute_analytical_cka_grad",
+    "DeepSeekMLASurgeryBridge",
+    "DualStreamLatentState",
+    "AttentionEntropyProfile",
+    "MoARouter",
 ]

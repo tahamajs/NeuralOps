@@ -33,6 +33,15 @@ void moe_fused_dispatch_cuda(
     int top_k
 );
 
+void moe_topk_routing_cuda(
+    torch::Tensor& routing_weights,
+    torch::Tensor& topk_indices,
+    const torch::Tensor& gate_logits,
+    int num_tokens,
+    int num_experts,
+    int top_k
+);
+
 void moe_gather_cuda(
     torch::Tensor& out_tokens,
     const torch::Tensor& expert_outputs,

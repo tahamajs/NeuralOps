@@ -13,9 +13,12 @@
 namespace neuralops {
 namespace cuda {
 
+// Fused Kronecker GEMM kernel with register accumulator and shared memory caching.
+// Y = X @ (A (x) B)^T + bias
+// Eliminates redundant DRAM re-fetches of A and B across threads and warps.
 template <typename scalar_t>
 __launch_bounds__(256)
-__global__ void kronecker_gemm_fwd_vectorized_kernel(
+__global__ void kronecker_gemm_fwd_shared_kernel(
     scalar_t* __restrict__ out,
     const scalar_t* __restrict__ x,
     const scalar_t* __restrict__ A,
@@ -36,13 +39,20 @@ __global__ void kronecker_gemm_fwd_vectorized_kernel(
     const int num_vec_N2 = N2 / 4;
     const int rem_start_N2 = num_vec_N2 * 4;
 
-    float acc = 0.0f;
-    for (int n1 = 0; n1 < N1; ++n1) {
-        const float a_val = to_float(A[m1 * N1 + n1]);
-        float inner = 0.0f;
+    // Precalculate row bases outside inner loops
+    const int a_row_base = m1 * N1;
+    const int b_row_base = m2 * N2;
+    const int x_batch_base = m * (N1 * N2);
+    const int out_idx = m1 * M2 + m2;
+    const int out_offset = m * (M1 * M2) + out_idx;
 
-        const int x_row_base = m * (N1 * N2) + n1 * N2;
-        const int b_row_base = m2 * N2;
+    // Register accumulator with __fmaf_rn single-cycle intrinsics
+    float acc = 0.0f;
+
+    for (int n1 = 0; n1 < N1; ++n1) {
+        const float a_val = to_float(A[a_row_base + n1]);
+        float inner = 0.0f;
+        const int x_row_base = x_batch_base + n1 * N2;
 
         for (int v = 0; v < num_vec_N2; ++v) {
             const int n2 = v * 4;
@@ -50,16 +60,16 @@ __global__ void kronecker_gemm_fwd_vectorized_kernel(
                 const float4 x4 = *reinterpret_cast<const float4*>(x + x_row_base + n2);
                 const float4 b4 = *reinterpret_cast<const float4*>(B + b_row_base + n2);
 
-                inner = fmaf(x4.x, b4.x, inner);
-                inner = fmaf(x4.y, b4.y, inner);
-                inner = fmaf(x4.z, b4.z, inner);
-                inner = fmaf(x4.w, b4.w, inner);
+                inner = __fmaf_rn(x4.x, b4.x, inner);
+                inner = __fmaf_rn(x4.y, b4.y, inner);
+                inner = __fmaf_rn(x4.z, b4.z, inner);
+                inner = __fmaf_rn(x4.w, b4.w, inner);
             } else {
                 #pragma unroll
                 for (int k = 0; k < 4; ++k) {
                     const float x_val = to_float(x[x_row_base + n2 + k]);
                     const float b_val = to_float(B[b_row_base + n2 + k]);
-                    inner = fmaf(x_val, b_val, inner);
+                    inner = __fmaf_rn(x_val, b_val, inner);
                 }
             }
         }
@@ -67,21 +77,20 @@ __global__ void kronecker_gemm_fwd_vectorized_kernel(
         for (int n2 = rem_start_N2; n2 < N2; ++n2) {
             const float x_val = to_float(x[x_row_base + n2]);
             const float b_val = to_float(B[b_row_base + n2]);
-            inner = fmaf(x_val, b_val, inner);
+            inner = __fmaf_rn(x_val, b_val, inner);
         }
 
-        acc = fmaf(a_val, inner, acc);
+        acc = __fmaf_rn(a_val, inner, acc);
     }
 
-    const int out_idx = m1 * M2 + m2;
     if (has_bias && bias != nullptr) {
         acc += to_float(bias[out_idx]);
     }
-    out[m * (M1 * M2) + out_idx] = from_float<scalar_t>(acc);
+    out[out_offset] = from_float<scalar_t>(acc);
 }
 
-}
-}
+} // namespace cuda
+} // namespace neuralops
 
 torch::Tensor kronecker_gemm_fwd(
     const torch::Tensor& x,
@@ -119,7 +128,7 @@ torch::Tensor kronecker_gemm_fwd(
     AT_DISPATCH_FLOATING_TYPES_AND2(
         at::ScalarType::Half, at::ScalarType::BFloat16,
         x.scalar_type(), "kronecker_gemm_fwd", ([&] {
-            neuralops::cuda::kronecker_gemm_fwd_vectorized_kernel<scalar_t><<<grid, block, 0, stream>>>(
+            neuralops::cuda::kronecker_gemm_fwd_shared_kernel<scalar_t><<<grid, block, 0, stream>>>(
                 out.data_ptr<scalar_t>(),
                 x_c.data_ptr<scalar_t>(),
                 a_c.data_ptr<scalar_t>(),

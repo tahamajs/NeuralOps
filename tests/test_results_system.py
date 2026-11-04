@@ -37,6 +37,7 @@ from neuralops.benchmarks.results import (
     SummaryGenerator,
     generate_reproduction_command,
     generate_reproduction_script,
+    normalize_legacy_result_dict,
     save_all_formats,
     save_csv_index,
     save_json,
@@ -46,6 +47,7 @@ from neuralops.benchmarks.results import (
 )
 from neuralops.benchmarks.results.schema import (
     DatasetMetadata,
+    EnvironmentMetadata,
     ModelMetadata,
     ModuleMetadata,
     RunMetadata,
@@ -252,3 +254,44 @@ def test_reproduction_command_and_script():
         script_text = script_path.read_text(encoding="utf-8")
         assert "#!/usr/bin/env bash" in script_text
         assert cmd in script_text
+
+
+def test_benchmark_result_checksum_and_iso_timestamps():
+    res = _create_sample_result()
+    assert res.checksum
+    assert len(res.checksum) == 16
+    assert "T" in res.run_metadata.timestamp_start
+    assert "T" in res.run_metadata.timestamp_end
+    # Ensure serialization preserves checksum
+    data = res.to_dict()
+    assert data["checksum"] == res.checksum
+    loaded = BenchmarkResult.from_dict(data)
+    assert loaded.checksum == res.checksum
+
+
+def test_environment_metadata_capture():
+    env = EnvironmentMetadata.capture()
+    assert isinstance(env.platform, str)
+    assert len(env.git_commit) == 40 or env.git_commit == "unknown"
+    assert isinstance(env.torch_version, str)
+
+
+def test_normalize_legacy_result_dict_preserves_all_data():
+    legacy = {
+        "suite": "glue_sst2",
+        "device": "cuda:0",
+        "model": "bert-base-uncased",
+        "attention": "cosformer",
+        "steps": 1000,
+        "results": {"accuracy": 0.92, "eval_loss": 0.25},
+        "custom_experimental_tag": "ablation_v3",
+    }
+    normalized = normalize_legacy_result_dict(legacy)
+    assert normalized.benchmark_suite == "glue_sst2"
+    assert normalized.device_type == "cuda:0"
+    assert normalized.model_name == "bert-base-uncased"
+    assert normalized.transplanted_attention == "cosformer"
+    assert normalized.pre_train_steps == 1000
+    assert normalized.metrics["accuracy"] == 0.92
+    assert normalized.metadata.get("custom_experimental_tag") == "ablation_v3"
+

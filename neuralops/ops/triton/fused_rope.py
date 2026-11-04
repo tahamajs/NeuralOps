@@ -241,6 +241,7 @@ def fused_unified_rope_offset_triton(
     cos: torch.Tensor,
     sin: torch.Tensor,
     rotary_dim: int,
+    offset: int = 0,
 ) -> torch.Tensor:
     """Fused RoPE coordinate rotation with past offset in GPU SRAM."""
     from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
@@ -259,8 +260,11 @@ def fused_unified_rope_offset_triton(
             total_tokens = x_2d.shape[0]
             out_2d = torch.empty_like(x_2d)
 
-            cos_2d = cos.view(-1, cos.shape[-1]).contiguous() if cos.dim() >= 2 else cos.contiguous()
-            sin_2d = sin.view(-1, sin.shape[-1]).contiguous() if sin.dim() >= 2 else sin.contiguous()
+            cos_slice = cos[offset:offset + L] if (cos.dim() >= 2 and cos.shape[0] >= offset + L) else cos
+            sin_slice = sin[offset:offset + L] if (sin.dim() >= 2 and sin.shape[0] >= offset + L) else sin
+
+            cos_2d = cos_slice.view(-1, cos_slice.shape[-1]).contiguous() if cos_slice.dim() >= 2 else cos_slice.contiguous()
+            sin_2d = sin_slice.view(-1, sin_slice.shape[-1]).contiguous() if sin_slice.dim() >= 2 else sin_slice.contiguous()
 
             half_rotary = rotary_dim // 2
             pass_dim = max(1, D - rotary_dim)
@@ -281,7 +285,9 @@ def fused_unified_rope_offset_triton(
             # allowed-swallow: best-effort-telemetry
             pass
 
-    return fused_unified_rope_offset_pytorch(x, cos, sin, rotary_dim)
+    c_eff = cos[offset:offset + x.shape[-2]] if (cos.dim() >= 2 and cos.shape[0] >= offset + x.shape[-2]) else cos
+    s_eff = sin[offset:offset + x.shape[-2]] if (sin.dim() >= 2 and sin.shape[0] >= offset + x.shape[-2]) else sin
+    return fused_unified_rope_offset_pytorch(x, c_eff, s_eff, rotary_dim)
 
 
 __all__ = [

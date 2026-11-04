@@ -522,7 +522,13 @@ class HLAAttention(BaseAttention):
                 y_accel = hla_attention(q, k, v, decay, eps=1e-5)
                 return y_accel.to(q.dtype), (None, None)
             except Exception:
-                # allowed-swallow: best-effort-telemetry
+                pass
+            try:
+                from neuralops.ops.triton.gla_scan import kda_hla_chunk_scan_triton
+                log_dec = (log_gamma.view(1, H, 1, 1).expand(B, H, L, 1)).squeeze(-1)
+                y_triton = kda_hla_chunk_scan_triton(q_f, k_f, v_f, log_dec)
+                return y_triton.to(q.dtype), (None, None)
+            except Exception:
                 pass
 
         C = self.chunk_size

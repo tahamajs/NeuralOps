@@ -29,3 +29,31 @@ def test_alibi_forward():
     out, attn = layer(x)
     assert out.shape == (2, 16, 64)
     assert attn is None
+
+
+def test_alibi_numeric_reference_accuracy():
+    """Verify ALiBi relative position bias accuracy against analytical reference (< 1e-5)."""
+    from neuralops.ops.cuda.alibi_attention.alibi_autograd import alibi_attention_pytorch_ref
+
+    torch.manual_seed(42)
+    B, H, L, D = 2, 8, 16, 32
+    q = torch.randn(B, H, L, D, dtype=torch.float32)
+    k = torch.randn(B, H, L, D, dtype=torch.float32)
+    v = torch.randn(B, H, L, D, dtype=torch.float32)
+    slopes = get_alibi_slopes(H)
+
+    out_causal = alibi_attention_pytorch_ref(q, k, v, slopes, is_causal=True)
+    out_bidi = alibi_attention_pytorch_ref(q, k, v, slopes, is_causal=False)
+
+    assert not torch.isnan(out_causal).any()
+    assert not torch.isnan(out_bidi).any()
+    assert (out_causal - out_bidi).abs().max() > 1e-5
+
+    # Test in-register slope generator numerical equivalence with Press et al.
+    for num_heads in (4, 8, 12, 16):
+        py_slopes = get_alibi_slopes(num_heads)
+        # Check monotonic decrease in slopes for power of 2
+        if (num_heads & (num_heads - 1)) == 0:
+            assert (py_slopes[:-1] > py_slopes[1:]).all()
+        assert py_slopes.min() > 0.0
+

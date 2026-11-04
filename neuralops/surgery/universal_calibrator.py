@@ -14,11 +14,19 @@ Streaming activation calibrator computing Gram and Hessian statistics across com
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
 logger = logging.getLogger("NeuralOps.Surgery.Calibrator")
+
+warnings.warn(
+    "neuralops.surgery.universal_calibrator is deprecated and will be removed in a future release. "
+    "Please use neuralops.surgery.calibration instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 class UniversalActivationCalibrator:

@@ -163,7 +163,7 @@ class PagedKVCache:
                 self.block_ref_counts[block] -= 1
                 if self.block_ref_counts[block] == 0:
                     del self.block_ref_counts[block]
-                    self.free_blocks.append(block)
+                    self.free_blocks.insert(0, block)
             del self.block_tables[seq_id]
             del self.seq_lengths[seq_id]
 

@@ -60,8 +60,8 @@ def export_model(
 
     if kwargs.get("auto_finalize", True):
         try:
-            from neuralops.api import finalize_surgery
-            model = finalize_surgery(model)
+            from neuralops.core._attention_surgery import heal_replaced_model
+            model = heal_replaced_model(model)
         except Exception as e:
             logger.debug("finalize_surgery check skipped or failed: %s", e)
 

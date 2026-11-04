@@ -25,6 +25,7 @@ from neuralops.ops.triton._base import triton, tl, HAS_TRITON
         triton.Config({"BLOCK_M": 16}, num_stages=2, num_warps=2),
         triton.Config({"BLOCK_M": 32}, num_stages=3, num_warps=4),
         triton.Config({"BLOCK_M": 64}, num_stages=3, num_warps=4),
+        triton.Config({"BLOCK_M": 128}, num_stages=4, num_warps=8),
     ],
     key=["M", "M1", "M2", "N1", "N2"],
 )
@@ -60,21 +61,27 @@ def _fused_kronecker_gemm_kernel(
     offs_m2 = tl.arange(0, M2)
     offs_n2 = tl.arange(0, N2)
 
-    a_tile = tl.load(a_ptr + offs_m1[:, None] * stride_a_m + offs_n1[None, :] * stride_a_n)
-    b_tile = tl.load(b_ptr + offs_m2[:, None] * stride_b_m + offs_n2[None, :] * stride_b_n)
+    # Pre-calculate Kronecker factor row and column indexing patterns outside the inner loop
+    flat_offs_k = offs_n1[:, None] * N2 + offs_n2[None, :]
+    flat_offs_out = offs_m1[:, None] * M2 + offs_m2[None, :]
+    a_ptrs = a_ptr + offs_m1[:, None] * stride_a_m + offs_n1[None, :] * stride_a_n
+    b_ptrs = b_ptr + offs_m2[:, None] * stride_b_m + offs_n2[None, :] * stride_b_n
+
+    a_tile = tl.load(a_ptrs)
+    b_tile = tl.load(b_ptrs)
+    b_tile_t = tl.trans(b_tile).to(tl.float32)
+    a_tile_f32 = a_tile.to(tl.float32)
 
     for m_idx in range(BLOCK_M):
         curr_m = pid_m * BLOCK_M + m_idx
         if curr_m < M:
-            flat_offs_k = offs_n1[:, None] * N2 + offs_n2[None, :]
             x_ptrs = x_ptr + curr_m * stride_xm + flat_offs_k * stride_xk
             x_slice = tl.load(x_ptrs)
 
-            t = tl.dot(x_slice.to(tl.float32), tl.trans(b_tile).to(tl.float32), allow_tf32=True)
+            t = tl.dot(x_slice.to(tl.float32), b_tile_t, allow_tf32=True)
 
-            y_slice = tl.dot(a_tile.to(tl.float32), t.to(tl.float32), allow_tf32=True)
+            y_slice = tl.dot(a_tile_f32, t.to(tl.float32), allow_tf32=True)
 
-            flat_offs_out = offs_m1[:, None] * M2 + offs_m2[None, :]
             y_ptrs = y_ptr + curr_m * stride_ym + flat_offs_out * stride_yn
 
             out_val = y_slice

@@ -18,6 +18,8 @@ import json
 import logging
 import os
 from pathlib import Path
+import sqlite3
+import threading
 from typing import Any, Dict, List, Optional
 import uuid
 import pandas as pd
@@ -306,6 +308,220 @@ def save_all_formats(
     return saved_artifacts
 
 
+_SQLITE_LOCK = threading.Lock()
+
+
+class MultiFormatSaver:
+    """Unified multi-format persistence engine with atomic WAL guarantees and SQLite ledger.
+
+    Writes simultaneously to:
+      1. raw_results/<run_id>.json (canonical pretty JSON via atomic rename)
+      2. .journal.jsonl (with os.fsync for write-ahead logging)
+      3. summary_matrix.csv (rolling flattened tabular view)
+      4. master_ledger.db (indexed SQLite relational storage)
+    """
+
+    def __init__(self, output_dir: Path | str = "results") -> None:
+        self.output_dir = Path(output_dir)
+        self.raw_results_dir = self.output_dir / "raw_results"
+        self.journal_path = self.output_dir / ".journal.jsonl"
+        self.summary_csv_path = self.output_dir / "summary_matrix.csv"
+        self.ledger_db_path = self.output_dir / "master_ledger.db"
+        self._lock = _SQLITE_LOCK
+
+        # Initialize directories
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.raw_results_dir.mkdir(parents=True, exist_ok=True)
+
+        with self._lock:
+            self._init_db()
+
+    def _init_db(self) -> None:
+        """Initialize the SQLite ledger table with schemas, multi-column and single indices."""
+        conn = sqlite3.connect(str(self.ledger_db_path), timeout=30.0)
+        try:
+            cur = conn.cursor()
+            cur.execute("PRAGMA journal_mode=WAL;")
+            cur.execute("PRAGMA synchronous=NORMAL;")
+            cur.execute("PRAGMA busy_timeout=30000;")
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS benchmark_runs (
+                    run_id TEXT PRIMARY KEY,
+                    timestamp TEXT NOT NULL,
+                    model_name TEXT NOT NULL,
+                    transplanted_attention TEXT NOT NULL,
+                    pre_train_steps INTEGER NOT NULL,
+                    benchmark_suite TEXT NOT NULL,
+                    device_type TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    git_commit TEXT,
+                    environment_json TEXT,
+                    metrics_json TEXT,
+                    metadata_json TEXT,
+                    raw_result_json TEXT NOT NULL
+                )
+                """
+            )
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_bm_model ON benchmark_runs (model_name)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_bm_attn ON benchmark_runs (transplanted_attention)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_bm_suite ON benchmark_runs (benchmark_suite)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_bm_status ON benchmark_runs (status)")
+            # Multi-column indices per Phase 50
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_model_attn ON benchmark_runs (model_name, transplanted_attention)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_suite_time ON benchmark_runs (benchmark_suite, timestamp)")
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _init_sqlite(self) -> None:
+        """Backward-compatible alias for _init_db."""
+        self._init_db()
+
+    def _save_json(self, result: BenchmarkResult) -> Path:
+        """Write canonical pretty JSON with atomic temporary file rename."""
+        raw_json_path = self.raw_results_dir / f"{result.run_id}.json"
+        tmp_json = raw_json_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+        with open(tmp_json, "w", encoding="utf-8") as fp:
+            json.dump(result.to_dict(), fp, indent=2, default=str)
+        tmp_json.replace(raw_json_path)
+        return raw_json_path
+
+    def _save_journal(self, result: BenchmarkResult) -> Path:
+        """Append to write-ahead log with explicit buffer flush and os.fsync."""
+        journal_entry = {
+            "timestamp": result.timestamp or result.timestamp_end or result.timestamp_start,
+            "event": "CASE_SUCCESS" if result.status == "success" else "CASE_FAILED",
+            "run_id": result.run_id,
+            "run_key": result.compute_run_key(),
+            "model_name": result.model_name,
+            "transplanted_attention": result.transplanted_attention,
+            "pre_train_steps": result.pre_train_steps,
+            "benchmark_suite": result.benchmark_suite,
+            "device_type": result.device_type,
+            "status": result.status,
+            "metrics": result.metrics,
+            "metadata": result.metadata,
+        }
+        line = json.dumps(journal_entry, default=str) + "\n"
+        with open(self.journal_path, "a", encoding="utf-8") as f_wal:
+            f_wal.write(line)
+            f_wal.flush()
+            try:
+                os.fsync(f_wal.fileno())
+            except OSError:
+                pass
+        return self.journal_path
+
+    def _save_csv(self, result: BenchmarkResult) -> Path:
+        """Append flattened metric summary row to summary_matrix.csv."""
+        write_header = not self.summary_csv_path.exists() or self.summary_csv_path.stat().st_size == 0
+        csv_row = {
+            "run_id": result.run_id,
+            "timestamp": result.timestamp or result.timestamp_end or result.timestamp_start,
+            "model_name": result.model_name,
+            "transplanted_attention": result.transplanted_attention,
+            "pre_train_steps": result.pre_train_steps,
+            "benchmark_suite": result.benchmark_suite,
+            "device_type": result.device_type,
+            "status": result.status,
+            "git_commit": result.git_commit,
+        }
+        if isinstance(result.metrics, dict):
+            for m_key, m_val in result.metrics.items():
+                if isinstance(m_val, (int, float, str, bool)):
+                    csv_row[f"metric_{m_key}"] = m_val
+
+        if not write_header:
+            try:
+                with open(self.summary_csv_path, "r", encoding="utf-8") as fp_in:
+                    reader = csv.reader(fp_in)
+                    existing_fields = next(reader, [])
+                for ef in existing_fields:
+                    if ef not in csv_row:
+                        csv_row[ef] = ""
+                fieldnames = existing_fields
+                for k in csv_row.keys():
+                    if k not in fieldnames:
+                        fieldnames.append(k)
+            except Exception:
+                fieldnames = list(csv_row.keys())
+        else:
+            fieldnames = list(csv_row.keys())
+
+        with open(self.summary_csv_path, "a", newline="", encoding="utf-8") as fp_csv:
+            writer = csv.DictWriter(fp_csv, fieldnames=fieldnames, extrasaction="ignore")
+            if write_header:
+                writer.writeheader()
+            writer.writerow(csv_row)
+        return self.summary_csv_path
+
+    def _save_sqlite(self, result: BenchmarkResult) -> Path:
+        """Persist structured record to master_ledger.db with mutex and connection timeout."""
+        env_json = json.dumps(result.environment.to_dict() if hasattr(result.environment, "to_dict") else result.environment, default=str)
+        metrics_json = json.dumps(result.metrics or {}, default=str)
+        metadata_json = json.dumps(result.metadata or {}, default=str)
+        raw_result_str = json.dumps(result.to_dict(), default=str)
+
+        with self._lock:
+            conn = sqlite3.connect(str(self.ledger_db_path), timeout=30.0)
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    INSERT OR REPLACE INTO benchmark_runs (
+                        run_id, timestamp, model_name, transplanted_attention,
+                        pre_train_steps, benchmark_suite, device_type, status,
+                        git_commit, environment_json, metrics_json, metadata_json,
+                        raw_result_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        result.run_id,
+                        result.timestamp or result.timestamp_end or result.timestamp_start,
+                        result.model_name,
+                        result.transplanted_attention,
+                        result.pre_train_steps,
+                        result.benchmark_suite,
+                        result.device_type,
+                        result.status,
+                        result.git_commit,
+                        env_json,
+                        metrics_json,
+                        metadata_json,
+                        raw_result_str,
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        return self.ledger_db_path
+
+    def save(self, result: BenchmarkResult) -> Dict[str, Path]:
+        """Save a single BenchmarkResult synchronously across all 4 targets."""
+        # 1. Raw JSON: raw_results/<run_id>.json
+        raw_json_path = self._save_json(result)
+
+        # 2. Write-Ahead Log: .journal.jsonl (with immediate flush & os.fsync)
+        journal_path = self._save_journal(result)
+
+        # 3. Flat CSV: summary_matrix.csv
+        csv_path = self._save_csv(result)
+
+        # 4. Relational Database: master_ledger.db (SQLite)
+        ledger_path = self._save_sqlite(result)
+
+        # Update result artifact path references
+        result.artifacts.json_file = str(raw_json_path)
+
+        return {
+            "raw_json": raw_json_path,
+            "journal": journal_path,
+            "summary_csv": csv_path,
+            "ledger_db": ledger_path,
+        }
+
+
 __all__ = [
     "CATEGORY_MAP",
     "resolve_category",
@@ -316,4 +532,5 @@ __all__ = [
     "save_markdown_summary",
     "save_parquet_index",
     "save_all_formats",
+    "MultiFormatSaver",
 ]

@@ -103,15 +103,23 @@ if HAS_TRITON:
 
                 s = (tl.dot(q, tl.trans(k)) * sm_scale).to(tl.float32)
 
+                # Unmasked interior tile optimization:
+                # If block is strictly interior (q_blk_idx > k_blk_idx when IS_CAUSAL, and fully in-bounds),
+                # all elements satisfy causal condition and bounds without tl.where SFU evaluation.
+                is_interior = (k_start + BLOCK_SIZE <= N_K) & (q_start + BLOCK_SIZE <= N_Q)
                 if IS_CAUSAL:
-                    causal_cond = offs_q[:, None] >= offs_k[None, :]
-                    s = tl.where(
-                        causal_cond & mask_q[:, None] & mask_k[None, :],
-                        s,
-                        float("-inf"),
-                    )
-                else:
-                    s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                    is_interior = is_interior & (k_blk_idx < q_blk_idx)
+
+                if not is_interior:
+                    if IS_CAUSAL:
+                        causal_cond = offs_q[:, None] >= offs_k[None, :]
+                        s = tl.where(
+                            causal_cond & mask_q[:, None] & mask_k[None, :],
+                            s,
+                            float("-inf"),
+                        )
+                    else:
+                        s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
 
                 m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
                 alpha = tl.math.exp2(1.44269504 * (m_prev - m_curr))
@@ -198,11 +206,16 @@ if HAS_TRITON and tl is not None:
                 k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
 
                 s = tl.dot(q, tl.trans(k)) * sm_scale
+                is_interior = (k_start + BLOCK_SIZE <= N_K) & (q_start + BLOCK_SIZE <= N_Q)
                 if IS_CAUSAL:
-                    causal_cond = offs_q[:, None] >= offs_k[None, :]
-                    s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
-                else:
-                    s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                    is_interior = is_interior & (k_blk_idx < q_blk_idx)
+
+                if not is_interior:
+                    if IS_CAUSAL:
+                        causal_cond = offs_q[:, None] >= offs_k[None, :]
+                        s = tl.where(causal_cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                    else:
+                        s = tl.where(mask_q[:, None] & mask_k[None, :], s, float("-inf"))
 
                 m_curr = tl.maximum(m_prev, tl.max(s, axis=1))
                 alpha = tl.math.exp2(1.44269504 * (m_prev - m_curr))
@@ -232,10 +245,17 @@ if HAS_TRITON and tl is not None:
                 v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
 
                 s = tl.dot(q, tl.trans(k)) * sm_scale
-                cond = (offs_q[:, None] >= offs_k[None, :]) if IS_CAUSAL else True
-                s = tl.where(cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
-                p = tl.math.exp2(1.44269504 * (s - m_prev[:, None])) / denom
-                p = tl.where(cond & mask_q[:, None] & mask_k[None, :], p, 0.0)
+                is_interior = (k_start + BLOCK_SIZE <= N_K) & (q_start + BLOCK_SIZE <= N_Q)
+                if IS_CAUSAL:
+                    is_interior = is_interior & (k_blk_idx < q_blk_idx)
+
+                if not is_interior:
+                    cond = (offs_q[:, None] >= offs_k[None, :]) if IS_CAUSAL else True
+                    s = tl.where(cond & mask_q[:, None] & mask_k[None, :], s, float("-inf"))
+                    p = tl.math.exp2(1.44269504 * (s - m_prev[:, None])) / denom
+                    p = tl.where(cond & mask_q[:, None] & mask_k[None, :], p, 0.0)
+                else:
+                    p = tl.math.exp2(1.44269504 * (s - m_prev[:, None])) / denom
 
                 dv = tl.dot(tl.trans(p.to(do.dtype)), do)
                 dv_ptrs = dv_base + (offs_k[:, None] * stride_dvn + offs_d[None, :] * stride_dvd)
@@ -486,6 +506,34 @@ def bwd(
 
 
 if HAS_TRITON:
+    @triton.jit
+    def _fused_reap_router_softmax_kernel(
+        Logits_ptr,
+        Probs_ptr,
+        NUM_TOKENS,
+        NUM_EXPERTS: tl.constexpr,
+        BLOCK_E: tl.constexpr,
+    ):
+        """
+        Fused in-SRAM Softmax normalizer across experts for MoE router.
+        Operates entirely in SRAM without round-trips to DRAM or CPU.
+        """
+        pid = tl.program_id(0)
+        if pid >= NUM_TOKENS:
+            return
+
+        offs_e = tl.arange(0, BLOCK_E)
+        mask_e = offs_e < NUM_EXPERTS
+
+        logits = tl.load(Logits_ptr + pid * NUM_EXPERTS + offs_e, mask=mask_e, other=-1e9).to(tl.float32)
+        max_val = tl.max(logits, axis=0)
+        exp_logits = tl.where(mask_e, tl.math.exp2(1.44269504 * (logits - max_val)), 0.0)
+        sum_exp = tl.sum(exp_logits, axis=0)
+        inv_sum = 1.0 / tl.maximum(sum_exp, 1e-8)
+        probs = exp_logits * inv_sum
+
+        tl.store(Probs_ptr + pid * NUM_EXPERTS + offs_e, probs.to(Probs_ptr.dtype.element_ty), mask=mask_e)
+
     @triton.jit
     def _fused_topk_route_kernel(
         Branches_ptr, Weights_ptr, Out_ptr,
@@ -778,7 +826,14 @@ def fused_expert_choice_scatter_gather_triton(
     gate_scores: torch.Tensor,
     top_k_experts: int,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Fused Expert Choice top-k routing dispatch."""
+    """Fused Expert Choice top-k routing dispatch with Level 1 CUDA acceleration."""
+    if gate_scores.is_cuda:
+        try:
+            from neuralops.ops.cuda.moe_routing import moe_topk_routing_fused
+            topk_vals, topk_indices = moe_topk_routing_fused(gate_scores, top_k_experts)
+            return topk_vals, topk_indices, gate_scores
+        except Exception:
+            pass
     return fused_expert_choice_scatter_gather_pytorch(x_flat, gate_scores, top_k_experts)
 
 
@@ -880,7 +935,31 @@ def fused_reap_moe_router_triton(
     gate_logits: torch.Tensor,
     top_k: int,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Fused REAP-MoE router gating in GPU SRAM."""
+    """Fused REAP-MoE router gating in GPU SRAM without CPU synchronization."""
+    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and gate_logits.is_cuda:
+        try:
+            num_experts = gate_logits.shape[-1]
+            total_tokens = gate_logits.numel() // num_experts
+            gate_flat = gate_logits.view(total_tokens, num_experts).contiguous()
+            gate_probs = torch.empty_like(gate_flat)
+
+            BLOCK_E = triton.next_power_of_2(num_experts)
+            grid = (total_tokens,)
+            _fused_reap_router_softmax_kernel[grid](
+                gate_flat,
+                gate_probs,
+                total_tokens,
+                NUM_EXPERTS=num_experts,
+                BLOCK_E=BLOCK_E,
+            )
+            act_k = min(top_k, num_experts)
+            gate_probs = gate_probs.view(gate_logits.shape)
+            topk_vals, topk_indices = torch.topk(gate_probs, act_k, dim=-1)
+            return topk_vals, topk_indices
+        except Exception:
+            # allowed-swallow: best-effort-telemetry
+            pass
     return fused_reap_moe_router_pytorch(gate_logits, top_k)
 
 
@@ -912,6 +991,64 @@ def fused_padre_polynomial_attn_pytorch(
     return torch.matmul(attn_weights, v)
 
 
+if HAS_TRITON and tl is not None:
+    @triton.jit
+    def _fused_padre_polynomial_fwd_kernel(
+        Q_ptr, K_ptr, V_ptr, Out_ptr,
+        stride_qb, stride_qh, stride_qm, stride_qd,
+        stride_kb, stride_kh, stride_kn, stride_kd,
+        stride_vb, stride_vh, stride_vn, stride_vd,
+        stride_ob, stride_oh, stride_om, stride_od,
+        H, N_q, N_k,
+        scale, temperature,
+        ORDER: tl.constexpr,
+        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_D: tl.constexpr,
+    ):
+        pid_m = tl.program_id(0)
+        pid_bh = tl.program_id(1)
+        i_b = pid_bh // H
+        i_h = pid_bh % H
+
+        offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+        offs_d = tl.arange(0, BLOCK_D)
+        mask_m = offs_m < N_q
+
+        q_ptrs = Q_ptr + i_b * stride_qb + i_h * stride_qh + offs_m[:, None] * stride_qm + offs_d[None, :] * stride_qd
+        q = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0)
+
+        acc = tl.zeros((BLOCK_M, BLOCK_D), dtype=tl.float32)
+        inv_temp = 1.0 / tl.maximum(temperature, 1e-6)
+
+        num_k_blocks = tl.cdiv(N_k, BLOCK_N)
+        for j in range(num_k_blocks):
+            offs_n = j * BLOCK_N + tl.arange(0, BLOCK_N)
+            mask_n = offs_n < N_k
+
+            k_ptrs = K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
+            v_ptrs = V_ptr + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+
+            k = tl.load(k_ptrs, mask=mask_n[None, :], other=0.0)
+            v = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
+
+            # In-SRAM polynomial attention dot product: (1 + S/order)^order
+            s = tl.dot(q, k) * scale
+            s_centered = s * inv_temp
+            base = tl.clamp(1.0 + (s_centered / ORDER), 0.0, 10.0)
+            
+            p = base
+            if ORDER == 2:
+                p = base * base
+            elif ORDER == 4:
+                b2 = base * base
+                p = b2 * b2
+
+            p = tl.where(mask_m[:, None] & mask_n[None, :], p, 0.0)
+            acc += tl.dot(p.to(v.dtype), v)
+
+        out_ptrs = Out_ptr + i_b * stride_ob + i_h * stride_oh + offs_m[:, None] * stride_om + offs_d[None, :] * stride_od
+        tl.store(out_ptrs, acc.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
+
+
 def fused_padre_polynomial_attn_triton(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -922,10 +1059,29 @@ def fused_padre_polynomial_attn_triton(
     invalid_mask: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Fused PADRe polynomial attention computation in GPU SRAM."""
-    if not (q.is_cuda and HAS_TRITON):
+    if not (q.is_cuda and HAS_TRITON and invalid_mask is None and order in (2, 4)):
         return fused_padre_polynomial_attn_pytorch(q, k, v, scale, order, temperature, invalid_mask)
+
     try:
-        return fused_padre_polynomial_attn_pytorch(q, k, v, scale, order, temperature, invalid_mask)
+        B, H, N_q, D = q.shape
+        N_k = k.shape[-2]
+        out = torch.empty_like(q)
+        BLOCK_M = 64
+        BLOCK_N = 64
+        grid = (triton.cdiv(N_q, BLOCK_M), B * H)
+
+        _fused_padre_polynomial_fwd_kernel[grid](
+            q, k, v, out,
+            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
+            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            H=H, N_q=N_q, N_k=N_k,
+            scale=float(scale), temperature=float(temperature),
+            ORDER=int(order),
+            BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_D=D,
+        )
+        return out
     except Exception:
         return fused_padre_polynomial_attn_pytorch(q, k, v, scale, order, temperature, invalid_mask)
 

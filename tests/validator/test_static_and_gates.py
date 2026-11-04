@@ -135,3 +135,44 @@ def test_run_validation_gates_suite():
     assert v_res.passed
     assert v_res.total_gates >= 4
     assert v_res.failed_gates == 0
+
+
+def test_numerical_guardrails_bounds_and_symplectic():
+    from neuralops.validator.numerical_guardrails import (
+        SymplecticNumericalGuard,
+        check_condition_number,
+        check_numerical_stability,
+        sanitize_non_finite,
+        symplectic_guarded_softmax,
+    )
+
+    # 1. Dynamic range spikes 10^{\pm 12}
+    spike = torch.tensor([1e-12, 1e-6, 1.0, 1e12])
+    stable, metrics = check_numerical_stability(spike, dynamic_range_threshold=1e25)
+    assert stable is True
+    unstable, _ = check_numerical_stability(spike, dynamic_range_threshold=1e10)
+    assert unstable is False
+
+    # 2. Condition number kappa <= 1e4
+    well_conditioned = torch.eye(16)
+    is_ok, info = check_condition_number(well_conditioned, max_condition_number=1e4)
+    assert is_ok is True
+    assert abs(info["kappa"] - 1.0) < 1e-4
+
+    ill_conditioned = torch.diag(torch.tensor([1e5, 1.0, 0.1]))
+    is_bad, bad_info = check_condition_number(ill_conditioned, max_condition_number=1e4)
+    assert is_bad is False
+    assert bad_info["kappa"] > 1e4
+
+    # 3. Finite denominators via symplectic softmax
+    extreme_logits = torch.tensor([[-1000.0, 0.0, 1000.0, 1e12]])
+    sm = symplectic_guarded_softmax(extreme_logits)
+    assert torch.isfinite(sm).all()
+    assert (sm >= 0.0).all()
+    assert abs(sm.sum().item() - 1.0) < 1e-2
+
+    # 4. Guard module
+    guard = SymplecticNumericalGuard()
+    out = guard(extreme_logits)
+    assert torch.isfinite(out).all()
+
