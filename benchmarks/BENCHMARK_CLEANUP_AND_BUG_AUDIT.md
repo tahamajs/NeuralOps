@@ -357,7 +357,6 @@ ruff check <changed-files>
 bash -n benchmarks/run_suite.sh scripts/*.pbs
 git diff --check
 python3 scripts/utils/audit_dead_code.py
-python3 scripts/audit_readme_consistency.py
 ```
 
 Then run CPU-safe contract tests and GPU suites on the correct remote

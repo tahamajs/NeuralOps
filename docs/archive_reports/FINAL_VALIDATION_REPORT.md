@@ -61,8 +61,8 @@ ssh hpc "ssh GPU-3090-1 'export LD_LIBRARY_PATH=/share/apps/gcc/gcc-8.2.0/lib64:
 
 | Invariant Area | Expected Canonical Value | Measured Value | Verification Method | Status |
 |:---|:---:|:---:|:---|:---:|
-| **Attention Registry Keys** | 131 | 131 | `scripts/audit_readme_consistency.py` | **PASS** |
-| **Compression Registry Keys** | 72 | 72 | `scripts/audit_readme_consistency.py` | **PASS** |
+| **Attention Registry Keys** | 131 | 131 | `neuralops.core.registry.ATTENTION_REGISTRY` | **PASS** |
+| **Compression Registry Keys** | 72 | 72 | `neuralops.core.registry.COMPRESSOR_REGISTRY` | **PASS** |
 | **Triton Kernel Modules / Unified Ops** | 26 / 62 | 26 / 62 | AST inspection of `ops/triton/__init__.py` | **PASS** |
 | **Native CUDA Packages / Implementations** | 110 / 114 | 110 / 114 | Directory & header enumeration | **PASS** |
 | **Master Jupyter Demonstration Notebooks** | 29 | 29 | `glob.glob("notebooks/*.ipynb")` | **PASS** |

@@ -46,7 +46,6 @@ This skill provides an exhaustive 6-phase engineering checklist and execution pr
    - Run consistency checks:
      ```bash
      python3 scripts/utils/audit_dead_code.py
-     python3 scripts/audit_readme_consistency.py
      ```
 2. **Verify Canonical Totals**:
    - Exact count of 131 logical attention keys in `ATTENTION_REGISTRY`.

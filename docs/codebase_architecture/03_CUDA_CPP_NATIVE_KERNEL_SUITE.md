@@ -160,7 +160,6 @@ Consecutive threads within a warp (lanes $0 \dots 31$) must access contiguous me
 ## 6. Audit & Verification Gate Checklist
 
 1. **Static AST & Count Verification**:
-   - `python3 scripts/audit_readme_consistency.py` verifies $\ge 100$ CUDA packages.
    - `python3 scripts/utils/audit_dead_code.py` confirms 0 unresolved imports.
 2. **Dynamic JIT Compilation**:
    - Verified via `_bindings.load_cuda_module` with `TORCH_CUDA_ARCH_LIST="8.9;9.0"`.

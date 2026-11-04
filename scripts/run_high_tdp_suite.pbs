@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#PBS -N high_tdp_bench
+#PBS -q N3090
+#PBS -l nodes=1:ppn=2
+#PBS -l walltime=04:00:00
+#PBS -j oe
+#PBS -o /home/tahamajlesi.ut/NeuralOps/high_tdp_suite.log
+
+set -euo pipefail
+cd "$PBS_O_WORKDIR"
+
+echo "=========================================================================="
+echo "=== HIGH-TDP HIGH-THROUGHPUT FULL SATURATION BENCHMARK SUITE ==="
+echo "Started At: $(date)"
+echo "Host: $(hostname)"
+nvidia-smi
+echo "=========================================================================="
+
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/gcc/gcc-8.2.0/lib:/share/apps/Anaconda/anaconda3.8/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
+PY="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python"
+
+"$PY" scripts/run_high_tdp_saturated_benchmark.py
+
+echo "=========================================================================="
+echo "=== FINISHED AT: $(date) ==="
+echo "=========================================================================="

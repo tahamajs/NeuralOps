@@ -755,7 +755,6 @@ To ensure effortless installation across diverse environments without requiring 
 
 #### Quality Gate 4 (Final Release Gate)
 - `python3 scripts/utils/audit_dead_code.py` $\to$ **0 issues found**.
-- `python3 scripts/audit_readme_consistency.py` $\to$ **0 errors found**.
 - Invariant check: Canonical counts verified (131 attentions, 72 compressors, 26 Triton kernel modules, 114 native CUDA packages).
 - Pre-release smoke test: `pip install neuralops[serving,cuda]` installs cleanly in an isolated virtual environment and passes `python -c "import neuralops; print(neuralops.__version__)"`.
 

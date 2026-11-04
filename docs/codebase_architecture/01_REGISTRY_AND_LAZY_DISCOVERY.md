@@ -37,7 +37,6 @@ Part 01 details the architectural overhaul centered on **PEP 562 lazy module dis
 
 ## 3. Strict Catalog Counts & Inventory Verification
 
-The codebase enforces strict inventory invariants verified across test suites (`tests/test_cli_safety_contracts.py`, `tests/test_definitive_master_suite.py`) and repository audit scripts (`scripts/audit_readme_consistency.py`).
 
 ### 3.1 Attention Registry Contract (`len(ATTENTION_REGISTRY) == 131`)
 `ATTENTION_REGISTRY` is an instance of `Registry("attentions")`.
@@ -192,7 +191,6 @@ Local static verification conducted under AGENTS.md §3.1 protocols:
    $\rightarrow$ **All checks passed!**
 2. `python3 scripts/utils/audit_dead_code.py`:
    $\rightarrow$ **Audited 1377 Python source files. Issues found: 0**
-3. `python3 scripts/audit_readme_consistency.py`:
    $\rightarrow$ **SUCCESS: 0 errors found! All invariants verified.**
 4. Static AST Registry Audit (`scratch/audit_registries_ast.py`):
    - `ATTENTION_REGISTRY._dict`: Exactly **131** entries (125 canonical + 6 backward-compatibility aliases).

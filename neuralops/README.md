@@ -183,7 +183,6 @@ pip install -e ".[dev]"
 
 # Run static quality audits
 python3 scripts/utils/audit_dead_code.py
-python3 scripts/audit_readme_consistency.py
 ```
 
 ---

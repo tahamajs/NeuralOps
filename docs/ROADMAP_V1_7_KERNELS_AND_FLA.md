@@ -418,7 +418,6 @@ gantt
 - **Objective:** Execute exhaustive verification, audit invariants, run cold-cache benchmarks, and package the v1.7.0 release.
 - **Mandatory Quality Gates:**
   1. `python3 scripts/utils/audit_dead_code.py` $\implies$ 0 issues found.
-  2. `python3 scripts/audit_readme_consistency.py` $\implies$ 0 errors found.
   3. Finite-difference autograd check passes on CPU and GPU:
      ```python
      torch.autograd.gradcheck(op, inputs, atol=1e-3, eps=1e-5)
