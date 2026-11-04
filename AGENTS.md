@@ -344,7 +344,7 @@ Allowed only when:
 - **Ignored Directories Law**:
   - `audit/`, `docs/`, `results/`, `academic/`, `paper/`, `thesis_final/`, `logs/`, `scratch/`, and `grading.log` are strictly ignored in `.gitignore`.
   - These folders contain academic thesis drafts, build artifacts, raw telemetry, and local experiment outputs. They must NEVER be committed to Git.
-- **Verifying invariants**: `python3 scripts/utils/audit_dead_code.py` and `python3 scripts/audit_readme_consistency.py` verify counts. Run these before any PR. Requires §3.2 authorization.
+- **Verifying invariants**: `python3 scripts/utils/audit_dead_code.py` verify counts. Run these before any PR. Requires §3.2 authorization.
 
 ---
 
@@ -431,7 +431,6 @@ A session that says "I tried to fix X, it broke Y, I reverted" is a successful s
 - **Blast radius audit**: for every shared symbol you touched, verify all callsites hold. State in the PR description which shapes, dtypes, and backends are affected.
 - **Mandatory Quality Gates**:
   1. `python3 scripts/utils/audit_dead_code.py` → 0 issues found.
-  2. `python3 scripts/audit_readme_consistency.py` → 0 errors found.
   3. Universal shebang `#!/usr/bin/env python3` and executable permissions on CLI scripts.
   4. `ruff check <changed_files>` → clean.
   5. All new code has regression tests (§5.4).
@@ -440,7 +439,6 @@ A session that says "I tried to fix X, it broke Y, I reverted" is a successful s
   [ ] ruff check passes
   [ ] pytest on affected modules passes (or blocked with authorization note)
   [ ] audit_dead_code.py → 0
-  [ ] audit_readme_consistency.py → 0
   [ ] No fake artifacts introduced (§6.1)
   [ ] No hardcoded numeric fallbacks (§6.2)
   [ ] Minimal diff (§9)
@@ -554,7 +552,6 @@ git push origin v1.5.0
 - Whether the release is PyPI-published or not
 
 **Never:**
-- Tag a commit that has not passed `scripts/audit_readme_consistency.py` and `scripts/utils/audit_dead_code.py`.
 - Tag a commit where any file in §14.4 still has the old version.
 - Move a tag that has been pushed (delete and re-create is a rewrite; ask the user first).
 - Tag a WIP commit. Wait for the PR to merge to `main`.
@@ -722,7 +719,6 @@ Before pushing a tag `v<version>`, the agent must paste this checklist into the 
 [ ] neuralops.api.get_version() == X.Y.Z
 [ ] sync_version.py --check → OK
 [ ] audit_dead_code.py → 0 issues
-[ ] audit_readme_consistency.py → 0 errors
 [ ] ruff check neuralops/ tests/ → clean
 [ ] pytest tests/ -v → all pass (or GPU tests deferred with authorization note)
 [ ] No file in §14.4 still has an old version

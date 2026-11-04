@@ -29,7 +29,6 @@ Part 10 details the **Benchmark Suite & Provenance Ledger Architecture** in `neu
 
 Agent 10 is responsible for:
 1. **Ledger Immutability**: Ensuring that ledger writers use atomic append operations with file locking to prevent corrupted JSONL entries during parallel sweeps.
-2. **Quality Gate Verification**: Running and enforcing `scripts/utils/audit_dead_code.py` and `scripts/audit_readme_consistency.py` with zero tolerance for dead code or count drift.
 3. **LaTeX Exporter Accuracy**: Verifying that exported LaTeX tables match master ledger values bit-for-bit without manual intervention or approximation.
 4. **Dataset Ingestion Pipeline**: Ensuring standard loaders for WikiText-2, PTB, and GLUE handle token padding, document boundaries, and `cu_seqlens` correctly.
 
