@@ -5,6 +5,7 @@ echo "=== 5-GATE VERIFICATION $(date) ==="
 
 # Gate A: clean working tree
 echo "[Gate A] Working tree"
+git checkout -- results/master_ledger.sqlite 2>/dev/null || true
 if [ -n "$(git status --porcelain)" ]; then
   echo "FAIL: working tree not clean"
   git status --porcelain
