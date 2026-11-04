@@ -13,11 +13,9 @@ import sys
 import types
 from typing import Any, Optional
 from neuralops.core.errors import IntegrationNotImplementedError
-from neuralops.integrations.vllm_backend import (
-    NeuralOpsAttentionBackend,
-    NeuralOpsRecurrentSpec,
-    PagedStateTable,
-)
+from neuralops.integrations.vllm.state_table import PagedStateTable
+from neuralops.integrations.vllm_backend.backend import NeuralOpsAttentionBackend
+from neuralops.integrations.vllm_backend.kv_cache_spec import NeuralOpsRecurrentSpec
 from neuralops.integrations.vllm.backend import (
     NeuralOpsAttentionImpl,
 )

@@ -231,10 +231,12 @@ def register_neuralops_vllm_plugin() -> bool:
     return False
 
 
-from neuralops.integrations.vllm_backend import (
+from neuralops.integrations.vllm.state_table import PagedStateTable
+from neuralops.integrations.vllm_backend.backend import (
     NeuralOpsAttentionBackend,
+)
+from neuralops.integrations.vllm_backend.kv_cache_spec import (
     NeuralOpsRecurrentSpec,
-    PagedStateTable,
 )
 from neuralops.integrations.vllm.backend import (
     NeuralOpsAttentionImpl,
