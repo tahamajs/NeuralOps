@@ -494,8 +494,9 @@ class MoARouter:
     # =========================================================================
     # Phase 071: Middle Bulk Linear Replacement Routing (Layers 4 to L-3)
     # =========================================================================
+    @classmethod
     def route_middle_layers(
-        self,
+        cls_or_self,
         entropies: Optional[Sequence[float]] = None,
         k_linear: Optional[int] = None,
         num_layers: Optional[int] = None,
@@ -503,9 +504,20 @@ class MoARouter:
         boundary_suffix: int = 2,
     ) -> MiddleLayersRoutingResult:
         r"""Routes middle layers to linear attention based on descending entropy order."""
-        l_total = num_layers if num_layers is not None else self.num_layers
-        return self._do_route_middle_layers(
-            router=self,
+        if isinstance(cls_or_self, HybridMoARouter):
+            router = cls_or_self
+            l_total = num_layers if num_layers is not None else router.num_layers
+        else:
+            if num_layers is not None:
+                l_total = num_layers
+            elif entropies is not None:
+                l_total = len(entropies)
+            else:
+                l_total = 32
+            router = cls_or_self(num_layers=l_total)
+
+        return cls_or_self._do_route_middle_layers(
+            router=router,
             l_total=l_total,
             entropies=entropies,
             k_linear=k_linear,

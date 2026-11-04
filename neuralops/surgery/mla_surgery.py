@@ -621,6 +621,25 @@ class DeepSeekMLASurgeryBridge(nn.Module):
         Returns:
             Tuple of (output_tensor [B, T, latent_kv_dim], (state_c, state_r)).
         """
+        seq_len = c_kv.shape[1]
+        if seq_len == 1:
+            orig_dtype = c_kv.dtype
+            c_kv_f32 = c_kv.to(torch.float32)
+            k_rope_f32 = k_rope.to(torch.float32)
+            q_content_f32 = q_content.to(torch.float32)
+            q_rope_f32 = q_rope.to(torch.float32)
+
+            q_phi = F.elu(q_content_f32) + 1.0
+            k_phi = F.elu(c_kv_f32) + 1.0
+
+            s_c = torch.matmul(k_phi.transpose(-2, -1), q_phi)
+            z_r = torch.matmul(k_rope_f32.transpose(-2, -1), q_rope_f32)
+
+            out_content = torch.matmul(q_phi, s_c.transpose(-2, -1))
+            out_rope = torch.matmul(q_rope_f32, z_r.transpose(-2, -1))
+            total_out = _fuse_content_and_rope(out_content, out_rope).to(orig_dtype)
+            return total_out, (s_c.to(orig_dtype), z_r.to(orig_dtype))
+
         if causal:
             c_size = chunk_size if chunk_size is not None else 64
             out, new_state = self.forward_chunk_scan(
