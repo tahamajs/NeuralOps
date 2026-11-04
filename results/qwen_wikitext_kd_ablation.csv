@@ -1,0 +1,2 @@
+module,zero_shot_ppl,isolated_ppl,polished_ppl,isolated_time_s,polish_time_s,total_time_s,status,teacher_ppl
+cosformer,10948989.58,4033629.73,4033629.73,68.5,33.4,119.8,PASSED,16.06
