@@ -24,37 +24,37 @@ from neuralops.core.cuda_kernels import (
     get_dispatch_stats,
     reset_dispatch_stats,
 )
-from neuralops.core.cuda_kernels.selective_scan.selective_scan_autograd import (
+from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
     selective_scan,
     selective_scan_pytorch_ref,
 )
-from neuralops.core.cuda_kernels.sliding_window.sliding_autograd import (
+from neuralops.ops.cuda.sliding_window.sliding_autograd import (
     sliding_window_attn,
     sliding_window_pytorch_ref,
 )
-from neuralops.core.cuda_kernels.sparse_attention.sparse_autograd import (
+from neuralops.ops.cuda.sparse_attention.sparse_autograd import (
     block_sparse_attn,
     block_sparse_attn_pytorch_ref,
 )
-from neuralops.core.cuda_kernels.quantized_gemm.quant_autograd import (
+from neuralops.ops.cuda.quantized_gemm.quant_autograd import (
     w4a16_gemm,
     w4a16_gemm_pytorch_ref,
     fp8_gemm,
     fp8_gemm_pytorch_ref,
 )
-from neuralops.core.cuda_kernels.flash_gqa.flash_gqa_autograd import (
+from neuralops.ops.cuda.flash_gqa.flash_gqa_autograd import (
     flash_gqa,
     flash_gqa_pytorch_ref,
 )
-from neuralops.core.cuda_kernels.paged_attention.paged_attention_autograd import (
+from neuralops.ops.cuda.paged_attention.paged_attention_autograd import (
     paged_attention,
     paged_attention_pytorch_reference,
 )
-from neuralops.core.cuda_kernels.paged_kv_cache.kv_cache_autograd import (
+from neuralops.ops.cuda.paged_kv_cache.kv_cache_autograd import (
     copy_blocks_cow,
     copy_blocks_cow_pytorch_ref,
 )
-from neuralops.core.cuda_kernels.moe_routing.moe_autograd import (
+from neuralops.ops.cuda.moe_routing.moe_autograd import (
     moe_dispatch,
     moe_gather,
     _moe_dispatch_pytorch_ref,

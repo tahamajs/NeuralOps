@@ -36,7 +36,7 @@ from neuralops.core.extensibility import (
     unregister_custom_module,
     validate_module_contract,
 )
-from neuralops.core.inspector import inspect_architecture, render_architecture_card
+from neuralops.analysis.inspector import inspect_architecture, render_architecture_card
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, create_attention, create_compressor
 from neuralops.core.roofline import profile_roofline, render_roofline_terminal
 

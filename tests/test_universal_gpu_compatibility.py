@@ -21,22 +21,22 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from neuralops.core.triton_kernels.hardware_profile import (
+from neuralops.ops.triton.hardware_profile import (
     HardwareProfile,
     get_device_hardware_profile,
 )
-from neuralops.core.triton_kernels.autotuner import (
+from neuralops.ops.triton.autotuner import (
     estimate_kernel_sram_bytes,
     get_safe_autotune_configs,
 )
-from neuralops.core.triton_kernels._common import (
+from neuralops.ops.triton._common import (
     pad_to_triton_power_of_2,
     unpad_from_triton_power_of_2,
     coerce_tensor_for_hardware,
     triton_dispatch,
     _RUNTIME_FALLBACK_CACHE,
 )
-from neuralops.core.triton_kernels._types import (
+from neuralops.ops.triton._types import (
     check_triton_suitability,
     TENSOR_CORE_DOT_KERNELS,
 )
@@ -157,22 +157,22 @@ def test_all_26_kernel_modules():
     assert out_su.shape == (B, T, D)
 
 
-    from neuralops.core.triton_kernels.cosformer_triton_kernel import cosformer_triton_fwd
+    from neuralops.ops.triton.cosformer_triton_kernel import cosformer_triton_fwd
     out_cos = cosformer_triton_fwd(q, k, v)
     assert out_cos.shape == (B, H, T, D)
 
-    from neuralops.core.triton_kernels.fused_rope import fused_rope_embedding_kernel
+    from neuralops.ops.triton.fused_rope import fused_rope_embedding_kernel
     cos = torch.randn(1, 1, T, D // 2, device=dev, dtype=dtype)
     sin = torch.randn(1, 1, T, D // 2, device=dev, dtype=dtype)
     oq, ok = fused_rope_embedding_kernel(q, k, cos, sin)
     assert oq.shape == q.shape
     assert ok.shape == k.shape
 
-    from neuralops.core.triton_kernels.sliding_window import sliding_window_attention_kernel
+    from neuralops.ops.triton.sliding_window import sliding_window_attention_kernel
     out_sw = sliding_window_attention_kernel(q, k, v, window_size=16)
     assert out_sw.shape == q.shape
 
-    from neuralops.core.triton_kernels.varlen_attention import _varlen_attention_fwd
+    from neuralops.ops.triton.varlen_attention import _varlen_attention_fwd
     q_var = torch.randn(T, H, D, device=dev, dtype=dtype)
     k_var = torch.randn(T, H, D, device=dev, dtype=dtype)
     v_var = torch.randn(T, H, D, device=dev, dtype=dtype)
@@ -180,7 +180,7 @@ def test_all_26_kernel_modules():
     out_var = _varlen_attention_fwd(q_var, k_var, v_var, cu, cu)
     assert out_var.shape == q_var.shape
 
-    from neuralops.core.triton_kernels.paged_attention import paged_attention_kernel
+    from neuralops.ops.triton.paged_attention import paged_attention_kernel
     q_paged = torch.randn(B, H, D, device=dev, dtype=dtype)
     k_cache = torch.randn(16, 16, H, D, device=dev, dtype=dtype)
     v_cache = torch.randn(16, 16, H, D, device=dev, dtype=dtype)
@@ -189,17 +189,17 @@ def test_all_26_kernel_modules():
     out_paged = paged_attention_kernel(q_paged, k_cache, v_cache, bt, sl)
     assert out_paged.shape == q_paged.shape
 
-    from neuralops.core.triton_kernels.flash_decoding import flash_decoding_attention
+    from neuralops.ops.triton.flash_decoding import flash_decoding_attention
     q_dec = torch.randn(B, H, 1, D, device=dev, dtype=dtype)
     out_dec = flash_decoding_attention(q_dec, k, v)
     assert out_dec.shape == q_dec.shape
 
-    from neuralops.core.triton_kernels.block_sparse import block_sparse_attention, butterfly_mask
+    from neuralops.ops.triton.block_sparse import block_sparse_attention, butterfly_mask
     mask = butterfly_mask(T, block_size=16, device=dev)
     out_bs = block_sparse_attention(q, k, v, mask=mask)
     assert out_bs.shape == q.shape
 
-    from neuralops.core.triton_kernels.elementwise import fused_swiglu, fast_gelu, fused_rmsnorm
+    from neuralops.ops.triton.elementwise import fused_swiglu, fast_gelu, fused_rmsnorm
     x_elem = torch.randn(B, T, D, device=dev, dtype=dtype)
     gate = torch.randn(B, T, D, device=dev, dtype=dtype)
     weight_norm = torch.ones(D, device=dev, dtype=dtype)
@@ -210,26 +210,26 @@ def test_all_26_kernel_modules():
     out_rmsnorm = fused_rmsnorm(x_elem, weight_norm)
     assert out_rmsnorm.shape == x_elem.shape
 
-    from neuralops.core.triton_kernels.fused_ce import fused_cross_entropy
+    from neuralops.ops.triton.fused_ce import fused_cross_entropy
     logits = torch.randn(B * T, 100, device=dev, dtype=dtype)
     targets = torch.randint(0, 100, (B * T,), device=dev, dtype=torch.long)
     loss_ce = fused_cross_entropy(logits, targets)
     assert loss_ce.ndim == 0 and not torch.isnan(loss_ce)
 
-    from neuralops.core.triton_kernels.fused_kd import fused_kd_loss
+    from neuralops.ops.triton.fused_kd import fused_kd_loss
     s_logits = torch.randn(B * T, 100, device=dev, dtype=dtype)
     t_logits = torch.randn(B * T, 100, device=dev, dtype=dtype)
     loss_kd = fused_kd_loss(s_logits, t_logits, temperature=2.0)
     assert loss_kd.ndim == 0 and not torch.isnan(loss_kd)
 
-    from neuralops.core.triton_kernels.fused_norm_linear import fused_norm_linear, fused_rmsnorm_linear
+    from neuralops.ops.triton.fused_norm_linear import fused_norm_linear, fused_rmsnorm_linear
     w_lin = torch.randn(D, D, device=dev, dtype=dtype)
     out_fnl = fused_norm_linear(x_elem, w_lin)
     assert out_fnl.shape == x_elem.shape
     out_rmslin = fused_rmsnorm_linear(x_elem, weight_norm, w_lin)
     assert out_rmslin.shape == x_elem.shape
 
-    from neuralops.core.triton_kernels.selective_scan import selective_scan_fn
+    from neuralops.ops.triton.selective_scan import selective_scan_fn
     u_ss = torch.randn(B, T, D, device=dev, dtype=dtype)
     delta_ss = torch.randn(B, T, D, device=dev, dtype=dtype)
     A_ss = torch.randn(D, 16, device=dev, dtype=dtype)
@@ -238,27 +238,27 @@ def test_all_26_kernel_modules():
     out_ss = selective_scan_fn(u_ss, delta_ss, A_ss, B_ss, C_ss)
     assert out_ss.shape == u_ss.shape
 
-    from neuralops.core.triton_kernels.fms_scan import fms_scan
+    from neuralops.ops.triton.fms_scan import fms_scan
     decay = torch.ones(H, device=dev, dtype=dtype) * 0.9
     out_fms = fms_scan(q, k, v, decay)
     assert out_fms.shape == (B, H, T, D)
 
-    from neuralops.core.triton_kernels.gdn_scan import gdn_scan
+    from neuralops.ops.triton.gdn_scan import gdn_scan
     beta = torch.ones(B, H, T, device=dev, dtype=dtype) * 0.9
     alpha = torch.ones(B, H, T, device=dev, dtype=dtype) * 0.5
     out_gdn = gdn_scan(q, k, v, beta, alpha)
     assert out_gdn.shape == (B, H, T, D)
 
-    from neuralops.core.triton_kernels.gla_scan import gla_scan
+    from neuralops.ops.triton.gla_scan import gla_scan
     out_gla = gla_scan(q, k, v, beta)
     assert out_gla.shape == (B, H, T, D)
 
-    from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan
+    from neuralops.ops.triton.hgrn2_scan import hgrn2_scan
     f_hgrn = torch.ones(B, T, D, device=dev, dtype=dtype) * 0.8
     iv_hgrn = torch.randn(B, T, D, device=dev, dtype=dtype)
     out_hgrn = hgrn2_scan(f_hgrn, iv_hgrn)
     assert out_hgrn.shape == (B, T, D)
 
-    from neuralops.core.triton_kernels.softplus import softplus_fn
+    from neuralops.ops.triton.softplus import softplus_fn
     out_sp = softplus_fn(q)
     assert out_sp.shape == q.shape

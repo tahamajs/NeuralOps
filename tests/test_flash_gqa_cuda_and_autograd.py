@@ -15,11 +15,11 @@ and analytical autograd backward pass.
 import pytest
 import torch
 
-from neuralops.core.cuda_kernels.flash_gqa import (
+from neuralops.ops.cuda.flash_gqa import (
     flash_gqa,
     flash_gqa_pytorch_ref,
 )
-from neuralops.core.cuda_kernels.flash_gqa.flash_gqa_autograd import _get_module
+from neuralops.ops.cuda.flash_gqa.flash_gqa_autograd import _get_module
 
 
 @pytest.fixture(autouse=True)

@@ -43,7 +43,7 @@ from neuralops import (
 )
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.core.triton_kernels import triton_dispatch
-from neuralops.core.triton_kernels._types import _WARNED_REASONS, log_fallback_reason
+from neuralops.ops.triton._types import _WARNED_REASONS, log_fallback_reason
 
 
 def test_no_unbound_locals():

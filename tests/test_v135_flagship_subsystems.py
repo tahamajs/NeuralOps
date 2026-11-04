@@ -28,7 +28,7 @@ import torch.nn as nn
 
 import neuralops
 from neuralops.core.composable import ComposableAttention, compose_attention
-from neuralops.core.paper_export import compute_pareto_frontier, export_benchmark_table
+from neuralops.analysis.paper_export import compute_pareto_frontier, export_benchmark_table
 from neuralops.core.roofline import (
     RooflineReport,
     estimate_module_flops_and_bytes,
@@ -234,7 +234,7 @@ def test_inspect_architecture_all_registries():
     import neuralops.attentions
     import neuralops.compression_engine
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-    from neuralops.core.inspector import inspect_architecture, render_architecture_card
+    from neuralops.analysis.inspector import inspect_architecture, render_architecture_card
 
     assert len(ATTENTION_REGISTRY) == 131
     assert len(COMPRESSOR_REGISTRY) == 72

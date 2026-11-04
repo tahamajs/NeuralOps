@@ -9,7 +9,7 @@
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.core.triton_kernels._common import (
+from neuralops.ops.triton._common import (
     pad_head_dim_for_triton,
     unpad_head_dim,
     pad_to_triton_power_of_2,

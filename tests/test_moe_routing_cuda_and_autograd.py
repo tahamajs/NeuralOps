@@ -16,11 +16,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core.cuda_kernels.moe_routing import (
+from neuralops.ops.cuda.moe_routing import (
     moe_dispatch_gather,
     moe_route_pytorch_ref,
 )
-from neuralops.core.cuda_kernels.moe_routing.moe_autograd import (
+from neuralops.ops.cuda.moe_routing.moe_autograd import (
     _moe_dispatch_pytorch_ref,
     _moe_gather_pytorch_ref,
     _get_module,

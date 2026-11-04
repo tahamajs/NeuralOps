@@ -28,7 +28,7 @@ import sqlite3
 import pytest
 from pathlib import Path
 
-from neuralops.core.results_ledger import (
+from neuralops.analysis.results_ledger import (
     ResultRecord,
     ResultsLedger,
     get_default_ledger,

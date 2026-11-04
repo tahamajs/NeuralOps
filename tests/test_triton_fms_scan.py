@@ -6,7 +6,7 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Comprehensive test suite for neuralops.core.triton_kernels.fms_scan.
+Comprehensive test suite for neuralops.ops.triton.fms_scan.
 
 Coverage:
 - Numerical correctness vs PyTorch reference
@@ -21,8 +21,8 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from neuralops.core.triton_kernels._common import HAS_TRITON
-from neuralops.core.triton_kernels.fms_scan import MAX_REGISTER_DIM, fms_scan_triton
+from neuralops.ops.triton._common import HAS_TRITON
+from neuralops.ops.triton.fms_scan import MAX_REGISTER_DIM, fms_scan_triton
 
 
 @pytest.fixture
