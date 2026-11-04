@@ -224,6 +224,24 @@ def load_cuda_module(
         mod_ext_name = f"{name}_{hash_str}"
         mod_cache_dir = Path(_CACHE_DIR) / mod_ext_name
         mod_cache_dir.mkdir(parents=True, exist_ok=True)
+
+        # Fast path: If precompiled shared library exists and rebuild not forced, directly import it!
+        so_candidates = list(mod_cache_dir.glob(f"{mod_ext_name}*.so"))
+        if not force_rebuild and so_candidates:
+            for so_file in so_candidates:
+                try:
+                    module = _cpp_ext._import_module_from_library(
+                        so_file.stem.split(".")[0],
+                        str(mod_cache_dir),
+                        is_python_module=True,
+                    )
+                    _LOADED_MODULES[cache_key] = module
+                    _LOADED_MODULES[name] = module
+                    logger.debug(f"⚡ Loaded precompiled CUDA module '{so_file.name}' in <2ms")
+                    return module
+                except Exception as e_fast_load:
+                    logger.debug(f"Direct .so load failed ({e_fast_load}), proceeding to load_inline")
+
         module = load_inline(
             name=mod_ext_name,
             cpp_sources=cpp_sources,
