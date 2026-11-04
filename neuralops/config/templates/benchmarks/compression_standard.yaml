@@ -1,0 +1,41 @@
+version: "1.0.0"
+benchmark_suite: "compression"
+name: "compression_standard_sweep"
+description: "Standard model compression algorithm evaluation sweep"
+tag: "standard_compression"
+output_root_directory: "results/benchmarks"
+
+hardware:
+  device: "${CUDA_VISIBLE_DEVICES:-cuda:0}"
+  backend_preference: "auto"
+  enforce_deterministic: false
+  allow_tf32: true
+  memory_fraction_limit: null
+
+tracking:
+  enabled: true
+  enable_tensorboard: true
+  enable_local_jsonl: true
+  log_frequency_steps: 1
+  capture_gpu_telemetry: true
+  telemetry_sample_interval_ms: 250
+  tensorboard_flush_secs: 10
+  export_formats:
+    - "jsonl"
+    - "csv"
+    - "summary"
+
+compression_sweep:
+  compressors:
+    - "all"
+  target_layers:
+    - "all"
+  target_ratios:
+    - 0.25
+    - 0.50
+    - 0.75
+  evaluation_datasets:
+    - "wikitext2"
+  eval_context_length: 2048
+
+custom_parameters: {}

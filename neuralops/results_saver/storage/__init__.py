@@ -9,15 +9,18 @@
 NeuralOps Results Saver Storage Subpackage.
 """
 
-from neuralops.results_saver.storage import sqlite_backend, sqlite_ops
+from neuralops.results_saver.storage import maintenance, sqlite_backend, sqlite_ops
+from neuralops.results_saver.storage.maintenance import SQLiteMaintenanceEngine
 from neuralops.results_saver.storage.sqlite_backend import (
     SQLiteMasterLedger,
     init_master_ledger,
 )
 
 __all__ = [
+    "SQLiteMaintenanceEngine",
     "SQLiteMasterLedger",
     "init_master_ledger",
+    "maintenance",
     "sqlite_backend",
     "sqlite_ops",
 ]
