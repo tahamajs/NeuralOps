@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+#PBS -N paper_overnight_all
+#PBS -q N3090
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=12:00:00
+#PBS -j oe
+#PBS -o /home/tahamajlesi.ut/NeuralOps/paper_overnight_master.log
+
+set -euo pipefail
+cd "$PBS_O_WORKDIR"
+
+echo "=========================================================================="
+echo "=== NEURALOPS OVERNIGHT AUTONOMOUS RESEARCH BENCHMARK SWEEP ON GPU ==="
+echo "Started At: $(date)"
+echo "Host: $(hostname)"
+nvidia-smi
+echo "=========================================================================="
+
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/gcc/gcc-8.2.0/lib:/share/apps/Anaconda/anaconda3.8/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+PY="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python"
+
+mkdir -p results/overnight_runs academic_paper_tables
+
+echo -e "\n>>> [Job 1/5] Running Multi-Regime Hardware Scaling (1K, 2K, 4K) <<<"
+"$PY" scripts/run_academic_multi_regime_rigor.py || true
+
+echo -e "\n>>> [Job 2/5] Running Cross-Architecture Model Family Benchmarks (DistilBERT, RoBERTa, GPT-2, LLaMA) <<<"
+"$PY" scripts/run_paper_cross_architecture_suite.py || true
+
+echo -e "\n>>> [Job 3/5] Running Long-Context Sequence Scaling (512 to 32K) <<<"
+"$PY" scripts/run_paper_seqlen_scaling.py || true
+
+echo -e "\n>>> [Job 4/5] Running 3-Level Fallback & AutoSVD Pareto Frontier <<<"
+"$PY" scripts/run_paper_3level_and_pareto.py || true
+
+echo -e "\n>>> [Job 5/5] Running 6-Pillar Knowledge Distillation PPL Recovery <<<"
+"$PY" scripts/run_kd_benchmark_with_baseline.py || true
+
+echo -e "\n=========================================================================="
+echo "=== ALL OVERNIGHT BENCHMARK SUITES COMPLETED SUCCESSFULLY! ==="
+echo "Finished At: $(date)"
+echo "=========================================================================="
