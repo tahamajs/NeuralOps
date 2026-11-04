@@ -1453,10 +1453,14 @@ class FXAttentionGraphRewriter:
         head_dim: int = 64,
         is_causal: bool = True,
         leaf_modules: Optional[List[Type[nn.Module]]] = None,
+        decay: Optional[float] = None,
+        **kwargs: Any,
     ) -> None:
         self.target_attention = target_attention
         self.head_dim = head_dim
         self.is_causal = is_causal
+        self.decay = decay
+        self.extra_kwargs = kwargs
         self.tracer = NeuralOpsAttentionTracer(leaf_modules=leaf_modules)
 
     def _find_attention_candidates(self, graph: torch.fx.Graph) -> List[torch.fx.Node]:
@@ -1494,6 +1498,7 @@ class FXAttentionGraphRewriter:
                             "scale": scale,
                             "is_causal": causal,
                             "target_attention": self.target_attention,
+                            "decay": self.decay,
                         },
                     )
                     node.replace_all_uses_with(new_node)
@@ -1637,6 +1642,7 @@ class FXAttentionGraphRewriter:
                                         "scale": scale_val,
                                         "is_causal": self.is_causal,
                                         "target_attention": self.target_attention,
+                                        "decay": self.decay,
                                     },
                                 )
                                 node.replace_all_uses_with(new_node)
@@ -1709,8 +1715,12 @@ class FXAttentionGraphRewriter:
     ) -> torch.fx.GraphModule:
         """Traces the model, performs dual subgraph replacement, purges dead code, and recompiles."""
         logger.info("Symbolically tracing model with NeuralOpsAttentionTracer...")
-        graph = self.tracer.trace(model, concrete_args=concrete_args)
-        gm = torch.fx.GraphModule(model, graph)
+        actual_model = getattr(model, "model", model)
+        if isinstance(actual_model, torch.fx.GraphModule):
+            gm = actual_model
+        else:
+            graph = self.tracer.trace(actual_model, concrete_args=concrete_args)
+            gm = torch.fx.GraphModule(actual_model, graph)
 
         sdpa_count = self.replace_sdpa_nodes(gm)
         decomp_count = self.replace_decomposed_patterns(gm)
