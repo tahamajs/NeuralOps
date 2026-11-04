@@ -249,6 +249,11 @@ def main():
             total_g, alloc_g, res_g, free_g = get_vram_info(device)
             
             # If VRAM exceeds saturation cap, pause dispatching and wait for running tasks to finish
+            # If no tasks are running but VRAM is high due to caching, force empty_cache() to break deadlock
+            if not active_futures and res_g >= VRAM_TARGET_CAP_GB:
+                torch.cuda.empty_cache()
+                _, _, res_g, _ = get_vram_info(device)
+
             can_dispatch = (res_g < VRAM_TARGET_CAP_GB) and (task_idx < len(tasks_queue)) and (len(active_futures) < num_streams)
             
             if can_dispatch:
