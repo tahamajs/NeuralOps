@@ -104,7 +104,8 @@ class MockLinear4bit(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.weight = nn.Parameter(
-            torch.randint(0, 127, (out_features, in_features // 2), dtype=torch.uint8)
+            torch.randint(0, 127, (out_features, in_features // 2), dtype=torch.uint8),
+            requires_grad=False,
         )
         self.bias = None
 
@@ -1039,12 +1040,13 @@ def test_phase_053_fp32_accumulation_drift_bound() -> None:
     v_f64 = torch.randn(B, H, T, D, dtype=torch.float64)
 
     # Reference computation in float64
-    q_phi_64 = torch.nn.functional.elu(q_f64) + 1.0
+    scale_64 = bridge.compute_folded_scale()
+    q_phi_64 = torch.nn.functional.elu(q_f64 * scale_64) + 1.0
     k_phi_64 = torch.nn.functional.elu(k_f64) + 1.0
     kv_64 = torch.einsum("bhtd,bhte->bhde", k_phi_64, v_f64)
     out_64 = torch.einsum("bhtd,bhde->bhte", q_phi_64, kv_64)
-    k_sum_64 = k_phi_64.sum(dim=2, keepdim=True)
-    denom_64 = torch.einsum("bhtd,bh1d->bht", q_phi_64, k_sum_64).unsqueeze(-1) + 1e-6
+    k_sum_64 = k_phi_64.sum(dim=2)
+    denom_64 = torch.einsum("bhtd,bhd->bht", q_phi_64, k_sum_64).unsqueeze(-1) + 1e-6
     ref_out = out_64 / denom_64
 
     # Run through bridge with float16 input
@@ -1447,7 +1449,9 @@ def test_phase_060_dod_deprecation_warning_and_invariant_verification() -> None:
     # 1. Deprecation warning on universal_calibrator
     with warnings.catch_warnings(record=True) as recorded:
         warnings.simplefilter("always")
+        import importlib
         from neuralops.surgery import universal_calibrator
+        importlib.reload(universal_calibrator)
 
         # Instantiate calibrator
         dummy_model = nn.Linear(16, 16)
