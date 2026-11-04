@@ -657,7 +657,19 @@ def build_parser() -> argparse.ArgumentParser:
         description='NeuralOps Benchmark Command & Universal Matrix Dispatcher',
     )
     sub = parser.add_subparsers(dest='subcommand', help='Benchmark action')
+    add_eval_subparser(sub)
     add_benchmark_parser(sub)
+
+    # Legacy benchmark arguments
+    parser.add_argument('--module', '--target', dest='module', type=str, default=None)
+    parser.add_argument('--mode', type=str, default='eval')
+    parser.add_argument('--model', type=str, default='gpt2')
+    parser.add_argument('--dataset', type=str, default='sst2')
+    parser.add_argument('--rank', type=int, default=32)
+    parser.add_argument('--device', type=str, default='cuda')
+    parser.add_argument('--all-attention', '--all', dest='all_attention', action='store_true', default=False)
+    parser.add_argument('--all-compressors', dest='all_compressors', action='store_true', default=False)
+    parser.add_argument('--output-dir', type=str, default=None)
     return parser
 
 
