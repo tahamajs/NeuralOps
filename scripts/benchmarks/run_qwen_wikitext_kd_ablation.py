@@ -12,10 +12,9 @@ Evaluates:
   - Teacher Baseline Perplexity (PPL) on WikiText-2 Test Set
   - Stage 0: Zero-Shot Attention Surgery PPL
   - Stage 1: Isolated Attention Mimicry PPL (Backbone frozen)
-  - Stage 2: Quick E2E Distillation Polish PPL (WSD / AdamW)
-  - PPL Recovery Retention %
+  - Stage 2: Quick E2E Distillation Polish PPL (AdamW)
 
-Persists metrics to results/master_ledger.sqlite and results/qwen_wikitext_kd.csv.
+Persists metrics to results/master_ledger.sqlite and results/qwen_wikitext_kd_ablation.csv.
 """
 
 from __future__ import annotations
@@ -78,7 +77,7 @@ class ArrowWikiTextDataset(Dataset):
         }
 
 
-def evaluate_ppl(model: nn.Module, dataloader: DataLoader, device: torch.device, max_batches: int = 50) -> float:
+def evaluate_ppl(model: nn.Module, dataloader: DataLoader, device: torch.device, max_batches: int = 40) -> float:
     """Calculates official Perplexity on WikiText-2 with causal cross-entropy."""
     model.eval()
     total_loss = 0.0
@@ -105,14 +104,30 @@ def evaluate_ppl(model: nn.Module, dataloader: DataLoader, device: torch.device,
     return round(ppl, 2)
 
 
+class CausalAttentionSurgeonAdapter(nn.Module):
+    """Universal Adapter reconciling Grouped-Query Attention & RoPE with Registry modules."""
+    def __init__(self, core_attn: nn.Module, hidden_size: int) -> None:
+        super().__init__()
+        self.core_attn = core_attn
+        self.in_proj = nn.Linear(hidden_size, hidden_size, bias=False)
+        self.out_proj = nn.Linear(hidden_size, hidden_size, bias=False)
+
+    def forward(self, hidden_states: torch.Tensor, *args, **kwargs) -> tuple[torch.Tensor, None]:
+        proj_in = self.in_proj(hidden_states)
+        out = self.core_attn(proj_in)
+        out_tensor = out[0] if isinstance(out, tuple) else out
+        final_out = self.out_proj(out_tensor)
+        return (final_out, None)
+
+
 def run_qwen_surgery_pipeline(
     module_name: str,
     teacher_model: nn.Module,
     train_loader: DataLoader,
     test_loader: DataLoader,
     device: torch.device,
-    isolated_steps: int = 80,
-    polish_steps: int = 30,
+    isolated_steps: int = 60,
+    polish_steps: int = 25,
     iso_lr: float = 8e-4,
     polish_lr: float = 1.5e-5,
 ) -> dict[str, Any]:
@@ -121,24 +136,23 @@ def run_qwen_surgery_pipeline(
     logger.info(f"\n{'='*80}\n[QWEN SURGERY] Testing Attention Module: {module_name}\n{'='*80}")
     t0 = time.time()
 
-    # 1. Zero-shot Surgery: build student from teacher weights
     student_model = copy.deepcopy(teacher_model)
-    embed_dim = student_model.config.hidden_size
+    hidden_size = student_model.config.hidden_size
     num_heads = student_model.config.num_attention_heads
 
-    # Replace Qwen attention layers
+    # Replace Qwen attention layers with adapted registry module
     for layer in student_model.model.layers:
         try:
-            layer.self_attn = create_attention(module_name, embed_dim=embed_dim, num_heads=num_heads)
+            core_attn = create_attention(module_name, embed_dim=hidden_size, num_heads=num_heads)
         except Exception:
-            # Fallback wrapper if custom init required
-            layer.self_attn = create_attention(module_name, dim=embed_dim, num_heads=num_heads)
+            core_attn = create_attention(module_name, dim=hidden_size, num_heads=num_heads)
+        layer.self_attn = CausalAttentionSurgeonAdapter(core_attn, hidden_size).to(device, dtype=torch.float16)
 
     student_model.to(device)
     zero_shot_ppl = evaluate_ppl(student_model, test_loader, device)
     logger.info(f"[{module_name}] Stage 0 (Zero-Shot Surgery): PPL={zero_shot_ppl:.2f}")
 
-    # 2. Stage 1: Isolated Attention Mimicry (Backbone Frozen)
+    # Stage 1: Isolated Attention Mimicry (Backbone Frozen)
     t_iso_start = time.time()
     for name, param in student_model.named_parameters():
         param.requires_grad = "self_attn" in name
@@ -158,7 +172,6 @@ def run_qwen_surgery_pipeline(
             t_out = teacher_model(input_ids=in_ids)
         s_out = student_model(input_ids=in_ids)
 
-        # Causal token distillation: KL Divergence on vocab logits
         kd_loss = F.kl_div(
             F.log_softmax(s_out.logits / 2.0, dim=-1),
             F.softmax(t_out.logits / 2.0, dim=-1),
@@ -174,7 +187,7 @@ def run_qwen_surgery_pipeline(
     isolated_ppl = evaluate_ppl(student_model, test_loader, device)
     logger.info(f"[{module_name}] Stage 1 (Isolated Attn): PPL={isolated_ppl:.2f} | Time={t_iso_dur:.1f}s")
 
-    # 3. Stage 2: Quick E2E Distillation Polish
+    # Stage 2: Quick E2E Distillation Polish
     t_pol_start = time.time()
     for p in student_model.parameters():
         p.requires_grad = True
@@ -257,7 +270,7 @@ def persist_qwen_sqlite(results: list[dict[str, Any]], base_ppl: float, sqlite_p
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             ts,
-            "Qwen/Qwen2.5-0.5B",
+            "Qwen/GPT2.5-0.5B",
             "WikiText-2",
             r.get("module"),
             base_ppl,
@@ -274,13 +287,13 @@ def persist_qwen_sqlite(results: list[dict[str, Any]], base_ppl: float, sqlite_p
 
 def main():
     parser = argparse.ArgumentParser(description="Qwen WikiText-2 Causal KD Ablation")
-    parser.add_argument("--model-name", type=str, default="Qwen/Qwen2.5-0.5B")
+    parser.add_argument("--model-path", type=str, default="/home/tahamajlesi.ut/.cache/huggingface/hub/models--Qwen--GPT2.5-0.5B/snapshots/060db6499f32faf8b98477b0a26969ef7d8b9987")
     parser.add_argument("--module", type=str, default=None)
     parser.add_argument("--all-modules", action="store_true")
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--seq-len", type=int, default=512)
-    parser.add_argument("--isolated-steps", type=int, default=80)
-    parser.add_argument("--polish-steps", type=int, default=30)
+    parser.add_argument("--isolated-steps", type=int, default=60)
+    parser.add_argument("--polish-steps", type=int, default=25)
     parser.add_argument("--iso-lr", type=float, default=8e-4)
     parser.add_argument("--polish-lr", type=float, default=1.5e-5)
     parser.add_argument("--out-csv", type=str, default="results/qwen_wikitext_kd_ablation.csv")
@@ -291,7 +304,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"=== Launching Qwen Causal LM KD on: {torch.cuda.get_device_name(0)} ===")
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_path)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -304,9 +317,8 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=True)
 
-    # Load Teacher Qwen model
-    logger.info(f"Loading Teacher Model ({args.model_name}) in float16...")
-    teacher_model = AutoModelForCausalLM.from_pretrained(args.model_name, torch_dtype=torch.float16).to(device)
+    logger.info(f"Loading Teacher Model from {args.model_path} in float16...")
+    teacher_model = AutoModelForCausalLM.from_pretrained(args.model_path, torch_dtype=torch.float16).to(device)
     teacher_model.eval()
     for p in teacher_model.parameters():
         p.requires_grad = False
