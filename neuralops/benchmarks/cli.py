@@ -1194,7 +1194,7 @@ def handle_recipe(args: argparse.Namespace) -> int:
             print("\n" + render_report(res.evidence))
         return 0 if res.status.value == "SUCCESS" else 1
     elif action == "validate":
-        from neuralops.validator.static import validate_recipe_static
+        from neuralops.validation.static import validate_recipe_static
         rec = load_recipe(args.file)
         try:
             warnings = validate_recipe_static(rec)

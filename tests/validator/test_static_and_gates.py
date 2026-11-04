@@ -19,8 +19,8 @@ from neuralops.validation.gates.behavioral import OutputSimilarityGate, Perplexi
 from neuralops.validation.gates.numerical import ForwardPassRunsGate, NoNanInfGate
 from neuralops.validation.gates.structural import ParameterCountGate, ShapesMatchGate
 from neuralops.validation.runner import run_validation_gates
-from neuralops.validator.errors import StaticValidationError
-from neuralops.validator.static import validate_recipe_static
+from neuralops.validation.errors import StaticValidationError
+from neuralops.validation.static import validate_recipe_static
 
 VALID_RECIPE_YAML = """
 apiVersion: neuralops/v1
@@ -138,7 +138,7 @@ def test_run_validation_gates_suite():
 
 
 def test_numerical_guardrails_bounds_and_symplectic():
-    from neuralops.validator.numerical_guardrails import (
+    from neuralops.validation.numerical_guardrails import (
         SymplecticNumericalGuard,
         check_condition_number,
         check_numerical_stability,

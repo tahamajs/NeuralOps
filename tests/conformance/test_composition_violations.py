@@ -14,14 +14,14 @@ import pytest
 from neuralops.executor.planner import plan_recipe
 from neuralops.recipe.loader import loads_recipe
 from neuralops.recipe.schema import Operation
-from neuralops.validator.errors import (
+from neuralops.validation.errors import (
     E_W3_EMPTY_OPERATIONS,
     E_W10_TYPE_CHAIN_MISMATCH,
     E_W12_COMPOSABILITY_VIOLATION,
     E_W15_DUPLICATE_OPERATION_ID,
     StaticValidationError,
 )
-from neuralops.validator.static import validate_recipe_static
+from neuralops.validation.static import validate_recipe_static
 
 
 def test_cat4_case1_duplicate_op_id():

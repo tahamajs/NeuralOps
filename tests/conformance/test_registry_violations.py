@@ -19,11 +19,11 @@ from neuralops.operations.errors import (
 )
 from neuralops.operations.registry import get_operation, register_operation
 from neuralops.recipe.loader import loads_recipe
-from neuralops.validator.errors import (
+from neuralops.validation.errors import (
     E_W7_INVALID_OPERATION_PARAMS,
     StaticValidationError,
 )
-from neuralops.validator.static import validate_recipe_static
+from neuralops.validation.static import validate_recipe_static
 
 
 def test_cat3_case1_unknown_operation():

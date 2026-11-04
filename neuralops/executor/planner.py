@@ -19,8 +19,8 @@ import torch.nn as nn
 from neuralops.executor.plan import ExecutionPlan, Stage
 from neuralops.operations.registry import get_operation
 from neuralops.recipe.schema import Recipe
-from neuralops.validator.errors import StaticValidationError
-from neuralops.validator.static import validate_recipe_static
+from neuralops.validation.errors import StaticValidationError
+from neuralops.validation.static import validate_recipe_static
 
 logger = logging.getLogger("NeuralOps.Executor.Planner")
 

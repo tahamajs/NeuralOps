@@ -205,7 +205,7 @@ def handle_recipe(args: argparse.Namespace) -> int:
         return int(ExitCode.SUCCESS) if res.status.value == "SUCCESS" else int(ExitCode.INTERNAL_ERROR)
 
     elif action == "validate":
-        from neuralops.validator.static import validate_recipe_static
+        from neuralops.validation.static import validate_recipe_static
         rec = load_recipe(args.file)
         try:
             warnings = validate_recipe_static(rec)

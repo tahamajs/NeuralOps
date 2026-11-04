@@ -159,26 +159,22 @@ class AbstractBaseBenchmark(ABC):
     @abstractmethod
     def setup(self) -> None:
         """Initialize models, allocate buffers, and warm up GPU caches."""
-        pass
 
     @abstractmethod
     def run_iteration(self, step: int, **kwargs: Any) -> Dict[str, float]:
         """Execute a single timed iteration with exact synchronization."""
-        pass
 
     @abstractmethod
     def teardown(self) -> None:
         """Release GPU memory and finalize temporary resources."""
-        pass
 
     @abstractmethod
     def generate_summary(self) -> ExecutionSummary:
         """Calculate descriptive metrics and format execution results."""
-        pass
 
+    @abstractmethod
     def run(self) -> None:
         """Execute all iterations across the parameter sweep matrix."""
-        pass
 
     def execute(self) -> ExecutionSummary:
         """Template method orchestrating the complete benchmark lifecycle."""

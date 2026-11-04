@@ -33,7 +33,7 @@ def load_recipe(*args: Any, **kwargs: Any) -> Any:
 
 
 def validate_recipe_static(*args: Any, **kwargs: Any) -> Any:
-    from neuralops.validator.static import validate_recipe_static as _impl
+    from neuralops.validation.static import validate_recipe_static as _impl
     return _impl(*args, **kwargs)
 
 
