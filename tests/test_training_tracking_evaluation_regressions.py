@@ -22,8 +22,8 @@ from neuralops.evaluation.eval_patcher import build_model_instance
 from neuralops.tracking.backends import LocalTracker
 from neuralops.trainer.base_trainer import Trainer
 from neuralops.trainer.results_manager import ResultsManager
-from neuralops.training.checkpointing import SelectiveCheckpointModule
-from neuralops.training.layer_distill import LayerAttentionDistillLoss
+from neuralops.trainer.checkpointing import SelectiveCheckpointModule
+from neuralops.trainer.layer_distill import LayerAttentionDistillLoss
 
 
 class _Classifier(nn.Module):
@@ -309,7 +309,7 @@ def test_selective_checkpoint_reads_sequence_length_from_keyword(monkeypatch):
         checkpoint_calls.append((function, args, kwargs))
         return function(*args)
 
-    monkeypatch.setattr("neuralops.training.checkpointing.checkpoint", checkpoint_spy)
+    monkeypatch.setattr("neuralops.trainer.checkpointing.checkpoint", checkpoint_spy)
     hidden_states = torch.ones(1, 8, 2, requires_grad=True)
     output = wrapped(hidden_states=hidden_states)
     output.sum().backward()

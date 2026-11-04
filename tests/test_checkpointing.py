@@ -8,7 +8,7 @@
 """Tests for selective gradient checkpointing."""
 import torch
 import torch.nn as nn
-from neuralops.training.checkpointing import checkpoint_selective, SelectiveCheckpointModule
+from neuralops.trainer.checkpointing import checkpoint_selective, SelectiveCheckpointModule
 
 
 def test_checkpoint_selective():

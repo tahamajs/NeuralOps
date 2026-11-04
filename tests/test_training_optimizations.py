@@ -8,7 +8,7 @@
 """Tests for Phase 7 training optimizations."""
 import torch
 import torch.nn as nn
-from neuralops.training.trainer import (
+from neuralops.trainer.trainer import (
     setup_ddp_training,
     MixedPrecisionTrainer,
     LoRATrainer,

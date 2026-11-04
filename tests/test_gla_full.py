@@ -27,7 +27,7 @@ import torch.nn.functional as F
 from transformers import GPT2Model
 
 from neuralops.attentions.linear.gla_attention import GLAttention
-from neuralops.training.layer_distill import LayerAttentionDistillLoss
+from neuralops.trainer.layer_distill import LayerAttentionDistillLoss
 from neuralops.core.triton_kernels.fused_ce import FusedCrossEntropyLoss
 from neuralops.core.triton_kernels.fused_kd import FusedKDLoss
 from neuralops.models.gla_hf_model import GLAConfig, GLAModel

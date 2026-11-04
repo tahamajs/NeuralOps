@@ -8,7 +8,7 @@
 """Tests for complete mixed precision trainer with gradient accumulation."""
 import torch
 import torch.nn as nn
-from neuralops.training.trainer import MixedPrecisionTrainer
+from neuralops.trainer.trainer import MixedPrecisionTrainer
 
 
 def test_mixed_precision_train_epoch_grad_accum():
