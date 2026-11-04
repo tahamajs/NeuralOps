@@ -258,6 +258,45 @@ class SQLiteMasterLedger:
         )
         self.conn.commit()
 
+    def get_benchmark_run(self, run_id: str) -> Optional[Dict[str, Any]]:
+        """Fetch metadata for a single benchmark run by run_id."""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM benchmark_runs WHERE run_id = ?", (run_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        col_names = [d[0] for d in cursor.description]
+        return dict(zip(col_names, row))
+
+    def get_benchmark_metrics(self, run_id: str) -> List[Dict[str, Any]]:
+        """Fetch step-level iteration metrics for a run."""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM benchmark_metrics WHERE run_id = ? ORDER BY step", (run_id,))
+        rows = cursor.fetchall()
+        if not rows:
+            return []
+        col_names = [d[0] for d in cursor.description]
+        return [dict(zip(col_names, r)) for r in rows]
+
+    def list_benchmark_runs(self, suite: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+        """List recent benchmark runs, optionally filtered by suite."""
+        cursor = self.conn.cursor()
+        if suite:
+            cursor.execute(
+                "SELECT * FROM benchmark_runs WHERE suite = ? OR benchmark_name = ? ORDER BY timestamp_start_utc DESC LIMIT ?",
+                (suite, suite, limit),
+            )
+        else:
+            cursor.execute(
+                "SELECT * FROM benchmark_runs ORDER BY timestamp_start_utc DESC LIMIT ?",
+                (limit,),
+            )
+        rows = cursor.fetchall()
+        if not rows:
+            return []
+        col_names = [d[0] for d in cursor.description]
+        return [dict(zip(col_names, r)) for r in rows]
+
     def commit(self) -> None:
         """Commit active transaction."""
         self.conn.commit()

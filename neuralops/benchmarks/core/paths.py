@@ -117,22 +117,72 @@ class StoragePathManager:
 
     @staticmethod
     def get_latest_run_dir(
-        benchmark_name: str,
+        benchmark_name: Optional[str] = None,
         output_root: Optional[Path | str] = None,
     ) -> Optional[Path]:
-        """Resolve the latest run directory for a benchmark suite if it exists."""
+        """Resolve the latest run directory for a benchmark suite or across all suites."""
         root = Path(output_root) if output_root is not None else Path("results/benchmarks")
-        clean_name = re.sub(r"[^a-zA-Z0-9_\-]", "_", benchmark_name.lower().strip().replace(" ", "_"))
-        suite_dir = root / clean_name
-        latest_link = suite_dir / "latest"
-        if latest_link.is_symlink():
-            target = (suite_dir / os.readlink(latest_link)).resolve()
-            if target.exists():
-                return target
-        latest_txt = suite_dir / "latest.txt"
-        if latest_txt.exists():
-            rel_path = latest_txt.read_text(encoding="utf-8").strip()
-            target = (suite_dir / rel_path).resolve()
-            if target.exists():
-                return target
+        if benchmark_name:
+            clean_name = re.sub(r"[^a-zA-Z0-9_\-]", "_", benchmark_name.lower().strip().replace(" ", "_"))
+            suite_dir = root / clean_name
+            latest_link = suite_dir / "latest"
+            if latest_link.is_symlink():
+                target = (suite_dir / os.readlink(latest_link)).resolve()
+                if target.exists():
+                    return target
+            latest_txt = suite_dir / "latest.txt"
+            if latest_txt.exists():
+                rel_path = latest_txt.read_text(encoding="utf-8").strip()
+                target = (suite_dir / rel_path).resolve()
+                if target.exists():
+                    return target
+            return None
+
+        # Search across all suites for the newest run
+        candidate_latest: Optional[Path] = None
+        candidate_mtime = -1.0
+        if root.exists():
+            for s_dir in root.iterdir():
+                if not s_dir.is_dir():
+                    continue
+                latest_link = s_dir / "latest"
+                target: Optional[Path] = None
+                if latest_link.is_symlink():
+                    try:
+                        target = (s_dir / os.readlink(latest_link)).resolve()
+                    except OSError:
+                        pass
+                elif (s_dir / "latest.txt").exists():
+                    rel_path = (s_dir / "latest.txt").read_text(encoding="utf-8").strip()
+                    target = (s_dir / rel_path).resolve()
+                if target and target.exists():
+                    mtime = target.stat().st_mtime
+                    if mtime > candidate_mtime:
+                        candidate_mtime = mtime
+                        candidate_latest = target
+        return candidate_latest
+
+    @staticmethod
+    def find_run_dir(
+        run_id: str,
+        benchmark_name: Optional[str] = None,
+        output_root: Optional[Path | str] = None,
+    ) -> Optional[Path]:
+        """Find an existing run directory by run_id or 'latest' across benchmark suites."""
+        root = Path(output_root) if output_root is not None else Path("results/benchmarks")
+        if not root.exists():
+            return None
+        if run_id == "latest":
+            return StoragePathManager.get_latest_run_dir(benchmark_name, output_root=root)
+        if benchmark_name:
+            clean_name = re.sub(r"[^a-zA-Z0-9_\-]", "_", benchmark_name.lower().strip().replace(" ", "_"))
+            candidate = root / clean_name / "runs" / run_id
+            if candidate.exists():
+                return candidate.resolve()
+        for suite_dir in root.iterdir():
+            if not suite_dir.is_dir():
+                continue
+            candidate = suite_dir / "runs" / run_id
+            if candidate.exists():
+                return candidate.resolve()
         return None
