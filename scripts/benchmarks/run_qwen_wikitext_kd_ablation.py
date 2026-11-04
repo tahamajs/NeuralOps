@@ -41,15 +41,229 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
-_orig_named_params = nn.Module.named_parameters
-def _safe_named_parameters(self, prefix="", recurse=True, remove_duplicate=True):
-    return _orig_named_params(self, prefix=prefix, recurse=recurse)
-nn.Module.named_parameters = _safe_named_parameters
+from transformers import PreTrainedTokenizerFast
+from safetensors.torch import load_file
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("qwen_wiki_kd")
+
+
+class RMSNorm(nn.Module):
+    """Root Mean Square Layer Normalization."""
+    def __init__(self, dim: int, eps: float = 1e-6) -> None:
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        input_dtype = x.dtype
+        variance = x.to(torch.float32).pow(2).mean(-1, keepdim=True)
+        x = x * torch.rsqrt(variance + self.eps)
+        return self.weight * x.to(input_dtype)
+
+
+class RoPEEmbedding(nn.Module):
+    """Rotary Position Embedding for Qwen2 causal attention."""
+    def __init__(self, dim: int, max_position_embeddings: int = 32768, base: float = 1000000.0) -> None:
+        super().__init__()
+        self.dim = dim
+        inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
+        t = torch.arange(max_position_embeddings, dtype=torch.float32)
+        freqs = torch.outer(t, inv_freq)
+        emb = torch.cat((freqs, freqs), dim=-1)
+        self.register_buffer("cos_cached", emb.cos(), persistent=False)
+        self.register_buffer("sin_cached", emb.sin(), persistent=False)
+
+    def forward(self, x: torch.Tensor, seq_len: int) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.cos_cached[:seq_len, :], self.sin_cached[:seq_len, :]
+
+
+def rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
+
+
+def apply_rotary_pos_emb(
+    q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
+    cos = cos.unsqueeze(0).unsqueeze(1)
+    sin = sin.unsqueeze(0).unsqueeze(1)
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    k_embed = (k * cos) + (rotate_half(k) * sin)
+    return q_embed, k_embed
+
+
+class Qwen2MLP(nn.Module):
+    """SwiGLU Multi-Layer Perceptron."""
+    def __init__(self, hidden_size: int, intermediate_size: int) -> None:
+        super().__init__()
+        self.gate_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
+        self.up_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
+        self.down_proj = nn.Linear(intermediate_size, hidden_size, bias=False)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.down_proj(F.silu(self.gate_proj(x)) * self.up_proj(x))
+
+
+class Qwen2Attention(nn.Module):
+    """Standard Grouped-Query Causal Attention with RoPE."""
+    def __init__(self, hidden_size: int, num_heads: int, num_kv_heads: int) -> None:
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.num_heads = num_heads
+        self.num_kv_heads = num_kv_heads
+        self.head_dim = hidden_size // num_heads
+        self.num_key_value_groups = num_heads // num_kv_heads
+
+        self.q_proj = nn.Linear(hidden_size, num_heads * self.head_dim, bias=True)
+        self.k_proj = nn.Linear(hidden_size, num_kv_heads * self.head_dim, bias=True)
+        self.v_proj = nn.Linear(hidden_size, num_kv_heads * self.head_dim, bias=True)
+        self.o_proj = nn.Linear(num_heads * self.head_dim, hidden_size, bias=False)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        cos: torch.Tensor,
+        sin: torch.Tensor,
+        mask: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        bsz, q_len, _ = x.size()
+        q = self.q_proj(x).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.k_proj(x).view(bsz, q_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(x).view(bsz, q_len, self.num_kv_heads, self.head_dim).transpose(1, 2)
+
+        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+
+        if self.num_key_value_groups > 1:
+            k = k.repeat_interleave(self.num_key_value_groups, dim=1)
+            v = v.repeat_interleave(self.num_key_value_groups, dim=1)
+
+        scores = torch.matmul(q, k.transpose(-1, -2)) / math.sqrt(self.head_dim)
+        if mask is not None:
+            scores = scores + mask
+        probs = F.softmax(scores, dim=-1).to(v.dtype)
+        out = torch.matmul(probs, v)
+        out = out.transpose(1, 2).contiguous().view(bsz, q_len, self.hidden_size)
+        return self.o_proj(out)
+
+
+class CausalAttentionSurgeonAdapter(nn.Module):
+    """Universal Adapter reconciling Grouped-Query Attention & RoPE with Registry modules."""
+    def __init__(self, core_attn: nn.Module, hidden_size: int) -> None:
+        super().__init__()
+        self.core_attn = core_attn
+        self.in_proj = nn.Linear(hidden_size, hidden_size, bias=False)
+        self.out_proj = nn.Linear(hidden_size, hidden_size, bias=False)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        cos: torch.Tensor,
+        sin: torch.Tensor,
+        mask: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        proj_in = self.in_proj(x)
+        out = self.core_attn(proj_in)
+        out_tensor = out[0] if isinstance(out, tuple) else out
+        final_out = self.out_proj(out_tensor)
+        return final_out
+
+
+class Qwen2DecoderLayer(nn.Module):
+    """Single transformer decoder block."""
+    def __init__(
+        self,
+        hidden_size: int,
+        intermediate_size: int,
+        num_heads: int,
+        num_kv_heads: int,
+        rms_eps: float,
+    ) -> None:
+        super().__init__()
+        self.input_layernorm = RMSNorm(hidden_size, eps=rms_eps)
+        self.self_attn = Qwen2Attention(hidden_size, num_heads, num_kv_heads)
+        self.post_attention_layernorm = RMSNorm(hidden_size, eps=rms_eps)
+        self.mlp = Qwen2MLP(hidden_size, intermediate_size)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        cos: torch.Tensor,
+        sin: torch.Tensor,
+        mask: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        h = x + self.self_attn(self.input_layernorm(x), cos, sin, mask)
+        out = h + self.mlp(self.post_attention_layernorm(h))
+        return out
+
+
+class StandaloneQwen2ForCausalLM(nn.Module):
+    """Clean PyTorch 1.12+ compatible implementation of Qwen2/2.5 Causal LM."""
+    def __init__(self, config: dict[str, Any]) -> None:
+        super().__init__()
+        self.config = config
+        hidden_size = config["hidden_size"]
+        intermediate_size = config["intermediate_size"]
+        num_layers = config["num_hidden_layers"]
+        num_heads = config["num_attention_heads"]
+        num_kv_heads = config["num_key_value_heads"]
+        rms_eps = config.get("rms_norm_eps", 1e-6)
+        vocab_size = config["vocab_size"]
+
+        self.embed_tokens = nn.Embedding(vocab_size, hidden_size)
+        self.rotary_emb = RoPEEmbedding(hidden_size // num_heads, base=config.get("rope_theta", 1000000.0))
+        self.layers = nn.ModuleList([
+            Qwen2DecoderLayer(hidden_size, intermediate_size, num_heads, num_kv_heads, rms_eps)
+            for _ in range(num_layers)
+        ])
+        self.norm = RMSNorm(hidden_size, eps=rms_eps)
+        self.lm_head = nn.Linear(hidden_size, vocab_size, bias=False)
+        if config.get("tie_word_embeddings", False):
+            self.lm_head.weight = self.embed_tokens.weight
+
+    def forward(
+        self,
+        input_ids: torch.Tensor,
+        labels: torch.Tensor | None = None,
+        return_hidden_only: bool = False,
+    ) -> Any:
+        bsz, seq_len = input_ids.shape
+        x = self.embed_tokens(input_ids)
+        cos, sin = self.rotary_emb(x, seq_len)
+        cos = cos.to(dtype=x.dtype, device=x.device)
+        sin = sin.to(dtype=x.dtype, device=x.device)
+
+        mask = torch.triu(torch.full((seq_len, seq_len), float("-inf"), device=x.device), diagonal=1)
+        mask = mask.unsqueeze(0).unsqueeze(1)
+
+        for layer in self.layers:
+            x = layer(x, cos, sin, mask)
+        x = self.norm(x)
+
+        if return_hidden_only:
+            return x
+
+        # Chunked loss computation to prevent OOM on 151,936 vocab
+        loss = None
+        if labels is not None:
+            shift_x = x[:, :-1, :]
+            shift_labels = labels[:, 1:]
+            total_loss_sum = 0.0
+            chunk_size = 64
+            vocab_sz = self.config["vocab_size"]
+            for i in range(0, shift_x.size(1), chunk_size):
+                h_c = shift_x[:, i:i + chunk_size, :]
+                l_c = shift_labels[:, i:i + chunk_size]
+                logits_c = self.lm_head(h_c)
+                loss_c = F.cross_entropy(logits_c.view(-1, vocab_sz), l_c.reshape(-1), reduction="sum")
+                total_loss_sum = total_loss_sum + loss_c
+            loss = total_loss_sum / shift_labels.numel()
+            return type("CausalLMOutput", (), {"logits": None, "hidden_states": x, "loss": loss})()
+
+        logits = self.lm_head(x)
+        return type("CausalLMOutput", (), {"logits": logits, "hidden_states": x, "loss": None})()
 
 
 class ArrowWikiTextDataset(Dataset):
@@ -60,7 +274,7 @@ class ArrowWikiTextDataset(Dataset):
             self.table = reader.read_all()
         raw_texts = self.table["text"].to_pylist()
         concatenated = "\n\n".join([t for t in raw_texts if t.strip()])
-        tokens = tokenizer.encode(concatenated, add_special_tokens=False)
+        tokens = tokenizer.encode(concatenated)
         self.num_samples = len(tokens) // seq_len
         self.tokens = torch.tensor(tokens[:self.num_samples * seq_len], dtype=torch.long)
         self.seq_len = seq_len
@@ -92,7 +306,7 @@ def evaluate_ppl(model: nn.Module, dataloader: DataLoader, device: torch.device,
 
             outputs = model(input_ids=input_ids, labels=labels)
             loss = outputs.loss
-            tokens_count = labels.numel()
+            tokens_count = (labels.size(1) - 1) * labels.size(0)
 
             total_loss += loss.item() * tokens_count
             total_tokens += tokens_count
@@ -104,25 +318,9 @@ def evaluate_ppl(model: nn.Module, dataloader: DataLoader, device: torch.device,
     return round(ppl, 2)
 
 
-class CausalAttentionSurgeonAdapter(nn.Module):
-    """Universal Adapter reconciling Grouped-Query Attention & RoPE with Registry modules."""
-    def __init__(self, core_attn: nn.Module, hidden_size: int) -> None:
-        super().__init__()
-        self.core_attn = core_attn
-        self.in_proj = nn.Linear(hidden_size, hidden_size, bias=False)
-        self.out_proj = nn.Linear(hidden_size, hidden_size, bias=False)
-
-    def forward(self, hidden_states: torch.Tensor, *args, **kwargs) -> tuple[torch.Tensor, None]:
-        proj_in = self.in_proj(hidden_states)
-        out = self.core_attn(proj_in)
-        out_tensor = out[0] if isinstance(out, tuple) else out
-        final_out = self.out_proj(out_tensor)
-        return (final_out, None)
-
-
 def run_qwen_surgery_pipeline(
     module_name: str,
-    teacher_model: nn.Module,
+    teacher_model: StandaloneQwen2ForCausalLM,
     train_loader: DataLoader,
     test_loader: DataLoader,
     device: torch.device,
@@ -137,11 +335,11 @@ def run_qwen_surgery_pipeline(
     t0 = time.time()
 
     student_model = copy.deepcopy(teacher_model)
-    hidden_size = student_model.config.hidden_size
-    num_heads = student_model.config.num_attention_heads
+    hidden_size = student_model.config["hidden_size"]
+    num_heads = student_model.config["num_attention_heads"]
 
     # Replace Qwen attention layers with adapted registry module
-    for layer in student_model.model.layers:
+    for layer in student_model.layers:
         try:
             core_attn = create_attention(module_name, embed_dim=hidden_size, num_heads=num_heads)
         except Exception:
@@ -169,16 +367,15 @@ def run_qwen_surgery_pipeline(
 
         optimizer_iso.zero_grad(set_to_none=True)
         with torch.no_grad():
-            t_out = teacher_model(input_ids=in_ids)
-        s_out = student_model(input_ids=in_ids)
+            t_hidden = teacher_model(input_ids=in_ids, return_hidden_only=True)
+        s_hidden = student_model(input_ids=in_ids, return_hidden_only=True)
 
-        kd_loss = F.kl_div(
-            F.log_softmax(s_out.logits / 2.0, dim=-1),
-            F.softmax(t_out.logits / 2.0, dim=-1),
-            reduction="batchmean"
-        ) * 4.0
-        lm_loss = F.cross_entropy(s_out.logits.view(-1, s_out.logits.size(-1)), lbls.view(-1))
-        loss = 0.5 * kd_loss + 0.5 * lm_loss
+        # Feature distillation on hidden representation + causal LM loss
+        kd_loss = F.mse_loss(s_hidden, t_hidden)
+        # Compute student lm loss chunked
+        s_out = student_model(input_ids=in_ids, labels=lbls)
+        lm_loss = s_out.loss
+        loss = kd_loss + 0.5 * lm_loss
         loss.backward()
         torch.nn.utils.clip_grad_norm_(trainable_params, 1.0)
         optimizer_iso.step()
@@ -203,16 +400,13 @@ def run_qwen_surgery_pipeline(
 
         optimizer_pol.zero_grad(set_to_none=True)
         with torch.no_grad():
-            t_out = teacher_model(input_ids=in_ids)
-        s_out = student_model(input_ids=in_ids)
+            t_hidden = teacher_model(input_ids=in_ids, return_hidden_only=True)
+        s_hidden = student_model(input_ids=in_ids, return_hidden_only=True)
 
-        kd_loss = F.kl_div(
-            F.log_softmax(s_out.logits / 2.0, dim=-1),
-            F.softmax(t_out.logits / 2.0, dim=-1),
-            reduction="batchmean"
-        ) * 4.0
-        lm_loss = F.cross_entropy(s_out.logits.view(-1, s_out.logits.size(-1)), lbls.view(-1))
-        total_l = 0.5 * kd_loss + 0.5 * lm_loss
+        kd_loss = F.mse_loss(s_hidden, t_hidden)
+        s_out = student_model(input_ids=in_ids, labels=lbls)
+        lm_loss = s_out.loss
+        total_l = kd_loss + 0.5 * lm_loss
         total_l.backward()
         torch.nn.utils.clip_grad_norm_(student_model.parameters(), 1.0)
         optimizer_pol.step()
@@ -270,7 +464,7 @@ def persist_qwen_sqlite(results: list[dict[str, Any]], base_ppl: float, sqlite_p
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             ts,
-            "Qwen/GPT2.5-0.5B",
+            "Qwen/Qwen2.5-0.5B",
             "WikiText-2",
             r.get("module"),
             base_ppl,
@@ -287,10 +481,10 @@ def persist_qwen_sqlite(results: list[dict[str, Any]], base_ppl: float, sqlite_p
 
 def main():
     parser = argparse.ArgumentParser(description="Qwen WikiText-2 Causal KD Ablation")
-    parser.add_argument("--model-path", type=str, default="/home/tahamajlesi.ut/.cache/huggingface/hub/models--Qwen--GPT2.5-0.5B/snapshots/060db6499f32faf8b98477b0a26969ef7d8b9987")
+    parser.add_argument("--model-path", type=str, default="/home/tahamajlesi.ut/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots/060db6499f32faf8b98477b0a26969ef7d8b9987")
     parser.add_argument("--module", type=str, default=None)
     parser.add_argument("--all-modules", action="store_true")
-    parser.add_argument("--batch-size", type=int, default=4)
+    parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--seq-len", type=int, default=512)
     parser.add_argument("--isolated-steps", type=int, default=60)
     parser.add_argument("--polish-steps", type=int, default=25)
@@ -304,9 +498,8 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"=== Launching Qwen Causal LM KD on: {torch.cuda.get_device_name(0)} ===")
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer_path = os.path.join(args.model_path, "tokenizer.json")
+    tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_path)
 
     train_path = os.path.expanduser("~/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-train.arrow")
     test_path = os.path.expanduser("~/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-test.arrow")
@@ -317,8 +510,14 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=True)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=True)
 
-    logger.info(f"Loading Teacher Model from {args.model_path} in float16...")
-    teacher_model = AutoModelForCausalLM.from_pretrained(args.model_path, torch_dtype=torch.float16).to(device)
+    logger.info(f"Loading Standalone Qwen Teacher from {args.model_path} in float16...")
+    with open(os.path.join(args.model_path, "config.json")) as f:
+        cfg = json.load(f)
+    teacher_model = StandaloneQwen2ForCausalLM(cfg)
+    weights = load_file(os.path.join(args.model_path, "model.safetensors"))
+    cleaned_sd = {k[6:] if k.startswith("model.") else k: v for k, v in weights.items()}
+    teacher_model.load_state_dict(cleaned_sd, strict=False)
+    teacher_model = teacher_model.to(device=device, dtype=torch.float16)
     teacher_model.eval()
     for p in teacher_model.parameters():
         p.requires_grad = False
