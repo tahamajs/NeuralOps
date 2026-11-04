@@ -27,7 +27,6 @@ from transformers import (
 )
 
 from neuralops.benchmarks.result import ModelMetadata
-from neuralops.core.attention_utils import inject_attention
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 LOG = logging.getLogger(__name__)
@@ -201,6 +200,7 @@ def apply_attention_module(
         )
 
     LOG.info("Injecting attention replacement: '%s' (rank=%d)...", module_name, rank)
+    from neuralops.core.attention_utils import inject_attention
     return inject_attention(
         model,
         attention_type=module_name,

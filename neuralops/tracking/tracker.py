@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import threading
 from typing import Any, Sequence
 
 from .backends import (
@@ -154,6 +155,9 @@ class ExperimentTracker:
                 )
 
         self._tracker: BaseTracker = self._trackers[0] if self._trackers else LocalTracker(self.log_dir)
+        self._current_step = 0
+        self._lock = threading.Lock()
+        self._closed = False
 
     def __enter__(self) -> "ExperimentTracker":
         return self
@@ -161,15 +165,39 @@ class ExperimentTracker:
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
 
+    def set_step(self, step: int) -> None:
+        """Set the global step index explicitly."""
+        with self._lock:
+            self._current_step = step
+
+    def step(self, increment: int = 1) -> int:
+        """Advance and return the active global step counter."""
+        with self._lock:
+            self._current_step += increment
+            return self._current_step
+
+    def get_step(self) -> int:
+        """Retrieve current global step."""
+        with self._lock:
+            return self._current_step
+
     def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log a single metric (scalar)."""
-        for t in self._trackers:
-            t.log_metric(name, value, step)
+        active_step = step if step is not None else self._current_step
+        with self._lock:
+            for t in self._trackers:
+                t.log_metric(name, value, active_step)
 
     def log_metrics(self, metrics: dict[str, float], step: int | None = None) -> None:
         """Log multiple metrics at once."""
-        for t in self._trackers:
-            t.log_metrics(metrics, step=step)
+        active_step = step if step is not None else self._current_step
+        with self._lock:
+            for t in self._trackers:
+                t.log_metrics(metrics, step=active_step)
+
+    def log_metrics_batch(self, metrics: dict[str, float], step: int | None = None) -> None:
+        """Log a batch of metrics."""
+        self.log_metrics(metrics, step=step)
 
     def log_param(self, key: str, value: Any) -> None:
         """Log a single hyperparameter."""
