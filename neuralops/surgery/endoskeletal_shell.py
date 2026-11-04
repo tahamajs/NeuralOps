@@ -625,7 +625,18 @@ class UniversalAttentionBridge(nn.Module):
             hidden_states, _ = self.sidecar(hidden_states)
 
         assert callable(self.new_attention), f"{type(self).__name__}.new_attention is not callable"
-        attn_out = self.new_attention(hidden_states, *rest_args, **kwargs_clean)
+        try:
+            target_fn = getattr(self.new_attention, "forward", self.new_attention)
+            sig = inspect.signature(target_fn)
+            accepts_varkw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+            if not accepts_varkw:
+                call_kwargs = {k: v for k, v in kwargs_clean.items() if k in sig.parameters}
+            else:
+                call_kwargs = kwargs_clean
+        except Exception:
+            call_kwargs = kwargs_clean
+
+        attn_out = self.new_attention(hidden_states, *rest_args, **call_kwargs)
 
         if isinstance(attn_out, tuple):
             core_tensor = attn_out[0]
