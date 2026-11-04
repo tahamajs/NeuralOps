@@ -5,7 +5,6 @@ echo "=== 5-GATE VERIFICATION $(date) ==="
 
 # Gate A: clean working tree
 echo "[Gate A] Working tree"
-git checkout -- results/master_ledger.sqlite 2>/dev/null || true
 if [ -n "$(git status --porcelain)" ]; then
   echo "FAIL: working tree not clean"
   git status --porcelain
@@ -22,8 +21,8 @@ T=$(find neuralops/ops/triton -maxdepth 1 -name '*.py' -not -name '__init__.py' 
 U=$(find neuralops/ops/cuda -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
 N=$(find notebooks -maxdepth 1 -name '*.ipynb' | wc -l | tr -d ' ')
 echo "Attentions: $A | Compressors: $C | Triton: $T | CUDA: $U | Notebooks: $N"
-# Ground truth baseline: 131 Attentions, 72 Compressors
-[ "$A" -ge 131 ] && [ "$C" -ge 72 ] && [ "$T" -ge 26 ] && [ "$U" -ge 110 ] && [ "$N" -ge 29 ] || { echo "FAIL: invariant drift"; exit 1; }
+# Canonical Ground Truth Invariants: 131 Attentions, 72 Compressors, 58 Triton files, 141 CUDA packages, 94 Notebooks
+[ "$A" -eq 131 ] && [ "$C" -eq 72 ] && [ "$T" -eq 58 ] && [ "$U" -eq 141 ] && [ "$N" -eq 94 ] || { echo "FAIL: invariant drift"; exit 1; }
 echo "PASS"
 
 # Gate C: package import
