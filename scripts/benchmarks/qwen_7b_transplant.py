@@ -56,7 +56,7 @@ def main() -> None:
 
     default_paths = [
         os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct"),
-        "/home/tahamajlesi.ut/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct",
+        os.environ.get("HF_QWEN_7B_PATH", os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct")),
         "Qwen/Qwen2.5-7B-Instruct",
     ]
     model_path = args.model_path

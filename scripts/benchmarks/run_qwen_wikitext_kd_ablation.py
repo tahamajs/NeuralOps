@@ -479,7 +479,7 @@ def persist_qwen_sqlite(results: list[dict[str, Any]], base_ppl: float, sqlite_p
 
 def main():
     parser = argparse.ArgumentParser(description="Qwen WikiText-2 Causal KD Ablation")
-    parser.add_argument("--model-path", type=str, default="/home/tahamajlesi.ut/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots/060db6499f32faf8b98477b0a26969ef7d8b9987")
+    parser.add_argument("--model-path", type=str, default=os.environ.get("HF_QWEN_MODEL_PATH", os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots/060db6499f32faf8b98477b0a26969ef7d8b9987")))
     parser.add_argument("--module", type=str, default=None)
     parser.add_argument("--all-modules", action="store_true")
     parser.add_argument("--batch-size", type=int, default=2)
