@@ -404,12 +404,49 @@ def _register_registry_modules() -> dict[str, OpConfig]:
 OPS_REGISTRY = _register_registry_modules()
 
 
+def resolve_op_name(name: str) -> str:
+    """Resolve an operation name or alias to its canonical OPS_REGISTRY key.
+
+    Handles prefixes (e.g. 'attention:', 'compressor:', 'cuda:', 'triton:') as well
+    as unprefixed names and deprecated aliases from the core registry.
+    """
+    if name in OPS_REGISTRY:
+        return name
+
+    if name == "triton:fused_LayerNorm":
+        return "triton:fused_norm_linear"
+
+    # Separate optional category prefix
+    prefix = ""
+    raw = name
+    if ":" in name:
+        prefix, raw = name.split(":", 1)
+
+    # Check DEPRECATED_ALIASES
+    from neuralops.core.registry import DEPRECATED_ALIASES
+    target = DEPRECATED_ALIASES.get(raw, raw)
+
+    # Candidate keys to probe
+    candidates: list[str] = []
+    if prefix:
+        candidates.append(f"{prefix}:{target}")
+        candidates.append(f"{prefix}:{raw}")
+    for cat in ("attention", "compressor", "cuda", "triton"):
+        candidates.append(f"{cat}:{target}")
+        candidates.append(f"{cat}:{raw}")
+
+    for candidate in candidates:
+        if candidate in OPS_REGISTRY:
+            return candidate
+
+    return name
+
+
 def get_op(name: str) -> OpConfig:
     """Return a registered operation or raise a descriptive error."""
-    if name == "triton:fused_LayerNorm":
-        name = "triton:fused_norm_linear"
+    canonical_name = resolve_op_name(name)
     try:
-        return OPS_REGISTRY[name]
+        return OPS_REGISTRY[canonical_name]
     except KeyError as exc:
         raise KeyError(f"Unknown benchmark operation: {name}") from exc
 
@@ -421,4 +458,4 @@ def list_ops(category: str = "all") -> list[str]:
     return sorted(key for key, value in OPS_REGISTRY.items() if value.category == category)
 
 
-__all__ = ["OpConfig", "OPS_REGISTRY", "get_op", "list_ops"]
+__all__ = ["OpConfig", "OPS_REGISTRY", "get_op", "list_ops", "resolve_op_name"]
