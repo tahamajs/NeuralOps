@@ -226,3 +226,4 @@ __pycache__/
 # Kaggle test outputs
 kaggle_*.txt
 hpc_results/
+results/*.sqlite
