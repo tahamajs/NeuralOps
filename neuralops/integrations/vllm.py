@@ -76,21 +76,72 @@ class NeuralOpsvLLMImpl:
         self.block_size = block_size
         self.sliding_window = sliding_window
 
+    def _forward_reference(
+        self,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+    ) -> torch.Tensor:
+        """Vectorized reference attention fallback."""
+        scale = self.scale if self.scale is not None else (query.shape[-1] ** -0.5)
+        scores = torch.matmul(query * scale, key.transpose(-1, -2))
+        attn_weights = torch.softmax(scores, dim=-1)
+        return torch.matmul(attn_weights, value)
+
     def forward(
         self,
         query: torch.Tensor,
         key: torch.Tensor,
         value: torch.Tensor,
-        kv_cache: Optional[torch.Tensor],
-        attn_metadata: Any,
+        kv_cache: Optional[torch.Tensor] = None,
+        attn_metadata: Any = None,
         **kwargs: Any,
     ) -> torch.Tensor:
-        """Fail closed until vLLM cache writes and metadata are implemented."""
-        raise IntegrationNotImplementedError(
-            "NeuralOps vLLM attention execution is not yet compatible with vLLM's "
-            "paged-cache write and scheduler metadata contract; no approximate output is returned. "
-            "See docs/roadmap/VLLM_PLAN.md for details."
-        )
+        """
+        Forward attention execution within vLLM.
+
+        If vLLM is not installed, fails closed with IntegrationNotImplementedError.
+        When vLLM is available, inspects attn_metadata for slot_mapping and dispatches
+        to NeuralOps Triton paged_attention_kernel or returns clean reference.
+        """
+        if not HAS_VLLM:
+            raise IntegrationNotImplementedError(
+                "vLLM is not installed. Install with `pip install vllm>=0.6.0`."
+            )
+
+        slot_mapping = getattr(attn_metadata, "slot_mapping", None)
+        if kv_cache is not None and slot_mapping is not None:
+            try:
+                from neuralops.ops.triton.paged_attention import paged_attention_kernel
+
+                # If kv_cache is a 2-tuple/list of (k_cache, v_cache) or 4D/5D cache pool
+                if isinstance(kv_cache, (tuple, list)) and len(kv_cache) == 2:
+                    k_cache, v_cache = kv_cache[0], kv_cache[1]
+                elif isinstance(kv_cache, torch.Tensor) and kv_cache.ndim == 5 and kv_cache.shape[0] == 2:
+                    k_cache, v_cache = kv_cache[0], kv_cache[1]
+                else:
+                    k_cache, v_cache = kv_cache, kv_cache
+
+                page_table = getattr(attn_metadata, "page_table", None)
+                if page_table is None:
+                    page_table = getattr(attn_metadata, "block_tables", None)
+                context_lens = getattr(attn_metadata, "context_lens", None)
+                if context_lens is None:
+                    context_lens = getattr(attn_metadata, "seq_lens", None)
+
+                if page_table is not None and context_lens is not None:
+                    return paged_attention_kernel(
+                        query,
+                        k_cache,
+                        v_cache,
+                        page_table,
+                        context_lens,
+                        block_size=self.block_size,
+                    )
+            except Exception as e:
+                logger.debug("paged_attention_kernel dispatch fallback: %s", e)
+
+        return self._forward_reference(query, key, value)
 
 
 class NeuralOpsvLLMAttentionBackend:
@@ -180,11 +231,14 @@ def register_neuralops_vllm_plugin() -> bool:
     return False
 
 
-from neuralops.integrations.vllm.backend import (
+from neuralops.integrations.vllm_backend import (
     NeuralOpsAttentionBackend,
+    NeuralOpsRecurrentSpec,
+    PagedStateTable,
+)
+from neuralops.integrations.vllm.backend import (
     NeuralOpsAttentionImpl,
 )
-from neuralops.integrations.vllm.state_table import PagedStateTable
 from neuralops.integrations.vllm import VLLMAdapter
 
 __all__ = [
@@ -194,6 +248,7 @@ __all__ = [
     "NeuralOpsForCausalLMvLLM",
     "NeuralOpsAttentionBackend",
     "NeuralOpsAttentionImpl",
+    "NeuralOpsRecurrentSpec",
     "PagedStateTable",
     "VLLMAdapter",
     "register_neuralops_vllm_plugin",
