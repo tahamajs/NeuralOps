@@ -1,0 +1,30 @@
+#!/bin/bash
+#PBS -N triton_58_comprehensive
+#PBS -q N3090
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=01:00:00
+#PBS -j oe
+#PBS -o run_triton_58_comprehensive.out
+
+cd "$PBS_O_WORKDIR" || exit 1
+
+export PATH="/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:${PATH:-}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/gcc/gcc-8.2.0/lib:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
+
+PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops/bin/python
+
+echo "======================================================================"
+echo "  STRICT 58 TRITON KERNELS COMPREHENSIVE BENCHMARK ON NVIDIA RTX 3090"
+echo "  Date: $(date -u)"
+echo "  Node: $(hostname)"
+nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader
+echo "======================================================================"
+
+$PYTHON_EXEC -c "import torch; import triton; print('PyTorch:', torch.__version__, 'CUDA:', torch.cuda.is_available(), 'Triton:', triton.__version__)"
+
+$PYTHON_EXEC benchmarks/benchmark_all_26_comprehensive.py --device cuda:0 --dtype float16 --warmup 10 --repeat 50 --output results/triton_58_kernels_audit.csv --output-json results/triton_58_kernels_audit.json --report-md docs/reports/TRITON_58_KERNELS_COMPREHENSIVE_REPORT.md
+STATUS=$?
+echo "Exit code: $STATUS"
+exit $STATUS

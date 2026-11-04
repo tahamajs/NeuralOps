@@ -1,0 +1,30 @@
+#!/bin/bash
+#PBS -N cuda_141_isolated
+#PBS -q N3090
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=01:30:00
+#PBS -j oe
+#PBS -o run_cuda_141_isolated.out
+
+cd "$PBS_O_WORKDIR" || exit 1
+
+export PATH="/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:${PATH:-}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/gcc/gcc-8.2.0/lib:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
+export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
+
+PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python
+
+echo "======================================================================"
+echo "  SUBPROCESS-ISOLATED MASTER BENCHMARK ACROSS ALL 141 CUDA PACKAGES"
+echo "  Date: $(date -u)"
+echo "  Node: $(hostname)"
+nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader
+echo "======================================================================"
+
+$PYTHON_EXEC -c "import torch; print('PyTorch:', torch.__version__, 'CUDA:', torch.cuda.is_available(), 'Count:', torch.cuda.device_count())"
+
+$PYTHON_EXEC -m neuralops.cli.main benchmark run --suite cuda_ops --device cuda:0 --output results/cuda_141_modules_benchmark.json
+STATUS=$?
+echo "Exit code: $STATUS"
+exit $STATUS
