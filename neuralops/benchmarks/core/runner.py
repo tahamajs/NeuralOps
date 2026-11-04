@@ -201,8 +201,8 @@ class BenchmarkRunner:
         self._write_markdown_report(summary, host_env, duration_s)
 
         if not self.paths.log_file.exists():
-            self.paths.log_file.write_text(f"Benchmark {self.paths.run_id} completed with status: {summary.status}
-", encoding="utf-8")
+            log_msg = f"Benchmark {self.paths.run_id} completed with status: {summary.status}\n"
+            self.paths.log_file.write_text(log_msg, encoding="utf-8")
 
         StoragePathManager.update_latest_symlink(self.paths)
         self._commit_to_master_ledger(summary, git_prov, host_env, start_iso, end_iso, duration_s)
