@@ -1389,3 +1389,56 @@ def test_phase_020_full_regression_and_recipe_pipeline() -> None:
     out = surgeried_model(x)
     assert out.shape == (2, 8, 32)
     assert not torch.isnan(out).any()
+
+
+def test_phase_021_cross_subsystem_interoperability() -> None:
+    """Verifies seamless interoperability between FX rewriter, UniversalDirector, and Law 7 decay."""
+    # 1. Direct verify fast_linear_attention_replacement with Law 7 exponential decay
+    b, h, t, d = 2, 4, 16, 32
+    q = torch.randn(b, h, t, d)
+    k = torch.randn(b, h, t, d)
+    v = torch.randn(b, h, t, d)
+    out_decay = fast_linear_attention_replacement(q, k, v, is_causal=True, decay=0.95)
+    assert out_decay.shape == (b, h, t, d)
+    assert not torch.isnan(out_decay).any()
+
+    # 2. Verify FXAttentionGraphRewriter accepts arbitrary kwargs from UniversalSurgeryDirector
+    model = ToySDPAAttentionBlock(d_model=32, num_heads=2)
+    rewriter = FXAttentionGraphRewriter(
+        target_attention="cosformer",
+        head_dim=16,
+        is_causal=True,
+        decay=0.99,
+        softcapping_factor=30.0,
+        attach_sidecar=False,
+    )
+    gm = rewriter.rewrite(model)
+    x = torch.randn(2, 8, 32)
+    out = gm(x)
+    assert out.shape == (2, 8, 32)
+    assert not torch.isnan(out).any()
+
+    # 3. Verify rewriting an already wrapped SurgicalModelWrapper
+    wrapper = SurgicalModelWrapper(model=gm, engine="fx", target_attention="cosformer")
+    rewriter2 = FXAttentionGraphRewriter(target_attention="cosformer", head_dim=16)
+    gm2 = rewriter2.rewrite(wrapper)
+    out2 = gm2(x)
+    assert out2.shape == (2, 8, 32)
+    assert not torch.isnan(out2).any()
+
+    # 4. Verify Universal Director with engine='fx'
+    from neuralops.surgery.pipeline import SurgeryPipeline
+
+    m_director = MultiLayerTransformerModel(d_model=32, num_heads=2, num_layers=2)
+    certified_director_model = SurgeryPipeline.apply_universal_director(
+        m_director,
+        engine="fx",
+        target_attention="cosformer",
+        head_dim=16,
+        decay=0.99,
+    )
+    assert certified_director_model is not None
+    out_dir = certified_director_model(x)
+    assert out_dir.shape == (2, 8, 32)
+    assert not torch.isnan(out_dir).any()
+

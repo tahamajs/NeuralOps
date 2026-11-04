@@ -268,6 +268,18 @@ CANONICAL_SCHEDULE_PARTITIONS: Dict[int, Dict[str, List[int]]] = {
 }
 
 
+class class_or_instance_method:
+    """Descriptor enabling a method to be invoked cleanly on both classes and instances."""
+
+    def __init__(self, fn: Any) -> None:
+        self.fn = fn
+
+    def __get__(self, instance: Any, owner: Any) -> Any:
+        if instance is None:
+            return lambda *args, **kwargs: self.fn(owner, *args, **kwargs)
+        return lambda *args, **kwargs: self.fn(instance, *args, **kwargs)
+
+
 class MoARouter:
     """Hybrid Mixture of Attentions (MoA) Pareto Router.
 
@@ -494,7 +506,7 @@ class MoARouter:
     # =========================================================================
     # Phase 071: Middle Bulk Linear Replacement Routing (Layers 4 to L-3)
     # =========================================================================
-    @classmethod
+    @class_or_instance_method
     def route_middle_layers(
         cls_or_self,
         entropies: Optional[Sequence[float]] = None,
