@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.6] - 2026-11-04
+
+### Changed
+- **Directory Modernization:** Consolidated legacy duality directories: merged `validator/` into `validation/`, eliminated `operations/` in favor of `ops/`, merged `experiment_logging/` into `tracking/`, and removed `training/` MetaPathFinder shim.
+- **Root Shim Elimination:** Deleted 7 unreferenced root compatibility shims (`server.py`, `checkpoint.py`, `qwen_compat.py`, `hub.py`, `architectures.py`, `lora.py`, `fastapi_app.py`) and migrated high-reference shims (`surgery.py`, `serving.py`, `replace_attention.py`, `registry.py`) via AST rewriting.
+- **HPC & Scripts Consolidation:** Relocated 19 PBS cluster job scripts into `scripts/hpc/` and centralized benchmark runners under `scripts/benchmarks/`.
+- **Portability:** Parameterized cluster cache paths in Qwen KD benchmarks via `os.environ.get('HF_HOME')`.
+
+
 ## [2.0.3] - 2026-11-03
 
 ### Changed

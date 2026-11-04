@@ -2,7 +2,7 @@
 
 <img src="assets/banner.svg" alt="NeuralOps Banner" width="100%" />
 
-# 🧬 NeuralOps v2.0.5
+# 🧬 NeuralOps v2.0.6
 
 ### **A correctness-gated platform for attention surgery, compression, and hardware-aware benchmarking**
 
@@ -11,7 +11,7 @@
 > **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
 
 [![PyPI version](https://img.shields.io/pypi/v/neuralops.svg?color=blue&label=pypi%20neuralops)](https://pypi.org/project/neuralops/)
-[![Release](https://img.shields.io/badge/release-v2.0.5-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.0.5)
+[![Release](https://img.shields.io/badge/release-v2.0.6-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.0.6)
 [![PyPI Provenance](https://img.shields.io/badge/provenance-Sigstore%20SLSA-green.svg)](https://pypi.org/project/neuralops/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
@@ -128,7 +128,7 @@ print(result)
 NeuralOps 1.9.0 introduces a declarative, typed, versioned, validated, and reproducible transformation platform:
 
 1. **Declarative Recipe Language (`neuralops.recipe`)**: Define end-to-end model transformations as versioned YAML specifications with canonical SHA-256 content hashing.
-2. **Operation Contracts (`neuralops.operations`)**: 15 versioned operations with typed inputs, preconditions, postconditions, and declared mutations.
+2. **Operation Contracts (`neuralops.ops`)**: 15 versioned operations with typed inputs, preconditions, postconditions, and declared mutations.
 3. **Multi-Level Validation (`neuralops.validation`)**: 4 levels of validation gates:
    - **L1 Structural**: Shape matching, dtype compatibility, module connectivity.
    - **L2 Numerical**: Forward pass execution, strict NaN/Inf guards.
@@ -2325,7 +2325,7 @@ For detailed documentation, arguments, and individual CLI commands, see [`exampl
 
 The `neuralops` package is verified against strict packaging standards prior to every release:
 
-- [x] **Package Distribution**: Published on PyPI as [`neuralops v2.0.5`](https://pypi.org/project/neuralops/).
+- [x] **Package Distribution**: Published on PyPI as [`neuralops v2.0.6`](https://pypi.org/project/neuralops/).
 - [x] **Trusted Publishing & Provenance**: Automated publish workflow using GitHub Actions OIDC (`actions/attest-build-provenance@v2` + `pypa/gh-action-pypi-publish@release/v1`) with cryptographic PEP 740 Sigstore provenance attestations.
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
 - [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-2.0.5-py3-none-any.whl`, size ~3.6 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
@@ -2338,7 +2338,7 @@ The `neuralops` package is verified against strict packaging standards prior to 
 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
-| **v2.0.5** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v2.0.6** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v2.0.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.9.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.6.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
