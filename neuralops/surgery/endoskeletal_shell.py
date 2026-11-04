@@ -138,12 +138,6 @@ def register_neuralops_with_huggingface() -> None:
         all_attn_fn["neuralops"] = _make_hf_attention_callable("cosformer")
 
 
-try:
-    register_neuralops_with_huggingface()
-except (RuntimeError, AttributeError, ValueError) as e:
-    logger.debug("Auto-registration with HuggingFace skipped: %s", e)
-
-
 class SidecarGateBranch(nn.Module):
     """
     Lightweight data-dependent gating and depthwise causal 1D convolution
@@ -940,6 +934,12 @@ class EndoskeletalShell(nn.Module):
             strict=strict,
             **kwargs,
         )
+
+
+try:
+    register_neuralops_with_huggingface()
+except (RuntimeError, AttributeError, ValueError) as e:
+    logger.debug("Auto-registration with HuggingFace skipped: %s", e)
 
 
 __all__ = [

@@ -255,3 +255,65 @@ def test_parquet_writer_roundtrip(tmp_path: Path):
     assert len(loaded) == 2
     assert loaded[0]["kernel"] == "k1"
     assert loaded[1]["latency_ms"] == 2.34
+
+
+def test_find_run_dir_and_global_latest(tmp_path: Path):
+    """Verify finding run dirs across suites and resolving global latest."""
+    ctx_attn = StoragePathManager.resolve_run_dir("attention", run_id="attn_run_01", output_root=tmp_path)
+    StoragePathManager.update_latest_symlink(ctx_attn)
+
+    ctx_comp = StoragePathManager.resolve_run_dir("compression", run_id="comp_run_01", output_root=tmp_path)
+    StoragePathManager.update_latest_symlink(ctx_comp)
+
+    # Find specific run without specifying suite
+    found_attn = StoragePathManager.find_run_dir("attn_run_01", output_root=tmp_path)
+    assert found_attn == ctx_attn.run_dir.resolve()
+
+    found_comp = StoragePathManager.find_run_dir("comp_run_01", output_root=tmp_path)
+    assert found_comp == ctx_comp.run_dir.resolve()
+
+    # Find latest across all suites
+    latest_global = StoragePathManager.get_latest_run_dir(output_root=tmp_path)
+    assert latest_global in (ctx_attn.run_dir.resolve(), ctx_comp.run_dir.resolve())
+
+
+def test_sqlite_ledger_query_apis(tmp_path: Path):
+    """Verify SQLiteMasterLedger querying runs and metrics."""
+    db_file = tmp_path / "queries.sqlite"
+    with SQLiteMasterLedger(db_path=str(db_file)) as ledger:
+        ledger.record_benchmark_run(
+            run_id="q_run_01",
+            benchmark_name="attention",
+            suite="attention",
+            commit_sha="sha_abc",
+            hostname="host1",
+            device_name="gpu1",
+            run_dir="results/q_run_01",
+            status="PASSED",
+            timestamp_start_utc="2026-11-04T10:00:00Z",
+            duration_seconds=12.5,
+        )
+        ledger.record_benchmark_metrics([
+            {
+                "run_id": "q_run_01",
+                "step": 1,
+                "mechanism_or_kernel": "flash_attn_v2",
+                "latency_p50_ms": 1.25,
+                "peak_vram_mb": 512.0,
+            }
+        ])
+
+        run_info = ledger.get_benchmark_run("q_run_01")
+        assert run_info is not None
+        assert run_info["run_id"] == "q_run_01"
+        assert run_info["status"] == "PASSED"
+
+        metrics = ledger.get_benchmark_metrics("q_run_01")
+        assert len(metrics) == 1
+        assert metrics[0]["mechanism_or_kernel"] == "flash_attn_v2"
+        assert metrics[0]["latency_p50_ms"] == 1.25
+
+        runs_list = ledger.list_benchmark_runs(suite="attention")
+        assert len(runs_list) == 1
+        assert runs_list[0]["run_id"] == "q_run_01"
+
