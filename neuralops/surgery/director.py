@@ -1160,14 +1160,14 @@ class InvariantPreservingLinearBridge(nn.Module):
             if q_acc.ndim == 4:
                 kv = torch.einsum("bhtd,bhte->bhde", k_phi, v_acc)
                 out = torch.einsum("bhtd,bhde->bhte", q_phi, kv)
-                k_sum = k_phi.sum(dim=2, keepdim=True)
-                denom = torch.einsum("bhtd,bh1d->bht", q_phi, k_sum).unsqueeze(-1) + self.eps
+                k_sum = k_phi.sum(dim=2)
+                denom = torch.einsum("bhtd,bhd->bht", q_phi, k_sum).unsqueeze(-1) + self.eps
                 result = out / denom
             else:
                 kv = torch.einsum("btd,bte->bde", k_phi, v_acc)
                 out = torch.einsum("btd,bde->bte", q_phi, kv)
-                k_sum = k_phi.sum(dim=1, keepdim=True)
-                denom = torch.einsum("btd,b1d->bt", q_phi, k_sum).unsqueeze(-1) + self.eps
+                k_sum = k_phi.sum(dim=1)
+                denom = torch.einsum("btd,bd->bt", q_phi, k_sum).unsqueeze(-1) + self.eps
                 result = out / denom
 
         # Cast back to original activation dtype
@@ -1230,6 +1230,21 @@ class InvariantPreservingLinearBridge(nn.Module):
         denom = torch.matmul(q_phi, new_z.transpose(-2, -1)).clamp(min=self.eps)
         out = (num / denom).to(dtype=orig_dtype)
         return out, new_s, new_z
+
+    def get_surgical_manifest(self) -> Dict[str, Any]:
+        """Returns structured metadata manifest for invariant auditing."""
+        return {
+            "has_qk_norm": self.has_qk_norm,
+            "softcapping_factor": self.softcapping_factor,
+            "decay": self.decay,
+            "num_attention_sinks": self.num_attention_sinks,
+            "head_dim": self.head_dim,
+            "attention_family": self.get_attention_family(),
+        }
+
+    def get_attention_family(self) -> str:
+        """Returns the canonical attention architecture family."""
+        return "linear_attention"
 
 
 class CrossAttentionLinearBridge(nn.Module):
