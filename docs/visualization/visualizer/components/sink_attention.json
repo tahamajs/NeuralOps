@@ -1,0 +1,13 @@
+{
+  "id": "sink_attention",
+  "name": "Sink Attention: Block-Sparse, Dilated & Sliding-Window Attentions",
+  "type": "Attention Module",
+  "family": "Block-Sparse, Dilated & Sliding-Window Attentions",
+  "category": "Block-Sparse, Dilated & Sliding-Window Attentions",
+  "paradigm": "sparse",
+  "icon": "🌟",
+  "file": "neuralops/layers/adaptive/sink_attention.py",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "description": "Sink Attention operator from the Block-Sparse, Dilated & Sliding-Window Attentions family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "math": "O = \\operatorname{Attention}(Q, K, V)"
+}

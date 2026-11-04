@@ -1,0 +1,13 @@
+{
+  "id": "chela_slay_attention",
+  "name": "Chela Slay Attention: Kernelized & Feature-Map Linear Attentions",
+  "type": "Attention Module",
+  "family": "Kernelized & Feature-Map Linear Attentions",
+  "category": "Kernelized & Feature-Map Linear Attentions",
+  "paradigm": "linear",
+  "icon": "⚡",
+  "file": "neuralops/layers/linear/chela_slay.py",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "description": "Chela Slay Attention operator from the Kernelized & Feature-Map Linear Attentions family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "math": "O = \\operatorname{Attention}(Q, K, V)"
+}

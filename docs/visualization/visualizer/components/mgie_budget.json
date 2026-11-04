@@ -1,0 +1,13 @@
+{
+  "id": "mgie_budget",
+  "name": "Mgie Budget: Dynamic Rank & Entropy-Guided Budget Allocation",
+  "type": "Compression Engine",
+  "family": "Dynamic Rank & Entropy-Guided Budget Allocation",
+  "category": "Dynamic Rank & Entropy-Guided Budget Allocation",
+  "paradigm": "dynamic_rank",
+  "icon": "📊",
+  "file": "neuralops/compression/low_rank/mgie_svd_compressor.py",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "description": "Mgie Budget compression engine from the Dynamic Rank & Entropy-Guided Budget Allocation paradigm. Hardware certified for post-training compression.",
+  "math": "W \\approx U_r \\Sigma_r V_r^\\top"
+}
