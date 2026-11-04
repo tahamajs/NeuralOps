@@ -86,6 +86,48 @@ def build_main_parser() -> argparse.ArgumentParser:
     except Exception:
         pass
 
+    try:
+        from neuralops.cli.doctor import cmd_doctor
+        doctor_p = subparsers.add_parser("doctor", help="Inspect local hardware, toolchains, and environment health")
+        doctor_p.add_argument("--json", action="store_true", default=False, help="Output diagnostics as JSON")
+        doctor_p.set_defaults(handler=cmd_doctor)
+    except Exception:
+        pass
+
+    try:
+        from neuralops.cli.info import cmd_info
+        info_p = subparsers.add_parser("info", help="Display hardware, framework, and registered component status")
+        info_p.add_argument("--json", action="store_true", default=False, help="Output system information as JSON")
+        info_p.set_defaults(handler=cmd_info)
+    except Exception:
+        pass
+
+    try:
+        from neuralops.cli.surgery_cmd import (
+            build_surgery_parser,
+            build_transplant_parser,
+            cmd_surgery,
+            cmd_transplant,
+        )
+        surg_p = build_surgery_parser(
+            subparsers.add_parser(
+                "surgery",
+                aliases=["recipe"],
+                help="Plan, validate, and execute declarative transformation recipes",
+            )
+        )
+        surg_p.set_defaults(handler=cmd_surgery)
+
+        trans_p = build_transplant_parser(
+            subparsers.add_parser(
+                "transplant",
+                help="Surgically transplant attention mechanisms into model checkpoints",
+            )
+        )
+        trans_p.set_defaults(handler=cmd_transplant)
+    except Exception:
+        pass
+
     return parser
 
 

@@ -19,6 +19,7 @@ import platform
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 try:
     from rich.console import Console
@@ -31,9 +32,9 @@ except ImportError:
     console = None
 
 
-def cmd_doctor() -> int:
+def cmd_doctor(args: Any = None) -> int:
     import neuralops
-    ver = getattr(neuralops, "__version__", "1.4.3")
+    ver = getattr(neuralops, "__version__", "2.0.6")
 
     rows = []
     all_ok = True
