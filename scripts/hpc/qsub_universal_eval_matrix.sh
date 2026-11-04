@@ -23,7 +23,7 @@
 
 # Target NVIDIA RTX 3090 node (GPU-3090-1) on N3090 queue
 # Request 1 node with 2 CPU cores and 1 GPU
-#PBS -l nodes=GPU-3090-1:ppn=2:gpus=1
+#PBS -l nodes=1:ppn=1
 #PBS -q N3090
 
 # Memory allocation (24 GB system RAM)
