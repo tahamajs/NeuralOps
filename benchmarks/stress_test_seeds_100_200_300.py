@@ -10,6 +10,10 @@
 Delegates directly to canonical neuralops.benchmarks.stress_test_seeds_100_200_300.
 """
 
+
+import warnings
+warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
+
 import sys
 from neuralops.benchmarks.stress_test_seeds_100_200_300 import main
 

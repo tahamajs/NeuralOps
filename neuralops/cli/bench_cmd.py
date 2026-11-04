@@ -26,6 +26,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+import types
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 import torch
@@ -455,25 +456,122 @@ def add_eval_subparser(subparsers: argparse._SubParsersAction) -> argparse.Argum
     return parser
 
 
+def execute_benchmark_cli(args: argparse.Namespace) -> int:
+    """Unified benchmark CLI execution dispatcher."""
+    bench_command = getattr(args, 'bench_command', None)
+
+    if bench_command == 'list':
+        import neuralops
+        from neuralops.core.registry import COMPRESSOR_REGISTRY
+        if 'neuralops.compressors' not in sys.modules:
+            _comp_mod = types.ModuleType('neuralops.compressors')
+            _comp_mod.COMPRESSOR_REGISTRY = COMPRESSOR_REGISTRY
+            sys.modules['neuralops.compressors'] = _comp_mod
+
+        from neuralops.attentions import ATTENTION_REGISTRY
+        from neuralops.compressors import COMPRESSOR_REGISTRY
+        from neuralops.benchmarks.suites import BENCHMARK_SUITES
+
+        if getattr(args, 'attentions', False):
+            for k in sorted(list(ATTENTION_REGISTRY)):
+                print(k)
+            return 0
+
+        if getattr(args, 'compressors', False):
+            for k in sorted(list(COMPRESSOR_REGISTRY)):
+                print(k)
+            return 0
+
+        if getattr(args, 'suites', False):
+            for s in sorted(list(BENCHMARK_SUITES.keys())):
+                print(s)
+            return 0
+
+        for s in sorted(list(BENCHMARK_SUITES.keys())):
+            print(s)
+        return 0
+
+    elif bench_command == 'run':
+        from neuralops.config.loader import load_benchmark_config
+        from neuralops.benchmarks.core.runner import BenchmarkRunner
+
+        overrides = {}
+        if getattr(args, 'device', None):
+            overrides.setdefault('hardware', {})['device'] = args.device
+        if getattr(args, 'backend', None):
+            overrides.setdefault('hardware', {})['backend_preference'] = args.backend
+        if getattr(args, 'tag', None):
+            overrides['tag'] = args.tag
+
+        config_source = args.config or f'neuralops/config/templates/benchmarks/{args.suite}.yaml'
+        config = load_benchmark_config(config_source, overrides=overrides if overrides else None)
+
+        if getattr(args, 'suite', None):
+            config.benchmark_suite = args.suite
+
+        if getattr(args, 'dry_run', False):
+            print('[DRY-RUN] Benchmark configuration validated successfully.')
+            print(f'Suite: {config.benchmark_suite} | Device: {config.hardware.device}')
+            if getattr(config, 'attention_sweep', None):
+                sw = config.attention_sweep
+                print(f'Attention sweep mechanisms: {len(sw.mechanisms) if sw.mechanisms != ["all"] else "all (131 registered)"}')
+            return 0
+
+        runner = BenchmarkRunner(config)
+        summary = runner.run()
+        print(f'Benchmark run {summary.run_id} completed with status: {summary.status}')
+        return 0 if summary.status in ('SUCCESS', 'COMPLETED', 'PASSED') else 1
+
+    return 0
+
+
+def add_benchmark_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentParser:
+    """Register 'benchmark' command and subcommands into NeuralOps central CLI."""
+    parser = subparsers.add_parser(
+        'benchmark',
+        help='Unified empirical benchmarking, profiling, and telemetry system',
+        description='Execute, monitor, track, and analyze benchmark suites across hardware.'
+    )
+    bench_subparsers = parser.add_subparsers(dest='bench_command', required=True)
+
+    # 1. run subcommand
+    run_parser = bench_subparsers.add_parser('run', help='Execute an empirical benchmark run')
+    run_parser.add_argument('--suite', '-s', type=str, required=True, help='Benchmark suite identifier')
+    run_parser.add_argument('--config', '-c', type=str, default=None, help='Path to YAML or JSON benchmark run configuration file')
+    run_parser.add_argument('--device', type=str, default=None, help='Compute device override (e.g. cuda:0 or cpu)')
+    run_parser.add_argument('--backend', type=str, default=None, choices=['auto', 'cuda', 'triton', 'torch'])
+    run_parser.add_argument('--tag', type=str, default=None, help='Semantic tag for ledger indexing')
+    run_parser.add_argument('--dry-run', action='store_true', help='Validate parameters and print execution manifest without running kernels')
+    run_parser.set_defaults(func=execute_benchmark_cli)
+
+    # 2. list subcommand
+    list_parser = bench_subparsers.add_parser('list', help='List available benchmark suites and registry entities')
+    list_group = list_parser.add_mutually_exclusive_group()
+    list_group.add_argument('--suites', action='store_true', help='List registered benchmark suites')
+    list_group.add_argument('--attentions', action='store_true', help='List all 131 canonical registered attention mechanisms')
+    list_group.add_argument('--compressors', action='store_true', help='List all 72 canonical registered model compressors')
+    list_parser.set_defaults(func=execute_benchmark_cli)
+
+    # 3. show subcommand
+    show_parser = bench_subparsers.add_parser('show', help='Inspect details and metrics of a previous benchmark run')
+    show_parser.add_argument('run_id', type=str, help="UUID or timestamp run identifier or 'latest'")
+    show_parser.add_argument('--manifest', action='store_true', help='Output raw JSON provenance manifest')
+    show_parser.add_argument('--metrics', action='store_true', help='Display summary metrics')
+    show_parser.add_argument('--log', action='store_true', help='Display raw execution console log')
+    show_parser.set_defaults(func=execute_benchmark_cli)
+
+    parser.set_defaults(func=execute_benchmark_cli)
+    return parser
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build standalone argument parser for bench_cmd."""
     parser = argparse.ArgumentParser(
-        prog="neuralops-bench",
-        description="NeuralOps Benchmark Command & Universal Matrix Dispatcher",
+        prog='neuralops benchmark',
+        description='NeuralOps Benchmark Command & Universal Matrix Dispatcher',
     )
-    subparsers = parser.add_subparsers(dest="subcommand", help="Benchmark action")
-    add_eval_subparser(subparsers)
-
-    # Legacy benchmark arguments
-    parser.add_argument("--module", "--target", dest="module", type=str, default=None)
-    parser.add_argument("--mode", type=str, default="eval")
-    parser.add_argument("--model", type=str, default="gpt2")
-    parser.add_argument("--dataset", type=str, default="sst2")
-    parser.add_argument("--rank", type=int, default=32)
-    parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--all-attention", "--all", dest="all_attention", action="store_true", default=False)
-    parser.add_argument("--all-compressors", dest="all_compressors", action="store_true", default=False)
-    parser.add_argument("--output-dir", type=str, default=None)
+    sub = parser.add_subparsers(dest='subcommand', help='Benchmark action')
+    add_benchmark_parser(sub)
     return parser
 
 

@@ -10,6 +10,10 @@
 Delegates directly to canonical neuralops.benchmarks.bench_llm_bandwidth.
 """
 
+
+import warnings
+warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
+
 import sys
 from neuralops.benchmarks.bench_llm_bandwidth import main
 

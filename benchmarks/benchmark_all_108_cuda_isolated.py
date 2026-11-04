@@ -10,6 +10,10 @@
 Delegates to the framework-native neuralops.benchmarks CLI.
 """
 
+
+import warnings
+warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
+
 from neuralops.benchmarks.cli import main
 
 if __name__ == "__main__":

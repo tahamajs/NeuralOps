@@ -7,6 +7,10 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Run the fail-closed critical CUDA dispatch validation."""
 
+
+import warnings
+warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
+
 from __future__ import annotations
 
 import sys

@@ -7,6 +7,10 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Root entry point for precision parity validation."""
 
+
+import warnings
+warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
+
 from neuralops.benchmarks.precision_parity import main
 
 

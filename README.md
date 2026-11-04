@@ -953,6 +953,7 @@ NeuralOps installs canonical binary commands (`neuralops`, `nops`, `nops-cli`, a
 │ neuralops surgery  │ In-place subquadratic attention transplantation   │
 │ neuralops doctor   │ Deep environment & SM 8.9 hardware verification   │
 │ neuralops verify   │ Validates canonical invariant registry counts     │
+│ neuralops benchmark│ Unified benchmark execution, dry-run & listing    │
 │ neuralops run      │ Benchmark single or multi-module matrix sweeps    │
 │ neuralops roofline │ Arithmetic intensity & DRAM saturation profiling  │
 │ neuralops export   │ Production artifact export (Safetensors / ONNX)   │
@@ -965,6 +966,13 @@ NeuralOps installs canonical binary commands (`neuralops`, `nops`, `nops-cli`, a
 #### Detailed CLI Invocations & Options
 
 ```bash
+# Unified Benchmark System (Empirical Grid Execution, Dry-Run & Component Listing)
+neuralops benchmark run --suite attention --config neuralops/config/templates/benchmarks/attention.yaml
+neuralops benchmark run --suite attention --config neuralops/config/templates/benchmarks/attention.yaml --dry-run
+neuralops benchmark list --attentions      # Lists exactly the 131 registered attention mechanisms
+neuralops benchmark list --compressors     # Lists exactly the 72 registered compression engines
+neuralops benchmark list --suites          # Lists available benchmark suites
+
 # 1. System Health & Environment Doctor (CUDA 12.8, Triton 3.6.0, SM 8.9 verification)
 neuralops doctor
 
@@ -2046,6 +2054,18 @@ Every table and figure in this repository is reproducible from scratch on physic
 - **Reproducibility Seed**: `torch.manual_seed(42)`
 
 ### Benchmark Execution Commands
+
+The unified CLI command `neuralops benchmark` provides standard empirical benchmark suite execution:
+
+```bash
+# Unified Benchmark Execution
+neuralops benchmark run --suite attention --config neuralops/config/templates/benchmarks/attention.yaml
+neuralops benchmark run --suite attention --config neuralops/config/templates/benchmarks/attention.yaml --dry-run
+neuralops benchmark list --attentions
+neuralops benchmark list --compressors
+neuralops benchmark list --suites
+```
+
 
 The framework-native implementation is the primary source of truth under `neuralops.benchmarks`; `scripts/benchmarks` remains as a compatibility and orchestration layer. Evaluation modules likewise live under `neuralops.evaluation`.
 

@@ -7,6 +7,10 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Root entry point for the canonical resource-scaling benchmark."""
 
+
+import warnings
+warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
+
 import sys
 from pathlib import Path
 

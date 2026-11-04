@@ -10,6 +10,10 @@
 Delegates directly to canonical neuralops.benchmarks.measure_multiprecision.
 """
 
+
+import warnings
+warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
+
 import sys
 from neuralops.benchmarks.measure_multiprecision import main
 
