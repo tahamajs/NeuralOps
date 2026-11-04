@@ -203,33 +203,43 @@ def causal_prefix_scan(
     k_phi: torch.Tensor,
     v: torch.Tensor,
     eps: float = 1e-6,
+    decay: Optional[float] = None,
 ) -> torch.Tensor:
     """Causal linear prefix recurrence via vectorized cumulative sums.
 
     Computes S_t = sum_{i=1}^t phi(K_i)^T V_i, ensuring strict lower-triangular
     dependency where future tokens have zero gradient contribution to past representations.
+    Supports exponential state decay gamma in (0, 1) according to Law 7.
     Accumulates in FP32 for numerical stability when inputs are FP16 or BF16.
     """
     orig_dtype = q_phi.dtype
-    if orig_dtype in (torch.float16, torch.bfloat16):
-        q_f = q_phi.float()
-        k_f = k_phi.float()
-        v_f = v.float()
-        kv = torch.einsum("bhtd,bhte->bhtde", k_f, v_f)
+    is_fp16 = orig_dtype in (torch.float16, torch.bfloat16)
+    q_calc = q_phi.float() if is_fp16 else q_phi
+    k_calc = k_phi.float() if is_fp16 else k_phi
+    v_calc = v.float() if is_fp16 else v
+
+    kv = torch.einsum("bhtd,bhte->bhtde", k_calc, v_calc)
+    if decay is not None and 0.0 < decay < 1.0:
+        t = k_calc.shape[2]
+        pos = torch.arange(t, device=k_calc.device, dtype=k_calc.dtype)
+        log_gamma = math.log(decay)
+        decay_weights = torch.exp(pos * log_gamma).view(1, 1, t, 1, 1)
+        inv_decay_weights = torch.exp(-pos * log_gamma).view(1, 1, t, 1, 1)
+        kv = kv * inv_decay_weights
+        kv_cum = torch.cumsum(kv, dim=2) * decay_weights
+
+        k_decay = decay_weights.squeeze(-1)
+        inv_k_decay = inv_decay_weights.squeeze(-1)
+        k_scaled = k_calc * inv_k_decay
+        k_cum = torch.cumsum(k_scaled, dim=2) * k_decay
+    else:
         kv_cum = torch.cumsum(kv, dim=2)
-        out = torch.einsum("bhtd,bhtde->bhte", q_f, kv_cum)
+        k_cum = torch.cumsum(k_calc, dim=2)
 
-        k_cum = torch.cumsum(k_f, dim=2)
-        denom = torch.einsum("bhtd,bhtd->bht", q_f, k_cum).unsqueeze(-1) + eps
-        return (out / denom).to(orig_dtype)
-
-    kv = torch.einsum("bhtd,bhte->bhtde", k_phi, v)
-    kv_cum = torch.cumsum(kv, dim=2)
-    out = torch.einsum("bhtd,bhtde->bhte", q_phi, kv_cum)
-
-    k_cum = torch.cumsum(k_phi, dim=2)
-    denom = torch.einsum("bhtd,bhtd->bht", q_phi, k_cum).unsqueeze(-1) + eps
-    return out / denom
+    out = torch.einsum("bhtd,bhtde->bhte", q_calc, kv_cum)
+    denom = torch.einsum("bhtd,bhtd->bht", q_calc, k_cum).unsqueeze(-1) + eps
+    res = out / denom
+    return res.to(orig_dtype) if is_fp16 else res
 
 
 def bidirectional_associative_scan(
@@ -270,13 +280,14 @@ def fast_linear_attention_replacement(
     is_causal: bool = True,
     eps: float = 1e-6,
     target_attention: str = "cosformer",
+    decay: Optional[float] = None,
 ) -> torch.Tensor:
     """Universal linear attention replacement function for FX graph rewrites.
 
     Applies normalized feature map phi(x) = elu(x) + 1.0, integrates optional
-    scaling, cosformer cosine positional reweighting, and zero-bleed padding sanitization,
-    computing associative prefix states. Compatible with PyTorch Inductor (torch.compile)
-    without graph breaks.
+    scaling, cosformer cosine positional reweighting, optional Law 7 state decay,
+    and zero-bleed padding sanitization, computing associative prefix states.
+    Compatible with PyTorch Inductor (torch.compile) without graph breaks.
     """
     # Normalized feature map: phi(x) = elu(x) + 1.0
     q_phi = linear_feature_map(q)
@@ -336,7 +347,7 @@ def fast_linear_attention_replacement(
         v = v.unsqueeze(1)
 
     if is_causal:
-        result = causal_prefix_scan(q_phi, k_phi, v, eps=eps)
+        result = causal_prefix_scan(q_phi, k_phi, v, eps=eps, decay=decay)
     else:
         result = bidirectional_associative_scan(q_phi, k_phi, v, eps=eps)
 

@@ -654,11 +654,44 @@ class UniversalArchitectureScanner:
             W_o, b_o = cls._extract_weight_bias(o_mod)
 
             embed_dim = W_q.shape[1]
-            num_heads = getattr(module, "num_heads", getattr(module, "n_heads", getattr(module, "num_attention_heads", 12)))
+            q_width = W_q.shape[0]
+            candidate_heads = (
+                getattr(module, "num_heads", None)
+                or getattr(module, "n_heads", None)
+                or getattr(module, "n_head", None)
+                or getattr(module, "num_attention_heads", None)
+                or getattr(module, "heads", None)
+                or getattr(getattr(module, "config", None), "num_attention_heads", None)
+                or getattr(getattr(root_model, "config", None), "num_attention_heads", None)
+            )
+            if candidate_heads is not None and candidate_heads > 0 and q_width % candidate_heads == 0:
+                num_heads = candidate_heads
+            elif (
+                getattr(module, "head_dim", None) is not None
+                and getattr(module, "head_dim") > 0
+                and q_width % getattr(module, "head_dim") == 0
+            ):
+                head_dim = getattr(module, "head_dim")
+                num_heads = q_width // head_dim
+            else:
+                # Infer standard head count where head_dim divides q_width
+                if q_width % 12 == 0:
+                    num_heads = 12
+                elif q_width % 4 == 0:
+                    num_heads = 4
+                elif q_width % 8 == 0:
+                    num_heads = 8
+                elif q_width % 16 == 0:
+                    num_heads = 16
+                elif q_width % 2 == 0:
+                    num_heads = 2
+                else:
+                    num_heads = 1
+
             if num_heads <= 0:
                 raise ValueError(f"Invalid attention head count at {path!r}: {num_heads}")
-            head_dim = getattr(module, "head_dim", W_q.shape[0] // num_heads)
-            if head_dim <= 0 or W_q.shape[0] % head_dim or W_k.shape[0] % head_dim:
+            head_dim = getattr(module, "head_dim", q_width // num_heads)
+            if head_dim <= 0 or q_width % head_dim or W_k.shape[0] % head_dim:
                 raise ValueError(
                     f"Incompatible projection dimensions at {path!r}: "
                     f"q_width={W_q.shape[0]}, k_width={W_k.shape[0]}, head_dim={head_dim}"
