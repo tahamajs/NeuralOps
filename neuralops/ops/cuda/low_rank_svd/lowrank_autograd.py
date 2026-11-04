@@ -176,16 +176,25 @@ def fused_lowrank_gated_gemm(
         t.requires_grad for t in (x, V, U, alpha, bias) if isinstance(t, torch.Tensor)
     )
 
+    orig_shape = x.shape
+    if x.dim() > 2:
+        x_2d = x.reshape(-1, orig_shape[-1])
+    else:
+        x_2d = x
+
     if x.is_cuda:
         b = bias
         if needs_grad:
-            return _FusedLowRankGatedGemmFunction.apply(x, V, U, alpha, b)
+            out_2d = _FusedLowRankGatedGemmFunction.apply(x_2d, V, U, alpha, b)
         else:
             mod = _get_module()
             dummy_tensor = torch.empty(0, device=x.device, dtype=x.dtype)
             a_arg = alpha if alpha is not None else dummy_tensor
             b_arg = b if b is not None else dummy_tensor
-            return mod.fused_lowrank_gated_gemm_fwd(x, V, U, a_arg, b_arg)
+            out_2d = mod.fused_lowrank_gated_gemm_fwd(x_2d, V, U, a_arg, b_arg)
+        if x.dim() > 2:
+            return out_2d.reshape(*orig_shape[:-1], U.size(0))
+        return out_2d
 
     def cuda_fn(x, V, U, alpha=None, bias=None, b_drift=None, **kwargs):
         b = bias if bias is not None else b_drift
@@ -199,14 +208,17 @@ def fused_lowrank_gated_gemm(
 
     triton_fn = _get_triton_impl()
 
-    return dispatch(
+    out_2d = dispatch(
         cuda_fn,
         triton_fn,
         fused_lowrank_gated_gemm_pytorch_ref,
-        x,
+        x_2d,
         V,
         U,
         alpha=alpha,
         b_drift=bias,
         kernel_name="fused_lowrank_gated_gemm",
     )
+    if x.dim() > 2:
+        return out_2d.reshape(*orig_shape[:-1], U.size(0))
+    return out_2d
