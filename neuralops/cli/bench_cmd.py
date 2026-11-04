@@ -503,7 +503,17 @@ def execute_benchmark_cli(args: argparse.Namespace) -> int:
         if getattr(args, 'tag', None):
             overrides['tag'] = args.tag
 
-        config_source = args.config or f'neuralops/config/templates/benchmarks/{args.suite}.yaml'
+        config_source = args.config
+        if not config_source:
+            default_yaml = Path(f'neuralops/config/templates/benchmarks/{args.suite}.yaml')
+            standard_yaml = Path(f'neuralops/config/templates/benchmarks/{args.suite}_standard.yaml')
+            if default_yaml.exists():
+                config_source = str(default_yaml)
+            elif standard_yaml.exists():
+                config_source = str(standard_yaml)
+            else:
+                config_source = str(default_yaml)
+
         config = load_benchmark_config(config_source, overrides=overrides if overrides else None)
 
         if getattr(args, 'suite', None):
@@ -521,6 +531,82 @@ def execute_benchmark_cli(args: argparse.Namespace) -> int:
         summary = runner.run()
         print(f'Benchmark run {summary.run_id} completed with status: {summary.status}')
         return 0 if summary.status in ('SUCCESS', 'COMPLETED', 'PASSED') else 1
+
+    elif bench_command == 'show':
+        run_id = getattr(args, 'run_id', 'latest')
+        root_dir = Path("results/benchmarks")
+
+        target_dir: Optional[Path] = None
+        if run_id == 'latest':
+            latest_links = list(root_dir.glob("*/latest"))
+            if latest_links:
+                latest_links.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                target_dir = latest_links[0].resolve()
+            else:
+                runs = [p for p in root_dir.glob("*/runs/*") if p.is_dir()]
+                if runs:
+                    runs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                    target_dir = runs[0]
+        else:
+            candidates = [p for p in root_dir.glob(f"*/runs/{run_id}") if p.is_dir()]
+            if not candidates:
+                candidates = [p for p in root_dir.glob(f"**/{run_id}") if p.is_dir()]
+            if candidates:
+                target_dir = candidates[0]
+            elif Path(run_id).is_dir():
+                target_dir = Path(run_id)
+
+        if not target_dir or not target_dir.exists():
+            print(f"Error: Benchmark run '{run_id}' not found in {root_dir}", file=sys.stderr)
+            return 1
+
+        if getattr(args, 'manifest', False):
+            manifest_file = target_dir / "manifest.json"
+            if manifest_file.exists():
+                print(manifest_file.read_text(encoding="utf-8").strip())
+                return 0
+            else:
+                print(f"Error: Manifest not found at {manifest_file}", file=sys.stderr)
+                return 1
+
+        if getattr(args, 'metrics', False):
+            summary_file = target_dir / "summary.json"
+            if summary_file.exists():
+                print(summary_file.read_text(encoding="utf-8").strip())
+                return 0
+            csv_file = target_dir / "summary.csv"
+            if csv_file.exists():
+                print(csv_file.read_text(encoding="utf-8").strip())
+                return 0
+            print(f"Error: Metrics not found at {summary_file}", file=sys.stderr)
+            return 1
+
+        if getattr(args, 'log', False):
+            log_file = target_dir / "stdout_stderr.log"
+            if not log_file.exists():
+                log_file = target_dir / "metrics.jsonl"
+            if log_file.exists():
+                print(log_file.read_text(encoding="utf-8").strip())
+                return 0
+            else:
+                print(f"Error: Log file not found at {log_file}", file=sys.stderr)
+                return 1
+
+        report_file = target_dir / "benchmark_report.md"
+        if report_file.exists():
+            print(report_file.read_text(encoding="utf-8").strip())
+            return 0
+        summary_file = target_dir / "summary.json"
+        if summary_file.exists():
+            print(summary_file.read_text(encoding="utf-8").strip())
+            return 0
+        manifest_file = target_dir / "manifest.json"
+        if manifest_file.exists():
+            print(manifest_file.read_text(encoding="utf-8").strip())
+            return 0
+
+        print(f"Run directory located at: {target_dir}")
+        return 0
 
     return 0
 
