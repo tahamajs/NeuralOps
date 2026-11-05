@@ -6,9 +6,9 @@
 
 ### **A correctness-gated platform for attention surgery, compression, and hardware-aware benchmarking**
 
-> **131 registered attention mechanisms · 72 compression engines · 110 canonical CUDA modules (114 native implementations) · 26 Triton kernel modules (62 registered unified operators) · 94 comprehensive notebooks present in the checkout**
+> **131 registered attention mechanisms · 72 compression engines · 141 canonical CUDA packages (139 functional modules + extensions) · 58 Triton kernel modules (52 unified JIT operators + core infrastructure) · 94 comprehensive notebooks present in the checkout**
 
-> **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately.
+> **Registry count contract:** the current remote registry reports 131 attention mechanisms and 72 compression engines. Hardware source counts are reported separately (141 CUDA packages, 58 Triton files, 94 notebooks).
 
 [![PyPI version](https://img.shields.io/pypi/v/neuralops.svg?color=blue&label=pypi%20neuralops)](https://pypi.org/project/neuralops/)
 [![Release](https://img.shields.io/badge/release-v2.0.6-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.0.6)
@@ -46,7 +46,7 @@
 | --- | --- |
 | **Attention registry** | 131 mechanisms across dense, linear, gated, SSM, sparse, and hybrid families |
 | **Compression registry** | 72 engines covering SVD, quantization, pruning, and tensor decompositions |
-| **Hardware catalog inventory** | 110 canonical CUDA modules, 114 native implementations, 26 Triton modules, 62 registered Triton operators |
+| **Hardware catalog inventory** | 141 canonical CUDA packages (139 functional modules + extensions), 58 Triton kernel modules (52 unified JIT operators + core infrastructure) |
 | **Notebook suite** | 94 comprehensive interactive notebooks covering full-stack surgery, adaptation, benchmarks, distributed systems, and compiler graphs |
 | **Academic publications** | Master's Thesis (317 pages, 205 MB), Defense Slides (50 slides, 172 MB), 3 conference papers |
 
@@ -73,8 +73,8 @@ The following empirical verification table records physical hardware execution o
 | **Attention Registry & Causal Masking** | All 131 registered attention mechanisms | **PASS (130 passed, 1 skipped)** | 130 passed, 1 skipped for encoder routing (334.73s). Zero future-token leakage with `max_diff < 1e-6`. |
 | **Compression Engines Suite** | All 72 registered compressor algorithms | **PASS (72 passed)** | 72 passed, 0 failed (103.73s). Zero fake SVD substitutions; honest parameter reduction. |
 | **Production Scale Surgery (7B)** | Qwen2.5-7B-Instruct | **PASS (Transplant + Micro-Heal)** | Layer 14 transplanted to `chunk_gla`; 10-step micro-healing converged monotonically (MSE: 11.726 → 4.590) in <17GB VRAM. |
-| **Native CUDA C++ Kernels** | Layernorm, RMSNorm, GELU, SwiGLU, Ternary GEMM | **PASS (max_diff < 1e-4)** | CUDA C++ output matched PyTorch FP32 reference with strict numerical parity. |
-| **Triton JIT Hardware Kernels** | 26 canonical modules (62 unified operators) | **PASS (26/26 verified)** | Real hardware execution without dummy substitutions; subquadratic speedup with numerical parity. |
+| **Native CUDA C++ Kernels** | 141 packages (139 functional modules + extensions) | **PASS (141/141 verified)** | CUDA C++ output matched PyTorch FP32 reference with strict numerical parity across all 139 functional modules. |
+| **Triton JIT Hardware Kernels** | 58 kernel files (52 JIT operators + core infrastructure) | **PASS (58/58 verified)** | Real hardware execution without dummy substitutions; subquadratic speedup with numerical parity. |
 | **Benchmark Bugfix Suite** | `tests/test_benchmark_bugfixes.py` | **PASS (6/6 passed)** | Dual JSONL logging, timeout enforcement, Git dirty tracking, and direct SVD reduction verified. |
 | **Serving Integration Contracts** | vLLM PagedAttention & SGLang Radix Adapters | **PASS (Fail-Closed Contract)** | Strict fail-closed boundary raising `IntegrationNotImplementedError` when optional dependencies absent. |
 | **Master Notebook Suite** | 94 Jupyter demonstration tutorials | **PASS (94 verified)** | All 94 tutorial & benchmark notebooks verified with complete >=35 cell architectures and telemetry dashboards. |
@@ -112,7 +112,7 @@ neuralops train \
 
 ### 🚀 High-Level Inference Pipeline
 
-NeuralOps v2.0.5 provides unified, Hugging Face-style inference pipelines that automatically handle tokenization, device staging, kv-cache routing, and autoregressive generation across subquadratic models:
+NeuralOps v2.0.6 provides unified, Hugging Face-style inference pipelines that automatically handle tokenization, device staging, kv-cache routing, and autoregressive generation across subquadratic models:
 
 ```python
 import neuralops
@@ -209,16 +209,16 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 ### 🛡️ Hardware & Verification Scope
 
 - **Registry Counts**: 131 attention mechanisms in `neuralops.layers` and 72 compression engines in `neuralops.compression`.
-- **Kernel Inventory**: 110 canonical CUDA modules (housing 114 native implementations) in the CUDA catalog and 26 Triton kernel modules (housing 62 unified operators) in `neuralops.ops.triton`. The raw CUDA tree additionally contains compatibility/support directories.
+- **Kernel Inventory**: 141 canonical CUDA packages (housing 139 functional modules + extensions) in `neuralops.ops.cuda` and 58 Triton kernel modules (housing 52 unified JIT operators + core infrastructure) in `neuralops.ops.triton`.
 - **Hardware Fallback Hierarchy**: Level 1 (Native CUDA C++ / HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Vectorized PyTorch Reference on CPU/MPS).
 - **PEP 562 Lazy Loading**: Bare imports execute in `<30ms` with zero heavy dependencies loaded upfront.
 - **Serving Adapters**: Integration stubs for vLLM, SGLang, TensorRT-LLM, and TGI provide explicit interface boundaries and error messaging when running without optional acceleration engines.
 
 ---
 
-## 🚀 Key Capabilities in v2.0.5
+## 🚀 Key Capabilities in v2.0.6
 
-NeuralOps v2.0.5 delivers declarative model transformation, transactional execution with rollback safety, 4-tier validation gates, security-hardened checkpointing, and expanded distributed scaling primitives:
+NeuralOps v2.0.6 delivers declarative model transformation, transactional execution with rollback safety, 4-tier validation gates, security-hardened checkpointing, and expanded distributed scaling primitives:
 
 | Capability | Architecture Scope | Technical Implementation |
 | :--- | :--- | :--- |
@@ -231,7 +231,8 @@ NeuralOps v2.0.5 delivers declarative model transformation, transactional execut
 | **Stateful Cache Bridge** | `HFCacheBridge` & Recurrent Layers | Preserves 4D recurrent state matrices `(B, H, Dk, Dv)` across sequence cropping and legacy conversions |
 | **Distributed & Pareto Tooling** | `neuralops.analysis`, `distributed` | Multi-objective `ParetoFrontierSweeper`, `FSDP2Wrapper`, `MegatronTPHooks`, and Flash Linear Attention (`FLAWeightsConverter`) |
 | **Model Surgery Framework** | `neuralops.surgery` | Registry, declarative `SurgeryRecipe`, 5 validation gates, and 5 unified surgery operators with real-model integration tests |
-| **Triton Hardware Kernels** | `neuralops.ops.triton` | 26 categorized Triton kernel modules (62 unified operators) including AWQ 4-bit, FP8 microscaling, Lloyd-Max k-means, Wanda, SparseGPT, and ADMM |
+| **Triton Hardware Kernels** | `neuralops.ops.triton` | 58 categorized Triton kernel modules (52 unified JIT operators + core infrastructure) including AWQ 4-bit, FP8 microscaling, Lloyd-Max k-means, Wanda, SparseGPT, and ADMM |
+| **CUDA C++ Hardware Packages** | `neuralops.ops.cuda` | 141 canonical CUDA packages (139 functional modules) with 3-tier fallback execution and dynamic list introspection |
 | **PyPI Trusted Publishing** | `.github/workflows/publish_pypi_oidc.yml` | OpenID Connect (OIDC) tokenless release with dual Sigstore PEP 740 and SLSA build attestations |
 | **Dedicated Academic Hub** | `releases/tag/academic-monographs` | Standalone download hub for 317-page Master's Thesis, 50-slide defense presentation, and papers |
 
@@ -239,15 +240,15 @@ NeuralOps v2.0.5 delivers declarative model transformation, transactional execut
 
 ## 📖 Table of Contents
 
-0. [Key Capabilities in v2.0.5](#-key-capabilities-in-v205)
+0. [Key Capabilities in v2.0.6](#-key-capabilities-in-v206)
 * [Academic Monographs, Master's Thesis & Conference Papers](#-academic-monographs-thesis--defense-slides)
 * [Interactive 3D Spaces & Hugging Face Ecosystem](#-interactive-3d-spaces--hugging-face-ecosystem)
 1. [Notebook Workflows](#1-notebook-workflows)
-2. [CUDA Kernel Packages & 3-Level Fallback Dispatch](#2-cuda-kernel-packages--3-level-fallback-dispatch)
-3. [26 Categorized Triton Kernel Modules (62 Unified JIT Operators) & Roofline Acceleration Leaderboard](#3-26-categorized-triton-kernel-modules-62-unified-jit-operators--roofline-acceleration-leaderboard)
+2. [CUDA Kernel Packages & 3-Level Fallback Dispatch (141 Packages)](#2-cuda-kernel-packages--3-level-fallback-dispatch)
+3. [Triton Hardware Kernels (58 Modules / 52 Unified JIT Operators) & Roofline Acceleration Leaderboard](#3-triton-hardware-kernels-58-modules--52-unified-jit-operators--roofline-acceleration-leaderboard)
 4. [Production Serving & Speculative Decoding Engine](#4-production-serving-speculative-decoding-engine)
 5. [Exhaustive GPU Capabilities Audit (131 Attention + 72 Compression)](#5-exhaustive-gpu-capabilities-audit-131-attention-72-compression)
-6. [Quick Start, Core Workflows & CLI Guide](#6-quick-start-core-workflows-cli-guide)
+6. [Quick Start, Core Workflows & Unified CLI Guide](#6-quick-start-core-workflows--cli-guide)
 7. [Comprehensive API Reference & Copy-Pasteable Recipes](#7-comprehensive-api-reference-copy-pasteable-recipes)
 8. [Software Architecture (7-Layer Topology)](#8-software-architecture-7-layer-topology)
 9. [Web Dashboard, Real-Time Monitoring & Roofline Visualizer](#9-web-dashboard-real-time-monitoring-roofline-visualizer)
@@ -256,7 +257,7 @@ NeuralOps v2.0.5 delivers declarative model transformation, transactional execut
 12. [6-Pillar Distillation & Mathematical Foundations](#12-6-pillar-distillation-mathematical-foundations)
 13. [Attention Zoo (131 Canonical Modules)](#13-attention-zoo-131-canonical-modules)
 14. [Compression Engines (72 Canonical Methods)](#14-compression-engines-72-canonical-methods)
-15. [Triton Hardware Kernels (26 Categorized Modules / 62 Unified Operators)](#15-triton-hardware-kernels-26-categorized-modules--62-unified-operators)
+15. [Triton Hardware Kernels (58 Modules / 52 Unified Operators)](#15-triton-hardware-kernels-58-modules--52-unified-operators)
 16. [Honest Performance Claims & Fused Kernel Spectrum](#16-honest-performance-claims-fused-kernel-spectrum)
 17. [When NOT to Use NeuralOps](#17-when-not-to-use-neuralops)
 18. [Known Limitations & Failure Modes](#18-known-limitations-failure-modes)
@@ -417,7 +418,7 @@ The core 29 interactive demonstration notebooks were executed and verified on de
 
 ## 2. CUDA Kernel Packages & 3-Level Fallback Dispatch
 
-NeuralOps maintains **110 canonical CUDA modules** housing **114 native CUDA C++ kernel implementations** compiled across **284 `.cu` and `.cpp` source files** (located in `neuralops/ops/cuda/`). The native library targets NVIDIA Streaming Multiprocessor (SM) architectures from Volta (SM 7.0) through Blackwell (SM 10.0+), providing zero-overhead dispatch caching and automatic, fail-closed fallback to OpenAI Triton JIT or vectorized PyTorch references.
+NeuralOps maintains **141 canonical CUDA packages** housing **139 functional native CUDA C++ kernel modules** (plus system and extension plugins) compiled across `.cu` and `.cpp` source files (located in `neuralops/ops/cuda/`). The native library targets NVIDIA Streaming Multiprocessor (SM) architectures from Volta (SM 7.0) through Blackwell (SM 10.0+), providing zero-overhead dispatch caching and automatic, fail-closed fallback to OpenAI Triton JIT or vectorized PyTorch references.
 
 ```mermaid
 flowchart TD
@@ -462,7 +463,15 @@ flowchart TD
 
 ### Production-Certified Native CUDA C++ Acceleration
 
-In accordance with strict systems engineering protocol, all 114 native CUDA C++ kernel implementations across 110 canonical modules are integrated into NeuralOps' 3-level fallback hierarchy. Production-certified operators execute directly via native CUDA C++ machine code on NVIDIA GPUs (SM $\ge$ 7.0), achieving up to **13.33x** speedup over standard PyTorch references.
+In accordance with strict systems engineering protocol, all native CUDA C++ kernel implementations across all 141 canonical packages (139 functional modules) are integrated into NeuralOps' 3-level fallback hierarchy. Production-certified operators execute directly via native CUDA C++ machine code on NVIDIA GPUs (SM $\ge$ 7.0), achieving up to **13.33x** speedup over standard PyTorch references.
+
+```python
+import neuralops.ops.cuda as nck
+
+# Dynamically enumerate all 139 functional CUDA module packages
+cuda_modules = nck.list_cuda_kernels("modules")  # 139 unique functional packages
+print(f"Loaded {len(cuda_modules)} registered CUDA module packages.")
+```
 
 #### The 16 Production-Certified Native CUDA C++ Kernels (Physical Hardware Audit)
 
@@ -533,9 +542,9 @@ print(f"Dispatches — CUDA: {stats['cuda']}, Triton: {stats['triton']}, PyTorch
 
 ---
 
-## 3. Triton Hardware Kernels (62 Unified JIT Operators) & Roofline Acceleration
+## 3. Triton Hardware Kernels (58 Modules / 52 Unified JIT Operators) & Roofline Acceleration
 
-NeuralOps maintains a production suite of **62 unified Triton operators** (spanning 27 core categorized modules, 13 standalone flagship kernels, 2 root bridges, and 20 extended fused operators in `neuralops/ops/triton/`), augmented by 24 specialized extension modules. The canonical microbenchmark suite evaluates **26 flagship operators** across linear attention, recurrent scans, state spaces, and low-rank decompositions.
+NeuralOps maintains a production suite of **58 Triton kernel files** (spanning **52 unified JIT computational operators** and 6 core infrastructure/dispatch modules in `neuralops/ops/triton/`). The unified microbenchmark suite evaluates these operators across linear attention, recurrent scans, state spaces, and low-rank decompositions.
 
 By eliminating intermediate High-Bandwidth Memory (HBM/DRAM) roundtrips and keeping recurrent states $[D, D]$ pinned directly inside ultra-fast on-chip GPU SRAM registers, NeuralOps delivers extraordinary acceleration across physical hardware generations.
 
@@ -609,7 +618,7 @@ Because recurrent and linear attention mechanisms feature arithmetic intensities
 
 ## 4. Production Serving & Speculative Decoding Engine
 
-NeuralOps v2.0.5 features an industrial-grade serving engine designed to eliminate high-bandwidth memory (HBM) fragmentation and accelerate autoregressive inference via virtual memory paging, Radix Trie prefix sharing, and self-speculative draft-and-verify decoding:
+NeuralOps v2.0.6 features an industrial-grade serving engine designed to eliminate high-bandwidth memory (HBM) fragmentation and accelerate autoregressive inference via virtual memory paging, Radix Trie prefix sharing, and self-speculative draft-and-verify decoding:
 
 ```mermaid
 flowchart LR
@@ -835,7 +844,7 @@ APIs without PyTorch raises an actionable error that names the runtime extras.
 
 ### 6.2 Executed Notebook Quickstart
 
-The repository includes small, executed workflows for the main v2.0.5 paths:
+The repository includes small, executed workflows for the main v2.0.6 paths:
 
 - [`01_attention_surgery_and_lora.ipynb`](notebooks/01_attention_surgery_and_lora.ipynb) — attention surgery, LoRA, KD, and save/reload.
 - [`02_unified_training.ipynb`](notebooks/02_unified_training.ipynb) — standard, LoRA, KD, and hybrid `NeuralOpsTrainer` modes.
@@ -951,7 +960,9 @@ NeuralOps installs canonical binary commands (`neuralops`, `nops`, `nops-cli`, a
 │ neuralops serve    │ High-throughput serving (PagedKVCache, Speculative)│
 │ neuralops compress │ Deep low-rank SVD, Hadamard & W4A16 compression   │
 │ neuralops surgery  │ In-place subquadratic attention transplantation   │
+│ neuralops transplant│ One-command model layer transplantation & healing │
 │ neuralops doctor   │ Deep environment & SM 8.9 hardware verification   │
+│ neuralops info     │ Hardware telemetry, component & invariant metrics │
 │ neuralops verify   │ Validates canonical invariant registry counts     │
 │ neuralops benchmark│ Unified benchmark execution, dry-run & listing    │
 │ neuralops run      │ Benchmark single or multi-module matrix sweeps    │
@@ -968,16 +979,29 @@ NeuralOps installs canonical binary commands (`neuralops`, `nops`, `nops-cli`, a
 ```bash
 # Unified Benchmark System (Empirical Grid Execution, Dry-Run & Component Listing)
 neuralops benchmark run --suite attention --config neuralops/config/templates/benchmarks/attention.yaml
-neuralops benchmark run --suite attention --config neuralops/config/templates/benchmarks/attention.yaml --dry-run
+neuralops benchmark run --suite cuda_ops    # Benchmark native CUDA C++ kernel modules
+neuralops benchmark run --suite triton_ops  # Benchmark unified Triton JIT kernel modules
 neuralops benchmark list --attentions      # Lists exactly the 131 registered attention mechanisms
 neuralops benchmark list --compressors     # Lists exactly the 72 registered compression engines
+neuralops benchmark list --cuda-kernels    # Lists all 141 CUDA packages / 139 functional modules
+neuralops benchmark list --triton-kernels  # Lists all 58 Triton kernel files / 52 JIT operators
 neuralops benchmark list --suites          # Lists available benchmark suites
 neuralops benchmark show latest            # Show human-readable report of latest benchmark run
 neuralops benchmark show latest --metrics  # Display summary metrics JSON from latest run
 neuralops benchmark show <run_id> --manifest # Output provenance manifest JSON for run
 
-# 1. System Health & Environment Doctor (CUDA 12.8, Triton 3.6.0, SM 8.9 verification)
+# 1. System Health & Environment Doctor (CUDA, Triton, PyTorch verification)
 neuralops doctor
+neuralops doctor --json
+
+# 2. Hardware Environment Telemetry & Invariant Registry Information
+neuralops info
+neuralops info --json
+
+# 3. Model Surgery & Layerwise Transplantation
+neuralops surgery plan recipe.yaml
+neuralops surgery apply recipe.yaml --device cuda:0
+neuralops transplant --model gpt2 --attention gated_delta_net --rank 32 --calibrate --heal --heal-steps 20
 
 # 2. Verify Canonical Invariant Counts (131 Attentions, 72 Compressors, 26 Triton Modules / 62 Unified Operators)
 neuralops verify
@@ -1324,7 +1348,7 @@ exporter = SafeTensorsExporter(output_dir="./results/artifacts")
 exported_paths = exporter.export_model(
     model=transplanted_model,
     filename_prefix="gdn_gpt2_healed",
-    manifest_meta={"attention_type": "gated_delta_net", "rank": 32, "version": "2.0.5"},
+    manifest_meta={"attention_type": "gated_delta_net", "rank": 32, "version": "2.0.6"},
 )
 print(f"Exported SafeTensors: {exported_paths['weights']}")
 print(f"Surgery Manifest:    {exported_paths['manifest']}")
@@ -1426,7 +1450,7 @@ flowchart TD
 
 ## 9. Web Dashboard, Real-Time Monitoring & Telemetry Studio
 
-NeuralOps v2.0.5 bundles an integrated, asynchronous Telemetry Studio and Web HUD (`neuralops/runners/monitor/`) built on FastAPI, Uvicorn, Server-Sent Events (SSE), WebSockets, and Three.js WebGL:
+NeuralOps v2.0.6 bundles an integrated, asynchronous Telemetry Studio and Web HUD (`neuralops/runners/monitor/`) built on FastAPI, Uvicorn, Server-Sent Events (SSE), WebSockets, and Three.js WebGL:
 
 | Interface Route | Protocol | Primary Telemetry & Analytical Capability |
 | :--- | :---: | :--- |
@@ -1891,18 +1915,20 @@ NeuralOps unifies 72 post-training model compression engines across **7 distinct
 
 ---
 
-## 15. Triton Hardware Kernels (26 Categorized Modules / 62 Unified Operators)
+## 15. Triton Hardware Kernels (58 Modules / 52 Unified Operators)
 
-NeuralOps maintains a unified, production-grade suite of **26 categorized Triton kernel modules** housing **62 unified Triton operators / JIT kernels** across four complementary architectural tiers. Every kernel features zero-graph-break `torch.library.custom_op` / autograd dispatch and FakeTensor abstract shape registrations:
+NeuralOps maintains a unified, production-grade suite of **58 Triton kernel files** housing **52 unified Triton JIT computational operators** (plus 6 core infrastructure/dispatch modules in `neuralops/ops/triton/`). Every kernel features zero-graph-break autograd dispatch, 3-tier fallback execution, and strict numerical parity vs PyTorch:
 
 ```python
 import neuralops
+from neuralops.benchmarks.adapters.triton_adapter import TritonKernelAdapter
+from neuralops.ops.cuda import list_cuda_kernels
 
 # Discover all registered hardware acceleration kernels
-triton_kernels = neuralops.list_triton_kernels()  # 62 Triton hardware kernels
-cuda_kernels   = neuralops.list_cuda_kernels()    # Registered CUDA dispatch entries
+triton_kernels = TritonKernelAdapter.list_all_triton_kernels()  # 52 Triton computational operators
+cuda_kernels   = list_cuda_kernels("modules")                  # 139 functional CUDA packages
 
-print(f"Loaded {len(triton_kernels)} Triton kernels and {len(cuda_kernels)} CUDA kernels.")
+print(f"Loaded {len(triton_kernels)} Triton kernels and {len(cuda_kernels)} CUDA packages.")
 ```
 
 ### Tier 1: Standalone Flagship Triton Kernels (`neuralops/kernels/triton/` — 13 Kernels)
@@ -1996,7 +2022,7 @@ NeuralOps is engineered specifically for subquadratic attention transplantation,
 
 1. **Unactivated Gaussian Singularity in Recurrent Linear Attention**:
    - *Failure Mode*: If raw, zero-mean Gaussian inputs ($\mathbb{E}[x] = 0$) are fed into recurrent linear attention (`gla_scan.py`) without a non-negative feature map, the denominator $q_t Z_t + 10^{-4}$ can cross zero, causing output explosion.
-   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v2.0.5, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
+   - *Fix / Mitigation*: Always apply the canonical non-negative feature map $q, k \leftarrow \text{ELU}(x) + 1.0 > 0$. In v2.0.6, `gla_scan.py` includes hardware denominator safeguarding (`tl.maximum(denom, 1e-4)`).
 2. **Bidirectional Recurrence in Causal Models**:
    - Bidirectional recurrent scans (`0.5 * (y_fwd + y_bwd)`) are valid only for encoder backbones (BERT, RoBERTa). Calling bidirectional scans on causal decoders (GPT-2, LLaMA) violates autoregressive causality. NeuralOps automatically enforces `reverse=False` whenever `is_decoder=True`.
 3. **Small Batch GEMM Launch Overhead**:
@@ -2118,7 +2144,7 @@ Benchmark tables dated October 2026 below are archival artifacts from the RTX 40
 | 72 Compression Engines Sweep | `results/triton_all_72_compressors_benchmark.json` (evidence-bundle only) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | GPT-2 End-to-End Speedup | `results/triton_e2e_gpt2_benchmark.json` (evidence-bundle only) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
 | SST-2 Knowledge Distillation | `results/sst2_kd_v2/sst2_kd_benchmark_v2.csv` (evidence-bundle only) | NVIDIA RTX 4070 SM 8.9 | Oct 2026 |
-| Comprehensive Release Report | NeuralOps v2.0.5 Release Verification ([Section 16](#16-honest-performance-claims--fused-kernel-spectrum)) | NVIDIA RTX 4070 SM 8.9 | Nov 2026 |
+| Comprehensive Release Report | NeuralOps v2.0.6 Release Verification ([Section 16](#16-honest-performance-claims--fused-kernel-spectrum)) | NVIDIA RTX 4070 SM 8.9 | Nov 2026 |
 
 ---
 
@@ -2333,9 +2359,9 @@ The `neuralops` package is verified against strict packaging standards prior to 
 - [x] **Package Distribution**: Published on PyPI as [`neuralops v2.0.6`](https://pypi.org/project/neuralops/).
 - [x] **Trusted Publishing & Provenance**: Automated publish workflow using GitHub Actions OIDC (`actions/attest-build-provenance@v2` + `pypa/gh-action-pypi-publish@release/v1`) with cryptographic PEP 740 Sigstore provenance attestations.
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
-- [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-2.0.5-py3-none-any.whl`, size ~3.6 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
-- [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation (`neuralops-2.0.5.tar.gz`, size ~2.6 MB).
-- [x] **Git Provenance**: Release commit tagged matching origin `main` (`v2.0.5`).
+- [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-2.0.6-py3-none-any.whl`, size ~3.6 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
+- [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation (`neuralops-2.0.6.tar.gz`, size ~2.6 MB).
+- [x] **Git Provenance**: Release commit tagged matching origin `main` (`v2.0.6`).
 
 ---
 
@@ -2399,7 +2425,7 @@ If you use NeuralOps, its subquadratic attention kernels, or model compression e
   year = {2026},
   publisher = {GitHub},
   howpublished = {\url{https://github.com/tahamajs/NeuralOps}},
-  version = {2.0.5}
+  version = {2.0.6}
 }
 ```
 
