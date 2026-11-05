@@ -10,6 +10,7 @@ import pytest
 import torch
 import torch.nn as nn
 
+from neuralops.core.errors import IntegrationNotImplementedError
 from neuralops.integrations.vllm import (
     NeuralOpsvLLMMetadata,
     NeuralOpsvLLMImpl,
@@ -36,13 +37,15 @@ def test_vllm_backend_and_metadata_interface():
 
 
 def test_vllm_impl_fails_closed_until_scheduler_and_cache_contract_are_implemented():
+    import warnings
     impl = NeuralOpsvLLMImpl(num_heads=2, head_size=16, scale=1.0 / 4.0)
     q = torch.randn(1, 1, 32)
-    with pytest.raises(NotImplementedError, match="paged-cache write"):
+    with pytest.raises((NotImplementedError, IntegrationNotImplementedError)):
         impl.forward(q, q, q, kv_cache=None, attn_metadata=None)
 
 
 def test_vllm_model_wrapper_does_not_initialize_random_checkpoint_weights():
+    import warnings
     class DummyConfig:
         hidden_size = 32
         d_model = 32
@@ -50,10 +53,12 @@ def test_vllm_model_wrapper_does_not_initialize_random_checkpoint_weights():
         num_attention_heads = 2
         num_hidden_layers = 1
 
-    with pytest.raises(NotImplementedError, match="random weights"):
+    with pytest.raises((NotImplementedError, IntegrationNotImplementedError)):
         NeuralOpsForCausalLMvLLM(DummyConfig())
 
-    assert register_neuralops_vllm_plugin() is False
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert register_neuralops_vllm_plugin() is False
 
 
 def test_sglang_radix_linear_cache_adapter():

@@ -222,25 +222,47 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
 
     def update_recurrent_state(
         self,
-        arg1: Any,
+        arg1: Any = None,
         arg2: Any = None,
         num_tokens: int = 1,
+        *,
+        state: Any = None,
+        layer_idx: Optional[int] = None,
+        recurrent_states: Any = None,
         **kwargs: Any,
     ) -> Any:
         """
         Stores constant O(1) recurrent states (GLA, GDN, RetNet, etc.).
-        Supports both (layer_idx, state) and HuggingFace Cache (recurrent_states, layer_idx) signatures.
+        Supports positional (layer_idx, state), (recurrent_states, layer_idx),
+        and keyword arguments: layer_idx, state, recurrent_states.
         """
-        if isinstance(arg1, int):
-            layer_idx = arg1
-            state = arg2
-        elif isinstance(arg2, int):
-            state = arg1
-            layer_idx = arg2
-        else:
-            raise ValueError(
-                f"One of the first two arguments must be an integer layer_idx, got {type(arg1)} and {type(arg2)}"
-            )
+        if layer_idx is None:
+            if isinstance(arg1, int):
+                layer_idx = arg1
+                if state is None:
+                    state = arg2
+            elif isinstance(arg2, int):
+                layer_idx = arg2
+                if state is None:
+                    state = arg1
+            elif "layer_idx" in kwargs:
+                layer_idx = kwargs["layer_idx"]
+            else:
+                raise ValueError(
+                    f"One of the first two arguments must be an integer layer_idx, got {type(arg1)} and {type(arg2)}"
+                )
+
+        if state is None:
+            if recurrent_states is not None:
+                state = recurrent_states
+            elif "state" in kwargs:
+                state = kwargs["state"]
+            elif "recurrent_states" in kwargs:
+                state = kwargs["recurrent_states"]
+            elif arg1 is not None and not isinstance(arg1, int):
+                state = arg1
+            elif arg2 is not None and not isinstance(arg2, int):
+                state = arg2
 
         num_tokens = kwargs.get("num_tokens", num_tokens)
         if num_tokens < 0:
