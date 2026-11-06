@@ -2,11 +2,18 @@
 
 This directory contains the production benchmark and stress-testing suite for the **NeuralOps** attention mechanisms, Triton JIT hardware kernels, compilation runtimes, and quantization algorithms.
 
-## Architectural Design: Single Source of Truth
+## Architecture & Design: Single Source of Truth
 
-To avoid duplication, all underlying benchmark implementations reside canonically in [`neuralops/benchmarks/`](../neuralops/benchmarks/). The scripts in this directory (`benchmarks/*.py`) serve as clean CLI wrappers that expose both:
+To ensure modularity and eliminate technical debt, all underlying benchmark implementations reside canonically in [`neuralops/benchmarks/`](../neuralops/benchmarks/). The scripts in this directory (`benchmarks/*.py`) serve as clean, stable CLI wrappers that expose both:
 - Standalone CLI execution interfaces with standard arguments (`--output`, `--device`, `--dtype`, `--warmup`, `--repeat`, `--quick`).
 - Re-exported programmatic APIs (`run_*`) for integration into external pipelines and tests.
+- Full compatibility with the unified `neuralops benchmark` CLI.
+
+For detailed historical architecture and migration design notes, see:
+- [`docs/reports/benchmarks/ARCHITECTURE.md`](../docs/reports/benchmarks/ARCHITECTURE.md)
+- [`docs/reports/benchmarks/BENCHMARK_CLEANUP_AND_BUG_AUDIT.md`](../docs/reports/benchmarks/BENCHMARK_CLEANUP_AND_BUG_AUDIT.md)
+- [`docs/reports/benchmarks/CLI_AUDIT_AND_UX_REMEDIATION_PLAN.md`](../docs/reports/benchmarks/CLI_AUDIT_AND_UX_REMEDIATION_PLAN.md)
+- [`docs/reports/benchmarks/CLI_MIGRATION_MATRIX.csv`](../docs/reports/benchmarks/CLI_MIGRATION_MATRIX.csv)
 
 ---
 

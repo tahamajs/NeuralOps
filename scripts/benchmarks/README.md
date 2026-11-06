@@ -20,7 +20,7 @@ All core benchmarking logic is maintained in the canonical Python package [`neur
 
 ## 2. Legacy Migration Redirectors & Archival
 
-In accordance with `benchmarks/BENCHMARK_CLEANUP_AND_BUG_AUDIT.md`, legacy benchmark scripts were consolidated into canonical package modules under `neuralops.benchmarks` or archived under `scripts/benchmarks/legacy/`. The following scripts serve as backward-compatible entry points:
+In accordance with [`docs/reports/benchmarks/BENCHMARK_CLEANUP_AND_BUG_AUDIT.md`](../../docs/reports/benchmarks/BENCHMARK_CLEANUP_AND_BUG_AUDIT.md), legacy benchmark scripts were consolidated into canonical package modules under `neuralops.benchmarks` or archived under `scripts/benchmarks/legacy/`. The following scripts serve as backward-compatible entry points:
 
 - `batch_validate_all_compressors.py` $\rightarrow$ use `python3 -m neuralops.benchmarks.cli run --category compressor`
 - `benchmark_all_cuda.py` $\rightarrow$ use `python3 -m neuralops.benchmarks.cli run --category kernel`
