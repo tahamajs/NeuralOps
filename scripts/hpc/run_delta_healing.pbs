@@ -31,7 +31,7 @@ echo "  Module   : ${MODULE_NAME}"
 echo "  Duration : ${DURATION}s | Peak LR: ${PEAK_LR}"
 echo "======================================================================"
 
-"$PYTHON_EXEC" -u scripts/benchmarks/benchmark_delta_healing.py \
+"$PYTHON_EXEC" -u neuralops/benchmarks/legacy_scripts/benchmark_delta_healing.py \
     --module "${MODULE_NAME}" \
     --device cuda:0 \
     --duration "${DURATION}" \

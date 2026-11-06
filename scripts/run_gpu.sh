@@ -12,8 +12,8 @@ source "${SCRIPT_DIR}/lib/neuralops_env.sh"
 MODE="${1:-help}"
 shift || true
 case "${MODE}" in
-    validate-cuda) exec "${PYTHON_BIN}" "${NEURALOPS_ROOT}/scripts/benchmarks/validate_4_cuda_kernels.py" "$@" ;;
-    benchmark) exec "${PYTHON_BIN}" "${NEURALOPS_ROOT}/scripts/benchmarks/gpu_master_suite.py" --device cuda:0 "$@" ;;
+    validate-cuda) exec "${PYTHON_BIN}" "${NEURALOPS_ROOT}/neuralops/benchmarks/legacy_scripts/validate_4_cuda_kernels.py" "$@" ;;
+    benchmark) exec "${PYTHON_BIN}" "${NEURALOPS_ROOT}/neuralops/benchmarks/legacy_scripts/gpu_master_suite.py" --device cuda:0 "$@" ;;
     triton) exec "${PYTHON_BIN}" "${NEURALOPS_ROOT}/neuralops/benchmarks/benchmark_all_26_comprehensive.py" --device cuda:0 "$@" ;;
     engine) exec "${SCRIPT_DIR}/run_engine_benchmark.sh" "$@" ;;
     full) exec "${SCRIPT_DIR}/run_full_gpu_suite.sh" "$@" ;;

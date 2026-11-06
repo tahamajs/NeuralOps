@@ -22,7 +22,7 @@ export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
 export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
 PY="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python"
 
-"$PY" scripts/benchmarks/run_high_tdp_saturated_benchmark.py
+"$PY" neuralops/benchmarks/legacy_scripts/run_high_tdp_saturated_benchmark.py
 
 echo "=========================================================================="
 echo "=== FINISHED AT: $(date) ==="

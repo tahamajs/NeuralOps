@@ -105,7 +105,7 @@ def test_backward_requires_finite_gradients(monkeypatch):
             return tensor.detach()
 
     monkeypatch.setattr(
-        "scripts.benchmarks.gpu_master_suite._get_shared_pretrained_attention",
+        "neuralops.benchmarks.legacy_scripts.gpu_master_suite._get_shared_pretrained_attention",
         lambda dim, num_heads: (None, None),
     )
     result = benchmark_single_attention(

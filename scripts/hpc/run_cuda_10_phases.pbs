@@ -22,7 +22,7 @@ echo "  Node: $(hostname)"
 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader
 echo "======================================================================"
 
-$PYTHON_EXEC scripts/benchmarks/benchmark_10_phases_cuda.py --device cuda:0 --output results/cuda_10_phases_rtx3090.csv
+$PYTHON_EXEC neuralops/benchmarks/legacy_scripts/benchmark_10_phases_cuda.py --device cuda:0 --output results/cuda_10_phases_rtx3090.csv
 STATUS=$?
 echo "Exit code: $STATUS"
 exit $STATUS

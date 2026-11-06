@@ -28,7 +28,7 @@ echo -e "\n>>> [Job 1/5] Running Multi-Regime Hardware Scaling (1K, 2K, 4K) <<<"
 "$PY" scripts/run_academic_multi_regime_rigor.py || true
 
 echo -e "\n>>> [Job 2/5] Running Cross-Architecture Model Family Benchmarks (DistilBERT, RoBERTa, GPT-2, LLaMA) <<<"
-"$PY" scripts/benchmarks/run_paper_cross_architecture_suite.py || true
+"$PY" neuralops/benchmarks/legacy_scripts/run_paper_cross_architecture_suite.py || true
 
 echo -e "\n>>> [Job 3/5] Running Long-Context Sequence Scaling (512 to 32K) <<<"
 "$PY" scripts/run_paper_seqlen_scaling.py || true

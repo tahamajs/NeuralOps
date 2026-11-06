@@ -32,7 +32,7 @@ echo "  Module   : ${MODULE_NAME} (${MODULE_TYPE})"
 echo "  Duration : ${DURATION}s | Peak LR: ${PEAK_LR}"
 echo "======================================================================"
 
-"$PYTHON_EXEC" -u scripts/benchmarks/benchmark_single_optimized_kd.py \
+"$PYTHON_EXEC" -u neuralops/benchmarks/legacy_scripts/benchmark_single_optimized_kd.py \
     --module "${MODULE_NAME}" \
     --category "${MODULE_TYPE}" \
     --device cuda:0 \
