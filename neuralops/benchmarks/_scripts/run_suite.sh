@@ -28,6 +28,6 @@ case "${MODE}" in
         "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_all_26_comprehensive.py" "$@"
         exec "${PYTHON_BIN}" "${ROOT_DIR}/benchmarks/benchmark_torch_compile_131_attentions.py" "$@"
         ;;
-    help|-h|--help) echo "Usage: benchmarks/run_suite.sh <kernels|cuda|attention|systems|numerics|resources|precision|reproducibility|regression|serving|dispatch|all> [options]" ;;
+    help|-h|--help) echo "Usage: neuralops/benchmarks/_scripts/run_suite.sh <kernels|cuda|attention|systems|numerics|resources|precision|reproducibility|regression|serving|dispatch|all> [options]" ;;
     *) echo "Unknown benchmark group: ${MODE}" >&2; exit 2 ;;
 esac

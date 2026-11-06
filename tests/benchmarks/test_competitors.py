@@ -34,7 +34,7 @@ from neuralops.benchmarks.registry import (
     list_benchmarks,
 )
 import benchmarks.competitors as competitors
-from benchmarks.competitors import (
+from neuralops.benchmarks.competitors import (
     benchmark_deepspeed_zero3_overhead,
     benchmark_flash_attn_tflops,
     benchmark_lighteval_fast_stream,
