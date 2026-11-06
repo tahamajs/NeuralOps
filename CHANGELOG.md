@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
+
 ## [2.0.6] - 2026-11-05
 
 ### Added

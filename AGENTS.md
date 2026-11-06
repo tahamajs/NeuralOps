@@ -49,6 +49,18 @@ Three universal laws supersede all other guidelines in this repository. Any viol
 
 ---
 
+### 1.5 Multi-Agent & Delegation Protocol (Strict)
+- **No Hero Mode**: When instructed to execute a multi-agent workflow (e.g., spawning 10 sub-agents across waves), you are strictly FORBIDDEN from doing the work yourself sequentially and reporting it as "agents completed". 
+- **Tool Dependency**: If your environment lacks a `Task` or Subagent spawning tool, you MUST stop immediately and report: `BLOCKED: This environment does not support multi-agent spawning.` 
+- **No Fabricated Agent IDs**: Never invent IDs like `41ddd7df` or report that "Agent X" finished a task unless you actually invoked the sub-agent and received its return payload.
+- **Parallel Execution**: For parallel waves, all sub-agents MUST be spawned in the same turn.
+
+### 1.6 Local State & Database Hygiene
+- **Never Track SQLite/Binary Ledgers**: The `results/master_ledger.sqlite` and any other local `.sqlite`, `.db`, or `.parquet` result files are local-only state. They MUST be listed in `.gitignore` and untracked via `git rm --cached`.
+- **Tests Must Not Dirty Git Status**: If a unit test writes to the SQLite ledger or a local output file, refactor the test to use the `tmp_path` fixture (pytest built-in) or write to a temporary directory. Never use `git checkout --` inside test scripts to hide working tree changes.
+
+---
+
 ## 2. Licensing, Copyright Headers & Code Attribution
 
 - **Standard Header Requirement**:
@@ -98,6 +110,16 @@ graph TD
 
 ---
 
+### 3.3 Reporting Deferred Tasks (GPU/HPC Only)
+- If a verification step requires CUDA or Triton (e.g., `torch.autograd.gradcheck` or `pytest -m gpu`) and cannot run on macOS, mark it as `DEFERRED`.
+- You MUST provide the exact SSH command and Python script snippet that the user needs to run on the remote HPC node to verify the task.
+- Example:
+  > **DEFERRED (GPU Required):** 
+  > Run on `taha@192.168.1.100`:
+  > `pytest tests/test_triton_parity.py -v -k "cosformer"`
+
+---
+
 ## 4. Frozen Repository Invariants (Canonical 5-Pillars)
 
 The repository's architectural scale is certified by 5 immutable count invariants, verified by `scripts/orchestrator_5gate.sh` and `scripts/utils/verify_readme_counts.py`:
@@ -113,6 +135,12 @@ The repository's architectural scale is certified by 5 immutable count invariant
 ### Invariant Rules:
 - **No Unapproved Additions or Deletions**: Never modify the number of registered keys without formal instruction and cross-file updates across all matrices, tests, and documentation.
 - **Registry Count vs File Count**: Note that canonical counts refer to registry keys and official packages, not arbitrary filesystem counts. Aliases and helper utilities are excluded.
+
+---
+
+### 5.0 Strict Scope Discipline (No Drive-by Refactoring)
+- If the user asks to "fix X", fix **only** X. Do not reformat adjacent functions, do not rename variables, and do not add "proactive improvements" (e.g., extra caching, speculative features) unless explicitly instructed.
+- A PR that fixes a bug should be reviewable in under 1 minute. If your diff touches more than 3 files for a simple fix, you are likely violating scope.
 
 ---
 
@@ -159,6 +187,13 @@ $$\mathcal{L}_{\text{total}} = \alpha \mathcal{L}_{\text{task}} + \beta \mathcal
 
 ---
 
+### 6.3 Error Traceback Mandate (No Silent Skipping)
+- When running benchmarks or evaluation matrices across multiple modules (e.g., all 131 attentions), if a module throws a `RuntimeError` or `ShapeMismatch`, you MUST capture and log the full traceback.
+- In the final CSV/JSON report, mark the module as `ERROR`, but in the accompanying markdown report, include an "Error Appendix" section listing the exact exception for each failed module. 
+- Never group failures under a generic phrase like "dimension mismatch" without proving the exact tensor shapes that clashed.
+
+---
+
 ## 7. Unified CLI System (`neuralops`)
 
 NeuralOps exposes a production-grade CLI built on Click and Rich. AI agents must prefer the unified CLI over fragmented standalone scripts:
@@ -193,6 +228,17 @@ bash scripts/orchestrator_5gate.sh
    - Runs deterministic CPU unit tests covering registries, adapters, and surgery contracts.
 5. **Gate E: Code Quality & AST Linter**:
    - Enforces clean syntax, zero syntax errors, and flake8/ruff conformance.
+
+---
+
+### 8.2 Active Self-Monitoring (The 2-Minute Rule)
+- During any long-running operation (e.g., executing a multi-phase cleanup or a 38-hour benchmark), pause every 2 to 3 phases (or after any command that produces unexpected output).
+- Run the self-check block:
+  ```bash
+  git status --porcelain
+  python3 -c "import neuralops; print(neuralops.__version__)"
+  ```
+- If `git status` shows uncommitted files that are NOT part of the current phase, or if the version/invariants drift, HALT execution immediately and report to the user.
 
 ---
 
@@ -232,4 +278,10 @@ When concluding a development turn or reporting results to the user, follow this
 
 ---
 
-*Authored and certified for NeuralOps v2.0.6. Updated November 2026.*
+## 13. Version History & Change Log
+
+- **v1.3.0** — Added §1.5 (Multi-Agent Protocol), §1.6 (DB Hygiene), §3.3 (Deferred Reporting), §5.0 (Strict Scope), §6.3 (Error Tracebacks), and §8.2 (Self-Monitoring).
+
+---
+
+*Authored and certified for NeuralOps v2.0.6. Last updated: 2026-11-06.*
