@@ -7,13 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.6] - 2026-11-04
+## [2.0.6] - 2026-11-05
+
+### Added
+- **Unified Hardware Kernel Sweeps:**
+  - Expanded CUDA kernel integration to **141 packages** (139 functional C++/CUDA modules with 3-tier fallback execution) in `neuralops.ops.cuda`.
+  - Expanded Triton kernel integration to **58 files** (52 unified JIT computational operators with 2D SRAM tile scheduling) in `neuralops.ops.triton`.
+  - Added native PBS execution scripts for the Sharif University HPC Cluster: `scripts/hpc/run_triton_58_comprehensive.pbs` and `scripts/hpc/run_cuda_141_isolated.pbs`.
+- **Unified CLI Modernization:**
+  - Integrated `neuralops surgery` (declarative planning, static validation, and transactional execution).
+  - Integrated `neuralops transplant` (one-step surgical attention transplantation with micro-healing and Ridge calibration).
+  - Integrated `neuralops doctor` (deep toolchain diagnostics and environment inspection with `--json` output).
+  - Integrated `neuralops info` (runtime hardware telemetry, invariant component inventory, and metadata with `--json` output).
+  - Integrated `neuralops benchmark show` (inspecting summaries, metrics, logs, and provenance manifests for benchmark runs).
+  - Added new benchmark suite runners: `cuda_ops`, `triton_ops`, `e2e_serving`, `roofline`, and `competitors`.
 
 ### Changed
 - **Directory Modernization:** Consolidated legacy duality directories: merged `validator/` into `validation/`, eliminated `operations/` in favor of `ops/`, merged `experiment_logging/` into `tracking/`, and removed `training/` MetaPathFinder shim.
 - **Root Shim Elimination:** Deleted 7 unreferenced root compatibility shims (`server.py`, `checkpoint.py`, `qwen_compat.py`, `hub.py`, `architectures.py`, `lora.py`, `fastapi_app.py`) and migrated high-reference shims (`surgery.py`, `serving.py`, `replace_attention.py`, `registry.py`) via AST rewriting.
 - **HPC & Scripts Consolidation:** Relocated 19 PBS cluster job scripts into `scripts/hpc/` and centralized benchmark runners under `scripts/benchmarks/`.
-- **Portability:** Parameterized cluster cache paths in Qwen KD benchmarks via `os.environ.get('HF_HOME')`.
+- **HFCacheBridge Dynamic Flexibility:** Enhanced `NeuralOpsHybridHFCache.update_recurrent_state()` to seamlessly support both keyword arguments (`layer_idx`, `state`, `recurrent_states`) and positional signatures, preserving fail-closed boundaries for external serving engines.
+- **Documentation Overhaul:** Synchronized `README.md`, `pyproject.toml`, and `CITATION.cff` across all 5 ground truth invariants (131 Attentions, 72 Compressors, 58 Triton files, 141 CUDA packages, 94 Notebooks).
+
+### Fixed
+- **DeepSeek MLA Surgery:** Calibrated dynamic head dimension fallbacks in `UniversalArchitectureScanner` and resolved Pareto solver decorator bindings in `MoARouter`.
+- **PyTorch 2.11+ Autograd Parameter Strictness:** Fixed explicit `requires_grad=False` handling on non-floating quantization tensors in mock test fixtures.
 
 
 ## [2.0.3] - 2026-11-03
