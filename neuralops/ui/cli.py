@@ -111,7 +111,18 @@ def cmd_ui(args: argparse.Namespace) -> int:
             return 1
 
     if static_path:
-        print(f"[INFO] --static flag noted ({static_path}): Static site generation deferred to Phase 10.")
+        from neuralops.ui.static_builder import build_static_site
+        print(f"Building static HTML distribution bundle into {static_path} ...")
+        try:
+            summary = build_static_site(static_path)
+            print(
+                f"[SUCCESS] Static site generated successfully: "
+                f"{summary['total_pages']} pages created at {summary['output_directory']}"
+            )
+            return 0
+        except Exception as exc:
+            print(f"[ERROR] Failed to build static site: {exc}", file=sys.stderr)
+            return 1
     if read_write:
         print("[INFO] --read-write flag noted: Full execution controls deferred to later phases.")
 
