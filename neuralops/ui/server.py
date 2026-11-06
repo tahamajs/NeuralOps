@@ -20,6 +20,7 @@ from fastapi.templating import Jinja2Templates
 
 import neuralops
 from neuralops.ui.routes import (
+    api_router,
     attentions_router,
     benchmarks_router,
     compressors_router,
@@ -81,5 +82,6 @@ def create_app() -> FastAPI:
     app.include_router(benchmarks_router)
     app.include_router(doctor_router)
     app.include_router(partials_router)
+    app.include_router(api_router)
 
     return app

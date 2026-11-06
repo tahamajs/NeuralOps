@@ -8,6 +8,7 @@
 
 """NeuralOps UI Routes package."""
 
+from neuralops.ui.routes.api import router as api_router
 from neuralops.ui.routes.attentions import router as attentions_router
 from neuralops.ui.routes.benchmarks import router as benchmarks_router
 from neuralops.ui.routes.compressors import router as compressors_router
@@ -16,6 +17,7 @@ from neuralops.ui.routes.doctor import router as doctor_router
 from neuralops.ui.routes.partials import router as partials_router
 
 __all__ = [
+    "api_router",
     "attentions_router",
     "benchmarks_router",
     "compressors_router",

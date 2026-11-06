@@ -52,4 +52,18 @@
 <div id="benchmarks-table-container">
   {% include "partials/benchmarks_table.html" %}
 </div>
+
+<div style="margin-top: 2rem;">
+  <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;">Empirical Performance &amp; Pareto Visualizations</h2>
+  <div class="chart-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem;">
+    <div class="card" style="margin-bottom: 0;">
+      <div id="roofline-chart" style="width: 100%; min-height: 400px;"></div>
+    </div>
+    <div class="card" style="margin-bottom: 0;">
+      <div id="pareto-chart" style="width: 100%; min-height: 400px;"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/static/charts.js"></script>
 {% endblock %}
