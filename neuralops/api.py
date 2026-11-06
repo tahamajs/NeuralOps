@@ -14,6 +14,7 @@ Unified public interface enabling drop-in attention replacement, model compressi
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 try:
@@ -142,9 +143,13 @@ def replace_attention(
             **kwargs,
         },
     }
-    if not hasattr(out_model, "_neuralops_metadata") or out_model._neuralops_metadata is None:
-        out_model._neuralops_metadata = []
-    out_model._neuralops_metadata.append(meta_entry)
+    try:
+        if not hasattr(out_model, "_neuralops_metadata") or out_model._neuralops_metadata is None:
+            out_model._neuralops_metadata = []
+        out_model._neuralops_metadata.append(meta_entry)
+    except Exception as e:
+        logger.error("Failed to register _neuralops_metadata on model %s: %s", type(out_model).__name__, e)
+        raise
 
     from neuralops.export.surgery_manifest import record_attention_surgery
     record_attention_surgery(
@@ -160,13 +165,15 @@ def replace_attention(
         out_model.config.neuralops_history.append(meta_entry)
         try:
             out_model.config.neuralops_attention = attn_name
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("Failed to set neuralops_attention on model config for %s: %s", type(out_model).__name__, e)
+            raise
     elif hasattr(out_model, "config") and out_model.config is not None:
         try:
             out_model.config.neuralops_attention = attn_name
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error("Failed to set neuralops_attention on model config for %s: %s", type(out_model).__name__, e)
+            raise
 
     from neuralops.utils.hub_integration import attach_attention_methods
     return attach_attention_methods(out_model)
@@ -275,9 +282,11 @@ transplant = transplant_attention
 def serve(
     model: Union[str, nn.Module],
     port: int = 8000,
-    host: str = "0.0.0.0",
+    host: str = "127.0.0.1",
     backend: str = "auto",
     kv_cache_budget_gb: float = 4.0,
+    api_key: Optional[str] = None,
+    rate_limit_rpm: int = 60,
     **kwargs: Any,
 ) -> Any:
     """Launches an OpenAI-compatible HTTP serving endpoint for the model.
@@ -285,10 +294,18 @@ def serve(
     Parameters:
         model: PyTorch model instance or Hugging Face model identifier string.
         port: HTTP server port (default: 8000).
-        host: Host binding address (default: '0.0.0.0').
+        host: Host binding address (default: '127.0.0.1').
         backend: Serving engine ('vllm', 'sglang', or 'neuralops_native').
         kv_cache_budget_gb: Maximum VRAM allocation for paged KV-cache.
+        api_key: Optional API key for client authentication. Defaults to NEURALOPS_API_KEY.
+        rate_limit_rpm: Maximum requests per minute per IP address (default: 60).
     """
+    resolved_api_key = api_key or os.environ.get("NEURALOPS_API_KEY")
+    if host not in ("127.0.0.1", "localhost") and not resolved_api_key:
+        raise ValueError(
+            "Refusing to bind serving to non-localhost address without an API key configured (set NEURALOPS_API_KEY)."
+        )
+
     if isinstance(model, str):
         from transformers import AutoModelForCausalLM
         resolved_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -302,6 +319,8 @@ def serve(
         model,
         backend=backend,
         kv_cache_budget_gb=kv_cache_budget_gb,
+        api_key=resolved_api_key,
+        rate_limit_rpm=rate_limit_rpm,
         **kwargs,
     )
     import uvicorn

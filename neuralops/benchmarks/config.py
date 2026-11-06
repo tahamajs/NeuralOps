@@ -130,10 +130,32 @@ class BenchmarkConfig:
             )
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert config to dictionary representation."""
+        """Convert config to dictionary representation without secret credentials.
+
+        Security trace (F-88 audit, 2026-11-06):
+        Previously, `asdict(self)` included `hf_token` in plain text.
+        Consumers including `BenchmarkConfig.save()`, `neuralops.results_saver.pipeline.result_writer`
+        (`save_config` -> `config.json` and `write_run_summary` -> `summary.md`),
+        `neuralops.benchmarks.kd.runner` (`config_snapshot`), and `cli.py:apply_config_to_args`
+        (`args.effective_config`) received this dictionary. If an `hf_token` was supplied,
+        it was written directly to disk in `config.json` and `summary.md`.
+        Removing `hf_token` from `to_dict()` ensures no serialized config artifact,
+        result manifest, or log output leaks HuggingFace authentication tokens.
+        """
         data = asdict(self)
         data["output_dir"] = str(self.output_dir)
+        data.pop("hf_token", None)
         return data
+
+    def __repr__(self) -> str:
+        """String representation with sensitive tokens redacted."""
+        fields = []
+        for f in self.__dataclass_fields__:
+            val = getattr(self, f)
+            if f == "hf_token" and val is not None:
+                val = "***REDACTED***"
+            fields.append(f"{f}={val!r}")
+        return f"{self.__class__.__name__}({', '.join(fields)})"
 
     @classmethod
     def from_file(cls, path: str | Path) -> "BenchmarkConfig":

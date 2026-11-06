@@ -50,13 +50,6 @@ def _add_ui_arguments(parser: argparse.ArgumentParser) -> None:
         help="Generate a static HTML bundle for HuggingFace Spaces deployment",
     )
     parser.add_argument(
-        "--read-write",
-        action="store_true",
-        dest="read_write",
-        default=False,
-        help="Enable read-write operations (benchmarking/distillation execution)",
-    )
-    parser.add_argument(
         "--no-browser",
         action="store_true",
         dest="no_browser",
@@ -67,8 +60,8 @@ def _add_ui_arguments(parser: argparse.ArgumentParser) -> None:
         "--auth",
         type=str,
         default=None,
-        metavar="USER:PASS",
-        help="Basic authentication credentials for public access (required with --share)",
+        metavar="USERNAME",
+        help="Basic authentication username (required with --share). Password is read from NEURALOPS_UI_AUTH or stdin via getpass.",
     )
 
 
@@ -95,9 +88,30 @@ def cmd_ui(args: argparse.Namespace) -> int:
     host = getattr(args, "host", "127.0.0.1")
     share = getattr(args, "share", False)
     static_path = getattr(args, "static", None)
-    read_write = getattr(args, "read_write", False)
     no_browser = getattr(args, "no_browser", False)
     auth = getattr(args, "auth", None)
+
+    if share and not auth:
+        raise ValueError("--auth is required when sharing the Web UI via --share.")
+
+    auth_creds = None
+    if auth:
+        import os
+        import getpass
+
+        if ":" in auth:
+            raise ValueError(
+                "Passing passwords via '--auth USER:PASS' is no longer supported for security. "
+                "Pass '--auth USERNAME' and set NEURALOPS_UI_AUTH or enter password when prompted."
+            )
+        user = auth
+        pwd = os.environ.get("NEURALOPS_UI_AUTH")
+        if not pwd:
+            pwd = getpass.getpass(f"Enter password for Web UI user '{user}': ")
+        if not pwd:
+            raise ValueError("Web UI authentication password cannot be empty.")
+        auth_creds = (user, pwd)
+        print(f"[SECURITY] Basic authentication enabled for user: {auth_creds[0]}")
 
     tunnel = None
     if share:
@@ -123,18 +137,6 @@ def cmd_ui(args: argparse.Namespace) -> int:
         except Exception as exc:
             print(f"[ERROR] Failed to build static site: {exc}", file=sys.stderr)
             return 1
-    if read_write:
-        print("[INFO] --read-write flag noted: Full execution controls deferred to later phases.")
-
-    auth_creds = None
-    if auth:
-        if ":" not in auth:
-            print("[ERROR] --auth format must be 'USERNAME:PASSWORD'", file=sys.stderr)
-            if tunnel:
-                tunnel.stop()
-            return 2
-        auth_creds = tuple(auth.split(":", 1))
-        print(f"[SECURITY] Basic authentication enabled for user: {auth_creds[0]}")
 
     url = f"http://{host}:{port}"
     print(f"Starting NeuralOps Web UI server on {url} ...")

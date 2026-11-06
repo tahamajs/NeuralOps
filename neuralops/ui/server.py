@@ -56,7 +56,7 @@ def create_app(auth_credentials: tuple[str, str] | None = None) -> FastAPI:
     # Restrict CORS to localhost
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=["http://127.0.0.1:8080", "http://localhost:8080"],
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],

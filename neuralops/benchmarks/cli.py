@@ -196,7 +196,22 @@ def _build_parser() -> argparse.ArgumentParser:
         default=False,
         help="[Deprecated] Redundant alias ensuring trust_remote_code is disabled (default: False)",
     )
-    run_p.add_argument("--hf-token", type=str, default=None, help="Hugging Face API token for gated/private models")
+    class _DeprecatedHfTokenAction(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            raise argparse.ArgumentError(
+                self,
+                "--hf-token is deprecated and refused for security. "
+                "Passing tokens via argv exposes credentials in process listings and shell history. "
+                "Set the HF_TOKEN environment variable instead.",
+            )
+
+    run_p.add_argument(
+        "--hf-token",
+        action=_DeprecatedHfTokenAction,
+        nargs="?",
+        default=None,
+        help="[Deprecated/Refused] Set HF_TOKEN environment variable instead of passing credentials via CLI.",
+    )
     run_p.add_argument("--language", type=str, default=None, help="Language code for multilingual datasets/metrics")
     run_p.add_argument("--text-column", type=str, default=None, help="Custom column name for text inputs")
     run_p.add_argument("--label-column", type=str, default=None, help="Custom column name for target labels")
@@ -823,7 +838,11 @@ def handle_run(args: argparse.Namespace) -> None:
         distributed_backend=args.distributed_backend,
         mixed_precision=args.mixed_precision,
         trust_remote_code=trust_remote_code_val,
-        hf_token=args.hf_token,
+        hf_token=(
+            os.environ.get("HF_TOKEN")
+            or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+            or os.environ.get("HUGGINGFACE_HUB_TOKEN")
+        ),
         language=args.language,
         text_column=args.text_column,
         label_column=args.label_column,

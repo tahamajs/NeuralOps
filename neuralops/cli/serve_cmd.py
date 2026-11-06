@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from typing import Any, Optional
 
@@ -39,8 +40,8 @@ def build_serve_parser(subparser: Optional[argparse.ArgumentParser] = None) -> a
     parser.add_argument(
         "--host",
         type=str,
-        default="0.0.0.0",
-        help="Host network interface to bind (default: 0.0.0.0)",
+        default="127.0.0.1",
+        help="Host network interface to bind (default: 127.0.0.1)",
     )
     parser.add_argument(
         "--port",
@@ -53,6 +54,12 @@ def build_serve_parser(subparser: Optional[argparse.ArgumentParser] = None) -> a
         choices=["fastapi"],
         default="fastapi",
         help="OpenAI-compatible FastAPI server (the only currently implemented HTTP engine)",
+    )
+    parser.add_argument(
+        "--api-key",
+        type=str,
+        default=None,
+        help="API key for client authentication. Can also be set via NEURALOPS_API_KEY env var.",
     )
     return parser
 
@@ -78,15 +85,22 @@ def cmd_serve(args: Any) -> int:
         args_ns = args
 
     model_id = getattr(args_ns, "model", "gpt2")
-    host = getattr(args_ns, "host", "0.0.0.0")
+    host = getattr(args_ns, "host", "127.0.0.1")
     port = getattr(args_ns, "port", 8000)
     engine_type = getattr(args_ns, "engine", "fastapi")
+    api_key = getattr(args_ns, "api_key", None) or os.environ.get("NEURALOPS_API_KEY")
+
     if not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535:
         raise ValueError("--port must be an integer between 1 and 65535")
     if not isinstance(host, str) or not host.strip():
         raise ValueError("--host must be a non-empty network interface name or address")
     if engine_type != "fastapi":
         raise ValueError("Only the FastAPI serving engine is implemented by this command.")
+
+    if host not in ("127.0.0.1", "localhost") and not api_key:
+        raise ValueError(
+            "Refusing to bind serving to non-localhost address without an API key configured (set NEURALOPS_API_KEY)."
+        )
 
     import torch
 
@@ -125,7 +139,7 @@ def cmd_serve(args: Any) -> int:
     primary_model.eval()
     tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-    app = create_openai_serving_app(primary_model, tokenizer, model_name=model_id)
+    app = create_openai_serving_app(primary_model, tokenizer, model_name=model_id, api_key=api_key)
     print(f"[*] Starting HTTP listener at http://{host}:{port} (Ctrl+C to stop).")
     uvicorn.run(app, host=host, port=port)
     return 0

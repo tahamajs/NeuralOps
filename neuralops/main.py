@@ -375,11 +375,9 @@ def run_eval(cfg: Any, fw: dict, logger: logging.Logger, model_path: str) -> dic
 
     try:
         model = fw["AutoModelForSequenceClassification"].from_pretrained(model_path)
-    except Exception:
-        logger.warning("Could not load from %s, falling back to base model", model_path)
-        model = fw["AutoModelForSequenceClassification"].from_pretrained(
-            cfg.model_name, num_labels=num_labels
-        )
+    except Exception as e:
+        logger.error("Could not load checkpoint from %s: %s", model_path, e)
+        raise RuntimeError(f"Failed to load checkpoint from {model_path}: {e}") from e
     model.to(device)
 
     training_args = fw["TrainingArguments"](
@@ -474,6 +472,8 @@ def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     eval_acc = 0.0
     eval_f1 = 0.0
     eval_loss = 0.0
+    status = "success"
+    eval_error = None
     try:
         dataset, num_labels, _ = load_data(cfg, tokenizer)
         eval_args = fw["TrainingArguments"](
@@ -498,7 +498,9 @@ def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
 
         shutil.rmtree(out_dir / "tmp_eval", ignore_errors=True)
     except Exception as e:
-        logger.warning("Could not evaluate compressed model on validation set: %s", e)
+        logger.error("Could not evaluate compressed model on validation set: %s", e)
+        status = "failed"
+        eval_error = str(e)
 
     if getattr(cfg, "save_model", False):
         model_dir = out_dir / "model"
@@ -506,6 +508,7 @@ def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         tokenizer.save_pretrained(str(model_dir))
 
     stats = {
+        "status": status,
         "compressor": compressor_name,
         "original_size_mb": round(orig_mb, 2),
         "compressed_size_mb": round(comp_mb, 2),
@@ -515,6 +518,8 @@ def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         "f1": eval_f1,
         "loss": eval_loss,
     }
+    if eval_error is not None:
+        stats["error"] = eval_error
     logger.info("Compression stats: %s", stats)
 
     rw = fw["ResultWriter"](out_dir)

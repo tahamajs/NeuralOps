@@ -195,25 +195,81 @@ def create_openai_serving_app(
     model: nn.Module | None = None,
     tokenizer: Any = None,
     model_name: str = "neuralops-default",
+    api_key: Optional[str] = None,
+    rate_limit_rpm: int = 60,
+    **kwargs: Any,
 ) -> Any:
     """Create an OpenAI-shaped API backed by the supplied model and tokenizer.
 
     This lightweight adapter performs ordinary Hugging Face ``generate`` calls;
     it does not implement continuous batching or vLLM's streaming scheduler.
+
+    Security & Rate Limiting:
+        - When an API key is provided (or set in NEURALOPS_API_KEY), requests to all
+          endpoints except /health require HTTP Bearer authentication.
+        - Enforces sliding-window rate limiting per client IP (default: 60 requests/minute).
+        - Exceeding the rate limit returns HTTP 429 Too Many Requests.
     """
     try:
         from fastapi import FastAPI, Request, HTTPException
-        from fastapi.responses import StreamingResponse
+        from fastapi.responses import JSONResponse, StreamingResponse
     except ImportError:
         raise ImportError(
             "FastAPI is required for OpenAI-compatible serving. "
             "Install with: pip install fastapi uvicorn"
         )
 
+    import os
+    import secrets
     import time
     import uuid
+    from collections import defaultdict
+
+    resolved_api_key = api_key or os.environ.get("NEURALOPS_API_KEY")
+
+    # In-memory sliding-window request timestamps per client IP
+    rate_limit_records: dict[str, list[float]] = defaultdict(list)
 
     app = FastAPI(title="NeuralOps Serving Engine", version="1.4.2")
+
+    @app.middleware("http")
+    async def security_and_rate_limit_middleware(request: Request, call_next):
+        # /health is always exempt from auth and rate limiting
+        if request.url.path == "/health":
+            return await call_next(request)
+
+        # 1. API key authentication check (if configured)
+        if resolved_api_key:
+            auth_header = request.headers.get("authorization", "").strip()
+            token = ""
+            if auth_header.startswith("Bearer "):
+                token = auth_header[7:].strip()
+            elif auth_header:
+                token = auth_header
+            elif "x-api-key" in request.headers:
+                token = request.headers["x-api-key"].strip()
+
+            if not token or not secrets.compare_digest(token, resolved_api_key):
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Unauthorized: Invalid or missing API key."},
+                )
+
+        # 2. Per-IP rate limiting (sliding window)
+        client_ip = request.client.host if request.client else "127.0.0.1"
+        now = time.time()
+        window_start = now - 60.0
+        timestamps = rate_limit_records[client_ip]
+        # Filter timestamps within current 60s window
+        rate_limit_records[client_ip] = [ts for ts in timestamps if ts > window_start]
+        if len(rate_limit_records[client_ip]) >= rate_limit_rpm:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": f"Rate limit exceeded: maximum {rate_limit_rpm} requests per minute."},
+            )
+        rate_limit_records[client_ip].append(now)
+
+        return await call_next(request)
 
     @app.get("/health")
     def health():

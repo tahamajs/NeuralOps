@@ -390,7 +390,8 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
             manifest = SurgeryManifest.from_dict(manifest_dict)
             model = replay_surgery_manifest(model, manifest)
         except Exception as e:
-            logger.warning("Failed to replay surgery manifest, falling back to legacy replay: %s", e)
+            logger.error("Failed to replay surgery manifest from '%s': %s", surgery_manifest_file, e)
+            raise RuntimeError(f"Failed to replay surgery manifest from {surgery_manifest_file}: {e}") from e
     else:
         import neuralops
         metadata_ops = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
@@ -422,7 +423,8 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
             state_dict = load_file(str(safetensors_path))
             model.load_state_dict(state_dict, strict=False)
         except Exception as err:
-            logger.warning("Could not load safetensors file: %s", err)
+            logger.error("Could not load safetensors file '%s': %s", safetensors_path, err)
+            raise RuntimeError(f"Failed to load weights from {safetensors_path}: {err}") from err
     elif bin_path.exists():
         state_dict = torch.load(bin_path, map_location="cpu", weights_only=True)
         model.load_state_dict(state_dict, strict=False)

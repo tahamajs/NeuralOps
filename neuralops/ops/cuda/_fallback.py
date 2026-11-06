@@ -93,6 +93,21 @@ def force_kernel_backend(backend: str) -> Generator[None, None, None]:
         _FORCED_BACKEND.reset(token)
 
 
+def _resolve_backend(backend: str = "auto") -> str:
+    """Resolve backend selection respecting _FORCED_BACKEND context.
+
+    If backend is 'auto', checks _FORCED_BACKEND. If forced is not 'auto',
+    returns the forced backend. Otherwise resolves 'auto' to 'cuda' so that
+    the Level 1 CUDA implementation is attempted first in the fallback chain.
+    """
+    if backend == "auto":
+        forced = _FORCED_BACKEND.get()
+        if forced != "auto":
+            return forced
+        return "cuda"
+    return backend
+
+
 def get_dispatch_stats() -> dict[str, int]:
     """Returns copy of dispatch telemetry counters."""
     return dict(_DISPATCH_STATS)
@@ -233,7 +248,18 @@ def dispatch(
     if pytorch_ref is None and pytorch_fn is not None:
         pytorch_ref = pytorch_fn
     pytorch_fn = pytorch_ref
+
+    if pytorch_fn is None:
+        raise RuntimeError(
+            f"No PyTorch fallback supplied for kernel '{kernel_name}'; "
+            "CUDA and Triton both unavailable"
+        )
+
     forced = _FORCED_BACKEND.get()
+    requested_backend = kwargs.pop("backend", "auto")
+    effective_backend = _resolve_backend(requested_backend)
+    if forced == "auto" and effective_backend != "cuda":
+        forced = effective_backend
 
     if (
         not FORCE_PYTORCH_FALLBACK
@@ -425,307 +451,721 @@ def is_kernel_available(kernel_name: str, backend: str = "cuda") -> bool:
 def _direct_svd_cuda_available() -> bool:
     return is_kernel_available("direct_svd", backend="cuda")
 
-def dispatch_direct_svd(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _direct_svd_cuda_available():
-        try:
-            from neuralops.ops.cuda.direct_svd import direct_svd_compress
-            return direct_svd_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"direct_svd CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.low_rank import direct_svd_compress as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_direct_svd(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _direct_svd_cuda_available():
+            try:
+                from neuralops.ops.cuda.direct_svd import direct_svd_compress
+                return direct_svd_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[direct_svd] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[direct_svd] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("direct_svd", backend="triton"):
+            try:
+                from neuralops.ops.triton.low_rank import direct_svd_compress as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[direct_svd] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[direct_svd] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'direct_svd'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _asvd_cuda_available() -> bool:
     return is_kernel_available("asvd", backend="cuda")
 
-def dispatch_asvd(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _asvd_cuda_available():
-        try:
-            from neuralops.ops.cuda.asvd import asvd_compress
-            return asvd_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"asvd CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.low_rank import asvd_compress as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_asvd(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _asvd_cuda_available():
+            try:
+                from neuralops.ops.cuda.asvd import asvd_compress
+                return asvd_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[asvd] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[asvd] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("asvd", backend="triton"):
+            try:
+                from neuralops.ops.triton.low_rank import asvd_compress as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[asvd] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[asvd] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'asvd'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _fwsvd_cuda_available() -> bool:
     return is_kernel_available("fwsvd", backend="cuda")
 
-def dispatch_fwsvd(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _fwsvd_cuda_available():
-        try:
-            from neuralops.ops.cuda.fwsvd import fwsvd_compress
-            return fwsvd_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"fwsvd CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.low_rank import fwsvd_compress as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_fwsvd(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _fwsvd_cuda_available():
+            try:
+                from neuralops.ops.cuda.fwsvd import fwsvd_compress
+                return fwsvd_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[fwsvd] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[fwsvd] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("fwsvd", backend="triton"):
+            try:
+                from neuralops.ops.triton.low_rank import fwsvd_compress as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[fwsvd] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[fwsvd] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'fwsvd'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _hnc_svd_cuda_available() -> bool:
     return is_kernel_available("hnc_svd", backend="cuda")
 
-def dispatch_hnc_svd(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _hnc_svd_cuda_available():
-        try:
-            from neuralops.ops.cuda.hnc_svd import hnc_svd_compress
-            return hnc_svd_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"hnc_svd CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.low_rank import hnc_svd_compress as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_hnc_svd(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _hnc_svd_cuda_available():
+            try:
+                from neuralops.ops.cuda.hnc_svd import hnc_svd_compress
+                return hnc_svd_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[hnc_svd] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[hnc_svd] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("hnc_svd", backend="triton"):
+            try:
+                from neuralops.ops.triton.low_rank import hnc_svd_compress as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[hnc_svd] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[hnc_svd] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'hnc_svd'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _awq_cuda_available() -> bool:
     return is_kernel_available("awq", backend="cuda")
 
-def dispatch_awq(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _awq_cuda_available():
-        try:
-            from neuralops.ops.cuda.awq import awq_compress
-            return awq_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"awq CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.quantize_awq import awq_compress as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_awq(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _awq_cuda_available():
+            try:
+                from neuralops.ops.cuda.awq import awq_compress
+                return awq_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[awq] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[awq] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("awq", backend="triton"):
+            try:
+                from neuralops.ops.triton.quantize_awq import awq_compress as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[awq] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[awq] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'awq'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _fp8_compressor_cuda_available() -> bool:
     return is_kernel_available("fp8_compressor", backend="cuda")
 
-def dispatch_fp8_compressor(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _fp8_compressor_cuda_available():
-        try:
-            from neuralops.ops.cuda.fp8_compressor import fp8_compressor_compress
-            return fp8_compressor_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"fp8_compressor CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.quantize_fp8 import fp8_compress as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_fp8_compressor(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _fp8_compressor_cuda_available():
+            try:
+                from neuralops.ops.cuda.fp8_compressor import fp8_compressor_compress
+                return fp8_compressor_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[fp8_compressor] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[fp8_compressor] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("fp8_compressor", backend="triton"):
+            try:
+                from neuralops.ops.triton.quantize_fp8 import fp8_compress as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[fp8_compressor] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[fp8_compressor] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'fp8_compressor'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _kmeans_quantize_cuda_available() -> bool:
     return is_kernel_available("kmeans_quantize", backend="cuda")
 
-def dispatch_kmeans_quantize(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _kmeans_quantize_cuda_available():
-        try:
-            from neuralops.ops.cuda.kmeans_quantize import kmeans_quantize_compress
-            return kmeans_quantize_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"kmeans_quantize CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.quantize_kmeans import kmeans_quantize_compress as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_kmeans_quantize(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _kmeans_quantize_cuda_available():
+            try:
+                from neuralops.ops.cuda.kmeans_quantize import kmeans_quantize_compress
+                return kmeans_quantize_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[kmeans_quantize] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[kmeans_quantize] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("kmeans_quantize", backend="triton"):
+            try:
+                from neuralops.ops.triton.quantize_kmeans import kmeans_quantize_compress as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[kmeans_quantize] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[kmeans_quantize] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'kmeans_quantize'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _wanda_cuda_available() -> bool:
     return is_kernel_available("wanda", backend="cuda")
 
-def dispatch_wanda(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _wanda_cuda_available():
-        try:
-            from neuralops.ops.cuda.wanda import wanda_compress
-            return wanda_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"wanda CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.prune_wanda import wanda_compress as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_wanda(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _wanda_cuda_available():
+            try:
+                from neuralops.ops.cuda.wanda import wanda_compress
+                return wanda_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[wanda] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[wanda] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("wanda", backend="triton"):
+            try:
+                from neuralops.ops.triton.prune_wanda import wanda_compress as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[wanda] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[wanda] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'wanda'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _sparsegpt_cuda_available() -> bool:
     return is_kernel_available("sparsegpt", backend="cuda")
 
-def dispatch_sparsegpt(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _sparsegpt_cuda_available():
-        try:
-            from neuralops.ops.cuda.sparsegpt import sparsegpt_compress
-            return sparsegpt_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"sparsegpt CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.prune_sparsegpt import sparsegpt_compress as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_sparsegpt(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _sparsegpt_cuda_available():
+            try:
+                from neuralops.ops.cuda.sparsegpt import sparsegpt_compress
+                return sparsegpt_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[sparsegpt] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[sparsegpt] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("sparsegpt", backend="triton"):
+            try:
+                from neuralops.ops.triton.prune_sparsegpt import sparsegpt_compress as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[sparsegpt] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[sparsegpt] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'sparsegpt'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _admm_cuda_available() -> bool:
     return is_kernel_available("admm", backend="cuda")
 
-def dispatch_admm(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _admm_cuda_available():
-        try:
-            from neuralops.ops.cuda.admm import admm_pruner_compress
-            return admm_pruner_compress(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"admm CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.prune_admm import admm_prune as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_admm(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _admm_cuda_available():
+            try:
+                from neuralops.ops.cuda.admm import admm_pruner_compress
+                return admm_pruner_compress(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[admm] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[admm] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("admm", backend="triton"):
+            try:
+                from neuralops.ops.triton.prune_admm import admm_prune as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[admm] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[admm] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'admm'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _routing_attention_cuda_available() -> bool:
     return is_kernel_available("routing_attention", backend="cuda")
 
-def dispatch_routing_attention(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _routing_attention_cuda_available():
-        try:
-            from neuralops.ops.cuda.routing_attention import routing_attention_forward
-            return routing_attention_forward(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"routing_attention CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.routing_attention_triton import routing_attention_forward as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_routing_attention(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _routing_attention_cuda_available():
+            try:
+                from neuralops.ops.cuda.routing_attention import routing_attention_forward
+                return routing_attention_forward(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[routing_attention] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[routing_attention] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("routing_attention", backend="triton"):
+            try:
+                from neuralops.ops.triton.routing_attention_triton import routing_attention_forward as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[routing_attention] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[routing_attention] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'routing_attention'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _lsh_attention_cuda_available() -> bool:
     return is_kernel_available("lsh_attention", backend="cuda")
 
-def dispatch_lsh_attention(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _lsh_attention_cuda_available():
-        try:
-            from neuralops.ops.cuda.lsh_attention import lsh_attention_forward
-            return lsh_attention_forward(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"lsh_attention CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.lsh_attention_triton import lsh_attention_forward as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_lsh_attention(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _lsh_attention_cuda_available():
+            try:
+                from neuralops.ops.cuda.lsh_attention import lsh_attention_forward
+                return lsh_attention_forward(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[lsh_attention] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[lsh_attention] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("lsh_attention", backend="triton"):
+            try:
+                from neuralops.ops.triton.lsh_attention_triton import lsh_attention_forward as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[lsh_attention] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[lsh_attention] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'lsh_attention'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _cross_attention_cuda_available() -> bool:
     return is_kernel_available("cross_attention", backend="cuda")
 
-def dispatch_cross_attention(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _cross_attention_cuda_available():
-        try:
-            from neuralops.ops.cuda.cross_attention import cross_attention_forward
-            return cross_attention_forward(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"cross_attention CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.cross_attention_triton import cross_attention_forward as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_cross_attention(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _cross_attention_cuda_available():
+            try:
+                from neuralops.ops.cuda.cross_attention import cross_attention_forward
+                return cross_attention_forward(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[cross_attention] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[cross_attention] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("cross_attention", backend="triton"):
+            try:
+                from neuralops.ops.triton.cross_attention_triton import cross_attention_forward as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[cross_attention] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[cross_attention] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'cross_attention'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _adaptive_sparse_cuda_available() -> bool:
     return is_kernel_available("adaptive_sparse", backend="cuda")
 
-def dispatch_adaptive_sparse(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _adaptive_sparse_cuda_available():
-        try:
-            from neuralops.ops.cuda.adaptive_sparse import adaptive_sparse_attention_forward
-            return adaptive_sparse_attention_forward(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"adaptive_sparse CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.adaptive_sparse_triton import adaptive_sparse_attention_forward as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_adaptive_sparse(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _adaptive_sparse_cuda_available():
+            try:
+                from neuralops.ops.cuda.adaptive_sparse import adaptive_sparse_attention_forward
+                return adaptive_sparse_attention_forward(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[adaptive_sparse] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[adaptive_sparse] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("adaptive_sparse", backend="triton"):
+            try:
+                from neuralops.ops.triton.adaptive_sparse_triton import adaptive_sparse_attention_forward as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[adaptive_sparse] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[adaptive_sparse] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'adaptive_sparse'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _dynamic_conv_cuda_available() -> bool:
     return is_kernel_available("dynamic_conv", backend="cuda")
 
-def dispatch_dynamic_conv(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _dynamic_conv_cuda_available():
-        try:
-            from neuralops.ops.cuda.dynamic_conv import dynamic_conv_attention_forward
-            return dynamic_conv_attention_forward(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"dynamic_conv CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.dynamic_conv_triton import dynamic_conv_attention_forward as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_dynamic_conv(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _dynamic_conv_cuda_available():
+            try:
+                from neuralops.ops.cuda.dynamic_conv import dynamic_conv_attention_forward
+                return dynamic_conv_attention_forward(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[dynamic_conv] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[dynamic_conv] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("dynamic_conv", backend="triton"):
+            try:
+                from neuralops.ops.triton.dynamic_conv_triton import dynamic_conv_attention_forward as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[dynamic_conv] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[dynamic_conv] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'dynamic_conv'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _token_compressed_cuda_available() -> bool:
     return is_kernel_available("token_compressed", backend="cuda")
 
-def dispatch_token_compressed(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _token_compressed_cuda_available():
-        try:
-            from neuralops.ops.cuda.token_compressed import token_compressed_attention_forward
-            return token_compressed_attention_forward(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"token_compressed CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.token_compressed_triton import token_compressed_attention_forward as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_token_compressed(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _token_compressed_cuda_available():
+            try:
+                from neuralops.ops.cuda.token_compressed import token_compressed_attention_forward
+                return token_compressed_attention_forward(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[token_compressed] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[token_compressed] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("token_compressed", backend="triton"):
+            try:
+                from neuralops.ops.triton.token_compressed_triton import token_compressed_attention_forward as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[token_compressed] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[token_compressed] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'token_compressed'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _chela_slay_cuda_available() -> bool:
     return is_kernel_available("chela_slay", backend="cuda")
 
-def dispatch_chela_slay(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _chela_slay_cuda_available():
-        try:
-            from neuralops.ops.cuda.chela_slay import chela_slay_attention_forward
-            return chela_slay_attention_forward(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"chela_slay CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.chela_slay_triton import chela_slay_forward as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_chela_slay(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _chela_slay_cuda_available():
+            try:
+                from neuralops.ops.cuda.chela_slay import chela_slay_attention_forward
+                return chela_slay_attention_forward(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[chela_slay] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[chela_slay] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("chela_slay", backend="triton"):
+            try:
+                from neuralops.ops.triton.chela_slay_triton import chela_slay_forward as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[chela_slay] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[chela_slay] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'chela_slay'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 def _rala_cuda_available() -> bool:
     return is_kernel_available("rala", backend="cuda")
 
-def dispatch_rala(*args: Any, backend: str = "auto", **kwargs: Any) -> Any:
-    if backend == "auto":
-        backend = _FORCED_BACKEND.get()
-    if backend == "cuda" and _rala_cuda_available():
-        try:
-            from neuralops.ops.cuda.rala import rala_attention_forward
-            return rala_attention_forward(*args, **kwargs)
-        except Exception as e:
-            logger.warning(f"rala CUDA failed: {e}. Falling back to Triton.")
-            # fall through to Triton
-    from neuralops.ops.triton.rala_attention_triton import rala_attention_forward as _triton_fwd
-    return _triton_fwd(*args, **kwargs)
+def dispatch_rala(*args: Any, pytorch_fn: Any = None, backend: str = "auto", **kwargs: Any) -> Any:
+    target_backend = _resolve_backend(backend)
+    is_auto = (backend == "auto" and _FORCED_BACKEND.get() == "auto")
+    if target_backend == "cuda":
+        if _rala_cuda_available():
+            try:
+                from neuralops.ops.cuda.rala import rala_attention_forward
+                return rala_attention_forward(*args, **kwargs)
+            except (ImportError, RuntimeError) as e:
+                logger.warning(f"[rala] CUDA failed: {e}. Falling back to Triton.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[rala] Backend forced to 'cuda', but no CUDA implementation is available.")
+        if is_auto:
+            target_backend = "triton"
+    if target_backend == "triton":
+        if is_kernel_available("rala", backend="triton"):
+            try:
+                from neuralops.ops.triton.rala_attention_triton import rala_attention_forward as _triton_fwd
+                return _triton_fwd(*args, **kwargs)
+            except (ImportError, AttributeError) as e:
+                logger.warning(f"[rala] Triton failed: {e}. Falling back to PyTorch.")
+                if not is_auto:
+                    raise
+        elif not is_auto:
+            raise RuntimeError("[rala] Backend forced to 'triton', but Triton is not available.")
+        if is_auto:
+            target_backend = "pytorch"
+    if pytorch_fn is None:
+        raise RuntimeError(
+            "No PyTorch fallback supplied for kernel 'rala'; "
+            "CUDA and Triton both unavailable"
+        )
+    return pytorch_fn(*args, **kwargs)
 
 
 __all__ = [

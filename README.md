@@ -754,7 +754,7 @@ print(f"Matched {matched_len} prompt tokens directly from Radix cache; prefillin
 Launch a production-grade OpenAI-compatible generation server backed by FastAPI:
 ```bash
 # Launch OpenAI-compatible API server on port 8000
-neuralops serve --model gpt2 --host 0.0.0.0 --port 8000 --engine fastapi
+neuralops serve --model gpt2 --host 127.0.0.1 --port 8000 --engine fastapi
 ```
 Test with `curl`:
 ```bash
@@ -1050,7 +1050,7 @@ neuralops export --model gpt2 --attn cosformer --rank 64 --format safetensors --
 neuralops export --model distilbert-base-uncased --comp direct_svd --rank 32 --format onnx
 
 # 10. High-Throughput Production Serving Runner (PagedKVCache + FastAPI + WebSockets)
-neuralops serve --host 0.0.0.0 --port 8080 --model ./checkpoints/healed_gdn_gpt2
+neuralops serve --host 127.0.0.1 --port 8080 --model ./checkpoints/healed_gdn_gpt2
 
 # 11. Self-Speculative Draft-and-Verify Accelerated Generation (Draft-K = 4)
 neuralops generate --model gpt2 --speculative --draft-k 4 --max-new-tokens 64
