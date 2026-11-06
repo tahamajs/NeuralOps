@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}{{ compressor.name }} &middot; Compressor &middot; NeuralOps{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+  <a href="/compressors" style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">&larr; Back to Compressors Catalog</a>
+</div>
+
+<div class="card">
+  <div class="card-title">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <h1 style="font-size: 1.5rem; font-family: var(--font-mono);">{{ compressor.name }}</h1>
+      <span class="badge badge-muted">{{ compressor.paradigm }}</span>
+    </div>
+  </div>
+  <div style="margin-top: 0.5rem; color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.875rem;">
+    <strong>Module:</strong> {{ compressor.module }}
+  </div>
+  <div style="margin-top: 0.25rem; color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.875rem;">
+    <strong>Class:</strong> {{ compressor.class_name }}
+  </div>
+  <div style="margin-top: 1rem; padding: 1rem; background-color: var(--bg-tertiary); border-radius: 0.375rem; font-family: var(--font-mono); font-size: 0.8125rem; white-space: pre-wrap; color: var(--text-primary);">
+{{ compressor.doc or 'No docstring provided.' }}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">
+    <span>Execution History &middot; Master Ledger</span>
+    <span class="badge badge-muted">{{ history | length }} records</span>
+  </div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Record ID</th>
+          <th>Status</th>
+          <th>Triton Latency</th>
+          <th>PyTorch Latency</th>
+          <th>Speedup</th>
+          <th>Peak VRAM</th>
+          <th>Cosine Parity</th>
+          <th>Timestamp (UTC)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in history %}
+        <tr>
+          <td style="font-family: var(--font-mono); color: var(--text-muted);">#{{ row.record_id }}</td>
+          <td>
+            <span class="badge {% if row.status in ['active', 'verified', 'PASS', 'success'] %}badge-active{% else %}badge-fail{% endif %}">
+              {{ row.status }}
+            </span>
+          </td>
+          <td style="font-family: var(--font-mono);">
+            {% if row.latency_triton_ms %}{{ "%.3f"|format(row.latency_triton_ms) }} ms{% else %}&mdash;{% endif %}
+          </td>
+          <td style="font-family: var(--font-mono);">
+            {% if row.latency_pytorch_ms %}{{ "%.3f"|format(row.latency_pytorch_ms) }} ms{% else %}&mdash;{% endif %}
+          </td>
+          <td style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-green);">
+            {% if row.speedup_x %}{{ "%.2f"|format(row.speedup_x) }}x{% else %}&mdash;{% endif %}
+          </td>
+          <td style="font-family: var(--font-mono);">
+            {% if row.peak_vram_mb %}{{ "%.1f"|format(row.peak_vram_mb) }} MB{% else %}&mdash;{% endif %}
+          </td>
+          <td style="font-family: var(--font-mono);">
+            {% if row.cosine_sim %}{{ "%.5f"|format(row.cosine_sim) }}{% else %}&mdash;{% endif %}
+          </td>
+          <td style="color: var(--text-secondary); font-size: 0.8125rem;">
+            {{ row.timestamp_utc or '&mdash;' }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No empirical benchmark executions recorded for this compressor.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

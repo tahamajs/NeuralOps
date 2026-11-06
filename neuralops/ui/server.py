@@ -5,79 +5,79 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-NeuralOps Web UI FastAPI Server Module.
 
-Provides minimal, production-grade web dashboard and interactive exploration interface.
-"""
+"""FastAPI web server factory for NeuralOps Web UI."""
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 import neuralops
+from neuralops.ui.routes import (
+    attentions_router,
+    benchmarks_router,
+    compressors_router,
+    dashboard_router,
+    doctor_router,
+)
 
 
 def create_app() -> FastAPI:
-    """Construct and configure the minimal NeuralOps Web UI FastAPI application."""
-    base_dir = Path(__file__).resolve().parent
-    templates_dir = base_dir / "templates"
-    static_dir = base_dir / "static"
+    """Create and configure the NeuralOps FastAPI application.
 
+    Returns:
+        Configured FastAPI instance with static files, templates, and routers.
+    """
     app = FastAPI(
         title="NeuralOps Web UI",
-        description="Publication-grade dashboard and interactive explorer for NeuralOps.",
         version=neuralops.__version__,
-        docs_url="/docs",
+        docs_url=None,
         redoc_url=None,
     )
 
-    # CORS middleware restricted to localhost / loopback interfaces
+    # Restrict CORS to localhost
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
             "http://localhost",
-            "http://127.0.0.1",
             "http://localhost:8080",
+            "http://127.0.0.1",
             "http://127.0.0.1:8080",
         ],
-        allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:[0-9]+)?$",
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
 
-    # Static files mount
-    if static_dir.exists():
+    package_root = Path(__file__).resolve().parent
+    templates_dir = package_root / "templates"
+    static_dir = package_root / "static"
+
+    # Store templates in app state for route handlers
+    templates = Jinja2Templates(directory=str(templates_dir))
+    app.state.templates = templates
+
+    # Mount static assets
+    if static_dir.is_dir():
         app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-    # Jinja2 templates configuration
-    templates = Jinja2Templates(directory=str(templates_dir))
-
-    @app.get("/health", response_class=JSONResponse, tags=["Diagnostics"])
-    async def health_check() -> Dict[str, Any]:
+    # Core health check endpoint
+    @app.get("/health")
+    async def health_check() -> dict[str, Any]:
         """Health check endpoint returning system status and package version."""
-        return {
-            "status": "ok",
-            "version": neuralops.__version__,
-        }
+        return {"status": "ok", "version": neuralops.__version__}
 
-    @app.get("/", response_class=HTMLResponse, tags=["Dashboard"])
-    async def root_view(request: Request) -> HTMLResponse:
-        """Root view rendering placeholder template."""
-        return templates.TemplateResponse(
-            request=request,
-            name="placeholder.html",
-        )
+    # Mount page routers
+    app.include_router(dashboard_router)
+    app.include_router(attentions_router)
+    app.include_router(compressors_router)
+    app.include_router(benchmarks_router)
+    app.include_router(doctor_router)
 
     return app
-
-
-__all__ = ["create_app"]

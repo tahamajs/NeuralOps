@@ -70,7 +70,18 @@ def test_placeholder_template_extends_base():
 def test_server_static_and_template_configuration():
     """Verify create_app configures static routes and Jinja2 templates."""
     app = create_app()
-    routes = [route.path for route in app.routes]
-    assert "/static" in routes
-    assert "/" in routes
-    assert "/health" in routes
+    all_paths = set()
+    for route in app.routes:
+        if hasattr(route, "path"):
+            all_paths.add(route.path)
+        if hasattr(route, "original_router"):
+            for subroute in route.original_router.routes:
+                all_paths.add(subroute.path)
+
+    assert "/static" in all_paths
+    assert "/" in all_paths
+    assert "/health" in all_paths
+    assert "/attentions" in all_paths
+    assert "/compressors" in all_paths
+    assert "/benchmarks" in all_paths
+    assert "/doctor" in all_paths

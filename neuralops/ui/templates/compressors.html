@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Compressors &middot; NeuralOps{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div>
+    <h1 style="font-size: 1.75rem; font-weight: 700;">Model Compressor Registry</h1>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">72 post-surgery distillation and quantization operators across 7 paradigms</p>
+  </div>
+  <form method="get" action="/compressors" style="display: flex; gap: 0.5rem;">
+    <select name="paradigm" class="form-control" onchange="this.form.submit()">
+      <option value="">All Paradigms ({{ total_count }})</option>
+      {% for par in paradigms %}
+      <option value="{{ par }}" {% if selected_paradigm == par %}selected{% endif %}>{{ par }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<div class="table-container">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Compressor Key</th>
+        <th>Paradigm</th>
+        <th>Module Path</th>
+        <th>Documentation</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for comp in compressors %}
+      <tr>
+        <td style="font-family: var(--font-mono); font-weight: 600;">
+          <a href="/compressors/{{ comp.name }}" style="color: var(--accent-blue); text-decoration: none;">
+            {{ comp.name }}
+          </a>
+        </td>
+        <td>
+          <span class="badge badge-muted">{{ comp.paradigm }}</span>
+        </td>
+        <td style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text-secondary);">
+          {{ comp.module }}
+        </td>
+        <td style="color: var(--text-secondary); max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          {{ comp.doc | truncate(60) or '&mdash;' }}
+        </td>
+        <td>
+          <a href="/compressors/{{ comp.name }}" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Details</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

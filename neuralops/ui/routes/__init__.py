@@ -5,8 +5,19 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-NeuralOps Web UI Route Handlers.
-"""
 
-from __future__ import annotations
+"""NeuralOps UI Routes package."""
+
+from neuralops.ui.routes.attentions import router as attentions_router
+from neuralops.ui.routes.benchmarks import router as benchmarks_router
+from neuralops.ui.routes.compressors import router as compressors_router
+from neuralops.ui.routes.dashboard import router as dashboard_router
+from neuralops.ui.routes.doctor import router as doctor_router
+
+__all__ = [
+    "attentions_router",
+    "benchmarks_router",
+    "compressors_router",
+    "dashboard_router",
+    "doctor_router",
+]

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Attention Mechanisms &middot; NeuralOps{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div>
+    <h1 style="font-size: 1.75rem; font-weight: 700;">Attention Mechanism Registry</h1>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">131 mathematical operator contracts across 12 architectural families</p>
+  </div>
+  <form method="get" action="/attentions" style="display: flex; gap: 0.5rem;">
+    <select name="family" class="form-control" onchange="this.form.submit()">
+      <option value="">All Families ({{ total_count }})</option>
+      {% for fam in families %}
+      <option value="{{ fam }}" {% if selected_family == fam %}selected{% endif %}>{{ fam }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<div class="table-container">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Registry Key</th>
+        <th>Family</th>
+        <th>Module Path</th>
+        <th>Documentation</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for att in attentions %}
+      <tr>
+        <td style="font-family: var(--font-mono); font-weight: 600;">
+          <a href="/attentions/{{ att.name }}" style="color: var(--accent-blue); text-decoration: none;">
+            {{ att.name }}
+          </a>
+        </td>
+        <td>
+          <span class="badge badge-muted">{{ att.family }}</span>
+        </td>
+        <td style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text-secondary);">
+          {{ att.module }}
+        </td>
+        <td style="color: var(--text-secondary); max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          {{ att.doc | truncate(60) or '&mdash;' }}
+        </td>
+        <td>
+          <a href="/attentions/{{ att.name }}" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Details</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

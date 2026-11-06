@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor &middot; NeuralOps{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+  <div>
+    <h1 style="font-size: 1.75rem; font-weight: 700;">System Doctor &amp; Diagnostics</h1>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">Canonical repository invariant audit and hardware health</p>
+  </div>
+  <div>
+    {% if invariants_passed %}
+    <span class="badge badge-active" style="font-size: 0.875rem; padding: 0.35rem 0.75rem;">
+      &check; ALL INVARIANTS PASS
+    </span>
+    {% else %}
+    <span class="badge badge-fail" style="font-size: 0.875rem; padding: 0.35rem 0.75rem;">
+      &times; INVARIANT DRIFT DETECTED
+    </span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Canonical Invariant Contracts</div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Subsystem / Invariant</th>
+          <th>Observed Count</th>
+          <th>Required Canonical Target</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Attention Operator Registry</td>
+          <td style="font-family: var(--font-mono); font-weight: 700;">{{ status.attentions }}</td>
+          <td style="font-family: var(--font-mono);">131</td>
+          <td>
+            <span class="badge {% if status.attentions == 131 %}badge-active{% else %}badge-fail{% endif %}">
+              {% if status.attentions == 131 %}PASS{% else %}FAIL{% endif %}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>Model Compressor Registry</td>
+          <td style="font-family: var(--font-mono); font-weight: 700;">{{ status.compressors }}</td>
+          <td style="font-family: var(--font-mono);">72</td>
+          <td>
+            <span class="badge {% if status.compressors == 72 %}badge-active{% else %}badge-fail{% endif %}">
+              {% if status.compressors == 72 %}PASS{% else %}FAIL{% endif %}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>Triton JIT Kernels (ops/triton)</td>
+          <td style="font-family: var(--font-mono); font-weight: 700;">{{ status.triton_modules }}</td>
+          <td style="font-family: var(--font-mono);">58</td>
+          <td>
+            <span class="badge {% if status.triton_modules == 58 %}badge-active{% else %}badge-fail{% endif %}">
+              {% if status.triton_modules == 58 %}PASS{% else %}FAIL{% endif %}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>CUDA C++ Packages (ops/cuda)</td>
+          <td style="font-family: var(--font-mono); font-weight: 700;">{{ status.cuda_packages }}</td>
+          <td style="font-family: var(--font-mono);">141</td>
+          <td>
+            <span class="badge {% if status.cuda_packages == 141 %}badge-active{% else %}badge-fail{% endif %}">
+              {% if status.cuda_packages == 141 %}PASS{% else %}FAIL{% endif %}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>Tutorial Notebooks (notebooks/)</td>
+          <td style="font-family: var(--font-mono); font-weight: 700;">{{ status.notebooks }}</td>
+          <td style="font-family: var(--font-mono);">94</td>
+          <td>
+            <span class="badge {% if status.notebooks == 94 %}badge-active{% else %}badge-fail{% endif %}">
+              {% if status.notebooks == 94 %}PASS{% else %}FAIL{% endif %}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Environment &amp; Persistence Health</div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>NeuralOps Version</td>
+          <td style="font-family: var(--font-mono);">{{ status.version }}</td>
+        </tr>
+        <tr>
+          <td>Git Commit SHA</td>
+          <td style="font-family: var(--font-mono);">{{ status.git_commit }}</td>
+        </tr>
+        <tr>
+          <td>Git Branch</td>
+          <td style="font-family: var(--font-mono);">{{ status.git_branch }}</td>
+        </tr>
+        <tr>
+          <td>Working Tree Cleanliness</td>
+          <td>
+            <span class="badge {% if not status.git_dirty %}badge-active{% else %}badge-muted{% endif %}">
+              {% if not status.git_dirty %}CLEAN{% else %}DIRTY{% endif %}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td>Master SQLite Ledger Tables</td>
+          <td style="font-family: var(--font-mono);">
+            {{ tables | length }} tables: {{ tables | join(', ') }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
