@@ -41,7 +41,10 @@
 <div class="card">
   <div class="card-title">
     <span>Recent Benchmark Executions</span>
-    <a href="/benchmarks" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">View All</a>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <button hx-get="/partials/recent-runs" hx-target="#recent-runs-body" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Refresh</button>
+      <a href="/benchmarks" class="btn btn-outline" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">View All</a>
+    </div>
   </div>
   <div class="table-container">
     <table class="data-table">
@@ -54,34 +57,8 @@
           <th>Timestamp (UTC)</th>
         </tr>
       </thead>
-      <tbody>
-        {% for run in recent_runs %}
-        <tr>
-          <td style="font-family: var(--font-mono); font-weight: 600;">
-            <a href="/attentions/{{ run.module_name }}" style="color: var(--accent-blue); text-decoration: none;">
-              {{ run.module_name }}
-            </a>
-          </td>
-          <td>
-            <span class="badge {% if run.status in ['active', 'verified', 'PASS', 'success'] %}badge-active{% else %}badge-fail{% endif %}">
-              {{ run.status }}
-            </span>
-          </td>
-          <td style="font-family: var(--font-mono);">
-            {% if run.latency_triton_ms %}{{ "%.3f"|format(run.latency_triton_ms) }} ms{% else %}&mdash;{% endif %}
-          </td>
-          <td style="font-family: var(--font-mono);">
-            {% if run.peak_vram_mb %}{{ "%.1f"|format(run.peak_vram_mb) }} MB{% else %}&mdash;{% endif %}
-          </td>
-          <td style="color: var(--text-secondary); font-size: 0.8125rem;">
-            {{ run.timestamp_utc or '&mdash;' }}
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No recent benchmark executions found in master ledger.</td>
-        </tr>
-        {% endfor %}
+      <tbody id="recent-runs-body" hx-get="/partials/recent-runs" hx-trigger="every 10s">
+        {% include "partials/recent_runs_rows.html" %}
       </tbody>
     </table>
   </div>

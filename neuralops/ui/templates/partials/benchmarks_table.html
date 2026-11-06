@@ -1,0 +1,78 @@
+<div class="table-container">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Record</th>
+        <th>Module</th>
+        <th>Category</th>
+        <th>Family</th>
+        <th>Status</th>
+        <th>Triton Latency</th>
+        <th>PyTorch Latency</th>
+        <th>Speedup</th>
+        <th>Peak VRAM</th>
+        <th>Throughput</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td style="font-family: var(--font-mono); color: var(--text-muted); font-size: 0.8125rem;">#{{ r.record_id }}</td>
+        <td style="font-family: var(--font-mono); font-weight: 600;">
+          <a href="/attentions/{{ r.module_name }}" style="color: var(--accent-blue); text-decoration: none;">
+            {{ r.module_name }}
+          </a>
+        </td>
+        <td style="color: var(--text-secondary);">{{ r.category or '&mdash;' }}</td>
+        <td><span class="badge badge-muted">{{ r.family or 'none' }}</span></td>
+        <td>
+          <span class="badge {% if r.status in ['active', 'verified', 'PASS', 'success'] %}badge-active{% else %}badge-fail{% endif %}">
+            {{ r.status }}
+          </span>
+        </td>
+        <td style="font-family: var(--font-mono);">
+          {% if r.latency_triton_ms %}{{ "%.3f"|format(r.latency_triton_ms) }} ms{% else %}&mdash;{% endif %}
+        </td>
+        <td style="font-family: var(--font-mono);">
+          {% if r.latency_pytorch_ms %}{{ "%.3f"|format(r.latency_pytorch_ms) }} ms{% else %}&mdash;{% endif %}
+        </td>
+        <td style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-green);">
+          {% if r.speedup_x %}{{ "%.2f"|format(row.speedup_x) if row is defined else "%.2f"|format(r.speedup_x) }}x{% else %}&mdash;{% endif %}
+        </td>
+        <td style="font-family: var(--font-mono);">
+          {% if r.peak_vram_mb %}{{ "%.1f"|format(r.peak_vram_mb) }} MB{% else %}&mdash;{% endif %}
+        </td>
+        <td style="font-family: var(--font-mono);">
+          {% if r.throughput_tok_s %}{{ "%.0f"|format(r.throughput_tok_s) }} tok/s{% else %}&mdash;{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">No matching benchmark results found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+  <div style="color: var(--text-secondary); font-size: 0.875rem;">
+    Page {{ page }} of {{ total_pages }} ({{ total_count }} total entries)
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    {% if page > 1 %}
+    <button hx-get="/partials/benchmarks?page={{ page - 1 }}&module_name={{ filter_module_name }}&status={{ filter_status }}&family={{ filter_family }}"
+            hx-target="#benchmarks-table-container"
+            class="btn btn-outline" style="font-size: 0.8125rem;">
+      &larr; Previous
+    </button>
+    {% endif %}
+    {% if page < total_pages %}
+    <button hx-get="/partials/benchmarks?page={{ page + 1 }}&module_name={{ filter_module_name }}&status={{ filter_status }}&family={{ filter_family }}"
+            hx-target="#benchmarks-table-container"
+            class="btn btn-outline" style="font-size: 0.8125rem;">
+      Next &rarr;
+    </button>
+    {% endif %}
+  </div>
+</div>

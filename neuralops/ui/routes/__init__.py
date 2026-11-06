@@ -13,6 +13,7 @@ from neuralops.ui.routes.benchmarks import router as benchmarks_router
 from neuralops.ui.routes.compressors import router as compressors_router
 from neuralops.ui.routes.dashboard import router as dashboard_router
 from neuralops.ui.routes.doctor import router as doctor_router
+from neuralops.ui.routes.partials import router as partials_router
 
 __all__ = [
     "attentions_router",
@@ -20,4 +21,5 @@ __all__ = [
     "compressors_router",
     "dashboard_router",
     "doctor_router",
+    "partials_router",
 ]
