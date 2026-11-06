@@ -81,3 +81,35 @@ jobs:
       - name: Validate Packaging Metadata with Twine
         run: |
           twine check dist/*
+
+  wheel-cli-smoke:
+    name: Wheel Packaging & CLI Smoke Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: Install Build Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install build
+
+      - name: Build Clean Wheel
+        run: |
+          python -m build --wheel
+
+      - name: Install Wheel in Isolated Environment & Smoke CLI
+        run: |
+          python -m venv /tmp/cli-smoke-venv
+          /tmp/cli-smoke-venv/bin/pip install --upgrade pip
+          /tmp/cli-smoke-venv/bin/pip install dist/*.whl torch
+          /tmp/cli-smoke-venv/bin/neuralops --help
+          /tmp/cli-smoke-venv/bin/neuralops info
+          /tmp/cli-smoke-venv/bin/python -m neuralops --help
+

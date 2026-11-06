@@ -191,7 +191,6 @@ exclude = [
     "scripts*",
     "eval*",
     "neuralops.tests*",
-    "neuralops.benchmarks*",
     "neuralops._archive*",
     "neuralops.core._archive*",
     "neuralops.attentions._legacy*",

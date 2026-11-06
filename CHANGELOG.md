@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added new benchmark suite runners: `cuda_ops`, `triton_ops`, `e2e_serving`, `roofline`, and `competitors`.
 
 ### Changed
+- **Breaking Change (Security / Remote Code Execution by Default):** Changed `trust_remote_code` default from `True` to `False` across `BenchmarkConfig`, `model_loader.py`, `adapter.py`, and `harness.py`. Converted CLI `neuralops run` from opt-out to opt-in with `--trust-remote-code` (default off); deprecated `--no-trust-remote-code`. When `trust_remote_code=True` is explicitly requested, an explicit warning is logged and the setting is recorded in the benchmark run manifest.
+- **Breaking Change (Training Fail-Closed):** Eliminated `_FallbackLanguageModel` and silent random model substitution in `neuralops train`; missing checkpoints or invalid models now fail closed with `RuntimeError` rather than silently training a random 4-layer model.
 - **Directory Modernization:** Consolidated legacy duality directories: merged `validator/` into `validation/`, eliminated `operations/` in favor of `ops/`, merged `experiment_logging/` into `tracking/`, and removed `training/` MetaPathFinder shim.
 - **Root Shim Elimination:** Deleted 7 unreferenced root compatibility shims (`server.py`, `checkpoint.py`, `qwen_compat.py`, `hub.py`, `architectures.py`, `lora.py`, `fastapi_app.py`) and migrated high-reference shims (`surgery.py`, `serving.py`, `replace_attention.py`, `registry.py`) via AST rewriting.
 - **HPC & Scripts Consolidation:** Relocated 19 PBS cluster job scripts into `scripts/hpc/` and centralized benchmark runners under `scripts/benchmarks/`.
@@ -33,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation Overhaul:** Synchronized `README.md`, `pyproject.toml`, and `CITATION.cff` across all 5 ground truth invariants (131 Attentions, 72 Compressors, 58 Triton files, 141 CUDA packages, 94 Notebooks).
 
 ### Fixed
+- **Wheel Packaging & Console Scripts CLI Resolution (Option A):** Removed `"neuralops.benchmarks*"` from `tool.setuptools.packages.find.exclude` in `pyproject.toml`. Previously, wheel builds excluded `neuralops/benchmarks`, causing `neuralops`, `neuralops-cli`, `nops`, and `nops-cli` to fail with `ModuleNotFoundError: No module named 'neuralops.benchmarks'` when installed from a wheel. Option A was selected as the cleanest minimal fix preserving existing entry point bindings.
+- **CI Wheel & CLI Smoke Gate:** Added `wheel-cli-smoke` job to `.github/workflows/quality_gate.yml` and regression test suite `tests/test_packaging_wheel_cli.py` to continuously verify wheel contents and entry points on every run.
 - **DeepSeek MLA Surgery:** Calibrated dynamic head dimension fallbacks in `UniversalArchitectureScanner` and resolved Pareto solver decorator bindings in `MoARouter`.
 - **PyTorch 2.11+ Autograd Parameter Strictness:** Fixed explicit `requires_grad=False` handling on non-floating quantization tensors in mock test fixtures.
 
