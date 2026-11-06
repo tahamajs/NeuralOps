@@ -14,7 +14,12 @@ Implements argparse parser configuration and command handler for the NeuralOps W
 from __future__ import annotations
 
 import argparse
+import sys
+import threading
+import webbrowser
 from typing import Optional
+
+import uvicorn
 
 
 def _add_ui_arguments(parser: argparse.ArgumentParser) -> None:
@@ -85,7 +90,7 @@ def build_ui_parser(subparser: Optional[argparse.ArgumentParser] = None) -> argp
 
 
 def cmd_ui(args: argparse.Namespace) -> int:
-    """Execute the UI CLI command (Phase 1 scaffold)."""
+    """Execute the UI CLI command starting the FastAPI server."""
     port = getattr(args, "port", 8080)
     host = getattr(args, "host", "127.0.0.1")
     share = getattr(args, "share", False)
@@ -94,12 +99,44 @@ def cmd_ui(args: argparse.Namespace) -> int:
     no_browser = getattr(args, "no_browser", False)
     auth = getattr(args, "auth", None)
 
-    print(
-        f"NeuralOps Web UI (Phase 1 Scaffold): "
-        f"host={host}, port={port}, share={share}, static={static_path}, "
-        f"read_write={read_write}, no_browser={no_browser}, auth={auth}"
-    )
-    print("UI command not yet implemented — Phase 2 will add the server.")
+    # Notice for future phase options (do not crash)
+    if share:
+        print("[INFO] --share flag noted: Cloudflare tunnel integration deferred to Phase 9.")
+    if static_path:
+        print(f"[INFO] --static flag noted ({static_path}): Static site generation deferred to Phase 10.")
+    if read_write:
+        print("[INFO] --read-write flag noted: Full execution controls deferred to later phases.")
+    if auth:
+        print("[INFO] --auth flag noted: Basic auth enforcement deferred to Phase 9.")
+
+    url = f"http://{host}:{port}"
+    print(f"Starting NeuralOps Web UI server on {url} ...")
+
+    if not no_browser:
+        def _open_browser() -> None:
+            try:
+                webbrowser.open(url)
+            except Exception:
+                pass
+
+        timer = threading.Timer(0.8, _open_browser)
+        timer.daemon = True
+        timer.start()
+
+    try:
+        uvicorn.run(
+            "neuralops.ui.server:create_app",
+            factory=True,
+            host=host,
+            port=port,
+            log_level="info",
+        )
+    except KeyboardInterrupt:
+        print("\nNeuralOps Web UI stopped cleanly.")
+    except Exception as exc:
+        print(f"Error starting NeuralOps Web UI: {exc}", file=sys.stderr)
+        return 1
+
     return 0
 
 
