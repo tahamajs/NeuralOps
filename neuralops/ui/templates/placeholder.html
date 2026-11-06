@@ -1,11 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuralOps UI</title>
-</head>
-<body>
-    <p>NeuralOps UI is running — Phase 3 will add the pages.</p>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Dashboard &middot; NeuralOps{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-title">
+    <h2>System Status</h2>
+    <span class="badge badge-active">Operational</span>
+  </div>
+  <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+    NeuralOps Web UI running on FastAPI + Uvicorn + Jinja2 + HTMX.
+  </p>
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-label">Attentions</div>
+      <div class="stat-value">131</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Compressors</div>
+      <div class="stat-value">72</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Triton Inventory</div>
+      <div class="stat-value">58</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">CUDA Packages</div>
+      <div class="stat-value">141</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

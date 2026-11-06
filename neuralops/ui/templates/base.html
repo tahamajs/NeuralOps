@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}NeuralOps{% endblock %}</title>
+  <link rel="stylesheet" href="/static/ui.css">
+  <script src="/static/htmx.min.js"></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="app-header">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a href="/" class="brand">
+        <span>⚡ NeuralOps</span>
+      </a>
+      <span class="brand-badge">v{{ version | default('2.0.6') }}</span>
+    </div>
+    <nav class="nav-links">
+      <a href="/" class="{% if active_tab == 'dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="/attentions" class="{% if active_tab == 'attentions' %}active{% endif %}">Attentions</a>
+      <a href="/compressors" class="{% if active_tab == 'compressors' %}active{% endif %}">Compressors</a>
+      <a href="/benchmarks" class="{% if active_tab == 'benchmarks' %}active{% endif %}">Benchmarks</a>
+      <a href="/doctor" class="{% if active_tab == 'doctor' %}active{% endif %}">Doctor</a>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="app-footer">
+    <div>NeuralOps Operational Suite &middot; 131 Attentions &middot; 72 Compressors &middot; 58 Triton Kernels &middot; 141 CUDA Packages &middot; 94 Notebooks</div>
+  </footer>
+</body>
+</html>
