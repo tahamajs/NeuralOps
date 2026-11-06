@@ -17,11 +17,14 @@ import os
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 import argparse
+import logging
 import math
 import platform
 from pathlib import Path
 import sys
 import time
+
+logger = logging.getLogger(__name__)
 
 from neuralops import __version__
 from neuralops.core.diagnostics import diagnose_error

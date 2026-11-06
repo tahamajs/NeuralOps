@@ -53,3 +53,24 @@ def test_benchmarks_not_excluded_from_wheel(tmp_path: pathlib.Path) -> None:
     assert "neuralops/benchmarks/__init__.py" in members, (
         f"'neuralops/benchmarks/__init__.py' was excluded from built wheel {wheel_files[0].name}"
     )
+
+
+def test_py_typed_shipped_in_wheel(tmp_path: pathlib.Path) -> None:
+    """Build the wheel into tmp_path and verify neuralops/py.typed is packaged."""
+    res = subprocess.run(
+        [sys.executable, "-m", "build", "--wheel", "--no-isolation", "--outdir", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert res.returncode == 0, f"Wheel build failed with stderr: {res.stderr}"
+
+    wheel_files = list(tmp_path.glob("*.whl"))
+    assert len(wheel_files) == 1, f"Expected 1 wheel file in {tmp_path}, found: {wheel_files}"
+
+    with zipfile.ZipFile(wheel_files[0], "r") as zf:
+        members = set(zf.namelist())
+
+    assert "neuralops/py.typed" in members, (
+        f"'neuralops/py.typed' was missing from built wheel {wheel_files[0].name}"
+    )
