@@ -32,6 +32,9 @@ from neuralops.benchmarks.adapters.triton_adapter import (
 from neuralops.benchmarks.adapters.zeroshot import ZeroShotAdapter
 
 __all__ = [
+    "BaseBenchmarkAdapter",
+    "BenchmarkInputs",
+    "NumericsReport",
     "BaseModelAdapter",
     "HuggingFaceModelAdapter",
     "SurgerizedModelAdapter",
@@ -48,6 +51,12 @@ __all__ = [
     "CANONICAL_CUDA_MODULES",
     "CUDA_KERNEL_ALIASES",
 ]
+
+from neuralops.benchmarks.adapters.base import (
+    BaseBenchmarkAdapter,
+    BenchmarkInputs,
+    NumericsReport,
+)
 
 from neuralops.benchmarks.adapters import classification
 from neuralops.benchmarks.adapters import perplexity

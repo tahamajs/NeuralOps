@@ -1,0 +1,12 @@
+{
+  "device": "cuda",
+  "precision": "float32",
+  "batch_sizes": [1, 2],
+  "seq_lens": [128, 512],
+  "warmup_steps": 5,
+  "benchmark_steps": 20,
+  "enable_backward": true,
+  "seed": 42,
+  "description": "Quick CUDA accelerator preset for regression gating. Requires CUDA-capable GPU.",
+  "output_dir": "results/quick_cuda"
+}

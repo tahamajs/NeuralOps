@@ -78,3 +78,102 @@ def test_registry_benchmark_spec_contracts():
     assert spec_comp.canonical_name == "compressor:direct_svd"
     assert spec_comp.category == "compressor"
     assert spec_comp.target_name == "direct_svd"
+
+
+def test_base_adapter_imports_and_fail_closed_on_cuda():
+    """BaseBenchmarkAdapter must be importable and refuse CUDA on a non-CUDA host."""
+    from neuralops.benchmarks.adapters.base import (
+        BaseBenchmarkAdapter,
+        BenchmarkInputs,
+        NumericsReport,
+    )
+    import torch
+
+    # Verify the ABC surface is complete
+    assert hasattr(BaseBenchmarkAdapter, "capability_check")
+    assert hasattr(BaseBenchmarkAdapter, "build_inputs")
+    assert hasattr(BaseBenchmarkAdapter, "run_reference")
+    assert hasattr(BaseBenchmarkAdapter, "run_candidate")
+    assert hasattr(BaseBenchmarkAdapter, "validate_numerics")
+    assert hasattr(BaseBenchmarkAdapter, "measure_performance")
+    assert hasattr(BaseBenchmarkAdapter, "execute")
+
+    # On a CPU-only host, requesting CUDA must raise immediately at __init__.
+    if not torch.cuda.is_available():
+        class _StubAdapter(BaseBenchmarkAdapter):
+            def capability_check(self):
+                return {"available": True, "backend": "pytorch", "reason": ""}
+            def build_inputs(self):
+                return BenchmarkInputs()
+            def run_reference(self, inputs):
+                return torch.zeros(1)
+            def run_candidate(self, inputs):
+                return torch.zeros(1), "pytorch"
+            def validate_numerics(self, ref, cand):
+                return self._default_validate_numerics(ref, cand)
+            def measure_performance(self, inputs):
+                return {"latency_ms_mean": 0.0}
+
+        with pytest.raises(RuntimeError, match="CUDA"):
+            _StubAdapter(benchmark_name="test:stub", device="cuda")
+
+
+def test_base_adapter_execute_lifecycle_cpu():
+    """BaseBenchmarkAdapter.execute() must return SUCCESS on a minimal CPU adapter."""
+    from neuralops.benchmarks.adapters.base import (
+        BaseBenchmarkAdapter,
+        BenchmarkInputs,
+        NumericsReport,
+    )
+    import torch
+
+    class _PassAdapter(BaseBenchmarkAdapter):
+        def capability_check(self):
+            return {"available": True, "backend": "pytorch", "reason": ""}
+        def build_inputs(self):
+            return BenchmarkInputs(tensors={"x": torch.ones(4, 4)})
+        def run_reference(self, inputs):
+            return inputs.tensors["x"].clone()
+        def run_candidate(self, inputs):
+            return inputs.tensors["x"].clone(), "pytorch"
+        def validate_numerics(self, ref, cand):
+            return self._default_validate_numerics(ref, cand)
+        def measure_performance(self, inputs):
+            return {"latency_ms_mean": 1.0, "latency_ms_std": 0.1}
+
+    adapter = _PassAdapter(benchmark_name="test:cpu_pass", device="cpu")
+    result = adapter.execute()
+    assert result.status == "success"
+    assert result.metadata.get("backend_used") == "pytorch"
+    assert result.metadata.get("max_diff") == 0.0
+    assert result.metadata.get("numerics_passed") is True
+
+
+def test_base_adapter_execute_fails_on_nan():
+    """BaseBenchmarkAdapter.execute() must return FAIL_NUMERICS when candidate has NaN."""
+    from neuralops.benchmarks.adapters.base import (
+        BaseBenchmarkAdapter,
+        BenchmarkInputs,
+    )
+    import torch
+
+    class _NaNAdapter(BaseBenchmarkAdapter):
+        def capability_check(self):
+            return {"available": True, "backend": "pytorch", "reason": ""}
+        def build_inputs(self):
+            return BenchmarkInputs(tensors={"x": torch.ones(4, 4)})
+        def run_reference(self, inputs):
+            return inputs.tensors["x"].clone()
+        def run_candidate(self, inputs):
+            bad = inputs.tensors["x"].clone()
+            bad[0, 0] = float("nan")
+            return bad, "pytorch"
+        def validate_numerics(self, ref, cand):
+            return self._default_validate_numerics(ref, cand)
+        def measure_performance(self, inputs):
+            # Should NOT be called — numerics gate failed
+            raise AssertionError("measure_performance must not be called after FAIL_NUMERICS")
+
+    adapter = _NaNAdapter(benchmark_name="test:nan_fail", device="cpu")
+    result = adapter.execute()
+    assert result.status == "fail_numerics"
