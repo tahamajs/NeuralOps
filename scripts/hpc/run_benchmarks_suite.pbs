@@ -27,20 +27,20 @@ echo "  Node: $(hostname) | GPU: $(nvidia-smi --query-gpu=name --format=csv,nohe
 echo "======================================================================"
 
 echo ""
-echo ">>> [1/5] Running scripts/benchmarks/gpu_telemetry.py..."
-"$PYTHON_EXEC" -u scripts/benchmarks/gpu_telemetry.py --json
+echo ">>> [1/5] Running neuralops/benchmarks/legacy_scripts/gpu_telemetry.py..."
+"$PYTHON_EXEC" -u neuralops/benchmarks/legacy_scripts/gpu_telemetry.py --json
 
 echo ""
-echo ">>> [2/5] Running scripts/benchmarks/gpu_master_suite.py (131 Attentions + 72 Compressors + Fallback Parity)..."
-"$PYTHON_EXEC" -u scripts/benchmarks/gpu_master_suite.py --device cuda:0 --export
+echo ">>> [2/5] Running neuralops/benchmarks/legacy_scripts/gpu_master_suite.py (131 Attentions + 72 Compressors + Fallback Parity)..."
+"$PYTHON_EXEC" -u neuralops/benchmarks/legacy_scripts/gpu_master_suite.py --device cuda:0 --export
 
 echo ""
 echo ">>> [3/5] Running neuralops/benchmarks/benchmark_all_26_comprehensive.py..."
 "$PYTHON_EXEC" -u neuralops/benchmarks/benchmark_all_26_comprehensive.py --device cuda:0
 
 echo ""
-echo ">>> [4/5] Running scripts/benchmarks/benchmark_kd_all_modules.py (Per-module 2-min KD runs)..."
-"$PYTHON_EXEC" -u scripts/benchmarks/benchmark_kd_all_modules.py \
+echo ">>> [4/5] Running neuralops/benchmarks/legacy_scripts/benchmark_kd_all_modules.py (Per-module 2-min KD runs)..."
+"$PYTHON_EXEC" -u neuralops/benchmarks/legacy_scripts/benchmark_kd_all_modules.py \
     --device cuda:0 \
     --max-duration 120.0 \
     --category all \
@@ -49,7 +49,7 @@ echo ">>> [4/5] Running scripts/benchmarks/benchmark_kd_all_modules.py (Per-modu
 
 echo ""
 echo ">>> [5/5] Consolidating and organizing all benchmark outputs..."
-"$PYTHON_EXEC" -u scripts/benchmarks/consolidate_and_organize_benchmarks.py
+"$PYTHON_EXEC" -u neuralops/benchmarks/legacy_scripts/consolidate_and_organize_benchmarks.py
 
 echo ""
 echo "======================================================================"

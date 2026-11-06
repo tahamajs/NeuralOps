@@ -15,7 +15,7 @@ import pytest
 from neuralops.benchmarks.config import BenchmarkConfig as CanonicalConfig
 from neuralops.benchmarks.regression_gate import compare_results
 from neuralops.benchmarks.runner import BaseRunner
-from scripts.benchmarks.benchmark_config import BenchmarkConfig as LegacyConfig
+from neuralops.benchmarks.legacy_scripts.benchmark_config import BenchmarkConfig as LegacyConfig
 
 
 def test_legacy_config_adapts_to_canonical_config(tmp_path: Path):

@@ -20,8 +20,8 @@ from neuralops.benchmarks.sampling import run_benchmark as run_sampling_benchmar
 from neuralops.benchmarks.serving import run_benchmark as run_serving_benchmark
 from neuralops.benchmarks.ssm import run_benchmark as run_ssm_benchmark
 from neuralops.benchmarks.verify_ops import _make_inputs
-from scripts.benchmarks.gpu_master_suite import _resolve_requested_device
-from scripts.benchmarks.gpu_master_suite import benchmark_single_attention, benchmark_single_compressor
+from neuralops.benchmarks.legacy_scripts.gpu_master_suite import _resolve_requested_device
+from neuralops.benchmarks.legacy_scripts.gpu_master_suite import benchmark_single_attention, benchmark_single_compressor
 
 
 def test_auto_device_resolves_to_cuda(monkeypatch):

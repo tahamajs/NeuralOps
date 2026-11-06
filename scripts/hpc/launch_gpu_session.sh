@@ -33,10 +33,10 @@ echo \"HOST: \$(hostname)\"
 nvidia-smi
 
 echo \"[*] Phase 1: High-Throughput Heavy GPU Stress Training & Distillation (3000 steps)...\"
-\"\$PYTHON_EXEC\" -u scripts/benchmarks/gpu_stress_heavy_trainer.py --steps 3000 --batch-size 8 --accum-steps 4
+\"\$PYTHON_EXEC\" -u neuralops/benchmarks/legacy_scripts/gpu_stress_heavy_trainer.py --steps 3000 --batch-size 8 --accum-steps 4
 
 echo \"[*] Phase 2: Consolidate Master SQLite Ledger, Paper Tables, and Dashboard...\"
-\"\$PYTHON_EXEC\" -u scripts/benchmarks/consolidate_and_organize_benchmarks.py
+\"\$PYTHON_EXEC\" -u neuralops/benchmarks/legacy_scripts/consolidate_and_organize_benchmarks.py
 
 echo \"=== GPU PIPELINE COMPLETED SUCCESSFULLY: \$(date -u) ===\"
 PBSEOF

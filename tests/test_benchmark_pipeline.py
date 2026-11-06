@@ -25,10 +25,10 @@ import tempfile
 import torch
 import torch.nn as nn
 
-from scripts.benchmarks.benchmark_config import BenchmarkConfig
-from scripts.benchmarks.benchmark_logger import BenchmarkLogger
-from scripts.benchmarks.results_exporter import init_sqlite_ledger
-from scripts.benchmarks.serving_matrix_verifier import verify_all_nine
+from neuralops.benchmarks.legacy_scripts.benchmark_config import BenchmarkConfig
+from neuralops.benchmarks.legacy_scripts.benchmark_logger import BenchmarkLogger
+from neuralops.benchmarks.legacy_scripts.results_exporter import init_sqlite_ledger
+from neuralops.benchmarks.legacy_scripts.serving_matrix_verifier import verify_all_nine
 
 
 def test_01_benchmark_config_defaults():
