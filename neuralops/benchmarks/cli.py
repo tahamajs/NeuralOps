@@ -115,7 +115,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
     run_p = subparsers.add_parser("run", aliases=["benchmark"], help="Run benchmark(s)")
     run_p.add_argument("--verbose", action="store_true", help="Print each operation gate and timing result")
-    run_p.add_argument("--module", type=str, default=None, help="Single module name")
+    run_p.add_argument("--benchmark", type=str, default=None, dest="benchmark", help="Canonical benchmark name (e.g. attention:cosformer, cuda:act_scale_gemm)")
+    run_p.add_argument("--module", type=str, default=None, help="Single module name (alias for --benchmark)")
     run_p.add_argument("--modules", type=str, default=None, help="Comma-separated operation keys, e.g. cuda:act_scale_gemm")
     run_p.add_argument("--category", choices=["attention", "compressor", "cuda", "triton", "roofline", "quantization", "moe", "serving", "rope", "sampling", "ssm", "varlen", "sweep", "all"], default=None, help="Benchmark category")
     run_p.add_argument("--dynamic", action="store_true", help="Enable resource-aware operation scheduling")
@@ -212,8 +213,10 @@ def _build_parser() -> argparse.ArgumentParser:
     resume_p.add_argument("--run-id", type=str, default=None, help="Run ID to resume")
 
     plan_p = subparsers.add_parser("plan", help="Dry-run and estimate execution grid")
-    plan_p.add_argument("--module", type=str, default=None)
+    plan_p.add_argument("--benchmark", type=str, default=None, dest="benchmark", help="Canonical benchmark name (e.g. attention:cosformer)")
+    plan_p.add_argument("--module", type=str, default=None, help="Single module name (alias for --benchmark)")
     plan_p.add_argument("--modules", type=str, default=None)
+    plan_p.add_argument("--device", type=str, default="cpu", help="Target device (cpu/cuda/mps)")
     grp_plan = plan_p.add_argument_group("Module selection shortcuts")
     grp_plan.add_argument("--all-attn", "--all-attention", dest="all_attn", action="store_true", help="Run every registered attention module")
     grp_plan.add_argument("--all-comp", "--all-compressors", dest="all_comp", action="store_true", help="Run every registered compressor module")
@@ -514,8 +517,9 @@ def handle_list(args: argparse.Namespace) -> int:
 
 def handle_plan(args: argparse.Namespace) -> None:
     from neuralops.benchmarks.orchestrator import BenchmarkOrchestrator
+    target_mod = getattr(args, "benchmark", None) or args.module
     orch = BenchmarkOrchestrator(
-        modules=args.modules or args.module or "all",
+        modules=args.modules or target_mod or "all",
         delta=getattr(args, "all_delta", False),
         gated=getattr(args, "all_gated", False),
         svd=getattr(args, "all_svd", False),
