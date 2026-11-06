@@ -99,20 +99,36 @@ def cmd_ui(args: argparse.Namespace) -> int:
     no_browser = getattr(args, "no_browser", False)
     auth = getattr(args, "auth", None)
 
-    # Notice for future phase options (do not crash)
+    tunnel = None
     if share:
-        print("[INFO] --share flag noted: Cloudflare tunnel integration deferred to Phase 9.")
+        from neuralops.ui.tunnel import CloudflareTunnel
+        tunnel = CloudflareTunnel(port=port, host=host)
+        try:
+            tunnel_url = tunnel.start()
+            print(f"[SHARE] Public Cloudflare tunnel active at: {tunnel_url}")
+        except Exception as exc:
+            print(f"[ERROR] Failed to establish Cloudflare tunnel: {exc}", file=sys.stderr)
+            return 1
+
     if static_path:
         print(f"[INFO] --static flag noted ({static_path}): Static site generation deferred to Phase 10.")
     if read_write:
         print("[INFO] --read-write flag noted: Full execution controls deferred to later phases.")
+
+    auth_creds = None
     if auth:
-        print("[INFO] --auth flag noted: Basic auth enforcement deferred to Phase 9.")
+        if ":" not in auth:
+            print("[ERROR] --auth format must be 'USERNAME:PASSWORD'", file=sys.stderr)
+            if tunnel:
+                tunnel.stop()
+            return 2
+        auth_creds = tuple(auth.split(":", 1))
+        print(f"[SECURITY] Basic authentication enabled for user: {auth_creds[0]}")
 
     url = f"http://{host}:{port}"
     print(f"Starting NeuralOps Web UI server on {url} ...")
 
-    if not no_browser:
+    if not no_browser and not share:
         def _open_browser() -> None:
             try:
                 webbrowser.open(url)
@@ -123,10 +139,12 @@ def cmd_ui(args: argparse.Namespace) -> int:
         timer.daemon = True
         timer.start()
 
+    from neuralops.ui.server import create_app
+    app = create_app(auth_credentials=auth_creds)
+
     try:
         uvicorn.run(
-            "neuralops.ui.server:create_app",
-            factory=True,
+            app,
             host=host,
             port=port,
             log_level="info",
@@ -136,6 +154,9 @@ def cmd_ui(args: argparse.Namespace) -> int:
     except Exception as exc:
         print(f"Error starting NeuralOps Web UI: {exc}", file=sys.stderr)
         return 1
+    finally:
+        if tunnel:
+            tunnel.stop()
 
     return 0
 

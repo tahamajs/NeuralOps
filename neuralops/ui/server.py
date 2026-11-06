@@ -31,8 +31,11 @@ from neuralops.ui.routes import (
 )
 
 
-def create_app() -> FastAPI:
+def create_app(auth_credentials: tuple[str, str] | None = None) -> FastAPI:
     """Create and configure the NeuralOps FastAPI application.
+
+    Args:
+        auth_credentials: Optional (username, password) tuple for Basic Auth.
 
     Returns:
         Configured FastAPI instance with static files, templates, and routers.
@@ -44,15 +47,16 @@ def create_app() -> FastAPI:
         redoc_url=None,
     )
 
+    # Optional Basic Auth middleware
+    if auth_credentials:
+        from neuralops.ui.auth import BasicAuthMiddleware
+        user, pwd = auth_credentials
+        app.add_middleware(BasicAuthMiddleware, username=user, password=pwd)
+
     # Restrict CORS to localhost
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost",
-            "http://localhost:8080",
-            "http://127.0.0.1",
-            "http://127.0.0.1:8080",
-        ],
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
