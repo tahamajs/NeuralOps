@@ -115,9 +115,9 @@ def _build_parser() -> argparse.ArgumentParser:
 
     run_p = subparsers.add_parser("run", aliases=["benchmark"], help="Run benchmark(s)")
     run_p.add_argument("--verbose", action="store_true", help="Print each operation gate and timing result")
-    run_p.add_argument("--benchmark", type=str, default=None, dest="benchmark", help="Canonical benchmark name (e.g. attention:cosformer, cuda:act_scale_gemm)")
-    run_p.add_argument("--module", type=str, default=None, help="Single module name (alias for --benchmark)")
-    run_p.add_argument("--modules", type=str, default=None, help="Comma-separated operation keys, e.g. cuda:act_scale_gemm")
+    run_p.add_argument("--benchmark", type=str, default=None, dest="benchmark", help="Canonical benchmark name (e.g. attention:cosformer, cuda:act_scale_gemm). Cannot be combined with --module/--modules.")
+    run_p.add_argument("--module", type=str, default=None, help="Single module name (alias for --benchmark). Cannot be combined with --benchmark.")
+    run_p.add_argument("--modules", type=str, default=None, help="Comma-separated operation keys, e.g. cuda:act_scale_gemm. Cannot be combined with --benchmark.")
     run_p.add_argument("--category", choices=["attention", "compressor", "cuda", "triton", "roofline", "quantization", "moe", "serving", "rope", "sampling", "ssm", "varlen", "sweep", "all"], default=None, help="Benchmark category")
     run_p.add_argument("--dynamic", action="store_true", help="Enable resource-aware operation scheduling")
     run_p.add_argument("--parallel-workers", type=int, default=1, help="Maximum operation workers")
@@ -691,6 +691,37 @@ def apply_config_to_args(args: argparse.Namespace) -> None:
         args.output = str(Path(config.output_dir) / "benchmark_ops.json")
 
 
+def resolve_benchmark_selector(selector: str) -> list[str]:
+    """Resolve a benchmark selector string into canonical benchmark names.
+
+    Supports exact canonical names ('attention:cosformer', 'cuda:act_scale_gemm'),
+    unprefixed names ('cosformer', 'direct_svd'), and comma-separated combinations.
+    Raises ValueError listing valid benchmark names if any selector token is invalid.
+    """
+    from neuralops.benchmarks.registry import BENCHMARK_REGISTRY
+
+    valid_names = sorted(list(BENCHMARK_REGISTRY.keys()))
+    tokens = [t.strip() for t in selector.split(",") if t.strip()]
+    resolved: list[str] = []
+
+    for token in tokens:
+        if token in BENCHMARK_REGISTRY:
+            resolved.append(token)
+        elif f"attention:{token}" in BENCHMARK_REGISTRY:
+            resolved.append(f"attention:{token}")
+        elif f"compressor:{token}" in BENCHMARK_REGISTRY:
+            resolved.append(f"compressor:{token}")
+        elif f"cuda:{token}" in BENCHMARK_REGISTRY:
+            resolved.append(f"cuda:{token}")
+        elif f"triton:{token}" in BENCHMARK_REGISTRY:
+            resolved.append(f"triton:{token}")
+        else:
+            raise ValueError(
+                f"Invalid benchmark '{token}'. Valid benchmark names are: {valid_names}"
+            )
+    return resolved
+
+
 def handle_run(args: argparse.Namespace) -> None:
     apply_config_to_args(args)
 
@@ -716,7 +747,32 @@ def handle_run(args: argparse.Namespace) -> None:
             )
             sys.exit(1)
 
-    requested_modules = getattr(args, "modules", None)
+    benchmark_arg = getattr(args, "benchmark", None)
+    module_arg = getattr(args, "module", None)
+    modules_arg = getattr(args, "modules", None)
+
+    if benchmark_arg and (module_arg or modules_arg):
+        raise ValueError("Cannot pass both --benchmark and --module/--modules. Please specify only one selection method.")
+
+    requested_modules = None
+    selected_mods = None
+
+    if benchmark_arg:
+        resolved_benchmarks = resolve_benchmark_selector(benchmark_arg)
+        logger.info("Resolved --benchmark '%s' to: %s", benchmark_arg, resolved_benchmarks)
+        requested_modules = ",".join(resolved_benchmarks)
+        selected_mods = [b.split(":", 1)[1] if ":" in b else b for b in resolved_benchmarks]
+    elif module_arg:
+        requested_modules = module_arg
+        selected_mods = [module_arg]
+        logger.info("Resolved --module selection to: %s", selected_mods)
+    elif modules_arg:
+        requested_modules = modules_arg
+        selected_mods = [m.strip() for m in modules_arg.split(",")]
+        logger.info("Resolved --modules selection to: %s", selected_mods)
+    else:
+        logger.info("No benchmark/module selector specified; resolving to 'all'")
+
     if getattr(args, "device", None) == "cpu":
         # Worker subprocesses inherit this and cannot initialize CUDA.
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
@@ -771,14 +827,10 @@ def handle_run(args: argparse.Namespace) -> None:
         return
 
     mods = "all"
-    module_arg = getattr(args, "module", None)
-    modules_arg = getattr(args, "modules", None)
     if args.no_compression:
         mods = "baseline"
-    elif module_arg:
-        mods = [module_arg]
-    elif modules_arg:
-        mods = [m.strip() for m in modules_arg.split(",")]
+    elif selected_mods is not None:
+        mods = selected_mods
 
     ranks = [int(r.strip()) for r in args.ranks.split(",")] if args.ranks else args.rank
     models = [m.strip() for m in args.models.split(",")] if args.models else args.model
