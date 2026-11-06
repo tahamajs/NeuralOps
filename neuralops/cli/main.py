@@ -128,6 +128,18 @@ def build_main_parser() -> argparse.ArgumentParser:
     except Exception:
         pass
 
+    try:
+        from neuralops.ui.cli import build_ui_parser, cmd_ui
+        ui_p = build_ui_parser(
+            subparsers.add_parser(
+                "ui",
+                help="Launch NeuralOps Web UI",
+            )
+        )
+        ui_p.set_defaults(handler=cmd_ui)
+    except Exception:
+        pass
+
     return parser
 
 
