@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Notebooks &middot; NeuralOps{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.75rem; font-weight: 700;">Demonstration Notebooks</h1>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">94 canonical tutorial notebooks for surgery, distillation, kernels, and benchmarks</p>
+  </div>
+  <form method="get" action="/notebooks" style="display: flex; gap: 0.5rem;">
+    <input type="text" name="query" value="{{ search_query }}" placeholder="Filter tutorials..." class="form-control" style="width: 220px;">
+    <button type="submit" class="btn btn-outline">Search</button>
+  </form>
+</div>
+
+<div class="table-container">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Notebook Filename</th>
+        <th>Description / Topic</th>
+        <th>Size</th>
+        <th>Path</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for nb in notebooks %}
+      <tr>
+        <td style="font-family: var(--font-mono); font-weight: 600;">
+          <span style="color: var(--accent-blue);">{{ nb.filename }}</span>
+          <div style="font-size: 0.75rem; color: var(--text-secondary); font-family: var(--font-sans); margin-top: 0.15rem;">
+            {{ nb.title }}
+          </div>
+        </td>
+        <td style="color: var(--text-primary); max-width: 450px; font-size: 0.8125rem;">
+          {{ nb.description | truncate(90) }}
+        </td>
+        <td style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text-muted);">
+          {{ nb.size_kb }} KB
+        </td>
+        <td style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">
+          {{ nb.path }}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">No notebooks found matching query.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

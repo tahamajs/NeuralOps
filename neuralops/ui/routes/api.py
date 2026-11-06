@@ -34,7 +34,8 @@ def get_roofline_data() -> JSONResponse:
         ORDER BY kernel_name ASC, batch_size ASC, seq_len ASC
     """
     points: list[dict[str, Any]] = []
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         cursor = conn.cursor()
         cursor.execute(query)
         rows = cursor.fetchall()
@@ -57,6 +58,8 @@ def get_roofline_data() -> JSONResponse:
                     "backend": r["backend"] or "unknown",
                 }
             )
+    finally:
+        conn.close()
 
     return JSONResponse(content=points)
 
@@ -72,7 +75,8 @@ def get_pareto_data() -> JSONResponse:
     points: list[dict[str, Any]] = []
     seen: set[tuple[str, float]] = set()
 
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         cursor = conn.cursor()
         cursor.execute(query)
         rows = cursor.fetchall()
@@ -107,5 +111,7 @@ def get_pareto_data() -> JSONResponse:
                     "ppl": ppl_val if ppl_val is not None else 0.0,
                 }
             )
+    finally:
+        conn.close()
 
     return JSONResponse(content=points)

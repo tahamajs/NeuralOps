@@ -49,12 +49,15 @@ def _get_connection() -> sqlite3.Connection:
 
 def list_tables() -> list[str]:
     """Return all table names present in the SQLite master ledger."""
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name ASC"
         )
         return [row["name"] for row in cursor.fetchall()]
+    finally:
+        conn.close()
 
 
 def get_doctor_status() -> dict[str, Any]:
@@ -120,7 +123,8 @@ def get_doctor_status() -> dict[str, Any]:
 
 def get_recent_runs(limit: int = 5) -> list[dict[str, Any]]:
     """Retrieve the most recent benchmark run records."""
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         cursor = conn.cursor()
         cursor.execute(
             """
@@ -132,6 +136,8 @@ def get_recent_runs(limit: int = 5) -> list[dict[str, Any]]:
             (limit,),
         )
         return [dict(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
 
 
 _ALLOWED_FILTER_COLUMNS = {
@@ -185,7 +191,8 @@ def get_results(
         LIMIT ? OFFSET ?
     """
 
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         cursor = conn.cursor()
         cursor.execute(count_query, params)
         total_row = cursor.fetchone()
@@ -193,13 +200,15 @@ def get_results(
 
         cursor.execute(data_query, params + [limit, offset])
         rows = [dict(row) for row in cursor.fetchall()]
-
-    return rows, total_count
+        return rows, total_count
+    finally:
+        conn.close()
 
 
 def get_attention_results(name: str) -> list[dict[str, Any]]:
     """Retrieve all execution results for a given attention mechanism."""
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         cursor = conn.cursor()
         cursor.execute(
             """
@@ -213,6 +222,8 @@ def get_attention_results(name: str) -> list[dict[str, Any]]:
             (name,),
         )
         return [dict(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
 
 
 def get_compressor_results(name: str) -> list[dict[str, Any]]:
@@ -238,10 +249,13 @@ def get_benchmark_comparison(module_names: list[str]) -> list[dict[str, Any]]:
         ORDER BY module_name ASC
     """
 
-    with _get_connection() as conn:
+    conn = _get_connection()
+    try:
         cursor = conn.cursor()
         cursor.execute(query, module_names)
         return [dict(row) for row in cursor.fetchall()]
+    finally:
+        conn.close()
 
 
 def export_results_csv(filters: dict[str, Any] | None = None) -> str:

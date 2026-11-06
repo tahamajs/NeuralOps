@@ -26,6 +26,7 @@ from neuralops.ui.routes import (
     compressors_router,
     dashboard_router,
     doctor_router,
+    models_notebooks_router,
     partials_router,
 )
 
@@ -80,6 +81,7 @@ def create_app() -> FastAPI:
     app.include_router(attentions_router)
     app.include_router(compressors_router)
     app.include_router(benchmarks_router)
+    app.include_router(models_notebooks_router)
     app.include_router(doctor_router)
     app.include_router(partials_router)
     app.include_router(api_router)

@@ -28,6 +28,11 @@ from neuralops.ui.queries.static_catalog import (
     list_paradigms,
 )
 
+from neuralops.ui.queries.models_notebooks import (
+    list_model_zoo,
+    list_notebooks,
+)
+
 __all__ = [
     "export_results_csv",
     "get_attention_metadata",
@@ -42,6 +47,8 @@ __all__ = [
     "list_attentions",
     "list_compressors",
     "list_families",
+    "list_model_zoo",
+    "list_notebooks",
     "list_paradigms",
     "list_tables",
 ]
