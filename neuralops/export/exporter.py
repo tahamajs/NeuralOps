@@ -371,7 +371,7 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
         if base_name and base_name != "unknown":
             try:
                 from transformers import AutoModel
-                model = AutoModel.from_pretrained(base_name)
+                model = AutoModel.from_pretrained(base_name, trust_remote_code=False)
             except Exception as e:
                 logger.debug("Could not load AutoModel for base '%s': %s", base_name, e)
 

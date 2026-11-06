@@ -184,7 +184,18 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--log-interval", type=int, default=10, help="Logging step interval")
     run_p.add_argument("--distributed-backend", choices=["none", "ddp", "fsdp", "deepspeed"], default="none", help="Distributed training backend")
     run_p.add_argument("--mixed-precision", choices=["no", "fp16", "bf16"], default="no", help="Mixed precision mode")
-    run_p.add_argument("--no-trust-remote-code", action="store_true", help="Disable trust_remote_code for HF models")
+    run_p.add_argument(
+        "--trust-remote-code",
+        action="store_true",
+        default=False,
+        help="Enable execution of untrusted remote code from HuggingFace model repositories (default: False)",
+    )
+    run_p.add_argument(
+        "--no-trust-remote-code",
+        action="store_true",
+        default=False,
+        help="[Deprecated] Redundant alias ensuring trust_remote_code is disabled (default: False)",
+    )
     run_p.add_argument("--hf-token", type=str, default=None, help="Hugging Face API token for gated/private models")
     run_p.add_argument("--language", type=str, default=None, help="Language code for multilingual datasets/metrics")
     run_p.add_argument("--text-column", type=str, default=None, help="Custom column name for text inputs")
@@ -758,6 +769,16 @@ def handle_run(args: argparse.Namespace) -> None:
     models = [m.strip() for m in args.models.split(",")] if args.models else args.model
     datasets = [d.strip() for d in args.datasets.split(",")] if args.datasets else args.dataset
 
+    if getattr(args, "no_trust_remote_code", False):
+        import warnings
+
+        warnings.warn(
+            "--no-trust-remote-code is deprecated and redundant (trust_remote_code now defaults to False).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    trust_remote_code_val = bool(getattr(args, "trust_remote_code", False)) and not bool(getattr(args, "no_trust_remote_code", False))
+
     from neuralops.benchmarks.api import Runner
 
     runner = Runner(
@@ -801,7 +822,7 @@ def handle_run(args: argparse.Namespace) -> None:
         log_interval=args.log_interval,
         distributed_backend=args.distributed_backend,
         mixed_precision=args.mixed_precision,
-        trust_remote_code=not args.no_trust_remote_code,
+        trust_remote_code=trust_remote_code_val,
         hf_token=args.hf_token,
         language=args.language,
         text_column=args.text_column,

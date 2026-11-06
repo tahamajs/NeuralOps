@@ -106,7 +106,7 @@ class TaskAdapter:
             task=self.task,
             device=self.device,
             dtype=self.dtype,
-            trust_remote_code=self.extra_kwargs.get("trust_remote_code", True),
+            trust_remote_code=self.extra_kwargs.get("trust_remote_code", False),
             hf_token=self.extra_kwargs.get("hf_token"),
             tokenizer_name=self.extra_kwargs.get("tokenizer"),
         )

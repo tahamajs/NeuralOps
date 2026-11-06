@@ -146,6 +146,8 @@ class BenchmarkRunner:
             "duration_seconds": None,
             "git_provenance": git_prov,
             "host_environment": host_env,
+            "model_name": getattr(self.config, "models", None) or getattr(self.config, "model", None),
+            "trust_remote_code": bool(getattr(self.config, "trust_remote_code", False)),
             "execution_outcome": {
                 "status": "RUNNING",
                 "total_iterations": 0,

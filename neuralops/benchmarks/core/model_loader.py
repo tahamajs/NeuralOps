@@ -74,7 +74,7 @@ def load_model_and_tokenizer(
     is_causal: bool = False,
     task: str | None = None,
     dataset: str | None = None,
-    trust_remote_code: bool = True,
+    trust_remote_code: bool = False,
 ) -> tuple[nn.Module, Any, Any]:
     """
     Load HuggingFace model, tokenizer, and config with transparent device fallback.
@@ -108,6 +108,12 @@ def load_model_and_tokenizer(
         "float16": torch.float16,
         "bfloat16": torch.bfloat16,
     }.get(dtype, torch.float32)
+
+    if trust_remote_code:
+        LOG.warning(
+            "Explicit trust_remote_code=True specified for model '%s'; remote code WILL be executed.",
+            model_name,
+        )
 
     LOG.info("Loading tokenizer for '%s'...", model_name)
     tokenizer = AutoTokenizer.from_pretrained(

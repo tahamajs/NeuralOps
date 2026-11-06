@@ -260,7 +260,7 @@ def _guided_wizard() -> None:
             training_type="finetune", kd_teacher=None, kd_temperature=2.0, kd_alpha=0.5,
             recovery_steps=50, max_samples=samples, max_eval_samples=50, grad_accum_steps=1,
             tracker="none", project_name="neuralops", run_name=None, log_interval=10,
-            distributed_backend="none", mixed_precision="no", no_trust_remote_code=False,
+            distributed_backend="none", mixed_precision="no", trust_remote_code=False,
             hf_token=None, language=None, text_column=None, label_column=None, id_column=None,
             preprocess_script=None, config=None, auto_commit=False, no_auto_commit=True,
             commit_interval=1, push_to_hf=None, no_deduplicate=True, force_rerun=True,

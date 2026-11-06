@@ -175,7 +175,7 @@ def load_universal_model(
     device: Optional[str] = None,
     dtype: Optional[str] = "float32",
     num_labels: Optional[int] = None,
-    trust_remote_code: bool = True,
+    trust_remote_code: bool = False,
     hf_token: Optional[str] = None,
     tokenizer_name: Optional[str] = None,
 ) -> Tuple[nn.Module, Any, Any]:

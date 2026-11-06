@@ -74,7 +74,7 @@ class NeuralOpsLMWrapper(BaseLM):
         dtype: Union[str, torch.dtype] = "float16",
         batch_size: Union[int, str] = 1,
         max_length: Optional[int] = 2048,
-        trust_remote_code: bool = True,
+        trust_remote_code: bool = False,
         **kwargs: Any,
     ) -> None:
         """Execute init routine."""

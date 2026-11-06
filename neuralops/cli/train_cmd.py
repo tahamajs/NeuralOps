@@ -208,15 +208,17 @@ def build_train_parser(subparser: Optional[argparse.ArgumentParser] = None) -> a
 
 
 def _load_model(model_name_or_path: str, device: str) -> nn.Module:
-    """Load model architecture or construct lightweight fallback model."""
+    """Load pretrained model architecture; fails closed without random fallbacks."""
+    errors: list[str] = []
     try:
         from transformers import AutoModelForCausalLM
 
         model = AutoModelForCausalLM.from_pretrained(model_name_or_path)
         model.to(device)
         return model
-    except Exception as e:
-        logger.warning("AutoModelForCausalLM loading failed for '%s': %s", model_name_or_path, e)
+    except Exception as exc_causal:
+        errors.append(f"AutoModelForCausalLM: {exc_causal}")
+        last_exc: Exception = exc_causal
 
     try:
         from transformers import AutoModel
@@ -224,43 +226,18 @@ def _load_model(model_name_or_path: str, device: str) -> nn.Module:
         model = AutoModel.from_pretrained(model_name_or_path)
         model.to(device)
         return model
-    except Exception as e:
-        logger.warning("AutoModel loading failed for '%s': %s. Using robust neural architecture.", model_name_or_path, e)
+    except Exception as exc_auto:
+        errors.append(f"AutoModel: {exc_auto}")
+        last_exc = exc_auto
 
-    # Lightweight fallback model for test/simulation
-    class _FallbackLanguageModel(nn.Module):
-        def __init__(self, vocab_size: int = 32000, hidden_dim: int = 512, num_layers: int = 4) -> None:
-            super().__init__()
-            self.embed = nn.Embedding(vocab_size, hidden_dim)
-            self.layers = nn.ModuleList([
-                nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=8, dim_feedforward=hidden_dim * 4, batch_first=True)
-                for _ in range(num_layers)
-            ])
-            self.head = nn.Linear(hidden_dim, vocab_size, bias=False)
-
-        def forward(self, input_ids: torch.Tensor, labels: Optional[torch.Tensor] = None, **kwargs: Any) -> Any:
-            x = self.embed(input_ids)
-            for layer in self.layers:
-                x = layer(x)
-            logits = self.head(x)
-            loss = None
-            if labels is not None:
-                shift_logits = logits[..., :-1, :].contiguous()
-                shift_labels = labels[..., 1:].contiguous()
-                loss = nn.functional.cross_entropy(
-                    shift_logits.view(-1, shift_logits.size(-1)),
-                    shift_labels.view(-1),
-                    ignore_index=-100,
-                )
-            class Output:
-                def __init__(self, loss_val: Optional[torch.Tensor], logits_val: torch.Tensor) -> None:
-                    self.loss = loss_val
-                    self.logits = logits_val
-            return Output(loss, logits)
-
-    model = _FallbackLanguageModel()
-    model.to(device)
-    return model
+    detail = "; ".join(errors)
+    raise RuntimeError(
+        f"Could not load pretrained model {model_name_or_path!r}. "
+        f"Root cause: {detail}. "
+        "Remedy: Check the model identifier for typos, verify the local checkpoint path exists, "
+        "or verify network/HuggingFace Hub connectivity (and check HF_HUB_OFFLINE settings). "
+        "Training will NOT continue on a random model."
+    ) from last_exc
 
 
 def _create_optimizer(optimizer_name: str, model: nn.Module, lr: float) -> torch.optim.Optimizer:

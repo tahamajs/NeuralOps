@@ -66,7 +66,7 @@ class BenchmarkConfig:
     log_interval: int = 10
     distributed_backend: str = "none"
     mixed_precision: str = "no"
-    trust_remote_code: bool = True
+    trust_remote_code: bool = False
     hf_token: Optional[str] = None
     language: Optional[str] = None
     text_column: Optional[str] = None

@@ -223,7 +223,7 @@ def handle_run(args: argparse.Namespace) -> int:
             log_interval=int(cfg.get("log_interval", 10)),
             distributed_backend=cfg.get("distributed_backend", "none"),
             mixed_precision=cfg.get("mixed_precision", "none"),
-            trust_remote_code=not bool(cfg.get("no_trust_remote_code", False)),
+            trust_remote_code=bool(cfg.get("trust_remote_code", False)),
             hf_token=cfg.get("hf_token"),
             language=cfg.get("language", "en"),
             text_column=cfg.get("text_column", "text"),
