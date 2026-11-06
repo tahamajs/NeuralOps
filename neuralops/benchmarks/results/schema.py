@@ -22,8 +22,67 @@ from pathlib import Path
 import platform
 import subprocess
 import sys
+from enum import Enum
 from typing import Any, Dict, List, Optional
 import uuid
+
+
+class BenchmarkStatus(str, Enum):
+    """Canonical status enum for NeuralOps benchmarks.
+
+    Prevents ad-hoc strings ('PASS', 'PASSED', 'FAIL') and enforces
+    strict fail-closed reporting across all modules, kernels, and suites.
+    """
+    PLANNED = "planned"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+    TIMEOUT = "timeout"
+    SKIPPED = "skipped"
+    DEFERRED = "deferred"
+    NOT_IMPLEMENTED = "not_implemented"
+    FAIL_NUMERICS = "fail_numerics"
+    DEPENDENCY_ERROR = "dependency_error"
+    HARDWARE_ERROR = "hardware_error"
+
+    @classmethod
+    def normalize(cls, value: Any) -> "BenchmarkStatus":
+        """Normalize legacy or loose status representations to a canonical BenchmarkStatus."""
+        if isinstance(value, cls):
+            return value
+        if not value:
+            return cls.FAILED
+        val_str = str(value).strip().lower()
+        mapping = {
+            "pass": cls.SUCCESS,
+            "passed": cls.SUCCESS,
+            "ok": cls.SUCCESS,
+            "true": cls.SUCCESS,
+            "success": cls.SUCCESS,
+            "fail": cls.FAILED,
+            "failed": cls.FAILED,
+            "false": cls.FAILED,
+            "error": cls.FAILED,
+            "timeout": cls.TIMEOUT,
+            "timed_out": cls.TIMEOUT,
+            "skip": cls.SKIPPED,
+            "skipped": cls.SKIPPED,
+            "defer": cls.DEFERRED,
+            "deferred": cls.DEFERRED,
+            "not_implemented": cls.NOT_IMPLEMENTED,
+            "unimplemented": cls.NOT_IMPLEMENTED,
+            "fail_numerics": cls.FAIL_NUMERICS,
+            "fail_delta": cls.FAIL_NUMERICS,
+            "numerical_error": cls.FAIL_NUMERICS,
+            "dependency_error": cls.DEPENDENCY_ERROR,
+            "missing_dependency": cls.DEPENDENCY_ERROR,
+            "hardware_error": cls.HARDWARE_ERROR,
+            "cuda_error": cls.HARDWARE_ERROR,
+            "planned": cls.PLANNED,
+            "running": cls.RUNNING,
+        }
+        return mapping.get(val_str, cls.FAILED)
+
 
 
 def _get_git_commit() -> str:
@@ -468,6 +527,9 @@ class BenchmarkResult:
 
         if not self.checksum:
             self.checksum = self.compute_checksum()
+
+        # Normalize status string to canonical BenchmarkStatus value
+        self.status = str(BenchmarkStatus.normalize(self.status).value)
 
     def compute_run_key(self) -> str:
         """Compute unique deterministic run key for deduplication."""

@@ -15,12 +15,35 @@ mappings for the 12 operational benchmark modes.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 import logging
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 LOG = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class BenchmarkSpec:
+    """Canonical specification and capability metadata for a benchmark target.
+
+    Adheres strictly to the Unified Benchmark CLI & Integrity Specification.
+    """
+    canonical_name: str
+    category: str
+    target_name: str
+    requires_cuda: bool = False
+    requires_triton: bool = False
+    supports_causal: bool = True
+    supports_backward: bool = True
+    supports_gqa: bool = False
+    supports_rope: bool = False
+    default_timeout_s: int = 1800
+    reference_backend: str = "pytorch"
+    is_deprecated: bool = False
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 CANONICAL_BENCHMARK_MODELS: list[str] = [
     "distilbert-base-uncased",
@@ -170,10 +193,80 @@ class BenchmarkRegistry:
         """Validate if a mode is one of the 12 operational benchmark modes."""
         return mode in OPERATIONAL_BENCHMARK_MODES
 
+    @staticmethod
+    def populate_canonical_benchmarks() -> int:
+        """Populate BENCHMARK_REGISTRY and _BENCHMARK_METADATA with canonical inventory.
+
+        Registers all 131 attention mechanisms, 72 compressor engines, and verified ops
+        under strict canonical names ('attention:<name>', 'compressor:<name>', 'cuda:<name>', 'triton:<name>').
+        """
+        from neuralops.benchmarks.discovery import discover_all_modules
+        from neuralops.benchmarks.ops_registry import OPS_REGISTRY
+
+        count = 0
+        modules = discover_all_modules()
+        for m in modules:
+            cat = getattr(m, "type", None) or getattr(m, "module_type", "attention")
+            canon_name = f"{cat}:{m.name}"
+            spec = BenchmarkSpec(
+                canonical_name=canon_name,
+                category=cat,
+                target_name=m.name,
+                requires_cuda=getattr(m, "requires_cuda", False),
+                supports_causal=getattr(m, "supports_causal", True),
+                supports_backward=True,
+                supports_gqa=getattr(m, "supports_gqa", False),
+                supports_rope=getattr(m, "supports_rope", False),
+                default_timeout_s=getattr(m, "timeout_s", 1800),
+            )
+            BENCHMARK_REGISTRY[canon_name] = spec
+            _BENCHMARK_METADATA[canon_name] = {
+                "name": canon_name,
+                "category": cat,
+                "target_name": m.name,
+                "mode": f"sweep-{cat}s" if cat in ("attention", "compressor") else "any",
+                "hardware": "cuda" if spec.requires_cuda else "any",
+                "description": f"Canonical {cat} benchmark for {m.name}",
+                "spec": spec,
+            }
+            count += 1
+
+        for raw_op_name, op_cfg in OPS_REGISTRY.items():
+            cat = op_cfg.category
+            canon_name = raw_op_name if ":" in raw_op_name else f"{cat}:{raw_op_name}"
+            target_name = raw_op_name.split(":", 1)[1] if ":" in raw_op_name else raw_op_name
+            if canon_name not in BENCHMARK_REGISTRY:
+                spec = BenchmarkSpec(
+                    canonical_name=canon_name,
+                    category=cat,
+                    target_name=target_name,
+                    requires_cuda=(cat == "cuda"),
+                    requires_triton=(cat == "triton"),
+                    reference_backend="pytorch",
+                )
+                BENCHMARK_REGISTRY[canon_name] = spec
+                _BENCHMARK_METADATA[canon_name] = {
+                    "name": canon_name,
+                    "category": cat,
+                    "target_name": target_name,
+                    "mode": "any",
+                    "hardware": "cuda" if cat == "cuda" else "any",
+                    "description": f"Verified {cat} kernel operation {target_name}",
+                    "spec": spec,
+                }
+                count += 1
+
+        return count
+
+
+# Auto-populate canonical benchmarks on initial import
+BenchmarkRegistry.populate_canonical_benchmarks()
+
 
 __all__ = [
     "BaseBenchmark",
     "BenchmarkRegistry",
+    "BenchmarkSpec",
     "BENCHMARK_REGISTRY",
     "register_benchmark",
     "get_benchmark",
