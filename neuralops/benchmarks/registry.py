@@ -202,6 +202,8 @@ class BenchmarkRegistry:
         """
         from neuralops.benchmarks.discovery import discover_all_modules
         from neuralops.benchmarks.ops_registry import OPS_REGISTRY
+        from neuralops.benchmarks.adapters.cuda_adapter import CANONICAL_CUDA_MODULES
+        from neuralops.benchmarks.adapters.triton_adapter import CANONICAL_TRITON_MODULES
 
         count = 0
         modules = discover_all_modules()
@@ -231,8 +233,56 @@ class BenchmarkRegistry:
             }
             count += 1
 
+        for mod in CANONICAL_CUDA_MODULES:
+            canon_name = mod if ":" in mod else f"cuda:{mod}"
+            target_name = mod.split(":", 1)[1] if ":" in mod else mod
+            if canon_name not in BENCHMARK_REGISTRY:
+                spec = BenchmarkSpec(
+                    canonical_name=canon_name,
+                    category="cuda",
+                    target_name=target_name,
+                    requires_cuda=True,
+                    reference_backend="pytorch",
+                )
+                BENCHMARK_REGISTRY[canon_name] = spec
+                _BENCHMARK_METADATA[canon_name] = {
+                    "name": canon_name,
+                    "category": "cuda",
+                    "target_name": target_name,
+                    "mode": "any",
+                    "hardware": "cuda",
+                    "description": f"Canonical CUDA kernel module {target_name}",
+                    "spec": spec,
+                }
+                count += 1
+
+        for mod in CANONICAL_TRITON_MODULES:
+            canon_name = mod if ":" in mod else f"triton:{mod}"
+            target_name = mod.split(":", 1)[1] if ":" in mod else mod
+            if canon_name not in BENCHMARK_REGISTRY:
+                spec = BenchmarkSpec(
+                    canonical_name=canon_name,
+                    category="triton",
+                    target_name=target_name,
+                    requires_triton=True,
+                    reference_backend="pytorch",
+                )
+                BENCHMARK_REGISTRY[canon_name] = spec
+                _BENCHMARK_METADATA[canon_name] = {
+                    "name": canon_name,
+                    "category": "triton",
+                    "target_name": target_name,
+                    "mode": "any",
+                    "hardware": "cuda",
+                    "description": f"Canonical Triton kernel module {target_name}",
+                    "spec": spec,
+                }
+                count += 1
+
         for raw_op_name, op_cfg in OPS_REGISTRY.items():
             cat = op_cfg.category
+            if cat in ("attention", "compressor"):
+                continue
             canon_name = raw_op_name if ":" in raw_op_name else f"{cat}:{raw_op_name}"
             target_name = raw_op_name.split(":", 1)[1] if ":" in raw_op_name else raw_op_name
             if canon_name not in BENCHMARK_REGISTRY:

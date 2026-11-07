@@ -58,3 +58,58 @@ def test_handle_run_invalid_benchmark_fails():
         assert "Valid benchmark" in msg
         assert not mock_orch.called
         assert not mock_runner.called
+
+
+def test_dispatch_benchmark_subcommands():
+    """Assert _dispatch cleanly routes neuralops benchmark <action> (info, list, plan, run)."""
+    from neuralops.benchmarks.cli import _dispatch
+
+    with patch("neuralops.cli.info.cmd_info", return_value=0) as mock_info:
+        args = argparse.Namespace(subcommand="benchmark", action="info")
+        assert _dispatch(args) == 0
+        assert mock_info.called
+
+    with patch("neuralops.benchmarks.cli.handle_list", return_value=0) as mock_list:
+        args = argparse.Namespace(subcommand="benchmark", action="list")
+        assert _dispatch(args) == 0
+        assert mock_list.called
+
+    with patch("neuralops.benchmarks.cli.handle_plan") as mock_plan:
+        args = argparse.Namespace(subcommand="benchmark", action="plan")
+        assert _dispatch(args) == 0
+        assert mock_plan.called
+
+    with patch("neuralops.benchmarks.cli.handle_run") as mock_run:
+        args = argparse.Namespace(subcommand="benchmark", action="run")
+        assert _dispatch(args) == 0
+        assert mock_run.called
+
+
+def test_compare_subcommand(tmp_path):
+    """Assert compare subcommand invokes compare_results and reflects regression gate status."""
+    import json
+    from neuralops.benchmarks.cli import _build_parser, _dispatch
+
+    base_file = tmp_path / "base.json"
+    cand_file = tmp_path / "cand.json"
+    base_file.write_text(json.dumps({"metrics": {"latency": 10.0}, "run_id": "r1"}))
+    cand_file.write_text(json.dumps({"metrics": {"latency": 10.5}, "run_id": "r2"}))
+
+    parser = _build_parser()
+    args_pass = parser.parse_args([
+        "compare",
+        "--baseline", str(base_file),
+        "--candidate", str(cand_file),
+        "--metric", "latency",
+        "--max-regression", "1.0",
+    ])
+    assert _dispatch(args_pass) == 0
+
+    args_fail = parser.parse_args([
+        "compare",
+        "--baseline", str(base_file),
+        "--candidate", str(cand_file),
+        "--metric", "latency",
+        "--max-regression", "0.1",
+    ])
+    assert _dispatch(args_fail) == 1

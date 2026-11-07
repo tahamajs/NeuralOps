@@ -276,6 +276,13 @@ def _build_parser() -> argparse.ArgumentParser:
     list_p.add_argument("--supports", choices=["causal", "gqa", "rope", "cuda"], default=None)
     list_p.add_argument("--json", action="store_true", help="Output catalog as formatted JSON")
 
+    comp_gate_p = subparsers.add_parser("compare", help="Compare benchmark run results against baseline for regression detection")
+    comp_gate_p.add_argument("--baseline", type=str, required=True, help="Path to baseline benchmark result JSON")
+    comp_gate_p.add_argument("--candidate", type=str, required=True, help="Path to candidate benchmark result JSON")
+    comp_gate_p.add_argument("--metric", type=str, required=True, help="Target metric name to evaluate")
+    comp_gate_p.add_argument("--max-regression", type=float, required=True, help="Maximum allowed numerical regression")
+    comp_gate_p.add_argument("--json", action="store_true", help="Format output as JSON")
+
     subparsers.add_parser("verify", help="Check system hardware and package requirements")
 
     exp_p = subparsers.add_parser("export", help="Export model to production artifact format")
@@ -549,12 +556,27 @@ def handle_list(args: argparse.Namespace) -> int:
     return cmd_list(args)
 
 
+def handle_compare(args: argparse.Namespace) -> int:
+    """Compare candidate benchmark results against baseline to gate regressions."""
+    import json
+    from pathlib import Path
+    from neuralops.benchmarks.regression_gate import compare_results
+
+    baseline = Path(args.baseline)
+    candidate = Path(args.candidate)
+    metric = str(args.metric)
+    max_regression = float(args.max_regression)
+
+    res = compare_results(baseline, candidate, metric, max_regression)
+    print(json.dumps(res, indent=2))
+    return 0 if res.get("status") == "PASS" else 1
+
 
 def handle_plan(args: argparse.Namespace) -> None:
     from neuralops.benchmarks.orchestrator import BenchmarkOrchestrator
-    target_mod = getattr(args, "benchmark", None) or args.module
+    target_mod = getattr(args, "benchmark", None) or getattr(args, "module", None)
     orch = BenchmarkOrchestrator(
-        modules=args.modules or target_mod or "all",
+        modules=getattr(args, "modules", None) or target_mod or "all",
         delta=getattr(args, "all_delta", False),
         gated=getattr(args, "all_gated", False),
         svd=getattr(args, "all_svd", False),
@@ -570,9 +592,9 @@ def handle_plan(args: argparse.Namespace) -> None:
     )
     mod_count = len(orch.modules)
 
-    models_count = 10 if args.all_models else (len(args.models.split(",")) if args.models else 1)
-    datasets_count = 22 if args.all_datasets else (len(args.datasets.split(",")) if args.datasets else 1)
-    ranks_count = len(args.ranks.split(",")) if args.ranks else 1
+    models_count = 10 if getattr(args, "all_models", False) else (len(args.models.split(",")) if getattr(args, "models", None) else 1)
+    datasets_count = 22 if getattr(args, "all_datasets", False) else (len(args.datasets.split(",")) if getattr(args, "datasets", None) else 1)
+    ranks_count = len(args.ranks.split(",")) if getattr(args, "ranks", None) else 1
 
     total_runs = mod_count * models_count * datasets_count * ranks_count
     est_seconds = total_runs * 180
@@ -589,7 +611,7 @@ def handle_plan(args: argparse.Namespace) -> None:
         table.add_row("Total Planned Runs", f"[bold yellow]{total_runs:,}[/]")
         table.add_row("Estimated Duration", f"~{est_hours:.1f} hours (1x GPU)")
         console.print(table)
-        if total_runs > 500 and not args.yes:
+        if total_runs > 500 and not getattr(args, "yes", False):
             console.print("[bold yellow]⚠️  Grid size exceeds 500 runs. Use --yes to confirm execution.[/]")
     else:
         print("═════════════════════════════════════════════════════")
@@ -759,6 +781,13 @@ def handle_run(args: argparse.Namespace) -> None:
     benchmark_arg = getattr(args, "benchmark", None)
     module_arg = getattr(args, "module", None)
     modules_arg = getattr(args, "modules", None)
+
+    if not benchmark_arg and not module_arg and not modules_arg:
+        pos_cmd = getattr(args, "recipe_cmd", None) or getattr(args, "action", None)
+        if pos_cmd and pos_cmd not in ("recipe", "info", "list", "plan", "verify", "compare", "run"):
+            from neuralops.benchmarks.registry import BENCHMARK_REGISTRY
+            if ":" in pos_cmd or pos_cmd in BENCHMARK_REGISTRY or f"attention:{pos_cmd}" in BENCHMARK_REGISTRY or f"compressor:{pos_cmd}" in BENCHMARK_REGISTRY or f"cuda:{pos_cmd}" in BENCHMARK_REGISTRY or f"triton:{pos_cmd}" in BENCHMARK_REGISTRY:
+                benchmark_arg = pos_cmd
 
     if benchmark_arg and (module_arg or modules_arg):
         raise ValueError("Cannot pass both --benchmark and --module/--modules. Please specify only one selection method.")
@@ -1447,18 +1476,39 @@ def _dispatch(args: argparse.Namespace) -> int:
                     print(f"[-] Roofline profiling skipped or failed: {e_roof}")
         return 0
     elif args.subcommand == "list":
-        handle_list(args)
+        return handle_list(args)
     elif args.subcommand == "plan":
         handle_plan(args)
+        return 0
     elif args.subcommand == "verify":
-        handle_verify(args)
+        return handle_verify(args)
+    elif args.subcommand == "compare":
+        return handle_compare(args)
 
     elif args.subcommand in ("run", "benchmark"):
-        if getattr(args, "recipe_cmd", None) == "recipe":
+        action = getattr(args, "action", None) or getattr(args, "recipe_cmd", None) or getattr(args, "bench_command", None)
+        if action == "recipe":
             args.recipe_action = "benchmark"
             args.file = getattr(args, "recipe_file", None)
             return handle_recipe(args)
-        handle_run(args)
+        elif action == "info":
+            from neuralops.cli.info import cmd_info
+            return cmd_info()
+        elif action == "list":
+            return handle_list(args)
+        elif action == "plan":
+            handle_plan(args)
+            return 0
+        elif action == "verify":
+            return handle_verify(args)
+        elif action == "compare":
+            return handle_compare(args)
+        elif action in ("run", None):
+            handle_run(args)
+            return 0
+        else:
+            handle_run(args)
+            return 0
     elif args.subcommand == "export":
         handle_export(args)
     elif args.subcommand == "search":

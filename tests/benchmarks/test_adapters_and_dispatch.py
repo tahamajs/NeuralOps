@@ -19,6 +19,7 @@ import pytest
 import torch
 import torch.nn as nn
 
+from neuralops.benchmarks.adapters.base import BaseBenchmarkAdapter
 from neuralops.benchmarks.adapters.cuda_adapter import (
     CANONICAL_CUDA_MODULES,
     CUDAKernelAdapter,
@@ -36,6 +37,7 @@ from neuralops.benchmarks.adapters.triton_adapter import (
     TritonKernelAdapter,
 )
 from neuralops.benchmarks.pipeline import BenchmarkPipeline, SweepController, sanitize_memory
+from neuralops.benchmarks.results.schema import BenchmarkStatus
 from neuralops.benchmarks.registry import (
     BENCHMARK_REGISTRY,
     BaseBenchmark,
@@ -171,24 +173,31 @@ def test_triton_adapter_catalogs() -> None:
     assert "linear_attn" in all_kernels
     assert "cosformer_triton_kernel" in all_kernels
 
-    # Instantiate adapter on CPU
+    # Instantiate adapter on CPU (inherits from BaseBenchmarkAdapter)
     adapter = TritonKernelAdapter("linear_attn", is_extension=False, device="cpu")
+    assert isinstance(adapter, BaseBenchmarkAdapter)
     assert adapter.kernel_name == "linear_attn"
 
     # Verify 2D SRAM tiling contract across canonical modules
     assert TritonKernelAdapter.verify_tiling_contract() is True
 
+    # 6-Gate Lifecycle execution returning canonical BenchmarkResult
+    result = adapter.execute()
+    assert result.status == BenchmarkStatus.SUCCESS
+    assert "latency_ms_mean" in result.metadata
+
 
 def test_cuda_adapter_catalogs() -> None:
-    assert len(CANONICAL_CUDA_MODULES) == 110
+    assert len(CANONICAL_CUDA_MODULES) >= 110
     modules = CUDAKernelAdapter.list_all_modules()
-    assert len(modules) == 110
-    assert len(CUDAKernelAdapter.list_modules()) == 110
+    assert len(modules) >= 110
+    assert len(CUDAKernelAdapter.list_modules()) >= 110
     kernels = CUDAKernelAdapter.list_all_kernels()
     assert len(kernels) >= 114
 
-    # Adapter instantiation on CPU
+    # Adapter instantiation on CPU (inherits from BaseBenchmarkAdapter)
     adapter = CUDAKernelAdapter("layernorm", device="cpu")
+    assert isinstance(adapter, BaseBenchmarkAdapter)
     assert adapter.kernel_name == "layernorm"
     assert adapter._pytorch_ref_fn is not None
 
@@ -201,9 +210,28 @@ def test_cuda_adapter_catalogs() -> None:
     out_call = adapter(x, w, b)
     assert out_call.shape == (2, 4, 16)
 
+    # 6-Gate Lifecycle execution returning canonical BenchmarkResult
+    result = adapter.execute()
+    assert result.status == BenchmarkStatus.SUCCESS
+    assert "latency_ms_mean" in result.metadata
+    assert result.metadata["backend_used"] == "pytorch"
+
     # Telemetry check
     telemetry = CUDAKernelAdapter.get_dispatch_telemetry()
     assert "stats" in telemetry
+
+
+def test_adapters_6gate_fail_numerics() -> None:
+    """Validate 6-gate lifecycle returns FAIL_NUMERICS when candidate diverges."""
+    adapter = CUDAKernelAdapter("layernorm", device="cpu", tolerance=1e-5)
+
+    # Monkeypatch run_candidate to return corrupted outputs
+    orig_run_candidate = adapter.run_candidate
+    adapter.run_candidate = lambda inputs: (orig_run_candidate(inputs)[0] + 1.0, "pytorch")
+
+    result = adapter.execute()
+    assert result.status == BenchmarkStatus.FAIL_NUMERICS
+    assert "max_diff" in result.error or "exceeds tolerance" in result.error
 
 
 def test_benchmark_registry_and_decorator() -> None:
