@@ -14,6 +14,7 @@ import torch
 import torch.nn as nn
 
 import types
+_orig_api = sys.modules.get("neuralops.api")
 api_mock = types.ModuleType("neuralops.api")
 api_mock.set_surgery_alpha = lambda model, alpha: None
 sys.modules["neuralops.api"] = api_mock
@@ -21,6 +22,11 @@ sys.modules["neuralops.api"] = api_mock
 from neuralops.inference.paged_cache import PagedKVCache
 from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
 from neuralops.models.paged_state import PagedStateTable, RadixPrefixStateCache
+
+if _orig_api is not None:
+    sys.modules["neuralops.api"] = _orig_api
+else:
+    sys.modules.pop("neuralops.api", None)
 
 print("=== STARTING DIRECT STRESS TESTS ===", flush=True)
 

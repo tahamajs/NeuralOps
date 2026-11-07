@@ -387,6 +387,7 @@ filterwarnings = [
     "ignore:.*pydantic.*:DeprecationWarning",
     "ignore:.*Support for class-based.*:DeprecationWarning",
     "ignore:.*neuralops.core.compression_engine has moved.*:DeprecationWarning",
+    "ignore:.*neuralops.core.roofline has moved.*:DeprecationWarning",
     "ignore:.*neuralops.training has merged into neuralops.trainer.*:DeprecationWarning",
     "ignore:.*neuralops.core.rope is deprecated.*:DeprecationWarning",
     "ignore:.*neuralops.core.gqa_utils is deprecated.*:DeprecationWarning",

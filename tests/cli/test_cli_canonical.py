@@ -26,7 +26,7 @@ except ModuleNotFoundError:
 
 def test_console_scripts_resolve_to_canonical_parser():
     """Assert all console scripts in pyproject.toml resolve to neuralops.benchmarks.cli:main."""
-    root_dir = Path(__file__).resolve().parent.parent
+    root_dir = Path(__file__).resolve().parents[2]
     pyproject_path = root_dir / "pyproject.toml"
     assert pyproject_path.exists(), "pyproject.toml missing"
 

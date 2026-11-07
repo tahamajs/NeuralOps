@@ -102,6 +102,7 @@ nav:
       - Kernels & 3-Level Dispatch: api/kernels.md
       - Serving Integrations: api/integrations.md
       - Results Ledger & Provenance: api/results_ledger.md
+      - CLI Reference: api/cli_reference.md
   - Tutorials:
       - 01 Quickstart: tutorials/01_quickstart.md
       - 02 Roofline Analysis: tutorials/02_roofline.md
