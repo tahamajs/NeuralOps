@@ -312,6 +312,12 @@ def serve(
 ) -> Any:
     """Launches an OpenAI-compatible HTTP serving endpoint for the model.
 
+    Canonical Serving Note (F-60):
+        The serving engine is powered canonically by
+        `neuralops.integrations.serving.create_openai_serving_app`
+        (re-exported as `neuralops.serving.create_openai_serving_app`),
+        providing OpenAI-compatible chat completions and generation endpoints.
+
     Parameters:
         model: PyTorch model instance or Hugging Face model identifier string.
         port: HTTP server port (default: 8000).

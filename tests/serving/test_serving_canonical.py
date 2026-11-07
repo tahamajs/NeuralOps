@@ -23,6 +23,26 @@ def test_serving_is_integrations_app():
     assert serving.create_openai_serving_app is int_serving.create_openai_serving_app
 
 
+test_serving_reexports_integrations_app = test_serving_is_integrations_app
+
+
+def test_api_serve_uses_canonical_app():
+    """Verify api.serve() invokes canonical create_openai_serving_app."""
+    from unittest.mock import MagicMock, patch
+    import torch.nn as nn
+    import neuralops.api as api
+
+    dummy_model = nn.Linear(4, 4)
+    mock_create_app = MagicMock(return_value="mock_app")
+    mock_uvicorn_run = MagicMock()
+
+    with patch("neuralops.integrations.serving.create_openai_serving_app", mock_create_app), \
+         patch("uvicorn.run", mock_uvicorn_run):
+        api.serve(dummy_model, port=9999, host="127.0.0.1")
+        assert mock_create_app.call_count == 1
+        assert mock_uvicorn_run.call_count == 1
+
+
 def test_api_serve_kwargs_accepted():
     """Verify backend and kv_cache_budget_gb kwargs are validated or honoured, never silently ignored."""
     # 1. Valid kwargs accepted and tracked on app.state

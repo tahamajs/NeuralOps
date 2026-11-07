@@ -244,6 +244,9 @@ def pytest_collection_modifyitems(config, items):
                 "test_perplexity_single_gate",
                 "test_cli_main",
                 "test_standalone_cli",
+                "test_results_ledger_single_owner",
+                "test_monitor_single_server",
+                "test_serving_canonical",
             )
         )
         if ("cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name) and not is_static_config_test:

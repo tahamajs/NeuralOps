@@ -17,6 +17,12 @@ from __future__ import annotations
 from neuralops.export.serving import TGIAdapter, VLLMAdapter, export_serving_bundle
 from neuralops.integrations.serving import create_openai_serving_app
 from neuralops.serving.paged_cache_manager import PagedKVCache, PagedKVCacheManager, PagedStateTable
+from neuralops.serving.request_batcher import (
+    TGIRequest,
+    TGIRequestBatch,
+    TGIServingAdapter,
+    TGIStreamingIterator,
+)
 
 __all__ = [
     "create_openai_serving_app",
@@ -26,4 +32,8 @@ __all__ = [
     "VLLMAdapter",
     "TGIAdapter",
     "export_serving_bundle",
+    "TGIRequest",
+    "TGIRequestBatch",
+    "TGIServingAdapter",
+    "TGIStreamingIterator",
 ]

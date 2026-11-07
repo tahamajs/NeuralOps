@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import csv
 import io
+import os
 import sqlite3
 import subprocess
 from pathlib import Path
@@ -22,7 +23,12 @@ from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 
 def get_db_path() -> Path:
-    """Resolve the path to the master SQLite ledger.
+    """Resolve the path to the master SQLite ledger (F-59).
+
+    Precedence:
+      1. Environment variable NEURALOPS_LEDGER_PATH
+      2. Local working directory results: `Path.cwd() / 'results' / 'master_ledger.sqlite'`
+      3. User cache directory: `~/.cache/neuralops/master_ledger.sqlite`
 
     Returns:
         Path to master_ledger.sqlite
@@ -30,10 +36,21 @@ def get_db_path() -> Path:
     Raises:
         FileNotFoundError: If the ledger file does not exist.
     """
-    repo_root = Path(__file__).resolve().parents[3]
-    db_path = repo_root / "results" / "master_ledger.sqlite"
+    env_path = os.environ.get("NEURALOPS_LEDGER_PATH")
+    if env_path:
+        db_path = Path(env_path).expanduser().resolve()
+    else:
+        cwd_path = Path.cwd() / "results" / "master_ledger.sqlite"
+        if cwd_path.is_file():
+            db_path = cwd_path
+        else:
+            db_path = Path.home() / ".cache" / "neuralops" / "master_ledger.sqlite"
+
     if not db_path.is_file():
-        raise FileNotFoundError(f"Master ledger SQLite database not found at expected path: {db_path}")
+        raise FileNotFoundError(
+            f"Master ledger SQLite database not found at: {db_path}. "
+            "Configure NEURALOPS_LEDGER_PATH or generate results using `neuralops benchmark`."
+        )
     return db_path
 
 
@@ -58,11 +75,12 @@ def list_tables() -> list[str]:
 
 def get_doctor_status() -> dict[str, Any]:
     """Collect repository health and invariant metrics."""
-    repo_root = Path(__file__).resolve().parents[3]
+    pkg_root = Path(neuralops.__file__).resolve().parent
+    repo_root = pkg_root.parent
 
     # Invariant counts matching orchestrator Gate D rules (maxdepth 1)
-    triton_dir = repo_root / "neuralops" / "ops" / "triton"
-    cuda_dir = repo_root / "neuralops" / "ops" / "cuda"
+    triton_dir = pkg_root / "ops" / "triton"
+    cuda_dir = pkg_root / "ops" / "cuda"
     notebooks_dir = repo_root / "notebooks"
 
     triton_count = len([p for p in triton_dir.glob("*.py") if p.name != "__init__.py"])

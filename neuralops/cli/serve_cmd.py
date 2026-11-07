@@ -5,7 +5,12 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""CLI command for an OpenAI-compatible Hugging Face generation server."""
+"""CLI command for an OpenAI-compatible Hugging Face generation server (F-60).
+
+Canonical serving is implemented in `neuralops.integrations.serving.create_openai_serving_app`
+(re-exported at `neuralops.serving.create_openai_serving_app`), with adapter export
+in `neuralops.export.serving`.
+"""
 
 from __future__ import annotations
 
