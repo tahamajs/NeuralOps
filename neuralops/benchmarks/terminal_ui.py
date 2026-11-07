@@ -356,7 +356,6 @@ def _guided_wizard() -> None:
                 text_column=None,
                 label_column=None,
                 id_column=None,
-                preprocess_script=None,
                 config=None,
                 auto_commit=False,
                 no_auto_commit=True,

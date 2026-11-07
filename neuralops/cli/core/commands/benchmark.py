@@ -275,7 +275,6 @@ def handle_run(args: argparse.Namespace) -> int:
             text_column=cfg.get("text_column", "text"),
             label_column=cfg.get("label_column", "label"),
             id_column=cfg.get("id_column", "id"),
-            preprocess_script=cfg.get("preprocess_script"),
             auto_commit=bool(cfg.get("auto_commit", False)) and not bool(cfg.get("no_auto_commit", False)),
             commit_interval=int(cfg.get("commit_interval", 5)),
             push_to_hf=bool(cfg.get("push_to_hf", False)),

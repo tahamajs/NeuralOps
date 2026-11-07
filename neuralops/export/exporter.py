@@ -355,15 +355,18 @@ def export_model(
 
 
 def load_exported_model(
-    export_dir: Union[str, Path], base_model: Optional[nn.Module] = None
+    export_dir: Union[str, Path],
+    base_model: Optional[nn.Module] = None,
+    allow_remote_base_model: bool = False,
+    strict: bool = True,
 ) -> Tuple[nn.Module, Dict[str, Any]]:
     """
     Load an exported NeuralOps model with full round-trip architecture reconstruction.
 
     1. Reads `neuralops_config.json` containing exact surgery/compression parameters.
-    2. Instantiates or uses base architecture.
-    3. Re-applies `replace_attention` and `compress` transformations.
-    4. Loads saved weights from `model.safetensors` or `pytorch_model.bin`.
+    2. Instantiates or uses base architecture (validating remote downloads against allow-lists).
+    3. Re-applies `replace_attention` and `compress` transformations with parameter schema validation.
+    4. Loads saved weights from `model.safetensors` or `pytorch_model.bin` with strict weight verification.
     """
     dir_path = Path(export_dir)
     cfg_file = dir_path / "neuralops_config.json"
@@ -377,12 +380,24 @@ def load_exported_model(
     if model is None:
         base_name = meta.get("base_model")
         if base_name and base_name != "unknown":
+            is_local = os.path.exists(base_name)
+            allowed_remote = os.environ.get("NEURALOPS_ALLOW_REMOTE_BASE_MODELS", "").split(",")
+            allowed_remote_set = {x.strip() for x in allowed_remote if x.strip()}
+
+            if not is_local and not allow_remote_base_model and base_name not in allowed_remote_set:
+                raise ValueError(
+                    f"Refusing to download remote base model '{base_name}' from export directory '{export_dir}'. "
+                    "For security against untrusted model downloads, pass allow_remote_base_model=True, "
+                    "set NEURALOPS_ALLOW_REMOTE_BASE_MODELS, or provide a pre-instantiated base_model."
+                )
+
             try:
                 from transformers import AutoModel
 
                 model = AutoModel.from_pretrained(base_name, trust_remote_code=False)
             except Exception as e:
-                logger.debug("Could not load AutoModel for base '%s': %s", base_name, e)
+                logger.error("Could not load AutoModel for base '%s': %s", base_name, e)
+                raise RuntimeError(f"Could not load AutoModel for base '{base_name}': {e}") from e
 
     if model is None:
         raise ValueError(
@@ -406,14 +421,51 @@ def load_exported_model(
         import neuralops
 
         metadata_ops = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
+        allowed_replace_kwargs = {
+            "rank",
+            "device",
+            "dtype",
+            "causal",
+            "layer_indices",
+            "target_module",
+            "new_attention_cls",
+            "attention_key",
+            "target_attention",
+            "target",
+            "backend",
+            "scale",
+            "dropout",
+            "seq_len",
+            "num_heads",
+            "head_dim",
+        }
+        allowed_compress_kwargs = {
+            "rank",
+            "method",
+            "target_modules",
+            "device",
+            "dtype",
+            "ratio",
+            "threshold",
+            "max_rank",
+            "scale",
+            "validation_level",
+        }
+
         if metadata_ops:
             for entry in metadata_ops:
                 op_action = entry.get("op") or entry.get("action")
                 op_type = entry.get("type") or entry.get("attention_type") or entry.get("compression_method")
                 op_kwargs = dict(entry.get("kwargs", {}))
                 if op_action in ("replace", "replace_attention") and op_type:
+                    unexpected = set(op_kwargs) - allowed_replace_kwargs
+                    if unexpected:
+                        raise ValueError(f"Unallowed kwargs {unexpected} in surgery replace configuration.")
                     model = neuralops.replace_attention(model, attention=op_type, **op_kwargs)
                 elif op_action in ("compress", "compression") and op_type:
+                    unexpected = set(op_kwargs) - allowed_compress_kwargs
+                    if unexpected:
+                        raise ValueError(f"Unallowed kwargs {unexpected} in surgery compress configuration.")
                     model = neuralops.compress(model, method=op_type, **op_kwargs)
         else:
             attn_type = meta.get("attention_type")
@@ -428,18 +480,37 @@ def load_exported_model(
     safetensors_path = dir_path / "model.safetensors"
     bin_path = dir_path / "pytorch_model.bin"
 
+    state_dict = None
     if safetensors_path.exists():
         try:
             from safetensors.torch import load_file
 
             state_dict = load_file(str(safetensors_path))
-            model.load_state_dict(state_dict, strict=False)
         except Exception as err:
             logger.error("Could not load safetensors file '%s': %s", safetensors_path, err)
             raise RuntimeError(f"Failed to load weights from {safetensors_path}: {err}") from err
     elif bin_path.exists():
-        state_dict = torch.load(bin_path, map_location="cpu", weights_only=True)
-        model.load_state_dict(state_dict, strict=False)
+        try:
+            state_dict = torch.load(bin_path, map_location="cpu", weights_only=True)
+        except Exception as err:
+            logger.error("Could not load weights from '%s': %s", bin_path, err)
+            raise RuntimeError(f"Failed to load weights from {bin_path}: {err}") from err
+    else:
+        raise FileNotFoundError(
+            f"No weights file (model.safetensors or pytorch_model.bin) found in export directory: {export_dir}"
+        )
+
+    incompatible = model.load_state_dict(state_dict, strict=strict)
+    if incompatible.missing_keys or incompatible.unexpected_keys:
+        msg = (
+            f"State dict mismatch loading exported model from '{export_dir}': "
+            f"{len(incompatible.missing_keys)} missing keys, {len(incompatible.unexpected_keys)} unexpected keys. "
+            f"Missing: {incompatible.missing_keys[:5]}, Unexpected: {incompatible.unexpected_keys[:5]}"
+        )
+        if strict:
+            raise RuntimeError(msg)
+        logger.warning(msg)
+
     saved_metadata = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
     if saved_metadata:
         model._neuralops_metadata = saved_metadata
@@ -452,7 +523,20 @@ def load_exported_model(
     return model, meta
 
 
-def load_model(export_dir: Union[str, Path], base_model: Optional[nn.Module] = None) -> nn.Module:
+def load_model(
+    export_dir: Union[str, Path],
+    base_model: Optional[nn.Module] = None,
+    allow_remote_base_model: bool = False,
+    strict: bool = True,
+) -> nn.Module:
+    """Convenience alias returning only the reconstructed nn.Module."""
+    model, _ = load_exported_model(
+        export_dir,
+        base_model=base_model,
+        allow_remote_base_model=allow_remote_base_model,
+        strict=strict,
+    )
+    return model
     """Convenience function to load and return the reconstructed NeuralOps model instance directly."""
     model, _ = load_exported_model(export_dir, base_model=base_model)
     return model

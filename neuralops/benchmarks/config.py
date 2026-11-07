@@ -72,7 +72,6 @@ class BenchmarkConfig:
     text_column: Optional[str] = None
     label_column: Optional[str] = None
     id_column: Optional[str] = None
-    preprocess_script: Optional[str] = None
     auto_commit: bool = False
     commit_interval: int = 1
     push_to_hf: Optional[str] = None
