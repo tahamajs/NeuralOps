@@ -16,8 +16,7 @@ import warnings
 from neuralops.pipeline_transform.snapshot import Snapshot as ModelSnapshot, capture, restore
 
 warnings.warn(
-    "neuralops.executor.snapshot is deprecated and scheduled for removal in NeuralOps 2.2.0. "
-    "Use neuralops.pipeline_transform.snapshot instead.",
+    "neuralops.executor.snapshot is deprecated. Use neuralops.pipeline_transform.snapshot instead.",
     DeprecationWarning,
     stacklevel=2,
 )

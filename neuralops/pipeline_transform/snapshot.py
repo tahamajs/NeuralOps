@@ -304,4 +304,6 @@ def restore(model: nn.Module, snapshot: Snapshot) -> None:
         raise RollbackError(f"Failed to restore model snapshot: {e}", error_code="E_EXEC_ROLLBACK_FAILED") from e
 
 
-__all__ = ["Snapshot", "capture", "restore"]
+ModelSnapshot = Snapshot
+
+__all__ = ["Snapshot", "ModelSnapshot", "capture", "restore"]

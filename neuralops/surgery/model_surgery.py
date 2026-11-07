@@ -21,10 +21,10 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import torch
 import torch.nn as nn
 
-from neuralops.executor.executor import execute_recipe
-from neuralops.executor.snapshot import ModelSnapshot
 from neuralops.models.protocols import SurgicalModel
 from neuralops.operations.registry import get_operation
+from neuralops.pipeline_transform.executor import execute_recipe
+from neuralops.pipeline_transform.snapshot import ModelSnapshot
 from neuralops.recipe.loader import load_recipe, loads_recipe
 from neuralops.recipe.schema import Recipe
 from neuralops.surgery.fx_surgery import compile_linear_surgery

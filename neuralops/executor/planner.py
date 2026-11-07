@@ -16,8 +16,7 @@ import warnings
 from neuralops.pipeline_transform.planner import plan_recipe
 
 warnings.warn(
-    "neuralops.executor.planner is deprecated and scheduled for removal in NeuralOps 2.2.0. "
-    "Use neuralops.pipeline_transform.planner instead.",
+    "neuralops.executor.planner is deprecated. Use neuralops.pipeline_transform.planner instead.",
     DeprecationWarning,
     stacklevel=2,
 )

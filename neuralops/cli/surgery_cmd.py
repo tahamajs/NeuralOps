@@ -19,13 +19,13 @@ from typing import Any, List, Optional
 
 
 def execute_recipe(*args: Any, **kwargs: Any) -> Any:
-    from neuralops.executor.executor import execute_recipe as _impl
+    from neuralops.pipeline_transform.executor import execute_recipe as _impl
 
     return _impl(*args, **kwargs)
 
 
 def plan_recipe(*args: Any, **kwargs: Any) -> Any:
-    from neuralops.executor.planner import plan_recipe as _impl
+    from neuralops.pipeline_transform.planner import plan_recipe as _impl
 
     return _impl(*args, **kwargs)
 

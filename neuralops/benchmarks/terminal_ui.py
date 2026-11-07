@@ -109,6 +109,8 @@ SUBCOMMAND_GROUPS = [
     },
 ]
 
+COMMAND_GROUPS = SUBCOMMAND_GROUPS
+
 HELP_TOPICS = {
     "quickstart": """# NeuralOps Quickstart Guide
 NeuralOps is a modular, high-performance library for Subquadratic Attention and Deep SVD Compression.

@@ -16,8 +16,7 @@ import warnings
 from neuralops.pipeline_transform.result import PipelineResult, StageRecord
 
 warnings.warn(
-    "neuralops.executor.result is deprecated and scheduled for removal in NeuralOps 2.2.0. "
-    "Use neuralops.pipeline_transform.result instead.",
+    "neuralops.executor.result is deprecated. Use neuralops.pipeline_transform.result instead.",
     DeprecationWarning,
     stacklevel=2,
 )

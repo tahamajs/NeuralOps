@@ -21,7 +21,7 @@ from neuralops.pipeline_transform.dependencies import (
     analyze_recipe,
 )
 from neuralops.pipeline_transform.errors import ConfigurationError, PlanningError
-from neuralops.pipeline_transform.executor import execute_plan
+from neuralops.pipeline_transform.executor import execute_plan, execute_recipe
 from neuralops.pipeline_transform.hardware_planner import (
     KNOWN_HARDWARE_PROFILES,
     HardwareProfile,
@@ -32,7 +32,7 @@ from neuralops.pipeline_transform.plan import ExecutionPlan, Stage
 from neuralops.pipeline_transform.planner import plan_recipe
 from neuralops.pipeline_transform.result import PipelineError, PipelineResult, StageRecord
 from neuralops.pipeline_transform.rollback import RollbackError
-from neuralops.pipeline_transform.snapshot import Snapshot, capture, restore
+from neuralops.pipeline_transform.snapshot import ModelSnapshot, Snapshot, capture, restore
 
 __all__ = [
     "Conflict",
@@ -44,6 +44,7 @@ __all__ = [
     "ExecutionPlan",
     "HardwareProfile",
     "KNOWN_HARDWARE_PROFILES",
+    "ModelSnapshot",
     "PipelineError",
     "PipelineResult",
     "PlanningError",
@@ -56,6 +57,7 @@ __all__ = [
     "capture",
     "estimate_resources",
     "execute_plan",
+    "execute_recipe",
     "plan_recipe",
     "restore",
     "suggest_config",

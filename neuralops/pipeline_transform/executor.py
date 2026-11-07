@@ -220,4 +220,22 @@ def execute_plan(
     )
 
 
-__all__ = ["execute_plan"]
+def execute_recipe(
+    recipe: Any,
+    model: nn.Module,
+    baseline_model: Optional[nn.Module] = None,
+    enable_rollback: Optional[bool] = None,
+) -> PipelineResult:
+    """Compile and execute a Recipe against a model."""
+    from neuralops.pipeline_transform.planner import plan_recipe
+
+    plan = plan_recipe(recipe, model=model)
+    return execute_plan(
+        plan=plan,
+        model=model,
+        baseline_model=baseline_model,
+        enable_rollback=enable_rollback,
+    )
+
+
+__all__ = ["execute_plan", "execute_recipe"]

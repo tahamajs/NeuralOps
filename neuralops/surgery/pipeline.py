@@ -16,7 +16,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from neuralops.executor.snapshot import ModelSnapshot
+from neuralops.pipeline_transform.snapshot import ModelSnapshot
 from neuralops.surgery.registry import SURGERY_REGISTRY, register_surgery
 from neuralops.surgery.validation import ValidationReport, validate_before_surgery
 

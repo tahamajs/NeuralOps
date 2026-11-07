@@ -11,57 +11,28 @@ CLI Terminal UI (Re-export facade over neuralops.benchmarks.terminal_ui).
 
 from __future__ import annotations
 
+from neuralops.benchmarks.terminal_ui import *  # noqa: F401, F403
 from neuralops.benchmarks.terminal_ui import (
     BANNER_ART,
-    COMMAND_GROUPS,
     HAS_RICH,
+    SUBCOMMAND_GROUPS,
     __version__,
     console,
-    create_progress,
-    format_table,
-    get_theme,
     print_banner,
-    print_command_group_help,
-    print_error,
-    print_gpu_telemetry_bar,
-    print_info,
-    print_markdown,
-    print_panel,
-    print_status_card,
-    print_success,
-    print_table,
-    print_warning,
-    prompt_confirm,
-    prompt_select,
+    print_hf_style_help,
     run_interactive_ui,
-    run_wizard,
-    search_modules,
 )
-from neuralops.benchmarks.terminal_ui import *  # noqa: F401, F403
+
+COMMAND_GROUPS = SUBCOMMAND_GROUPS
 
 __all__ = [
     "HAS_RICH",
     "BANNER_ART",
     "COMMAND_GROUPS",
+    "SUBCOMMAND_GROUPS",
     "console",
-    "create_progress",
-    "format_table",
-    "get_theme",
     "print_banner",
-    "print_command_group_help",
-    "print_error",
-    "print_gpu_telemetry_bar",
-    "print_info",
-    "print_markdown",
-    "print_panel",
-    "print_status_card",
-    "print_success",
-    "print_table",
-    "print_warning",
-    "prompt_confirm",
-    "prompt_select",
+    "print_hf_style_help",
     "run_interactive_ui",
-    "run_wizard",
-    "search_modules",
     "__version__",
 ]

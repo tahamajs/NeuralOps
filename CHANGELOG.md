@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Terminal UI Single Source & Transformation Pipeline Architecture Unification (F-55, F-56):**
+  - Unified `terminal_ui` on `neuralops.benchmarks.terminal_ui`: converted `neuralops/cli/terminal_ui.py` into a thin re-export facade under 40 lines delegating all rich UI components, progress bars, and interactive menus to `neuralops.benchmarks.terminal_ui`. Replaced outdated hardcoded version strings (`"1.4.2"`, `"1.4.3"`) with dynamic lookup of authoritative `neuralops.__version__`.
+  - Audited `neuralops.executor` versus `neuralops.pipeline_transform`: confirmed `pipeline_transform` as the canonical, feature-complete transformation execution engine featuring transactional planning, dependency DAGs, hardware profiling, and atomic rollback with SafeTensors disk persistence.
+  - Converted `neuralops.executor` (`__init__.py`, `plan.py`, `planner.py`, `result.py`, `snapshot.py`, `executor.py`) into a deprecated re-export facade over `neuralops.pipeline_transform`, emitting a clear `DeprecationWarning` scheduled for removal in NeuralOps 2.2.0.
+  - Re-pointed internal surgery engine and CLI callers (`neuralops/surgery/model_surgery.py`, `neuralops/surgery/pipeline.py`, `neuralops/cli/surgery_cmd.py`) to canonical `neuralops.pipeline_transform`.
+  - Disambiguated `neuralops.recipe` (declarative NRL AST and schema specification) versus `neuralops.surgery.recipe` (surgery execution pipeline recipe serialization) with explicit module-level scope distinction docstrings.
+  - Added unit test suites `tests/test_terminal_ui_single_source.py` and `tests/test_executor_pipeline_transform_canonical.py`.
 - **Adaptation and Optimization Facade Implementation (F-52, F-53):**
   - Resolved empty package shells for `neuralops.adaptation` and `neuralops.optimization` by implementing Option (b) documented thin facades re-exporting canonical implementations with zero code duplication.
   - `neuralops/adaptation/peft`: Thin facade re-exporting canonical LoRA and PEFT modules from `neuralops.trainer.methods.lora` (`LoRALinear`), `neuralops.operations.adaptation.lora` (`CONTRACT`), and `neuralops.trainer.peft_recovery.svd_adapters` (`DoRALinear`, `PiSSALinear`, `inject_pissa_adapters`).

@@ -377,6 +377,8 @@ markers = [
 filterwarnings = [
     "error",
     "ignore::DeprecationWarning:neuralops\\.benchmarks\\..*",
+    "ignore::DeprecationWarning:neuralops\\.executor.*",
+    "ignore::DeprecationWarning:neuralops\\.core\\.config.*",
     "ignore::UserWarning:transformers.*",
     "ignore::pytest.PytestCacheWarning",
     "ignore:.*run_quality_sweep is deprecated.*:DeprecationWarning",
@@ -398,6 +400,7 @@ filterwarnings = [
     "ignore:.*Attempting to run cuBLAS, but there was no current CUDA context.*:UserWarning",
     "ignore:.*invalid value encountered in scalar divide.*:RuntimeWarning",
     "ignore:.*pkg_resources is deprecated as an API.*:UserWarning",
+    "ignore:.*The pynvml package is deprecated.*:FutureWarning",
 ]
 
 [tool.coverage.run]
