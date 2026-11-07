@@ -139,3 +139,21 @@ def test_pytorch_refs_importable_from_ops_pytorch() -> None:
 
     assert callable(ops.rmsnorm_pytorch_ref)
     assert callable(ops.moe_routing_pytorch_ref)
+
+
+def test_core_backend_dispatch_routes_unknown_op_to_fallback() -> None:
+    """Verify that core.backend.dispatch routes unknown op to ops.cuda._fallback.dispatch and raises KernelNotAvailableError."""
+    from neuralops.core.backend.dispatch import dispatch as core_dispatch
+    from neuralops.core.exceptions import KernelNotAvailableError
+
+    x = torch.randn(2, 2)
+    # Calling unknown op without fallback on CPU should raise KernelNotAvailableError
+    with pytest.raises(KernelNotAvailableError) as exc_info:
+        core_dispatch("non_existent_kernel_op_12345", x)
+    assert "non_existent_kernel_op_12345" in str(exc_info.value)
+
+    # Calling unknown op with fallback should route through fallback and succeed
+    custom_ref = MagicMock(return_value="custom_fallback_output")
+    res = core_dispatch("non_existent_kernel_op_12345", x, pytorch_fn=custom_ref)
+    assert res == "custom_fallback_output"
+    assert custom_ref.called

@@ -37,16 +37,15 @@ def available_backends() -> list[str]:
     """
     Return all compute backends available in the current environment.
     """
+    from neuralops.ops.triton._base import HAS_TRITON
+
     backends = ["cpu"]
     if torch.cuda.is_available():
         is_rocm = bool(hasattr(torch.version, "hip") and torch.version.hip is not None)
         backends.insert(0, "rocm" if is_rocm else "cuda")
-        try:
-            import triton  # noqa: F401
 
-            backends.insert(0, "triton")
-        except ImportError:
-            pass
+    if HAS_TRITON:
+        backends.insert(0, "triton")
 
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         backends.insert(0, "mps")
@@ -187,7 +186,23 @@ def dispatch(op_name: str, *args: Any, backend: Optional[str] = None, **kwargs: 
             return torch.nn.functional.kl_div(p.log(), q, reduction="batchmean")
 
     else:
-        raise NotImplementedError(
-            f"Operation '{op_name}' not implemented in any available backend. "
-            f"Available backends: {available_backends()}"
-        )
+        # Route unknown ops through ops.cuda._fallback.dispatch
+        from neuralops.core.exceptions import KernelNotAvailableError
+        from neuralops.ops.cuda._fallback import dispatch as fallback_dispatch
+
+        pytorch_fn = kwargs.pop("pytorch_fn", kwargs.pop("pytorch_ref", None))
+        try:
+            return fallback_dispatch(
+                None,
+                None,
+                pytorch_fn,
+                *args,
+                backend=backend or "auto",
+                kernel_name=op_name,
+                **kwargs,
+            )
+        except RuntimeError as exc:
+            raise KernelNotAvailableError(
+                f"Operation '{op_name}' could not be dispatched: {exc}. "
+                f"Available backends: {available_backends()}"
+            ) from exc

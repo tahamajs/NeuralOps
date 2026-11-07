@@ -230,7 +230,14 @@ def pytest_collection_modifyitems(config, items):
         # Don't classify static config/metadata verification tests as GPU tests
         is_static_config_test = any(
             cfg_mod in item_path
-            for cfg_mod in ("test_version_sync", "test_repo_config", "test_dependency", "test_ops_triton_imports")
+            for cfg_mod in (
+                "test_version_sync",
+                "test_repo_config",
+                "test_dependency",
+                "test_ops_triton_imports",
+                "test_cuda_bindings",
+                "test_kernels_lazy",
+            )
         )
         if ("cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name) and not is_static_config_test:
             item.add_marker(pytest.mark.gpu)

@@ -8,9 +8,10 @@
 """
 CUDA C++ JIT Module Loader & Hardware Compiler Infrastructure
 
-Architectural Role (NeuralOps v1.6.0):
-This module manages runtime just-in-time (JIT) compilation and execution of the 112 native
-CUDA C++ kernel packages (housing 114 native implementations) in neuralops/ops/cuda/.
+Architectural Role (NeuralOps v2.0):
+This module manages runtime just-in-time (JIT) compilation and execution of the
+native CUDA C++ kernel packages (canonical catalog in neuralops.ops.cuda._map.CUDA_KERNEL_CATALOG)
+in neuralops/ops/cuda/.
 
 Design & Engineering Guarantees:
 1. Dynamic Extension Compilation:
@@ -41,81 +42,38 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-home_bin = os.path.expanduser("~/bin")
-os.environ["PATH"] = f"{home_bin}:{os.environ.get('PATH', '')}"
-os.environ["LDFLAGS"] = f"-B{home_bin} {os.environ.get('LDFLAGS', '')}".strip()
-os.environ["COMPILER_PATH"] = f"{home_bin}:{os.environ.get('COMPILER_PATH', '')}"
-
-if os.path.exists("/usr/local/cuda"):
-    if not os.environ.get("CUDA_HOME") or os.environ.get("CUDA_HOME") == "/usr/local":
-        os.environ["CUDA_HOME"] = "/usr/local/cuda"
-    cuda_bin = "/usr/local/cuda/bin"
+# Resolve CUDA_HOME dynamically from environment or nvcc without mutating global state
+cuda_home = os.environ.get("CUDA_HOME")
+if not cuda_home:
+    nvcc_bin = shutil.which("nvcc")
+    if nvcc_bin:
+        cuda_home = str(Path(nvcc_bin).resolve().parent.parent)
+    elif os.path.exists("/usr/local/cuda"):
+        # Fallback to standard Linux system CUDA installation if present
+        cuda_home = "/usr/local/cuda"
+if cuda_home:
+    os.environ.setdefault("CUDA_HOME", cuda_home)
+    cuda_bin = os.path.join(cuda_home, "bin")
     curr_path = os.environ.get("PATH", "")
-    if cuda_bin not in curr_path:
+    if os.path.exists(cuda_bin) and cuda_bin not in curr_path:
         os.environ["PATH"] = f"{cuda_bin}:{curr_path}"
-
-if os.path.exists("/share/apps/gcc/gcc-8.2.0/bin/g++"):
-    os.environ["CXX"] = "/share/apps/gcc/gcc-8.2.0/bin/g++"
-    os.environ["CC"] = "/share/apps/gcc/gcc-8.2.0/bin/gcc"
-    gcc_bin = "/share/apps/gcc/gcc-8.2.0/bin"
-    curr_path = os.environ.get("PATH", "")
-    prefix_paths = [p for p in (home_bin, gcc_bin) if os.path.exists(p) and p not in curr_path]
-    if prefix_paths:
-        os.environ["PATH"] = f"{':'.join(prefix_paths)}:{curr_path}"
-
-import sys
-import types
-
-try:
-    import pkg_resources  # noqa: F401
-except ImportError:
-    try:
-        import packaging
-
-        _pr = types.ModuleType("pkg_resources")
-        _pr.packaging = packaging
-        sys.modules["pkg_resources"] = _pr
-    except Exception:
-        pass
 
 import torch
 import torch.utils.cpp_extension as _cpp_ext
 
-
-def _enforce_build_env(kwargs: dict[str, Any]) -> None:
-    hb = os.path.expanduser("~/bin")
-    os.environ["PATH"] = f"{hb}:{os.environ.get('PATH', '')}"
-    os.environ["LDFLAGS"] = f"-B{hb} {os.environ.get('LDFLAGS', '')}".strip()
-    os.environ["COMPILER_PATH"] = f"{hb}:{os.environ.get('COMPILER_PATH', '')}"
-    if os.path.exists(hb):
-        extra_ldflags = kwargs.get("extra_ldflags") or []
-        b_flag = f"-B{hb}"
-        if b_flag not in extra_ldflags:
-            kwargs["extra_ldflags"] = list(extra_ldflags) + [b_flag]
-
-
 _orig_load_inline = _cpp_ext.load_inline
-
-
-def load_inline(*args: Any, **kwargs: Any) -> Any:
-    _enforce_build_env(kwargs)
-    return _orig_load_inline(*args, **kwargs)
-
-
-_cpp_ext.load_inline = load_inline
-
 _orig_load = _cpp_ext.load
 
 
+def load_inline(*args: Any, **kwargs: Any) -> Any:
+    """Local wrapper around torch.utils.cpp_extension.load_inline without global monkey-patching."""
+    return _orig_load_inline(*args, **kwargs)
+
+
 def load(*args: Any, **kwargs: Any) -> Any:
-    _enforce_build_env(kwargs)
+    """Local wrapper around torch.utils.cpp_extension.load without global monkey-patching."""
     return _orig_load(*args, **kwargs)
 
-
-_cpp_ext.load = load
-
-if os.path.exists("/usr/local/cuda"):
-    _cpp_ext.CUDA_HOME = "/usr/local/cuda"
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +106,7 @@ _FAILED_MODULES: set[str] = set()
 def get_cuda_arch_flags() -> list[str]:
     """Auto-detect GPU compute capability and return corresponding nvcc arch flag."""
     if not torch.cuda.is_available():
-        return ["-arch=sm_70"]
+        return []
     try:
         major, minor = torch.cuda.get_device_capability()
         sm = f"sm_{major}{minor}"
