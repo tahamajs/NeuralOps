@@ -32,9 +32,10 @@ from __future__ import annotations
 
 import builtins
 import importlib
+import inspect
 import logging
 from collections.abc import Callable
-from typing import Any, cast
+from typing import Any, Sequence, cast
 
 from neuralops.core.exceptions import RegistryError
 
@@ -82,6 +83,7 @@ def _make_universal_attention_class(target_cls: type) -> type:
 
     class UniversalAttentionWrapper(target_cls):
         _is_universal_attention_wrapped = True
+        __wrapped__ = target_cls
 
         def __new__(cls, *args: Any, **kwargs: Any) -> Any:
             args_list = list(args)
@@ -170,28 +172,32 @@ def _make_universal_attention_class(target_cls: type) -> type:
                     kwargs["num_heads"] = resolved_heads
                     kwargs["num_attention_heads"] = resolved_heads
 
-            init_attempts = [
-                lambda: super(UniversalAttentionWrapper, self).__init__(*args_list, **kwargs),
-                lambda: super(UniversalAttentionWrapper, self).__init__(
-                    config=config, **{k: v for k, v in kwargs.items() if k != "config"}
-                ),
-                lambda: super(UniversalAttentionWrapper, self).__init__(
-                    config, **{k: v for k, v in kwargs.items() if k != "config"}
-                ),
-                lambda: super(UniversalAttentionWrapper, self).__init__(resolved_dim, resolved_heads, **kwargs),
-                lambda: super(UniversalAttentionWrapper, self).__init__(resolved_dim, **kwargs),
-                lambda: super(UniversalAttentionWrapper, self).__init__(**kwargs),
-            ]
-            last_err = None
-            for attempt in init_attempts:
-                try:
-                    attempt()
-                    return
-                except TypeError as e:
-                    last_err = e
+            sig = inspect.signature(target_cls)
+            call_kwargs = dict(kwargs)
+            has_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+
+            for p_name in sig.parameters:
+                if p_name in ("self", "args", "kwargs"):
                     continue
-            if last_err:
-                raise last_err
+                if p_name not in call_kwargs:
+                    if p_name in ("embed_dim", "dim", "hidden_size", "d_model") and resolved_dim is not None:
+                        call_kwargs[p_name] = resolved_dim
+                    elif p_name in ("num_heads", "n_heads", "heads", "num_attention_heads") and resolved_heads is not None:
+                        call_kwargs[p_name] = resolved_heads
+                    elif p_name == "config" and config is not None:
+                        call_kwargs[p_name] = config
+
+            if not has_var_kw:
+                call_kwargs = {k: v for k, v in call_kwargs.items() if k in sig.parameters}
+
+            try:
+                bound = sig.bind_partial(*args_list, **call_kwargs)
+            except TypeError:
+                bound = sig.bind_partial(*args_list)
+
+            super_args = list(bound.args)
+            super_kwargs = dict(bound.kwargs)
+            super(UniversalAttentionWrapper, self).__init__(*super_args, **super_kwargs)
 
     UniversalAttentionWrapper.__name__ = target_cls.__name__
     UniversalAttentionWrapper.__qualname__ = target_cls.__qualname__
@@ -365,6 +371,21 @@ class Registry:
             return obj
 
         return decorator
+
+    def unregister(self, key: str) -> bool:
+        """Unregister a component key, alias, and metadata cleanly."""
+        k = key.lower()
+        removed = False
+        if k in self._dict:
+            del self._dict[k]
+            removed = True
+        if k in self._aliases:
+            del self._aliases[k]
+            removed = True
+        if k in self._metadata:
+            del self._metadata[k]
+            removed = True
+        return removed
 
     def get_metadata(self, key: str) -> dict[str, Any]:
         """Retrieve capability metadata for a registered component."""
@@ -954,85 +975,109 @@ def create_attention(
         config._is_synthetic = True
         call_kwargs["config"] = config
 
-    init_attempts = []
-    if config is not None:
-        init_attempts.append(lambda: cls(config=config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
-        init_attempts.append(lambda: cls(config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
-    if resolved_dim is not None and resolved_heads is not None:
-        init_attempts.append(
-            lambda: cls(
-                embed_dim=resolved_dim,
-                num_heads=resolved_heads,
-                **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "num_heads")},
-            )
-        )
-        init_attempts.append(
-            lambda: cls(
-                dim=resolved_dim,
-                num_heads=resolved_heads,
-                **{k: v for k, v in call_kwargs.items() if k not in ("dim", "num_heads")},
-            )
-        )
-        init_attempts.append(
-            lambda: cls(
-                resolved_dim,
-                num_heads=resolved_heads,
-                **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "dim", "num_heads")},
-            )
-        )
-    init_attempts.append(lambda: cls(**call_kwargs))
-    init_attempts.append(lambda: cls())
+    # Inspect constructor signature once on the underlying component class
+    target_cls = getattr(cls, "__wrapped__", cls)
+    sig = inspect.signature(target_cls)
+    param_names = set(sig.parameters.keys())
+    has_var_keyword = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
 
-    last_err = None
-    for attempt in init_attempts:
-        try:
-            return attempt()
-        except TypeError as e:
-            last_err = e
-            continue
-    if last_err is not None:
-        raise last_err
-    return cls(**call_kwargs)
+    bound_kwargs: dict[str, Any] = {}
+
+    # Map dimension parameter
+    dim_target = next((k for k in ("embed_dim", "dim", "hidden_size", "d_model") if k in param_names), None)
+    if dim_target and resolved_dim is not None:
+        bound_kwargs[dim_target] = resolved_dim
+
+    # Map heads parameter
+    heads_target = next((k for k in ("num_heads", "n_heads", "heads", "num_attention_heads") if k in param_names), None)
+    if heads_target and resolved_heads is not None:
+        bound_kwargs[heads_target] = resolved_heads
+
+    # Map rank parameter
+    rank_target = next((k for k in ("rank", "r") if k in param_names), None)
+    if rank_target and resolved_rank is not None:
+        bound_kwargs[rank_target] = resolved_rank
+
+    # Map config parameter
+    if "config" in param_names:
+        if config is not None:
+            bound_kwargs["config"] = config
+        elif resolved_dim is not None:
+            from transformers import BertConfig
+
+            h = resolved_heads or max(1, resolved_dim // 64)
+            is_dec = kwargs.get("is_decoder", kwargs.get("is_causal", True))
+            synth_cfg = BertConfig(hidden_size=resolved_dim, num_attention_heads=h, is_decoder=is_dec)
+            synth_cfg.is_causal = is_dec
+            synth_cfg._is_synthetic = True
+            bound_kwargs["config"] = synth_cfg
+
+    # Pass remaining kwargs so unexpected arguments are caught during signature binding
+    for k, v in kwargs.items():
+        if k not in bound_kwargs:
+            bound_kwargs[k] = v
+
+    try:
+        bound = sig.bind(**bound_kwargs)
+        bound.apply_defaults()
+    except TypeError as err:
+        raise TypeError(
+            f"Failed to bind arguments for {cls.__name__} (attention '{name}'): "
+            f"signature is {sig}, but bound parameters were {list(bound_kwargs.keys())}. Details: {err}"
+        ) from err
+
+    # Call constructor ONCE - TypeErrors raised within __init__ bubble up unchanged
+    return cls(*bound.args, **bound.kwargs)
 
 
 def create_compressor(name: str, model: Any = None, rank: int | None = None, **kwargs: Any) -> Any:
-    """Universal compressor factory instantiating any registered compression engine."""
+    """Universal compressor factory instantiating any registered compression engine.
+
+    Inspects constructor signature once and never substitutes a dummy host model.
+    """
     cls = COMPRESSOR_REGISTRY.get(name)
     if cls is None:
         from neuralops.core.exceptions import CompressorNotRegisteredError
 
         raise CompressorNotRegisteredError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
 
-    call_kwargs = dict(kwargs)
-    resolved_rank = rank or call_kwargs.pop("r", None)
-    if resolved_rank is not None:
-        call_kwargs["rank"] = resolved_rank
+    target_cls = getattr(cls, "__wrapped__", cls)
+    sig = inspect.signature(target_cls)
+    param_names = set(sig.parameters.keys())
+    has_var_keyword = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
 
-    if model is not None:
-        call_kwargs["model"] = model
+    resolved_rank = rank or kwargs.pop("r", None)
+    bound_kwargs: dict[str, Any] = {}
 
-    attempts = [
-        lambda: cls(**call_kwargs),
-    ]
-    if model is not None:
-        attempts.append(lambda: cls(model, **{k: v for k, v in call_kwargs.items() if k != "model"}))
-    else:
-        import torch.nn as nn
+    if "model" in param_names:
+        if model is not None:
+            bound_kwargs["model"] = model
+        else:
+            param = sig.parameters["model"]
+            if param.default is inspect.Parameter.empty:
+                raise TypeError(
+                    f"Compressor '{name}' ({cls.__name__}) requires a 'model' parameter, got model=None."
+                )
 
-        dummy_host = nn.Sequential(nn.Linear(64, 64))
-        attempts.append(lambda: cls(model=dummy_host, **call_kwargs))
-        attempts.append(lambda: cls(dummy_host, **call_kwargs))
+    rank_target = next((k for k in ("rank", "r") if k in param_names), None)
+    if rank_target and resolved_rank is not None:
+        bound_kwargs[rank_target] = resolved_rank
 
-    last_err = None
-    for attempt in attempts:
-        try:
-            return attempt()
-        except TypeError as e:
-            last_err = e
-            continue
-    if last_err is not None:
-        raise last_err
-    return cls(**call_kwargs)
+    for k, v in kwargs.items():
+        if k not in bound_kwargs:
+            bound_kwargs[k] = v
+
+    try:
+        bound = sig.bind(**bound_kwargs)
+        bound.apply_defaults()
+    except TypeError as err:
+        raise TypeError(
+            f"Failed to bind arguments for {cls.__name__} (compressor '{name}'): "
+            f"signature is {sig}, but provided parameters were {list(bound_kwargs.keys())}. Details: {err}"
+        ) from err
+
+    # Call constructor ONCE - TypeErrors raised within __init__ bubble up unchanged
+    return cls(*bound.args, **bound.kwargs)
 
 
 def get_attention(name: str) -> type:

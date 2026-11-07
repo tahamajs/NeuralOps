@@ -55,6 +55,7 @@ def test_subpackages_match_filesystem():
         )
 
 
+
 def test_getattr_missing_raises_attribute_error_not_module_not_found():
     """Verify missing/phantom subpackages raise AttributeError and hasattr returns False cleanly."""
     assert getattr(neuralops, "experiment_logging", None) is None
@@ -67,4 +68,29 @@ def test_getattr_missing_raises_attribute_error_not_module_not_found():
 
     with pytest.raises(AttributeError):
         _ = neuralops.non_existent_subpackage_xyz
+
+
+def test_deprecated_alias_warns_and_resolves():
+    """Accessing neuralops.attentions warns with DeprecationWarning and resolves to neuralops.layers."""
+    import warnings
+    import neuralops.layers as layers
+
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        # Ensure clean lookup by removing cache if present
+        if "attentions" in neuralops.__dict__:
+            del neuralops.__dict__["attentions"]
+        mod = neuralops.attentions
+        assert mod is layers
+        deprecation_warnings = [w for w in recorded if issubclass(w.category, DeprecationWarning)]
+        assert len(deprecation_warnings) >= 1
+        assert "deprecated" in str(deprecation_warnings[0].message)
+
+
+def test_phantom_subpackage_raises_attribute_error():
+    """Verify phantom subpackages raise AttributeError instead of ModuleNotFoundError."""
+    with pytest.raises(AttributeError):
+        _ = neuralops.validator
+    with pytest.raises(AttributeError):
+        _ = neuralops.experiment_logging
 

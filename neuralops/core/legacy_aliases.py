@@ -150,10 +150,11 @@ def handle_deprecated_alias(name: str) -> str:
     k = name.lower()
     if k in DEPRECATED_ALIASES:
         new_name = DEPRECATED_ALIASES[k]
-        warnings.warn(
-            f"'{name}' is deprecated. Use '{new_name}' instead.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
+        if not os.environ.get("NEURALOPS_NO_DEPRECATION_WARNINGS"):
+            warnings.warn(
+                f"'{name}' is deprecated and will be removed in v3.0.0; use '{new_name}' instead.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
         return new_name
     return name

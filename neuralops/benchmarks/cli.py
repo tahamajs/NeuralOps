@@ -479,7 +479,8 @@ def _build_parser() -> argparse.ArgumentParser:
     comp_gate_p.add_argument("--max-regression", type=float, required=True, help="Maximum allowed numerical regression")
     comp_gate_p.add_argument("--json", action="store_true", help="Format output as JSON")
 
-    subparsers.add_parser("verify", help="Check system hardware and package requirements")
+    verify_p = subparsers.add_parser("verify", help="Check system hardware and package requirements")
+    verify_p.add_argument("--json", action="store_true", help="Format output as JSON")
 
     exp_p = subparsers.add_parser("export", help="Export model to production artifact format")
     exp_p.add_argument("--model", type=str, required=True, help="Base model identifier or path")
@@ -495,9 +496,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     exp_p.add_argument("--output-dir", type=str, default="exported_model", help="Directory for exported artifacts")
 
-    subparsers.add_parser("doctor", help="Run comprehensive diagnostics on environment and registrations")
+    doctor_p = subparsers.add_parser("doctor", help="Run comprehensive diagnostics on environment and registrations")
+    doctor_p.add_argument("--json", action="store_true", help="Format output as JSON")
 
-    subparsers.add_parser("info", help="Print system, GPU, and registry summary information")
+    info_p = subparsers.add_parser("info", help="Print system, GPU, and registry summary information")
+    info_p.add_argument("--json", action="store_true", help="Format output as JSON")
 
     search_p = subparsers.add_parser(
         "search", help="Automated Fisher-information & Pareto rank allocation search (AutoSVD)"
@@ -742,6 +745,7 @@ def _build_parser() -> argparse.ArgumentParser:
     res_p = subparsers.add_parser(
         "results", aliases=["ledger"], help="Query, version, plot, and manage experiment results ledger"
     )
+    res_p.add_argument("--latest", action="store_true", help="Display latest benchmark run record")
     res_p.add_argument("--module", type=str, default=None, help="Filter by module name")
     res_p.add_argument(
         "--category",
@@ -1065,6 +1069,27 @@ def handle_verify(args: argparse.Namespace) -> None:
     cuda_avail = torch.cuda.is_available()
     device_name = torch.cuda.get_device_name(0) if cuda_avail else "N/A"
     device_count = torch.cuda.device_count() if cuda_avail else 0
+
+    if getattr(args, "json", False):
+        import json
+
+        payload = {
+            "platform": platform.platform(),
+            "python_version": platform.python_version(),
+            "pytorch_version": torch.__version__,
+            "cuda_available": cuda_avail,
+            "device_name": device_name,
+            "device_count": device_count,
+            "mps_available": torch.backends.mps.is_available(),
+            "triton_available": HAS_TRITON,
+            "attention_registry_count": len(ATTENTION_REGISTRY),
+            "compressor_registry_count": len(COMPRESSOR_REGISTRY),
+            "triton_kernels_count": triton_count,
+            "cuda_kernels_count": cuda_count,
+            "status": "PASS",
+        }
+        print(json.dumps(payload, indent=2))
+        return
 
     if HAS_RICH and console is not None:
         table = Table(title="System Environment & Hardware Verification", header_style="bold blue")

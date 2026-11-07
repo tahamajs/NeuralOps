@@ -394,7 +394,7 @@ Release evidence:
 python -m build
 python -m pip install --force-reinstall dist/*.whl
 python -m neuralops --version
-python -m neuralops system verify --json
+python -m neuralops verify --json
 twine check dist/*
 ```
 

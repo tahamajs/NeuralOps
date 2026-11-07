@@ -56,9 +56,11 @@ def build_serve_parser(subparser: Optional[argparse.ArgumentParser] = None) -> a
     )
     parser.add_argument(
         "--engine",
-        choices=["fastapi"],
+        "--backend",
+        dest="engine",
+        choices=["fastapi", "neuralops_native", "vllm", "sglang"],
         default="fastapi",
-        help="OpenAI-compatible FastAPI server (the only currently implemented HTTP engine)",
+        help="Serving engine backend: fastapi (default), neuralops_native, vllm, sglang",
     )
     parser.add_argument(
         "--api-key",
@@ -106,8 +108,10 @@ def cmd_serve(args: Any) -> int:
         raise ValueError("--port must be an integer between 1 and 65535")
     if not isinstance(host, str) or not host.strip():
         raise ValueError("--host must be a non-empty network interface name or address")
-    if engine_type != "fastapi":
-        raise ValueError("Only the FastAPI serving engine is implemented by this command.")
+    if engine_type not in ("fastapi", "neuralops_native"):
+        raise ValueError(
+            f"Serving engine '{engine_type}' is not currently implemented in live HTTP serving; only 'fastapi' and 'neuralops_native' are supported."
+        )
     if kv_cache_budget_gb <= 0:
         raise ValueError("--kv-cache-budget-gb must be a positive float")
 

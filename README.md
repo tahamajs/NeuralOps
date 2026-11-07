@@ -1010,17 +1010,14 @@ NeuralOps installs canonical binary commands (`neuralops`, `nops`, `nops-cli`, a
 
 ```bash
 # Unified Benchmark System (Empirical Grid Execution, Dry-Run & Component Listing)
-neuralops benchmark run --suite attention --config neuralops/config/templates/benchmarks/attention.yaml
-neuralops benchmark run --suite cuda_ops    # Benchmark native CUDA C++ kernel modules
-neuralops benchmark run --suite triton_ops  # Benchmark unified Triton JIT kernel modules
-neuralops benchmark list --attentions      # Lists exactly the 131 registered attention mechanisms
-neuralops benchmark list --compressors     # Lists exactly the 72 registered compression engines
-neuralops benchmark list --cuda-kernels    # Lists all 141 CUDA packages / 139 functional modules
-neuralops benchmark list --triton-kernels  # Lists all 58 Triton kernel files / 52 JIT operators
-neuralops benchmark list --suites          # Lists available benchmark suites
-neuralops benchmark show latest            # Show human-readable report of latest benchmark run
-neuralops benchmark show latest --metrics  # Display summary metrics JSON from latest run
-neuralops benchmark show <run_id> --manifest # Output provenance manifest JSON for run
+neuralops run --category attention --config neuralops/config/templates/benchmarks/attention.yaml
+neuralops run --category cuda    # Benchmark native CUDA C++ kernel modules
+neuralops run --category triton  # Benchmark unified Triton JIT kernel modules
+neuralops list --type attention      # Lists registered attention mechanisms
+neuralops list --type compressor     # Lists registered compression engines
+neuralops list --type kernels        # Lists unified native CUDA and Triton kernels
+neuralops results --latest           # Show human-readable report of latest benchmark run
+neuralops results --latest --format json  # Display summary metrics JSON from latest run
 
 # 1. System Health & Environment Doctor (CUDA, Triton, PyTorch verification)
 neuralops doctor
@@ -1031,8 +1028,8 @@ neuralops info
 neuralops info --json
 
 # 3. Model Surgery & Layerwise Transplantation
-neuralops surgery plan recipe.yaml
-neuralops surgery apply recipe.yaml --device cuda:0
+neuralops recipe plan recipe.yaml
+neuralops recipe execute recipe.yaml
 neuralops transplant --model gpt2 --attention gated_delta_net --rank 32 --calibrate --heal --heal-steps 20
 
 # 2. Verify Canonical Invariant Counts (131 Attentions, 72 Compressors, 26 Triton Modules / 62 Unified Operators)
@@ -1064,7 +1061,7 @@ neuralops train \
 neuralops eval --model gpt2 --dataset wikitext --batch-size 16 --seq-len 512 --json
 
 # 7. High-Throughput Serving Engine with PagedKVCache & Speculative Decoding
-neuralops serve --model gpt2 --port 8000 --engine continuous_batcher --max-batch-size 16
+neuralops serve --model gpt2 --port 8000 --engine fastapi
 
 # 8. Deep Compression CLI (Fisher-Weighted SVD, Hadamard Incoherent, W4A16, INT4)
 neuralops compress --model gpt2 --compressor fwsvd_compressor --rank 32 --save-dir ./compressed_gpt2
@@ -2200,13 +2197,13 @@ The unified CLI command `neuralops benchmark` provides standard empirical benchm
 
 ```bash
 # Unified Benchmark Execution
-neuralops benchmark run --suite attention --config neuralops/config/templates/benchmarks/attention.yaml
-neuralops benchmark run --suite attention --config neuralops/config/templates/benchmarks/attention.yaml --dry-run
-neuralops benchmark list --attentions
-neuralops benchmark list --compressors
-neuralops benchmark list --suites
-neuralops benchmark show latest
-neuralops benchmark show latest --metrics
+neuralops run --category attention --config neuralops/config/templates/benchmarks/attention.yaml
+neuralops plan --module attention:cosformer
+neuralops list --type attention
+neuralops list --type compressor
+neuralops list --type kernels
+neuralops results --latest
+neuralops results --latest --format json
 ```
 
 

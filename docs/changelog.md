@@ -11,6 +11,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **CLI Test Tree Copy Removal, Deprecation Warning Enforcement, Documentation Harmonization & Single-Inspection Factories (F-76, F-82, F-83, F-85):**
+  - **Eliminated CLI Test Tree Drift (F-76):** Removed duplicate 1,762-line CLI copy `tests/benchmarks/cli.py` (`git rm`). All test suites import canonical `neuralops.benchmarks.cli`. Added regression guard test `tests/test_no_cli_copy.py` preventing reinstatement of any CLI copy in `tests/`.
+  - **Explicit Deprecation Warnings on Legacy Aliases (F-82):**
+    - Intercepted legacy aliases in `_ModuleAliasFinder` (`neuralops/__init__.py`) and `ExactModuleAliasLoader` (`neuralops.core._compat_importer.py`), emitting explicit `DeprecationWarning` scheduled for removal in `v3.0.0`:
+      | Legacy Import Path | Canonical Target Namespace | Removal Target |
+      | :--- | :--- | :--- |
+      | `neuralops.attentions` | `neuralops.layers` | `v3.0.0` |
+      | `neuralops.compression_engine` | `neuralops.compression` | `v3.0.0` |
+      | `neuralops.training` | `neuralops.trainer` | `v3.0.0` |
+      | `neuralops.backward_compat` | `neuralops.core` | `v3.0.0` |
+      | `neuralops.kernels.cuda.*` | `neuralops.core.cuda_kernels.*` | `v3.0.0` |
+      | Module aliases in `_ALIASES` / `deprecated_aliases.json` | Modern registered modules | `v3.0.0` |
+    - Added test-only silence flag `NEURALOPS_NO_DEPRECATION_WARNINGS=1` for clean test runs.
+    - Verified `_SUBPACKAGES` dynamically reflects real directories on disk: non-existent phantom subpackages (`experiment_logging`, `validator`) raise `AttributeError` instead of `ModuleNotFoundError`, ensuring `hasattr(neuralops, 'validator')` evaluates to `False`.
+  - **CLI Command Examples & Serving Flags Harmonization (F-83):**
+    - Harmonized all CLI command examples across `README.md` and `AGENTS.md` with canonical parser: replaced non-existent `system verify` with `neuralops verify --json`, `benchmark list --attentions` with `neuralops list --type attention`, `benchmark run --suite attention` with `neuralops run --category attention`, and `benchmark show latest` with `neuralops results --latest`.
+    - Unified serving engine flags across `neuralops/cli/serve_cmd.py`, `neuralops/api.py`, and `README.md` to canonical `--engine` (choices: `fastapi`, `neuralops_native`, `vllm`, `sglang`), eliminating non-existent `continuous_batcher`.
+    - Added comprehensive regression test `tests/test_cli_docs_match.py` asserting that all 59 documented CLI commands in `README.md` and `AGENTS.md` parse cleanly against `_build_parser()`.
+  - **Single-Inspection Factory Architecture & Dummy Host Elimination (F-85):**
+    - Refactored `create_attention` and `create_compressor` in `neuralops.core.registry`: replaced trial-and-error signature guessing and `TypeError` swallowing loops with single `inspect.signature` inspection and parameter binding prior to invocation.
+    - Preserved inner error transparency: any `TypeError` raised inside `__init__` propagates directly to the caller without being masked as a signature mismatch.
+    - Eliminated forbidden synthetic host substitution: `create_compressor(name, model=None)` requires a model with a clear `TypeError` if required by signature, or returns an unattached compressor, never substituting a dummy `nn.Sequential(nn.Linear(64, 64))`.
+    - Added unit test suite `tests/test_create_signature.py` (3 passed in 10.84s).
 - **Notebook Suite Consolidation & Two-Level Execution Verification (F-75):**
   - **Breaking Change / Consolidation:** Eliminated 94 duplicate divergent notebook files from `notebooks/extended/` (consolidating 188 files down to 94 unique notebooks in canonical `notebooks/`). Established `notebooks/extended -> .` as a directory symlink so legacy external links and scripts resolve without dual-mirror drift.
   - Rewrote `tests/test_notebooks_execution.py` into a two-level test suite: Level (a) executes structural JSON validation and Python AST syntax checks across all 94 unique notebooks plus fast CPU smoke tests (97 passed); Level (b) parametrises over the 29 physically verified notebooks for GPU execution.

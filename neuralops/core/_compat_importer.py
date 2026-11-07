@@ -15,8 +15,10 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import logging
+import os
 import sys
 import types
+import warnings
 from importlib.abc import Loader, MetaPathFinder
 from types import ModuleType
 from typing import Any, Optional, Sequence
@@ -311,6 +313,12 @@ class NeuralOpsCompatibilityRedirectFinder(MetaPathFinder):
     ) -> Optional[Any]:
         if fullname in self._EXACT_MAP:
             target_name, is_pkg = self._EXACT_MAP[fullname]
+            if not os.environ.get("NEURALOPS_NO_DEPRECATION_WARNINGS"):
+                warnings.warn(
+                    f"'{fullname}' is deprecated and will be removed in v3.0.0; use '{target_name}' instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
             loader = ExactModuleAliasLoader(target_name, is_pkg=is_pkg)
             return importlib.util.spec_from_loader(fullname, loader, is_package=is_pkg)
 
@@ -321,6 +329,12 @@ class NeuralOpsCompatibilityRedirectFinder(MetaPathFinder):
                 resolved = self._resolve_canonical(canonical_fullname)
                 if resolved is not None:
                     canon, is_pkg, sym_map = resolved
+                    if not os.environ.get("NEURALOPS_NO_DEPRECATION_WARNINGS"):
+                        warnings.warn(
+                            f"'{fullname}' is deprecated and will be removed in v3.0.0; use '{canon}' instead.",
+                            DeprecationWarning,
+                            stacklevel=2,
+                        )
                     loader = ExactModuleAliasLoader(canon, is_pkg=is_pkg, symbol_aliases=sym_map)
                     return importlib.util.spec_from_loader(fullname, loader, is_package=is_pkg)
         return None

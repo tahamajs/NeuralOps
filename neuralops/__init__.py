@@ -91,8 +91,10 @@ if "pydantic" not in _sys.modules:
 
 import importlib
 import importlib.util
+import os
 from pathlib import Path
 import sys
+import warnings
 
 from neuralops.core._compat_importer import install_compatibility_interceptor
 
@@ -370,6 +372,12 @@ class _ModuleAliasFinder(MetaPathFinder):
             sub = fullname[len("neuralops.kernels.cuda.") :]
             canonical = f"neuralops.core.cuda_kernels.{sub}"
             try:
+                if not os.environ.get("NEURALOPS_NO_DEPRECATION_WARNINGS"):
+                    warnings.warn(
+                        f"'{fullname}' is deprecated and will be removed in v3.0.0; use '{canonical}' instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
                 mod = importlib.import_module(canonical)
                 sys.modules[fullname] = mod
                 return getattr(mod, "__spec__", None)
@@ -379,6 +387,12 @@ class _ModuleAliasFinder(MetaPathFinder):
         if fullname in self._ALIASES:
             canonical = self._ALIASES[fullname]
             try:
+                if not os.environ.get("NEURALOPS_NO_DEPRECATION_WARNINGS"):
+                    warnings.warn(
+                        f"'{fullname}' is deprecated and will be removed in v3.0.0; use '{canonical}' instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
                 mod = importlib.import_module(canonical)
                 sys.modules[fullname] = mod
                 return getattr(mod, "__spec__", None)
@@ -812,10 +826,10 @@ _API_EXPORTS = {
     "force_kernel_backend": "neuralops.ops.cuda._fallback",
     "list_triton_kernels": "neuralops.kernels",
     "list_cuda_kernels": "neuralops.kernels",
-    "GLAttention": "neuralops.attentions.linear.gla_attention",
-    "CosformerAttention": "neuralops.attentions.linear.cosformer",
-    "SVDLinearAttention": "neuralops.attentions.svd.svd_linear_attention",
-    "DecayLinearAttention": "neuralops.attentions.gated.decay_linear_attention",
+    "GLAttention": "neuralops.layers.linear.gla_attention",
+    "CosformerAttention": "neuralops.layers.linear.cosformer",
+    "SVDLinearAttention": "neuralops.layers.svd.svd_linear_attention",
+    "DecayLinearAttention": "neuralops.layers.gated.decay_linear_attention",
     "Muon": "neuralops.trainer.optimizers.muon",
     "StiefelOptimizer": "neuralops.trainer.optimizers",
     "RiemannianAdam": "neuralops.trainer.optimizers",
@@ -831,7 +845,7 @@ _API_EXPORTS = {
     "unpack_int4_weights": "neuralops.core.triton_kernels.low_rank",
     "fused_w4a16_gemm_triton": "neuralops.core.triton_kernels.low_rank",
     "fast_hadamard_transform": "neuralops.core.triton_kernels.elementwise",
-    "HadamardIncoherentSVDCompressor": "neuralops.compression_engine.svd.hadamard_incoherent_svd",
+    "HadamardIncoherentSVDCompressor": "neuralops.compression.svd.hadamard_incoherent_svd",
     "SelfSpeculativeDecoder": "neuralops.inference.speculative_decoding",
     "SpeculativeDecodeStats": "neuralops.inference.speculative_decoding",
     "PagedKVCache": "neuralops.inference.paged_cache",
@@ -861,7 +875,7 @@ _COMPAT_SUBPACKAGES: dict[str, str] = {
 
 def inject_gla(model, **kwargs):
     """Replace all standard attention layers with GLA. Convenience wrapper."""
-    from neuralops.attentions.linear.gla_attention import GLAttention as _GLA
+    from neuralops.layers.linear.gla_attention import GLAttention as _GLA
     from neuralops.core._attention_surgery import replace_attention_in_model
 
     return replace_attention_in_model(model, _GLA, **kwargs)
@@ -987,6 +1001,12 @@ def __getattr__(name: str) -> Any:
     if name in _COMPAT_SUBPACKAGES:
         target = _COMPAT_SUBPACKAGES[name]
         try:
+            if not os.environ.get("NEURALOPS_NO_DEPRECATION_WARNINGS"):
+                warnings.warn(
+                    f"neuralops.{name} is deprecated and will be removed in v3.0.0; use {target} instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
             submod = importlib.import_module(target)
             globals()[name] = submod
             return submod
