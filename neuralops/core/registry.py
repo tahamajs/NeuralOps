@@ -975,9 +975,12 @@ def get_compressor(name: str, **kwargs: Any) -> Any:
     return cls
 
 
-def list_attentions() -> list[str]:
+def list_attentions(include_extensions: bool = False) -> list[str]:
     """List all registered attention names."""
-    return sorted(list(ATTENTION_REGISTRY.keys()))
+    names = sorted(list(ATTENTION_REGISTRY.keys()))
+    if not include_extensions:
+        names = [n for n in names if not n.startswith("fla:")]
+    return names
 
 
 def list_compressors() -> list[str]:
