@@ -1,3 +1,5 @@
+# Scope: Dedicated matrix verification for Triton JIT operator fallbacks,
+# torch.compile compatibility, and vectorized PyTorch numerical reference parity on CPU.
 name: Triton Kernels Test Suite
 
 concurrency:

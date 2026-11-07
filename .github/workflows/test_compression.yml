@@ -1,3 +1,5 @@
+# Scope: Dedicated matrix verification for 72 model compression algorithms and surgery lifecycle
+# (SVD, pruning, quantization, AST rewriting). Runs on push/PR affecting compression paths.
 name: Compression Engines & Model Surgery Test Suite
 
 concurrency:

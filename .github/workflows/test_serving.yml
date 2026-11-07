@@ -1,3 +1,5 @@
+# Scope: Dedicated matrix verification for high-throughput production inference serving,
+# PagedAttention block tables, speculative decoding, and radix prefix cache.
 name: Production Serving & Inference Test Suite
 
 concurrency:
@@ -49,8 +51,7 @@ jobs:
         env:
           PYTHONPATH: .
         run: |
-          pytest tests/test_fast.py \
-                 tests/test_paged_cache.py \
+          pytest tests/test_paged_cache.py \
                  tests/test_self_speculative_decoding.py \
                  tests/test_paged_state_and_radix_prefix_cache.py \
                  -v --tb=short

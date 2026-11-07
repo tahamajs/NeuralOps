@@ -21,48 +21,140 @@ on:
       - 'results/**'
 
 jobs:
-  test:
+  version-check:
+    name: Version Synchronization Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run Version Sync Check
+        run: |
+          python scripts/utils/sync_version.py --check
+
+  lint:
+    name: Code Style & Static Analysis (ruff, black, isort)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black isort
+      - name: Lint with ruff
+        run: |
+          ruff check neuralops tests
+      - name: Check code formatting with black
+        run: |
+          black --check neuralops tests
+      - name: Check import ordering with isort
+        run: |
+          isort --check-only neuralops tests
+
+  mypy:
+    name: Static Type Checking (mypy baseline scope)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e ".[cpu,dev]"
+      - name: Run mypy on baseline core scope
+        # Scope: Core exceptions, errors, diagnostics, and version metadata.
+        # Broader scope deferred to avoid failing on legacy untyped modules.
+        run: |
+          mypy --follow-imports=skip neuralops/core/exceptions.py neuralops/core/errors.py neuralops/core/diagnostics.py neuralops/_version.py
+
+  wheel-smoke:
+    name: Distribution Wheel Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build wheel and verify CLI entry points in clean environment
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel --no-isolation
+          python -m venv /tmp/neuralops-smoke-venv
+          /tmp/neuralops-smoke-venv/bin/pip install dist/*.whl
+          /tmp/neuralops-smoke-venv/bin/neuralops --help
+          /tmp/neuralops-smoke-venv/bin/neuralops info
+          /tmp/neuralops-smoke-venv/bin/python -c "import neuralops; print(neuralops.__version__)"
+
+  test-fast:
+    name: Fast Unit & Parity Tests (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12"]
-
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e ".[cpu,dev,mlops]"
+      - name: Run unit & parity tests with coverage
+        run: |
+          pytest tests/test_fast.py tests/test_framework_completeness.py -v --cov=neuralops --cov-report=xml --cov-report=term -p no:cacheprovider
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./coverage.xml
+          # fail_ci_if_error is false to prevent external Codecov service / token issues from blocking CI
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Dry-run verification and planning suite
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m neuralops.benchmarks verify
+          python -m neuralops.benchmarks plan --all-attn
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools wheel
-        pip install -e ".[cpu,dev,mlops]"
-
-    - name: Lint with ruff
-      run: |
-        ruff check neuralops tests
-
-    - name: Run unit & parity tests with coverage
-      run: |
-        pytest tests/test_fast.py tests/test_framework_completeness.py -v --cov=neuralops --cov-report=xml --cov-report=term -p no:cacheprovider
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v7
-      with:
-        files: ./coverage.xml
-        fail_ci_if_error: false
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-
-    - name: Dry-run verification and planning suite
-      env:
-        PYTHONPATH: .
-      run: |
-        python -m neuralops.benchmarks verify
-        python -m neuralops.benchmarks plan --all-attn
+  test-full:
+    name: Full CPU Regression Suite (${{ matrix.os }}, py${{ matrix.python-version }})
+    # Scope: Runs complete test suite excluding hardware-dependent GPU and Triton marks.
+    # GPU and Triton tests are validated in dedicated workflows and HPC cluster jobs.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e ".[cpu,dev,mlops]"
+      - name: Run non-GPU and non-Triton regression tests
+        run: |
+          pytest tests/ -m "not gpu and not triton" --tb=short
