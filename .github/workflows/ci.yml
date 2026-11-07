@@ -33,6 +33,9 @@ jobs:
       - name: Run Version Sync Check
         run: |
           python scripts/utils/sync_version.py --check
+      - name: Run Changelog Sync Check
+        run: |
+          python scripts/docs/sync_changelog.py --check
 
   test-layout:
     name: Test Layout Structure Gate

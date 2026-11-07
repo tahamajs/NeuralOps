@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Changelog Synchronization, Missing Version History & Modernization Status (F-73, F-74):**
+  - Reconciled missing version history in `CHANGELOG.md`: added detailed entries for released versions `[2.0.4]` and `[2.0.5]` verified against Git tags and commit logs, eliminating unexplained version jumps.
+  - Implemented automatic changelog synchronization: authored `scripts/docs/sync_changelog.py` with `--check` mode for CI, synchronizing root `CHANGELOG.md` to `docs/changelog.md` for MkDocs publication.
+  - Updated `CONTRIBUTING.md` requiring all PRs with user-visible behavior changes to include a changelog entry enforced via CI `--check`.
+  - Resolved directory modernization documentation: corrected the `[2.0.6]` changelog entry to state "operations/ deprecated, removal planned; validator/ merged at package level, its tests still live in tests/validator/", and created `docs/DIRECTORY_MODERNIZATION_STATUS.md` recording granular migration status across all legacy directories.
+  - Added unit and synchronization guard test suite `tests/test_changelog_sync.py` (3 passed in 1.08s).
 - **Removal of Non-Functional Sharding Placeholder & Explicit Tensor Parallel Documentation (F-62):**
   - **Breaking Change:** Removed `shard_model_tensor_parallel` placeholder from public `neuralops.distributed.__all__` and `neuralops.distributed.tensor_parallel.__all__`. Direct imports from `neuralops.distributed` now raise `ImportError`.
   - Converted `shard_model_tensor_parallel` to a private `_shard_model_tensor_parallel` helper with explicit docstrings warning that automatic sharding is intentionally unsupported.

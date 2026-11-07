@@ -164,4 +164,5 @@ Before submitting a Pull Request, ensure that:
 - [ ] Full test suite passes: `pytest tests/ -v`
 - [ ] In-package tests pass: `pytest neuralops/tests/analysis/ neuralops/tests/config/ neuralops/tests/data/ neuralops/tests/models/`
 - [ ] No hardcoded local paths (`/home/user`, `D:/`, etc.) exist in the code.
+- [ ] **Changelog Updated**: Every PR changing user-visible behavior must include an entry in `CHANGELOG.md`. CI validates synchronization with docs via `python scripts/docs/sync_changelog.py --check`.
 - [ ] Working tree is clean and commits follow conventional commit standards (`feat:`, `fix:`, `docs:`, `chore:`).
