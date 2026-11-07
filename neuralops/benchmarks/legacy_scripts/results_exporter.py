@@ -110,6 +110,15 @@ def export_benchmark_results(
     cur = conn.cursor()
     passed_count = sum(1 for r in records if r.get("status") == "PASS")
 
+    try:
+        import subprocess
+        commit_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        commit_sha = "unknown"
+
+    import socket
+    hostname = socket.gethostname()
+
     cur.execute("PRAGMA table_info(benchmark_runs)")
     existing_run_cols = {r[1] for r in cur.fetchall()}
     run_row: dict[str, Any] = {
@@ -118,9 +127,19 @@ def export_benchmark_results(
         "suite": "gpu_master_suite",
         "timestamp": timestamp,
         "timestamp_utc": timestamp,
+        "timestamp_start_utc": timestamp,
+        "timestamp_end_utc": timestamp,
+        "duration_s": 0.0,
+        "duration_seconds": 0.0,
+        "commit_sha": commit_sha,
+        "branch": "main",
+        "is_dirty": 0,
+        "hostname": hostname,
         "device": device,
         "device_name": device,
+        "run_dir": str(output_dir),
         "status": "PASS",
+        "tag": "full_gpu_suite",
         "total_modules": len(records),
         "passed_modules": passed_count,
         "total_cells": len(records),

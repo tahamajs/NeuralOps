@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Breaking Change (Canonical `replace_attention` & Unified Distillation, F-92):**
+  - Declared `neuralops.api.replace_attention` the single canonical implementation of `replace_attention`.
+  - Re-exported `replace_attention` from `neuralops.surgery.attention.replace`, `neuralops.surgery.attention_replace`, `neuralops.core.attention_utils`, `neuralops.core._attention_surgery`, and `neuralops.utils.replace_attention` ensuring exact pointer identity across all legacy import paths (`is` check passes across all 5 paths).
+  - Fixed duplicate export in `neuralops.surgery.__all__` where `replace_attention` was listed twice and shadowed.
+  - Aligned parameter names in `neuralops.operations.attention.replace.AttentionReplaceOperation` to call `replace_attention(model, attention=target)`.
+  - Declared `neuralops.trainer.distillation.multi_level_kd` the canonical distillation implementation, exposing `distill(student, teacher, train_loader, epochs=..., lr=..., **kwargs)` using `MultiLevelKDTrainer`.
+  - Connected `neuralops.api.distill` and `neuralops.benchmarks.core.training.train_kd` to delegate directly to `neuralops.trainer.distillation.multi_level_kd.distill`.
+  - Documented specialized roles for non-redundant side distillation paths (`streaming_distill.py` for zero-OOM micro-chunked CKA, `surgery/recovery/distill.py` for surgery recovery operations, `trainer/layer_distill.py` for layer-wise distillation, and `benchmarks/kd/` for distillation evaluation).
 - **Breaking Change (Unified Exception Hierarchy & Registered Error Types, F-81):**
   - Canonical exception hierarchy consolidated in `neuralops.core.exceptions`. `neuralops.core.errors` is now a 100% compatible re-export shim (`core.exceptions.NeuralOpsError is core.errors.NeuralOpsError`).
   - Standardized unknown module errors: `create_attention`, `create_compressor`, and `replace_attention` now consistently raise `AttentionNotRegisteredError` and `CompressorNotRegisteredError` across all public paths (`neuralops`, `neuralops.api`, `neuralops.core.registry`).

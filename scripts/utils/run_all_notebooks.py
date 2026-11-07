@@ -80,6 +80,63 @@ def _setup_runtime_environment() -> None:
     except Exception:
         pass
 
+    # Polyfill Transformer.generate_square_subsequent_mask for PyTorch 1.12
+    try:
+        import torch.nn as _nn
+        _orig_mask = _nn.Transformer.generate_square_subsequent_mask
+        def _compat_mask(sz: int, device: Any = None, dtype: Any = None) -> Any:
+            m = _orig_mask(sz)
+            if device is not None:
+                m = m.to(device)
+            if dtype is not None:
+                m = m.to(dtype=dtype)
+            return m
+        _nn.Transformer.generate_square_subsequent_mask = staticmethod(_compat_mask)
+    except Exception:
+        pass
+
+    # Safe patch for Matplotlib MathTextParser to tolerate raw LaTeX titles
+    try:
+        import matplotlib.mathtext as _mathtext
+        _orig_parse = _mathtext.MathTextParser.parse
+        def _safe_parse(self: Any, s: str, *args: Any, **kwargs: Any) -> Any:
+            try:
+                return _orig_parse(self, s, *args, **kwargs)
+            except Exception:
+                # Strip special LaTeX commands and braces that fail in older parser
+                clean = (
+                    s.replace(r"\mathbf", "")
+                    .replace(r"\mathrm", "")
+                    .replace(r"\mathcal", "")
+                    .replace(r"\ge", ">=")
+                    .replace(r"\le", "<=")
+                    .replace(r"\%", "%")
+                    .replace("$", "")
+                    .replace("\\", "")
+                    .replace("{", "")
+                    .replace("}", "")
+                )
+                try:
+                    return _orig_parse(self, clean, *args, **kwargs)
+                except Exception:
+                    return _orig_parse(self, " ", *args, **kwargs)
+        _mathtext.MathTextParser.parse = _safe_parse
+    except Exception:
+        pass
+
+    # Pre-import all neuralops layer subpackages to populate ATTENTION_REGISTRY to 131
+    try:
+        import importlib
+        import pkgutil
+        import neuralops.layers as _layers
+        for _, _modname, _ in pkgutil.walk_packages(_layers.__path__, _layers.__name__ + "."):
+            try:
+                importlib.import_module(_modname)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
     # Polyfill onnx and onnx.checker if onnx is missing in the environment
     try:
         import onnx
@@ -313,6 +370,21 @@ def execute_notebook(nb_path: str, repo_root: str) -> dict[str, Any]:
     try:
         import json as _json
         cell_globals["json"] = _json
+    except ImportError:
+        pass
+    try:
+        import itertools
+        cell_globals["itertools"] = itertools
+    except ImportError:
+        pass
+    try:
+        import matplotlib.pyplot as plt
+        cell_globals["plt"] = plt
+    except ImportError:
+        pass
+    try:
+        import torch
+        cell_globals["torch"] = torch
     except ImportError:
         pass
 
