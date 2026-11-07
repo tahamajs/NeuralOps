@@ -25,12 +25,7 @@ from neuralops.adaptation.distillation import (
     SmoothMaxOverLayersCKASteeringLoss,
     SpikyFeatureMap,
 )
-from neuralops.adaptation.peft import (
-    DoRALinear,
-    LoRALinear,
-    PiSSALinear,
-    inject_pissa_adapters,
-)
+from neuralops.adaptation.peft import DoRALinear, LoRALinear, PiSSALinear, inject_pissa_adapters
 
 
 def test_adaptation_subpackage_exports():
@@ -112,3 +107,23 @@ def test_peft_pissa_linear():
     x = torch.randn(2, 8, 32)
     out = pissa(x)
     assert out.shape == (2, 8, 32)
+
+
+def test_adaptation_absent_or_reexports_real_lora():
+    """Verify that neuralops.adaptation.peft re-exports the canonical LoRA implementation."""
+    from neuralops.adaptation.peft import LoRALinear
+    from neuralops.trainer.methods.lora import LoRALinear as RealLoRALinear
+
+    assert LoRALinear is RealLoRALinear
+
+
+def test_no_empty_adaptation_package():
+    """Verify that no adaptation package or subpackage is an empty advertising shell."""
+    from pathlib import Path
+
+    adaptation_dir = Path(__file__).resolve().parent.parent.parent / "neuralops" / "adaptation"
+    init_files = list(adaptation_dir.rglob("__init__.py"))
+    assert len(init_files) >= 3
+    for init_file in init_files:
+        text = init_file.read_text(encoding="utf-8").strip()
+        assert "from " in text or "import " in text or "__all__" in text

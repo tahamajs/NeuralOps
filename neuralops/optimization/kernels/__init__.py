@@ -6,9 +6,24 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-NeuralOps Optimization Kernels Subpackage.
+NeuralOps Optimization Kernels Facade.
 
-Hosts unified Triton and CUDA kernel dispatch mechanisms and accelerated primitives.
+Canonical Owner: neuralops.ops
 """
 
-from neuralops.ops.triton import *  # noqa: F401, F403
+from __future__ import annotations
+
+from typing import Any
+
+import neuralops.ops as _ops
+
+
+def __getattr__(name: str) -> Any:
+    return getattr(_ops, name)
+
+
+def __dir__() -> list[str]:
+    return dir(_ops)
+
+
+__all__ = ["_ops"]

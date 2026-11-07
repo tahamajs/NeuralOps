@@ -26,3 +26,31 @@ def test_optimization_kernels_module_access():
     # Verify module has docstring and license
     assert neuralops.optimization.__doc__ is not None
     assert "Optimization" in neuralops.optimization.__doc__
+
+
+def test_optimization_absent_or_reexports_real_optimizers():
+    """Verify that optimization re-exports canonical optimizer classes directly."""
+    from neuralops.optimization import Lion, Muon, RiemannianStiefelOptimizer
+    from neuralops.trainer.optimizers.lion import Lion as RealLion
+    from neuralops.trainer.optimizers.muon import Muon as RealMuon
+    from neuralops.trainer.optimizers.riemannian import RiemannianStiefelOptimizer as RealRiemannian
+
+    assert Lion is RealLion
+    assert Muon is RealMuon
+    assert RiemannianStiefelOptimizer is RealRiemannian
+
+
+def test_no_empty_optimization_kernels():
+    """Verify that optimization/kernels is not an empty stub."""
+    from pathlib import Path
+
+    kernels_init = (
+        Path(__file__).resolve().parent.parent.parent
+        / "neuralops"
+        / "optimization"
+        / "kernels"
+        / "__init__.py"
+    )
+    assert kernels_init.exists()
+    text = kernels_init.read_text(encoding="utf-8")
+    assert "neuralops.ops" in text or "__getattr__" in text

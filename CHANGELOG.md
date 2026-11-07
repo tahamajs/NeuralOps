@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Adaptation and Optimization Facade Implementation (F-52, F-53):**
+  - Resolved empty package shells for `neuralops.adaptation` and `neuralops.optimization` by implementing Option (b) documented thin facades re-exporting canonical implementations with zero code duplication.
+  - `neuralops/adaptation/peft`: Thin facade re-exporting canonical LoRA and PEFT modules from `neuralops.trainer.methods.lora` (`LoRALinear`), `neuralops.operations.adaptation.lora` (`CONTRACT`), and `neuralops.trainer.peft_recovery.svd_adapters` (`DoRALinear`, `PiSSALinear`, `inject_pissa_adapters`).
+  - `neuralops/adaptation/distillation`: Thin facade re-exporting canonical multi-level knowledge distillation loss functions from `neuralops.trainer.distillation.multi_level_kd`.
+  - `neuralops/optimization`: Thin facade re-exporting canonical optimization algorithms from `neuralops.trainer.optimizers` (`Muon`, `MuonAdamW`, `RiemannianStiefelOptimizer`, `Lion`, `OPTIMIZER_REGISTRY`, `get_optimizer`).
+  - `neuralops/optimization/kernels`: Thin facade dynamically delegating to `neuralops.ops`.
+  - Added unit and parity tests `test_adaptation_absent_or_reexports_real_lora`, `test_no_empty_adaptation_package` in `tests/adaptation/test_adaptation.py`, and `test_optimization_absent_or_reexports_real_optimizers`, `test_no_empty_optimization_kernels` in `tests/optimization/test_optimization.py`.
 - **Config System Consolidation & Deprecation of Duplicate Core Config (F-40):**
   - Consolidated configuration loading on the typed `neuralops.config` package (`neuralops/config/loader.py` and `neuralops/config/config.py`).
   - Added `DummyConfig` to `neuralops.config.config` and re-exported it in `neuralops.config` as the canonical lightweight dummy configuration for testing and fallback initialization.

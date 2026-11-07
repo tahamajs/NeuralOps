@@ -6,11 +6,16 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-NeuralOps Adaptation Subpackage.
+NeuralOps Adaptation Facade.
 
-Hosts post-surgery adaptation, fine-tuning, knowledge distillation, parameter-efficient
-fine-tuning (PEFT/LoRA), and representation healing methods.
+Re-exports post-surgery adaptation and fine-tuning subsystems:
+- PEFT/LoRA: neuralops.adaptation.peft (canonical: neuralops.trainer.methods.lora)
+- Distillation: neuralops.adaptation.distillation (canonical: neuralops.trainer.distillation)
 """
+
+from __future__ import annotations
+
+from . import distillation, peft
 
 __all__ = [
     "distillation",

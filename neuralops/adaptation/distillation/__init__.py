@@ -6,8 +6,12 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Multi-Level Knowledge Distillation Adaptation Module.
+Multi-Level Knowledge Distillation Adaptation Facade.
+
+Canonical Owner: neuralops.trainer.distillation.multi_level_kd
 """
+
+from __future__ import annotations
 
 from neuralops.trainer.distillation.multi_level_kd import (
     BlockwiseOperatorCloningLoss,
