@@ -16,19 +16,63 @@ from typing import Optional, Any
 
 
 class NeuralOpsError(Exception):
-    """Base exception for all neuralops errors."""
+    """Base exception for all NeuralOps errors."""
 
 
-class ConfigError(NeuralOpsError):
+class RegistryError(NeuralOpsError):
+    """Raised when a registry lookup or registration fails."""
+
+
+class AttentionNotRegisteredError(RegistryError, ValueError, KeyError):
+    """Raised when a requested attention type is not found in ATTENTION_REGISTRY."""
+
+
+class CompressorNotRegisteredError(RegistryError, KeyError):
+    """Raised when a requested compressor type is not found in COMPRESSOR_REGISTRY."""
+
+
+class ConfigError(NeuralOpsError, ValueError):
     """Raised when a configuration is invalid or incomplete."""
-
-
-class WeightCopyError(NeuralOpsError):
-    """Raised when copying weights from a pretrained attention module fails."""
 
 
 class BackendError(NeuralOpsError):
     """Raised when no backend can execute the requested operation."""
+
+
+class KernelNotAvailableError(BackendError, RuntimeError):
+    """Raised when a native hardware kernel is requested but not available."""
+
+
+class KernelDispatchError(BackendError, RuntimeError):
+    """Raised when kernel backend dispatch fails across all available levels."""
+
+
+class MissingDependencyError(NeuralOpsError, ImportError):
+    """Raised when an optional dependency required by a feature is not installed."""
+
+
+class TorchNotInstalledError(MissingDependencyError):
+    """Raised when PyTorch is required but not installed."""
+
+
+class TritonNotInstalledError(MissingDependencyError):
+    """Raised when OpenAI Triton is required but not installed."""
+
+
+class IntegrationNotImplementedError(NeuralOpsError, NotImplementedError):
+    """Raised when a framework integration stub is invoked but not implemented."""
+
+
+class IncompatibleArchitectureError(NeuralOpsError, ValueError):
+    """Raised when a model architecture is incompatible with the requested operation."""
+
+
+class CalibrationError(NeuralOpsError, RuntimeError):
+    """Raised when model calibration or parameter reconstruction fails."""
+
+
+class WeightCopyError(NeuralOpsError):
+    """Raised when copying weights from a pretrained attention module fails."""
 
 
 class NumericalError(NeuralOpsError):
@@ -37,10 +81,6 @@ class NumericalError(NeuralOpsError):
 
 class ShapeError(NeuralOpsError):
     """Raised when tensor shapes are incompatible."""
-
-
-class RegistryError(NeuralOpsError):
-    """Raised when a registry lookup or registration fails."""
 
 
 class InjectionError(NeuralOpsError):
@@ -59,16 +99,49 @@ class InferenceError(NeuralOpsError):
     """Raised when autoregressive inference fails."""
 
 
+def torch_install_error(feature: str, cause: ImportError | None = None) -> ImportError:
+    """Build an actionable error for features that require PyTorch."""
+    message = (
+        f"NeuralOps requires PyTorch for {feature}, but torch is not installed.\n\n"
+        "Install the extra that matches your hardware:\n"
+        '  pip install "neuralops[cpu]"    # CPU-only\n'
+        '  pip install "neuralops[cuda]"   # NVIDIA GPU\n'
+        '  pip install "neuralops[mps]"    # Apple Silicon\n'
+        '  pip install "neuralops[rocm]"   # AMD GPU\n\n'
+        "Alternatively, install a PyTorch build selected for your hardware, then install "
+        '"neuralops[core]".'
+    )
+    if cause is not None:
+        message += f"\n\nUnderlying import error: {cause}"
+    return MissingDependencyError(message)
+
+
+# Backward-compatible alias
+_torch_install_error = torch_install_error
+
+
 __all__ = [
     "NeuralOpsError",
+    "RegistryError",
+    "AttentionNotRegisteredError",
+    "CompressorNotRegisteredError",
     "ConfigError",
-    "WeightCopyError",
     "BackendError",
+    "KernelNotAvailableError",
+    "KernelDispatchError",
+    "MissingDependencyError",
+    "TorchNotInstalledError",
+    "TritonNotInstalledError",
+    "IntegrationNotImplementedError",
+    "IncompatibleArchitectureError",
+    "CalibrationError",
+    "WeightCopyError",
     "NumericalError",
     "ShapeError",
-    "RegistryError",
     "InjectionError",
     "KDError",
     "CompressionError",
     "InferenceError",
+    "torch_install_error",
+    "_torch_install_error",
 ]
