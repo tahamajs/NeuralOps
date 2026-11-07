@@ -1,7 +1,7 @@
 # Benchmark Reconciliation Report
 
-**Date**: October 16, 2026  
-**Auditor**: Principal Systems Architect, Benchmarking Lead  
+**Date**: October 16, 2026
+**Auditor**: Principal Systems Architect, Benchmarking Lead
 **Scope**: Reconciliation between raw JSON execution benchmarks and published Markdown / LaTeX reports.
 
 ---

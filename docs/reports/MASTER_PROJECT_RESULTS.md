@@ -1,9 +1,9 @@
 # Master Project Results & Attention Benchmark Report
 
-**Date:** September 25, 2026  
-**Repository:** SVD Linear Attention & Unified Compression Framework  
-**Scope:** 245 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2 (consolidated from 252 registered alias keys)  
-**Status:** 100% COMPLETE — ZERO ERRORS / ZERO CRASHES  
+**Date:** September 25, 2026
+**Repository:** SVD Linear Attention & Unified Compression Framework
+**Scope:** 245 Evaluated Unique Modules across DistilBERT, RoBERTa-base, and GPT-2 (consolidated from 252 registered alias keys)
+**Status:** 100% COMPLETE — ZERO ERRORS / ZERO CRASHES
 
 ---
 
@@ -595,11 +595,11 @@ These modules replace standard softmax with linear kernels, state-space models, 
 For modules exhibiting zero-shot logit differences $> 8.0$ on GPT-2 due to non-softmax formulation differences, 50-step recovery fine-tuning was evaluated:
 
 > [!NOTE]
-> **PASS_AFTER_RECOVERY Qualification Threshold**:  
-> A module qualifies for `PASS_AFTER_RECOVERY` if post-recovery accuracy $\ge (\text{baseline} - 10.0\%)$.  
-> For GPT-2 (uncompressed dense baseline **87.84%**), the qualification threshold is $\mathbf{77.84\%}$.  
+> **PASS_AFTER_RECOVERY Qualification Threshold**:
+> A module qualifies for `PASS_AFTER_RECOVERY` if post-recovery accuracy $\ge (\text{baseline} - 10.0\%)$.
+> For GPT-2 (uncompressed dense baseline **87.84%**), the qualification threshold is $\mathbf{77.84\%}$.
 > All 7 evaluated modules (**80.53% to 84.22%**) exceed this threshold.
-> 
+>
 > *Note on Baseline Probe*: "Acc Before" = 52.50% reflects the small 40-sample batch cache probe used for rapid pre-recovery evaluation. Full 872-sample evaluation appears in "Acc After 50 Steps".
 
 | Module Name | Zero-Shot Diff | Acc Before | Acc After 50 Steps | Delta Acc | Status | Verdict | Source |
@@ -703,7 +703,7 @@ Systematic sequence length scaling evaluation across sequence lengths $N \in [12
 | `hgrn2_layer` | SSM (Linear Recurrent Gating) | 378.59 ± 14.20 | 462.10 ± 18.50 | 625.40 ± 24.30 | 954.80 ± 38.60 | $O(N^{0.44})$ | 1,396.80 MB |
 
 > [!NOTE]
-> **Mamba Architecture Windows Status (`NOT_SUPPORTED_ON_WINDOWS`)**:  
+> **Mamba Architecture Windows Status (`NOT_SUPPORTED_ON_WINDOWS`)**:
 > Mamba SSM requires compiled Linux CUDA C++ extensions (`mamba_ssm`, `causal_conv1d`) that cannot be compiled or installed on Windows environments. The PyTorch eager fallback (`selective_scan_chunked`) allocates 5D intermediate decay tensors ($16 \times 1536 \times 18 \times 18 \times 16$, 509 MB each), generating >270 GB of memory churn per forward pass and causing out-of-memory crashes on 8GB GPUs at $N \ge 512$. Mamba is formally marked as unsupported on Windows. `hgrn2_layer` represents the state-space model category.
 
 ### Architectural Takeaways:
@@ -905,4 +905,3 @@ This is documented as a **negative result**, not a failure of implementation.
 - ASVD: C4 PPL 14.98 (baseline ~7.63)
 - Our `adasvd_compressor` on GPT-2: C4 PPL 46.55 (baseline 37.86, with 49.57% FLOPs reduction and ultra-fast 1.20s calibration)
 - *Note on scale:* GPT-2 is significantly smaller (124M vs 7B parameters) and uses fused 1D convolutions (`c_attn`) which make high compression challenging, yet `adasvd_compressor` preserves baseline perplexity while cutting FLOPs in half.
-

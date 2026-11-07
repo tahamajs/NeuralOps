@@ -1,17 +1,17 @@
 # Comprehensive Engineering Blueprint & Architectural Specification: Unified Benchmark Execution, Config Management, Experiment Tracking, and Per-Run Artifact Isolation
 
-**Author / Lead Systems Architect:** Taha Majlesi (`tahamaj4@gmail.com`)  
-**Project:** NeuralOps Architecture & Optimization Framework (v1.5.0 / Branch: `main`)  
-**Document Classification:** Core Architectural Redesign & Systems Engineering Specification  
-**Scope:** `neuralops/cli/`, `neuralops/config/`, `neuralops/tracking/`, `neuralops/results_saver/`, `benchmarks/`  
-**Date:** November 4, 2026  
-**Status:** Canonical Engineering Roadmap & Specification Document (1,000+ Lines)  
+**Author / Lead Systems Architect:** Taha Majlesi (`tahamaj4@gmail.com`)
+**Project:** NeuralOps Architecture & Optimization Framework (v1.5.0 / Branch: `main`)
+**Document Classification:** Core Architectural Redesign & Systems Engineering Specification
+**Scope:** `neuralops/cli/`, `neuralops/config/`, `neuralops/tracking/`, `neuralops/results_saver/`, `benchmarks/`
+**Date:** November 4, 2026
+**Status:** Canonical Engineering Roadmap & Specification Document (1,000+ Lines)
 
 ---
 
 ## Executive Summary & Design Philosophy
 
-The objective of this engineering specification is to resolve structural fragmentation across the NeuralOps benchmarking ecosystem. Currently, benchmarking tasks, command-line interfaces, configuration parsers, experiment tracking, and results persistence operate through partially decoupled pathways. 
+The objective of this engineering specification is to resolve structural fragmentation across the NeuralOps benchmarking ecosystem. Currently, benchmarking tasks, command-line interfaces, configuration parsers, experiment tracking, and results persistence operate through partially decoupled pathways.
 
 To achieve an enterprise-grade, reproducible, and verifiable deep learning systems architecture, we establish a **Single Source of Truth Unified Pipeline**. Under this paradigm:
 
@@ -294,16 +294,16 @@ To achieve comprehensive tracking during benchmarking and distillation, the trac
 # Real-Time Telemetry Logging Protocol
 for step, batch in enumerate(train_loader):
     loss, aux_losses = model_step(batch)
-    
+
     # 1. Algorithmic Losses
     tracker.log_metric("train/total_loss", loss.item(), step=step)
     tracker.log_metric("train/kd_feature_loss", aux_losses["kd"].item(), step=step)
     tracker.log_metric("train/causal_lm_loss", aux_losses["lm"].item(), step=step)
-    
+
     # 2. Optimization Dynamics
     tracker.log_metric("optim/learning_rate", scheduler.get_last_lr()[0], step=step)
     tracker.log_metric("optim/grad_norm", current_grad_norm, step=step)
-    
+
     # 3. Hardware Telemetry
     if step % 10 == 0 and torch.cuda.is_available():
         allocated_mb = torch.cuda.memory_allocated() / (1024 * 1024)
@@ -614,7 +614,7 @@ def commit_to_master_ledger(
 ) -> None:
     conn = sqlite3.connect(sqlite_path)
     cur = conn.cursor()
-    
+
     # Ensure foreign-linkable benchmark runs table exists
     cur.execute('''
         CREATE TABLE IF NOT EXISTS benchmark_runs (
@@ -629,7 +629,7 @@ def commit_to_master_ledger(
             status TEXT
         )
     ''')
-    
+
     cur.execute('''
         INSERT OR REPLACE INTO benchmark_runs (
             run_id, benchmark_name, timestamp_utc, commit_sha,
@@ -646,7 +646,7 @@ def commit_to_master_ledger(
         manifest["duration_seconds"],
         manifest["execution_outcome"]["status"],
     ))
-    
+
     conn.commit()
     conn.close()
 ```
@@ -713,9 +713,9 @@ def add_benchmark_parser(subparsers: argparse._SubParsersAction) -> None:
         help="Unified benchmarking, profiling, and telemetry system",
         description="Execute, monitor, track, and analyze benchmark suites across hardware."
     )
-    
+
     bench_subparsers = bench_parser.add_subparsers(dest="bench_command", required=True)
-    
+
     # -------------------------------------------------------------------------
     # Subcommand: run
     # -------------------------------------------------------------------------
@@ -781,7 +781,7 @@ def add_benchmark_parser(subparsers: argparse._SubParsersAction) -> None:
         action="store_true",
         help="Validate parameters and print execution manifest without invoking kernels"
     )
-    
+
     # -------------------------------------------------------------------------
     # Subcommand: list
     # -------------------------------------------------------------------------

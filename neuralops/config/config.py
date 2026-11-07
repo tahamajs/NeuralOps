@@ -13,6 +13,8 @@ Central configuration aggregator and re-export hub for all experiment, model, an
 
 from dataclasses import dataclass, field
 
+from typing import Any
+
 from neuralops.config.compression_config import CompressionConfig
 from neuralops.config.data_config import DataConfig
 from neuralops.config.experiment_config import DatasetConfig, ExperimentConfig
@@ -31,6 +33,39 @@ from neuralops.config.method_config import (
 from neuralops.config.model_config import ModelConfig
 from neuralops.config.sweep_config import SweepConfig
 from neuralops.config.training_config import TrainingConfig
+
+
+class DummyConfig:
+    """Canonical lightweight dummy configuration for testing and fallback initialization."""
+
+    def __init__(
+        self,
+        hidden_size: int = 64,
+        num_heads: int = 4,
+        num_attention_heads: int | None = None,
+        num_key_value_heads: int | None = None,
+        intermediate_size: int | None = None,
+        max_position_embeddings: int = 512,
+        vocab_size: int = 1000,
+        **kwargs: Any,
+    ) -> None:
+        self.hidden_size = int(hidden_size)
+        self.d_model = int(hidden_size)
+        self.dim = int(hidden_size)
+        heads = int(num_attention_heads if num_attention_heads is not None else num_heads)
+        self.num_attention_heads = heads
+        self.num_heads = heads
+        self.n_heads = heads
+        self.num_key_value_heads = int(num_key_value_heads if num_key_value_heads is not None else heads)
+        self.head_dim = max(1, self.hidden_size // max(1, heads))
+        self.intermediate_size = int(intermediate_size if intermediate_size is not None else self.hidden_size * 4)
+        self.max_position_embeddings = int(max_position_embeddings)
+        self.vocab_size = int(vocab_size)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def to_dict(self) -> dict[str, Any]:
+        return dict(self.__dict__)
 
 
 @dataclass
@@ -66,4 +101,5 @@ __all__ = [
     "CompressionConfig",
     "TrainingConfig",
     "Config",
+    "DummyConfig",
 ]

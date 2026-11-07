@@ -160,12 +160,12 @@ SVD Linear Attn & $\gamma \mathbf{I} + U \Sigma V^T$ & $0.6993$ & $260.6$ & \tex
 \toprule
 \textbf{Model} & \textbf{Precision} & $\|S_L - \hat{S}_L\|_F$ & $\kappa_{\text{eff}}(S)$ & \textbf{Gradient Norm} $\|\nabla\|$ \\
 \midrule
-\multirow{3}{*}{Chunk GLA} 
+\multirow{3}{*}{Chunk GLA}
  & FP32 & $5.06 \times 10^{-8}$ & $468.5$ & $41.8$ \\
  & FP16 & $4.67 \times 10^{-4}$ & $854.1$ & $67.3$ \\
  & BF16 & $3.11 \times 10^{-3}$ & $830.7$ & $56.5$ \\
 \midrule
-\multirow{3}{*}{Gated Delta Net} 
+\multirow{3}{*}{Gated Delta Net}
  & FP32 & $3.87 \times 10^{-8}$ & $930.6$ & $39.2$ \\
  & FP16 & $3.03 \times 10^{-4}$ & $931.7$ & $58.1$ \\
  & BF16 & $2.62 \times 10^{-3}$ & $909.2$ & $52.4$ \\
@@ -402,7 +402,7 @@ Assume input representations satisfy $\|\mathbf{x}\|_2 \le B_X$ almost surely, a
     \hat{\mathcal{R}}_n(\mathcal{H}_{\text{SVD}}) \le \frac{\sqrt{r D} B_W B_X}{\sqrt{n}}.
     \end{equation}
     In contrast, unconstrained dense attention satisfies $\hat{\mathcal{R}}_n(\mathcal{H}_{\text{dense}}) \le \frac{D B_W B_X}{\sqrt{n}}$.
-    
+
     \item \textbf{Generalization Gap Theorem:}
     With probability at least $1 - \delta$ over the draw of $n$ samples, the generalization gap of any SVD-compressed attention model satisfies:
     \begin{equation}

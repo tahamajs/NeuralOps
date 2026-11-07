@@ -1,15 +1,15 @@
 # معماری استانداردسازی ذخیره‌سازی بنچمارک‌ها، کانفیگ‌ها و CLI در NeuralOps
 
-**تاریخ تدوین:** ۴ نوامبر ۲۰۲۶  
-**مؤلف:** طه مجلسی (`tahamaj4@gmail.com`)  
-**مخزن:** `NeuralOps` (شاخه `main`)  
-**وضعیت:** طرح معماری و گزارش بررسی عمیق (Deep Architectural Audit & Specification)  
+**تاریخ تدوین:** ۴ نوامبر ۲۰۲۶
+**مؤلف:** طه مجلسی (`tahamaj4@gmail.com`)
+**مخزن:** `NeuralOps` (شاخه `main`)
+**وضعیت:** طرح معماری و گزارش بررسی عمیق (Deep Architectural Audit & Specification)
 
 ---
 
 ## ۱. پاسخ مستقیم به سوال: وضعیت ذخیره‌سازی داده‌ها در دیتابیس
 
-**بله، دقیقاً تمام اطلاعات بنچمارک‌ها و ران‌ها در دیتابیس ذخیره است.**  
+**بله، دقیقاً تمام اطلاعات بنچمارک‌ها و ران‌ها در دیتابیس ذخیره است.**
 در حال حاضر فایل مرجع اصلی دیتابیس در مسیر [`results/master_ledger.sqlite`](file:///Users/tahamajs/Documents/uni/Project/results/master_ledger.sqlite) قرار دارد و شامل جداول زیر با رکوردهای واقعی و تاییدشده است:
 
 1. **جدول `results` (شامل ۲,۶۳۵ ردیف رکورد بنچمارک):**
@@ -136,7 +136,7 @@ results/
 ## ۵. نقشه راه استانداردسازی CLI و یکپارچه‌سازی با کانفیگ‌ها
 
 ### مرحله ۱: حذف پوشه موازی `benchmarks/` بیرونی
-تمام لاجیک‌ها و فایل‌های بنچمارک در پکیج درونی [`neuralops/benchmarks/`](file:///Users/tahamajs/Documents/uni/Project/neuralops/benchmarks/) وجود دارند. فایل‌های موجود در دایرکتوری بیرونی `benchmarks/` فقط رپرهای لاغر بودند.  
+تمام لاجیک‌ها و فایل‌های بنچمارک در پکیج درونی [`neuralops/benchmarks/`](file:///Users/tahamajs/Documents/uni/Project/neuralops/benchmarks/) وجود دارند. فایل‌های موجود در دایرکتوری بیرونی `benchmarks/` فقط رپرهای لاغر بودند.
 - با حذف دایرکتوری بیرونی `benchmarks/`، ریشه پروژه تمیز شده و همه چیز از درون سورس پکیج و دستور CLI هدایت می‌شود.
 
 ### مرحله ۲: کانفیگ‌محور کردن بنچمارک‌ها از طریق `neuralops/config/`
@@ -217,7 +217,7 @@ neuralops benchmark run --benchmark qwen_wikitext_kd --modules cosformer,linear_
 
 ## ۲. حلقه مفقوده: چرا تاکنون این رهگیری به شکل ۱۰۰٪ با بنچمارک‌ها لینک نبوده است؟
 
-در وضعیت پیشین، اسکریپت‌های بنچمارک (مانند `run_qwen_wikitext_kd_ablation.py` یا بنچمارک‌های موجود در `benchmarks/`) تنها در **پایان کار** یک فایل خروجی CSV یا JSON تولید کرده و رکورد نهایی را به صورت استاتیک در SQLite می‌نوشتند.  
+در وضعیت پیشین، اسکریپت‌های بنچمارک (مانند `run_qwen_wikitext_kd_ablation.py` یا بنچمارک‌های موجود در `benchmarks/`) تنها در **پایان کار** یک فایل خروجی CSV یا JSON تولید کرده و رکورد نهایی را به صورت استاتیک در SQLite می‌نوشتند.
 **پیامد این موضوع:**
 - ترند استپ‌به‌استپ لاس (Loss Curve) در طول گام‌های تقطیر یا بنچمارک ضبط نمی‌شد.
 - اطلاعات تله‌متری فرکانسی سخت‌افزار (مانند نوسانات حافظه VRAM در هر استپ و دمای GPU) با هایپرپارامترها کپسوله نمی‌شد.
@@ -232,23 +232,23 @@ neuralops benchmark run --benchmark qwen_wikitext_kd --modules cosformer,linear_
 ```mermaid
 flowchart TD
     CLI["دستور CLI / فایل کانفیگ: neuralops benchmark run --config ..."] --> INIT["موتور راه‌اندازی بنچمارک"]
-    
+
     INIT --> DIR["ایجاد ساختار فولدربندی: results/benchmarks/<name>/runs/<run_id>/"]
-    
+
     DIR --> TRACKER["نمونه‌سازی ExperimentTracker(backend='local', log_dir=run_dir)"]
-    
+
     TRACKER --> PARAMS["tracker.log_params(config + hardware_info + git_sha)"]
-    
+
     subgraph Execution_Loop ["حلقه اجرای بنچمارک / تقطیر"]
         STEP1["ارزیابی Stage 0 (Zero-Shot)"] --> LOG1["tracker.log_metric('zero_shot_ppl', val, step=0)"]
         STEP2["گام‌های بهینه‌سازی Stage 1"] --> LOG2["tracker.log_metric('kd_loss', loss, step=s)"]
         STEP3["گام‌های بهینه‌سازی Stage 2"] --> LOG3["tracker.log_metric('polish_ppl', val, step=s)"]
     end
-    
+
     Execution_Loop --> ARTIFACTS["ذخیره آرتیفکت‌ها: tracker.log_artifact('model_diff.pt')"]
-    
+
     ARTIFACTS --> FINAL["tracker.finalize(summary_dict)"]
-    
+
     FINAL --> SQL["ثبت تراکنش تجمیعی در results/master_ledger.sqlite"]
     FINAL --> SUMMARY_CSV["به‌روزرسانی جدول summary.csv در پوشه بنچمارک"]
 ```
@@ -308,19 +308,19 @@ def execute_tracked_benchmark(config: dict, run_dir: str):
         project=config.get("project", "neuralops"),
         config_dict=config
     )
-    
+
     # لاگ کردن هایپرپارامترها و مشخصات سخت‌افزاری
     tracker.log_params(config["hyperparameters"])
     tracker.log_params(get_system_telemetry())
-    
+
     try:
         for step, batch in enumerate(dataset):
             loss = model_step(batch)
             tracker.log_metric("loss", loss, step=step)
-            
+
         final_ppl = evaluate_ppl()
         tracker.log_metric("final_ppl", final_ppl)
-        
+
         # نهایی‌سازی و کپسوله‌سازی تمام آرتیفکت‌ها
         tracker.finalize({"status": "SUCCESS", "final_ppl": final_ppl})
     except Exception as e:

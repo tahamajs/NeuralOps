@@ -6,73 +6,25 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Core Configuration Parser and Standard Configuration Objects.
+Deprecated core configuration module.
 
-Lightweight YAML configuration loader and canonical Config / DummyConfig
-containers for core execution settings, model definitions, and tests.
+DEPRECATION NOTICE:
+This module is deprecated in favor of `neuralops.config` and will be removed in version 2.2.0.
+Please update your imports:
+    from neuralops.config import Config, DummyConfig, load_config
 """
 
 from __future__ import annotations
 
-from typing import Any
+import warnings
 
-import yaml
+from neuralops.config.config import Config, DummyConfig
+from neuralops.config.loader import load_config
 
+warnings.warn(
+    "neuralops.core.config is deprecated. Use neuralops.config instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-class DummyConfig:
-    """Canonical lightweight dummy configuration for testing and fallback initialization."""
-
-    def __init__(
-        self,
-        hidden_size: int = 64,
-        num_heads: int = 4,
-        num_attention_heads: int | None = None,
-        num_key_value_heads: int | None = None,
-        intermediate_size: int | None = None,
-        max_position_embeddings: int = 512,
-        vocab_size: int = 1000,
-        **kwargs: Any,
-    ) -> None:
-        self.hidden_size = int(hidden_size)
-        self.d_model = int(hidden_size)
-        self.dim = int(hidden_size)
-        heads = int(num_attention_heads if num_attention_heads is not None else num_heads)
-        self.num_attention_heads = heads
-        self.num_heads = heads
-        self.n_heads = heads
-        self.num_key_value_heads = int(num_key_value_heads if num_key_value_heads is not None else heads)
-        self.head_dim = max(1, self.hidden_size // max(1, heads))
-        self.intermediate_size = int(intermediate_size if intermediate_size is not None else self.hidden_size * 4)
-        self.max_position_embeddings = int(max_position_embeddings)
-        self.vocab_size = int(vocab_size)
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    def to_dict(self) -> dict[str, Any]:
-        return dict(self.__dict__)
-
-
-class Config:
-    """Canonical root configuration container uniting subsystem configurations."""
-
-    def __init__(self, **kwargs: Any) -> None:
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    def to_dict(self) -> dict[str, Any]:
-        return dict(self.__dict__)
-
-
-def load_config(path: str) -> dict[str, Any]:
-    """Load config from disk or config."""
-    with open(path) as f:
-        return yaml.safe_load(f)
-
-
-def save_config(config: dict[str, Any], path: str) -> None:
-    """Persist config to disk."""
-    with open(path, "w") as f:
-        yaml.safe_dump(config, f)
-
-
-__all__ = ["load_config", "save_config", "Config", "DummyConfig"]
+__all__ = ["Config", "DummyConfig", "load_config"]

@@ -1,8 +1,8 @@
 # 🔬 NEURALOPS v1.3.7 — RIGOROUS FORENSIC BENCHMARK AUDIT & CLASSIFICATION REPORT
 
-**Evaluation Target**: NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace, SM 8.9, 8GB VRAM)  
-**Execution Environment**: Python 3.10 / 3.14 + PyTorch 2.x CUDA 12.8  
-**Audit Scope**: All Native CUDA C++ Modules in `neuralops/core/cuda_kernels/`  
+**Evaluation Target**: NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace, SM 8.9, 8GB VRAM)
+**Execution Environment**: Python 3.10 / 3.14 + PyTorch 2.x CUDA 12.8
+**Audit Scope**: All Native CUDA C++ Modules in `neuralops/core/cuda_kernels/`
 **Classification Protocol**: Strict Multi-Metric Forensic Audit (No Silent Pass, No Fallback Masking)
 
 ---

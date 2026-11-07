@@ -1,14 +1,14 @@
 # Forensic Engineering & Empirical Benchmark Report: Multi-Stage Knowledge Distillation & Attention Surgery on Qwen2.5 & SST-2
 
-**Author / Lead Research Engineer:** Taha Majlesi (`tahamaj4@gmail.com`)  
-**Project:** NeuralOps Autoregressive Acceleration & Attention Surgery Subsystem  
-**Branch:** `feature/serving-frameworks-modernization` (Commit: `4df7da12fd`)  
-**Host Cluster:** Sharif University of Technology HPC Cluster (Torque PBS / Rocks 6.1)  
-**Nodes Engaged:** `login-3` (Headnode) $\rightarrow$ `GPU-3090-1` (Compute Node)  
-**Target Hardware:** NVIDIA GeForce RTX 3090 (24,268 MiB GDDR6X, Compute Capability SM 8.6, GA102 Silicon)  
-**Host Driver & CUDA Environment:** NVIDIA UNIX x86_64 Kernel Driver `465.19.01`, CUDA `11.3`, PyTorch `1.12.1+cu113`, cuDNN `8.2.0`  
-**Certification Date:** November 4, 2026  
-**Primary Master Ledgers:** `results/master_ledger.sqlite`, `results/qwen_wikitext_kd_ablation.csv`, `results/layerwise_kd_ablation.csv`  
+**Author / Lead Research Engineer:** Taha Majlesi (`tahamaj4@gmail.com`)
+**Project:** NeuralOps Autoregressive Acceleration & Attention Surgery Subsystem
+**Branch:** `feature/serving-frameworks-modernization` (Commit: `4df7da12fd`)
+**Host Cluster:** Sharif University of Technology HPC Cluster (Torque PBS / Rocks 6.1)
+**Nodes Engaged:** `login-3` (Headnode) $\rightarrow$ `GPU-3090-1` (Compute Node)
+**Target Hardware:** NVIDIA GeForce RTX 3090 (24,268 MiB GDDR6X, Compute Capability SM 8.6, GA102 Silicon)
+**Host Driver & CUDA Environment:** NVIDIA UNIX x86_64 Kernel Driver `465.19.01`, CUDA `11.3`, PyTorch `1.12.1+cu113`, cuDNN `8.2.0`
+**Certification Date:** November 4, 2026
+**Primary Master Ledgers:** `results/master_ledger.sqlite`, `results/qwen_wikitext_kd_ablation.csv`, `results/layerwise_kd_ablation.csv`
 
 ---
 
@@ -109,7 +109,7 @@ The computational environment is hosted on the Sharif University of Technology H
 ```
 
 #### Firewall Impact on Scientific Workflow:
-Because outbound HTTP/HTTPS connections are blocked, any attempt to invoke `pip install`, `huggingface-cli download`, or `datasets.load_dataset` fails immediately with `ConnectTimeoutError`. 
+Because outbound HTTP/HTTPS connections are blocked, any attempt to invoke `pip install`, `huggingface-cli download`, or `datasets.load_dataset` fails immediately with `ConnectTimeoutError`.
 - **Resolution**: All dependencies, model weights (`Qwen2.5-0.5B` SafeTensors), and dataset archives (`wikitext-2-raw-v1` Arrow streams) were staged on the local development machine and transferred via secure shell chunked synchronization (`rsync -avz`) across the multi-hop SSH bridge.
 
 ---
@@ -519,7 +519,7 @@ In Stage 2, attention projections and normalization layers were co-optimized for
 The following canonical records represent the complete historical ledger of Qwen2.5 WikiText-2 ablation runs extracted directly from `results/master_ledger.sqlite`:
 
 ```sql
-SELECT id, timestamp, module, teacher_baseline_ppl, zero_shot_ppl, isolated_ppl, polished_ppl, ppl_delta, total_time_s, status 
+SELECT id, timestamp, module, teacher_baseline_ppl, zero_shot_ppl, isolated_ppl, polished_ppl, ppl_delta, total_time_s, status
 FROM qwen_wikitext_kd_ablation ORDER BY id ASC;
 ```
 
@@ -713,8 +713,8 @@ This forensic engineering report certifies that:
 3. All memory overflow (OOM) and numerical instability (`Loss=nan`) blockers were definitively resolved via chunked FP32 loss computation and component-selective training.
 4. All metrics are permanently persisted in the master SQLite ledger (`results/master_ledger.sqlite`) with full Git provenance.
 
-**Certification Status:** `VERIFIED & PRODUCTION CERTIFIED`  
-**Engineer Signature:** Taha Majlesi (`tahamaj4@gmail.com`)  
+**Certification Status:** `VERIFIED & PRODUCTION CERTIFIED`
+**Engineer Signature:** Taha Majlesi (`tahamaj4@gmail.com`)
 **Audit Hash:** `4df7da12fd893778_QWEN_WIKITEXT2_KD_20261104`
 
 ---
@@ -777,7 +777,7 @@ The following unedited terminal log records verify physical GPU execution on `GP
 2026-11-04 16:13:36,275 [INFO] === Launching Qwen Causal LM KD on: NVIDIA GeForce RTX 3090 ===
 2026-11-04 16:13:49,329 [INFO] Loading Standalone Qwen Teacher from /home/tahamajlesi.ut/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots/060db6499f32faf8b98477b0a26969ef7d8b9987 in float16...
 2026-11-04 16:13:59,497 [INFO] Verified Teacher Baseline PPL on WikiText-2: 16.06
-2026-11-04 16:13:59,507 [INFO] 
+2026-11-04 16:13:59,507 [INFO]
 ================================================================================
 [QWEN SURGERY] Testing Attention Module: cosformer
 ================================================================================

@@ -1,7 +1,7 @@
 # HNC-SVD Architectural Status & Dispatch Decision
 
-**Date**: October 16, 2026  
-**Status**: Decided & Integrated into Dispatch Pipeline  
+**Date**: October 16, 2026
+**Status**: Decided & Integrated into Dispatch Pipeline
 **Authority**: Principal Systems Architect, Compression Lead
 
 ---

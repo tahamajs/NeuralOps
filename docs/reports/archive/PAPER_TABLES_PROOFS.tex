@@ -112,12 +112,12 @@ SVD Linear Attn & $\gamma \mathbf{I} + U \Sigma V^T$ & $0.6993$ & $260.6$ & \tex
 \toprule
 \textbf{Model} & \textbf{Precision} & $\|S_L - \hat{S}_L\|_F$ & $\kappa_{\text{eff}}(S)$ & \textbf{Gradient Norm} $\|\nabla\|$ \\
 \midrule
-\multirow{3}{*}{Chunk GLA} 
+\multirow{3}{*}{Chunk GLA}
  & FP32 & $5.06 \times 10^{-8}$ & $468.5$ & $41.8$ \\
  & FP16 & $4.67 \times 10^{-4}$ & $854.1$ & $67.3$ \\
  & BF16 & $3.11 \times 10^{-3}$ & $830.7$ & $56.5$ \\
 \midrule
-\multirow{3}{*}{Gated Delta Net} 
+\multirow{3}{*}{Gated Delta Net}
  & FP32 & $3.87 \times 10^{-8}$ & $930.6$ & $39.2$ \\
  & FP16 & $3.03 \times 10^{-4}$ & $931.7$ & $58.1$ \\
  & BF16 & $2.62 \times 10^{-3}$ & $909.2$ & $52.4$ \\
@@ -190,7 +190,7 @@ For FP32 ($\epsilon_{	ext{mach}} pprox 1.19 	imes 10^{-7}$):
 In the analytical backward pass, the gradient error satisfies:
 egin{equation}
 \|
-abla_\mathbf{X} \mathcal{L}_{	ext{triton}} - 
+abla_\mathbf{X} \mathcal{L}_{	ext{triton}} -
 abla_\mathbf{X} \mathcal{L}_{	ext{cuda}}\|_F \le \mathcal{O}(K \epsilon_{	ext{mach}}) \|
 abla_\mathbf{Y} \mathcal{L}\|_F \|\mathbf{X}\|_F.
 \end{equation}
@@ -204,7 +204,7 @@ Zero-divergence forward and backward numerical equivalence between Triton and CU
 \label{tab:triton_cuda_parity}
 egin{tabular}{lccc}
 	oprule
-	extbf{Kernel Family} & 	extbf{Max Forward Diff} $\|\Delta \mathbf{Y}\|_\infty$ & 	extbf{Max Backward Diff} $\|\Delta 
+	extbf{Kernel Family} & 	extbf{Max Forward Diff} $\|\Delta \mathbf{Y}\|_\infty$ & 	extbf{Max Backward Diff} $\|\Delta
 abla\|_\infty$ & 	extbf{Parity Status} \
 \midrule
 Chunk GLA Scan & $4.76 	imes 10^{-7}$ & $8.92 	imes 10^{-7}$ & 	extbf{EXACT PARITY} \
@@ -241,10 +241,10 @@ S_t = \gamma S_{t-1} + (k_t V_r) (v_t U_r)^T, \quad o_t = (q_t V_r) S_t (U_r)^T.
     \end{equation}
     Since $r \ll D \ll L$ for long sequences ($L \ge 2048$), the theoretical computational speedup is:
     egin{equation}
-    	ext{Speedup} = rac{\mathcal{C}_{	ext{Flash2}}^{	ext{train}}}{\mathcal{C}_{	ext{SVD}}^{	ext{train}}} = rac{4 B H L^2 D}{4 B H L D r + 2 B H L r^2} pprox rac{L}{r} = \mathcal{O}\left( rac{L}{r} 
+    	ext{Speedup} = rac{\mathcal{C}_{	ext{Flash2}}^{	ext{train}}}{\mathcal{C}_{	ext{SVD}}^{	ext{train}}} = rac{4 B H L^2 D}{4 B H L D r + 2 B H L r^2} pprox rac{L}{r} = \mathcal{O}\left( rac{L}{r}
 ight).
     \end{equation}
-    
+
     \item 	extbf{Autoregressive Generation Working Memory:} During inference at step $t$, FlashAttention-2 must retain all past key-value states in a dynamic KV-cache of size:
     egin{equation}
     \mathcal{M}_{	ext{Flash2}}^{	ext{infer}}(t) = 2 B H t D \quad 	ext{elements} = \mathcal{O}(B H L D).

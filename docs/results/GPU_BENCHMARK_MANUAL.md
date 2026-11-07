@@ -1,8 +1,8 @@
 # 🚀 NeuralOps v1.4.0 GPU Hardware Benchmark Execution & Verification Manual
 
-**Target Platform:** Remote Dedicated GPU Server `taha@192.168.1.100`  
-**GPU Architecture:** NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace, SM 8.9, 8,192 MB GDDR6)  
-**Host Paths:** `/mnt/d/SVD_Project` and `/mnt/d/SVD_linear_Attention`  
+**Target Platform:** Remote Dedicated GPU Server `taha@192.168.1.100`
+**GPU Architecture:** NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace, SM 8.9, 8,192 MB GDDR6)
+**Host Paths:** `/mnt/d/SVD_Project` and `/mnt/d/SVD_linear_Attention`
 **Python Runtime:** `/mnt/d/venv/bin/python3` (PyTorch 2.11.0+cu128, CUDA 12.8, Triton 3.2.x)
 
 ---

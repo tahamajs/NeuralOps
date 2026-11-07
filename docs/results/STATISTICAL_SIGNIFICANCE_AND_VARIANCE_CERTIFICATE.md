@@ -1,8 +1,8 @@
 # Statistical Significance and Variance Certificate
 
-**Certificate ID**: `CERT-MULTISEED-STAT-SIG-20261018`  
-**Evaluation Role**: `Subagent-7-MultiSeed-Statistical-Certifier`  
-**Target Infrastructure**: NVIDIA GeForce RTX 4070 (AD106M, SM 8.9, 8188 MiB VRAM), CUDA 13.2 / PyTorch 2.6.0  
+**Certificate ID**: `CERT-MULTISEED-STAT-SIG-20261018`
+**Evaluation Role**: `Subagent-7-MultiSeed-Statistical-Certifier`
+**Target Infrastructure**: NVIDIA GeForce RTX 4070 (AD106M, SM 8.9, 8188 MiB VRAM), CUDA 13.2 / PyTorch 2.6.0
 **Status**: **CERTIFIED & VERIFIED RIGOROUS**
 
 ---

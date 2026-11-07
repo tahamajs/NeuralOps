@@ -1,9 +1,9 @@
 # 🧪 RoBERTa-Base Downstream GLUE SST-2 Compression Benchmark
 
-**Hardware**: NVIDIA GeForce RTX 4070 Laptop GPU 8GB (Ada Lovelace, SM 8.9)  
-**Model**: `textattack/roberta-base-SST-2` (125M parameters)  
-**Task**: GLUE SST-2 Sentiment Classification (Full Validation Set, $N = 872$)  
-**Baseline RoBERTa Accuracy**: **94.04%** | Baseline Latency: **31.10 ms/batch**  
+**Hardware**: NVIDIA GeForce RTX 4070 Laptop GPU 8GB (Ada Lovelace, SM 8.9)
+**Model**: `textattack/roberta-base-SST-2` (125M parameters)
+**Task**: GLUE SST-2 Sentiment Classification (Full Validation Set, $N = 872$)
+**Baseline RoBERTa Accuracy**: **94.04%** | Baseline Latency: **31.10 ms/batch**
 
 ---
 

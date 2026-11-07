@@ -6,29 +6,22 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Configuration Utilities
-
-Handles loading, validation, and serialization of experiment configurations.
+Configuration Utilities (Delegating wrapper around neuralops.config.loader).
 """
+
+from __future__ import annotations
 
 import json
 from pathlib import Path
 from typing import Any
 
+from neuralops.config.loader import load_config as _canonical_load_config
 import yaml
 
 
-def load_config(config_path: str) -> dict[str, Any]:
-    """Load config from disk or config."""
-    path = Path(config_path)
-    if not path.exists():
-        raise FileNotFoundError(f"Config file not found: {path}")
-    if path.suffix in (".yaml", ".yml"):
-        with open(path) as f:
-            return yaml.safe_load(f)
-    else:
-        with open(path) as f:
-            return json.load(f)
+def load_config(config_path: str | Path | None = None, **kwargs: Any) -> Any:
+    """Delegate configuration loading to canonical neuralops.config.loader.load_config."""
+    return _canonical_load_config(yaml_path=config_path, **kwargs)
 
 
 def save_config(config: dict[str, Any], config_path: str) -> None:
@@ -57,3 +50,6 @@ def merge_configs(base: dict[str, Any], override: dict[str, Any]) -> dict[str, A
     """Merge configs."""
     result = base.copy()
     return update_config(result, override)
+
+
+__all__ = ["load_config", "save_config", "update_config", "merge_configs"]

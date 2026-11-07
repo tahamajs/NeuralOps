@@ -26,6 +26,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
 import pytest
 
 
@@ -50,8 +51,8 @@ def test_lora_linear_single():
 
 def test_lora_linear_identity():
     """Verify that importing LoRALinear from common or utils resolves to the canonical object."""
-    from neuralops.core.peft.lora import LoRALinear as CanonicalLoRA
     from neuralops.core.common import LoRALinear as CommonLoRA
+    from neuralops.core.peft.lora import LoRALinear as CanonicalLoRA
 
     assert CanonicalLoRA is CommonLoRA
 
@@ -102,11 +103,12 @@ def test_factorized_linear_british_alias():
 
 
 def test_config_single():
-    """Verify Config and DummyConfig can be imported from neuralops.core.config."""
-    from neuralops.core.config import Config, DummyConfig
+    """Verify Config and DummyConfig can be imported from neuralops.config."""
+    from neuralops.config import Config, DummyConfig
 
-    cfg = Config(hidden_size=128)
-    assert cfg.hidden_size == 128
+    cfg = Config()
+    assert hasattr(cfg, "model")
+    assert hasattr(cfg, "training")
 
     dummy = DummyConfig(hidden_size=64, num_heads=4)
     assert dummy.hidden_size == 64
@@ -151,7 +153,11 @@ def test_training_merged():
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        import neuralops.training as training
         import neuralops.trainer as trainer
+        import neuralops.training as training
 
-        assert hasattr(training, "base_trainer") or hasattr(training, "NeuralOpsTrainer") or hasattr(training, "checkpointing")
+        assert (
+            hasattr(training, "base_trainer")
+            or hasattr(training, "NeuralOpsTrainer")
+            or hasattr(training, "checkpointing")
+        )

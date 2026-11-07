@@ -11,6 +11,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Config System Consolidation & Deprecation of Duplicate Core Config (F-40):**
+  - Consolidated configuration loading on the typed `neuralops.config` package (`neuralops/config/loader.py` and `neuralops/config/config.py`).
+  - Added `DummyConfig` to `neuralops.config.config` and re-exported it in `neuralops.config` as the canonical lightweight dummy configuration for testing and fallback initialization.
+  - Converted `neuralops/core/config.py` into a deprecated re-export shim emitting a `DeprecationWarning` pointing to `neuralops.config`, scheduled for final removal in NeuralOps 2.2.0. Completely eliminated the untyped `Config.__getattr__ -> None` trap so that missing configuration attributes raise `AttributeError`.
+  - Re-pointed all core config imports across the codebase and tests to `neuralops.config`.
+  - Made `neuralops/utils/config.py:load_config` delegate directly to `neuralops.config.loader.load_config`.
+  - Added test suite `tests/test_config_single_source.py` verifying `AttributeError` on missing attributes, delegation of secondary loaders, and proper shim deprecation warnings.
+- **Honest Hardware Kernel Catalog & JIT-Only Build Model Documentation (F-38, F-39):**
+  - Updated `neuralops/kernels/extended_kernels.py`: corrected docstring to honestly state "2 Triton kernels + 18 PyTorch references" instead of claiming three-level fallback for all 20 operations. Added an explicit implementation breakdown table detailing the exact Level 2 Triton vs Level 3 PyTorch reality for each operator, noting that none currently provide Level 1 CUDA C++ implementations.
+  - Added header TODO comment in `extended_kernels.py` recording the F-38 follow-up to implement Triton JIT and CUDA C++ kernels for the 18 PyTorch-only operations.
+  - Documented JIT-only build model in `README.md` and `pyproject.cuda.toml`: clarified that on Linux with NVIDIA GPUs, operators compile dynamically via PyTorch `load_inline` into `~/.cache/torch_extensions/`, and no precompiled binary extensions are distributed on PyPI.
+  - Clarified macOS execution reality: macOS runs strictly in Level-3 PyTorch fallback mode since Triton is not installed on macOS (`sys_platform == 'linux'`) and NVIDIA CUDA hardware is absent.
+  - Recorded architectural decisions: prebuilt Linux wheels via `cibuildwheel` are deferred pending dedicated multi-ABI GPU CI infrastructure; `*aarch64*` skip in `cibuildwheel` remains active pending physical ARM64 runner verification.
+  - Added `test_extended_kernels_jit_count_matches_docstring` to `tests/test_cuda_catalog.py`, asserting that the counted `@triton.jit` decorators match the docstring.
+- **CUDA JIT Isolation, Dispatch Fallback Routing & Lazy Kernels Facade (F-35, F-36, F-37):**
+  - Removed global monkey-patching of `torch.utils.cpp_extension.load_inline` and `load` in `neuralops/ops/cuda/_bindings.py`; provided local compilation wrappers without process-wide side effects.
+  - Eliminated hardcoded Sharif HPC paths (`/share/apps/gcc/...`) and `~/bin` environment prepends from `_bindings.py`. Corrected `get_cuda_arch_flags()` to return `[]` when CUDA is unavailable rather than misleading `["-arch=sm_70"]`.
+  - Updated `available_backends()` in `neuralops/core/backend/dispatch.py` to query genuine `HAS_TRITON` state. Routed unknown dispatch operations through `neuralops.ops.cuda._fallback.dispatch` raising `KernelNotAvailableError` upon exhaustion instead of raw `NotImplementedError`.
+  - Re-architected `neuralops/kernels/__init__.py` and `neuralops/kernels/cuda/__init__.py` as lazy PEP 562 facades over `CUDA_KERNEL_CATALOG`, eliminating eager loading of 110+ CUDA operator modules on import.
+- **PyTorch Reference Facade, Honest HAS_TRITON & Mock Triton Safety (F-31, F-32, F-33, F-34):**
+  - Turned `neuralops/ops/pytorch/__init__.py` into a lazy facade mapping and re-exporting 79 canonical PyTorch reference implementations directly from `ops/cuda/<module>/*_autograd.py` with zero code duplication.
+  - Updated `_import_structure` in `neuralops/ops/__init__.py` so that `"pytorch"` is fully mapped and accessible from top-level `ops`.
+  - Replaced hardcoded `HAS_TRITON = True` in `neuralops/core/triton_kernels/__init__.py` with honest dynamic import from `neuralops.ops.triton._base`, properly evaluating to `False` on environments without Triton (such as macOS).
+  - Purged all `= None` kernel assignments in `neuralops/ops/triton/__init__.py` and `flash_decoding.py`. Configured PEP 562 `__getattr__` to fail closed and raise actionable `ImportError` on uninstalled Triton kernels instead of silently returning `None`.
+  - Hardened the fallback mock in `neuralops/ops/triton/_base.py`: mock `@triton.jit` decorated kernels and `tl.*` language operations now raise `ImportError` when executed, preventing silent corruption.
+- **BaseAttention Contract Alignment & Registry Loading Hardening (F-23, F-24):**
+  - Updated `MambaBlock` in `neuralops/layers/ssm/mamba_block.py` to subclass `BaseAttention`, ensuring compliance with the universal attention base contract (`issubclass(MambaBlock, BaseAttention) == True`).
+  - Hardened registry loading in `neuralops/core/registry.py`: converted all import error handling in `_load_all()` from warning to `logger.error(...)` and recorded failed imports into a module-level `LOAD_ERRORS` list exposed via `load_errors()`.
+  - Added error recording to `neuralops/layers/__init__.__dir__()` to prevent silent suppression of subpackage import failures.
+  - Added `test_all_registered_attentions_subclass_base_attention_or_exempt` and `test_registry_load_has_no_errors` in `tests/test_registry_counts.py`, proving zero loading errors across all 116 attention modules and 82 compressors.
+  - Verified gate sensitivity via mutation probe in `neuralops/layers/ssm/simple_ssm.py`, confirming immediate test failure on import breakdown.
+- **Registry Gate Integrity & Vacuous Test Prevention (F-22):**
+  - Created hardcoded catalog `tests/data/expected_registry_names.json` listing the canonical 116 attention mechanisms and 82 compressor algorithms.
+  - Added strict set-equality gate `test_registry_names_match_expected` in `tests/test_registry_counts.py`, guaranteeing that registry omissions or shortfalls immediately fail the test suite rather than passing vacuously.
+  - Eliminated the `len(names) < 131` fallback in `tests/test_exhaustive_131_attentions_matrix.py` and `tests/gpu_exhaustive/test_all_131_attentions.py`.
+  - Replaced all 7 `except NotImplementedError: pass` blocks in `tests/test_exhaustive_131_attentions_matrix.py` with `pytest.fail(...)`, ensuring unimplemented modules fail the suite explicitly instead of silently passing.
+  - Proved gate efficacy via mutation test (popping `"adaptive_span_attention"` produced immediate `AssertionError` with unexpected extra keys; restoring restored 100% pass).
 - **Package Hygiene, Subpackage Resolution & Import Hardening (F-10, F-11, F-12):**
   - Dynamically resolved `_SUBPACKAGES` from filesystem directories containing `__init__.py` under `neuralops/`, removing phantom names (`validator`, `experiment_logging`, `tests`).
   - Isolated legacy package redirects (`attentions`, `compression_engine`, `training`) into dedicated `_COMPAT_SUBPACKAGES` mapping.

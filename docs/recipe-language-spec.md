@@ -1,10 +1,10 @@
 # NeuralOps Recipe Language Specification v1.0.0
 
-Status: NORMATIVE SPECIFICATION  
-Version: 1.0.0  
-API Version: `neuralops/v1`  
-Date: 2026-10-31  
-Authors: NeuralOps Core Architecture Team  
+Status: NORMATIVE SPECIFICATION
+Version: 1.0.0
+API Version: `neuralops/v1`
+Date: 2026-10-31
+Authors: NeuralOps Core Architecture Team
 
 ---
 
@@ -16,7 +16,7 @@ The language is governed by four immutable design axioms:
 
 ### A1 — Declarative
 
-**The recipe specifies WHAT transformations are to be applied, never HOW they are computed.**  
+**The recipe specifies WHAT transformations are to be applied, never HOW they are computed.**
 A recipe file is purely data. It contains no imperative control flow (`if`, `when`, `switch`), no iterative loops (`for`, `while`), no variable assignments (`let`, `set`), no computational expressions, and no custom function invocations. If an operator requires different transformation policies depending on model architecture or hardware capacity, multiple discrete recipes must be authored, validated, and selected at the workflow orchestration layer.
 
 *Rationale:* Declarative representations decouple transformation intent from execution engines. A recipe can be inspected, planned, statically analyzed for shape and rank invariants, and validated before touching memory or allocating GPU devices. Imperative logic embedded in transformation files creates opaque side effects, non-reproducible dynamic branches, and unpredictable mutation states.
@@ -33,7 +33,7 @@ operations:
 
 ### A2 — Typed and Versioned
 
-**Every operation, type transition, and recipe schema is explicitly typed and pinned to a semantic version.**  
+**Every operation, type transition, and recipe schema is explicitly typed and pinned to a semantic version.**
 Each operation contract specifies strict input and output state types (e.g., `NeuralOpsModel[loaded]` $\rightarrow$ `NeuralOpsModel[attention_replaced]`). All operation references in recipes must pin a semantic version (`major.minor.patch`). The language specification itself is versioned under `apiVersion: neuralops/v1` and guarantees backward compatibility for all minor and patch iterations.
 
 *Rationale:* Silent runtime behavior drift across library releases is the primary cause of regression in post-training optimization. Pinned operational contracts guarantee that an operation executed six months later evaluates against identical parameter schemas, numerical invariants, and validation gates.
@@ -49,7 +49,7 @@ operations:
 
 ### A3 — Composable with Explicit Dependencies
 
-**Operations form a strictly ordered linear transformation chain with declarative dependency tracking.**  
+**Operations form a strictly ordered linear transformation chain with declarative dependency tracking.**
 Operations execute in sequential pipeline order ($O_1 \rightarrow O_2 \rightarrow \dots \rightarrow O_n$). The `depends_on` field establishes an explicit declaration of semantic dependency and postcondition consumption, not an automated reordering mechanism. Forward references, circular dependencies, and out-of-order state mutations are statically illegal.
 
 *Rationale:* Linear transformation chains enable deterministic state snapshots and clean backward rollback paths. Allowing arbitrary graph dependencies or auto-reordering introduces combinatorial validation states and makes transactional failure recovery non-deterministic.
@@ -67,7 +67,7 @@ operations:
 
 ### A4 — Reproducible with Evidence
 
-**A recipe transformation is only certified when accompanied by structured, cryptographic execution evidence.**  
+**A recipe transformation is only certified when accompanied by structured, cryptographic execution evidence.**
 The static recipe hash (`recipe_hash` computed over canonicalized bytes) is necessary but insufficient for scientific reproducibility. A complete execution evidence record binds the static recipe hash to the base model git commit SHA, exact framework versions (`torch`, `transformers`, `neuralops`), hardware device metadata, pseudorandom generator seed, per-stage latency/memory telemetry, and validation gate certificates.
 
 *Rationale:* Model surgery modifies billions of numerical parameters. Without verifiable cryptographic evidence binding the inputs, environment, and intermediate verification gates, downstream deployment teams cannot verify whether a deployed checkpoint matches its designated transformation lineage.
@@ -86,9 +86,9 @@ execution:
 
 ## Section 2 — Lexical Structure
 
-1. **Surface and Canonical Encodings:**  
+1. **Surface and Canonical Encodings:**
    The surface representation of a Recipe is valid YAML (1.2). The canonical wire and storage representation is valid JSON (RFC 8259). Both encodings parse into an identical abstract syntax tree (AST).
-2. **Value Primitives:**  
+2. **Value Primitives:**
    The language admits exactly seven primitive types:
    - `string`: UTF-8 encoded text, normalized to Unicode Normalization Form C (NFC) prior to canonicalization.
    - `integer`: 64-bit signed decimal integer (`-9223372036854775808` to `9223372036854775807`).
@@ -97,16 +97,16 @@ execution:
    - `null`: Explicit null value (`null` or `~` in YAML, `null` in JSON).
    - `array`: Ordered sequence of zero or more values.
    - `object`: Unordered mapping of unique string keys to values.
-3. **Identifiers:**  
-   All object keys, identifiers, and recipe names must match the DNS-style identifier regular expression:  
-   `^[a-z0-9][a-z0-9-]{0,62}$`  
+3. **Identifiers:**
+   All object keys, identifiers, and recipe names must match the DNS-style identifier regular expression:
+   `^[a-z0-9][a-z0-9-]{0,62}$`
    Keys must begin with an alphanumeric ASCII character, followed by up to 62 lowercase alphanumeric characters or hyphens.
-4. **Operation Type Namespacing:**  
-   Operation types must conform to dot-delimited hierarchical namespaces:  
+4. **Operation Type Namespacing:**
+   Operation types must conform to dot-delimited hierarchical namespaces:
    `^[a-z]+(\.[a-z0-9_-]+)+$` (e.g., `attention.replace`, `weights.compress`, `export.model`).
-5. **Version Strings:**  
+5. **Version Strings:**
    All version fields must strictly adhere to Semantic Versioning 2.0.0 (`MAJOR.MINOR.PATCH` with optional `-PRERELEASE` and `+BUILD` metadata). Floating ranges (`^1.0.0`, `~1.2`) are rejected.
-6. **Comments:**  
+6. **Comments:**
    YAML comments (`# ...`) are permitted in surface syntax for human documentation, but are stripped during AST construction and do not survive canonicalization or hashing.
 
 ---
@@ -204,7 +204,7 @@ The NRL type system is a static refinement type system over deep learning models
 
 ### 4.1 Domain Types
 
-1. **`NeuralOpsModel[state]`**  
+1. **`NeuralOpsModel[state]`**
    Represents an in-memory PyTorch neural network module parameterized by its lifecycle transformation state:
    - `state = loaded`: Model loaded directly from base weights; untouched.
    - `state = attention_replaced`: Quadratic multi-head or grouped-query attention modules transplanted with subquadratic linear/recurrent operators.
@@ -214,7 +214,7 @@ The NRL type system is a static refinement type system over deep learning models
    - `state = adapted`: Post-surgery adapters attached (LoRA) or knowledge-distillation fine-tuning applied.
    - `state = *`: Universal wild-card state matching any lifecycle state.
 
-2. **`ServingArtifact[engine]`**  
+2. **`ServingArtifact[engine]`**
    Represents a serialized runtime package prepared for production serving engines:
    - `engine ∈ {hf, safetensors, vllm, sglang, tensorrt_llm, tgi, onnx, gguf}`
 
@@ -240,10 +240,10 @@ The NRL type system is a static refinement type system over deep learning models
 
 ### 4.3 Static Verification Capabilities and Preconditions
 
-The type system catches structural order violations at compile time before weights or memory are allocated.  
-- **Why `export.model` $\rightarrow$ `weights.compress` is caught:**  
+The type system catches structural order violations at compile time before weights or memory are allocated.
+- **Why `export.model` $\rightarrow$ `weights.compress` is caught:**
   `export.model` emits `ServingArtifact[engine]`, which does not satisfy the input constraint `NeuralOpsModel[*]` required by `weights.compress`. The type checker raises `E_COMP_TYPE_MISMATCH`.
-- **Why `weights.compress` $\rightarrow$ `attention.replace` requires preconditions:**  
+- **Why `weights.compress` $\rightarrow$ `attention.replace` requires preconditions:**
   Both operations consume and produce `NeuralOpsModel`. However, replacing an attention layer after compressing weight projections invalidates the low-rank projection factorizations ($U, S, V$). This semantic conflict is caught by static precondition checking (`preconditions: [model.attention_intact == true]`), producing `E_COMP_PRECONDITION_UNSATISFIED`.
 
 ---
@@ -605,50 +605,50 @@ Every operation contract exposes the following immutable interface properties:
 
 A recipe document must satisfy all fifteen static well-formedness rules:
 
-- **W1 — Root Schema Conformance:** The document must match top-level fields: `apiVersion`, `kind`, `metadata`, `model`, `operations`.  
-  *Error:* `E_SCHEMA_MISSING_FIELD`  
+- **W1 — Root Schema Conformance:** The document must match top-level fields: `apiVersion`, `kind`, `metadata`, `model`, `operations`.
+  *Error:* `E_SCHEMA_MISSING_FIELD`
   *Violation:* `kind: "Recipe"` omitted.
-- **W2 — SemVer Validity:** Version strings in `metadata.version` and `operations[i].version` must parse as valid SemVer 2.0.0.  
-  *Error:* `E_SCHEMA_INVALID_SEMVER`  
+- **W2 — SemVer Validity:** Version strings in `metadata.version` and `operations[i].version` must parse as valid SemVer 2.0.0.
+  *Error:* `E_SCHEMA_INVALID_SEMVER`
   *Violation:* `version: "v1.2"`.
-- **W3 — Operation Registry Membership:** Every operation `type` must exist in the active operation registry.  
-  *Error:* `E_REGISTRY_UNKNOWN_OP`  
+- **W3 — Operation Registry Membership:** Every operation `type` must exist in the active operation registry.
+  *Error:* `E_REGISTRY_UNKNOWN_OP`
   *Violation:* `type: "quantum.teleport"`.
-- **W4 — Operation Version Compatibility:** The pinned version in `operations[i].version` must exist in the registry for that operation name.  
-  *Error:* `E_REGISTRY_UNKNOWN_VERSION`  
+- **W4 — Operation Version Compatibility:** The pinned version in `operations[i].version` must exist in the registry for that operation name.
+  *Error:* `E_REGISTRY_UNKNOWN_VERSION`
   *Violation:* `type: "attention.replace", version: "99.0.0"`.
-- **W5 — Strict Parameter Schema Conformance:** The `config` object must validate against the operation's JSON Schema with `additionalProperties: false`.  
-  *Error:* `E_SCHEMA_UNKNOWN_FIELD`  
+- **W5 — Strict Parameter Schema Conformance:** The `config` object must validate against the operation's JSON Schema with `additionalProperties: false`.
+  *Error:* `E_SCHEMA_UNKNOWN_FIELD`
   *Violation:* `config: { target: "chunk_gla", bogus_option: 42 }`.
-- **W6 — Fail-Closed Schema Validation:** Unknown fields at any level of the recipe document trigger immediate rejection.  
-  *Error:* `E_SCHEMA_UNKNOWN_FIELD`  
+- **W6 — Fail-Closed Schema Validation:** Unknown fields at any level of the recipe document trigger immediate rejection.
+  *Error:* `E_SCHEMA_UNKNOWN_FIELD`
   *Violation:* `metadata: { name: "test", experimental_flag: true }`.
-- **W7 — Unique Operation Identifiers:** Every explicit operation `id` must be unique across the recipe.  
-  *Error:* `E_COMP_DUPLICATE_ID`  
+- **W7 — Unique Operation Identifiers:** Every explicit operation `id` must be unique across the recipe.
+  *Error:* `E_COMP_DUPLICATE_ID`
   *Violation:* Two operations sharing `id: "step-1"`.
-- **W8 — Declared Dependency Resolution:** Every element in `depends_on` must reference a valid preceding operation `id`.  
-  *Error:* `E_COMP_FORWARD_DEPENDENCY`  
+- **W8 — Declared Dependency Resolution:** Every element in `depends_on` must reference a valid preceding operation `id`.
+  *Error:* `E_COMP_FORWARD_DEPENDENCY`
   *Violation:* `depends_on: ["non_existent_op"]`.
-- **W9 — Strictly Preceding Dependencies:** No operation may depend on itself or an operation appearing later in the array.  
-  *Error:* `E_COMP_FORWARD_DEPENDENCY`  
+- **W9 — Strictly Preceding Dependencies:** No operation may depend on itself or an operation appearing later in the array.
+  *Error:* `E_COMP_FORWARD_DEPENDENCY`
   *Violation:* Operation at index 0 declaring `depends_on: ["op-2"]`.
-- **W10 — Linear Type Chain Validity:** The output type of operation $i$ must unify with the input type of operation $i+1$.  
-  *Error:* `E_COMP_TYPE_MISMATCH`  
+- **W10 — Linear Type Chain Validity:** The output type of operation $i$ must unify with the input type of operation $i+1$.
+  *Error:* `E_COMP_TYPE_MISMATCH`
   *Violation:* `export.model` (`ServingArtifact`) followed by `weights.compress` (`NeuralOpsModel`).
-- **W11 — Precondition Satisfiability on Declared Family:** Declared model family must satisfy all static preconditions of each operation.  
-  *Error:* `E_COMP_PRECONDITION_UNSATISFIED`  
+- **W11 — Precondition Satisfiability on Declared Family:** Declared model family must satisfy all static preconditions of each operation.
+  *Error:* `E_COMP_PRECONDITION_UNSATISFIED`
   *Violation:* `attention.replace` declared on `model: { family: "mamba" }`.
-- **W12 — Disallow Incompatible Self-Composition:** Multiple applications of identical operations must be explicitly permitted by the operation contract.  
-  *Error:* `E_COMP_SELF_COMPOSE_DISALLOWED`  
+- **W12 — Disallow Incompatible Self-Composition:** Multiple applications of identical operations must be explicitly permitted by the operation contract.
+  *Error:* `E_COMP_SELF_COMPOSE_DISALLOWED`
   *Violation:* Applying `attention.replace` twice in the same pipeline.
-- **W13 — Empirical Profile Requires Evaluation Dataset:** If `validation.profile` is set to `empirical` or `production`, an evaluation dataset must be provided or policy configured.  
-  *Error:* `E_VALIDATION_NO_DATASET`  
+- **W13 — Empirical Profile Requires Evaluation Dataset:** If `validation.profile` is set to `empirical` or `production`, an evaluation dataset must be provided or policy configured.
+  *Error:* `E_VALIDATION_NO_DATASET`
   *Violation:* Profile is `empirical` but no dataset or calibration corpus is configured.
-- **W14 — Valid Gate Threshold References:** Threshold configuration overrides must reference gates registered in the validation engine.  
-  *Error:* `E_VALIDATION_UNKNOWN_GATE`  
+- **W14 — Valid Gate Threshold References:** Threshold configuration overrides must reference gates registered in the validation engine.
+  *Error:* `E_VALIDATION_UNKNOWN_GATE`
   *Violation:* `thresholds: { imaginary_loss_gate: 0.1 }`.
-- **W15 — Production Safety Gate Contract:** If `validation.profile` is `"none"`, the recipe must explicitly declare `metadata.production_ready: false`.  
-  *Error:* `E_VALIDATION_LEVEL_INVALID`  
+- **W15 — Production Safety Gate Contract:** If `validation.profile` is `"none"`, the recipe must explicitly declare `metadata.production_ready: false`.
+  *Error:* `E_VALIDATION_LEVEL_INVALID`
   *Violation:* Profile `"none"` with `production_ready: true` or omitted.
 
 ---
@@ -657,8 +657,8 @@ A recipe document must satisfy all fifteen static well-formedness rules:
 
 The recipe executor operates as a deterministic, transactional state machine:
 
-- **E1 — Execution Loop:**  
-  The engine executes operations sequentially:  
+- **E1 — Execution Loop:**
+  The engine executes operations sequentially:
   `For op in recipe.operations:`
   1. Resolve operational contract from registry.
   2. Verify all `depends_on` operations succeeded.
@@ -669,19 +669,19 @@ The recipe executor operates as a deterministic, transactional state machine:
   7. If any required gate fails: invoke `rollback`, abort, and raise `E_EXEC_VALIDATION_FAILED`.
   8. If gates pass: commit stage, append evidence record to chain, release snapshot.
 
-- **E2 — Snapshot Scope:**  
+- **E2 — Snapshot Scope:**
   Snapshots capture only state paths listed in `op.declares_mutations`. The snapshot stores parameter tensors, buffers, sub-module references, model config attributes, and pseudorandom generator states. Unmutated sub-modules are never cloned.
 
-- **E3 — Transactional Rollback:**  
+- **E3 — Transactional Rollback:**
   Upon gate failure or unhandled exception during operation execution, `restore(model, snapshot)` restores the mutated state paths bit-for-bit. If the rollback restore fails, the engine raises `E_EXEC_ROLLBACK_FAILED` and halts immediately.
 
-- **E4 — Validation Shortcut Restriction:**  
+- **E4 — Validation Shortcut Restriction:**
   When `profile == "none"`, validation gates are bypassed for rapid testing. This execution path is rejected unless `metadata.production_ready: false` is explicitly set.
 
-- **E5 — Empirical Fallback:**  
+- **E5 — Empirical Fallback:**
   When `profile == "empirical"` and physical hardware or dataset is unavailable, empirical gates return `skipped: true` (never `passed: true`). The validation status reflects `PARTIAL` rather than `SUCCESS`.
 
-- **E6 — Dry-Run Planning:**  
+- **E6 — Dry-Run Planning:**
   The planning phase (`plan_recipe`) executes all W1–W15 checks, verifies type transitions, evaluates preconditions against model configuration metadata, and estimates VRAM and latency without loading weight tensors or creating CUDA contexts.
 
 ---
@@ -702,11 +702,11 @@ The recipe executor operates as a deterministic, transactional state machine:
 
 NeuralOps maintains three distinct, independent versioning streams:
 
-1. **Language Version (`apiVersion: neuralops/v1`):**  
+1. **Language Version (`apiVersion: neuralops/v1`):**
    Governs the grammar, top-level keys, well-formedness rules (W1–W15), and canonical hashing algorithm. A change to language semantics or canonical hashing requires `apiVersion: neuralops/v2`.
-2. **Operation Contract Version (`type: name, version: X.Y.Z`):**  
+2. **Operation Contract Version (`type: name, version: X.Y.Z`):**
    Governed by individual operation definitions. A breaking parameter change in `weights.compress` increments its major version (`2.0.0`) without bumping the language version.
-3. **Library Package Version (`neuralops.__version__`):**  
+3. **Library Package Version (`neuralops.__version__`):**
    The runtime software release (e.g., `1.9.0`), independent of recipe contracts. A recipe does not pin the library package version.
 
 ---
@@ -806,15 +806,15 @@ Namespace Rules:
 This section defines 30+ test recipes with expected outcomes for verification:
 
 ### Category 1: Valid Recipes (5 Cases)
-1. **Case 1.1 — Minimal Valid Recipe:**  
+1. **Case 1.1 — Minimal Valid Recipe:**
    Single `attention.replace` operation with required fields. $\rightarrow$ `VALID`
-2. **Case 1.2 — Multi-Stage Valid Pipeline:**  
+2. **Case 1.2 — Multi-Stage Valid Pipeline:**
    `attention.replace` $\rightarrow$ `weights.compress` $\rightarrow$ `export.model`. $\rightarrow$ `VALID`
-3. **Case 1.3 — Pruning and Healing Pipeline:**  
+3. **Case 1.3 — Pruning and Healing Pipeline:**
    `architecture.drop_layer` $\rightarrow$ `adaptation.heal` $\rightarrow$ `export.checkpoint`. $\rightarrow$ `VALID`
-4. **Case 1.4 — Full Recipe with Explicit Metadata and Overrides:**  
+4. **Case 1.4 — Full Recipe with Explicit Metadata and Overrides:**
    All optional metadata fields, `validation` thresholds, and `execution` seed provided. $\rightarrow$ `VALID`
-5. **Case 1.5 — Micro-Quantization Pipeline:**  
+5. **Case 1.5 — Micro-Quantization Pipeline:**
    `weights.quantize` with method `fp8` and `export.model`. $\rightarrow$ `VALID`
 
 ### Category 2: Schema Violations (5 Cases)

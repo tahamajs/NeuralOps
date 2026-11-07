@@ -37,10 +37,10 @@ configs:
 <!-- Author: Taha Majlesi -->
 # NeuralOps Benchmark Results & Artifacts Repository
 
-**Author:** Taha Majlesi  
-**Release Version:** 1.4.0  
-**Hardware Environment:** NVIDIA GeForce RTX 4070 (AD104, 12GB VRAM, Compute Capability 8.9)  
-**Software Stack:** PyTorch 2.5+, Triton 3.0+, CUDA 12.4+  
+**Author:** Taha Majlesi
+**Release Version:** 1.4.0
+**Hardware Environment:** NVIDIA GeForce RTX 4070 (AD104, 12GB VRAM, Compute Capability 8.9)
+**Software Stack:** PyTorch 2.5+, Triton 3.0+, CUDA 12.4+
 
 ---
 

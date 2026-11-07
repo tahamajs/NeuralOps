@@ -1,9 +1,9 @@
 # Phase 1 Efficiency Benchmark Sweep: Exhaustive Audit Report
 
-**Audit Date:** 2026-08-26  
-**Evaluated Artifact:** `results/gpu_server/snapshot_2026_08_26/benchmark_summary.csv`  
-**Hardware Platform:** NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16)  
-**Batch Configuration:** Batch Size $B=4$, Sequence Context $L=128$  
+**Audit Date:** 2026-08-26
+**Evaluated Artifact:** `results/gpu_server/snapshot_2026_08_26/benchmark_summary.csv`
+**Hardware Platform:** NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM, CUDA 12.4, AMP FP16)
+**Batch Configuration:** Batch Size $B=4$, Sequence Context $L=128$
 
 ---
 

@@ -93,4 +93,3 @@ The following methods were evaluated but **excluded from the primary rank leader
 |:---|:---:|:---|
 | **`int4_lut_quantizer`** | `FAILED_TO_LOAD` | Constructor returned None / specialized CoOPQ LUT structure incompatible with standard module interface |
 | **`tucker_compressor`** | `FAILED_TO_LOAD` | Constructor returned None / CompOT Tucker decomposition requiring specific 4D tensor configurations |
-

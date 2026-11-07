@@ -1,6 +1,6 @@
 # NeuralOps Master Comprehensive Evaluation Matrix
 
-**Hardware Environment**: `NVIDIA GeForce RTX 4070 Laptop GPU` (cuda:0) | CUDA `12.8`  
+**Hardware Environment**: `NVIDIA GeForce RTX 4070 Laptop GPU` (cuda:0) | CUDA `12.8`
 **Generated**: `2026-10-17 22:27:32` | **Total Benchmark Configurations**: `55`
 
 ## 1. Attention Architectural Families Across Context Horizons

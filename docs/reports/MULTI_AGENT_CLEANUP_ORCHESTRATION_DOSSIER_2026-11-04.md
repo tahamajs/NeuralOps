@@ -1,9 +1,9 @@
 # NeuralOps Multi-Agent Cleanup Orchestration Dossier
-**Version:** 1.0 | **Date:** 2026-11-04  
-**Author / Orchestrator:** Master Principal Systems Architect  
-**Classification:** Operational Master Execution Dossier  
-**Target Subsystems:** `neuralops/` package & `scripts/` automation tree  
-**Invariant Mandate:** 131 Attentions | 72 Compressors | 58 Triton Kernels | 141 CUDA Kernels | 94 Notebooks  
+**Version:** 1.0 | **Date:** 2026-11-04
+**Author / Orchestrator:** Master Principal Systems Architect
+**Classification:** Operational Master Execution Dossier
+**Target Subsystems:** `neuralops/` package & `scripts/` automation tree
+**Invariant Mandate:** 131 Attentions | 72 Compressors | 58 Triton Kernels | 141 CUDA Kernels | 94 Notebooks
 
 ---
 
