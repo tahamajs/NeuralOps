@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
+### Changed
+- **Breaking Change (CI Workflow Consolidation & Security Policy Refresh, F-13, F-15):**
+  - Consolidated duplicate `test.yml` into `.github/workflows/ci.yml` and deleted `test.yml`.
+  - Replaced legacy monolithic `test` job with discrete, dedicated CI jobs: `version-check`, `lint` (ruff, black, isort), `mypy` (baseline core scope), `wheel-smoke` (clean venv wheel install and CLI execution check), `test-fast` (smoke unit & parity tests), and `test-full` (complete CPU/MPS test suite excluding hardware-dependent GPU/Triton tests).
+  - Branch protection rules requiring old job names (`test`) must be updated to require `test-fast`, `test-full`, `lint`, and `version-check`.
+  - Updated `SECURITY.md` support table to mark `2.0.x` active and `1.8.x and below` End of Life; updated vulnerability disclosure link to `https://github.com/tahamajs/NeuralOps/security/advisories/new`.
+  - Pinned `mkdocs-minify-plugin>=0.8.0` in `pyproject.toml` under `docs` extra.
+  - Documented explicit scopes for `test_compression.yml`, `test_serving.yml`, and `test-triton.yml` and removed duplicate fast test runs.
+- **Breaking Change (Single Version Source of Truth & Config Consolidation, F-02, F-03, F-04):**
+  - Declared `pyproject.toml` the single canonical version source of truth. `neuralops.__version__` is now resolved dynamically via `importlib.metadata.version("neuralops")` with fallback to generated `neuralops/_version.py` upon `PackageNotFoundError` (eliminating hardcoded version literals in `neuralops/__init__.py`).
+  - Added empty `neuralops/py.typed` to provide PEP 561 type annotation markers in built distribution wheels.
+  - Consolidated standalone `ruff.toml` and `pytest.ini` into `pyproject.toml` (and deleted standalone `ruff.toml` and `pytest.ini`). `[tool.ruff.lint]` preserves active rules `E, F, B, PIE` and full ignore list; `[tool.pytest.ini_options]` unifies all 9 test markers (`gpu`, `triton`, `integration`, `regression`, `performance`, `vllm`, `sglang`, `trt_llm`, and `slow` with 10s threshold), full filterwarnings ignores with `error`, and `-ra --strict-markers`.
+  - Upgraded `scripts/utils/sync_version.py` with `--check` verification gate enforcing zero version drift across all metadata files.
+
 ## [2.0.6] - 2026-11-05
 
 ### Added

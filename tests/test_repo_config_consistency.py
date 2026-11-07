@@ -66,3 +66,39 @@ def test_pytest_markers_complete() -> None:
     # Verify testpaths and python_files
     assert pytest_opts.get("testpaths") == ["tests"]
     assert pytest_opts.get("python_files") == ["test_*.py"]
+
+
+def test_ci_has_no_duplicate_test_workflow() -> None:
+    """Verify that duplicate .github/workflows/test.yml has been deleted."""
+    duplicate_test_workflow = ROOT_DIR / ".github" / "workflows" / "test.yml"
+    assert not duplicate_test_workflow.exists(), (
+        f"Duplicate test workflow still exists at {duplicate_test_workflow}"
+    )
+
+
+def test_ci_runs_full_suite_or_documented_subset() -> None:
+    """Verify that CI workflow runs test suite, mypy, and ruff linting."""
+    import yaml
+
+    ci_yaml_path = ROOT_DIR / ".github" / "workflows" / "ci.yml"
+    assert ci_yaml_path.exists(), f"ci.yml not found at {ci_yaml_path}"
+
+    with open(ci_yaml_path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+
+    jobs = data.get("jobs", {})
+    assert "lint" in jobs, "CI missing 'lint' job"
+    assert "mypy" in jobs, "CI missing 'mypy' job"
+
+    # Verify at least one test job runs pytest tests/ or documented subset
+    test_commands: list[str] = []
+    for job_name, job_def in jobs.items():
+        steps = job_def.get("steps", [])
+        for step in steps:
+            run_cmd = step.get("run", "")
+            if "pytest" in run_cmd:
+                test_commands.append(run_cmd)
+
+    assert any("pytest tests/" in cmd for cmd in test_commands), (
+        f"No CI job found running full suite or documented subset with 'pytest tests/': {test_commands}"
+    )

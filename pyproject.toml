@@ -129,6 +129,7 @@ docs = [
     "mkdocs>=1.5.0",
     "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.24.0",
+    "mkdocs-minify-plugin>=0.8.0",
     "pdoc3>=0.10.0",
 ]
 
@@ -207,6 +208,13 @@ neuralops = [
     "**/*.h",
 ]
 
+# AGT-08 (F-04): Consolidated ruff configuration (single source of truth).
+# ruff.toml has been removed. Conflict resolution decisions:
+# - select: active rules ["E", "F", "B", "PIE"]. Rules W, I, UP, C4, SIM from pyproject
+#   were previously overridden by ruff.toml; enabling them repo-wide without broad formatting
+#   sweeps causes extensive churn across legacy modules, so they are deferred.
+# - ignore: retained the union of ruff.toml ignores and pyproject ignores to maintain
+#   identical linting invariants.
 [tool.ruff]
 target-version = "py310"
 line-length = 120
@@ -236,32 +244,51 @@ exclude = [
 [tool.ruff.lint]
 select = [
     "E",
-    "W",
     "F",
     "B",
     "PIE",
-    "I",
-    "UP",
-    "C4",
-    "SIM",
 ]
 ignore = [
-    "E402",
-    "E731",
-    "E741",
-    "F403",
-    "B006",
-    "B008",
-    "B904",
-    "B905",
+    "N803",
+    "N806",  # B, H, N, D for tensor dims (ML standard)
+    "E501",  # long lines
+    "F401",  # legacy compatibility imports retained for public API surfaces
+    "F841",  # legacy scripts contain intentionally staged locals
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "D205",
+    "D400",
+    "E402",  # module level import not at top of file (sys.path manipulation in scripts)
+    "E741",  # ambiguous variable name
+    "B023",  # function definition does not bind loop variable
+    "E731",  # do not assign a lambda expression, use a def
+    "B007",  # loop control variable not used within loop body
+    "B905",  # zip() without explicit strict= parameter
+    "E701",  # legacy compact statements
+    "F403",  # legacy wildcard re-export modules
+    "F811",  # legacy compatibility redefinitions
+    "B008",  # framework callables used as defaults
+    "B904",  # legacy exception chaining style
+    "B017",  # legacy broad exception assertions
+    "B018",  # intentional expression statements in compatibility tests
+    "F601",  # legacy duplicate dictionary keys
+    "B026",  # legacy star-argument call style
 ]
-unfixable = ["B006"]
+unfixable = [
+    "B006",  # mutable default — flag error, do not auto-remove
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
 "tests/**/*.py" = ["E501", "F401", "F841", "B011", "B017", "B018"]
 "benchmarks/**/*.py" = ["E501", "F401", "F841"]
 "scripts/**/*.py" = ["E501", "F401", "F841"]
+"neuralops/benchmarks/legacy_root/**/*.py" = ["F404"]
 
 [tool.black]
 line-length = 120
@@ -322,6 +349,13 @@ exclude = [
     "^_proposed/",
 ]
 
+# AGT-08 (F-04): Consolidated pytest configuration (single source of truth).
+# pytest.ini has been removed. Conflict resolution decisions:
+# - markers: union of 8 markers from pytest.ini + trt_llm from pyproject.toml.
+# - slow threshold: 10s (winning value from pytest.ini).
+# - filterwarnings: error + full ignore list from pytest.ini.
+# - addopts: "-ra --strict-markers" preserved.
+# - testpaths & python_files: ["tests"] and ["test_*.py"].
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
@@ -329,12 +363,41 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-ra --strict-markers"
+norecursedirs = [".*", "build", "dist", "*.egg-info", "_archive", "tests/_archive"]
 markers = [
-    "gpu: requires CUDA-capable GPU",
-    "vllm: requires vllm installed",
-    "sglang: requires sglang installed",
+    "slow: marks tests as slow (> 10s)",
+    "gpu: marks tests requiring CUDA",
+    "triton: marks tests requiring Triton",
+    "integration: marks integration tests",
+    "regression: marks regression tests",
+    "performance: marks performance benchmarks",
+    "vllm: marks tests requiring vLLM",
+    "sglang: marks tests requiring SGLang",
     "trt_llm: requires tensorrt_llm installed",
-    "slow: takes more than 30 seconds",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning:neuralops\\.benchmarks\\..*",
+    "ignore::UserWarning:transformers.*",
+    "ignore::pytest.PytestCacheWarning",
+    "ignore:.*run_quality_sweep is deprecated.*:DeprecationWarning",
+    "ignore:.*torch.jit.script_method.*:UserWarning",
+    "ignore:.*torch.jit.script_method.*:DeprecationWarning",
+    "ignore:.*torch.cuda.amp.autocast.*:FutureWarning",
+    "ignore:.*pydantic.*:DeprecationWarning",
+    "ignore:.*Support for class-based.*:DeprecationWarning",
+    "ignore:.*neuralops.core.compression_engine has moved.*:DeprecationWarning",
+    "ignore:.*neuralops.training has merged into neuralops.trainer.*:DeprecationWarning",
+    "ignore:.*neuralops.core.rope is deprecated.*:DeprecationWarning",
+    "ignore:.*neuralops.core.gqa_utils is deprecated.*:DeprecationWarning",
+    "ignore:.*neuralops.surgery.universal_calibrator is deprecated.*:DeprecationWarning",
+    "ignore:.*is deprecated\\. Use.*instead\\.:DeprecationWarning",
+    "ignore:.*Cannot dispatch to fused implementation.*:UserWarning",
+    "ignore:.*isinstance\\(treespec, LeafSpec\\) is deprecated.*:DeprecationWarning",
+    "ignore:.*explain\\(f, \\*args, \\*\\*kwargs\\) is deprecated.*:FutureWarning",
+    "ignore:.*Attempting to run cuBLAS, but there was no current CUDA context.*:UserWarning",
+    "ignore:.*invalid value encountered in scalar divide.*:RuntimeWarning",
+    "ignore:.*pkg_resources is deprecated as an API.*:UserWarning",
 ]
 
 [tool.coverage.run]

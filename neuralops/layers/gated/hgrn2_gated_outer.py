@@ -37,13 +37,14 @@ logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register(
-    "hgrn2_outer",
+    "hgrn2_gated_outer",
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,
 )
 @ATTENTION_REGISTRY.register(
-    "hgrn2_gated_outer",
+    "hgrn2_outer",
+    is_alias=True,
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,

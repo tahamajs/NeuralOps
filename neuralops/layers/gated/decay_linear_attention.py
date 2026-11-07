@@ -74,18 +74,21 @@ def _read_past_kv(past_key_value: Any, layer_idx: int):
 )
 @ATTENTION_REGISTRY.register(
     "decay_linear_attn",
+    is_alias=True,
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,
 )
 @ATTENTION_REGISTRY.register(
     "gated_linear_attn",
+    is_alias=True,
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,
 )
 @ATTENTION_REGISTRY.register(
     "gated_linear_attention",
+    is_alias=True,
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,

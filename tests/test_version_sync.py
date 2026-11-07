@@ -78,3 +78,19 @@ def test_sync_version_check_passes() -> None:
         check=False,
     )
     assert res.returncode == 0, f"sync_version.py --check failed (rc={res.returncode}):\n{res.stdout}\n{res.stderr}"
+
+
+def test_security_md_supports_current_major() -> None:
+    """Verify SECURITY.md support table has 2.0.x active and links to NeuralOps repo."""
+    security_text = (ROOT_DIR / "SECURITY.md").read_text(encoding="utf-8")
+    assert "| **2.0.x** | :white_check_mark: Active |" in security_text, (
+        "2.0.x not marked as active in SECURITY.md"
+    )
+    assert "SVD_linear_Attention" not in security_text, (
+        "Stale SVD_linear_Attention link remains in SECURITY.md"
+    )
+    assert "github.com/tahamajs/NeuralOps/security/advisories/new" in security_text, (
+        "Canonical NeuralOps security advisories URL not found in SECURITY.md"
+    )
+    # Ensure no duplicate 1.7.x row
+    assert security_text.count("1.7.x") <= 1, "Duplicate 1.7.x row remains in SECURITY.md"

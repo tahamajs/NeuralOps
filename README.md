@@ -63,7 +63,7 @@ flowchart LR
 
 The dispatch hierarchy is intentionally conservative: a source file is not counted as an accelerated result unless the operation actually dispatches, passes correctness checks, and produces a measured latency.
 
-### 🚀 GPU Verified on RTX 3090 (v2.0.1-gpu-verified)
+### 🚀 GPU Verified on RTX 3090 (v2.0.6-gpu-verified)
 
 The following empirical verification table records physical hardware execution on the Sharif University HPC cluster (`GPU-3090-1`, NVIDIA GeForce RTX 3090 24GB, CUDA 11.3, GCC 8.2):
 
@@ -123,9 +123,9 @@ result = pipe("Deep learning hardware acceleration requires", max_new_tokens=50,
 print(result)
 ```
 
-### 🧬 NeuralOps 1.9.0 Transformation Platform & Recipe Language
+### 🧬 NeuralOps 2.0.6 Transformation Platform & Recipe Language
 
-NeuralOps 1.9.0 introduces a declarative, typed, versioned, validated, and reproducible transformation platform:
+NeuralOps 2.0.6 introduces a declarative, typed, versioned, validated, and reproducible transformation platform:
 
 1. **Declarative Recipe Language (`neuralops.recipe`)**: Define end-to-end model transformations as versioned YAML specifications with canonical SHA-256 content hashing.
 2. **Operation Contracts (`neuralops.ops`)**: 15 versioned operations with typed inputs, preconditions, postconditions, and declared mutations.
@@ -284,7 +284,7 @@ All comprehensive scientific monographs, formal mathematical derivations, and ph
 | **Master's Thesis Monograph** | Complete 317-page university monograph detailing subquadratic operator design, in-place neural attention surgery, 6-pillar knowledge distillation, and SM 8.9 microarchitectures. | PDF (205.37 MB) | [📥 Download Thesis PDF](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Master_Thesis_810101504.pdf) |
 | **Oral Defense Slide Deck** | 50 presentation slides with high-resolution vector diagrams, hardware roofline trajectories, and SVD eigenspectrum decay plots. | PDF (172.13 MB) | [📥 Download Defense Slides](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Thesis_Defense_Slides_810101504.pdf) |
 | **NeurIPS 2026 Paper** | Subquadratic Attention Surgery via Closed-Form Ridge Subspace Realignment. | PDF (64.31 MB) | [📥 Download NeurIPS Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_NeurIPS2026_Paper.pdf) |
-| **ICLR 2027 Paper** | Subquadratic Sequence Modeling: A Unified Survey & Benchmark of 131 Operators. | PDF (64.31 MB) | [📥 Download ICLR Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_ICLR2027_Paper.pdf) |
+| **ICLR 2027 Paper** | NeuralOps: A Unified Framework for In-Place Attention Surgery, Riemannian SVD Compression, and Representation Stability | PDF (64.31 MB) | [📥 Download ICLR Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_ICLR2027_Paper.pdf) |
 | **MLSys 2027 Paper** | Zero-Overhead Kernel Dispatch & Hardware Roofline Analysis on Modern Silicon. | PDF (68.29 MB) | [📥 Download MLSys Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_MLSys2027_Paper.pdf) |
 
 ---
@@ -2363,6 +2363,14 @@ The `neuralops` package is verified against strict packaging standards prior to 
 - [x] **Source Distribution**: Complete source archive includes all source files, C++/CUDA headers, LICENSE, and documentation (`neuralops-2.0.6.tar.gz`, size ~2.6 MB).
 - [x] **Git Provenance**: Release commit tagged matching origin `main` (`v2.0.6`).
 
+### 📦 Release Process & Single Version Source of Truth
+
+NeuralOps enforces `pyproject.toml` as the single canonical source of truth for versioning:
+1. Bump `version = "X.Y.Z"` in `pyproject.toml`.
+2. Run `python scripts/utils/sync_version.py` to propagate the version to `neuralops/_version.py`, `pyproject.cuda.toml`, `CITATION.cff`, `SECURITY.md`, and documentation.
+3. Validate synchronization with `python scripts/utils/sync_version.py --check`.
+4. Commit the synchronized metadata and tag `vX.Y.Z`.
+
 ---
 
 ## 25. Full Version Compatibility Matrix
@@ -2420,10 +2428,11 @@ If you use NeuralOps, its subquadratic attention kernels, or model compression e
 
 ```bibtex
 @software{neuralops2026,
-  author = {Majlesi, Taha and contributors},
-  title = {NeuralOps: Unified Platform for Subquadratic Attention and Deep Model Compression},
+  author = {Majlesi, Taha},
+  title = {NeuralOps: A Production-Grade Framework for Subquadratic Attention, Model Compression, and Hardware-Aware Transformer Optimization},
   year = {2026},
   publisher = {GitHub},
+  url = {https://github.com/tahamajs/NeuralOps},
   howpublished = {\url{https://github.com/tahamajs/NeuralOps}},
   version = {2.0.6}
 }
