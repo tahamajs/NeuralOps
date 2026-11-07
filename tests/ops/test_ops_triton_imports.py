@@ -26,7 +26,7 @@ def test_rmsnorm_triton_import_resolves():
 
 def test_all_autograd_triton_imports_resolve():
     """Verify every from neuralops.ops.triton.* import in *_autograd.py files resolves."""
-    root_dir = Path(__file__).resolve().parent.parent
+    root_dir = Path(__file__).resolve().parents[2]
     cuda_dir = root_dir / "neuralops" / "ops" / "cuda"
 
     def get_module_symbols(mod_name: str) -> tuple[set[str] | None, str | None]:

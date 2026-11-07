@@ -108,46 +108,50 @@ def dummy_qkv():
 
 @pytest.fixture
 def tiny_gpt2():
-    """Lightweight GPT2 model for testing."""
-    try:
-        from transformers import GPT2Config, GPT2LMHeadModel
-        config = GPT2Config(
-            n_layer=2,
-            n_head=2,
-            n_embd=64,
-            vocab_size=256,
-            n_positions=512,
-        )
-        return GPT2LMHeadModel(config)
-    except Exception:
-        class TinyGPT2Dummy(torch.nn.Module):
-            def __init__(self):
-                super().__init__()
-                self.config = type("Config", (), {
-                    "hidden_size": 64,
-                    "num_attention_heads": 2,
-                    "num_hidden_layers": 2,
-                    "vocab_size": 256,
-                    "n_positions": 512,
-                    "model_type": "gpt2",
-                })()
-                self.transformer = torch.nn.ModuleDict({
-                    "wte": torch.nn.Embedding(256, 64),
-                    "wpe": torch.nn.Embedding(512, 64),
-                    "h": torch.nn.ModuleList([
-                        torch.nn.Linear(64, 64) for _ in range(2)
-                    ]),
-                })
-                self.lm_head = torch.nn.Linear(64, 256, bias=False)
+    """Lightweight real GPT2 model for testing, requiring transformers."""
+    pytest.importorskip("transformers", reason="transformers package required for tiny_gpt2 fixture")
+    from transformers import GPT2Config, GPT2LMHeadModel
+    config = GPT2Config(
+        n_layer=2,
+        n_head=2,
+        n_embd=64,
+        vocab_size=256,
+        n_positions=512,
+    )
+    return GPT2LMHeadModel(config)
 
-            def forward(self, input_ids, **kwargs):
-                x = self.transformer["wte"](input_ids)
-                for layer in self.transformer["h"]:
-                    x = layer(x)
-                logits = self.lm_head(x)
-                return type("Output", (), {"logits": logits, "loss": torch.tensor(0.0)})()
 
-        return TinyGPT2Dummy()
+@pytest.fixture
+def tiny_gpt2_dummy():
+    """Explicit hand-made mock GPT2 model for lightweight testing without transformers."""
+    class TinyGPT2Dummy(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.config = type("Config", (), {
+                "hidden_size": 64,
+                "num_attention_heads": 2,
+                "num_hidden_layers": 2,
+                "vocab_size": 256,
+                "n_positions": 512,
+                "model_type": "gpt2",
+            })()
+            self.transformer = torch.nn.ModuleDict({
+                "wte": torch.nn.Embedding(256, 64),
+                "wpe": torch.nn.Embedding(512, 64),
+                "h": torch.nn.ModuleList([
+                    torch.nn.Linear(64, 64) for _ in range(2)
+                ]),
+            })
+            self.lm_head = torch.nn.Linear(64, 256, bias=False)
+
+        def forward(self, input_ids, **kwargs):
+            x = self.transformer["wte"](input_ids)
+            for layer in self.transformer["h"]:
+                x = layer(x)
+            logits = self.lm_head(x)
+            return type("Output", (), {"logits": logits, "loss": torch.tensor(0.0)})()
+
+    return TinyGPT2Dummy()
 
 
 @pytest.fixture

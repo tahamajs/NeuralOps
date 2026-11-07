@@ -44,11 +44,14 @@ pip install -e .
 
 ### Compiling Native CUDA C++ Extensions (Level 1 Dispatch)
 
-To enable native Level-1 CUDA acceleration (for NVIDIA GPUs SM $\ge$ 7.0 / Ampere, Ada Lovelace, Hopper):
+To enable native Level-1 CUDA acceleration (for NVIDIA GPUs SM $\ge$ 7.0 / Ampere, Ada Lovelace, Hopper), install from the repository root with native compilation, or install pre-compiled binary packages:
 
 ```bash
-cd neuralops/csrc
-python setup.py build_ext --inplace
+# Build extensions in-place from repository root (sources in neuralops/core/cuda_kernels/ and neuralops/ops/cuda/)
+pip install -e .
+
+# Or install standalone binary distribution
+pip install neuralops-cuda
 ```
 
 ---

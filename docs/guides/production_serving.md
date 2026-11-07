@@ -73,13 +73,19 @@ adapter = TGIServingAdapter(
     max_batch_size=16,
 )
 
+# High-level continuous batching over multiple sequences
 prompts = [
     "Explain low-rank matrix decomposition:",
     "How does continuous dynamic batching work?",
 ]
+completions = adapter.continuous_batching_generate(prompts, max_new_tokens=25)
+for prompt, completion in zip(prompts, completions):
+    print(f"Prompt: {prompt}\nCompletion: {completion}\n")
 
-for token in adapter.continuous_batching_generate(prompts, max_new_tokens=25):
-    print(f"Seq {token.seq_id}: {token.text}", end="", flush=True)
+# Token-by-token streaming generation
+prompt = "Explain low-rank matrix decomposition:"
+for token_id, token_text in adapter.streaming_generate(prompt, max_new_tokens=25):
+    print(f"Token {token_id}: {token_text}", end="", flush=True)
 print()
 ```
 

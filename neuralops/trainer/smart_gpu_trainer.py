@@ -337,7 +337,8 @@ class AutoMaxGPUTrainer(BaseTrainer):
 
     def _make_loader(self, dataset: Any, batch_size: int, shuffle: bool = True) -> DataLoader:
         pin = self.device.type == "cuda"
-        num_workers = int(self.config.get("num_workers", 4 if self.device.type == "cuda" else 0))
+        default_workers = 0 if (hasattr(dataset, "__len__") and len(dataset) < 500) else (4 if self.device.type == "cuda" else 0)
+        num_workers = int(self.config.get("num_workers", default_workers))
         loader_kwargs = {
             "batch_size": batch_size,
             "shuffle": shuffle,
