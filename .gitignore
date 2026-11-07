@@ -228,3 +228,17 @@ kaggle_*.txt
 hpc_results/
 results/*.sqlite
 .cleanup_base_sha
+.agents/agt-prompts/ACD-02-paper-content.md
+.agents/agt-prompts/AGT-08-version-source-of-truth.md
+.agents/agt-prompts/AGT-09-ci-security.md
+.agents/agt-prompts/REMAINING-Academic-ACD-04-to-FINAL.md
+.agents/agt-prompts/REMAINING-Core-AGT-09-to-FINAL-2.md
+.agents/agt-prompts/REMAINING-Website-WEB-03-to-FINAL.md
+.agents/agt-prompts/WEB-03-auth-settings.md
+.agents/agt-reports/ACD-03-report.md
+.agents/agt-reports/ACD-04-report.md
+.agents/agt-reports/AGT-07-report.md
+.agents/agt-reports/AGT-08-report.md
+.agents/agt-reports/AGT-09-report.md
+.agents/agt-reports/AGT-10-report.md
+.agents/agt-reports/WEB-02-report.md
