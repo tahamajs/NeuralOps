@@ -112,3 +112,36 @@ def test_extended_kernels_jit_count_matches_docstring() -> None:
         f"Docstring missing '{jit_count} Triton kernels'"
     )
     assert "18 PyTorch references" in doc, "Docstring missing '18 PyTorch references'"
+
+
+def test_no_duplicate_cu_files() -> None:
+    """Verify no duplicate .cu files exist and all catalog folders exist on disk (F-41)."""
+    import hashlib
+
+    root_dir = Path(__file__).resolve().parent.parent
+    cuda_dir = root_dir / "neuralops" / "ops" / "cuda"
+
+    cu_files = list(cuda_dir.glob("**/*.cu"))
+    assert len(cu_files) > 0, "No .cu files found"
+
+    hashes: dict[str, list[Path]] = {}
+    for cu in cu_files:
+        content = cu.read_bytes()
+        # Skip small compat shims that only include another .cu file
+        if b"#include" in content and len(content) < 512:
+            continue
+        sha = hashlib.sha256(content).hexdigest()
+        hashes.setdefault(sha, []).append(cu)
+
+    duplicates = {sha: paths for sha, paths in hashes.items() if len(paths) > 1}
+    assert not duplicates, f"Duplicate .cu files found: {duplicates}"
+
+    # Verify every non-special catalog folder exists on disk
+    for entry in OPS_CATALOG:
+        folder = cuda_dir / entry
+        if entry in _KERNEL_SYMBOL_MAP:
+            target_sub = _KERNEL_SYMBOL_MAP[entry][0]
+            if not target_sub.startswith("_"):
+                assert (cuda_dir / target_sub).exists(), f"Target folder {target_sub} for catalog entry {entry} missing"
+        else:
+            assert folder.exists(), f"Catalog folder {folder} does not exist on disk"

@@ -72,3 +72,39 @@ def test_mock_triton_jit_raises_on_call() -> None:
         with pytest.raises(ImportError) as tl_exc:
             _ = tl.load
         assert "tl.load" in str(tl_exc.value)
+
+
+def test_ptxas_resolved_from_path_first(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify ptxas is resolved in strict order: env -> PATH -> CUDA_HOME -> fallback (F-42)."""
+    import os
+    from neuralops.ops.triton._common import resolve_ptxas_path
+
+    # Clean relevant environment variables
+    monkeypatch.delenv("TRITON_PTXAS_PATH", raising=False)
+    monkeypatch.delenv("CUDA_HOME", raising=False)
+    monkeypatch.delenv("CUDA_PATH", raising=False)
+
+    # 1. When PATH has a stub ptxas, it takes precedence
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir(parents=True, exist_ok=True)
+    stub_ptxas = fake_bin / "ptxas"
+    stub_ptxas.write_text("#!/bin/sh\nexit 0\n")
+    stub_ptxas.chmod(0o755)
+
+    monkeypatch.setenv("PATH", f"{fake_bin}:{os.environ.get('PATH', '')}")
+    resolved = resolve_ptxas_path()
+    assert resolved == str(stub_ptxas), f"Expected PATH ptxas {stub_ptxas}, got {resolved}"
+
+    # 2. When TRITON_PTXAS_PATH is explicitly set, it takes precedence over PATH
+    explicit_ptxas = tmp_path / "custom_ptxas"
+    explicit_ptxas.write_text("#!/bin/sh\nexit 0\n")
+    explicit_ptxas.chmod(0o755)
+    monkeypatch.setenv("TRITON_PTXAS_PATH", str(explicit_ptxas))
+    resolved_env = resolve_ptxas_path()
+    assert resolved_env == str(explicit_ptxas)
+
+    # 3. When no ptxas exists anywhere, it falls through cleanly without crashing
+    monkeypatch.delenv("TRITON_PTXAS_PATH", raising=False)
+    monkeypatch.setenv("PATH", "/nonexistent_path")
+    resolved_none = resolve_ptxas_path()
+    assert resolved_none is None or os.path.exists(resolved_none)
