@@ -22,6 +22,10 @@ from neuralops.benchmarks.ssm import run_benchmark as run_ssm_benchmark
 from neuralops.benchmarks.verify_ops import _make_inputs
 from neuralops.benchmarks.legacy_scripts.gpu_master_suite import _resolve_requested_device
 from neuralops.benchmarks.legacy_scripts.gpu_master_suite import benchmark_single_attention, benchmark_single_compressor
+from neuralops.benchmarks.adapters.compressor import CompressorModuleAdapter
+from neuralops.benchmarks.adapters.base import BaseBenchmarkAdapter
+from neuralops.benchmarks.results.schema import BenchmarkStatus
+from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 
 def test_auto_device_resolves_to_cuda(monkeypatch):
@@ -122,3 +126,63 @@ def test_backward_requires_finite_gradients(monkeypatch):
     )
     assert result["backward_passed"] is False
     assert result["status"] == "FAIL_NUMERICAL"
+
+
+def test_compressor_module_adapter_lifecycle_and_metrics():
+    """Verify CompressorModuleAdapter 6-gate lifecycle, snapshotting, and Frobenius/SQNR metrics."""
+    assert issubclass(CompressorModuleAdapter, BaseBenchmarkAdapter)
+
+    adapter = CompressorModuleAdapter(
+        compressor_name="direct_svd",
+        device="cpu",
+        seed=42,
+        tolerance=1.0,
+    )
+    result = adapter.execute()
+
+    assert result.status == BenchmarkStatus.SUCCESS.value
+    assert adapter._snapshot_model is not None, "Model snapshot must exist before mutation"
+    assert adapter.relative_frob_error >= 0.0, "Relative Frobenius error must be non-negative"
+    assert "relative_frob_error" in result.metadata
+    assert "sqnr_db" in result.metadata
+    assert "compression_ratio" in result.metadata
+    assert "param_reduction_pct" in result.metadata
+    assert result.metadata["relative_frob_error"] == adapter.relative_frob_error
+    assert result.metadata["sqnr_db"] == adapter.sqnr_db
+
+    # Verify backwards-compatible dictionary interface
+    legacy_res = adapter.benchmark_module("direct_svd")
+    assert legacy_res["status"] == "PASS"
+    assert legacy_res["relative_frob_error"] == adapter.relative_frob_error
+    assert legacy_res["sqnr_db"] == adapter.sqnr_db
+
+
+def test_compressor_module_adapter_fail_closed_no_svd_substitution(monkeypatch):
+    """Verify strict fail-closed: broken compressor fails with FAILED, never generic SVD."""
+    class BrokenCompressor:
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError("forced compressor surgery abort")
+
+    # In-memory temporary registration for fail-closed verification
+    monkeypatch.setitem(COMPRESSOR_REGISTRY._dict, "broken_audit_comp", BrokenCompressor)
+
+    adapter = CompressorModuleAdapter(compressor_name="broken_audit_comp", device="cpu")
+    result = adapter.execute()
+
+    assert result.status == BenchmarkStatus.FAILED.value
+    assert "forced compressor surgery abort" in (result.error or "")
+    assert "sqnr_db" not in result.metadata
+
+    # Verify unregistered compressor fails closed and does not substitute generic SVD
+    adapter_unknown = CompressorModuleAdapter(compressor_name="unregistered_failing_xyz", device="cpu")
+    res_unknown = adapter_unknown.execute()
+    assert res_unknown.status in (BenchmarkStatus.DEPENDENCY_ERROR.value, BenchmarkStatus.FAILED.value)
+    assert "unregistered_failing_xyz" in (res_unknown.error or "")
+    assert "sqnr_db" not in res_unknown.metadata
+
+
+def test_compressor_module_adapter_device_fail_closed(monkeypatch):
+    """Verify CompressorModuleAdapter fails closed when accelerated device is unavailable."""
+    monkeypatch.setattr("torch.cuda.is_available", lambda: False)
+    with pytest.raises(RuntimeError, match="unavailable"):
+        CompressorModuleAdapter(compressor_name="direct_svd", device="cuda")
