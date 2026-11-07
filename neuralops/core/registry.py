@@ -844,7 +844,8 @@ def create_attention(
 
     cls = ATTENTION_REGISTRY.get(name)
     if cls is None:
-        raise ValueError(f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}")
+        from neuralops.core.exceptions import AttentionNotRegisteredError
+        raise AttentionNotRegisteredError(f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}")
 
     resolved_dim = (
         embed_dim
@@ -920,7 +921,8 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
     """Universal compressor factory instantiating any registered compression engine."""
     cls = COMPRESSOR_REGISTRY.get(name)
     if cls is None:
-        raise KeyError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
+        from neuralops.core.exceptions import CompressorNotRegisteredError
+        raise CompressorNotRegisteredError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
 
     call_kwargs = dict(kwargs)
     resolved_rank = rank or call_kwargs.pop("r", None)
@@ -957,7 +959,7 @@ def get_attention(name: str) -> type:
     """Retrieve an attention class by registered name."""
     cls = ATTENTION_REGISTRY.get(name)
     if cls is None:
-        from neuralops.core.errors import AttentionNotRegisteredError
+        from neuralops.core.exceptions import AttentionNotRegisteredError
         raise AttentionNotRegisteredError(f"Attention '{name}' not found in ATTENTION_REGISTRY.")
     return cls
 
@@ -966,7 +968,7 @@ def get_compressor(name: str, **kwargs: Any) -> Any:
     """Retrieve a compressor class by registered name, or instantiate if kwargs provided."""
     cls = COMPRESSOR_REGISTRY.get(name)
     if cls is None:
-        from neuralops.core.errors import CompressorNotRegisteredError
+        from neuralops.core.exceptions import CompressorNotRegisteredError
         raise CompressorNotRegisteredError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
     if kwargs:
         return cls(**kwargs)

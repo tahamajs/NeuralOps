@@ -23,7 +23,7 @@ try:
     import torch.nn.functional as F
 except ModuleNotFoundError as exc:
     if exc.name == "torch" or (exc.name and exc.name.startswith("torch.")):
-        from neuralops.core.errors import torch_install_error
+        from neuralops.core.exceptions import torch_install_error
 
         raise torch_install_error("neuralops.api", exc) from exc
     raise
@@ -94,7 +94,7 @@ def replace_attention(
     if attn_name in ("chunk_gla", "gla"):
         attn_name = "gla_attention"
     if attn_name.startswith("fla:"):
-        from neuralops.core.errors import IntegrationNotImplementedError
+        from neuralops.core.exceptions import IntegrationNotImplementedError
         from neuralops.integrations.fla import (
             fla_is_available,
             SUPPORTED_FLA_ATTENTIONS,
@@ -110,7 +110,8 @@ def replace_attention(
                 f"Unsupported FLA attention '{attn_name}'. Supported mechanisms: {SUPPORTED_FLA_ATTENTIONS}"
             )
     elif attn_name not in ATTENTION_REGISTRY:
-        raise ValueError(
+        from neuralops.core.exceptions import AttentionNotRegisteredError
+        raise AttentionNotRegisteredError(
             f"Unknown attention module '{attn_name}'. "
             f"Use neuralops.list_attentions() to see all {len(ATTENTION_REGISTRY)} available modules."
         )
@@ -805,7 +806,7 @@ def get_attention_class(name: str) -> Type[Any]:
         Registered attention class.
     """
     if name.startswith("fla:"):
-        from neuralops.core.errors import IntegrationNotImplementedError
+        from neuralops.core.exceptions import IntegrationNotImplementedError
         from neuralops.integrations.fla import (
             EXTENSION_ATTENTION_REGISTRY,
             SUPPORTED_FLA_ATTENTIONS,
@@ -824,7 +825,8 @@ def get_attention_class(name: str) -> Type[Any]:
         return EXTENSION_ATTENTION_REGISTRY[name]
 
     if name not in ATTENTION_REGISTRY:
-        raise KeyError(f"Unknown attention '{name}'. Available: {list_attentions()}")
+        from neuralops.core.exceptions import AttentionNotRegisteredError
+        raise AttentionNotRegisteredError(f"Unknown attention '{name}'. Available: {list_attentions()}")
     return ATTENTION_REGISTRY[name]
 
 
@@ -838,7 +840,8 @@ def get_compressor_class(name: str) -> Type[Any]:
         Registered compressor class.
     """
     if name not in COMPRESSOR_REGISTRY:
-        raise KeyError(f"Unknown compressor '{name}'. Available: {list_compressors()}")
+        from neuralops.core.exceptions import CompressorNotRegisteredError
+        raise CompressorNotRegisteredError(f"Unknown compressor '{name}'. Available: {list_compressors()}")
     return COMPRESSOR_REGISTRY[name]
 
 

@@ -16,7 +16,7 @@ from __future__ import annotations
 import sys
 from typing import Optional
 
-from neuralops.core.errors import TorchNotInstalledError, TritonNotInstalledError
+from neuralops.core.exceptions import TorchNotInstalledError, TritonNotInstalledError
 
 _TORCH_AVAILABLE: Optional[bool] = None
 _TRITON_AVAILABLE: Optional[bool] = None

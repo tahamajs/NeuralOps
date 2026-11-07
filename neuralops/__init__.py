@@ -90,7 +90,7 @@ try:
 except (ImportError, ValueError):
     _TORCH_AVAILABLE = False
 
-from neuralops.core.errors import torch_install_error as _torch_install_error
+from neuralops.core.exceptions import torch_install_error as _torch_install_error
 
 
 def _require_torch(feature: str = "this feature") -> None:
