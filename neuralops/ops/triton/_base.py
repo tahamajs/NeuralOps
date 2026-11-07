@@ -26,20 +26,40 @@ except ImportError:
     HAS_TRITON = False
 
     class _MockConfig:
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             self.kwargs = kwargs.get("kwargs", {})
             self.num_stages = kwargs.get("num_stages", 1)
             self.num_warps = kwargs.get("num_warps", 4)
 
     class _MockLanguage:
         def __getattr__(self, name: str) -> Any:
-            return lambda *args, **kwargs: None
+            raise ImportError(
+                f"Triton language construct 'tl.{name}' is not available because Triton is not installed. "
+                "Install neuralops[cuda] on Linux with compatible GPU/drivers to use Triton kernels."
+            )
+
+    def _mock_jit(fn: Any = None, *args: Any, **kwargs: Any) -> Any:
+        def decorator(f: Any) -> Any:
+            def _caller(*call_args: Any, **call_kwargs: Any) -> Any:
+                raise ImportError(
+                    f"Triton kernel '{getattr(f, '__name__', 'unknown')}' cannot be executed because Triton is not installed. "
+                    "Install neuralops[cuda] on Linux with compatible GPU/drivers to use Triton JIT kernels."
+                )
+
+            _caller.__name__ = getattr(f, "__name__", "mock_kernel")
+            _caller.__doc__ = getattr(f, "__doc__", None)
+            _caller.__wrapped__ = f
+            return _caller
+
+        if fn is not None and callable(fn):
+            return decorator(fn)
+        return decorator
 
     triton = type(
         "triton",
         (),
         {
-            "jit": lambda f: f,
+            "jit": staticmethod(_mock_jit),
             "heuristics": lambda *a, **kw: lambda f: f,
             "autotune": lambda *a, **kw: lambda f: f,
             "Config": _MockConfig,

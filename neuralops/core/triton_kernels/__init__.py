@@ -12,7 +12,7 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-HAS_TRITON = True
+from neuralops.ops.triton._base import HAS_TRITON
 
 from neuralops.ops.triton._common import triton_dispatch
 from neuralops.ops.triton.block_sparse import fused_dsa_sparse_attn_triton
@@ -34,7 +34,7 @@ __all__ = [
 
 def __getattr__(name: str) -> Any:
     if name == "HAS_TRITON":
-        return True
+        return HAS_TRITON
     if name == "triton_dispatch":
         return triton_dispatch
     if name == "triton_cosformer_linear_attention":

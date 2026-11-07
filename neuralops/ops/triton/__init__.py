@@ -40,41 +40,37 @@ try:
 except Exception:
     import torch.nn.functional as F
 
+    # Deliberate PyTorch reference fallback when Triton softplus kernel is unavailable
     softplus = F.softplus
 
 try:
     from neuralops.ops.triton.selective_scan import selective_scan_fn
 except Exception:
-    selective_scan_fn = None
+    pass  # Handled lazily via __getattr__ raising clear ImportError on access
 
 try:
     from neuralops.ops.triton import fms_scan
     from neuralops.ops.triton.fms_scan import fms_scan_triton
 except Exception:
-    fms_scan = None
-    fms_scan_triton = None
+    pass
 
 try:
     from neuralops.ops.triton import gdn_scan
     from neuralops.ops.triton.gdn_scan import gdn_scan_triton
 except Exception:
-    gdn_scan = None
-    gdn_scan_triton = None
+    pass
 
 try:
     from neuralops.ops.triton import gla_scan
     from neuralops.ops.triton.gla_scan import chunked_gla_scan, gla_scan_triton
 except Exception:
-    gla_scan = None
-    gla_scan_triton = None
-    chunked_gla_scan = None
+    pass
 
 try:
     from neuralops.ops.triton import hgrn2_scan
     from neuralops.ops.triton.hgrn2_scan import hgrn2_scan_triton
 except Exception:
-    hgrn2_scan = None
-    hgrn2_scan_triton = None
+    pass
 
 from neuralops.ops.triton.fused_ce import (
     FusedCrossEntropyLoss,
@@ -457,17 +453,17 @@ from neuralops.ops.triton.retnet_retention import (
 try:
     from neuralops.ops.triton.gdn_scan import gdn_recurrent_step_triton
 except Exception:
-    gdn_recurrent_step_triton = None
+    pass
 
 try:
     from neuralops.ops.triton.gla_scan import gla_recurrent_step_triton
 except Exception:
-    gla_recurrent_step_triton = None
+    pass
 
 try:
     from neuralops.ops.triton.autotuner import select_optimal_triton_config
 except Exception:
-    select_optimal_triton_config = None
+    pass
 
 from neuralops.ops.triton import (
     _common,
@@ -497,26 +493,49 @@ from neuralops.ops.triton import (
 
 def __getattr__(name: str) -> Any:
     """Resolve specialized Triton operators from the canonical standalone package or core."""
+    if name.startswith("_"):
+        raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
     if name in ("fast_linear_attention", "LinearAttentionTriton"):
-        from neuralops.core import triton_linear_attn
+        try:
+            from neuralops.core import triton_linear_attn
 
-        val = getattr(triton_linear_attn, name)
-        globals()[name] = val
-        return val
+            val = getattr(triton_linear_attn, name)
+            globals()[name] = val
+            return val
+        except Exception:
+            raise ImportError(
+                f"Triton kernel '{name}' is not available: Triton is not installed; install neuralops[cuda] on Linux."
+            )
+
     if name == "triton_block_sparse_attention":
-        from neuralops.core import triton_sparse_attn
+        try:
+            from neuralops.core import triton_sparse_attn
 
-        val = getattr(triton_sparse_attn, name)
-        globals()[name] = val
-        return val
+            val = getattr(triton_sparse_attn, name)
+            globals()[name] = val
+            return val
+        except Exception:
+            raise ImportError(
+                f"Triton kernel '{name}' is not available: Triton is not installed; install neuralops[cuda] on Linux."
+            )
+
     try:
         from neuralops.ops.triton import standalone
 
-        val = getattr(standalone, name)
-        globals()[name] = val
-        return val
+        if hasattr(standalone, name):
+            val = getattr(standalone, name)
+            globals()[name] = val
+            return val
     except Exception:
-        raise AttributeError(f"module '{__name__}' has no attribute '{name}'") from None
+        pass
+
+    if name in __all__ or name.endswith(("_triton", "_kernel")) or "scan" in name or "attn" in name:
+        raise ImportError(
+            f"Triton kernel '{name}' is not available: Triton is not installed; install neuralops[cuda] on Linux."
+        )
+
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 def __dir__() -> list[str]:

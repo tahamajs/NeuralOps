@@ -230,11 +230,11 @@ def pytest_collection_modifyitems(config, items):
         # Don't classify static config/metadata verification tests as GPU tests
         is_static_config_test = any(
             cfg_mod in item_path
-            for cfg_mod in ("test_version_sync", "test_repo_config", "test_dependency")
+            for cfg_mod in ("test_version_sync", "test_repo_config", "test_dependency", "test_ops_triton_imports")
         )
         if ("cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name) and not is_static_config_test:
             item.add_marker(pytest.mark.gpu)
-        if "triton" in item_path or "triton" in item.keywords or "triton" in item_name:
+        if ("triton" in item_path or "triton" in item.keywords or "triton" in item_name) and not is_static_config_test:
             item.add_marker(pytest.mark.triton)
             item.add_marker(pytest.mark.gpu)
 
@@ -246,6 +246,6 @@ def pytest_collection_modifyitems(config, items):
             if "requires_fp16_cuda" in item.keywords or any(item.iter_markers("requires_fp16_cuda")):
                 item.add_marker(skip_cuda)
 
-        if not _TRITON_AVAILABLE:
+        if not _TRITON_AVAILABLE and not is_static_config_test:
             if "triton" in item.keywords or any(item.iter_markers("triton")):
                 item.add_marker(skip_triton)

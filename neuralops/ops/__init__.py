@@ -19,7 +19,17 @@ from typing import Any
 _import_structure = {
     "cuda": ["list_cuda_kernels", "CUDA_KERNEL_CATALOG"],
     "triton": ["triton_dispatch"],
-    "pytorch": [],
+    "pytorch": [
+        "rmsnorm_pytorch_ref",
+        "moe_routing_pytorch_ref",
+        "moe_dispatch_gather_pytorch_ref",
+        "fused_rotary_emb_pytorch_ref",
+        "fused_cross_entropy_pytorch_ref",
+        "fused_kd_loss_pytorch_ref",
+        "chunked_delta_gate_scan_pytorch_ref",
+        "gla_scan_pytorch_ref",
+        "selective_scan_pytorch_ref",
+    ],
 }
 
 __all__ = ["cuda", "triton", "pytorch"]

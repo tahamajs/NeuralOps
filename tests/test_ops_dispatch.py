@@ -9,8 +9,9 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
 import inspect
+from unittest.mock import MagicMock, patch
+
 import pytest
 import torch
 
@@ -22,6 +23,7 @@ for _f in inspect.stack():
         break
 
 if _pm:
+
     class _UnskipCudaHook:
         @pytest.hookimpl(trylast=True)
         def pytest_collection_modifyitems(self, config, items):
@@ -81,8 +83,10 @@ def test_dispatch_helpers_auto_mode_tries_cuda_first():
     mock_cuda_fn = MagicMock(return_value="cuda_output")
 
     # Test on a representative helper, e.g. direct_svd
-    with patch("neuralops.ops.cuda._fallback._direct_svd_cuda_available", return_value=True), \
-         patch.dict("sys.modules", {"neuralops.ops.cuda.direct_svd": MagicMock(direct_svd_compress=mock_cuda_fn)}):
+    with (
+        patch("neuralops.ops.cuda._fallback._direct_svd_cuda_available", return_value=True),
+        patch.dict("sys.modules", {"neuralops.ops.cuda.direct_svd": MagicMock(direct_svd_compress=mock_cuda_fn)}),
+    ):
         result = dispatch_direct_svd(torch.randn(2, 2), backend="auto")
         assert result == "cuda_output"
         assert mock_cuda_fn.called
@@ -116,3 +120,22 @@ def test_dispatch_without_pytorch_fn_raises_runtime_error():
     msg = str(exc_info.value)
     assert "test_orphan_kernel" in msg
     assert "No PyTorch fallback supplied" in msg
+
+
+def test_pytorch_refs_importable_from_ops_pytorch() -> None:
+    """Verify that canonical PyTorch reference implementations import from neuralops.ops.pytorch."""
+    from neuralops.ops.pytorch import (
+        moe_dispatch_gather_pytorch_ref,
+        moe_routing_pytorch_ref,
+        rmsnorm_pytorch_ref,
+    )
+
+    assert callable(rmsnorm_pytorch_ref)
+    assert callable(moe_routing_pytorch_ref)
+    assert callable(moe_dispatch_gather_pytorch_ref)
+
+    # Verify top-level ops re-export
+    import neuralops.ops as ops
+
+    assert callable(ops.rmsnorm_pytorch_ref)
+    assert callable(ops.moe_routing_pytorch_ref)
