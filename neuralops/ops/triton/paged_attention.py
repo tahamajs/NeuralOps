@@ -290,6 +290,15 @@ def paged_attention_kernel(
     """Dispatches paged attention to Triton kernel if supported, else PyTorch fallback."""
     from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
     B, H, D = q.shape
+    # Support standard floating and 8-bit precision representations
+    supported_dtypes = (
+        torch.float16,
+        torch.bfloat16,
+        torch.float32,
+    )
+    if hasattr(torch, "float8_e4m3fn"):
+        supported_dtypes = supported_dtypes + (torch.float8_e4m3fn,)
+
     if (
         HAS_TRITON
         and not FORCE_PYTORCH_FALLBACK
@@ -297,6 +306,8 @@ def paged_attention_kernel(
         and k_cache.is_cuda
         and v_cache.is_cuda
         and D in (16, 32, 64, 128, 256)
+        and block_size in (16, 32)
+        and q.dtype in supported_dtypes
     ):
         try:
             total_elements = k_cache.numel()
@@ -306,8 +317,13 @@ def paged_attention_kernel(
 
             out = torch.empty_like(q)
             max_seq_len = int(seq_lens.max().item()) if seq_lens.numel() > 0 else 0
-            NUM_SPLITS = 16
-            if max_seq_len > block_size * NUM_SPLITS:
+            
+            # FlashDecoding logic: partition sequence length across thread blocks (Split-K)
+            # to maximize SM occupancy on short-batch, long-context decode steps
+            num_blocks_max = (max_seq_len + block_size - 1) // block_size if max_seq_len > 0 else 0
+            NUM_SPLITS = min(16, max(1, num_blocks_max // 2))
+            
+            if NUM_SPLITS > 1 and max_seq_len > block_size * 2:
                 mid_out = torch.empty((B, H, NUM_SPLITS, D), dtype=q.dtype, device=q.device)
                 mid_lse = torch.empty((B, H, NUM_SPLITS), dtype=torch.float32, device=q.device)
                 grid_stage1 = (NUM_SPLITS, B, H)

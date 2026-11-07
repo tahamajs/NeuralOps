@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import collections
 import logging
+import time
 from typing import Any
 import torch
 
@@ -45,7 +46,19 @@ try:
 except ImportError:
     PagedStateTable = None
 
-__all__ = ["PagedKVCache", "PagedKVCacheManager", "PagedKVCacheBlock", "PagedStateTable"]
+from neuralops.ops.triton.paged_attention import (
+    paged_attention_kernel,
+    paged_attention_pytorch as paged_attention_reference,
+)
+
+__all__ = [
+    "PagedKVCache",
+    "PagedKVCacheManager",
+    "PagedKVCacheBlock",
+    "PagedStateTable",
+    "paged_attention_reference",
+    "paged_attention_kernel",
+]
 
 
 class PagedKVCache:
@@ -93,6 +106,12 @@ class PagedKVCache:
         self.block_tables: dict[int, list[int]] = {}
         self.seq_lengths: dict[int, int] = {}
         self.block_ref_counts: dict[int, int] = collections.defaultdict(int)
+
+        # Telemetry metrics tracking
+        self._total_append_tokens: int = 0
+        self._total_append_time_sec: float = 0.0
+        self._total_reads: int = 0
+        self._total_read_time_sec: float = 0.0
 
     def allocate_sequence(self, seq_id: int) -> None:
         """Register a new sequence with an empty block list."""
@@ -180,6 +199,7 @@ class PagedKVCache:
                 f"key and value must both have shape {expected_shape}; "
                 f"got {tuple(key.shape)} and {tuple(value.shape)}."
             )
+        t0 = time.perf_counter()
         if seq_id not in self.block_tables and not self.free_blocks:
             raise RuntimeError("Out of KV cache blocks.")
         if seq_id not in self.block_tables:
@@ -202,21 +222,46 @@ class PagedKVCache:
         self.key_cache[block_idx, token_offset] = key.to(device=self.device, dtype=self.dtype)
         self.value_cache[block_idx, token_offset] = value.to(device=self.device, dtype=self.dtype)
         self.seq_lengths[seq_id] = seq_len + 1
+        self._total_append_tokens += 1
+        self._total_append_time_sec += time.perf_counter() - t0
+
+    def append_tokens(
+        self,
+        seq_id: int,
+        keys: torch.Tensor,
+        values: torch.Tensor,
+    ) -> None:
+        """Appends multiple token keys and values of shape (num_tokens, num_heads, head_dim)."""
+        if keys.ndim == 2:
+            keys = keys.unsqueeze(0)
+            values = values.unsqueeze(0)
+        if keys.shape[0] != values.shape[0]:
+            raise ValueError(
+                f"keys and values must have the same number of tokens: {keys.shape[0]} vs {values.shape[0]}"
+            )
+        for i in range(keys.shape[0]):
+            self.append_token(seq_id, keys[i], values[i])
 
     def get_kv(self, seq_id: int) -> tuple[torch.Tensor, torch.Tensor]:
         """Returns contiguous (K, V) tensors of shape (seq_len, num_heads, head_dim)."""
         if seq_id not in self.block_tables:
             raise KeyError(f"Sequence {seq_id} not found.")
 
+        t0 = time.perf_counter()
         seq_len = self.seq_lengths[seq_id]
         if seq_len == 0:
             empty = torch.empty((0, self.num_heads, self.head_dim), dtype=self.dtype, device=self.device)
+            self._total_reads += 1
+            self._total_read_time_sec += time.perf_counter() - t0
             return empty, empty
 
         blocks = self.block_tables[seq_id]
         if len(blocks) == 1:
             b = blocks[0]
-            return self.key_cache[b, :seq_len], self.value_cache[b, :seq_len]
+            res = self.key_cache[b, :seq_len], self.value_cache[b, :seq_len]
+            self._total_reads += 1
+            self._total_read_time_sec += time.perf_counter() - t0
+            return res
 
         # Check if physical block allocations are contiguous to return direct zero-copy views
         if all(blocks[i] == blocks[0] + i for i in range(1, len(blocks))):
@@ -224,12 +269,16 @@ class PagedKVCache:
             end = start + len(blocks)
             k_view = self.key_cache[start:end].view(-1, self.num_heads, self.head_dim)[:seq_len]
             v_view = self.value_cache[start:end].view(-1, self.num_heads, self.head_dim)[:seq_len]
+            self._total_reads += 1
+            self._total_read_time_sec += time.perf_counter() - t0
             return k_view, v_view
 
         # Non-contiguous scattered blocks: index_select avoids intermediate Python list and torch.cat allocations
         idx = torch.as_tensor(blocks, device=self.device, dtype=torch.long)
         k_all = self.key_cache.index_select(0, idx).view(-1, self.num_heads, self.head_dim)[:seq_len]
         v_all = self.value_cache.index_select(0, idx).view(-1, self.num_heads, self.head_dim)[:seq_len]
+        self._total_reads += 1
+        self._total_read_time_sec += time.perf_counter() - t0
         return k_all, v_all
 
     def get_kv_blocks(self, seq_id: int) -> tuple[torch.Tensor, torch.Tensor]:
@@ -293,6 +342,30 @@ class PagedKVCache:
             "token_capacity": token_capacity,
             "internal_fragmentation_ratio": round(internal_frag, 4),
             "external_fragmentation_ratio": round(external_frag, 4),
+            "fragmentation_pct": round(external_frag * 100.0, 2),
+            "internal_fragmentation_pct": round(internal_frag * 100.0, 2),
+            "external_fragmentation_pct": round(external_frag * 100.0, 2),
+            "total_fragmentation_ratio": round(min(1.0, internal_frag + external_frag), 4),
+        }
+
+    def get_telemetry(self) -> dict[str, Any]:
+        """
+        Emits canonical runtime throughput, latency, and fragmentation telemetry.
+        """
+        frag = self.get_fragmentation_stats()
+        append_time = max(self._total_append_time_sec, 1e-9)
+        read_time = max(self._total_read_time_sec, 1e-9)
+        return {
+            "fragmentation": frag,
+            "throughput": {
+                "append_tokens_per_sec": round(self._total_append_tokens / append_time, 2),
+                "reads_per_sec": round(self._total_reads / read_time, 2),
+            },
+            "latency": {
+                "avg_append_latency_us": round((self._total_append_time_sec / max(1, self._total_append_tokens)) * 1e6, 2),
+                "avg_read_latency_us": round((self._total_read_time_sec / max(1, self._total_reads)) * 1e6, 2),
+            },
+            "utilization_pct": round(frag["block_utilization"] * 100.0, 2),
         }
 
     def defragment(self) -> dict[str, Any]:
