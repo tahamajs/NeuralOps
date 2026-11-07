@@ -11,7 +11,7 @@ Error hierarchy for distributed execution in NeuralOps.
 
 from __future__ import annotations
 
-from neuralops.core.errors import NeuralOpsError
+from neuralops.core.exceptions import NeuralOpsError
 
 E_DIST_INIT_FAILED = "E_DIST_INIT_FAILED"
 E_DIST_NOT_INITIALIZED = "E_DIST_NOT_INITIALIZED"

@@ -20,7 +20,7 @@ from typing import Any, Optional, Tuple
 import torch
 import torch.nn as nn
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.integrations.fla.cache_translator import (
     _translate_hf_cache_to_fla_state,
     _translate_fla_state_to_hf_cache,

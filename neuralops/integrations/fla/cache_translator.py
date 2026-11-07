@@ -18,7 +18,7 @@ import logging
 from typing import Any, Optional, Tuple
 import torch
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 
 logger = logging.getLogger(__name__)
 

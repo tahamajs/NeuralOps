@@ -11,7 +11,7 @@ Transactional Rollback Exception Definitions.
 
 from __future__ import annotations
 
-from neuralops.core.errors import NeuralOpsError
+from neuralops.core.exceptions import NeuralOpsError
 
 
 class RollbackError(NeuralOpsError):

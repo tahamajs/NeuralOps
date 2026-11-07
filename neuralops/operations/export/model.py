@@ -18,7 +18,7 @@ from typing import Any, Dict, Tuple
 
 import torch.nn as nn
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.operations.base import Operation, OperationContract
 from neuralops.operations.registry import register_operation
 

@@ -15,7 +15,7 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.recipe.schema import Recipe
 
 

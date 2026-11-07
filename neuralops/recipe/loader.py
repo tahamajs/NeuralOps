@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.recipe.errors import (
     E_PARSE_DUP_KEY,
     E_PARSE_JSON_SYNTAX,

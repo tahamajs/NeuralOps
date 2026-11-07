@@ -23,7 +23,7 @@ import torch
 
 logger = logging.getLogger("NeuralOps.Surgery.HFCacheBridge")
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 
 try:
     from transformers.cache_utils import Cache, DynamicCache

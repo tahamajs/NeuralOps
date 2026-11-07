@@ -78,7 +78,7 @@ def force_kernel_backend(backend: str) -> Generator[None, None, None]:
         raise ValueError(f"Unknown backend: {backend}")
     if backend == "fla":
         from neuralops.integrations.fla import fla_is_available
-        from neuralops.core.errors import IntegrationNotImplementedError
+        from neuralops.core.exceptions import IntegrationNotImplementedError
 
         if not fla_is_available():
             raise IntegrationNotImplementedError(

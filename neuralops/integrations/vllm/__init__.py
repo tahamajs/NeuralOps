@@ -12,7 +12,7 @@ vLLM Runtime Integration for NeuralOps.
 import sys
 import types
 from typing import Any, Optional
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.integrations.vllm.state_table import PagedStateTable
 from neuralops.integrations.vllm_backend.backend import NeuralOpsAttentionBackend
 from neuralops.integrations.vllm_backend.kv_cache_spec import NeuralOpsRecurrentSpec

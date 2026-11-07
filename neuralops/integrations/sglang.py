@@ -17,7 +17,7 @@ import importlib.util
 import logging
 from typing import Any, Optional
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.integrations.radix_prefix_cache import (
     RadixPrefixNode,
     SGLangRadixAdapter,

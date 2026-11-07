@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from neuralops.core.errors import NeuralOpsError
+from neuralops.core.exceptions import NeuralOpsError
 
 
 class PlanningError(NeuralOpsError):

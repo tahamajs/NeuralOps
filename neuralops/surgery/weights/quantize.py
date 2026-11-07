@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.surgery.registry import register_surgery
 
 logger = logging.getLogger(__name__)

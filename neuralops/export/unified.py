@@ -21,7 +21,7 @@ from typing import Any, Optional
 import torch
 import torch.nn as nn
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 
 logger = logging.getLogger(__name__)
 

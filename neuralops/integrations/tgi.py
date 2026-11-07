@@ -27,7 +27,7 @@ import importlib.util
 import logging
 from typing import Any, Dict
 
-from neuralops.core.errors import IntegrationNotImplementedError
+from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.serving.request_batcher import (
     TGIRequest,
     TGIRequestSlot,

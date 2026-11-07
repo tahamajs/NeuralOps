@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 import torch.nn as nn
 
-from neuralops.core.errors import NeuralOpsError
+from neuralops.core.exceptions import NeuralOpsError
 from neuralops.validation.result import ValidationResult
 
 
