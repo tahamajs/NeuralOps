@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from importlib import import_module
+from pathlib import Path
 from typing import Any
 
 _EXPORTS = {
@@ -52,28 +53,15 @@ _EXPORTS = {
     "EvaluationReport": ("neuralops.evaluation.metrics", "EvaluationReport"),
 }
 
+# Scan evaluation directory to dynamically export all evaluation submodules
+_eval_dir = Path(__file__).resolve().parent
 _MODULE_EXPORTS = {
-    name: f"neuralops.evaluation.{name}"
-    for name in (
-        "ab_testing",
-        "eval_all_models_datasets",
-        "eval_data",
-        "eval_patcher",
-        "eval_perplexity",
-        "eval_pipeline",
-        "eval_reporter",
-        "eval_types",
-        "eval_utils",
-        "fairness",
-        "full_mnli_validation",
-        "label_quality",
-        "retraining",
-        "run_baseline_comparison",
-        "run_lm_eval_harness",
-    )
+    f.stem: f"neuralops.evaluation.{f.stem}"
+    for f in _eval_dir.glob("*.py")
+    if f.is_file() and f.name not in ("__init__.py", "__main__.py")
 }
 
-__all__ = [*_EXPORTS, *_MODULE_EXPORTS, "RobustnessReport", "TextAdversarialTester"]
+__all__ = sorted([*_EXPORTS, *_MODULE_EXPORTS])
 
 
 def __getattr__(name: str) -> Any:
@@ -84,11 +72,6 @@ def __getattr__(name: str) -> Any:
         value = module if attribute is None else getattr(module, attribute)
     elif name in _MODULE_EXPORTS:
         value = import_module(_MODULE_EXPORTS[name])
-    elif name in {"RobustnessReport", "TextAdversarialTester"}:
-        try:
-            value = getattr(import_module("neuralops.evaluation.robustness"), name)
-        except ImportError:
-            value = None
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 

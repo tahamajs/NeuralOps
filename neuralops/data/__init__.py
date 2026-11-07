@@ -58,9 +58,14 @@ def compute_empirical_entropy(tokens: torch.Tensor) -> float:
     return float(max(0.0, entropy))
 
 
-def load_glue_split(task_name: str, split: str = "train") -> dict[str, Any]:
-    """Load GLUE benchmark split or raise descriptive error if unavailable locally."""
-    raise FileNotFoundError(f"GLUE benchmark task '{task_name}' split '{split}' is not cached locally.")
+def load_glue_split(task_name: str, split: str = "train", base_path: str | Path | None = None) -> Any:
+    """Load a specific split of a GLUE benchmark task (delegates to glue_loader)."""
+    from neuralops.data.glue_loader import load_glue_local
+
+    ds = load_glue_local(task_name, base_path=base_path)
+    if split in ds:
+        return ds[split]
+    raise KeyError(f"Split '{split}' not found in GLUE task '{task_name}'. Available splits: {list(ds.keys())}")
 
 
 def generate_synthetic_data(
@@ -110,17 +115,41 @@ def get_text_columns(task_name: str) -> list[str]:
 
 
 class BenchmarkDatasetRegistry:
-    """Registry catalog for benchmark datasets."""
+    """Registry catalog for benchmark datasets (F-61)."""
 
     _datasets: dict[str, Any] = {}
 
     @classmethod
+    def register(cls, name: str, dataset: Any) -> None:
+        """Register a dataset in the registry."""
+        cls._datasets[name.lower()] = dataset
+
+    @classmethod
     def list_datasets(cls) -> list[str]:
-        return ["sst2", "mrpc", "mnli", "qqp", "qnli", "rte", "cola", "stsb", "wikitext2", "c4"]
+        """Return sorted list of registered dataset names."""
+        return sorted(cls._datasets.keys())
 
     @classmethod
     def get(cls, name: str) -> Any:
-        return cls._datasets.get(name.lower(), None)
+        """Retrieve registered dataset, raising KeyError if not found."""
+        key = name.lower()
+        if key in cls._datasets:
+            return cls._datasets[key]
+        raise KeyError(
+            f"Dataset '{name}' is not registered in BenchmarkDatasetRegistry. "
+            f"Available: {cls.list_datasets()}"
+        )
+
+
+# Populate canonical default datasets
+for _ds_name in ("sst2", "mrpc", "mnli", "qqp", "qnli", "rte", "cola", "stsb", "wikitext2", "c4"):
+    BenchmarkDatasetRegistry.register(
+        _ds_name,
+        {
+            "name": _ds_name,
+            "category": "classification" if _ds_name not in ("wikitext2", "c4") else "language_modeling",
+        },
+    )
 
 
 __all__ = [
