@@ -16,9 +16,10 @@ import importlib.util
 import sys
 
 from neuralops.core._compat_importer import install_compatibility_interceptor
+
 install_compatibility_interceptor()
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from neuralops.api import (
@@ -46,7 +47,6 @@ if TYPE_CHECKING:
         info,
         list_attentions,
         list_compressors,
-        list_fla_attentions,
         list_families,
         load_exported_model,
         load_model,
@@ -67,6 +67,7 @@ if TYPE_CHECKING:
         export,
         validate,
     )
+    from neuralops.integrations.fla import list_fla_attentions
     from neuralops.core.exceptions import (
         BackendError,
         ConfigError,
@@ -97,6 +98,7 @@ def _require_torch(feature: str = "this feature") -> None:
     """Raise a clear installation error when PyTorch is absent."""
     if not _TORCH_AVAILABLE:
         raise _torch_install_error(feature)
+
 
 import importlib.machinery
 from importlib.abc import MetaPathFinder
@@ -283,9 +285,7 @@ class _ModuleAliasFinder(MetaPathFinder):
         "neuralops.kernels.triton.cur_linear": "neuralops.core.triton_kernels.cur_linear",
     }
 
-    def find_spec(
-        self, fullname: str, path: Any, target: Any = None
-    ) -> Any | None:
+    def find_spec(self, fullname: str, path: Any, target: Any = None) -> Any | None:
         """Execute find_spec operation."""
         if fullname.startswith("neuralops.kernels.cuda."):
             sub = fullname[len("neuralops.kernels.cuda.") :]
@@ -312,6 +312,7 @@ class _ModuleAliasFinder(MetaPathFinder):
 if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
     sys.meta_path.insert(0, _ModuleAliasFinder())
 
+
 def _patch_torch_compat():
     """Install PyTorch 1.12 backward compatibility polyfills (SDPA, torch.compile, torch.amp)."""
     if "torch" not in sys.modules:
@@ -323,11 +324,13 @@ def _patch_torch_compat():
         try:
             import contextlib
             import math
+
             import torch
             import torch.nn.functional as F
 
             # 1. Polyfill F.scaled_dot_product_attention if missing (PyTorch < 2.0)
             if not hasattr(F, "scaled_dot_product_attention"):
+
                 def _scaled_dot_product_attention(
                     query: Any,
                     key: Any,
@@ -357,28 +360,35 @@ def _patch_torch_compat():
 
             # 2. Polyfill torch.compile if missing (PyTorch < 2.0)
             if not hasattr(torch, "compile"):
+
                 def _dummy_compile(fn: Any = None, *args: Any, **kwargs: Any) -> Any:
                     if fn is not None:
                         return fn
+
                     def decorator(func: Any) -> Any:
                         return func
+
                     return decorator
 
                 torch.compile = _dummy_compile
 
             # 3. Polyfill torch.compiler if missing (PyTorch < 2.0)
             if not hasattr(torch, "compiler"):
+
                 class _CompilerCompat:
                     @staticmethod
                     def is_compiling() -> bool:
                         return False
+
                     @staticmethod
                     def cudagraph_mark_step_begin() -> None:
                         pass
+
                 torch.compiler = _CompilerCompat
 
             # 4. Polyfill torch.amp if missing (PyTorch < 2.0)
             if not hasattr(torch, "amp"):
+
                 class _AmpCompat:
                     @staticmethod
                     def autocast(
@@ -408,6 +418,7 @@ def _patch_torch_compat():
             # 5. Fix torch.is_autocast_enabled to safely accept optional device_type
             if hasattr(torch, "is_autocast_enabled"):
                 _orig_is_autocast_enabled = torch.is_autocast_enabled
+
                 def _safe_is_autocast_enabled(device_type: str | None = None) -> bool:
                     try:
                         if device_type is not None:
@@ -422,6 +433,7 @@ def _patch_torch_compat():
 
             # 6. Polyfill torch.nn.RMSNorm for PyTorch < 2.4
             if not hasattr(torch.nn, "RMSNorm"):
+
                 class RMSNorm(torch.nn.Module):
                     def __init__(self, normalized_shape: int | tuple[int, ...] | list[int], eps: float = 1e-6) -> None:
                         super().__init__()
@@ -439,8 +451,10 @@ def _patch_torch_compat():
 
             # 7. Polyfill torch.cuda.OutOfMemoryError for PyTorch < 2.0
             if hasattr(torch, "cuda") and not hasattr(torch.cuda, "OutOfMemoryError"):
+
                 class _OutOfMemoryError(RuntimeError):
                     pass
+
                 torch.cuda.OutOfMemoryError = _OutOfMemoryError
 
         except Exception:
@@ -493,14 +507,8 @@ def _patch_pascal_svd_if_needed():
                     if capability < (7, 0):
                         device = matrix.device
                         cpu_matrix = matrix.detach().cpu().float()
-                        u_cpu, s_cpu, vh_cpu = _call_orig_svd(
-                            cpu_matrix, full_matrices, driver, None
-                        )
-                        result_dtype = (
-                            matrix.dtype
-                            if matrix.dtype != torch.float16
-                            else torch.float32
-                        )
+                        u_cpu, s_cpu, vh_cpu = _call_orig_svd(cpu_matrix, full_matrices, driver, None)
+                        result_dtype = matrix.dtype if matrix.dtype != torch.float16 else torch.float32
                         u = u_cpu.to(device=device, dtype=result_dtype)
                         s = s_cpu.to(device=device, dtype=result_dtype)
                         vh = vh_cpu.to(device=device, dtype=result_dtype)
@@ -518,6 +526,7 @@ def _patch_pascal_svd_if_needed():
         except Exception:
             # allowed-swallow: best-effort-telemetry
             pass
+
 
 _patch_torch_compat()
 _patch_pascal_svd_if_needed()
@@ -623,19 +632,24 @@ _LAZY_EXPORTS = {
     "triton_dispatch": ("neuralops.core.triton_kernels", "triton_dispatch"),
 }
 
-def replace_attention(*args: Any, **kwargs: Any) -> Any:
+
+def replace_attention(*args: Any, **kwargs: Any) -> Any:  # type: ignore[no-redef]
     """Surgically replace attention mechanisms in a model (requires PyTorch)."""
     from neuralops._optional import _require_torch
+
     _require_torch("replace_attention")
     from neuralops.api import replace_attention as _impl
+
     return _impl(*args, **kwargs)
 
 
-def compress(*args: Any, **kwargs: Any) -> Any:
+def compress(*args: Any, **kwargs: Any) -> Any:  # type: ignore[no-redef]
     """Compress a neural network model (requires PyTorch)."""
     from neuralops._optional import _require_torch
+
     _require_torch("compress")
     from neuralops.api import compress as _impl
+
     return _impl(*args, **kwargs)
 
 
@@ -752,13 +766,37 @@ _API_EXPORTS = {
 }
 
 _SUBPACKAGES = {
-    "analysis", "attentions", "benchmarks", "cli", "compression_engine",
-    "config", "core", "distributed", "experiment_logging",
-    "inference", "integrations", "kernels", "models",
-    "results_saver", "runners", "tests", "tracking", "trainer",
-    "training", "utils", "main", "surgery", "export",
-    "optimization", "adaptation",
-    "recipe", "operations", "adapters", "validator", "executor", "reporting",
+    "analysis",
+    "attentions",
+    "benchmarks",
+    "cli",
+    "compression_engine",
+    "config",
+    "core",
+    "distributed",
+    "experiment_logging",
+    "inference",
+    "integrations",
+    "kernels",
+    "models",
+    "results_saver",
+    "runners",
+    "tests",
+    "tracking",
+    "trainer",
+    "training",
+    "utils",
+    "main",
+    "surgery",
+    "export",
+    "optimization",
+    "adaptation",
+    "recipe",
+    "operations",
+    "adapters",
+    "validator",
+    "executor",
+    "reporting",
 }
 
 
@@ -766,92 +804,91 @@ def inject_gla(model, **kwargs):
     """Replace all standard attention layers with GLA. Convenience wrapper."""
     from neuralops.attentions.linear.gla_attention import GLAttention as _GLA
     from neuralops.core._attention_surgery import replace_attention_in_model
+
     return replace_attention_in_model(model, _GLA, **kwargs)
 
+
 # Universal factories (F-80 single implementation in core.registry)
-from neuralops.core.registry import (
-    create_attention,
-    create_compressor,
-    list_attentions,
-    list_compressors,
+from neuralops.core.registry import create_attention, create_compressor, list_attentions, list_compressors
+
+__all__ = sorted(
+    list(
+        set(
+            [
+                "__version__",
+                "create_attention",
+                "create_compressor",
+                "list_attentions",
+                "list_compressors",
+                "inject_gla",
+                "ComposableAttention",
+                "compose_attention",
+                "compile_to_so",
+                "list_surgeries",
+                "SurgeryRecipe",
+                "surgery",
+                "force_kernel_backend",
+                "list_triton_kernels",
+                "list_cuda_kernels",
+                "list_fla_attentions",
+                "GLAttention",
+                "CosformerAttention",
+                "SVDLinearAttention",
+                "DecayLinearAttention",
+                "Muon",
+                "StiefelOptimizer",
+                "RiemannianAdam",
+                "HybridAttentionSpec",
+                "NeuralOpsError",
+                "ConfigError",
+                "WeightCopyError",
+                "BackendError",
+                "NumericalError",
+                "BitPackedW4A16Linear",
+                "BitPackedLowRankSVDLinear",
+                "pack_int4_weights",
+                "unpack_int4_weights",
+                "fused_w4a16_gemm_triton",
+                "fast_hadamard_transform",
+                "HadamardIncoherentSVDCompressor",
+                "SelfSpeculativeDecoder",
+                "SpeculativeDecodeStats",
+                "PagedKVCache",
+                "PagedStateTable",
+                "ATTENTION_REGISTRY",
+                "COMPRESSOR_REGISTRY",
+                "NeedleInAHaystackEvaluator",
+                "plot_niah_heatmap",
+                "NeuralOpsLMEvalAdapter",
+                "evaluate_zero_shot_tasks",
+            ]
+            + list(_PUBLIC_API.keys())
+            + list(_LAZY_EXPORTS.keys())
+        )
+    )
 )
-
-
-__all__ = sorted(list(set(
-    [
-        "__version__",
-        "create_attention",
-        "create_compressor",
-        "list_attentions",
-        "list_compressors",
-        "inject_gla",
-        "ComposableAttention",
-        "compose_attention",
-        "compile_to_so",
-        "list_surgeries",
-        "SurgeryRecipe",
-        "surgery",
-        "force_kernel_backend",
-        "list_triton_kernels",
-        "list_cuda_kernels",
-        "list_fla_attentions",
-        "GLAttention",
-        "CosformerAttention",
-        "SVDLinearAttention",
-        "DecayLinearAttention",
-        "Muon",
-        "StiefelOptimizer",
-        "RiemannianAdam",
-        "HybridAttentionSpec",
-        "NeuralOpsError",
-        "ConfigError",
-        "WeightCopyError",
-        "BackendError",
-        "NumericalError",
-        "BitPackedW4A16Linear",
-        "BitPackedLowRankSVDLinear",
-        "pack_int4_weights",
-        "unpack_int4_weights",
-        "fused_w4a16_gemm_triton",
-        "fast_hadamard_transform",
-        "HadamardIncoherentSVDCompressor",
-        "SelfSpeculativeDecoder",
-        "SpeculativeDecodeStats",
-        "PagedKVCache",
-        "PagedStateTable",
-        "ATTENTION_REGISTRY",
-        "COMPRESSOR_REGISTRY",
-        "NeedleInAHaystackEvaluator",
-        "plot_niah_heatmap",
-        "NeuralOpsLMEvalAdapter",
-        "evaluate_zero_shot_tasks",
-    ]
-    + list(_PUBLIC_API.keys())
-    + list(_LAZY_EXPORTS.keys())
-)))
 
 
 def __getattr__(name: str) -> Any:
     """PEP 562 dynamic lazy loader."""
-    if (
-        name not in _TORCH_FREE_SYMBOLS
-        and (
-            name in __all__
-            or name in _API_EXPORTS
-            or name in _LAZY_EXPORTS
-            or name in _SUBPACKAGES
-            or name in {"ATTENTION_REGISTRY", "ALL_ATTENTION_CLASSES", "evaluation"}
-        )
+    if name not in _TORCH_FREE_SYMBOLS and (
+        name in __all__
+        or name in _API_EXPORTS
+        or name in _LAZY_EXPORTS
+        or name in _SUBPACKAGES
+        or name in {"ATTENTION_REGISTRY", "ALL_ATTENTION_CLASSES", "evaluation"}
     ):
         _require_torch(f"neuralops.{name}")
 
     if name == "ATTENTION_REGISTRY":
         from neuralops.core.registry import ATTENTION_REGISTRY as reg
+
         globals()[name] = reg
         return reg
 
     if name == "ALL_ATTENTION_CLASSES":
         from neuralops.core.registry import ATTENTION_REGISTRY as reg
+
         classes = list(reg.values())
         globals()[name] = classes
         return classes

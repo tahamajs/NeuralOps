@@ -34,7 +34,7 @@ import builtins
 import importlib
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from neuralops.core.exceptions import RegistryError
 
@@ -53,12 +53,10 @@ DEPRECATED_ALIASES: dict[str, str] = {
     "svd_seq": "svd_attention",
 }
 
-from neuralops.core.legacy_aliases import (
-    DEPRECATED_ALIASES as _DEPRECATED_ALIASES,
-    handle_deprecated_alias as _handle_deprecated,
-    ATTENTION_FILE_MAP as _ATTENTION_FILE_MAP,
-    COMPRESSOR_FILE_MAP as _COMPRESSOR_FILE_MAP,
-)
+from neuralops.core.legacy_aliases import ATTENTION_FILE_MAP as _ATTENTION_FILE_MAP
+from neuralops.core.legacy_aliases import COMPRESSOR_FILE_MAP as _COMPRESSOR_FILE_MAP
+from neuralops.core.legacy_aliases import DEPRECATED_ALIASES as _DEPRECATED_ALIASES
+from neuralops.core.legacy_aliases import handle_deprecated_alias as _handle_deprecated
 
 DEPRECATED_ALIASES.update(_DEPRECATED_ALIASES)
 
@@ -80,7 +78,9 @@ def _make_universal_attention_class(target_cls: type) -> type:
 
         def __new__(cls, *args: Any, **kwargs: Any) -> Any:
             args_list = list(args)
-            resolved_dim = kwargs.get("dim") or kwargs.get("hidden_size") or kwargs.get("d_model") or kwargs.get("embed_dim")
+            resolved_dim = (
+                kwargs.get("dim") or kwargs.get("hidden_size") or kwargs.get("d_model") or kwargs.get("embed_dim")
+            )
             resolved_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads") or kwargs.get("n_head")
 
             if len(args_list) > 0 and isinstance(args_list[0], int):
@@ -95,6 +95,7 @@ def _make_universal_attention_class(target_cls: type) -> type:
             if resolved_dim is not None:
                 if config is None:
                     from transformers import BertConfig
+
                     h = resolved_heads or max(1, resolved_dim // 64)
                     config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
                 else:
@@ -121,11 +122,13 @@ def _make_universal_attention_class(target_cls: type) -> type:
                     "UniversalAttentionWrapper.__new__ super failed (%s); allocating target_cls directly",
                     e,
                 )
-                return target_cls.__new__(target_cls)
+                return object.__new__(target_cls)
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             args_list = list(args)
-            resolved_dim = kwargs.get("dim") or kwargs.get("hidden_size") or kwargs.get("d_model") or kwargs.get("embed_dim")
+            resolved_dim = (
+                kwargs.get("dim") or kwargs.get("hidden_size") or kwargs.get("d_model") or kwargs.get("embed_dim")
+            )
             resolved_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads") or kwargs.get("n_head")
 
             if len(args_list) > 0 and isinstance(args_list[0], int):
@@ -140,6 +143,7 @@ def _make_universal_attention_class(target_cls: type) -> type:
             if resolved_dim is not None:
                 if config is None:
                     from transformers import BertConfig
+
                     h = resolved_heads or max(1, resolved_dim // 64)
                     config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
                 else:
@@ -161,8 +165,12 @@ def _make_universal_attention_class(target_cls: type) -> type:
 
             init_attempts = [
                 lambda: super(UniversalAttentionWrapper, self).__init__(*args_list, **kwargs),
-                lambda: super(UniversalAttentionWrapper, self).__init__(config=config, **{k: v for k, v in kwargs.items() if k != "config"}),
-                lambda: super(UniversalAttentionWrapper, self).__init__(config, **{k: v for k, v in kwargs.items() if k != "config"}),
+                lambda: super(UniversalAttentionWrapper, self).__init__(
+                    config=config, **{k: v for k, v in kwargs.items() if k != "config"}
+                ),
+                lambda: super(UniversalAttentionWrapper, self).__init__(
+                    config, **{k: v for k, v in kwargs.items() if k != "config"}
+                ),
                 lambda: super(UniversalAttentionWrapper, self).__init__(resolved_dim, resolved_heads, **kwargs),
                 lambda: super(UniversalAttentionWrapper, self).__init__(resolved_dim, **kwargs),
                 lambda: super(UniversalAttentionWrapper, self).__init__(**kwargs),
@@ -268,9 +276,7 @@ class Registry:
                     "supports_cross_attention",
                     (True if supports_cross_attention is None else supports_cross_attention),
                 ),
-                "supports_gqa": getattr(
-                    obj, "supports_gqa", False if supports_gqa is None else supports_gqa
-                ),
+                "supports_gqa": getattr(obj, "supports_gqa", False if supports_gqa is None else supports_gqa),
             }
             if self.name == "compressors":
                 caps["hardware_accelerated"] = getattr(
@@ -295,9 +301,7 @@ class Registry:
             k = final_key.lower()
             if is_alias:
                 if k in self._dict:
-                    raise RegistryError(
-                        f"Alias '{k}' collides with canonical key in registry '{self.name}'."
-                    )
+                    raise RegistryError(f"Alias '{k}' collides with canonical key in registry '{self.name}'.")
                 self._aliases[k] = obj
             else:
                 if k in self._dict and self._dict[k] is not obj:
@@ -316,12 +320,12 @@ class Registry:
                 parts = mod.split(".")
                 if len(parts) >= 3 and parts[0] == "neuralops" and parts[1] in ("layers", "compression"):
                     try:
-                        obj.FAMILY = parts[2]
+                        obj.FAMILY = parts[2]  # type: ignore[attr-defined]
                     except (AttributeError, TypeError):
                         pass
                 elif "ttt" in mod:
                     try:
-                        obj.FAMILY = "linear"
+                        obj.FAMILY = "linear"  # type: ignore[attr-defined]
                     except (AttributeError, TypeError):
                         pass
 
@@ -341,9 +345,7 @@ class Registry:
                     "supports_cross_attention",
                     (True if supports_cross_attention is None else supports_cross_attention),
                 ),
-                "supports_gqa": getattr(
-                    obj, "supports_gqa", False if supports_gqa is None else supports_gqa
-                ),
+                "supports_gqa": getattr(obj, "supports_gqa", False if supports_gqa is None else supports_gqa),
             }
             if self.name == "compressors":
                 caps["hardware_accelerated"] = getattr(
@@ -419,7 +421,15 @@ class Registry:
                         importlib.import_module(f"neuralops.compression.{canonical}")
                     except (ImportError, ModuleNotFoundError):
                         bare = canonical.split(".")[-1]
-                        for subpkg in ('svd', 'quantization', 'pruning', 'low_rank', 'tensor_decomp', 'kv_cache', 'experimental'):
+                        for subpkg in (
+                            "svd",
+                            "quantization",
+                            "pruning",
+                            "low_rank",
+                            "tensor_decomp",
+                            "kv_cache",
+                            "experimental",
+                        ):
                             try:
                                 importlib.import_module(f"neuralops.compression.{subpkg}.{bare}")
                                 break
@@ -452,7 +462,19 @@ class Registry:
                         importlib.import_module(f"neuralops.layers.{canonical}")
                     except (ImportError, ModuleNotFoundError):
                         bare = canonical.split(".")[-1]
-                        for subpkg in ('modern', 'svd', 'adaptive', 'gated', 'linear', 'sparse', 'ssm', 'hybrid', 'dense', 'fast_kernels', 'experimental'):
+                        for subpkg in (
+                            "modern",
+                            "svd",
+                            "adaptive",
+                            "gated",
+                            "linear",
+                            "sparse",
+                            "ssm",
+                            "hybrid",
+                            "dense",
+                            "fast_kernels",
+                            "experimental",
+                        ):
                             try:
                                 importlib.import_module(f"neuralops.layers.{subpkg}.{bare}")
                                 break
@@ -472,6 +494,7 @@ class Registry:
         if key in DEPRECATED_ALIASES:
             canonical = DEPRECATED_ALIASES[key]
             import warnings
+
             warnings.warn(
                 f"'{key}' is deprecated. Use '{canonical}' instead.",
                 DeprecationWarning,
@@ -491,12 +514,22 @@ class Registry:
             can = _ATTENTION_FILE_MAP[k_lower]
             self._try_lazy_load(can)
             bare = can.split(".")[-1].lower()
-            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower()) or self._dict.get(bare) or self._aliases.get(bare)
+            obj = (
+                self._dict.get(can.lower())
+                or self._aliases.get(can.lower())
+                or self._dict.get(bare)
+                or self._aliases.get(bare)
+            )
         if obj is None and self.name == "compressors" and k_lower in _COMPRESSOR_FILE_MAP:
             can = _COMPRESSOR_FILE_MAP[k_lower]
             self._try_lazy_load(can)
             bare = can.split(".")[-1].lower()
-            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower()) or self._dict.get(bare) or self._aliases.get(bare)
+            obj = (
+                self._dict.get(can.lower())
+                or self._aliases.get(can.lower())
+                or self._dict.get(bare)
+                or self._aliases.get(bare)
+            )
         if unwrap:
             return obj
         if obj is not None and self.name == "attentions" and isinstance(obj, type):
@@ -508,6 +541,7 @@ class Registry:
         if key in DEPRECATED_ALIASES:
             canonical = DEPRECATED_ALIASES[key]
             import warnings
+
             warnings.warn(
                 f"'{key}' is deprecated. Use '{canonical}' instead.",
                 DeprecationWarning,
@@ -527,16 +561,24 @@ class Registry:
             can = _ATTENTION_FILE_MAP[k_lower]
             self._try_lazy_load(can)
             bare = can.split(".")[-1].lower()
-            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower()) or self._dict.get(bare) or self._aliases.get(bare)
+            obj = (
+                self._dict.get(can.lower())
+                or self._aliases.get(can.lower())
+                or self._dict.get(bare)
+                or self._aliases.get(bare)
+            )
         if obj is None and self.name == "compressors" and k_lower in _COMPRESSOR_FILE_MAP:
             can = _COMPRESSOR_FILE_MAP[k_lower]
             self._try_lazy_load(can)
             bare = can.split(".")[-1].lower()
-            obj = self._dict.get(can.lower()) or self._aliases.get(can.lower()) or self._dict.get(bare) or self._aliases.get(bare)
-        if obj is None:
-            raise KeyError(
-                f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}"
+            obj = (
+                self._dict.get(can.lower())
+                or self._aliases.get(can.lower())
+                or self._dict.get(bare)
+                or self._aliases.get(bare)
             )
+        if obj is None:
+            raise KeyError(f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}")
         if self.name == "attentions" and isinstance(obj, type):
             return _make_universal_attention_class(obj)
         return obj
@@ -724,8 +766,9 @@ def list_attention_mechanisms() -> list[str]:
 
 
 import sys as _sys
+
 if "neuralops" in _sys.modules:
-    _sys.modules["neuralops"].list_attention_mechanisms = list_attention_mechanisms
+    _sys.modules["neuralops"].list_attention_mechanisms = list_attention_mechanisms  # type: ignore[attr-defined]
 
 MODEL_REGISTRY = Registry("models")
 DATASET_REGISTRY = Registry("datasets")
@@ -776,11 +819,7 @@ def list_all_components() -> dict:
 def get_evaluatable_modules(include_compressors: bool = True) -> list[str]:
     """Returns all genuine registered attention and compressor architectures, excluding helper aliases."""
     attns = [k for k in ATTENTION_REGISTRY.keys() if not is_helper_module(k)]
-    comps = (
-        [k for k in COMPRESSOR_REGISTRY.keys() if not is_helper_module(k)]
-        if include_compressors
-        else []
-    )
+    comps = [k for k in COMPRESSOR_REGISTRY.keys() if not is_helper_module(k)] if include_compressors else []
     return sorted(list(set(attns + comps)))
 
 
@@ -840,12 +879,16 @@ def create_attention(
     """
     if name == "composable" or name.startswith("compose(") or "proj=" in name:
         from neuralops.core.composable import ComposableAttention
+
         return ComposableAttention(embed_dim=embed_dim or dim or 768, num_heads=num_heads or 12, **kwargs)
 
     cls = ATTENTION_REGISTRY.get(name)
     if cls is None:
         from neuralops.core.exceptions import AttentionNotRegisteredError
-        raise AttentionNotRegisteredError(f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}")
+
+        raise AttentionNotRegisteredError(
+            f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}"
+        )
 
     resolved_dim = (
         embed_dim
@@ -887,6 +930,7 @@ def create_attention(
 
     if config is None and resolved_dim is not None:
         from transformers import BertConfig
+
         h = resolved_heads or max(1, resolved_dim // 64)
         is_dec = kwargs.get("is_decoder", kwargs.get("is_causal", True))
         config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h, is_decoder=is_dec)
@@ -899,9 +943,27 @@ def create_attention(
         init_attempts.append(lambda: cls(config=config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
         init_attempts.append(lambda: cls(config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
     if resolved_dim is not None and resolved_heads is not None:
-        init_attempts.append(lambda: cls(embed_dim=resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "num_heads")}))
-        init_attempts.append(lambda: cls(dim=resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("dim", "num_heads")}))
-        init_attempts.append(lambda: cls(resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "dim", "num_heads")}))
+        init_attempts.append(
+            lambda: cls(
+                embed_dim=resolved_dim,
+                num_heads=resolved_heads,
+                **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "num_heads")},
+            )
+        )
+        init_attempts.append(
+            lambda: cls(
+                dim=resolved_dim,
+                num_heads=resolved_heads,
+                **{k: v for k, v in call_kwargs.items() if k not in ("dim", "num_heads")},
+            )
+        )
+        init_attempts.append(
+            lambda: cls(
+                resolved_dim,
+                num_heads=resolved_heads,
+                **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "dim", "num_heads")},
+            )
+        )
     init_attempts.append(lambda: cls(**call_kwargs))
     init_attempts.append(lambda: cls())
 
@@ -922,6 +984,7 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
     cls = COMPRESSOR_REGISTRY.get(name)
     if cls is None:
         from neuralops.core.exceptions import CompressorNotRegisteredError
+
         raise CompressorNotRegisteredError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
 
     call_kwargs = dict(kwargs)
@@ -939,6 +1002,7 @@ def create_compressor(name: str, model: Any = None, rank: int | None = None, **k
         attempts.append(lambda: cls(model, **{k: v for k, v in call_kwargs.items() if k != "model"}))
     else:
         import torch.nn as nn
+
         dummy_host = nn.Sequential(nn.Linear(64, 64))
         attempts.append(lambda: cls(model=dummy_host, **call_kwargs))
         attempts.append(lambda: cls(dummy_host, **call_kwargs))
@@ -960,8 +1024,9 @@ def get_attention(name: str) -> type:
     cls = ATTENTION_REGISTRY.get(name)
     if cls is None:
         from neuralops.core.exceptions import AttentionNotRegisteredError
+
         raise AttentionNotRegisteredError(f"Attention '{name}' not found in ATTENTION_REGISTRY.")
-    return cls
+    return cast(type, cls)
 
 
 def get_compressor(name: str, **kwargs: Any) -> Any:
@@ -969,6 +1034,7 @@ def get_compressor(name: str, **kwargs: Any) -> Any:
     cls = COMPRESSOR_REGISTRY.get(name)
     if cls is None:
         from neuralops.core.exceptions import CompressorNotRegisteredError
+
         raise CompressorNotRegisteredError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
     if kwargs:
         return cls(**kwargs)

@@ -74,6 +74,10 @@ jobs:
       - name: Check import ordering with isort
         run: |
           isort --check-only neuralops tests
+      - name: Run pre-commit hooks
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
 
   mypy:
     name: Static Type Checking (mypy baseline scope)
@@ -90,10 +94,8 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install -e ".[cpu,dev]"
       - name: Run mypy on baseline core scope
-        # Scope: Core exceptions, errors, diagnostics, and version metadata.
-        # Broader scope deferred to avoid failing on legacy untyped modules.
         run: |
-          mypy --follow-imports=skip neuralops/core/exceptions.py neuralops/core/errors.py neuralops/core/diagnostics.py neuralops/_version.py
+          mypy --follow-imports=silent neuralops/core/exceptions.py neuralops/core/config.py neuralops/core/registry.py neuralops/utils/seed.py neuralops/__init__.py
 
   wheel-smoke:
     name: Distribution Wheel Smoke Test

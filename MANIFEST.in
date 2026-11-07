@@ -5,10 +5,9 @@ include CONTRIBUTING.md
 include CITATION.cff
 include SECURITY.md
 include CODE_OF_CONDUCT.md
-include ROADMAP.md
+include docs/ROADMAP.md
 include requirements.txt
 include requirements.lock.txt
-include pytest.ini
 
 include neuralops/py.typed
 include neuralops/core/deprecated_aliases.json
@@ -25,11 +24,9 @@ recursive-include neuralops *.json
 
 prune tests
 prune benchmarks
-prune evaluation
 prune scripts
 prune results
 prune paper
-prune thesis_final
 prune docs
 prune academic
 prune logs

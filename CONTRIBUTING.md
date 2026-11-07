@@ -24,7 +24,12 @@ Thank you for your interest in contributing to **NeuralOps**! We welcome contrib
    pip install -e ".[all,dev]"
    ```
 
-4. **Verify your local installation**:
+4. **Install pre-commit quality hooks**:
+   ```bash
+   pre-commit install
+   ```
+
+5. **Verify your local installation**:
    ```bash
    python -m neuralops.benchmarks verify
    python -m neuralops info
