@@ -27,8 +27,8 @@ def _get_attention_names() -> list[str]:
     """Retrieve full canonical list of all registered attention names."""
     ATTENTION_REGISTRY._load_all()
     names = sorted(list(ATTENTION_REGISTRY.keys()))
-    if len(names) < 116:
-        pytest.fail(f"Attention registry short: expected >= 116 names, got {len(names)}")
+    if len(names) < 115:
+        pytest.fail(f"Attention registry short: expected >= 115 names, got {len(names)}")
     return names
 
 

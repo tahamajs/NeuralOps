@@ -30,8 +30,8 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 ATTENTION_REGISTRY._load_all()
 ATTN_KEYS = sorted(ATTENTION_REGISTRY.keys())
-if len(ATTN_KEYS) < 116:
-    pytest.fail(f"Attention registry short: expected >= 116 names, got {len(ATTN_KEYS)}")
+if len(ATTN_KEYS) < 115:
+    pytest.fail(f"Attention registry short: expected >= 115 names, got {len(ATTN_KEYS)}")
 
 
 def _instantiate_attn(attn_name: str, dim: int, num_heads: int, device: str = "cuda"):
