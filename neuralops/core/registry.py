@@ -182,12 +182,40 @@ def _make_universal_attention_class(target_cls: type) -> type:
     return UniversalAttentionWrapper
 
 
+class _LazyRegistryDict(dict):
+    """Dictionary proxy that lazily triggers _load_all() upon iteration or bulk inspection."""
+
+    def __init__(self, registry: Registry, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._registry = registry
+
+    def values(self) -> Any:
+        self._registry._load_all()
+        return super().values()
+
+    def items(self) -> Any:
+        self._registry._load_all()
+        return super().items()
+
+    def keys(self) -> Any:
+        self._registry._load_all()
+        return super().keys()
+
+    def __iter__(self) -> Any:
+        self._registry._load_all()
+        return super().__iter__()
+
+    def __len__(self) -> int:
+        self._registry._load_all()
+        return super().__len__()
+
+
 class Registry:
     """A named dictionary that maps string keys to classes or factory functions with capability metadata."""
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self._dict: dict[str, Callable] = {}
+        self._dict: dict[str, Callable] = _LazyRegistryDict(self)
         self._aliases: dict[str, Callable] = {}
         self._metadata: dict[str, dict[str, Any]] = {}
         self._loaded: bool = False
