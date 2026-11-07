@@ -29,9 +29,7 @@ except ModuleNotFoundError as exc:
     raise
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from neuralops.core.attention_utils import inject_attention
 from neuralops.export.exporter import export_model as _export_model, load_model as _load_model, load_exported_model
-from neuralops.utils.hub_integration import load_attention_from_hub, save_attention_only
 
 logger = logging.getLogger("NeuralOps.API")
 
@@ -137,6 +135,8 @@ def replace_attention(
         from neuralops.models.hybrid_spec import normalize_hybrid_spec
         norm_spec = normalize_hybrid_spec(hybrid_spec)
         call_kwargs["hybrid_spec"] = norm_spec
+
+    from neuralops.core._attention_injectors import _inject_attention_loop as inject_attention
 
     out_model = inject_attention(
         model=model,
@@ -1671,6 +1671,7 @@ from neuralops.transformers import (
     patch_transformers,
 )
 from neuralops.export.surgery_manifest import merge_for_inference
+from neuralops.utils.hub_integration import load_attention_from_hub, save_attention_only
 
 # Canonical Public API symbol mapping (F-79 single source of truth)
 _PUBLIC_API: Dict[str, str] = {name: "neuralops.api" for name in __all__}

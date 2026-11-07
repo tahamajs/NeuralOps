@@ -782,4 +782,8 @@ def _unused_replace_attention(model, attention_key=None, layer_indices=None, new
     return model
 
 
-replace_attention_in_model = replace_attention
+def __getattr__(name: str) -> Any:
+    if name in ("replace_attention", "replace_attention_in_model"):
+        from neuralops.api import replace_attention
+        return replace_attention
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

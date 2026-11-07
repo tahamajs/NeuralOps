@@ -234,7 +234,16 @@ def inject_replace(
 inject_replace_attention = inject_replace
 inject_replace_attention_v2 = inject_replace
 
+
+def __getattr__(name: str) -> Any:
+    if name == "replace_attention":
+        from neuralops.api import replace_attention
+        return replace_attention
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
 __all__ = [
+    "replace_attention",
     "replace_attention_in_model",
     "build_attention",
     "ReplaceAttention",
