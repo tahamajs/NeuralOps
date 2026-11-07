@@ -234,6 +234,50 @@ def test_adapters_6gate_fail_numerics() -> None:
     assert "max_diff" in result.error or "exceeds tolerance" in result.error
 
 
+def test_adapters_individual_6gates_contract() -> None:
+    """Verify each of the 6 gates individually for CUDAKernelAdapter and TritonKernelAdapter."""
+    from neuralops.benchmarks.adapters.base import BenchmarkInputs, NumericsReport
+
+    for adapter_cls, kernel in [(CUDAKernelAdapter, "layernorm"), (TritonKernelAdapter, "linear_attn")]:
+        adapter = adapter_cls(kernel, device="cpu")
+        assert isinstance(adapter, BaseBenchmarkAdapter)
+
+        # Gate 1: capability_check
+        cap = adapter.capability_check()
+        assert isinstance(cap, dict)
+        assert "available" in cap and "backend" in cap and "reason" in cap
+        assert cap["available"] is True
+
+        # Gate 2: build_inputs
+        inputs = adapter.build_inputs()
+        assert isinstance(inputs, BenchmarkInputs)
+        assert len(inputs.tensors) > 0
+        assert inputs.seed == adapter.seed
+        assert inputs.dtype == adapter.dtype
+
+        # Gate 3: run_reference
+        ref_out = adapter.run_reference(inputs)
+        assert isinstance(ref_out, torch.Tensor)
+
+        # Gate 4: run_candidate
+        cand_out, backend_used = adapter.run_candidate(inputs)
+        assert isinstance(cand_out, torch.Tensor)
+        assert isinstance(backend_used, str)
+
+        # Gate 5: validate_numerics
+        report = adapter.validate_numerics(ref_out, cand_out)
+        assert isinstance(report, NumericsReport)
+        assert report.passed is True
+        assert report.max_diff <= adapter.tolerance
+
+        # Gate 6: measure_performance
+        perf = adapter.measure_performance(inputs)
+        assert isinstance(perf, dict)
+        assert "latency_ms_mean" in perf
+        assert "latency_ms_std" in perf
+        assert perf["latency_ms_mean"] >= 0.0
+
+
 def test_benchmark_registry_and_decorator() -> None:
     @register_benchmark("mock_unit_benchmark", mode="checkpoint", hardware="any", description="Mock test benchmark")
     class MockBench(BaseBenchmark):
