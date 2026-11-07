@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -275,6 +275,8 @@ def make_dataloader(
     batch_size: int = 32,
     shuffle: bool = False,
     num_workers: int | None = None,
+    collate_fn: Callable[[Any], Any] | None = None,
+    preprocess_fn: Callable[[Any], Any] | None = None,
 ) -> DataLoader:
     """Create a DataLoader tuned for GPU training.
 
@@ -284,15 +286,30 @@ def make_dataloader(
     if num_workers is None:
         num_workers = int(os.environ.get("NEURALOPS_DATALOADER_WORKERS", "0"))
 
-    return DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        num_workers=num_workers,
-        pin_memory=torch.cuda.is_available(),
-        persistent_workers=(num_workers > 0),
-        prefetch_factor=2 if num_workers > 0 else None,
-    )
+    final_collate = collate_fn
+    if preprocess_fn is not None:
+        import torch.utils.data.dataloader as dl
+
+        base_collate = collate_fn or dl.default_collate
+
+        def custom_collate(batch: Any) -> Any:
+            collated = base_collate(batch)
+            return preprocess_fn(collated)
+
+        final_collate = custom_collate
+
+    kwargs: dict[str, Any] = {
+        "batch_size": batch_size,
+        "shuffle": shuffle,
+        "num_workers": num_workers,
+        "pin_memory": torch.cuda.is_available(),
+        "persistent_workers": (num_workers > 0),
+        "prefetch_factor": 2 if num_workers > 0 else None,
+    }
+    if final_collate is not None:
+        kwargs["collate_fn"] = final_collate
+
+    return DataLoader(dataset, **kwargs)
 
 
 def load_glue_dataset(task_name: str, tokenizer: Any, max_length: int = 128, split: str = "validation") -> Dataset:
@@ -308,6 +325,46 @@ def load_wikitext_dataset(
     return load_dataset_by_name(name=ds_name, tokenizer=tokenizer, max_length=max_length, split=split)
 
 
+def load_preprocess_script(path: str | Path) -> Callable[[Any], Any]:
+    """Load and validate custom preprocessing script exposing `preprocess(batch) -> batch`.
+
+    WARNING: Executing a preprocessing script executes arbitrary Python code.
+    Ensure the script is sourced from a trusted origin.
+    """
+    path_obj = Path(path).resolve()
+    if not path_obj.is_file():
+        raise FileNotFoundError(f"Preprocessing script not found: {path_obj}")
+
+    LOG.warning(
+        "Loading and executing custom preprocessing script '%s'. "
+        "Arbitrary code execution enabled; ensure script source is trusted.",
+        path_obj,
+    )
+    import hashlib
+    import importlib.util
+
+    with open(path_obj, "rb") as f:
+        script_hash = hashlib.sha256(f.read()).hexdigest()
+
+    module_name = f"_neuralops_preprocess_{path_obj.stem}_{script_hash[:8]}"
+    spec = importlib.util.spec_from_file_location(module_name, str(path_obj))
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load module specification from {path_obj}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    preprocess_fn = getattr(module, "preprocess", None)
+    if not callable(preprocess_fn):
+        raise AttributeError(
+            f"Preprocessing script '{path_obj}' does not expose a callable named 'preprocess(batch)'."
+        )
+
+    preprocess_fn.__preprocess_script_path__ = str(path_obj)
+    preprocess_fn.__preprocess_script_sha256__ = script_hash
+    return preprocess_fn
+
+
 __all__ = [
     "GLUE_TASKS",
     "get_num_labels",
@@ -315,5 +372,6 @@ __all__ = [
     "load_dataset_by_name",
     "load_glue_dataset",
     "load_wikitext_dataset",
+    "load_preprocess_script",
     "make_dataloader",
 ]

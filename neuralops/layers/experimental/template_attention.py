@@ -30,7 +30,7 @@ from neuralops.core.utils.gqa import repeat_kv
 logger = logging.getLogger(__name__)
 
 
-@ATTENTION_REGISTRY.register("template_attention")
+@ATTENTION_REGISTRY.register("template_attention", is_alias=True)
 class YourCustomAttention(BaseAttention):
     r"""Template attention layer with optional low-rank pooling modulation."""
 

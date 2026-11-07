@@ -192,27 +192,52 @@ def test_gitignore_does_not_ignore_tracked_docs() -> None:
 
 
 
-def test_gitignore_does_not_ignore_tracked_docs() -> None:
-    """Verify that .gitignore does not ignore docs/ or audit/, and dead whitelists are deleted."""
-    import subprocess
+def test_ci_prevents_bytecode_accumulation() -> None:
+    """Verify that CI workflow sets PYTHONDONTWRITEBYTECODE=1 to prevent bytecode pollution (F-16)."""
+    ci_yaml_path = ROOT_DIR / ".github" / "workflows" / "ci.yml"
+    assert ci_yaml_path.exists(), f"ci.yml not found at {ci_yaml_path}"
 
-    gitignore_path = ROOT_DIR / ".gitignore"
-    assert gitignore_path.exists(), ".gitignore not found"
+    content = ci_yaml_path.read_text(encoding="utf-8")
+    assert "PYTHONDONTWRITEBYTECODE" in content, (
+        "PYTHONDONTWRITEBYTECODE guard is missing from .github/workflows/ci.yml"
+    )
 
-    lines = gitignore_path.read_text(encoding="utf-8").splitlines()
-    assert "docs/" not in lines, "docs/ still explicitly ignored in .gitignore"
-    assert "docs/**" not in lines, "docs/** still explicitly ignored in .gitignore"
-    assert "audit/" not in lines, "audit/ still explicitly ignored in .gitignore"
-    assert "audit/**" not in lines, "audit/** still explicitly ignored in .gitignore"
-    assert "!ROADMAP.md" not in lines, "Dead whitelist !ROADMAP.md still in .gitignore"
-    assert "!setup.py" not in lines, "Dead whitelist !setup.py still in .gitignore"
 
-    git_dir = ROOT_DIR / ".git"
-    if git_dir.exists():
-        res = subprocess.run(
-            ["git", "check-ignore", "docs/QUICKSTART.md"],
-            cwd=str(ROOT_DIR),
-            capture_output=True,
-            check=False,
+def test_no_hardcoded_user_paths_in_readme() -> None:
+    """Verify README.md contains no personal /home/tahamajlesi or /Users/tahamajs paths (F-17)."""
+    readme_path = ROOT_DIR / "README.md"
+    assert readme_path.exists(), f"README.md not found at {readme_path}"
+
+    lines = readme_path.read_text(encoding="utf-8").splitlines()
+    for idx, line in enumerate(lines, start=1):
+        # Exclude official github.com contributor URLs
+        if "github.com" in line:
+            continue
+        assert "/home/tahamajlesi" not in line, (
+            f"Hardcoded HPC path found in README.md line {idx}: {line}"
         )
-        assert res.returncode != 0, "docs/QUICKSTART.md should not be ignored by git"
+        assert "/Users/tahamajs" not in line, (
+            f"Hardcoded macOS user path found in README.md line {idx}: {line}"
+        )
+
+
+def test_no_bare_except_pass_in_layers_compression() -> None:
+    """Verify zero unlogged bare 'except Exception: pass' blocks in targeted fallback files (F-26)."""
+    target_rel_files = [
+        "neuralops/compression/low_rank/a3_compressor.py",
+        "neuralops/layers/hybrid/tri_branch_hybrid_attention.py",
+        "neuralops/layers/modern/mla_attention.py",
+    ]
+    for rel_path in target_rel_files:
+        full_path = ROOT_DIR / rel_path
+        assert full_path.exists(), f"File not found: {full_path}"
+        content = full_path.read_text(encoding="utf-8")
+        lines = content.splitlines()
+        for idx, line in enumerate(lines):
+            if "except Exception:" in line:
+                # Next 4 lines must not contain bare pass without logger
+                following_block = "\n".join(lines[idx + 1 : min(len(lines), idx + 5)])
+                if "pass" in following_block:
+                    assert "logger" in following_block or "LOGGER" in following_block, (
+                        f"Found unlogged bare pass in {rel_path} line {idx + 1}:\n{following_block}"
+                    )

@@ -136,9 +136,9 @@ class A3FactorizedLinear(nn.Module):
                     )
                     return out + lora_out
                 return out
-            except Exception:
+            except Exception as e:
                 # allowed-swallow: best-effort-telemetry
-                pass
+                logger.debug("Triton fused forward failed, falling back to PyTorch linear: %s", e, exc_info=True)
 
         latent = F.linear(x, self.V)
         out = F.linear(latent, self.U)
@@ -403,9 +403,9 @@ class A3Compressor(BaseCompressor):
         try:
             if not should_compress_linear(self.model, name):
                 return False
-        except Exception:
+        except Exception as e:
             # allowed-swallow: best-effort-telemetry
-            pass
+            logger.debug("should_compress_linear check failed: %s", e, exc_info=True)
 
         if self.target_attention_only:
             FFN_PATTERNS = {
@@ -939,9 +939,9 @@ class A3Compressor(BaseCompressor):
             try:
                 for p in target_mod.parameters():
                     self._orig_storage_bytes += p.numel() * p.element_size()
-            except Exception:
+            except Exception as e:
                 # allowed-swallow: best-effort-telemetry
-                pass
+                logger.debug("Triton fused forward failed, falling back to PyTorch linear: %s", e, exc_info=True)
 
             cov = cov_map.get(name, None)
             fisher = fisher_map.get(name, None)
@@ -977,9 +977,9 @@ class A3Compressor(BaseCompressor):
                 try:
                     for p in factorized_layer.parameters():
                         self._comp_storage_bytes += p.numel() * p.element_size()
-                except Exception:
+                except Exception as e:
                     # allowed-swallow: best-effort-telemetry
-                    pass
+                    logger.debug("Compressed parameter calculation failed: %s", e, exc_info=True)
             else:
                 skipped_count += 1
                 for p in module.parameters():
@@ -1051,9 +1051,9 @@ class A3Compressor(BaseCompressor):
         self.stats = stats
         try:
             self.model.compression_stats = stats
-        except Exception:
+        except Exception as e:
             # allowed-swallow: best-effort-telemetry
-            pass
+            logger.debug("should_compress_linear check failed: %s", e, exc_info=True)
         return self.model, stats
 
 
@@ -1212,9 +1212,9 @@ def a3_compressor_factory(
     compressed_model, stats = compressor.compress()
     try:
         compressed_model.compression_stats = stats
-    except Exception:
+    except Exception as e:
         # allowed-swallow: best-effort-telemetry
-        pass
+        logger.debug("Factory compression_stats attachment failed: %s", e, exc_info=True)
     if return_tuple:
         return compressed_model, stats
     return compressed_model

@@ -124,9 +124,9 @@ def _local_window_attention_chunked(
             from neuralops.ops.cuda.hybrid_local_kernel import hybrid_local_attn
 
             return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder), None
-        except Exception:
+        except Exception as e:
             # allowed-swallow: best-effort-telemetry
-            pass
+            logger.debug("CUDA hybrid_local_attn fallback failed, using PyTorch: %s", e, exc_info=True)
 
     scale = 1.0 / math.sqrt(int(D))
     device = Q.device
@@ -517,7 +517,8 @@ class TriBranchHybridAttention(BaseAttention):
             def _calc_svd(mat):
                 try:
                     return torch.linalg.svd(mat, full_matrices=False)
-                except Exception:
+                except Exception as e_svd:
+                    logger.debug("GPU SVD failed, falling back to CPU float SVD: %s", e_svd, exc_info=True)
                     u, s, vh = torch.linalg.svd(mat.detach().cpu().float(), full_matrices=False)
                     return u.to(dev), s.to(dev), vh.to(dev)
 
@@ -527,7 +528,8 @@ class TriBranchHybridAttention(BaseAttention):
                     U, S, Vh = _calc_svd(W_eff)
                     L_inv = torch.linalg.inv(L)
                     Vh = Vh @ L_inv
-                except Exception:
+                except Exception as e_whitened:
+                    logger.debug("Whitened SVD failed, falling back to unwhitened SVD: %s", e_whitened, exc_info=True)
                     U, S, Vh = _calc_svd(W)
             else:
                 U, S, Vh = _calc_svd(W)
@@ -561,13 +563,13 @@ class TriBranchHybridAttention(BaseAttention):
         try:
             for p in old_attn.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
-        except Exception:
+        except Exception as e:
             # allowed-swallow: best-effort-telemetry
-            pass
+            logger.debug("CUDA hybrid_local_attn fallback failed, using PyTorch: %s", e, exc_info=True)
 
         try:
             from neuralops.core.adapters import UniversalAdapter
-        except Exception:
+        except (ImportError, AttributeError):
             UniversalAdapter = None
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -583,9 +585,9 @@ class TriBranchHybridAttention(BaseAttention):
                     w, b = UniversalAdapter.get_weight_bias(old_attn, p)
                     if w is not None:
                         extracted[p] = (w, b)
-                except Exception:
+                except Exception as e:
                     # allowed-swallow: best-effort-telemetry
-                    pass
+                    logger.debug("UniversalAdapter weight extraction failed: %s", e, exc_info=True)
 
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
             c = old_attn.c_attn
@@ -666,9 +668,9 @@ class TriBranchHybridAttention(BaseAttention):
             for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
-        except Exception:
+        except Exception as e:
             # allowed-swallow: best-effort-telemetry
-            pass
+            logger.debug("CUDA hybrid_local_attn fallback failed, using PyTorch: %s", e, exc_info=True)
 
     @staticmethod
     def _prepare_valid_mask(attention_mask, B, L, device) -> torch.Tensor | None:
@@ -804,7 +806,9 @@ class TriBranchHybridAttention(BaseAttention):
                     fused = hybrid_two_branch_blend(
                         local_out, global_out, beta.expand_as(local_out).to(local_out.dtype)
                     )
-                except Exception:
+                except Exception as e:
+                    # allowed-swallow: best-effort-telemetry
+                    logger.debug("CUDA hybrid_two_branch_blend fallback failed, using PyTorch: %s", e, exc_info=True)
                     fused = beta * local_out + (1.0 - beta) * global_out
             else:
                 fused = beta * local_out + (1.0 - beta) * global_out

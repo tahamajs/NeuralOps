@@ -110,7 +110,6 @@
     "svd_llm_v2_attention",
     "svd_mamba",
     "svd_projection_attention",
-    "template_attention",
     "token_compressed_attention",
     "tri_branch_hybrid",
     "triton_cosformer",

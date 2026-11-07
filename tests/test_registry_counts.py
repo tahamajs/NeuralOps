@@ -15,13 +15,31 @@ from neuralops.core.registry import ATTENTION_REGISTRY, Registry
 
 
 def test_distinct_attention_class_count():
-    """Verify distinct attention class count equals the audited honest count (116)."""
+    """Verify distinct attention class count equals the audited honest count (115 after template exclusion)."""
     classes = ATTENTION_REGISTRY.distinct_classes()
-    assert len(classes) == 116
+    assert len(classes) == 115
 
     # Also verify through _dict values directly
     dict_classes = {v for v in ATTENTION_REGISTRY._dict.values() if isinstance(v, type)}
-    assert len(dict_classes) == 116
+    assert len(dict_classes) == 115
+
+
+def test_experimental_not_counted_as_canonical() -> None:
+    """Verify that no class from neuralops/layers/experimental/ appears in canonical keys (F-25)."""
+    ATTENTION_REGISTRY._load_all()
+    canonical_keys = set(ATTENTION_REGISTRY.canonical_keys())
+
+    assert "template_attention" not in canonical_keys, (
+        "template_attention must not be counted as a canonical attention mechanism!"
+    )
+
+    for k in canonical_keys:
+        cls_obj = ATTENTION_REGISTRY._dict.get(k)
+        if isinstance(cls_obj, type):
+            mod_path = getattr(cls_obj, "__module__", "")
+            assert "neuralops.layers.experimental" not in mod_path, (
+                f"Experimental class {cls_obj} from {mod_path} registered under canonical key '{k}'!"
+            )
 
 
 def test_gptq_awq_smoothquant_have_canonical_keys():
@@ -172,5 +190,27 @@ def test_registry_load_has_no_errors() -> None:
 
     assert attn_errors == [], f"Attention registry load encountered errors: {attn_errors}"
     assert comp_errors == [], f"Compressor registry load encountered errors: {comp_errors}"
+
+
+def test_experimental_not_counted_as_canonical() -> None:
+    """Verify that no class from layers/experimental appears in the canonical count (F-25)."""
+    ATTENTION_REGISTRY._load_all()
+    canonical_keys = ATTENTION_REGISTRY.canonical_keys()
+
+    assert "template_attention" not in canonical_keys, (
+        "template_attention should be an alias, not a canonical key"
+    )
+
+    experimental_canonicals = {}
+    for key in canonical_keys:
+        val = ATTENTION_REGISTRY._dict.get(key)
+        if val is not None:
+            mod = getattr(val, "__module__", "")
+            if "layers.experimental" in mod:
+                experimental_canonicals[key] = f"{mod}.{getattr(val, '__name__', str(val))}"
+
+    assert not experimental_canonicals, (
+        f"Found experimental classes registered as canonical: {experimental_canonicals}"
+    )
 
 

@@ -357,9 +357,9 @@ class MLAAttention(BaseAttention):
         try:
             for p in src.parameters():
                 self._orig_storage_bytes += p.numel() * p.element_size()
-        except Exception:
+        except Exception as e:
             # allowed-swallow: best-effort-telemetry
-            pass
+            logger.debug("Source parameter size calculation failed: %s", e, exc_info=True)
 
         with torch.no_grad():
             w_q, b_q = extracted["q"]
@@ -506,9 +506,9 @@ class MLAAttention(BaseAttention):
             for m in (self.q_proj, self.kv_down, self.k_up, self.v_up, self.out_proj):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
-        except Exception:
+        except Exception as e:
             # allowed-swallow: best-effort-telemetry
-            pass
+            logger.debug("Source parameter size calculation failed: %s", e, exc_info=True)
 
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
@@ -729,9 +729,9 @@ class MLAAttention(BaseAttention):
                 if self.is_nested_encoder:
                     return out, present_key_value
                 return self.out_proj(out), present_key_value
-            except Exception:
+            except Exception as e:
                 # allowed-swallow: best-effort-telemetry
-                pass
+                logger.debug("Triton MLA fallback failed, using PyTorch reference: %s", e, exc_info=True)
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 

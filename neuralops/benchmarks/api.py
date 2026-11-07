@@ -123,6 +123,13 @@ class Runner:
             timeout_s=timeout_s,
             **config_kwargs,
         )
+        preprocess_script = kwargs.get("preprocess_script") or getattr(self.config, "preprocess_script", None)
+        self.preprocess_fn = None
+        if preprocess_script:
+            from neuralops.benchmarks.core.data_loader import load_preprocess_script
+
+            self.preprocess_fn = load_preprocess_script(preprocess_script)
+
         self.orchestrator = BenchmarkOrchestrator(
             config=self.config,
             output_dir=output_dir,

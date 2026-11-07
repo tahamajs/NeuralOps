@@ -2188,7 +2188,7 @@ Every table and figure in this repository is reproducible from scratch on physic
 - **GPU Testbenches**:
   * **Sharif HPC Cluster**: NVIDIA GeForce RTX 3090 (Ampere SM 8.6, 24,268 MiB), node `GPU-3090-1`, Driver `535.183.01`, CUDA `12.4` / `11.8`, PyTorch `2.2.2+cu124`.
   * **Dedicated Silicon**: NVIDIA GeForce RTX 4070 (Ada Lovelace AD104, SM 8.9, 12,282 MiB), Driver `550.54.14`, CUDA `12.8`, PyTorch `2.11.0+cu128`.
-- **Primary Worktree**: `/home/tahamajlesi.ut/NeuralOps` (Remote cluster) / `/Users/tahamajs/dev/Project` (Local)
+- **Primary Worktree**: `$HOME/NeuralOps` (Remote cluster) / `<path-to-NeuralOps-clone>` (Local)
 - **Reproducibility Seed**: `torch.manual_seed(42)`
 
 ### Benchmark Execution Commands
@@ -2214,7 +2214,7 @@ To reproduce the physical GPU benchmarks exactly as certified, execute on the re
 
 ```bash
 # Environment interpreter
-REMOTE_PYTHON="/home/tahamajlesi.ut/.conda/envs/neuralops/bin/python"
+REMOTE_PYTHON="$HOME/.conda/envs/neuralops/bin/python"
 
 # 1. Run full 26 Triton kernel microbenchmark suite
 $REMOTE_PYTHON -m neuralops.benchmarks --category triton --dynamic
@@ -2292,7 +2292,7 @@ Before synchronizing an HPC result set, compare manifests and checksums. The
 safe direction is to copy verified result artifacts into the local
 `results/` tree while preserving local source code; never use a destructive
 `rsync --delete` until both manifests have been reviewed. The HPC checkout
-must also be identified explicitly: `/home/tahamajlesi.ut/NeuralOps` is not a
+must also be identified explicitly: `$HOME/NeuralOps` is not a
 Git checkout in the current audit, so it must not be treated as the canonical
 source tree.
 
@@ -2316,9 +2316,9 @@ the checkout contains reproducible code and reviewed summaries, while
 
 The current local evidence sync from the HPC bundle is complete: 70 MB across
 284 files. It was performed from
-`/home/tahamajlesi.ut/NeuralOps/results/` into this checkout's `results/`
+`$HOME/NeuralOps/results/` into this checkout's `results/`
 directory with `rsync` and without `--delete`; no source code was overwritten.
-The separate `/home/tahamajlesi.ut/results/` directory is not merged
+The separate `$HOME/results/` directory is not merged
 automatically because it is a different result set and must be reconciled by
 manifest before combining it.
 
@@ -2390,7 +2390,7 @@ used a native Triton/CUDA path.
 
 The executed notebook files are preserved separately from the source notebooks
 under `results/notebooks_executed/`. This directory is a direct, non-
-destructive copy of `/home/tahamajlesi.ut/NeuralOps/notebooks/` from the HPC
+destructive copy of `$HOME/NeuralOps/notebooks/` from the HPC
 run; it preserves the notebook JSON, execution counts, cell outputs, embedded
 figures, and errors. The source notebooks under `notebooks/` remain the clean
 inputs for future runs.

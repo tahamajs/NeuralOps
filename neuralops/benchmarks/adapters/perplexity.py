@@ -109,7 +109,16 @@ class PerplexityAdapter:
             split=eval_split,
         )
 
-        self.eval_loader = make_dataloader(tokenized_eval, batch_size=self.batch_size, shuffle=False)
+        preprocess_script = getattr(self, "preprocess_script", None) or self.extra_kwargs.get("preprocess_script")
+        preprocess_fn = None
+        if preprocess_script:
+            from neuralops.benchmarks.core.data_loader import load_preprocess_script
+
+            preprocess_fn = load_preprocess_script(preprocess_script)
+
+        self.eval_loader = make_dataloader(
+            tokenized_eval, batch_size=self.batch_size, shuffle=False, preprocess_fn=preprocess_fn
+        )
 
     def apply_module(self) -> None:
         """Apply attention module replacement or compression algorithm."""

@@ -139,8 +139,19 @@ class ClassificationAdapter:
             num_eval=len(tokenized_eval) if hasattr(tokenized_eval, "__len__") else None,
         )
 
-        self.train_loader = make_dataloader(tokenized_train, batch_size=self.batch_size, shuffle=True)
-        self.eval_loader = make_dataloader(tokenized_eval, batch_size=self.batch_size, shuffle=False)
+        preprocess_script = getattr(self, "preprocess_script", None) or self.extra_kwargs.get("preprocess_script")
+        preprocess_fn = None
+        if preprocess_script:
+            from neuralops.benchmarks.core.data_loader import load_preprocess_script
+
+            preprocess_fn = load_preprocess_script(preprocess_script)
+
+        self.train_loader = make_dataloader(
+            tokenized_train, batch_size=self.batch_size, shuffle=True, preprocess_fn=preprocess_fn
+        )
+        self.eval_loader = make_dataloader(
+            tokenized_eval, batch_size=self.batch_size, shuffle=False, preprocess_fn=preprocess_fn
+        )
 
     def apply_module(self) -> None:
         """Apply attention module replacement or compression algorithm."""
