@@ -39,10 +39,15 @@ _EXPORTS = {
     "NeuralOpsLinearMethod": ("vllm_plugin", "NeuralOpsLinearMethod"),
     "register_neuralops_linear_method": ("vllm_plugin", "register_neuralops_linear_method"),
     "query_serving_capabilities": ("capabilities", "query_serving_capabilities"),
+    "probe_serving_ecosystem": ("capabilities", "probe_serving_ecosystem"),
     "BackendCapabilities": ("capabilities", "BackendCapabilities"),
+    "ServingEngineProtocol": ("protocols", "ServingEngineProtocol"),
+    "PagedKVCacheProtocol": ("protocols", "PagedKVCacheProtocol"),
+    "ContinuousBatcherProtocol": ("protocols", "ContinuousBatcherProtocol"),
+    "RadixTrieProtocol": ("protocols", "RadixTrieProtocol"),
 }
 _MODULES = {
-    "compressed_tensors", "distributed_compile", "hf_automodel", "serving",
+    "capabilities", "compressed_tensors", "distributed_compile", "hf_automodel", "protocols", "serving",
     "sglang", "sglang_backend", "tensorrt_llm", "tensorrt_llm_plugin", "tgi", "vllm", "vllm_backend", "vllm_plugin",
 }
 

@@ -55,9 +55,6 @@ class DummyConfig:
     def to_dict(self) -> dict[str, Any]:
         return dict(self.__dict__)
 
-    def __getattr__(self, item: str) -> Any:
-        return None
-
 
 class Config:
     """Canonical root configuration container uniting subsystem configurations."""
@@ -68,9 +65,6 @@ class Config:
 
     def to_dict(self) -> dict[str, Any]:
         return dict(self.__dict__)
-
-    def __getattr__(self, item: str) -> Any:
-        return None
 
 
 def load_config(path: str) -> dict[str, Any]:

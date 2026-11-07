@@ -69,9 +69,31 @@ def register_neuralops_sglang_plugin(
         ) from exc
 
 
+def get_sglang_radix_adapter(
+    tree: Optional[RadixRecurrentTree] = None,
+    **kwargs: Any,
+) -> SGLangRadixAdapter:
+    """
+    Construct an SGLangRadixAdapter connected to a RadixRecurrentTree.
+    Fails closed if SGLang runtime is explicitly requested with require_sglang=True
+    when SGLang is not installed.
+    """
+    require_sglang = kwargs.pop("require_sglang", False)
+    if require_sglang and not sglang_is_available():
+        raise IntegrationNotImplementedError(
+            "SGLang runtime is not installed. Install SGLang with:\n"
+            "    pip install 'sglang>=0.4.0'\n"
+            "Or see https://github.com/sgl-project/sglang for instructions."
+        )
+
+    t = tree if tree is not None else RadixRecurrentTree()
+    return SGLangRadixAdapter(tree=t, **kwargs)
+
+
 __all__ = [
     "register_neuralops_sglang_plugin",
     "sglang_is_available",
+    "get_sglang_radix_adapter",
     "RadixPrefixNode",
     "RadixRecurrentNode",
     "RadixRecurrentTree",

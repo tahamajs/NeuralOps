@@ -56,6 +56,7 @@ class RadixPrefixNode:
 class SGLangRadixAdapter:
     """
     Radix Tree Prefix Cache Manager for LLM Serving with SGLang-compatible semantics.
+    Supports recurrent state caching and reuse via RadixRecurrentTree when configured.
     """
 
     def __init__(
@@ -66,6 +67,7 @@ class SGLangRadixAdapter:
         max_cached_prefixes: int = 256,
         max_depth: int = 128,
         device: Union[str, torch.device] = "cuda",
+        tree: Optional[Any] = None,
     ):
         self.device = torch.device(device if (device != "cuda" or torch.cuda.is_available()) else "cpu")
         self.model = model.to(self.device).eval() if model is not None else None
@@ -73,6 +75,7 @@ class SGLangRadixAdapter:
         self.max_cached_tokens = max_cached_tokens
         self.max_cached_prefixes = max_cached_prefixes
         self.max_depth = max_depth
+        self.tree = tree
 
         self.root = RadixPrefixNode([])
         self._lock = threading.RLock()
@@ -81,6 +84,34 @@ class SGLangRadixAdapter:
         self._miss_count = 0
         self._eviction_count = 0
         self._total_nodes = 1
+
+    def match_prefix_state(
+        self,
+        token_ids: Union[List[int], torch.Tensor],
+    ) -> Tuple[int, Optional[Any]]:
+        """
+        Find longest cached prefix using internal RadixRecurrentTree if attached,
+        or fallback to KV cache matching.
+        """
+        if self.tree is not None and hasattr(self.tree, "match_prefix"):
+            tokens = self._ensure_token_list(token_ids)
+            matched_tokens, state = self.tree.match_prefix(tokens)
+            return len(matched_tokens), state
+        return self.match_prefix(token_ids)
+
+    def insert_prefix_state(
+        self,
+        token_ids: Union[List[int], torch.Tensor],
+        state: Any,
+    ) -> Any:
+        """
+        Insert token sequence and terminal recurrent state into attached tree
+        or standard RadixPrefixNode.
+        """
+        if self.tree is not None and hasattr(self.tree, "insert"):
+            tokens = self._ensure_token_list(token_ids)
+            return self.tree.insert(tokens, recurrent_state=state)
+        return self.insert_prefix(token_ids, kv_cache=state)
 
     def _ensure_token_list(self, token_ids: Union[List[int], torch.Tensor]) -> List[int]:
         if isinstance(token_ids, torch.Tensor):

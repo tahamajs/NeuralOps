@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 import json
 from pathlib import Path
+import re
 from typing import Any, Optional
 
 
@@ -34,6 +35,7 @@ class BenchmarkConfig:
     device: str = "cuda"
     seed: int = 42
     epochs: int = 3
+    rank: Optional[int] = None
     batch_size: int = 32
     batch_sizes: list[int] = field(default_factory=lambda: [32])
     lr: float = 2e-5
@@ -107,6 +109,22 @@ class BenchmarkConfig:
                 "eval_only=True specified: evaluating with a freshly initialized "
                 "classification head without fine-tuning may yield random accuracy."
             )
+
+        if not isinstance(self.epochs, int) or isinstance(self.epochs, bool) or self.epochs <= 0:
+            raise ValueError(f"epochs must be a positive integer, got {self.epochs!r}")
+
+        if not isinstance(self.lr, (int, float)) or isinstance(self.lr, bool) or self.lr <= 0.0:
+            raise ValueError(f"lr must be a positive float, got {self.lr!r}")
+
+        if self.rank is not None:
+            if not isinstance(self.rank, int) or isinstance(self.rank, bool) or self.rank <= 0:
+                raise ValueError(f"rank must be a positive integer, got {self.rank!r}")
+
+        if not isinstance(self.timeout_s, (int, float)) or isinstance(self.timeout_s, bool) or self.timeout_s <= 0:
+            raise ValueError(f"timeout_s must be a positive number, got {self.timeout_s!r}")
+
+        if not isinstance(self.device, str) or not re.match(r"^(cuda(:\d+)?|cpu|mps)$", self.device.strip().lower()):
+            raise ValueError(f"Invalid device '{self.device}'. Must match '^(cuda(:\\d+)?|cpu|mps)$'")
 
     def resolve_torch_dtype(self) -> Any:
         """Resolve canonical precision string to torch.dtype."""

@@ -92,6 +92,67 @@ class TGIRequestBatch:
         self.free_slot_ids: List[int] = list(range(max_batch_size))
         self.slot_to_request_id: Dict[int, str] = {}
 
+    def admit_request(self, request: TGIRequest) -> Optional[int]:
+        """Binds a request to an available free slot if available, or queues it.
+        
+        Returns:
+            Assigned slot_id if admitted immediately, or None if queued.
+        """
+        self.add(request)
+        return request.slot_id
+
+    def evict_completed_slots(self) -> List[str]:
+        """Frees slots of finished requests, emits completion, and returns evicted request IDs."""
+        evicted = []
+        finished_ids = [r_id for r_id, req in self.active_slots.items() if req.finished]
+        for r_id in finished_ids:
+            self.remove(r_id)
+            evicted.append(r_id)
+        return evicted
+
+    def step(self, model: nn.Module) -> Dict[str, int]:
+        """Assembles active slot tokens, executes forward step, appends generated tokens.
+        
+        Returns:
+            Mapping of request_id to newly generated token id.
+        """
+        if not self.active_slots:
+            return {}
+
+        active_ids = self.active_request_ids()
+        if not active_ids:
+            return {}
+
+        batched_tokens, req_ids, _ = self.assemble_decode_batch(active_ids)
+        if batched_tokens.numel() == 0:
+            return {}
+
+        outputs = _call_model(model, batched_tokens)
+        logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
+        
+        next_tokens = torch.argmax(logits, dim=-1)
+        step_results: Dict[str, int] = {}
+
+        for idx, req_id in enumerate(req_ids):
+            slot = self.active_slots[req_id]
+            tok = int(next_tokens[idx].item())
+            slot.generated_ids.append(tok)
+            step_results[req_id] = tok
+            
+            is_max = len(slot.generated_ids) >= slot.max_new_tokens
+            is_eos = slot.eos_token_id is not None and tok == slot.eos_token_id
+            
+            if is_max or is_eos:
+                slot.finished = True
+                slot.finish_reason = "eos" if is_eos else "max_tokens"
+                slot.stream_queue.put((tok, f"<{tok}>", True))
+                slot.stream_queue.put(None)
+            else:
+                slot.stream_queue.put((tok, f"<{tok}>", False))
+
+        self.evict_completed_slots()
+        return step_results
+
     def add(self, request: TGIRequest) -> None:
         if request.request_id in self.active_slots or request.request_id in self.completed_slots:
             raise ValueError(f"request_id {request.request_id!r} has already been used")
@@ -331,6 +392,7 @@ class TGIServingAdapter:
 
     def _tokenize_prompt(self, prompt: Union[str, List[int], torch.Tensor]) -> torch.Tensor:
         """Convert input prompt into an integer 1D tensor [seq_len]."""
+        vocab_size = getattr(getattr(self.model, "config", None), "vocab_size", 50257)
         if isinstance(prompt, torch.Tensor):
             t = prompt.squeeze()
             if t.dim() == 0:
@@ -342,7 +404,7 @@ class TGIServingAdapter:
             if self.tokenizer is not None and hasattr(self.tokenizer, "encode"):
                 ids = self.tokenizer.encode(prompt)
                 return torch.tensor(ids, dtype=torch.long, device=self.device)
-            ids = [ord(c) % 50257 for c in prompt] or [0]
+            ids = [ord(c) % vocab_size for c in prompt] or [0]
             return torch.tensor(ids, dtype=torch.long, device=self.device)
         raise TypeError(f"Unsupported prompt format: {type(prompt)}")
 
@@ -564,7 +626,7 @@ class TGIServingAdapter:
 
     async def stream_generate(
         self,
-        request_id: str,
+        request_id: Optional[str] = None,
         prompt: Optional[Union[str, List[int], torch.Tensor]] = None,
         max_new_tokens: int = 16,
         sse_format: bool = True,
@@ -573,13 +635,13 @@ class TGIServingAdapter:
         """
         Asynchronous streaming generator yielding tokens and SSE-compatible chunks for a request.
 
-        If `prompt` is provided and the request has not yet been registered, enqueues
-        the request into continuous batch scheduling. If `request_id` is already queued
-        or active, generation advances step-wise.
+        Supports both:
+        `stream_generate(request_id, prompt=..., ...)` and `stream_generate(prompt=..., ...)`
+        (where request_id is automatically generated).
 
         Args:
-            request_id: Unique request identifier.
-            prompt: Input text prompt or token tensor (optional if already enqueued).
+            request_id: Unique request identifier, or prompt if called positionally as stream_generate(prompt).
+            prompt: Input text prompt or token tensor (optional if passed as first arg or already enqueued).
             max_new_tokens: Maximum tokens to generate.
             sse_format: When True, yields Server-Sent Event formatted chunks ("data: {...}\\n\\n").
                         When False, yields (token_id, token_text, is_final) tuples.
@@ -587,6 +649,23 @@ class TGIServingAdapter:
         Yields:
             SSE payload strings or (token_id, token_text, is_final) tuples per generated token.
         """
+        # Support stream_generate(prompt: str, max_new_tokens: int) where prompt was passed in request_id
+        if request_id is not None and prompt is None and not isinstance(request_id, str):
+            # request_id passed as a non-string tensor or list
+            prompt = request_id
+            request_id = f"stream_{int(time.time() * 1000)}_{self._total_requests}"
+        elif request_id is not None and prompt is None and isinstance(request_id, str) and (
+            request_id not in self.batch_manager.active_slots
+            and not any(q.request_id == request_id for q in self.batch_manager.queued_slots)
+        ):
+            # Positional call stream_generate(prompt_str, max_new_tokens)
+            prompt = request_id
+            request_id = f"stream_{int(time.time() * 1000)}_{self._total_requests}"
+        elif request_id is None:
+            if prompt is None:
+                raise ValueError("Either request_id or prompt must be provided")
+            request_id = f"stream_{int(time.time() * 1000)}_{self._total_requests}"
+
         slot = self.batch_manager.active_slots.get(request_id)
         if slot is None:
             # Check queued

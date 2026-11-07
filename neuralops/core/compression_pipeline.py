@@ -46,9 +46,10 @@ class CompressionPipeline:
             logger.info("No compressors specified. Returning original model.")
             return self.model
 
-        seed = self.config.get("seed")
-        if seed is not None:
-            set_seed(seed)
+        seed = self.config.get("seed", 42)
+        if seed is None:
+            seed = 42
+        set_seed(seed)
 
         for i, comp_cfg in enumerate(compressors_cfg):
             method = comp_cfg.pop("method")
