@@ -1065,7 +1065,11 @@ def heal_replaced_model(
             parameter.requires_grad_(was_trainable)
 
 
-from neuralops.api import replace_attention, replace_attention as replace_attention_in_model
+def __getattr__(name: str) -> Any:
+    if name in ("replace_attention", "replace_attention_in_model"):
+        from neuralops.api import replace_attention
+        return replace_attention
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 __all__ = [
     "replace_attention",

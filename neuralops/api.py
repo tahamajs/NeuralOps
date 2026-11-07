@@ -63,7 +63,7 @@ def replace_attention(
     Returns:
         The model with attention layers replaced in-place.
     """
-    target_mod = kwargs.pop("target_module", None)
+    target_mod = kwargs.pop("target_module", None) or kwargs.pop("new_attention_cls", None)
     if isinstance(target_mod, str) and not attention:
         attention = target_mod
         target_mod = None
@@ -71,7 +71,13 @@ def replace_attention(
         target_mod = attention
         attention = None
 
+    layers = layers or kwargs.pop("layer_indices", None)
+    if layers == "all":
+        layers = None
+
     if target_mod is not None:
+        if model is None:
+            return None
         from neuralops.core.model_utils import replace_module
         from neuralops.core.architecture import get_attention_modules
         modules_list = list(get_attention_modules(model))
@@ -88,7 +94,13 @@ def replace_attention(
             replace_module(model, name, wrapped)
         return model
 
-    attn_name = attention or attention_type
+    attn_name = (
+        attention
+        or attention_type
+        or kwargs.pop("attention_key", None)
+        or kwargs.pop("target_attention", None)
+        or kwargs.pop("target", None)
+    )
     if not attn_name:
         raise ValueError("Must specify attention or attention_type.")
     if attn_name in ("chunk_gla", "gla"):

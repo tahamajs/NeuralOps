@@ -267,4 +267,12 @@ __all__ = [
     "broadcast_cos_sin",
     "apply_rotary_pos_emb",
     "LoRALinear",
+    "replace_attention",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name == "replace_attention":
+        from neuralops.api import replace_attention
+        return replace_attention
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

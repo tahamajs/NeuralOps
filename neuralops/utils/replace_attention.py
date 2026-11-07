@@ -569,7 +569,8 @@ def _try_instantiate(
     )
 
 
-def replace_attention(model, attention_key=None, layer_indices=None, new_attention_cls=None, **kwargs) -> Any:
+
+def _unused_replace_attention(model, attention_key=None, layer_indices=None, new_attention_cls=None, **kwargs) -> Any:
     """
     Replace attention modules in a model with a registered attention block or class.
     """
