@@ -25,6 +25,10 @@ Documentation = "https://neuralops.readthedocs.io/"
 where = ["."]
 include = ["neuralops.ops.cuda*", "neuralops.ops.triton*"]
 
+[tool.setuptools.package-data]
+"neuralops.ops.cuda.plugins" = ["trt_linear_attention_plugin.cpp", "*.cpp", "*.h"]
+"neuralops.ops.cuda" = ["**/*.cu", "**/*.cpp", "**/*.h", "**/*.cuh"]
+
 # Cibuildwheel configuration for automated Linux x86_64 wheel builds.
 # Note (F-39): Binary wheels are currently not published on PyPI; runtime JIT
 # compilation via torch.utils.cpp_extension is the primary build model.
