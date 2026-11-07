@@ -661,7 +661,6 @@ class ReGLAAttention(BaseAttention):
         return output.to(dtype), None
 
 
-@ATTENTION_REGISTRY.register("regla_attention")
 def inject_regla(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

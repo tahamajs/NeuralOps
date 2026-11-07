@@ -144,12 +144,6 @@ def _write_cache(
     return (k, v)
 
 
-@ATTENTION_REGISTRY.register(
-    "jamba",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
 class Jamba2Block(BaseAttention):
     """
     Jamba-2 hybrid block:

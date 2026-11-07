@@ -667,7 +667,6 @@ class RPCAttention(BaseAttention):
         return out
 
 
-@ATTENTION_REGISTRY.register("rpc_attention")
 def inject_rpc(
     layer: Any = None,
     model: Any = None,

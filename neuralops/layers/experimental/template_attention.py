@@ -589,7 +589,6 @@ class YourCustomAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("template_attention")
 def inject_custom_attn(
     layer: Any = None,
     model: Any = None,
