@@ -310,7 +310,7 @@ def replay_surgery_manifest(model: nn.Module, manifest: SurgeryManifest) -> nn.M
     WITHOUT running heavy SVD decompositions or calibration passes.
     """
     from neuralops.api import replace_attention
-    from neuralops.compression_engine.svd.aa_svd_compressor import SVDLinear
+    from neuralops.compression.svd.aa_svd_compressor import SVDLinear
     from neuralops.core.utils.lora import FactorizedLinear
 
     for attn_entry in manifest.attentions:

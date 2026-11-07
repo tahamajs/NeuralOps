@@ -207,6 +207,8 @@ def compress(
     validation_level: Optional[str] = None,
     **kwargs: Any,
 ) -> nn.Module:
+    # Rule: no function in api.py or core/compression_pipeline.py mutates an input dict or model class;
+    # if it needs to change one, it copies first. Stats travel as an explicit attribute.
     """Compress model weights using SVD, low-rank factorization, or pruning.
 
     Records the operation in `model._neuralops_metadata`.
@@ -255,19 +257,9 @@ def compress(
             out_model.config.neuralops_history = []
         out_model.config.neuralops_history.append(meta_entry)
 
-    orig_cls = out_model.__class__
-    if not getattr(orig_cls, "_supports_compress_unpack", False):
-
-        class _CompressibleModelProxy(orig_cls):
-            _supports_compress_unpack = True
-
-            def __iter__(self):
-                stats = getattr(self, "_compression_stats", {})
-                return iter((self, stats))
-
-        _CompressibleModelProxy.__name__ = orig_cls.__name__
-        _CompressibleModelProxy.__qualname__ = orig_cls.__qualname__
-        out_model.__class__ = _CompressibleModelProxy
+    # Attach stats directly to the model as an attribute; do not mutate model class or __iter__
+    stats = getattr(out_model, "_compression_stats", {})
+    out_model._neuralops_compression_stats = stats
 
     return out_model
 
@@ -1290,6 +1282,8 @@ def evaluate(
     seed: Optional[int] = 42,
     **kwargs: Any,
 ) -> Dict[str, Any]:
+    # Rule: no function in api.py or core/compression_pipeline.py mutates an input dict or batch;
+    # if it needs to change one, it copies first or reads non-destructively.
     """Evaluate a named benchmark dataset or an arbitrary PyTorch loader.
 
     Args:
@@ -1320,14 +1314,23 @@ def evaluate(
         with torch.no_grad():
             for batch in loader:
                 if isinstance(batch, dict):
-                    labels = batch.pop("labels", batch.pop("label", None))
-                    inputs = {key: value.to(dev) if hasattr(value, "to") else value for key, value in batch.items()}
+                    labels = batch.get("labels", batch.get("label", None))
+                    inputs = {
+                        key: value.to(dev) if hasattr(value, "to") else value
+                        for key, value in batch.items()
+                        if key not in ("labels", "label")
+                    }
                 elif isinstance(batch, (tuple, list)) and len(batch) >= 2:
                     inputs, labels = {"input_ids": batch[0].to(dev)}, batch[-1].to(dev)
                 else:
                     raise TypeError("Evaluation batches must be mappings or (inputs, labels) tuples.")
                 outputs = model(**inputs)
-                logits = outputs.logits if hasattr(outputs, "logits") else outputs[0]
+                if hasattr(outputs, "logits"):
+                    logits = outputs.logits
+                elif isinstance(outputs, torch.Tensor):
+                    logits = outputs
+                else:
+                    logits = outputs[0]
                 predictions = logits.argmax(dim=-1) if logits.ndim > 1 else logits
                 count = int(labels.shape[0]) if labels is not None and hasattr(labels, "shape") else 0
                 samples += count

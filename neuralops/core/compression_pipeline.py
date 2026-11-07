@@ -40,6 +40,8 @@ class CompressionPipeline:
             self.model.tokenizer = tokenizer
 
     def run(self) -> nn.Module:
+        # Rule: no function in api.py or core/compression_pipeline.py mutates an input dict or batch;
+        # if it needs to change one, it copies first.
         """Execute the run operation and return results."""
         compressors_cfg = self.config.get("compressors", [])
         if not compressors_cfg:
@@ -51,7 +53,8 @@ class CompressionPipeline:
             seed = 42
         set_seed(seed)
 
-        for i, comp_cfg in enumerate(compressors_cfg):
+        for i, raw_comp_cfg in enumerate(compressors_cfg):
+            comp_cfg = dict(raw_comp_cfg)
             method = comp_cfg.pop("method")
             logger.info("Step %d: Applying compressor '%s'", i + 1, method)
             compressor_cls = COMPRESSOR_REGISTRY.resolve(method)

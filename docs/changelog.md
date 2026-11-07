@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Zero In-Place Mutation of Models, Configs, and Batches (F-86):**
+  - **Breaking Change (Model Class & Iteration Behavior):** In `neuralops.api.compress()`, removed the dynamic subclass `_CompressibleModelProxy` that overwrote `out_model.__class__` and injected `def __iter__(self): return iter((self, stats))`. The returned model preserves its original class, passes standard `type(model)` / `isinstance` checks, pickles cleanly, and iterates modules normally without returning a 2-tuple `(model, stats)`.
+  - **Compression Stats Storage:** Compression statistics are now stored explicitly on the model attribute `_neuralops_compression_stats` (and accessible via `getattr(model, "_neuralops_compression_stats", {})`).
+  - **No In-Place Dict or Batch Mutation:**
+    - In `neuralops.core.compression_pipeline.CompressionPipeline.run()`: isolated pipeline config with `comp_cfg = dict(raw_comp_cfg)` prior to popping `"method"`, ensuring caller-owned configuration dictionaries are never mutated.
+    - In `neuralops.api.evaluate()`: replaced destructive `batch.pop("labels", ...)` with non-destructive `.get("labels")` and excluded label keys when constructing model inputs, ensuring caller-owned evaluation batches and datasets are untouched.
+  - Added test suite `tests/test_api_no_mutation.py` (3 passed).
 - **CLI Test Tree Copy Removal, Deprecation Warning Enforcement, Documentation Harmonization & Single-Inspection Factories (F-76, F-82, F-83, F-85):**
   - **Eliminated CLI Test Tree Drift (F-76):** Removed duplicate 1,762-line CLI copy `tests/benchmarks/cli.py` (`git rm`). All test suites import canonical `neuralops.benchmarks.cli`. Added regression guard test `tests/test_no_cli_copy.py` preventing reinstatement of any CLI copy in `tests/`.
   - **Explicit Deprecation Warnings on Legacy Aliases (F-82):**
