@@ -49,7 +49,7 @@ jobs:
           python -m cibuildwheel --output-dir dist
 
       - name: Upload Built Wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: neuralops-cuda-wheels-${{ matrix.python }}-cu${{ matrix.cuda }}
           path: ./dist/*.whl
