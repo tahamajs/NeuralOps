@@ -41,12 +41,16 @@ from neuralops.core.exceptions import RegistryError
 logger = logging.getLogger(__name__)
 
 DEPRECATED_ALIASES: dict[str, str] = {
+    "aegis_v6": "gated_hybrid_kernel_attention",
     "chela_slay_attention": "chela_slay",
     "cosformer_attention": "cosformer",
     "decay_linear_attn": "decay_linear_attention",
     "eat_attention": "eat",
-    "gated_linear_attn": "gated_linear_attention",
+    "gated_linear_attention": "decay_linear_attention",
+    "gated_linear_attn": "decay_linear_attention",
     "hgrn2_outer": "hgrn2_gated_outer",
+    "native_hybrid_attention": "nha_attention",
+    "svd_seq": "svd_attention",
 }
 
 from neuralops.core.legacy_aliases import (

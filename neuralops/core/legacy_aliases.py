@@ -25,6 +25,11 @@ else:
     DEPRECATED_ALIASES = {}
 
 ATTENTION_FILE_MAP: dict[str, str] = {
+    "aegis_v6": "gated_hybrid_kernel_attention",
+    "native_hybrid_attention": "nha_attention",
+    "svd_seq": "svd_attention",
+    "gated_linear_attention": "decay_linear_attention",
+    "gated_linear_attn": "decay_linear_attention",
     "gqa": "gqa_attention",
     "galerkin": "galerkin_attention",
     "galerkin_inject": "galerkin_attention",
