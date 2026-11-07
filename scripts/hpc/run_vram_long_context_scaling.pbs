@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#PBS -N vram_long_ctx
+#PBS -q N3090
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=00:30:00
+#PBS -j oe
+#PBS -o /home/tahamajlesi.ut/NeuralOps/results/vram_long_context.log
+
+set -euo pipefail
+export PYTHONIOENCODING=utf-8
+export PATH="/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:${PATH:-}"
+export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/lib:${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="/home/tahamajlesi.ut/NeuralOps:${PYTHONPATH:-}"
+
+cd /home/tahamajlesi.ut/NeuralOps || exit 1
+mkdir -p results/vram_scaling_n3090
+
+PY=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python
+
+echo "======================================================================"
+echo "  STARTING VRAM & LONG-CONTEXT SCALING SUITE: $(date -u)"
+echo "  Node: $(hostname) | Queue: N3090"
+echo "======================================================================"
+
+echo ""
+echo ">>> [1/4] Hardware Telemetry & Preflight"
+nvidia-smi --query-gpu=name,memory.total,driver_version,pstate --format=csv
+$PY -c "import torch; assert torch.cuda.is_available(), 'CUDA unavailable'; print('PyTorch:', torch.__version__, '| Device:', torch.cuda.get_device_name(0), '| Capability:', torch.cuda.get_device_capability(0))"
+
+echo ""
+echo ">>> [2/4] Running GPU Long-Context Memory Tests (Linear, O(1) Recurrent, Quadratic OOM)"
+$PY -m pytest -p no:django -p no:hydra -p no:langsmith tests/gpu_exhaustive/test_long_context_memory.py -v --tb=short
+
+echo ""
+echo ">>> [3/4] Running Resource Scaling Benchmark on CUDA"
+$PY -m neuralops.benchmarks.resource_scaling \
+    --device cuda:0 \
+    --batch-sizes 1 \
+    --seq-lens 512 1024 2048 4096 8192 \
+    --precision fp16 \
+    --warmup 3 \
+    --iters 10 \
+    --output-dir results/vram_scaling_n3090
+
+echo ""
+echo ">>> [4/4] Executing Comprehensive Real Long-Context VRAM Sweep"
+$PY scripts/benchmarks/run_real_long_context_vram_scaling.py \
+    --device cuda:0 \
+    --output-file results/benchmarks_long_context_scaling.json
+
+echo ""
+echo "======================================================================"
+echo "  COMPLETED VRAM & LONG-CONTEXT SCALING SUITE: $(date -u)"
+echo "======================================================================"
