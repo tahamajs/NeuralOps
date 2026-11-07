@@ -12,10 +12,12 @@ Tests verifying single source of truth for the CUDA kernel catalog and symbol re
 from __future__ import annotations
 
 from pathlib import Path
+
 import pytest
 
-from neuralops.ops.cuda._map import CUDA_KERNEL_CATALOG as OPS_CATALOG, _KERNEL_SYMBOL_MAP
 from neuralops.kernels.cuda import CATALOG as KERNELS_CATALOG
+from neuralops.ops.cuda._map import _KERNEL_SYMBOL_MAP
+from neuralops.ops.cuda._map import CUDA_KERNEL_CATALOG as OPS_CATALOG
 
 
 def test_catalog_matches_disk():
@@ -23,11 +25,7 @@ def test_catalog_matches_disk():
     root_dir = Path(__file__).resolve().parent.parent
     cuda_dir = root_dir / "neuralops" / "ops" / "cuda"
     disk_folders = sorted(
-        [
-            p.name
-            for p in cuda_dir.iterdir()
-            if p.is_dir() and p.name not in ("__pycache__", "plugins")
-        ]
+        [p.name for p in cuda_dir.iterdir() if p.is_dir() and p.name not in ("__pycache__", "plugins")]
     )
     assert len(disk_folders) == 139, f"Expected 139 on-disk folders, found {len(disk_folders)}"
 
@@ -97,3 +95,20 @@ def test_29_missing_modules_now_visible():
         assert hasattr(ops_cuda, name), f"Module {name} not found in ops_cuda"
         val = getattr(ops_cuda, name)
         assert val is not None, f"Module {name} resolved to None"
+
+
+def test_extended_kernels_jit_count_matches_docstring() -> None:
+    """Verify that @triton.jit count in extended_kernels.py matches the count stated in its docstring."""
+    from neuralops.kernels import extended_kernels
+
+    file_path = Path(extended_kernels.__file__).resolve()
+    content = file_path.read_text(encoding="utf-8")
+
+    jit_count = content.count("@triton.jit")
+    assert jit_count == 2, f"Expected 2 @triton.jit decorators, found {jit_count}"
+
+    doc = extended_kernels.__doc__ or ""
+    assert f"{jit_count} Triton kernels" in doc or f"{jit_count} Triton JIT kernels" in doc, (
+        f"Docstring missing '{jit_count} Triton kernels'"
+    )
+    assert "18 PyTorch references" in doc, "Docstring missing '18 PyTorch references'"

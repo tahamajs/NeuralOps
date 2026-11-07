@@ -25,6 +25,11 @@ Documentation = "https://neuralops.readthedocs.io/"
 where = ["."]
 include = ["neuralops.ops.cuda*", "neuralops.ops.triton*"]
 
+# Cibuildwheel configuration for automated Linux x86_64 wheel builds.
+# Note (F-39): Binary wheels are currently not published on PyPI; runtime JIT
+# compilation via torch.utils.cpp_extension is the primary build model.
+# *aarch64* is skipped because Apple Silicon does not support CUDA and Linux ARM64
+# GPU build runners are not active in the build matrix.
 [tool.cibuildwheel]
 build = "cp310-* cp311-* cp312-*"
 skip = "*-musllinux* *i686* *ppc64le* *s390x* *aarch64*"

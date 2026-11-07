@@ -236,6 +236,7 @@ def pytest_collection_modifyitems(config, items):
                 "test_dependency",
                 "test_ops_triton_imports",
                 "test_cuda_bindings",
+                "test_cuda_catalog",
                 "test_kernels_lazy",
             )
         )

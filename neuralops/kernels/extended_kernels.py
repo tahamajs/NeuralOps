@@ -6,9 +6,40 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Extended Accelerated Kernels
+Extended Accelerated Kernels (2 Triton kernels + 18 PyTorch references).
 
-Production hardware-accelerated kernels with unified three-level fallback across CUDA C++, Triton JIT, and PyTorch reference backends.
+Implementation Architecture:
+This module contains 20 fused_* operations:
+- 2 Triton JIT kernels (_swiglu_fwd_kernel, _rmsnorm_fwd_kernel) with PyTorch reference fallbacks.
+- 18 PyTorch reference-only implementations with no dedicated Triton JIT or CUDA C++ kernels.
+- 0 native CUDA C++ kernels.
+
+Operator Implementation Breakdown:
+| Kernel Name | Triton JIT | PyTorch Ref | Native CUDA C++ | Notes |
+|:---|:---:|:---:|:---:|:---|
+| fused_swiglu | Yes | Yes | No | Level 2 Triton + Level 3 PyTorch |
+| fused_rmsnorm | Yes | Yes | No | Level 2 Triton + Level 3 PyTorch |
+| fused_rotary_emb | No | Yes | No | Level 3 PyTorch reference only |
+| fused_alibi_attention | No | Yes | No | Level 3 PyTorch reference only |
+| fused_sink_token_attention | No | Yes | No | Level 3 PyTorch reference only |
+| fused_decay_scan | No | Yes | No | Level 3 PyTorch reference only |
+| fused_hadamard_transform | No | Yes | No | Level 3 PyTorch reference only |
+| fused_int4_dequant | No | Yes | No | Level 3 PyTorch reference only |
+| fused_fp8_e4m3_gemm | No | Yes | No | Level 3 PyTorch reference only |
+| fused_spectral_dct | No | Yes | No | Level 3 PyTorch reference only |
+| fused_chunked_cumsum | No | Yes | No | Level 3 PyTorch reference only |
+| fused_cka_alignment | No | Yes | No | Level 3 PyTorch reference only |
+| fused_mohawk_homotopy | No | Yes | No | Level 3 PyTorch reference only |
+| fused_nullspace_project | No | Yes | No | Level 3 PyTorch reference only |
+| fused_householder_reflect | No | Yes | No | Level 3 PyTorch reference only |
+| fused_simplex_project | No | Yes | No | Level 3 PyTorch reference only |
+| fused_topk_gating | No | Yes | No | Level 3 PyTorch reference only |
+| fused_label_smoothing_ce | No | Yes | No | Level 3 PyTorch reference only |
+| fused_kl_divergence | No | Yes | No | Level 3 PyTorch reference only |
+| fused_lowrank_residual_add | No | Yes | No | Level 3 PyTorch reference only |
+
+TODO (F-38): Implement remaining 18 Triton JIT kernels on GPUs with SM >= 8.0.
+Currently, those 18 operators execute via vectorized PyTorch references.
 """
 
 from __future__ import annotations
@@ -20,7 +51,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core.cuda_kernels._fallback import dispatch, force_kernel_backend
+from neuralops.ops.cuda._fallback import dispatch, force_kernel_backend
 
 try:
     import triton

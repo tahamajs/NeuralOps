@@ -822,17 +822,17 @@ NeuralOps standardizes **116 distinct attention mechanisms across 11 architectur
 
 ### 6.1 Installation
 
-NeuralOps offers both pure-Python distributions and pre-compiled CUDA binary wheels:
+#### Build model: JIT-only
 
-- **Pure Python (`neuralops`)**: Universal CPU / MPS fallback and Triton JIT compilation for all Linux/macOS environments.
-- **Pre-compiled CUDA (`neuralops-cuda`)**: High-performance pre-compiled C++/CUDA native extensions for NVIDIA GPUs (Ampere, Ada Lovelace, Hopper, Blackwell) across CUDA 12.1, 12.4, and 12.8:
+NeuralOps adopts a **JIT-only build model** for native CUDA C++ operators:
+- **Runtime JIT Compilation (Linux)**: On Linux with NVIDIA GPUs (`nvcc` available, compute capability $\ge$ 7.0), the first execution of each native CUDA operator triggers `torch.utils.cpp_extension.load_inline` to compile the source code dynamically into a content-hashed binary cache (`~/.cache/torch_extensions/`). No precompiled C++ extension binaries currently ship on PyPI.
+- **Prebuilt Linux Wheels Decision**: Packaging configuration in `pyproject.cuda.toml` provides a `cibuildwheel` recipe for building `neuralops-cuda` wheels for Linux (`x86_64`, CUDA 12.1+). This remains a future deployment capability; precompiled wheels are not currently distributed on PyPI, and users rely on the JIT compiler.
+- **macOS / Apple Silicon Reality (PyTorch Fallback Only)**: macOS does not support NVIDIA CUDA C++ or Triton (`triton` is only installed on Linux via `sys_platform == 'linux'`). On macOS (Apple Silicon Metal / MPS or CPU), NeuralOps runs strictly in **Level-3 PyTorch Fallback mode**. All 131 attention mechanisms, 72 compressors, and hardware operators execute through numerically verified, vectorized PyTorch references.
+- **cibuildwheel Architecture Policy**: In `pyproject.cuda.toml`, `*aarch64*` is skipped in `cibuildwheel` because Apple Silicon cannot run CUDA, and Linux aarch64 CI runners with CUDA toolchains are not active. Supporting Linux aarch64 prebuilt extensions remains an open tracking decision requiring explicit hardware runner validation.
 
 ```bash
-# Pure Python distribution (CPU, MPS, Triton JIT on Linux)
+# Standard distribution with CPU, MPS, and Linux Triton/CUDA JIT support
 pip install neuralops
-
-# Pre-compiled CUDA acceleration wheels (maximum throughput, zero-compilation)
-pip install neuralops-cuda
 ```
 
 The base `neuralops` package does not install PyTorch. Choose a runtime extra for
@@ -844,10 +844,10 @@ official PyTorch selector, then install NeuralOps with the matching extra.
 # CPU runtime
 pip install "neuralops[cpu]"
 
-# NVIDIA CUDA runtime (Triton is included on Linux)
+# NVIDIA CUDA runtime (Triton is included on Linux; requires local nvcc for CUDA C++ JIT)
 pip install "neuralops[cuda]"
 
-# Apple Silicon / MPS runtime
+# Apple Silicon / MPS runtime (pure PyTorch fallback)
 pip install "neuralops[mps]"
 
 # AMD ROCm runtime
