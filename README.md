@@ -765,14 +765,14 @@ curl http://localhost:8000/v1/completions \
 
 ---
 
-## 5. Registry and Hardware Scope (131 Attention + 72 Compression)
+## 5. Registry and Hardware Scope (113 Attention + 72 Compression)
 
-NeuralOps standardizes **131 attention mechanisms across 14 architectural families** and **72 post-training compression engines across 8 algorithmic paradigms**, operating over a strictly validated zero-overhead execution hierarchy:
+NeuralOps standardizes **113 distinct attention mechanisms across 11 architectural families** and **72 post-training compression engines across 7 algorithmic paradigms**, operating over a strictly validated zero-overhead execution hierarchy:
 
 | Registry Ecosystem Category | Canonical Count | Mathematical Scope | Hardware Certification Target | Zero-Overhead Fallback Chain |
 | :--- | :---: | :--- | :--- | :--- |
-| **Attention Modules (`ATTENTION_REGISTRY`)** | **131** | 14 foundational families (Linear, SSM, DeltaNet, SVD, Block-Sparse, MLA, MoE, TTT) | NVIDIA RTX 4070 SM 8.9 & RTX 3090 SM 8.6 | Level 1: CUDA C++ $\to$ Level 2: Triton JIT $\to$ Level 3: PyTorch |
-| **Compression Engines (`COMPRESSOR_REGISTRY`)** | **72** | 8 algorithmic paradigms (Whitened SVD, Dynamic Low-Rank, ADMM Pruning, INT4/FP8, Paged KV) | Full matrix preservation up to $256.0\times$ reduction | Automated Cholesky Whitening & SVD Decomposition |
+| **Attention Modules (`ATTENTION_REGISTRY`)** | **113** | 11 foundational families (Linear, SSM, DeltaNet, SVD, Block-Sparse, MLA, MoE, TTT) | NVIDIA RTX 4070 SM 8.9 & RTX 3090 SM 8.6 | Level 1: CUDA C++ $\to$ Level 2: Triton JIT $\to$ Level 3: PyTorch |
+| **Compression Engines (`COMPRESSOR_REGISTRY`)** | **72** | 7 algorithmic paradigms (Whitened SVD, Dynamic Low-Rank, ADMM Pruning, INT4/FP8, Paged KV) | Full matrix preservation up to $256.0\times$ reduction | Automated Cholesky Whitening & SVD Decomposition |
 | **Native CUDA C++ Kernels** | **114** | 110 unique CUDA modules (16 production-certified flagship kernels) | SM 8.0, 8.6, 8.9, 9.0 (Ada, Ampere, Hopper) | Direct PyTorch C++ Extension API with Fast Launch Bounds |
 | **Unified Triton JIT Operators** | **62** | 26 categorized modules across 4 structural tiers | Cold-cache microbenchmarked on CUDA 12.8 | Autotuned 2D-Tiled Grid with Zero Block Pointers |
 | **Universal Model Surgery Backbones** | **8** | BERT, RoBERTa, GPT-2, LLaMA-3, Mistral, T5, ViT/DiT, DeepSeek MLA | In-place weight transplantation & micro-healing | 5 Topological Scanner Patterns (`UniversalArchitectureScanner`) |
@@ -1600,30 +1600,27 @@ $$\mathcal{L}_{\text{total}}(t) = \alpha(t) \cdot \left(\lambda_2 \mathcal{L}_{\
 
 ---
 
-## 13. Attention Zoo (131 Canonical Modules)
+## 13. Attention Zoo (113 Canonical Modules)
 
 All mechanisms are registered in `ATTENTION_REGISTRY` with canonical identifiers and certified on SM 8.9 hardware:
 
-### Mathematical Foundations & Architectural Taxonomy (12 Families)
+### Mathematical Foundations & Architectural Taxonomy (11 Families)
 
-NeuralOps categorizes all 131 attention mechanisms across **12 distinct mathematical paradigms**, each providing provable trade-offs between computational complexity, recurrent state retention, and inference throughput:
+NeuralOps categorizes all 113 attention mechanisms across **11 distinct mathematical paradigms**, each providing provable trade-offs between computational complexity, recurrent state retention, and inference throughput:
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│               131 CANONICAL ATTENTION MECHANISMS TAXONOMY              │
-├────────────────────┬───────┬───────────────────┬───────────────────────┤
-│ Architectural Group│ Count │ Time Complexity   │ Memory Footprint      │
-├────────────────────┼───────┼───────────────────┼───────────────────────┤
-│ 1. Linear Kernel   │  18   │ O(T * d^2)        │ O(1) State Cache      │
-│ 2. Gated DeltaRule │  16   │ O(T * d^2)        │ O(1) Associative Mem  │
-│ 3. SVD Low-Rank    │  25   │ O(T * r)          │ O(r) Latent Bottleneck│
-│ 4. Recurrent SSM   │  14   │ O(T * d * N)      │ O(d * N) State Scan   │
-│ 5. Hybrid & MoE    │  20   │ O(T * d)          │ O(B * d) Dynamic Route│
-│ 6. Sparse Windowed │  14   │ O(T * W)          │ O(W) Sliding SRAM Tile│
-│ 7. Modern Pos/GQA  │  18   │ O(T^2) or O(T*KV) │ O(T * KV) Compressed  │
-│ 8. Dense Baselines │   6   │ O(T^2)            │ O(T^2) Uncompressed   │
-└────────────────────┴───────┴───────────────────┴───────────────────────┘
-```
+| Family | Count | Members |
+| :--- | :---: | :--- |
+| adaptive | 7 | `adaptive_span_attention`, `block_transformer_hiba`, `eat`, `lola_attention`, `progressive_token_pruning`, `sink_attention`, `token_compressed_attention` |
+| dense | 2 | `full_attention`, `zeros_attention` |
+| experimental | 1 | `template_attention` |
+| fast_kernels | 5 | `adasplash_attention`, `flash_attention3`, `flash_attention3_fp8`, `soa_attn`, `xattention` |
+| gated | 8 | `decay_linear_attention`, `gated_delta_net`, `gated_deltanet_block`, `hgrn2_gated_deltanet`, `hgrn2_gated_layer`, `hgrn2_gated_outer`, `hla_attention`, `kda_attention` |
+| hybrid | 15 | `aegis_v6`, `fusion_attn`, `granite_hybrid`, `halo_regla`, `hybrid_attention`, `hybrid_local_kernel`, `landmark_local_attention`, `mixattention_moska`, `optimized_hybrid_attention`, `positive_kernel_linear_attention`, `refined_landmark_attention`, `regla_attention`, `spectron_fp8`, `split_head_hybrid`, `tri_branch_hybrid` |
+| linear | 15 | `chela_slay`, `cosformer`, `galerkin_attention`, `gla_attention`, `linformer_attention`, `nasc_attention`, `nystrom_attention`, `performer_attention`, `primal_attention`, `rala_attention`, `rpc_attention`, `spectraformer_attention`, `spectron`, `triton_cosformer`, `ttt_linear_attention` |
+| modern | 11 | `alibi`, `cross_attention`, `dynamic_conv_attention`, `gqa_attention`, `mla_attention`, `mqa`, `native_hybrid_attention`, `qcqa_attention`, `unified_rope`, `vig_attention`, `wgqa_attention` |
+| sparse | 12 | `adaptive_sparse_attention`, `bam_umoe`, `cluster_attention`, `expert_choice_moe`, `hamming_attention`, `lsh_attention`, `moba_attention`, `moe_deltakv_paged`, `nsa_attention`, `padre_attention`, `reap_moe`, `routing_attention` |
+| ssm | 16 | `goldfinch_ahn`, `griffin_ssd`, `hymba_transx`, `jamba`, `jamba_info`, `mamba_block`, `mamba_svd_flash`, `nexus`, `orion`, `phantom`, `samba_m3`, `samba_moe`, `selective_ssm`, `simple_ssm`, `upi_stuffed_mamba`, `vspec` |
+| svd | 21 | `adaptive_svd_attention`, `asvd_attention`, `compressed_attention`, `compressed_mha_attention`, `factorised_matrix_state`, `fused_svd_kernel`, `lora_attention`, `minimal_nova`, `minimal_svd`, `naive_svd`, `projection_factorized_attn`, `residual_svd_attention`, `salt_attention`, `svd_compressed`, `svd_linear_attention`, `svd_linear_decay`, `svd_llm_v2_attention`, `svd_mamba`, `svd_projection_attention`, `svd_seq`, `triton_svd_linear_attention` |
 
 #### Exact Mathematical Formulations per Family
 
@@ -1648,7 +1645,7 @@ NeuralOps categorizes all 131 attention mechanisms across **12 distinct mathemat
 6. **Sliding-Window & Dynamic Sparse (14 modules: `adaptive_sparse_attention`, `nsa_attention`, `moba_attention`)**:
    - Restricts receptive fields to local bands $W \ll T$ combined with top-$k$ block gather/scatter indexing.
 
-### Complete 131-Module Forensic Hardware Audit Table
+### Complete 113-Module Forensic Hardware Audit Table
 
 | # | Attention Module Name | Status | FP16 | BF16 | FP32 | Bwd Pass | Latency (ms) | Peak VRAM | Notes / Error |
 | :-: | :--- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :--- |
@@ -1656,133 +1653,115 @@ NeuralOps categorizes all 131 attention mechanisms across **12 distinct mathemat
 | 2 | `adaptive_sparse_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 109.921 | 18.9 MB | Certified |
 | 3 | `adaptive_svd_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.733 | 19.2 MB | Certified |
 | 4 | `adasplash_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.995 | 19.8 MB | Certified |
-| 5 | `aegis_hybrid` | **OK** | ✓ | ✓ | ✓ | ✓ | 143.951 | 24.3 MB | Certified |
-| 6 | `aegis_spectron_fp8` | **OK** | ✓ | ✓ | ✓ | ✓ | 4.563 | 23.3 MB | Certified |
-| 7 | `aegis_v1` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.611 | 20.9 MB | Certified |
-| 8 | `aegis_v2` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.439 | 21.1 MB | Certified |
-| 9 | `aegis_v3` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.860 | 21.1 MB | Certified |
-| 10 | `aegis_v4` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.872 | 21.1 MB | Certified |
-| 11 | `aegis_v5` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.792 | 21.1 MB | Certified |
-| 12 | `aegis_v6` | **OK** | ✓ | ✓ | ✓ | ✓ | 9.332 | 26.6 MB | Certified |
-| 13 | `alibi` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.381 | 22.8 MB | Certified |
-| 14 | `asvd_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.736 | 19.2 MB | Certified |
-| 15 | `bam_umoe` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.645 | 20.1 MB | Certified |
-| 16 | `block_transformer_hiba` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.380 | 19.3 MB | Certified |
-| 17 | `chela_slay` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.966 | 24.9 MB | Certified |
-| 18 | `chela_slay_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.741 | 24.9 MB | Certified |
-| 19 | `cluster_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.576 | 23.2 MB | Certified |
-| 20 | `compressed_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.420 | 19.5 MB | Certified |
-| 21 | `compressed_mha_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 3.394 | 18.9 MB | Certified |
-| 22 | `cosformer` | **OK** | ✓ | ✓ | ✓ | ✓ | 3.613 | 20.0 MB | Certified |
-| 23 | `cosformer_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.130 | 20.3 MB | Certified |
-| 24 | `cross_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.499 | 19.6 MB | Certified |
-| 25 | `decay_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.884 | 276.4 MB | Certified |
-| 26 | `decay_linear_attn` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.773 | 20.6 MB | Certified |
-| 27 | `dynamic_conv_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 37.055 | 20.2 MB | Certified |
-| 28 | `eat` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.338 | 18.7 MB | Certified |
-| 29 | `eat_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.336 | 18.0 MB | Certified |
-| 30 | `expert_choice_moe` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.016 | 18.8 MB | Certified |
-| 31 | `factorised_matrix_state` | **OK** | ✓ | ✓ | ✓ | ✓ | 100.980 | 21.5 MB | Certified |
-| 32 | `flash_attention3` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.328 | 20.4 MB | Certified |
-| 33 | `flash_attention3_fp8` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.341 | 18.2 MB | Certified |
-| 34 | `full` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.376 | 18.2 MB | Certified |
-| 35 | `full_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.339 | 18.2 MB | Certified |
-| 36 | `fused_svd_kernel` | **OK** | ✓ | ✓ | ✓ | ✓ | 81.324 | 18.2 MB | Certified |
-| 37 | `fusion_attn` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.457 | 19.5 MB | Certified |
-| 38 | `galerkin_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.813 | 22.8 MB | Certified |
-| 39 | `gated_delta_net` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.982 | 22.4 MB | Certified |
-| 40 | `gated_deltanet_block` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.870 | 22.7 MB | Certified |
-| 41 | `gated_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.724 | 22.1 MB | Certified |
-| 42 | `gated_linear_attn` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.774 | 20.6 MB | Certified |
-| 43 | `gla_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.152 | 20.8 MB | Certified |
-| 44 | `goldfinch_ahn` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.290 | 20.4 MB | Certified |
-| 45 | `gqa_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.355 | 18.9 MB | Certified |
-| 46 | `granite_hybrid` | **OK** | ✓ | ✓ | ✓ | ✓ | 114.016 | 38.9 MB | Certified |
-| 47 | `griffin_ssd` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.756 | 33.1 MB | Certified |
-| 48 | `halo_regla` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.748 | 21.0 MB | Certified |
-| 49 | `hamming_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.657 | 20.6 MB | Certified |
-| 50 | `hgrn2_gated_deltanet` | **OK** | ✓ | ✓ | ✓ | ✓ | 4.152 | 24.6 MB | Certified |
-| 51 | `hgrn2_gated_layer` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.894 | 23.7 MB | Certified |
-| 52 | `hgrn2_gated_outer` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.347 | 274.8 MB | Certified |
-| 53 | `hgrn2_outer` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.305 | 19.6 MB | Certified |
-| 54 | `hla_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.189 | 22.1 MB | Certified |
-| 55 | `hybrid_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.684 | 21.4 MB | Certified |
-| 56 | `hybrid_local_kernel` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.938 | 20.9 MB | Certified |
-| 57 | `hymba_transx` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.361 | 22.6 MB | Certified |
-| 58 | `jamba` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.422 | 22.6 MB | Certified |
-| 59 | `jamba_info` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.228 | 25.4 MB | Certified |
-| 60 | `kda_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.357 | 25.2 MB | Certified |
-| 61 | `landmark_local_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.482 | 35.6 MB | Certified |
-| 62 | `linformer_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.627 | 31.1 MB | Certified |
-| 63 | `lola_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.676 | 21.2 MB | Certified |
-| 64 | `lora_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.458 | 20.7 MB | Certified |
-| 65 | `lsh_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.632 | 25.1 MB | Certified |
-| 66 | `mamba_block` | **OK** | ✓ | ✓ | ✓ | ✓ | 3.102 | 29.7 MB | Certified |
-| 67 | `mamba_svd_flash` | **OK** | ✓ | ✓ | ✓ | ✓ | 10.899 | 37.3 MB | Certified |
-| 68 | `minimal_nova` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.636 | 32.4 MB | Certified |
-| 69 | `minimal_svd` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.536 | 19.6 MB | Certified |
-| 70 | `mixattention_moska` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.653 | 20.0 MB | Certified |
-| 71 | `mla_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.522 | 19.9 MB | Certified |
-| 72 | `moba_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.449 | 19.5 MB | Certified |
-| 73 | `moe_deltakv_paged` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.984 | 24.5 MB | Certified |
-| 74 | `mqa` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.377 | 20.8 MB | Certified |
-| 75 | `naive_svd` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.322 | 19.2 MB | Certified |
-| 76 | `nasc_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.625 | 24.7 MB | Certified |
-| 77 | `native_hybrid_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.743 | 24.2 MB | Certified |
-| 78 | `nexus` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.736 | 24.8 MB | Certified |
-| 79 | `nsa_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.502 | 22.8 MB | Certified |
-| 80 | `nystrom_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.476 | 19.3 MB | Certified |
-| 81 | `optimized_hybrid_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.973 | 21.8 MB | Certified |
-| 82 | `orion` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.204 | 27.2 MB | Certified |
-| 83 | `padre_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.694 | 24.6 MB | Certified |
-| 84 | `performer_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.916 | 20.6 MB | Certified |
-| 85 | `phantom` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.386 | 20.2 MB | Certified |
-| 86 | `positive_kernel_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 123.159 | 19.7 MB | Certified |
-| 87 | `primal_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 13.911 | 21.5 MB | Certified |
-| 88 | `progressive_token_pruning` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.669 | 21.2 MB | Certified |
-| 89 | `projection_factorized_attn` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.387 | 20.5 MB | Certified |
-| 90 | `qcqa_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.659 | 20.8 MB | Certified |
-| 91 | `rala_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.890 | 19.9 MB | Certified |
-| 92 | `reap_moe` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.313 | 19.7 MB | Certified |
-| 93 | `refined_landmark_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.337 | 33.3 MB | Certified |
-| 94 | `regla_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 4.409 | 29.1 MB | Certified |
-| 95 | `residual_svd_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.691 | 20.3 MB | Certified |
-| 96 | `routing_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 6.117 | 20.5 MB | Certified |
-| 97 | `rpc_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.560 | 20.9 MB | Certified |
-| 98 | `salt_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.416 | 20.1 MB | Certified |
-| 99 | `samba_m3` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.838 | 20.8 MB | Certified |
-| 100 | `samba_moe` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.255 | 22.9 MB | Certified |
-| 101 | `selective_ssm` | **OK** | ✓ | ✓ | ✓ | ✓ | 4.267 | 31.8 MB | Certified |
-| 102 | `simple_ssm` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.948 | 35.5 MB | Certified |
-| 103 | `sink_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.495 | 28.9 MB | Certified |
-| 104 | `soa_attn` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.465 | 20.1 MB | Certified |
-| 105 | `spectraformer_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.687 | 21.9 MB | Certified |
-| 106 | `spectron` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.395 | 21.0 MB | Certified |
-| 107 | `spectron_fp8` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.443 | 20.9 MB | Certified |
-| 108 | `split_head_hybrid` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.413 | 21.6 MB | Certified |
-| 109 | `svd_compressed` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.693 | 21.6 MB | Certified |
-| 110 | `svd_linear` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.391 | 20.8 MB | Certified |
-| 111 | `svd_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.385 | 21.3 MB | Certified |
-| 112 | `svd_linear_attn` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.381 | 21.3 MB | Certified |
-| 113 | `svd_linear_decay` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.373 | 21.3 MB | Certified |
-| 114 | `svd_linear_inject` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.372 | 21.3 MB | Certified |
-| 115 | `svd_llm_v2_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 5.430 | 21.3 MB | Certified |
-| 116 | `svd_mamba` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.082 | 43.9 MB | Certified |
-| 117 | `svd_projection_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.633 | 33.7 MB | Certified |
-| 118 | `svd_seq` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.378 | 19.3 MB | Certified |
-| 119 | `template_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.372 | 19.2 MB | Certified |
-| 120 | `token_compressed_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.099 | 20.1 MB | Certified |
-| 121 | `tri_branch_hybrid` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.738 | 25.3 MB | Certified |
-| 122 | `triton_cosformer` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.392 | 23.5 MB | Certified |
-| 123 | `triton_svd_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.535 | 19.4 MB | Certified |
-| 124 | `ttt_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.565 | 21.1 MB | Certified |
-| 125 | `unified_rope` | **OK** | ✓ | ✓ | ✓ | ✓ | 30.825 | 21.2 MB | Certified |
-| 126 | `upi_stuffed_mamba` | **OK** | ✓ | ✓ | ✓ | ✓ | 3.416 | 23.7 MB | Certified |
-| 127 | `vig_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.786 | 23.3 MB | Certified |
-| 128 | `vspec` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.126 | 20.9 MB | Certified |
-| 129 | `wgqa_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.492 | 20.0 MB | Certified |
-| 130 | `xattention` | **OK** | ✓ | ✓ | ✓ | ✓ | 93.893 | 19.4 MB | Certified |
-| 131 | `zeros_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.737 | 19.8 MB | Certified |
+| 5 | `aegis_v6` | **OK** | ✓ | ✓ | ✓ | ✓ | 9.332 | 26.6 MB | Certified |
+| 6 | `alibi` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.381 | 22.8 MB | Certified |
+| 7 | `asvd_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.736 | 19.2 MB | Certified |
+| 8 | `bam_umoe` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.645 | 20.1 MB | Certified |
+| 9 | `block_transformer_hiba` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.380 | 19.3 MB | Certified |
+| 10 | `chela_slay` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.966 | 24.9 MB | Certified |
+| 11 | `cluster_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.576 | 23.2 MB | Certified |
+| 12 | `compressed_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.420 | 19.5 MB | Certified |
+| 13 | `compressed_mha_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 3.394 | 18.9 MB | Certified |
+| 14 | `cosformer` | **OK** | ✓ | ✓ | ✓ | ✓ | 3.613 | 20.0 MB | Certified |
+| 15 | `cross_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.499 | 19.6 MB | Certified |
+| 16 | `decay_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.884 | 276.4 MB | Certified |
+| 17 | `dynamic_conv_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 37.055 | 20.2 MB | Certified |
+| 18 | `eat` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.338 | 18.7 MB | Certified |
+| 19 | `expert_choice_moe` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.016 | 18.8 MB | Certified |
+| 20 | `factorised_matrix_state` | **OK** | ✓ | ✓ | ✓ | ✓ | 100.980 | 21.5 MB | Certified |
+| 21 | `flash_attention3` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.328 | 20.4 MB | Certified |
+| 22 | `flash_attention3_fp8` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.341 | 18.2 MB | Certified |
+| 23 | `full_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.339 | 18.2 MB | Certified |
+| 24 | `fused_svd_kernel` | **OK** | ✓ | ✓ | ✓ | ✓ | 81.324 | 18.2 MB | Certified |
+| 25 | `fusion_attn` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.457 | 19.5 MB | Certified |
+| 26 | `galerkin_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.813 | 22.8 MB | Certified |
+| 27 | `gated_delta_net` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.982 | 22.4 MB | Certified |
+| 28 | `gated_deltanet_block` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.870 | 22.7 MB | Certified |
+| 29 | `gla_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.152 | 20.8 MB | Certified |
+| 30 | `goldfinch_ahn` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.290 | 20.4 MB | Certified |
+| 31 | `gqa_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.355 | 18.9 MB | Certified |
+| 32 | `granite_hybrid` | **OK** | ✓ | ✓ | ✓ | ✓ | 114.016 | 38.9 MB | Certified |
+| 33 | `griffin_ssd` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.756 | 33.1 MB | Certified |
+| 34 | `halo_regla` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.748 | 21.0 MB | Certified |
+| 35 | `hamming_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.657 | 20.6 MB | Certified |
+| 36 | `hgrn2_gated_deltanet` | **OK** | ✓ | ✓ | ✓ | ✓ | 4.152 | 24.6 MB | Certified |
+| 37 | `hgrn2_gated_layer` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.894 | 23.7 MB | Certified |
+| 38 | `hgrn2_gated_outer` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.347 | 274.8 MB | Certified |
+| 39 | `hla_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.189 | 22.1 MB | Certified |
+| 40 | `hybrid_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.684 | 21.4 MB | Certified |
+| 41 | `hybrid_local_kernel` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.938 | 20.9 MB | Certified |
+| 42 | `hymba_transx` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.361 | 22.6 MB | Certified |
+| 43 | `jamba` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.422 | 22.6 MB | Certified |
+| 44 | `jamba_info` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.228 | 25.4 MB | Certified |
+| 45 | `kda_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.357 | 25.2 MB | Certified |
+| 46 | `landmark_local_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.482 | 35.6 MB | Certified |
+| 47 | `linformer_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.627 | 31.1 MB | Certified |
+| 48 | `lola_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.676 | 21.2 MB | Certified |
+| 49 | `lora_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.458 | 20.7 MB | Certified |
+| 50 | `lsh_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.632 | 25.1 MB | Certified |
+| 51 | `mamba_block` | **OK** | ✓ | ✓ | ✓ | ✓ | 3.102 | 29.7 MB | Certified |
+| 52 | `mamba_svd_flash` | **OK** | ✓ | ✓ | ✓ | ✓ | 10.899 | 37.3 MB | Certified |
+| 53 | `minimal_nova` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.636 | 32.4 MB | Certified |
+| 54 | `minimal_svd` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.536 | 19.6 MB | Certified |
+| 55 | `mixattention_moska` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.653 | 20.0 MB | Certified |
+| 56 | `mla_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.522 | 19.9 MB | Certified |
+| 57 | `moba_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.449 | 19.5 MB | Certified |
+| 58 | `moe_deltakv_paged` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.984 | 24.5 MB | Certified |
+| 59 | `mqa` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.377 | 20.8 MB | Certified |
+| 60 | `naive_svd` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.322 | 19.2 MB | Certified |
+| 61 | `nasc_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.625 | 24.7 MB | Certified |
+| 62 | `native_hybrid_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.743 | 24.2 MB | Certified |
+| 63 | `nexus` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.736 | 24.8 MB | Certified |
+| 64 | `nsa_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.502 | 22.8 MB | Certified |
+| 65 | `nystrom_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.476 | 19.3 MB | Certified |
+| 66 | `optimized_hybrid_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.973 | 21.8 MB | Certified |
+| 67 | `orion` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.204 | 27.2 MB | Certified |
+| 68 | `padre_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.694 | 24.6 MB | Certified |
+| 69 | `performer_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.916 | 20.6 MB | Certified |
+| 70 | `phantom` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.386 | 20.2 MB | Certified |
+| 71 | `positive_kernel_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 123.159 | 19.7 MB | Certified |
+| 72 | `primal_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 13.911 | 21.5 MB | Certified |
+| 73 | `progressive_token_pruning` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.669 | 21.2 MB | Certified |
+| 74 | `projection_factorized_attn` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.387 | 20.5 MB | Certified |
+| 75 | `qcqa_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.659 | 20.8 MB | Certified |
+| 76 | `rala_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.890 | 19.9 MB | Certified |
+| 77 | `reap_moe` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.313 | 19.7 MB | Certified |
+| 78 | `refined_landmark_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.337 | 33.3 MB | Certified |
+| 79 | `regla_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 4.409 | 29.1 MB | Certified |
+| 80 | `residual_svd_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.691 | 20.3 MB | Certified |
+| 81 | `routing_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 6.117 | 20.5 MB | Certified |
+| 82 | `rpc_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.560 | 20.9 MB | Certified |
+| 83 | `salt_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.416 | 20.1 MB | Certified |
+| 84 | `samba_m3` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.838 | 20.8 MB | Certified |
+| 85 | `samba_moe` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.255 | 22.9 MB | Certified |
+| 86 | `selective_ssm` | **OK** | ✓ | ✓ | ✓ | ✓ | 4.267 | 31.8 MB | Certified |
+| 87 | `simple_ssm` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.948 | 35.5 MB | Certified |
+| 88 | `sink_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.495 | 28.9 MB | Certified |
+| 89 | `soa_attn` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.465 | 20.1 MB | Certified |
+| 90 | `spectraformer_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.687 | 21.9 MB | Certified |
+| 91 | `spectron` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.395 | 21.0 MB | Certified |
+| 92 | `spectron_fp8` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.443 | 20.9 MB | Certified |
+| 93 | `split_head_hybrid` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.413 | 21.6 MB | Certified |
+| 94 | `svd_compressed` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.693 | 21.6 MB | Certified |
+| 95 | `svd_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.385 | 21.3 MB | Certified |
+| 96 | `svd_linear_decay` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.373 | 21.3 MB | Certified |
+| 97 | `svd_llm_v2_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 5.430 | 21.3 MB | Certified |
+| 98 | `svd_mamba` | **OK** | ✓ | ✓ | ✓ | ✓ | 2.082 | 43.9 MB | Certified |
+| 99 | `svd_projection_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.633 | 33.7 MB | Certified |
+| 100 | `svd_seq` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.378 | 19.3 MB | Certified |
+| 101 | `template_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.372 | 19.2 MB | Certified |
+| 102 | `token_compressed_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.099 | 20.1 MB | Certified |
+| 103 | `tri_branch_hybrid` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.738 | 25.3 MB | Certified |
+| 104 | `triton_cosformer` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.392 | 23.5 MB | Certified |
+| 105 | `triton_svd_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.535 | 19.4 MB | Certified |
+| 106 | `ttt_linear_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.565 | 21.1 MB | Certified |
+| 107 | `unified_rope` | **OK** | ✓ | ✓ | ✓ | ✓ | 30.825 | 21.2 MB | Certified |
+| 108 | `upi_stuffed_mamba` | **OK** | ✓ | ✓ | ✓ | ✓ | 3.416 | 23.7 MB | Certified |
+| 109 | `vig_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.786 | 23.3 MB | Certified |
+| 110 | `vspec` | **OK** | ✓ | ✓ | ✓ | ✓ | 1.126 | 20.9 MB | Certified |
+| 111 | `wgqa_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.492 | 20.0 MB | Certified |
+| 112 | `xattention` | **OK** | ✓ | ✓ | ✓ | ✓ | 93.893 | 19.4 MB | Certified |
+| 113 | `zeros_attention` | **OK** | ✓ | ✓ | ✓ | ✓ | 0.737 | 19.8 MB | Certified |
 
 *For complete mathematical references, see [Section 13](#13-attention-zoo-131-canonical-modules).*
 
@@ -1796,19 +1775,15 @@ Structured compression algorithms registered in `COMPRESSOR_REGISTRY`:
 
 NeuralOps unifies 72 post-training model compression engines across **7 distinct mathematical paradigms**, spanning parameter reduction ratios from $1.0\times$ (full singular value retention) up to $256.0\times$ (vector-quantized codebooks):
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│               72 CANONICAL COMPRESSION ENGINES TAXONOMY                │
-├────────────────────┬───────┬───────────────────┬───────────────────────┤
-│ Paradigm Category  │ Count │ Parameter Range   │ Core Mathematical Rule│
-├────────────────────┼───────┼───────────────────┼───────────────────────┤
-│ 1. SVD & Low-Rank  │  25   │ 1.0x to 16.0x     │ W ~= U_r * Sigma * V^T│
-│ 2. Quantization    │  12   │ 2.0x to 256.0x    │ Q(w) = round(w/s) + z │
-│ 3. Struct. Pruning │  15   │ 1.2x to 4.0x      │ min ||W_p - W||_H     │
-│ 4. KV-Cache Opt    │   8   │ 2.0x to 8.0x      │ Page eviction & CoW   │
-│ 5. Tensor Decomp   │  12   │ 2.0x to 32.0x     │ Kronecker / Tensor-Tr.│
-└────────────────────┴───────┴───────────────────┴───────────────────────┘
-```
+| Family | Count | Members |
+| :--- | :---: | :--- |
+| experimental | 4 | `flat_llm`, `hashed_net_compressor`, `liftr`, `roast_hashed_linear` |
+| kv_cache | 6 | `aatc_xkv_compressor`, `cachenotes_compressor`, `delta_kv`, `hybridkv_compressor`, `kvtc_compressor`, `zerokv_neo_compressor` |
+| low_rank | 24 | `a3_compressor`, `come_compressor`, `compot_compressor`, `cr_compressor`, `cur_compressor`, `cur_moe_compressor`, `drone_compressor`, `enlighten_compressor`, `frandi_compressor`, `grecodec_compressor`, `lsc_compressor`, `mgie_budget`, `mlorq_compressor`, `modegpt_compressor`, `nmf_compressor`, `oats_compressor`, `rpca_compressor`, `salr`, `sdrm_compressor`, `slim_compressor`, `soka_compressor`, `svd_llm_compressor`, `tomoe_compressor`, `uniql_compressor` |
+| pruning | 9 | `admm_compressor`, `admm_pruner`, `armor_pruner`, `ast_pruner`, `bonsai_pruner`, `flap`, `mamba_shedder`, `proxsparse`, `sparsegpt` |
+| quantization | 8 | `astro_quantizer`, `coopq_quantizer`, `faq_quantizer`, `huffman_coder`, `kmeans_quantize`, `rotational_slicegpt_int4`, `slicegpt`, `slicegpt_pca` |
+| svd | 18 | `aa_svd_compressor`, `adaptive_ranks`, `adasvd_compressor`, `direct_svd`, `dobi_svd`, `dynamic_rank`, `entropy_budget_allocation`, `erc_svd`, `fwsvd_compressor`, `gfws`, `hybrid_svd_layer`, `optimal_subspace_projection`, `residual_svd_compressor`, `saes_svd_v2`, `subspace_projection`, `svd_linear`, `swift_svd`, `swift_svd_act` |
+| tensor_decomp | 3 | `kronecker_compressor`, `kronecker_tt_lora`, `tt_compressor` |
 
 #### Exact Formulations across the 7 Paradigms
 
