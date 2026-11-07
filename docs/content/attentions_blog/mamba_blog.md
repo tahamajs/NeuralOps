@@ -6,6 +6,12 @@
 
 ---
 
+> [!NOTE] **Empirical Methodology & Theoretical Projection Notice**  
+> Benchmark metrics and trade-off tables presented in this architectural monograph reflect theoretical asymptotic scaling, design projections, or illustrative simulations from reference literature. For physical hardware benchmarks executed on dedicated silicon (NVIDIA RTX 4070 SM 8.9 / RTX 3090 SM 8.6) with cryptographic execution provenance, consult the authoritative [Master Results Matrix](https://huggingface.co/datasets/Hooshaai/neuralops-results) and [Results Ledger](../../api/results_ledger.md).
+
+---
+
+
 ## 📑 Master Contents
 1. [Executive Summary & Core Value Proposition](#1-executive-summary--core-value-proposition)
 2. [The Mental Model: 4 Real-World Analogies](#2-the-mental-model-4-real-world-analogies)

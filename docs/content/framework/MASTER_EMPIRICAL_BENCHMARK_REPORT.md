@@ -1,5 +1,7 @@
 # 📊 SVD Linear Attention & Compression Framework: Master Empirical Benchmark Report
 
+> **Canonical Notice**: This report is canonically maintained in [`docs/reports/MASTER_EMPIRICAL_BENCHMARK_REPORT.md`](../../reports/MASTER_EMPIRICAL_BENCHMARK_REPORT.md).
+
 **Authors**: Advanced AI Architecture & Systems Group  
 **Date**: August 2026  
 **Status**: Publication-Grade Empirical Summary  
