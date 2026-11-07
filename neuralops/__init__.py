@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
+from pathlib import Path
 import sys
 
 from neuralops.core._compat_importer import install_compatibility_interceptor
@@ -765,38 +766,18 @@ _API_EXPORTS = {
     "evaluate_zero_shot_tasks": "neuralops.evaluation.lm_eval_adapter",
 }
 
-_SUBPACKAGES = {
-    "analysis",
-    "attentions",
-    "benchmarks",
-    "cli",
-    "compression_engine",
-    "config",
-    "core",
-    "distributed",
-    "experiment_logging",
-    "inference",
-    "integrations",
-    "kernels",
-    "models",
-    "results_saver",
-    "runners",
-    "tests",
-    "tracking",
-    "trainer",
-    "training",
-    "utils",
-    "main",
-    "surgery",
-    "export",
-    "optimization",
-    "adaptation",
-    "recipe",
-    "operations",
-    "adapters",
-    "validator",
-    "executor",
-    "reporting",
+_PKG_DIR = Path(__file__).resolve().parent
+_SUBPACKAGES: frozenset[str] = frozenset(
+    d.name
+    for d in _PKG_DIR.iterdir()
+    if d.is_dir() and (d / "__init__.py").exists() and not d.name.startswith((".", "_"))
+)
+
+# Compatibility-only redirects for legacy package namespaces (never in _SUBPACKAGES)
+_COMPAT_SUBPACKAGES: dict[str, str] = {
+    "attentions": "neuralops.layers",
+    "compression_engine": "neuralops.compression",
+    "training": "neuralops.trainer",
 }
 
 
@@ -925,10 +906,22 @@ def __getattr__(name: str) -> Any:
         except ImportError:
             pass
 
+    if name in _COMPAT_SUBPACKAGES:
+        target = _COMPAT_SUBPACKAGES[name]
+        try:
+            submod = importlib.import_module(target)
+            globals()[name] = submod
+            return submod
+        except (ModuleNotFoundError, ImportError) as exc:
+            raise AttributeError(f"module '{__name__}' has no attribute '{name}'") from exc
+
     if name in _SUBPACKAGES:
-        submod = importlib.import_module(f"neuralops.{name}")
-        globals()[name] = submod
-        return submod
+        try:
+            submod = importlib.import_module(f"neuralops.{name}")
+            globals()[name] = submod
+            return submod
+        except (ModuleNotFoundError, ImportError) as exc:
+            raise AttributeError(f"module '{__name__}' has no attribute '{name}'") from exc
 
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 

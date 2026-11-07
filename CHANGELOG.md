@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Package Hygiene, Subpackage Resolution & Import Hardening (F-10, F-11, F-12):**
+  - Dynamically resolved `_SUBPACKAGES` from filesystem directories containing `__init__.py` under `neuralops/`, removing phantom names (`validator`, `experiment_logging`, `tests`).
+  - Isolated legacy package redirects (`attentions`, `compression_engine`, `training`) into dedicated `_COMPAT_SUBPACKAGES` mapping.
+  - Wrapped `importlib.import_module` in `neuralops.__getattr__` in try/except `(ModuleNotFoundError, ImportError)` raising `AttributeError`, enabling `hasattr(neuralops, "validator")` and `getattr` with defaults to work reliably.
+  - Corrected directory modernization note in CHANGELOG to state that `operations/` is deprecated in favor of `ops/` (removal planned for 2.1.0).
+  - Consolidated lazy loading mechanisms: converted `neuralops/ops/__init__.py` to PEP 562 `__getattr__` and deleted dead `neuralops/_lazy.py` (`_LazyModule`). Replaced bare `except Exception: pass` in `neuralops/_optional.py` with warning logger.
+  - Cleaned `neuralops/main.py`: removed `sys.path.insert` mutation and `HF_HOME` filesystem cache overrides, ensuring importing the library never alters the host environment's Python path or Hugging Face cache root.
+- **Packaging, Gitignore & CUDA Build Consistency (F-09, F-14):**
+  - Audited repository tracking state: confirmed `docs/` contains 1,000+ tracked documentation pages and verified `docs/` and `audit/` are not ignored in `.gitignore`. Probed `docs/__gitignore_probe__.md` proving newly added documentation files are tracked and visible to Git.
+  - Retained explicit narrowing of `/results/` to generated execution artifacts (`results/*.log`, `results/*.sqlite`, `results/plots/*.pdf`, etc.) with whitelists for canonical data (`results/*.csv`).
+  - Purged dead whitelist patterns (`!ROADMAP.md` and `!setup.py`) from `.gitignore`.
+  - Audited `pyproject.cuda.toml`: verified build requires does not contain `torch` (runtime JIT only) and aligned `license`, `license-files`, `readme`, and canonical version `2.0.6` with main `pyproject.toml`.
+  - Updated `tests/conftest.py` hook to ensure static config and version verification tests (`test_version_sync`, `test_repo_config_consistency`) are not incorrectly marked as physical GPU tests.
+- **Tooling, Packaging & Typechecking Consistency (F-05, F-06, F-07, F-08):**
+  - Created `.pre-commit-config.yaml` at repository root enforcing `ruff` (lint + format), `black`, `isort`, `mypy`, `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, and `check-added-large-files`. Hooks are pinned to matching versions in `pyproject.toml` dev dependencies.
+  - Updated `MANIFEST.in`: changed `include ROADMAP.md` to `include docs/ROADMAP.md` and pruned nonexistent directory references. Verified `python -m build --sdist` produces `neuralops-2.0.6.tar.gz` with zero missing-file warnings.
+  - Cleaned `requirements.lock.txt` and `requirements.txt`: eliminated `-e git+...` editable VCS dependency, removed near-duplicate suffixed packages (`httpcore2`, `httpx2`, `nest-asyncio2`), and ensured core dependencies `einops` and `safetensors` are explicitly present and locked.
+  - Aligned `[tool.mypy] python_version = "3.10"` with `requires-python = ">=3.10"`. Dropped unverified Python 3.13 and 3.14 classifiers from `pyproject.toml` to match the active CI matrix (Python 3.10, 3.11, 3.12).
+  - Defined a clean static typing baseline scope for `neuralops/core/` in `.github/workflows/ci.yml` and `.pre-commit-config.yaml`.
 - **Documentation & Packaging (Honest Quickstart & Torch-Free Invariant, F-96):**
   - Updated Quickstart in `README.md` and documentation guides to recommend `pip install "neuralops[core]"` for real model transformation workflows. Clarified that bare `pip install neuralops` is a lightweight install containing package metadata and torch-free utilities only.
   - Removed `pipeline` from `_TORCH_FREE_SYMBOLS` in `neuralops/__init__.py`. Eagerly calling or importing `pipeline` in a torch-free environment now fails closed with an actionable error.
@@ -101,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change (Credential Protection / Token Leak Elimination):** Overrode `BenchmarkConfig.to_dict()` to exclude `hf_token`, preventing Hugging Face API tokens from being serialized into `config.json`, `summary.md`, and journal manifests. Redacted `hf_token` in `BenchmarkConfig.__repr__()`. Deprecated and refused `--hf-token` CLI argument in `neuralops.benchmarks run`; tokens are now read exclusively from environment variables (`HF_TOKEN`, `HUGGING_FACE_HUB_TOKEN`).
 - **Breaking Change (Security / Remote Code Execution by Default):** Changed `trust_remote_code` default from `True` to `False` across `BenchmarkConfig`, `model_loader.py`, `adapter.py`, and `harness.py`. Converted CLI `neuralops run` from opt-out to opt-in with `--trust-remote-code` (default off); deprecated `--no-trust-remote-code`. When `trust_remote_code=True` is explicitly requested, an explicit warning is logged and the setting is recorded in the benchmark run manifest.
 - **Breaking Change (Training Fail-Closed):** Eliminated `_FallbackLanguageModel` and silent random model substitution in `neuralops train`; missing checkpoints or invalid models now fail closed with `RuntimeError` rather than silently training a random 4-layer model.
-- **Directory Modernization:** Consolidated legacy duality directories: merged `validator/` into `validation/`, eliminated `operations/` in favor of `ops/`, merged `experiment_logging/` into `tracking/`, and removed `training/` MetaPathFinder shim.
+- **Directory Modernization:** Consolidated legacy duality directories: merged `validator/` into `validation/`, deprecated `operations/` in favor of `ops/` (scheduled for removal in 2.1.0), merged `experiment_logging/` into `tracking/`, and removed `training/` MetaPathFinder shim.
 - **Root Shim Elimination:** Deleted 7 unreferenced root compatibility shims (`server.py`, `checkpoint.py`, `qwen_compat.py`, `hub.py`, `architectures.py`, `lora.py`, `fastapi_app.py`) and migrated high-reference shims (`surgery.py`, `serving.py`, `replace_attention.py`, `registry.py`) via AST rewriting.
 - **HPC & Scripts Consolidation:** Relocated 19 PBS cluster job scripts into `scripts/hpc/` and centralized benchmark runners under `scripts/benchmarks/`.
 - **HFCacheBridge Dynamic Flexibility:** Enhanced `NeuralOpsHybridHFCache.update_recurrent_state()` to seamlessly support both keyword arguments (`layer_idx`, `state`, `recurrent_states`) and positional signatures, preserving fail-closed boundaries for external serving engines.
@@ -651,4 +670,3 @@ All compiled on Tesla T4 (SM 7.5), parity tested vs PyTorch reference (< 1e-3 FP
 - Baseline configuration files and YAML hyperparameter specifications.
 - Automated weight transplantation from standard multi-head self-attention projections to factorized low-rank weights.
 - Early stopping criteria based on validation cross-entropy and task accuracy.
-

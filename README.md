@@ -84,7 +84,7 @@ The following empirical verification table records physical hardware execution o
 ```python
 # 1. Install NeuralOps with PyTorch core runtime from PyPI
 pip install "neuralops[core]"
-# (Bare `pip install neuralops` is a lightweight install containing metadata and torch-free utilities only)
+# (Bare `pip install neuralops` is a lightweight install containing metadata and torch-free utilities only; `import neuralops.api` requires PyTorch via `neuralops[core]`)
 
 # 2. High-Level Ergonomic Pipeline (One-line Hugging Face-compatible inference)
 import neuralops
@@ -429,21 +429,21 @@ flowchart TD
     classDef gate fill:#2c3e50,stroke:#95a5a6,stroke-width:2px,color:#fff;
 
     In["Tensor Operation Input<br><code>(Query, Key, Value, State)</code>"] --> DevCheck{"Tensor Device & Force Context?"}
-    
+
     DevCheck -- "CPU / MPS Device" --> L3["<b>Level 3: Pure PyTorch Reference</b><br>• Vectorized Einsum / BMM / Associative Scans<br>• Zero external compiler dependencies<br>• Native Apple Silicon Metal (MPS) & ARM Neon"]:::l3
-    
+
     DevCheck -- "CUDA Device & Auto Dispatch" --> L1Check{"CUDA SM ≥ 7.0 & NVCC Extension Compiled?"}:::gate
-    
+
     L1Check -- "Yes (Preferred)" --> L1["<b>Level 1: Native CUDA C++ (NVCC)</b><br>• Sub-warp shuffle intrinsics (<code>__shfl_xor_sync</code>)<br>• 128-bit vectorized global memory loads (<code>uint4</code> / <code>float4</code>)<br>• Shared memory swizzling (zero bank conflicts)<br>• Strict register budget (≤ 48 regs / thread)"]:::l1
-    
+
     L1Check -- "No / Compile Absent" --> L2Check{"Triton JIT Available?"}:::gate
-    
+
     L1 -. "Runtime Exception (Silent Fallback Banned)" .-> LogWarn1["⚠️ Logger Warning + Telemetry Incr"] --> L2["<b>Level 2: OpenAI Triton JIT</b><br>• Dynamic autotuned 2D/3D block tiles (<code>@triton.autotune</code>)<br>• Fused on-chip SRAM register residency<br>• Native FP8/BF16/FP32 PTX compilation"]:::l2
-    
+
     L2Check -- "Yes" --> L2
     L2 -. "JIT Exception / Shape Guard" .-> LogWarn2["⚠️ Logger Warning + Telemetry Incr"] --> L3
     L2Check -- "No" --> L3
-    
+
     L1 --> Out["Synchronized Result Tensor + Telemetry Record"]
     L2 --> Out
     L3 --> Out
@@ -1148,14 +1148,14 @@ with torch.cuda.amp.autocast(dtype=torch.bfloat16 if torch.cuda.is_bf16_supporte
     with torch.no_grad():
         teacher_out = teacher(inputs, output_hidden_states=True)
     student_out = student(inputs, output_hidden_states=True)
-    
+
     # Pillar 1: Logit Distillation
     loss_logit = logit_kd(student_out.logits, teacher_out.logits, labels=labels)
     # Pillar 2: SmoothMax Layerwise CKA
     loss_cka = cka_steering(student_out.hidden_states, teacher_out.hidden_states)
     # Pillar 4: Operator Cloning & Angular MSE
     loss_op = operator_cloning(student_out.hidden_states[-1], teacher_out.hidden_states[-1])
-    
+
     # Combined Multi-Objective Loss (measured throughput: 29,047 tokens/sec on NVIDIA GeForce RTX 4070 12GB Laptop SM 8.9; DistilBERT-base B=32, T=128, AMP BF16; preliminary single-run measurement)
     loss = 0.5 * loss_logit + 0.3 * loss_cka + 0.2 * loss_op
 
@@ -2140,7 +2140,7 @@ NeuralOps enforces explicit dependency boundaries across core execution, hardwar
 
 | Dependency Component | Minimum Version | Tested Version | Category | Purpose & Compatibility Notes |
 | :--- | :---: | :---: | :---: | :--- |
-| **Python** | `3.10` | `3.14.3` | Core | Actively tested in CI/CD on Python 3.10, 3.11, 3.12, 3.14. |
+| **Python** | `3.10` | `3.12.x` | Core | Actively tested in CI/CD on Python 3.10, 3.11, 3.12 (minimum supported: 3.10). |
 | **PyTorch** | `2.2.0` | `2.11.0+cu128` | Core | Full support for `torch.compile`, `FakeTensor`, and `torch.library.custom_op`. |
 | **OpenAI Triton** | `2.3.0` | `3.6.0+` | Acceleration | Hardware JIT acceleration on NVIDIA CUDA SM 6.1–9.0+ and AMD ROCm. Level 3 fallback when unavailable. |
 | **Hugging Face Transformers**| `4.40.0` | `4.49.0` | Integration | Drop-in surgery across BERT, RoBERTa, DistilBERT, GPT-2, LLaMA-3, Mistral, Qwen-2.5, T5. |
@@ -2461,8 +2461,8 @@ NeuralOps enforces `pyproject.toml` as the single canonical source of truth for 
 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
-| **v2.0.6** (Current) | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
-| **v2.0.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v2.0.6** (Current) | `3.10`, `3.11`, `3.12` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v2.0.0** | `3.10`, `3.11`, `3.12` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.9.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.6.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.3.7** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.6.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux, macOS 13+, Windows 10/11 |

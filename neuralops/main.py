@@ -38,30 +38,10 @@ except (
 ):
     pass
 
-_HERE = Path(__file__).resolve().parent
-_CODES = _HERE.parent
-if sys.path and sys.path[0] == str(_HERE):
-    sys.path.pop(0)
-if str(_CODES) not in sys.path:
-    sys.path.insert(0, str(_CODES))
-
 os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "300")
 os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
-
-if "HF_HOME" not in os.environ:
-    _potential_caches = [
-        _CODES.parent / "cache",
-        Path.home() / ".cache" / "huggingface" / "hub",
-        Path.home() / ".cache" / "huggingface",
-    ]
-    for pc in _potential_caches:
-        if pc.exists() and os.access(pc, os.W_OK):
-            os.environ["HF_HOME"] = str(pc)
-            os.environ["HF_HUB_CACHE"] = str(pc)
-            os.environ["TRANSFORMERS_CACHE"] = str(pc)
-            break
 
 
 def _import_framework():
@@ -75,24 +55,11 @@ def _import_framework():
         TrainingArguments,
     )
 
-    from neuralops.core.registry import (
-        ATTENTION_REGISTRY,
-        COMPRESSOR_REGISTRY,
-        list_all_components,
-    )
-    from neuralops.core.utils import (
-        clear_memory,
-        count_parameters,
-        get_device,
-        set_seed,
-    )
     from neuralops.config.experiment_config import ExperimentConfig
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, list_all_components
+    from neuralops.core.utils import clear_memory, count_parameters, get_device, set_seed
     from neuralops.results_saver.pipeline.result_writer import ResultWriter
-    from neuralops.trainer.callbacks import (
-        MemoryCallback,
-        SVDAttentionCallback,
-        TimeCallback,
-    )
+    from neuralops.trainer.callbacks import MemoryCallback, SVDAttentionCallback, TimeCallback
     from neuralops.trainer.metrics import get_task_metrics
     from neuralops.utils.replace_attention import replace_attention
 
@@ -157,19 +124,13 @@ def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
 def load_data(cfg: Any, tokenizer: Any) -> tuple[Any, int, bool]:
     """Load, tokenise, and return a HuggingFace DatasetDict."""
     try:
-        from neuralops.data.glue_loader import (
-            GLUE_TASK_KEYS,
-            get_num_labels_and_is_regression,
-            load_glue_local,
-        )
+        from neuralops.data.glue_loader import GLUE_TASK_KEYS, get_num_labels_and_is_regression, load_glue_local
         from neuralops.data.preprocessing import preprocess_function as build_preprocess
 
         raw = load_glue_local(cfg.task, cfg.glue_base_path)
         num_labels, is_regression = get_num_labels_and_is_regression(cfg.task)
         sent1_key, sent2_key = GLUE_TASK_KEYS[cfg.task]
-        preprocess_fn = build_preprocess(
-            tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
-        )
+        preprocess_fn = build_preprocess(tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression)
         dataset = raw.map(preprocess_fn, batched=True, remove_columns=raw["train"].column_names)
 
         max_samples = getattr(cfg, "max_train_samples", None)
@@ -189,6 +150,7 @@ def load_data(cfg: Any, tokenizer: Any) -> tuple[Any, int, bool]:
 try:
     from transformers import TrainerCallback
 except ImportError:
+
     class TrainerCallback:
         pass
 
@@ -226,9 +188,7 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     try:
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True)
     except Exception:
-        tokenizer = fw["AutoTokenizer"].from_pretrained(
-            cfg.model_name, use_fast=True, local_files_only=True
-        )
+        tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True, local_files_only=True)
 
     logger.info("Loading data for task: %s", cfg.task)
     dataset, num_labels, is_regression = load_data(cfg, tokenizer)
@@ -240,9 +200,7 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
 
     logger.info("Loading model: %s  (num_labels=%d)", cfg.model_name, num_labels)
     try:
-        model = fw["AutoModelForSequenceClassification"].from_pretrained(
-            cfg.model_name, num_labels=num_labels
-        )
+        model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name, num_labels=num_labels)
     except Exception:
         model = fw["AutoModelForSequenceClassification"].from_pretrained(
             cfg.model_name, num_labels=num_labels, local_files_only=True
@@ -259,7 +217,6 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
                 fw["ATTENTION_REGISTRY"].keys(),
             )
 
-
     model.to(device)
     n_params = fw["count_parameters"](model)
     logger.info("Trainable parameters: %s", f"{n_params:,}")
@@ -272,9 +229,7 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     }
     f"eval_{metric_map.get(cfg.task, 'accuracy')}"
 
-    training_args = fw[
-        "TrainingArguments"
-    ](
+    training_args = fw["TrainingArguments"](
         output_dir=str(out_dir / "checkpoints"),
         num_train_epochs=cfg.epochs,
         per_device_train_batch_size=cfg.batch_size,
@@ -283,9 +238,7 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         learning_rate=cfg.lr,
         weight_decay=0.01,
         lr_scheduler_type="linear",
-        warmup_steps=min(
-            500, int(0.1 * len(dataset["train"]) / max(1, cfg.batch_size) * cfg.epochs)
-        ),
+        warmup_steps=min(500, int(0.1 * len(dataset["train"]) / max(1, cfg.batch_size) * cfg.epochs)),
         logging_steps=50,
         eval_strategy="epoch",
         save_strategy="no",
@@ -435,9 +388,7 @@ def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name)
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name)
     except Exception:
-        model = fw["AutoModelForSequenceClassification"].from_pretrained(
-            cfg.model_name, local_files_only=True
-        )
+        model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name, local_files_only=True)
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, local_files_only=True)
     model.to(device)
     model.tokenizer = tokenizer
@@ -575,9 +526,7 @@ def run_sweep(args: Any, fw: dict, logger: logging.Logger) -> list[dict[str, Any
                 logger.error("Run %s failed: %s", run_name, e, exc_info=True)
                 all_results.append({"run_name": run_name, "error": str(e)})
 
-    sweep_out = (
-        Path(args.output_dir) / f"sweep_{args.task}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    )
+    sweep_out = Path(args.output_dir) / f"sweep_{args.task}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     sweep_out.mkdir(parents=True, exist_ok=True)
 
     by_attn: dict[str, list] = {}
@@ -591,9 +540,7 @@ def run_sweep(args: Any, fw: dict, logger: logging.Logger) -> list[dict[str, Any
         if not good:
             summary[attn_type] = {"error": "all runs failed"}
             continue
-        eval_keys = {
-            k for r in good for k in r.get("eval", {}) if isinstance(r["eval"].get(k), float)
-        }
+        eval_keys = {k for r in good for k in r.get("eval", {}) if isinstance(r["eval"].get(k), float)}
         summary[attn_type] = {}
         for k in eval_keys:
             vals = [r["eval"][k] for r in good if k in r.get("eval", {})]
@@ -620,9 +567,7 @@ def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: l
         "## Leaderboard\n",
     ]
 
-    all_keys = sorted(
-        {k for v in summary.values() if isinstance(v, dict) for k in v if k.endswith("_mean")}
-    )
+    all_keys = sorted({k for v in summary.values() if isinstance(v, dict) for k in v if k.endswith("_mean")})
     header = "| Attention Type | " + " | ".join(k.replace("_mean", "") for k in all_keys) + " |"
     sep = "|" + "|".join(["---"] * (len(all_keys) + 1)) + "|"
     lines += [header, sep]
@@ -631,9 +576,7 @@ def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: l
         if "error" in v:
             row_vals = ["ERROR"] * len(all_keys)
         else:
-            row_vals = [
-                f"{v.get(k, 0):.4f} ± {v.get(k.replace('_mean', '_std'), 0):.4f}" for k in all_keys
-            ]
+            row_vals = [f"{v.get(k, 0):.4f} ± {v.get(k.replace('_mean', '_std'), 0):.4f}" for k in all_keys]
         lines.append(f"| {at} | " + " | ".join(row_vals) + " |")
 
     (out_dir / "RESULTS.md").write_text("\n".join(lines))
@@ -661,7 +604,7 @@ def run_list(fw: dict | None = None) -> None:
 def build_parser() -> argparse.ArgumentParser:
     """Build the full CLI argument parser."""
     p = argparse.ArgumentParser(
-        prog="python main.py",
+        prog="neuralops-run",
         description="Efficient Attention Framework — Full Pipeline Runner",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
@@ -718,11 +661,7 @@ def main() -> None:
 
     cfg_overrides: dict[str, Any] = {}
     if getattr(args, "config", None):
-        from neuralops.config.loader import (
-            load_attention_sweep_config,
-            load_experiment_config,
-            load_yaml,
-        )
+        from neuralops.config.loader import load_attention_sweep_config, load_experiment_config, load_yaml
 
         cfg_overrides = load_yaml(args.config)
         if args.command == "sweep":

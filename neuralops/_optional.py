@@ -30,6 +30,7 @@ def _torch_available() -> bool:
         else:
             try:
                 import torch  # noqa: F401
+
                 _TORCH_AVAILABLE = True
             except (ImportError, ModuleNotFoundError):
                 _TORCH_AVAILABLE = False
@@ -45,10 +46,13 @@ def _require_torch(feature: str = "this operation") -> None:
         )
     try:
         import neuralops
+
         if hasattr(neuralops, "_patch_torch_compat"):
             neuralops._patch_torch_compat()
-    except Exception:
-        pass
+    except Exception as exc:
+        import logging
+
+        logging.getLogger(__name__).warning("Failed to patch torch compatibility: %s", exc)
 
 
 def _triton_available() -> bool:
@@ -59,6 +63,7 @@ def _triton_available() -> bool:
         else:
             try:
                 import triton  # noqa: F401
+
                 _TRITON_AVAILABLE = True
             except (ImportError, ModuleNotFoundError):
                 _TRITON_AVAILABLE = False

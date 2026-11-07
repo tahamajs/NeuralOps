@@ -173,6 +173,7 @@ neuralops-cli = "neuralops.benchmarks.cli:main"
 nops = "neuralops.benchmarks.cli:main"
 nops-cli = "neuralops.benchmarks.cli:main"
 neuralops-eval = "neuralops.evaluation.standalone.cli:main"
+neuralops-run = "neuralops.main:main"
 
 [project.urls]
 Homepage = "https://github.com/tahamajs/NeuralOps"
