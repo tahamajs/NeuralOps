@@ -1,5 +1,7 @@
 # Complete Multi-Model & Cross-Dataset Benchmark Report
 
+> **Canonical Notice**: This report is canonically maintained in [`docs/reports/FULL_BENCHMARK_ANALYSIS_REPORT.md`](../reports/FULL_BENCHMARK_ANALYSIS_REPORT.md).
+
 This document compiles, audits, and analyzes all experimental evaluations across the full suite of attention mechanisms and compression engines.
 
 ## 1. Executive Summary & Aggregate Statistics

@@ -34,6 +34,7 @@ LIMIT=""
 STEPS=20
 BATCH_SIZE="auto"
 BACKWARD_FLAG=""
+PARALLEL_WORKERS=4
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -62,8 +63,12 @@ while [[ $# -gt 0 ]]; do
             BATCH_SIZE="$2"
             shift 2
             ;;
+        --parallel-workers)
+            PARALLEL_WORKERS="$2"
+            shift 2
+            ;;
         -h|--help)
-            echo "Usage: bash scripts/run_full_gpu_suite.sh [--quick] [--device <cuda|mps|cpu|auto>] [--limit <N>] [--backward] [--steps <N>] [--batch-size <N>]"
+            echo "Usage: bash scripts/run_full_gpu_suite.sh [--quick] [--device <cuda|mps|cpu|auto>] [--limit <N>] [--backward] [--steps <N>] [--batch-size <N>] [--parallel-workers <N>]"
             exit 0
             ;;
         *)
@@ -87,6 +92,7 @@ echo "======================================================================"
 echo "  Repository  : ${REPO_ROOT}"
 echo "  Interpreter : ${PYTHON_BIN}"
 echo "  Target      : ${DEVICE}"
+echo "  Workers     : ${PARALLEL_WORKERS}"
 echo "  Timestamp   : $(date)"
 echo "======================================================================"
 
@@ -101,7 +107,7 @@ echo ">>> [1/6] Hardware Pre-Flight & VRAM Auto-Tuning..."
 # Phase 2: Master Benchmark Sweep (Attentions & Compressors)
 echo ""
 echo ">>> [2/6] Executing High-Precision Benchmark Suite..."
-"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_master_suite.py" --device "${DEVICE}" ${LIMIT} ${BACKWARD_FLAG} --export
+"${PYTHON_BIN}" "${REPO_ROOT}/scripts/benchmarks/gpu_master_suite.py" --device "${DEVICE}" ${LIMIT} ${BACKWARD_FLAG} --parallel-workers "${PARALLEL_WORKERS}" --export
 
 # Phase 2.5: Canonical 26-Kernel Triton / CUDA Benchmark
 echo ""

@@ -1,3 +1,9 @@
+# SUPERSEDED — Historical Release Report (v1.3.7)
+
+> **HISTORICAL NOTICE**: This report documents the historical v1.3.7 release status from October 2026. NeuralOps has since advanced to version **v2.1.0** with the unified 203-module census, 343 canonical benchmarks, and the 5-invariant test suite. For current verification, see [Master Project Results](MASTER_PROJECT_RESULTS.md) and [Full Benchmark Analysis](FULL_BENCHMARK_ANALYSIS_REPORT.md).
+
+---
+
 # 🚀 NEURALOPS (SVD_linear_Attention v1.3.7) — FINAL PRODUCTION READINESS REPORT
 
 **Date**: October 16, 2026  

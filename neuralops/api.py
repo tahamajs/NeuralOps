@@ -762,8 +762,10 @@ def _ensure_registries_loaded() -> None:
 
 def list_attentions(include_extensions: bool = False) -> List[str]:
     """Return a sorted list of all available canonical attention module names."""
+    from neuralops.core.registry import list_attentions as _registry_list_attentions
+
     _ensure_registries_loaded()
-    canonical = sorted(list(ATTENTION_REGISTRY.keys()))
+    canonical = list(_registry_list_attentions())
     if include_extensions:
         try:
             from neuralops.integrations.fla import list_fla_attentions
@@ -772,7 +774,7 @@ def list_attentions(include_extensions: bool = False) -> List[str]:
         except Exception:
             # allowed-swallow: best-effort-telemetry
             pass
-    return canonical
+    return sorted(list(set(canonical)))
 
 
 def list_compressors() -> List[str]:

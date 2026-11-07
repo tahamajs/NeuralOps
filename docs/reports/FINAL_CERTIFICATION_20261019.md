@@ -1,3 +1,9 @@
+# Historical Certification Snapshot — 2026-10-19
+
+> **HISTORICAL NOTICE**: This document records a point-in-time certification snapshot from October 19, 2026 (pre-v2.0). For current v2.1.0 release verification, consult the authoritative test suite and master benchmark ledger.
+
+---
+
 # Final Certification — 2026-10-19
 
 ## CERTIFIED_WITH_DOCUMENTED_LIMITATIONS

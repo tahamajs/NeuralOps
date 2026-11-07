@@ -720,17 +720,7 @@ def register_compressor(
 
 def list_attention_mechanisms() -> list[str]:
     """Returns canonical list of all registered attention mechanisms."""
-    return ATTENTION_REGISTRY.keys()
-
-
-def list_attentions() -> list[str]:
-    """Returns canonical list of all registered attention mechanisms."""
-    return ATTENTION_REGISTRY.keys()
-
-
-def list_compressors() -> list[str]:
-    """Returns canonical list of all registered compressor names."""
-    return COMPRESSOR_REGISTRY.keys()
+    return list_attentions()
 
 
 import sys as _sys
@@ -841,7 +831,13 @@ def create_attention(
     rank: int | None = None,
     **kwargs: Any,
 ) -> Any:
-    """Universal attention factory instantiating any registered attention mechanism or ComposableAttention."""
+    """Universal attention factory instantiating any registered attention mechanism or ComposableAttention.
+
+    Normalizes architectural hyperparameter aliases (embed_dim, dim, d_model, hidden_size,
+    num_heads, n_heads, heads, rank, r). If no config is provided and dim is specified,
+    constructs a synthetic BertConfig with config._is_synthetic = True. Validates that
+    num_heads divides dim evenly, raising ValueError if it does not.
+    """
     if name == "composable" or name.startswith("compose(") or "proj=" in name:
         from neuralops.core.composable import ComposableAttention
         return ComposableAttention(embed_dim=embed_dim or dim or 768, num_heads=num_heads or 12, **kwargs)
@@ -872,10 +868,7 @@ def create_attention(
 
     if resolved_dim is not None and resolved_heads is not None and resolved_heads > 0:
         if resolved_dim % resolved_heads != 0:
-            for cand in [16, 12, 8, 4, 2, 1]:
-                if resolved_dim % cand == 0:
-                    resolved_heads = cand
-                    break
+            raise ValueError(f"num_heads ({resolved_heads}) must divide dim ({resolved_dim}) evenly.")
 
     call_kwargs = dict(kwargs)
     if resolved_dim is not None:
@@ -894,7 +887,10 @@ def create_attention(
     if config is None and resolved_dim is not None:
         from transformers import BertConfig
         h = resolved_heads or max(1, resolved_dim // 64)
-        config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h)
+        is_dec = kwargs.get("is_decoder", kwargs.get("is_causal", True))
+        config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h, is_decoder=is_dec)
+        config.is_causal = is_dec
+        config._is_synthetic = True
         call_kwargs["config"] = config
 
     init_attempts = []

@@ -4,11 +4,11 @@
 
 Only the latest production release receives active security patches:
 
-| Version | Supported |
-| :--- | :--- |
-| **2.0.x** | :white_check_mark: Active |
-| 1.9.x | :warning: Security fixes only |
-| $\le$ 1.8.x | :x: End of Life |
+| Version | Supported | Notes |
+| :--- | :---: | :--- |
+| **2.1.x / 2.0.x** | :white_check_mark: Active | Current active production release (Unified 3-level dispatch, 203 modules, AGT suite) |
+| 1.9.x | :warning: Maintenance | Security fixes only |
+| $\le$ 1.8.x | :x: End of Life | Upgrade to latest `v2.x` recommended |
 
 ---
 
@@ -25,4 +25,4 @@ Please include:
 - Step-by-step reproduction instructions or proof-of-concept code.
 - Affected components (CUDA kernels, PyTorch modules, Serving RPC, Web endpoints).
 
-We aim to acknowledge reports within 48 hours and provide patches within 14 days.
+We aim to acknowledge reports within **48 hours** and provide patches within **14 days**.

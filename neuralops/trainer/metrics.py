@@ -16,7 +16,9 @@ from typing import Any
 import numpy as np
 
 try:
-    from scipy.stats import pearsonr, spearmanr
+    import scipy.stats as _sp_stats
+    pearsonr = _sp_stats.pearsonr
+    spearmanr = _sp_stats.spearmanr
 except ImportError:
     def pearsonr(x: Any, y: Any) -> tuple[float, float]:
         x_arr, y_arr = np.asarray(x, dtype=float), np.asarray(y, dtype=float)

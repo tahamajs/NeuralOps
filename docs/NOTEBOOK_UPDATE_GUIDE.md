@@ -1,6 +1,6 @@
 # NeuralOps Notebook Standard & Update Guide
 
-This document defines the architectural and coding standards for all 26 Jupyter demonstration notebooks in the [`notebooks/`](../notebooks/) directory of the NeuralOps repository.
+This document defines the architectural and coding standards for all 26 Jupyter demonstration notebooks in the `notebooks/` directory of the NeuralOps repository.
 
 ---
 

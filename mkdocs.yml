@@ -71,8 +71,94 @@ extra:
       link: https://huggingface.co/datasets/Hooshaai/neuralops-results
 
 exclude_docs: |
-  README.md
+  /index.html
   visualizer/README.md
+  visualizer/DEMO.md
+  visualizer/DETAIL_AUDIT.md
+  visualizer/docs/*
+  visualizer/docs/**/*
+  visualization/*
+  visualization/**/*
+  Attention_Visualization_Dashboard/*
+  Attention_Visualization_Dashboard/**/*
+  Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/*
+  Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/**/*
+  archive/*
+  archive/**/*
+  archive_reports/*
+  archive_reports/**/*
+  audit/*
+  audit/**/*
+  blog/*
+  blog/**/*
+  content/*
+  content/**/*
+  app/*
+  app/**/*
+  developer_notes/*
+  developer_notes/**/*
+  huggingface/*
+  huggingface/**/*
+  integrations/*
+  integrations/**/*
+  internal_notes/*
+  internal_notes/**/*
+  module_metadata/*
+  module_metadata/**/*
+  presentation/*
+  presentation/**/*
+  results/*
+  results/**/*
+  roadmap/*
+  roadmap/**/*
+  scripts/*
+  scripts/**/*
+  surgery/*
+  surgery/**/*
+  reports/README.md
+  reports/BENCHMARK_CLEANUP_AND_STANDARDIZATION_PLAN.md
+  reports/BENCHMARK_ECOSYSTEM_DEEP_AUDIT_AND_ACTION_PLAN.md
+  reports/BENCHMARK_ECOSYSTEM_EXHAUSTIVE_USER_GUIDE_AND_AUDIT.md
+  reports/BENCHMARK_EXHAUSTIVE_CODEBASE_CLEANUP_AND_REFACTORING_SPEC.md
+  reports/BENCHMARK_MASTER_AUDIT_USER_GUIDE_AND_REFACTORING_SPEC.md
+  reports/BENCHMARK_STORAGE_AND_CONFIG_ARCHITECTURE_PLAN.md
+  reports/BENCHMARK_UNIFIED_STORAGE_CONFIGURATION_AND_EXECUTION_STANDARD.md
+  reports/DIRECTORY_ARCHITECTURE_BLUEPRINT_2026-11-04.md
+  reports/FINAL_CERTIFICATION_20261019.md
+  reports/KD_EXPERIMENT_SUMMARY.md
+  reports/MULTI_AGENT_*
+  reports/NEURALOPS_BENCHMARK_ECOSYSTEM_MASTER_ENCYCLOPEDIA.md
+  reports/PHASE1_EFFICIENCY_SWEEP_AUDIT_REPORT.md
+  reports/QWEN_WIKITEXT2_KD_ABLATION_MASTER_REPORT.md
+  reports/RESULTS_INDEX.md
+  reports/SCRIPTS_FORENSIC_AUDIT_2026-11-04.md
+  reports/SKILL_DISCOVERY_LOG.md
+  reports/SKILL_EVALUATION_MATRIX.md
+  reports/TRITON_26_KERNELS_COMPREHENSIVE_REPORT.md
+  reports/ULTIMATE_BENCHMARK_ECOSYSTEM_AUDIT_AND_4AGENT_EXECUTION_BLUEPRINT.md
+  reports/UNIFIED_BENCHMARK_CONFIG_TRACKING_ARCHITECTURE_SPEC.md
+  reports/archive/*
+  reports/archive/**/*
+  reports/benchmarks/*
+  reports/benchmarks/**/*
+  AUDIT_*
+  SURGERY_*
+  *_verification.md
+  recipe-*
+  ACADEMIC_BAD_RESULTS_REPORT_*
+  Attention_Mechanisms_For_Paper.md
+  CLI_DECISION_BRIEF.md
+  COMPLETE_RESEARCH_GUIDE.md
+  CONTRIBUTING_TESTING.md
+  DEPLOYMENT.md
+  KERNEL_*
+  NOTEBOOK_UPDATE_GUIDE.md
+  ROADMAP_V1_7_DX_AND_ECOSYSTEM.md
+  SERVING_FRAMEWORKS_SYNC_PLAN.md
+  SERVING_INTEGRATION_REPORT.md
+  START_HERE.md
+  phase1-version-decision.md
+  fallback_list.md
 
 nav:
   - Home: index.md
@@ -81,10 +167,12 @@ nav:
   - Migration Guide: MIGRATION_GUIDE.md
   - Guides:
       - Getting Started: guides/getting_started.md
+      - How NeuralOps Works: guides/how_neuralops_works.md
       - Attention Surgery: guides/attention_surgery.md
       - Model Compression: guides/model_compression.md
       - Kernel Dispatch: guides/kernel_dispatch.md
       - Production Serving: guides/production_serving.md
+      - HPC Cluster Execution: HPC_GPU_MASTER_GUIDE.md
   - Visualizer & Dashboards:
       - Architecture & Telemetry Dashboard: dashboard.html
       - 3D Attention Lab & Atlas: visualizer/index.html
@@ -126,11 +214,14 @@ nav:
   - Academic & Theses:
       - Manuscripts & PDFs: academic_monographs.md
   - Reports:
-      - Production Readiness: reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT.md
+      - Master Project Results: reports/MASTER_PROJECT_RESULTS.md
+      - Full Benchmark Analysis: reports/FULL_BENCHMARK_ANALYSIS_REPORT.md
+      - Master Empirical Benchmark Report: reports/MASTER_EMPIRICAL_BENCHMARK_REPORT.md
       - Gaps & Incompletion: reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT.md
       - Paper/Thesis Consistency: reports/PAPER_THESIS_CONSISTENCY_REPORT.md
       - Benchmark Reconciliation: reports/BENCHMARK_RECONCILIATION.md
       - HNC-SVD Decision: reports/HNC_SVD_STATUS_DECISION.md
+      - Historical v1.3.7 Report: reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT.md
   - Roadmap:
       - Strategic Roadmap Overview: ROADMAP.md
       - High-Throughput FLA Kernels & Microarchitecture: ROADMAP_V1_7_KERNELS_AND_FLA.md
