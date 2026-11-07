@@ -14,6 +14,7 @@ Accelerates autoregressive decoding via split-KV sequence chunking and multi-blo
 from __future__ import annotations
 
 import math
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -193,8 +194,16 @@ if HAS_TRITON and tl is not None:
         tl.store(out_ptrs, acc.to(FinalOut_ptr.dtype.element_ty))
 
 else:
-    flash_decoding_stage1_kernel = None  # noqa: F811
-    flash_decoding_stage2_kernel = None  # noqa: F811
+
+    @triton.jit
+    def flash_decoding_stage1_kernel(*args: Any, **kwargs: Any) -> Any:
+        """Mock stage 1 kernel when Triton is absent."""
+        pass
+
+    @triton.jit
+    def flash_decoding_stage2_kernel(*args: Any, **kwargs: Any) -> Any:
+        """Mock stage 2 kernel when Triton is absent."""
+        pass
 
 
 def flash_decoding_attention(

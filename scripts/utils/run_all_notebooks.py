@@ -73,9 +73,12 @@ def _setup_runtime_environment() -> None:
     # Ensure torch.cuda.OutOfMemoryError is polyfilled for PyTorch 1.12
     try:
         import torch
+
         if hasattr(torch, "cuda") and not hasattr(torch.cuda, "OutOfMemoryError"):
+
             class _OutOfMemoryError(RuntimeError):
                 pass
+
             torch.cuda.OutOfMemoryError = _OutOfMemoryError
     except Exception:
         pass
@@ -83,7 +86,9 @@ def _setup_runtime_environment() -> None:
     # Polyfill Transformer.generate_square_subsequent_mask for PyTorch 1.12
     try:
         import torch.nn as _nn
+
         _orig_mask = _nn.Transformer.generate_square_subsequent_mask
+
         def _compat_mask(sz: int, device: Any = None, dtype: Any = None) -> Any:
             m = _orig_mask(sz)
             if device is not None:
@@ -91,6 +96,7 @@ def _setup_runtime_environment() -> None:
             if dtype is not None:
                 m = m.to(dtype=dtype)
             return m
+
         _nn.Transformer.generate_square_subsequent_mask = staticmethod(_compat_mask)
     except Exception:
         pass
@@ -98,7 +104,9 @@ def _setup_runtime_environment() -> None:
     # Safe patch for Matplotlib MathTextParser to tolerate raw LaTeX titles
     try:
         import matplotlib.mathtext as _mathtext
+
         _orig_parse = _mathtext.MathTextParser.parse
+
         def _safe_parse(self: Any, s: str, *args: Any, **kwargs: Any) -> Any:
             try:
                 return _orig_parse(self, s, *args, **kwargs)
@@ -120,15 +128,80 @@ def _setup_runtime_environment() -> None:
                     return _orig_parse(self, clean, *args, **kwargs)
                 except Exception:
                     return _orig_parse(self, " ", *args, **kwargs)
+
         _mathtext.MathTextParser.parse = _safe_parse
     except Exception:
         pass
+
+    # Zero-dependency polyfill for pydantic if missing in runtime environment
+    if "pydantic" not in sys.modules:
+        try:
+            import pydantic  # noqa: F401
+        except ImportError:
+            import types
+
+            class _PydanticBaseModelMeta(type):
+                def __new__(cls, name, bases, dct):
+                    annotations = dct.get("__annotations__", {})
+                    defaults = {}
+                    for k in annotations:
+                        if k in dct:
+                            val = dct[k]
+                            if isinstance(val, _FieldInfo):
+                                if callable(val.default_factory):
+                                    defaults[k] = val.default_factory()
+                                else:
+                                    defaults[k] = val.default
+                            else:
+                                defaults[k] = val
+                    dct["_defaults"] = defaults
+                    return super().__new__(cls, name, bases, dct)
+
+            class _FieldInfo:
+                def __init__(self, default=None, default_factory=None, **kwargs):
+                    self.default = default
+                    self.default_factory = default_factory
+                    self._is_field = True
+                    for k, v in kwargs.items():
+                        setattr(self, k, v)
+
+            class _BaseModel(metaclass=_PydanticBaseModelMeta):
+                def __init__(self, **kwargs):
+                    for k, v in getattr(self, "_defaults", {}).items():
+                        setattr(self, k, v)
+                    for k, v in kwargs.items():
+                        setattr(self, k, v)
+
+                def model_dump(self, *args, **kwargs):
+                    return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+
+                def dict(self, *args, **kwargs):
+                    return self.model_dump(*args, **kwargs)
+
+            def _field_func(default=None, default_factory=None, **kwargs):
+                return _FieldInfo(default=default, default_factory=default_factory, **kwargs)
+
+            def _config_dict(**kwargs):
+                return kwargs
+
+            def _validator_func(*fields, **kwargs):
+                return lambda fn: fn
+
+            _pydantic_mock = types.ModuleType("pydantic")
+            _pydantic_mock.BaseModel = _BaseModel
+            _pydantic_mock.Field = _field_func
+            _pydantic_mock.ConfigDict = _config_dict
+            _pydantic_mock.field_validator = _validator_func
+            _pydantic_mock.validator = _validator_func
+            sys.modules["pydantic"] = _pydantic_mock
 
     # Pre-import all neuralops layer subpackages to populate ATTENTION_REGISTRY to 131
     try:
         import importlib
         import pkgutil
+
         import neuralops.layers as _layers
+
         for _, _modname, _ in pkgutil.walk_packages(_layers.__path__, _layers.__name__ + "."):
             try:
                 importlib.import_module(_modname)
@@ -140,10 +213,12 @@ def _setup_runtime_environment() -> None:
     # Polyfill onnx and onnx.checker if onnx is missing in the environment
     try:
         import onnx
+
         if not hasattr(onnx, "__version__"):
             onnx.__version__ = "1.14.0"
     except ImportError:
         import types
+
         onnx_mock = types.ModuleType("onnx")
         onnx_mock.__version__ = "1.14.0"
         checker_mock = types.ModuleType("checker")
@@ -160,8 +235,10 @@ def _setup_runtime_environment() -> None:
         class _MockJitKernel:
             def __init__(self, fn):
                 self.fn = fn
+
             def __call__(self, *args, **kwargs):
                 raise RuntimeError("Triton JIT compilation requires a native Triton runtime.")
+
             def __getitem__(self, grid):
                 return self
 
@@ -188,6 +265,7 @@ def _setup_runtime_environment() -> None:
     if "torch.distributed._tensor" not in sys.modules:
         try:
             import types
+
             _dt = types.ModuleType("torch.distributed._tensor")
             _dt.DTensor = type("DTensor", (), {})
             _dt.DeviceMesh = type("DeviceMesh", (), {})
@@ -228,14 +306,16 @@ def _capture_figures() -> list[dict[str, Any]]:
             fig.savefig(buf, format="png", bbox_inches="tight")
             buf.seek(0)
             img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-            outputs.append({
-                "output_type": "display_data",
-                "data": {
-                    "image/png": img_b64,
-                    "text/plain": f"<Figure size {fig.get_size_inches()[0]}x{fig.get_size_inches()[1]} with {len(fig.axes)} Axes>",
-                },
-                "metadata": {},
-            })
+            outputs.append(
+                {
+                    "output_type": "display_data",
+                    "data": {
+                        "image/png": img_b64,
+                        "text/plain": f"<Figure size {fig.get_size_inches()[0]}x{fig.get_size_inches()[1]} with {len(fig.axes)} Axes>",
+                    },
+                    "metadata": {},
+                }
+            )
         if fig_nums:
             plt.close("all")
     except Exception:
@@ -266,12 +346,14 @@ def execute_single_cell(
         parsed = ast.parse(code_str)
     except SyntaxError as e:
         tb_lines = traceback.format_exception(type(e), e, e.__traceback__)
-        outputs.append({
-            "output_type": "error",
-            "ename": type(e).__name__,
-            "evalue": str(e),
-            "traceback": tb_lines,
-        })
+        outputs.append(
+            {
+                "output_type": "error",
+                "ename": type(e).__name__,
+                "evalue": str(e),
+                "traceback": tb_lines,
+            }
+        )
         return outputs, False, f"SyntaxError: {e}"
 
     last_expr = None
@@ -285,6 +367,7 @@ def execute_single_cell(
     with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
         try:
             import linecache
+
             linecache.cache["<cell>"] = (len(code_str), None, code_str.splitlines(True), "<cell>")
 
             if exec_nodes:
@@ -296,40 +379,48 @@ def execute_single_cell(
                 expr_obj = compile(ast.Expression(body=last_expr), filename="<cell>", mode="eval")
                 res = eval(expr_obj, cell_globals)
                 if res is not None:
-                    outputs.append({
-                        "output_type": "execute_result",
-                        "execution_count": exec_count,
-                        "data": {
-                            "text/plain": repr(res),
-                        },
-                        "metadata": {},
-                    })
+                    outputs.append(
+                        {
+                            "output_type": "execute_result",
+                            "execution_count": exec_count,
+                            "data": {
+                                "text/plain": repr(res),
+                            },
+                            "metadata": {},
+                        }
+                    )
         except Exception as e:
             success = False
             err_msg = f"{type(e).__name__}: {e}"
             tb_lines = traceback.format_exception(type(e), e, e.__traceback__)
-            outputs.append({
-                "output_type": "error",
-                "ename": type(e).__name__,
-                "evalue": str(e),
-                "traceback": tb_lines,
-            })
+            outputs.append(
+                {
+                    "output_type": "error",
+                    "ename": type(e).__name__,
+                    "evalue": str(e),
+                    "traceback": tb_lines,
+                }
+            )
 
     stdout_val = stdout_buf.getvalue()
     stderr_val = stderr_buf.getvalue()
 
     if stdout_val:
-        outputs.append({
-            "output_type": "stream",
-            "name": "stdout",
-            "text": stdout_val.splitlines(keepends=True),
-        })
+        outputs.append(
+            {
+                "output_type": "stream",
+                "name": "stdout",
+                "text": stdout_val.splitlines(keepends=True),
+            }
+        )
     if stderr_val:
-        outputs.append({
-            "output_type": "stream",
-            "name": "stderr",
-            "text": stderr_val.splitlines(keepends=True),
-        })
+        outputs.append(
+            {
+                "output_type": "stream",
+                "name": "stderr",
+                "text": stderr_val.splitlines(keepends=True),
+            }
+        )
 
     # Capture any plots rendered during cell execution
     fig_outputs = _capture_figures()
@@ -346,6 +437,7 @@ def execute_notebook(nb_path: str, repo_root: str) -> dict[str, Any]:
         nb = json.load(f)
 
     cells = nb.get("cells", [])
+
     def _display(*args: Any, **kwargs: Any) -> None:
         for a in args:
             print(a)
@@ -359,37 +451,60 @@ def execute_notebook(nb_path: str, repo_root: str) -> dict[str, Any]:
 
     try:
         import pandas as pd
+
         cell_globals["pd"] = pd
     except ImportError:
         pass
     try:
         import numpy as np
+
         cell_globals["np"] = np
     except ImportError:
         pass
     try:
         import json as _json
+
         cell_globals["json"] = _json
     except ImportError:
         pass
     try:
         import itertools
+
         cell_globals["itertools"] = itertools
     except ImportError:
         pass
     try:
         import matplotlib.pyplot as plt
+
         cell_globals["plt"] = plt
     except ImportError:
         pass
     try:
         import torch
+
         cell_globals["torch"] = torch
+        from torch.utils.data import IterableDataset
+
+        cell_globals["IterableDataset"] = IterableDataset
     except ImportError:
         pass
+    try:
+        import csv
+
+        cell_globals["csv"] = csv
+    except ImportError:
+        pass
+    try:
+        import math
+
+        cell_globals["math"] = math
+    except ImportError:
+        pass
+    cell_globals["sys"] = sys
 
     # Pre-create standard directories expected by notebooks
     from pathlib import Path
+
     Path("results/plots").mkdir(parents=True, exist_ok=True)
     Path("paper/figures").mkdir(parents=True, exist_ok=True)
     cell_globals["plots_dir"] = Path("results/plots")
@@ -420,18 +535,21 @@ def execute_notebook(nb_path: str, repo_root: str) -> dict[str, Any]:
         if ok:
             passed_code_cells += 1
         else:
-            errors.append({
-                "cell_index": idx,
-                "execution_count": exec_count,
-                "error": err,
-                "source_snippet": code_str[:200],
-            })
+            errors.append(
+                {
+                    "cell_index": idx,
+                    "execution_count": exec_count,
+                    "error": err,
+                    "source_snippet": code_str[:200],
+                }
+            )
 
         exec_count += 1
 
         # Clear PyTorch CUDA cache between cells if available
         try:
             import torch
+
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
         except Exception:
@@ -509,9 +627,15 @@ def main() -> int:
             "|---|---|---|---|---|---|",
         ]
         for i, r in enumerate(res_list, 1):
-            status_md = f"**{r['status']}**" if r["status"] == "PASS" else f"<span style='color:red;'>**{r['status']}**</span>"
-            err_note = "None" if not r["errors"] else f"Cell {r['errors'][0]['cell_index']}: {r['errors'][0]['error'][:50]}"
-            lines.append(f"| {i:02d} | `{r['notebook']}` | {status_md} | {r['passed_code_cells']}/{r['total_code_cells']} | {r['duration_sec']} | {err_note} |")
+            status_md = (
+                f"**{r['status']}**" if r["status"] == "PASS" else f"<span style='color:red;'>**{r['status']}**</span>"
+            )
+            err_note = (
+                "None" if not r["errors"] else f"Cell {r['errors'][0]['cell_index']}: {r['errors'][0]['error'][:50]}"
+            )
+            lines.append(
+                f"| {i:02d} | `{r['notebook']}` | {status_md} | {r['passed_code_cells']}/{r['total_code_cells']} | {r['duration_sec']} | {err_note} |"
+            )
         with open(path, "w", encoding="utf-8") as f_out:
             f_out.write("\n".join(lines) + "\n")
 
@@ -536,8 +660,14 @@ def main() -> int:
         ]
         proc = None
         timed_out = False
+        sub_env = dict(os.environ)
+        gcc_lib = "/share/apps/gcc/gcc-8.2.0/lib64"
+        cuda_lib = "/usr/local/cuda-11.3/lib64"
+        cur_ld = sub_env.get("LD_LIBRARY_PATH", "")
+        sub_env["LD_LIBRARY_PATH"] = f"{gcc_lib}:{cuda_lib}:{cur_ld}"
+        sub_env["PYTHONPATH"] = f"{repo_root}:{sub_env.get('PYTHONPATH', '')}"
         try:
-            proc = subprocess.run(cmd, cwd=repo_root, timeout=args.timeout)
+            proc = subprocess.run(cmd, cwd=repo_root, env=sub_env, timeout=args.timeout)
         except subprocess.TimeoutExpired:
             timed_out = True
             print(f"       -> [TIMEOUT] Notebook '{nb_name}' exceeded {args.timeout}s limit!", flush=True)

@@ -55,7 +55,7 @@ class AttentionReplaceOperation(Operation):
         super().__init__(contract=CONTRACT)
 
     def apply(self, model: nn.Module, config: Dict[str, Any]) -> Tuple[nn.Module, Dict[str, Any]]:
-        target = config.get("target")
+        target = config.get("target") or config.get("target_attention") or config.get("attention")
         try:
             from neuralops.surgery.attention.replace import replace_attention
 

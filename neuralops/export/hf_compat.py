@@ -260,3 +260,8 @@ def export_to_hf(
             warnings=warnings,
             error=f"Verification inference failed: {e_sim}",
         )
+
+
+export_to_huggingface = export_to_hf
+
+__all__ = ["export_to_hf", "export_to_huggingface", "ExportResult"]

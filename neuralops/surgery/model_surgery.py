@@ -375,7 +375,7 @@ class ModelSurgery:
             return self
         elif engine == "shell":
             return self.apply(
-                "attention.transplant",
+                "attention.replace",
                 target_attention=target_attention,
                 layer_indices=layer_indices,
                 **config,

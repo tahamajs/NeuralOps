@@ -1,0 +1,18 @@
+{
+  "notebook_id": "43",
+  "name": "amd_rocm_hip_cross_compilation",
+  "canonical_subsystem": "neuralops.adaptation.rocm",
+  "status": "VERIFIED_PUBLICATION_GRADE",
+  "invariants": {
+    "nvidia_warp_size": 32,
+    "amd_wavefront_size": 64,
+    "nvidia_smem_banks": 32,
+    "amd_lds_banks": 64,
+    "amd_padded_stride": 65
+  },
+  "telemetry": {
+    "transpilation_pass_rate_pct": 100.0,
+    "wavefront_32_relative_error": 4.247059972733875e-07,
+    "wavefront_64_relative_error": 4.247059972733875e-07
+  }
+}

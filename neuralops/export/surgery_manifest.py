@@ -59,19 +59,33 @@ class AttentionSurgeryEntry:
     peft_recovery_type: Optional[str] = None
     peft_rank: int = 0
     arch_pattern: Optional[str] = None
+    hyperparameters: Optional[Dict[str, Any]] = None
+    notes: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.hyperparameters and not self.kwargs:
+            self.kwargs = self.hyperparameters
 
 
 @dataclass
 class CompressionSurgeryEntry:
     layer_path: str
     compressor_name: str
-    in_features: int
-    out_features: int
-    rank: int
+    in_features: int = 128
+    out_features: int = 128
+    rank: int = 32
     bits: Optional[int] = None
+    bit_width: Optional[int] = None
     group_size: Optional[int] = None
     has_bias: bool = True
+    bias: Optional[bool] = None
     wrapper_class: str = "SVDLinear"
+
+    def __post_init__(self) -> None:
+        if self.bit_width is not None and self.bits is None:
+            self.bits = self.bit_width
+        if self.bias is not None:
+            self.has_bias = self.bias
 
 
 @dataclass
@@ -81,6 +95,34 @@ class SurgeryManifest:
     attentions: List[AttentionSurgeryEntry] = field(default_factory=list)
     compressions: List[CompressionSurgeryEntry] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    model_name: Optional[str] = None
+    base_architecture: Optional[str] = None
+    neuralops_version: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.model_name and not self.base_model_name:
+            self.base_model_name = self.model_name
+        if self.neuralops_version:
+            self.version = self.neuralops_version
+        if self.base_architecture:
+            self.metadata["base_architecture"] = self.base_architecture
+
+    def add_attention_entry(self, entry: AttentionSurgeryEntry) -> None:
+        self.attentions.append(entry)
+
+    def add_compression_entry(self, entry: CompressionSurgeryEntry) -> None:
+        self.compressions.append(entry)
+
+    def save(self, path: Union[str, Path]) -> str:
+        return self.checkpoint(path)
+
+    @property
+    def attention_entries(self) -> List[AttentionSurgeryEntry]:
+        return self.attentions
+
+    @property
+    def compression_entries(self) -> List[CompressionSurgeryEntry]:
+        return self.compressions
 
     def to_dict(self) -> Dict[str, Any]:
         return {

@@ -21,6 +21,20 @@ Usage:
 
 from __future__ import annotations
 
+import sys
+import types
+if "pkg_resources" not in sys.modules:
+    try:
+        import pkg_resources
+    except ImportError:
+        try:
+            import packaging
+            _pr = types.ModuleType("pkg_resources")
+            _pr.packaging = packaging
+            sys.modules["pkg_resources"] = _pr
+        except Exception:
+            pass
+
 import argparse
 import sys
 import time

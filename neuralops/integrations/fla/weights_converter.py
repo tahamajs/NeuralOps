@@ -38,7 +38,17 @@ FLA_TO_NEURALOPS_MAP: dict[str, str] = {
     "beta_proj": "W_beta",
 }
 
-NEURALOPS_TO_FLA_MAP: dict[str, str] = {v: k for k, v in FLA_TO_NEURALOPS_MAP.items()}
+NEURALOPS_TO_FLA_MAP: dict[str, str] = {
+    "W_q": "q_proj",
+    "W_k": "k_proj",
+    "W_v": "v_proj",
+    "W_g": "g_proj",
+    "W_out": "o_proj",
+    "W_gk": "gk_proj",
+    "W_gv": "gv_proj",
+    "W_b": "b_proj",
+    "W_beta": "beta_proj",
+}
 
 
 def convert_fla_weights(

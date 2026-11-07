@@ -118,6 +118,8 @@ from neuralops.utils import (
     seed,
 )
 
+from typing import Any
+
 from .checkpoint import CheckpointManager  # noqa: E402
 
 

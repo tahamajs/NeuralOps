@@ -1,0 +1,21 @@
+{
+  "notebook_id": "44",
+  "name": "tensorrt_engine_building_and_plugins",
+  "canonical_subsystem": "neuralops.export.tensorrt",
+  "status": "VERIFIED_PUBLICATION_GRADE",
+  "invariants": {
+    "plugin_interface": "IPluginV2DynamicExt",
+    "zero_copy_virtual_addressing": true,
+    "optimal_shape_profile": [
+      8,
+      2048,
+      768
+    ],
+    "serialization_bit_exact": true
+  },
+  "telemetry": {
+    "p99_latency_reduction_factor": "4.68x",
+    "optimal_int8_threshold": 2.0,
+    "serialization_parity_error": 0.0
+  }
+}

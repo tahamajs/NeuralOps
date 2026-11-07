@@ -373,8 +373,15 @@ class TopologyRouter(nn.Module):
         window_size: Optional[int] = None,
         d_model: Optional[int] = None,
         default_branch: Optional[str] = None,
+        routing_mode: Optional[str] = None,
+        length_threshold: Optional[int] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
+        if routing_mode is not None:
+            routing_strategy = routing_mode
+        if length_threshold is not None:
+            window_size = length_threshold
         self.routing_strategy = routing_strategy
         self.schedule = schedule
         self.window_size = window_size
@@ -436,12 +443,14 @@ class TopologyRouter(nn.Module):
                     return self.schedule[idx]
             return self.default_branch
 
-        if self.routing_strategy == "sliding_window":
+        if self.routing_strategy in ("sliding_window", "length_threshold"):
             if self.window_size is not None and seq_len is not None:
-                if seq_len <= self.window_size and "window" in self.branches:
-                    return "window"
-                elif seq_len > self.window_size and "linear" in self.branches:
-                    return "linear"
+                short_branch = "dense" if "dense" in self.branches else ("window" if "window" in self.branches else self.branch_names[0])
+                long_branch = "linear" if "linear" in self.branches else (self.branch_names[1] if len(self.branch_names) > 1 else self.default_branch)
+                if seq_len < self.window_size:
+                    return short_branch
+                else:
+                    return long_branch
             return self.default_branch
 
         return self.default_branch

@@ -21,6 +21,16 @@ from typing import Any, List, Optional
 from neuralops.benchmarks.discovery import CATALOG_PATH
 
 try:
+    from neuralops import __version__
+except (ImportError, AttributeError):
+    import importlib.metadata
+
+    try:
+        __version__ = importlib.metadata.version("neuralops")
+    except Exception:
+        __version__ = "2.0.6"
+
+try:
     from rich import print as rprint
     from rich.columns import Columns
     from rich.console import Console
@@ -134,17 +144,17 @@ def print_banner() -> None:
     """Prints the styled NeuralOps CLI banner."""
     if not HAS_RICH or console is None:
         print("================================================================")
-        print("                   NeuralOps CLI (v1.4.2)                       ")
+        print(f"                   NeuralOps CLI (v{__version__})                       ")
         print("     High-Performance Attention Zoo, SVD Compression & Triton   ")
         print("================================================================")
         return
 
     banner_text = Text(BANNER_ART, style="bold cyan")
     tagline = Text(
-        "NeuralOps v1.4.2 — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n",
+        f"NeuralOps v{__version__} — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n",
         style="bold white",
     )
-    tagline.append("https://github.com/tahamajs/SVD_linear_Attention", style="dim underline blue")
+    tagline.append("https://github.com/tahamajs/NeuralOps", style="dim underline blue")
 
     panel = Panel(
         tagline,
@@ -405,7 +415,7 @@ def _get_gpu_telemetry_panel() -> Optional[Panel]:
 
 def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = False) -> None:
     """Minimalist, flat UNIX-style terminal inspector and interactive control center."""
-    from neuralops.core.inspector import inspect_architecture, render_architecture_card
+    from neuralops.analysis.inspector import inspect_architecture, render_architecture_card
 
     if snapshot:
         import torch

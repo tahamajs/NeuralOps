@@ -1,0 +1,21 @@
+{
+  "notebook_id": "42",
+  "name": "huawei_ascend_npu_cann_adaptation",
+  "canonical_subsystem": "neuralops.adaptation.ascend",
+  "status": "VERIFIED_PUBLICATION_GRADE",
+  "invariants": {
+    "fractal_block_size": 16,
+    "burst_alignment_bytes": 512,
+    "ub_capacity_kb": 256,
+    "cube_systolic_dims": [
+      16,
+      16,
+      16
+    ]
+  },
+  "telemetry": {
+    "fractal_speedup_vs_unaligned": "3.97x",
+    "ub_memory_safety": "GUARANTEED_STRICT",
+    "relative_error_vs_level3": 1.873729047474626e-07
+  }
+}

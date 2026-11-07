@@ -59,6 +59,22 @@ if cuda_home:
         os.environ["PATH"] = f"{cuda_bin}:{curr_path}"
 
 import torch
+# Compatibility shim for PyTorch < 2.0 with Setuptools >= 70 (pkg_resources removal)
+import sys as _sys
+if "pkg_resources" not in _sys.modules:
+    try:
+        import pkg_resources as _pkg_resources  # noqa: F401
+    except ImportError:
+        try:
+            import packaging as _packaging
+            import types as _types
+
+            _pr = _types.ModuleType("pkg_resources")
+            _pr.packaging = _packaging
+            _sys.modules["pkg_resources"] = _pr
+        except Exception:
+            pass
+
 import torch.utils.cpp_extension as _cpp_ext
 
 _orig_load_inline = _cpp_ext.load_inline

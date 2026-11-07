@@ -1555,18 +1555,26 @@ class UniversalSurgeryDirector:
                         inherit_weights=False,
                         attach_sidecar=attach_sidecar,
                     )
-                    setattr(spec.parent_module, spec.attr_name, bridge)
+                    if isinstance(spec.parent_module, (nn.ModuleList, list)):
+                        try:
+                            idx_int = int(spec.attr_name)
+                            spec.parent_module[idx_int] = bridge
+                        except Exception:
+                            setattr(spec.parent_module, spec.attr_name, bridge)
+                    else:
+                        setattr(spec.parent_module, spec.attr_name, bridge)
             else:
                 # Fallback to ModelSurgery
                 from neuralops.surgery.model_surgery import ModelSurgery
 
                 surgery = ModelSurgery(self.model)
-                self.model = surgery.replace_attention(
+                surgery.replace_attention(
                     target_attention=target_attention,
                     layer_indices=layer_indices if isinstance(layer_indices, list) else None,
                     engine="shell",
                     **kwargs,
                 )
+                self.model = surgery.model
         else:
             raise ValueError(f"Unknown surgery engine '{engine}'. Choose 'shell' or 'fx'.")
 

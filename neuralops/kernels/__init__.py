@@ -6,333 +6,113 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-NeuralOps Kernels Hardware Operators.
+NeuralOps Kernels Facade (Lazy PEP 562).
 """
 
 from __future__ import annotations
 
-import sys
-from typing import Any, List, Optional
+import importlib
+from typing import Any
 
-from neuralops.core.cuda_kernels import act_scale_quant_gemm as cuda_act_scale_quant_gemm
-from neuralops.core.cuda_kernels import alibi_attention as cuda_alibi_attention
-from neuralops.core.cuda_kernels import block_diag_matmul as cuda_block_diag_matmul
-from neuralops.core.cuda_kernels import block_sparse_attn as cuda_block_sparse_attn
-from neuralops.core.cuda_kernels import causal_conv1d as cuda_causal_conv1d
-from neuralops.core.cuda_kernels import channel_shuffle as cuda_channel_shuffle
-from neuralops.core.cuda_kernels import check_cuda_error
-from neuralops.core.cuda_kernels import copy_blocks_cow as cuda_copy_blocks_cow
-from neuralops.core.cuda_kernels import cosformer_linear_attention as cuda_cosformer_linear_attention
-from neuralops.core.cuda_kernels import cross_attention as cuda_cross_attention
-from neuralops.core.cuda_kernels import dispatch
-from neuralops.core.cuda_kernels import fast_gelu as cuda_fast_gelu
-from neuralops.core.cuda_kernels import flash_decoding_attention as cuda_flash_decoding_attention
-from neuralops.core.cuda_kernels import flash_gqa as cuda_flash_gqa
-from neuralops.core.cuda_kernels import fms_scan as cuda_fms_scan
-from neuralops.core.cuda_kernels import force_kernel_backend
-from neuralops.core.cuda_kernels import fp4_gemm as cuda_fp4_gemm
-from neuralops.core.cuda_kernels import fp8_gemm as cuda_fp8_gemm
-from neuralops.core.cuda_kernels import fused_cross_entropy as cuda_fused_cross_entropy
-from neuralops.core.cuda_kernels import fused_dropout_add as cuda_fused_dropout_add
-from neuralops.core.cuda_kernels import fused_kd_loss as cuda_fused_kd_loss
-from neuralops.core.cuda_kernels import fused_lowrank_gated_gemm
-from neuralops.core.cuda_kernels import fused_norm_linear as cuda_fused_norm_linear
-from neuralops.core.cuda_kernels import fused_rotary_emb as cuda_fused_rotary_emb
-from neuralops.core.cuda_kernels import fused_softplus as cuda_fused_softplus
-from neuralops.core.cuda_kernels import get_cuda_arch_flags, get_device_capability, get_dispatch_stats
-from neuralops.core.cuda_kernels import gla_scan as cuda_gla_scan
-from neuralops.core.cuda_kernels import hadamard_w4a16_gemm as cuda_hadamard_w4a16_gemm
-from neuralops.core.cuda_kernels import hgrn2_fused_bwd_scan as cuda_hgrn2_fused_bwd_scan
-from neuralops.core.cuda_kernels import is_cuda_available
-from neuralops.core.cuda_kernels import kronecker_matmul as cuda_kronecker_matmul
-from neuralops.core.cuda_kernels import latent_kv_cache_attention as cuda_latent_kv_cache_attention
-from neuralops.core.cuda_kernels import layernorm as cuda_layernorm
-from neuralops.core.cuda_kernels import linear_attention as cuda_linear_attention
-from neuralops.core.cuda_kernels import load_cuda_module
-from neuralops.core.cuda_kernels import lut_codebook_dequant_gemm as cuda_lut_codebook_dequant_gemm
-from neuralops.core.cuda_kernels import moe_dispatch_gather as cuda_moe_dispatch_gather
-from neuralops.core.cuda_kernels import paged_attention as cuda_paged_attention
-from neuralops.core.cuda_kernels import recurrent_gla_step as cuda_recurrent_gla_step
-from neuralops.core.cuda_kernels import recurrent_hgrn2_step as cuda_recurrent_hgrn2_step
-from neuralops.core.cuda_kernels import recurrent_linear_step as cuda_recurrent_linear_step
-from neuralops.core.cuda_kernels import reset_dispatch_stats
-from neuralops.core.cuda_kernels import rmsnorm as cuda_rmsnorm
-from neuralops.core.cuda_kernels import rotational_svd as cuda_rotational_svd
-from neuralops.core.cuda_kernels import rpca_sparse_svd_gemm as cuda_rpca_sparse_svd_gemm
-from neuralops.core.cuda_kernels import selective_scan as cuda_selective_scan
-from neuralops.core.cuda_kernels import sliding_window_attn as cuda_sliding_window_attn
-from neuralops.core.cuda_kernels import spectral_entropy_svd_gate as cuda_spectral_entropy_svd_gate
-from neuralops.core.cuda_kernels import speculative_verify as cuda_speculative_verify
-from neuralops.core.cuda_kernels import swiglu as cuda_swiglu
-from neuralops.core.cuda_kernels import ternary_gemm as cuda_ternary_gemm
-from neuralops.core.cuda_kernels import tt_contraction as cuda_tt_contraction
-from neuralops.core.cuda_kernels import tt_linear as cuda_tt_linear
-from neuralops.core.cuda_kernels import varlen_attention as cuda_varlen_attention
-from neuralops.core.cuda_kernels import w4a16_gemm as cuda_w4a16_gemm
-from neuralops.core.triton_kernels import (
-    FORCE_PYTORCH_FALLBACK,
-    HAS_TRITON,
-    Autotuner,
-    autotune_kernel,
-    block_sparse,
-    check_triton_suitability,
-    cosformer_triton_kernel,
-    cur_linear,
-    differential_attention,
-    dynamic_sparse_attention,
-    elementwise,
-    flash_decoding,
-    fms_scan,
-    fused_ce,
-    fused_kd,
-    fused_norm_linear,
-    fused_rope,
-    gdn_scan,
-    gla_scan,
-    gqa,
-    hgrn2_scan,
-    linear_attn,
-    log_fallback_reason,
-    low_rank,
-    paged_attention,
-    retnet_retention,
-    selective_scan,
-    selective_scan_fn,
-    sliding_window,
-    softplus,
-    sparse_attn,
-    state_update,
-    triton_dispatch,
-    varlen_attention,
-)
-from neuralops.core.triton_linear_attn import LinearAttentionTriton, fast_linear_attention
-from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
-from neuralops.kernels import cuda, triton
-from neuralops.kernels.cuda import CUDA_KERNEL_CATALOG, list_cuda_kernels
-from neuralops.kernels.extended_kernels import (
-    fused_alibi_attention,
-    fused_chunked_cumsum,
-    fused_cka_alignment,
-    fused_decay_scan,
-    fused_fp8_e4m3_gemm,
-    fused_hadamard_transform,
-    fused_householder_reflect,
-    fused_int4_dequant,
-    fused_kl_divergence,
-    fused_label_smoothing_ce,
-    fused_lowrank_residual_add,
-    fused_mohawk_homotopy,
-    fused_nullspace_project,
-    fused_rmsnorm,
-    fused_rotary_emb,
-    fused_simplex_project,
-    fused_sink_token_attention,
-    fused_spectral_dct,
-    fused_swiglu,
-    fused_topk_gating,
-)
-from neuralops.kernels.triton import (
-    TRITON_CORE_MODULES,
-    TRITON_EXTENDED_KERNELS,
-    TRITON_KERNEL_CATALOG,
-    TRITON_ROOT_MODULES,
-    TRITON_STANDALONE_KERNELS,
-    block_sparse_streaming_attn,
-    chunked_delta_gate_scan,
-    cosformer_linear_attention,
-    fused_act_scale_quant_gemm,
-    fused_hadamard_w4a16_gemm,
-    fused_kronecker_matmul,
-    fused_latent_kv_cache_attention,
-    fused_lowrank_gemm,
-    hgrn2_fused_bwd_scan,
-    list_triton_kernels,
-    lut_codebook_dequant_gemm,
-    rpca_sparse_gemm,
-    spectral_entropy_svd_gate,
-    strided_tt,
-    triton_block_sparse_streaming_attn,
-    triton_chunked_delta_gate_scan,
-    triton_cosformer_linear_attention,
-    triton_fused_act_scale_quant_gemm,
-    triton_fused_hadamard_w4a16_gemm,
-    triton_fused_kronecker_matmul,
-    triton_fused_latent_kv_cache_attention,
-    triton_fused_lowrank_gated_gemm,
-    triton_fused_lowrank_sparse_gemm,
-    triton_hgrn2_fused_bwd_scan,
-    triton_lut_codebook_dequant_gemm,
-    triton_spectral_entropy_svd_gate,
-    triton_strided_tt_contraction,
-    triton_strided_tt_linear,
-)
+from neuralops.ops.cuda._map import CUDA_KERNEL_CATALOG, _KERNEL_SYMBOL_MAP, _SPECIAL_MAP
 
-__all__ = [
-    "triton",
-    "cuda",
-    "list_triton_kernels",
-    "list_cuda_kernels",
-    "TRITON_KERNEL_CATALOG",
-    "TRITON_STANDALONE_KERNELS",
-    "TRITON_CORE_MODULES",
-    "TRITON_ROOT_MODULES",
-    "TRITON_EXTENDED_KERNELS",
-    "CUDA_KERNEL_CATALOG",
-    "HAS_TRITON",
-    "FORCE_PYTORCH_FALLBACK",
-    "triton_dispatch",
-    "dispatch",
-    "force_kernel_backend",
-    "get_dispatch_stats",
-    "reset_dispatch_stats",
-    "is_cuda_available",
-    "get_device_capability",
-    "check_cuda_error",
-    "load_cuda_module",
-    "get_cuda_arch_flags",
-    "Autotuner",
-    "autotune_kernel",
-    "check_triton_suitability",
-    "log_fallback_reason",
-    "block_sparse_streaming_attn",
-    "chunked_delta_gate_scan",
-    "cosformer_linear_attention",
-    "fused_act_scale_quant_gemm",
-    "fused_hadamard_w4a16_gemm",
-    "fused_kronecker_matmul",
-    "fused_latent_kv_cache_attention",
-    "fused_lowrank_gemm",
-    "hgrn2_fused_bwd_scan",
-    "lut_codebook_dequant_gemm",
-    "rpca_sparse_gemm",
-    "spectral_entropy_svd_gate",
-    "strided_tt",
-    "triton_fused_lowrank_gated_gemm",
-    "triton_fused_lowrank_sparse_gemm",
-    "triton_strided_tt_contraction",
-    "triton_strided_tt_linear",
-    "triton_fused_hadamard_w4a16_gemm",
-    "triton_lut_codebook_dequant_gemm",
-    "triton_fused_kronecker_matmul",
-    "triton_chunked_delta_gate_scan",
-    "triton_cosformer_linear_attention",
-    "triton_block_sparse_streaming_attn",
-    "triton_hgrn2_fused_bwd_scan",
-    "triton_spectral_entropy_svd_gate",
-    "triton_fused_act_scale_quant_gemm",
-    "triton_fused_latent_kv_cache_attention",
-    "block_sparse",
-    "cosformer_triton_kernel",
-    "cur_linear",
-    "differential_attention",
-    "dynamic_sparse_attention",
-    "elementwise",
-    "flash_decoding",
-    "fms_scan",
-    "fused_ce",
-    "fused_kd",
-    "fused_norm_linear",
-    "fused_rope",
-    "gdn_scan",
-    "gla_scan",
-    "gqa",
-    "hgrn2_scan",
-    "hydra_attention",
-    "linear_attn",
-    "low_rank",
-    "paged_attention",
-    "retnet_retention",
-    "selective_scan",
-    "selective_scan_fn",
-    "sliding_window",
-    "softplus",
-    "sparse_attn",
-    "state_update",
-    "varlen_attention",
-    "fast_linear_attention",
-    "LinearAttentionTriton",
-    "triton_block_sparse_attention",
-    "fused_swiglu",
-    "fused_rmsnorm",
-    "fused_rotary_emb",
-    "fused_alibi_attention",
-    "fused_sink_token_attention",
-    "fused_decay_scan",
-    "fused_hadamard_transform",
-    "fused_int4_dequant",
-    "fused_fp8_e4m3_gemm",
-    "fused_spectral_dct",
-    "fused_chunked_cumsum",
-    "fused_cka_alignment",
-    "fused_mohawk_homotopy",
-    "fused_nullspace_project",
-    "fused_householder_reflect",
-    "fused_simplex_project",
-    "fused_topk_gating",
-    "fused_label_smoothing_ce",
-    "fused_kl_divergence",
-    "fused_lowrank_residual_add",
-    "fused_lowrank_gated_gemm",
-    "cuda_hgrn2_fused_bwd_scan",
-    "cuda_cosformer_linear_attention",
-    "cuda_fused_norm_linear",
-    "cuda_fused_rotary_emb",
-    "cuda_kronecker_matmul",
-    "cuda_lut_codebook_dequant_gemm",
-    "cuda_linear_attention",
-    "cuda_fused_cross_entropy",
-    "cuda_rpca_sparse_svd_gemm",
-    "cuda_tt_contraction",
-    "cuda_tt_linear",
-    "cuda_hadamard_w4a16_gemm",
-    "cuda_act_scale_quant_gemm",
-    "cuda_latent_kv_cache_attention",
-    "cuda_spectral_entropy_svd_gate",
-    "cuda_fused_kd_loss",
-    "cuda_recurrent_linear_step",
-    "cuda_flash_decoding_attention",
-    "cuda_fms_scan",
-    "cuda_rmsnorm",
-    "cuda_layernorm",
-    "cuda_swiglu",
-    "cuda_fast_gelu",
-    "cuda_fused_softplus",
-    "cuda_gla_scan",
-    "cuda_causal_conv1d",
-    "cuda_recurrent_gla_step",
-    "cuda_recurrent_hgrn2_step",
-    "cuda_fused_dropout_add",
-    "cuda_varlen_attention",
-    "cuda_cross_attention",
-    "cuda_rotational_svd",
-    "cuda_block_diag_matmul",
-    "cuda_ternary_gemm",
-    "cuda_fp4_gemm",
-    "cuda_channel_shuffle",
-    "cuda_speculative_verify",
-    "cuda_alibi_attention",
-    "cuda_flash_gqa",
-    "cuda_moe_dispatch_gather",
-    "cuda_paged_attention",
-    "cuda_copy_blocks_cow",
-    "cuda_w4a16_gemm",
-    "cuda_fp8_gemm",
-    "cuda_selective_scan",
-    "cuda_sliding_window_attn",
-    "cuda_block_sparse_attn",
-]
+_SUBPACKAGES = ["cuda", "triton", "extended_kernels"]
+
+__all__ = sorted(
+    list(
+        set(_SUBPACKAGES)
+        | set(CUDA_KERNEL_CATALOG)
+        | set(_KERNEL_SYMBOL_MAP.keys())
+        | set(_SPECIAL_MAP.keys())
+        | {
+            "HAS_TRITON",
+            "triton_dispatch",
+            "extended_kernels",
+            "fast_attention",
+            "cross_attention",
+            "sliding_window_attn",
+            "fused_rotary_emb",
+            "fused_norm_linear",
+            "fused_swiglu",
+            "fused_rmsnorm",
+            "fused_alibi_attention",
+            "fused_sink_token_attention",
+            "fused_decay_scan",
+            "fused_hadamard_transform",
+            "fused_int4_dequant",
+            "fused_fp8_e4m3_gemm",
+            "fused_spectral_dct",
+            "fused_chunked_cumsum",
+            "fused_cka_alignment",
+            "fused_mohawk_homotopy",
+            "fused_nullspace_project",
+            "fused_householder_reflect",
+            "fused_simplex_project",
+            "fused_topk_gating",
+            "fused_label_smoothing_ce",
+            "fused_kl_divergence",
+            "fused_lowrank_residual_add",
+            "fused_lowrank_gated_gemm",
+        }
+    )
+)
 
 
 def __getattr__(name: str) -> Any:
-    """Dynamically resolve attributes from triton or cuda subpackages."""
-    if hasattr(triton, name):
-        val = getattr(triton, name)
+    """Dynamically resolve attributes lazily from subpackages, ops.cuda, or ops.triton."""
+    if name.startswith("_") and name not in _KERNEL_SYMBOL_MAP:
+        raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+    if name in _SUBPACKAGES:
+        mod = importlib.import_module(f".{name}", __name__)
+        globals()[name] = mod
+        return mod
+
+    if name == "HAS_TRITON":
+        from neuralops.ops.triton._base import HAS_TRITON
+
+        return HAS_TRITON
+
+    if name == "triton_dispatch":
+        from neuralops.ops.triton._common import triton_dispatch
+
+        return triton_dispatch
+
+    # Check extended_kernels
+    try:
+        from neuralops.kernels import extended_kernels
+
+        if hasattr(extended_kernels, name):
+            val = getattr(extended_kernels, name)
+            globals()[name] = val
+            return val
+    except Exception:
+        pass
+
+    # Check CUDA ops
+    import neuralops.ops.cuda as _ops_cuda
+
+    if hasattr(_ops_cuda, name):
+        val = getattr(_ops_cuda, name)
         globals()[name] = val
         return val
-    if hasattr(cuda, name):
-        val = getattr(cuda, name)
-        globals()[name] = val
-        return val
+
+    if name in CUDA_KERNEL_CATALOG:
+        mod = importlib.import_module(f"neuralops.ops.cuda.{name}")
+        globals()[name] = mod
+        return mod
+
+    # Check Triton ops
+    try:
+        import neuralops.ops.triton as _ops_triton
+
+        if hasattr(_ops_triton, name):
+            val = getattr(_ops_triton, name)
+            globals()[name] = val
+            return val
+    except Exception:
+        pass
+
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 

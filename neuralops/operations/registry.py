@@ -74,6 +74,8 @@ def register_operation(
 
 def get_operation(name: str, version: Optional[str] = "1.0.0") -> Operation:
     """Retrieve an operation instance by name and exact version."""
+    if name == "attention.transplant" and "attention.transplant" not in _OPERATION_REGISTRY:
+        name = "attention.replace"
     if name not in _OPERATION_REGISTRY:
         raise OperationError(
             f"Operation '{name}' is not registered in the active registry",

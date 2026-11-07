@@ -6,9 +6,11 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Recipe Schema Dataclasses and Fail-Closed Structural Validation.
+Declarative NeuralOps Recipe Language (NRL) Specification and AST Schema (F-56).
 
-Implements the EBNF Grammar (Section 3) and Well-Formedness Rules W1, W2, W6, W15.
+Defines the declarative recipe AST, EBNF grammar, and well-formedness validation
+rules (W1-W15) for multi-stage model surgery and distillation pipelines.
+Distinct from the surgery-specific serialization helper in `neuralops.surgery.recipe`.
 """
 
 from __future__ import annotations

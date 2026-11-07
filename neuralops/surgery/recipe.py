@@ -6,7 +6,14 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Recipe YAML/JSON Serialization, Deserialization, and Hub Publishing Engine.
+Surgery Recipe Serialization and Hub Publishing Engine.
+
+Scope Distinction:
+This module handles serialization, validation, and Hub publishing specifically for
+`neuralops.surgery.pipeline.SurgeryRecipe`.
+
+For the declarative NeuralOps Recipe Language (NRL) and execution manifests,
+refer to canonical `neuralops.recipe`.
 """
 
 from __future__ import annotations

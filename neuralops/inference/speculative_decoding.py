@@ -69,7 +69,11 @@ class SelfSpeculativeDecoder:
         min_draft_k: int = 1,
         adaptive_k: bool = True,
         max_draft_tokens: Optional[int] = None,
+        gamma: Optional[int] = None,
+        temperature: Optional[float] = None,
     ) -> None:
+        if gamma is not None:
+            max_draft_k = gamma
         if max_draft_tokens is not None:
             max_draft_k = max_draft_tokens
         if not isinstance(max_draft_k, int) or isinstance(max_draft_k, bool) or max_draft_k <= 0:
@@ -84,6 +88,7 @@ class SelfSpeculativeDecoder:
         self.min_draft_k = min_draft_k
         self.adaptive_k = adaptive_k
         self.current_k = max_draft_k
+        self.temperature = temperature
 
     @property
     def max_draft_tokens(self) -> int:
@@ -124,6 +129,8 @@ class SelfSpeculativeDecoder:
         Matches exact greedy or stochastic distribution of target_model.
         """
         start_time = time.perf_counter()
+        if temperature == 0.0 and self.temperature is not None:
+            temperature = self.temperature
         if input_ids.ndim != 2 or input_ids.shape[0] != 1 or input_ids.shape[1] == 0:
             raise ValueError("SelfSpeculativeDecoder currently requires input_ids shaped [1, non-empty sequence]")
         if not isinstance(max_new_tokens, int) or isinstance(max_new_tokens, bool) or max_new_tokens < 0:

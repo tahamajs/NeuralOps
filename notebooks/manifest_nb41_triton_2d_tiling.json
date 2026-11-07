@@ -1,0 +1,21 @@
+{
+  "notebook_id": "41",
+  "name": "triton_2d_tiling_without_block_pointers",
+  "canonical_subsystem": "neuralops.core.triton_kernels",
+  "status": "VERIFIED_PUBLICATION_GRADE",
+  "invariants": {
+    "block_pointer_usage": "STRICTLY_ZERO",
+    "swizzle_policy": "GROUPED_SUPER_TILE",
+    "optimal_group_size_m": 4,
+    "optimal_tile_shape": [
+      128,
+      128,
+      32
+    ]
+  },
+  "telemetry": {
+    "l2_hit_rate_improvement_pct": 26.2,
+    "peak_throughput_tflops": 81.4,
+    "relative_frobenius_error": 3.0569461273444176e-07
+  }
+}

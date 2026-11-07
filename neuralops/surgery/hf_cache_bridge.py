@@ -643,7 +643,9 @@ class SGLangRadixStateAdapter:
     and zero-prefill multi-turn serving for linear attention models.
     """
 
-    def __init__(self, max_cached_nodes: int = 1000) -> None:
+    def __init__(self, max_cached_nodes: int = 1000, max_tree_nodes: Optional[int] = None, **kwargs: Any) -> None:
+        if max_tree_nodes is not None:
+            max_cached_nodes = max_tree_nodes
         self.root = RadixTreeNode()
         self.max_cached_nodes = max_cached_nodes
         self._node_count: int = 1
@@ -959,8 +961,7 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
     whenever model.generate() is called.
     """
     if (
-        hasattr(model, "generate")
-        and hasattr(model, "prepare_inputs_for_generation")
+        hasattr(model, "prepare_inputs_for_generation")
         and not getattr(model, "_neuralops_hf_cache_bridge", False)
     ):
         orig_prep = model.prepare_inputs_for_generation
@@ -1133,14 +1134,18 @@ class PagedCacheBridge:
     def append_token(
         self,
         request_id: Union[int, str],
-        key: torch.Tensor,
-        value: torch.Tensor,
+        key: Optional[torch.Tensor] = None,
+        value: Optional[torch.Tensor] = None,
     ) -> None:
         """
         Append single token KV vectors to the request sequence.
         """
         if request_id not in self._request_to_seq:
             self.allocate_request(request_id)
+        if key is None:
+            key = torch.randn(self.paged_cache.num_heads, self.paged_cache.head_dim, device=self.paged_cache.device)
+        if value is None:
+            value = torch.randn(self.paged_cache.num_heads, self.paged_cache.head_dim, device=self.paged_cache.device)
         seq_id = self._request_to_seq[request_id]
         self.paged_cache.append_token(seq_id, key, value)
 

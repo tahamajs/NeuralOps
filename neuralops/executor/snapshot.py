@@ -6,52 +6,20 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Transactional Model Snapshot and Rollback Management.
+Deprecated executor snapshot module (re-exports from pipeline_transform.snapshot).
 """
 
 from __future__ import annotations
 
-import copy
-import logging
-from typing import Any, Dict, Optional
+import warnings
 
-import torch
-import torch.nn as nn
+from neuralops.pipeline_transform.snapshot import Snapshot as ModelSnapshot, capture, restore
 
-logger = logging.getLogger("NeuralOps.Executor.Snapshot")
+warnings.warn(
+    "neuralops.executor.snapshot is deprecated and scheduled for removal in NeuralOps 2.2.0. "
+    "Use neuralops.pipeline_transform.snapshot instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-
-class ModelSnapshot:
-    """In-memory model snapshot facilitating rollback to known consistent states."""
-
-    def __init__(self, model: nn.Module) -> None:
-        self.state_dict: Dict[str, torch.Tensor] = {k: v.detach().clone().cpu() for k, v in model.state_dict().items()}
-        # In case module architecture/classes mutated (e.g. Linear -> SVDLinear),
-        # we preserve a deep copy of the module graph or architecture
-        try:
-            self.model_copy: Optional[nn.Module] = copy.deepcopy(model).cpu()
-        except Exception as e:
-            logger.debug("Model deepcopy unavailable for snapshot: %s; relying on state_dict", e)
-            self.model_copy = None
-
-    @classmethod
-    def capture(cls, model: nn.Module) -> ModelSnapshot:
-        """Capture an immutable snapshot of the model."""
-        return cls(model)
-
-    def restore(self, current_model: nn.Module) -> nn.Module:
-        """Restore the model to the snapshotted state and return restored model."""
-        if self.model_copy is not None:
-            # If architecture changed, return the restored deepcopy
-            device = (
-                next(current_model.parameters()).device if list(current_model.parameters()) else torch.device("cpu")
-            )
-            restored = copy.deepcopy(self.model_copy).to(device)
-            return restored
-
-        # State dict fallback
-        current_model.load_state_dict(self.state_dict)
-        return current_model
-
-
-__all__ = ["ModelSnapshot"]
+__all__ = ["ModelSnapshot", "capture", "restore"]

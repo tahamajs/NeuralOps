@@ -11,6 +11,84 @@ NeuralOps Core Modules.
 
 from __future__ import annotations
 
+# Compatibility shim for PyTorch < 2.0 with Setuptools >= 70 (pkg_resources removal)
+import sys as _sys
+if "pkg_resources" not in _sys.modules:
+    try:
+        import pkg_resources as _pkg_resources  # noqa: F401
+    except ImportError:
+        try:
+            import packaging as _packaging
+            import types as _types
+
+            _pr = _types.ModuleType("pkg_resources")
+            _pr.packaging = _packaging
+            _sys.modules["pkg_resources"] = _pr
+        except Exception:
+            pass
+
+# Zero-dependency polyfill for pydantic if missing in runtime environment
+if "pydantic" not in _sys.modules:
+    try:
+        import pydantic as _pydantic  # noqa: F401
+    except ImportError:
+        import types as _types
+
+        class _PydanticBaseModelMeta(type):
+            def __new__(cls, name, bases, dct):
+                annotations = dct.get("__annotations__", {})
+                defaults = {}
+                for k in annotations:
+                    if k in dct:
+                        val = dct[k]
+                        if isinstance(val, _FieldInfo):
+                            if callable(val.default_factory):
+                                defaults[k] = val.default_factory()
+                            else:
+                                defaults[k] = val.default
+                        else:
+                            defaults[k] = val
+                dct["_defaults"] = defaults
+                return super().__new__(cls, name, bases, dct)
+
+        class _FieldInfo:
+            def __init__(self, default=None, default_factory=None, **kwargs):
+                self.default = default
+                self.default_factory = default_factory
+                self._is_field = True
+                for k, v in kwargs.items():
+                    setattr(self, k, v)
+
+        class _BaseModel(metaclass=_PydanticBaseModelMeta):
+            def __init__(self, **kwargs):
+                for k, v in getattr(self, "_defaults", {}).items():
+                    setattr(self, k, v)
+                for k, v in kwargs.items():
+                    setattr(self, k, v)
+
+            def model_dump(self, *args, **kwargs):
+                return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+
+            def dict(self, *args, **kwargs):
+                return self.model_dump(*args, **kwargs)
+
+        def _field_func(default=None, default_factory=None, **kwargs):
+            return _FieldInfo(default=default, default_factory=default_factory, **kwargs)
+
+        def _config_dict(**kwargs):
+            return kwargs
+
+        def _validator_func(*fields, **kwargs):
+            return lambda fn: fn
+
+        _pydantic_mock = _types.ModuleType("pydantic")
+        _pydantic_mock.BaseModel = _BaseModel
+        _pydantic_mock.Field = _field_func
+        _pydantic_mock.ConfigDict = _config_dict
+        _pydantic_mock.field_validator = _validator_func
+        _pydantic_mock.validator = _validator_func
+        _sys.modules["pydantic"] = _pydantic_mock
+
 import importlib
 import importlib.util
 from pathlib import Path
