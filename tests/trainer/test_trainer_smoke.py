@@ -21,6 +21,7 @@ def test_trainer_scheduler_smoke():
 
     # Step through warmup
     initial_lr = optimizer.param_groups[0]["lr"]
+    optimizer.step()
     scheduler.step()
     next_lr = optimizer.param_groups[0]["lr"]
     assert next_lr >= 0.0

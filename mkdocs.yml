@@ -35,6 +35,10 @@ theme:
 
 plugins:
   - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
 
 validation:
   omitted_files: warn
@@ -73,6 +77,8 @@ exclude_docs: |
 nav:
   - Home: index.md
   - Quickstart: QUICKSTART.md
+  - Troubleshooting: TROUBLESHOOTING.md
+  - Migration Guide: MIGRATION_GUIDE.md
   - Guides:
       - Getting Started: guides/getting_started.md
       - Attention Surgery: guides/attention_surgery.md
@@ -85,6 +91,7 @@ nav:
       - 3D Latent Manifold Geometry: visualizer/latent_manifold.html
       - Ada Roofline Interactive: roofline_interactive.html
   - Architecture:
+      - Whole Framework Overview: ARCHITECTURE.md
       - Overview: codebase_architecture/README.md
       - Registry & Lazy Discovery: codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY.md
       - 3-Level Fallback Dispatch: codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY.md
@@ -97,6 +104,8 @@ nav:
       - Hardware Telemetry & Roofline: codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE.md
       - Benchmark Suite & Reproducibility: codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY.md
   - API Reference:
+      - API Index: API_REFERENCE.md
+      - Core Python API: api/api.md
       - 131 Attention Mechanisms: api/attentions.md
       - 72 Compression Engines: api/compression.md
       - Kernels & 3-Level Dispatch: api/kernels.md
@@ -129,5 +138,8 @@ nav:
   - Ecosystem:
       - Model Zoo: model_zoo.md
       - 3D Visualizer: visualizer.md
+      - Framework Comparison: COMPARISON.md
+      - Hugging Face Upload: HUGGINGFACE_UPLOAD.md
+      - Legacy Rename Map: RENAME_MAP.md
   - Changelog: changelog.md
   - Security: security.md

@@ -34,6 +34,23 @@ jobs:
         run: |
           python scripts/utils/sync_version.py --check
 
+  test-layout:
+    name: Test Layout Structure Gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify 1:1 Subsystem to Test Directory Mapping
+        run: |
+          python scripts/ci/check_test_layout.py
+      - name: Run Layout Guard Unit Tests
+        run: |
+          pip install pytest
+          pytest tests/test_test_layout_check.py -v
+
   lint:
     name: Code Style & Static Analysis (ruff, black, isort)
     runs-on: ubuntu-latest
@@ -158,3 +175,33 @@ jobs:
       - name: Run non-GPU and non-Triton regression tests
         run: |
           pytest tests/ -m "not gpu and not triton" --tb=short
+
+  cpu-smoke:
+    name: CPU Smoke & Skip-Ratio Guard (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e ".[cpu,dev]"
+      - name: Run CPU Smoke Tests with JUnit XML
+        run: |
+          pytest -m "not gpu and not triton and not slow" --junitxml=junit-cpu-smoke.xml -q || true
+      - name: Verify Test Execution & Skip Ratio
+        run: |
+          python scripts/ci/check_skip_ratio.py junit-cpu-smoke.xml --max-skip-ratio 0.50
+      - name: Upload JUnit XML Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpu-smoke-junit-${{ matrix.os }}
+          path: junit-cpu-smoke.xml

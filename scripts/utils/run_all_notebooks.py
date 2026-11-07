@@ -227,6 +227,9 @@ def execute_single_cell(
 
     with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
         try:
+            import linecache
+            linecache.cache["<cell>"] = (len(code_str), None, code_str.splitlines(True), "<cell>")
+
             if exec_nodes:
                 mod = ast.Module(body=exec_nodes, type_ignores=[])
                 code_obj = compile(mod, filename="<cell>", mode="exec")
@@ -388,6 +391,7 @@ def main() -> int:
     parser.add_argument("--summary-file", type=str, default="results/NOTEBOOKS_EXECUTION_SUMMARY.md")
     parser.add_argument("--single-notebook", type=str, default=None, help="Execute single notebook and exit")
     parser.add_argument("--output-json", type=str, default=None, help="Write execution result dictionary to JSON file")
+    parser.add_argument("--timeout", type=int, default=300, help="Per-notebook timeout in seconds (default 300)")
     args = parser.parse_args()
 
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -458,9 +462,15 @@ def main() -> int:
             "--output-json",
             tmp_json,
         ]
-        proc = subprocess.run(cmd, cwd=repo_root)
+        proc = None
+        timed_out = False
+        try:
+            proc = subprocess.run(cmd, cwd=repo_root, timeout=args.timeout)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            print(f"       -> [TIMEOUT] Notebook '{nb_name}' exceeded {args.timeout}s limit!", flush=True)
 
-        if os.path.exists(tmp_json) and os.path.getsize(tmp_json) > 0:
+        if os.path.exists(tmp_json) and os.path.getsize(tmp_json) > 0 and not timed_out:
             try:
                 with open(tmp_json, "r", encoding="utf-8") as f_in:
                     res = json.load(f_in)
@@ -472,17 +482,24 @@ def main() -> int:
                 pass
         else:
             res = None
+            if os.path.exists(tmp_json):
+                try:
+                    os.remove(tmp_json)
+                except OSError:
+                    pass
 
         if res is None:
+            exit_info = "timed out" if timed_out else (f"exit {proc.returncode}" if proc else "aborted")
+            status_val = "TIMEOUT" if timed_out else "FAIL"
             res = {
                 "notebook": nb_name,
                 "path": nb_path,
-                "duration_sec": 0.0,
+                "duration_sec": float(args.timeout) if timed_out else 0.0,
                 "total_cells": 0,
                 "total_code_cells": 0,
                 "passed_code_cells": 0,
-                "status": "FAIL",
-                "errors": [{"cell_index": 0, "error": f"Notebook process crashed (exit {proc.returncode})"}],
+                "status": status_val,
+                "errors": [{"cell_index": 0, "error": f"Notebook execution {exit_info}"}],
             }
         results.append(res)
 

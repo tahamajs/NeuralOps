@@ -81,7 +81,7 @@ Using `ModularAttention` provides a clean, zero-boilerplate workflow where QKV p
 
 4. **Register the export in `neuralops/layers/<category>/__init__.py`**.
 
-5. **Verify with the 8-invariant test suite**:
+5. **Verify with the 5-invariant test suite**:
    ```bash
    pytest tests/test_exhaustive_131_attentions_matrix.py -k "my_fast_linear_attention"
    ```
@@ -119,12 +119,36 @@ Compressors reduce weight matrices or KV caches and are registered in `COMPRESSO
 
 ## ⚡ Writing Triton Kernels with Mandatory PyTorch Fallbacks
 
-Every custom Triton kernel module added to `neuralops/core/triton_kernels/` **must** satisfy these strict engineering rules:
+Every custom Triton kernel module added to `neuralops/ops/triton/` **must** satisfy these strict engineering rules:
 1. **Deterministic Fallback**: Must provide a mathematically equivalent PyTorch CPU/MPS reference implementation.
 2. **Capability Check**: Must query `check_triton_suitability(tensor, kernel_name)` before attempting Triton JIT compilation.
-3. **torch.compile Support**: Must register FakeTensor / Meta-device shapes in `neuralops/core/triton_kernels/op_registry.py`.
+3. **torch.compile Support**: Must register FakeTensor / Meta-device shapes in `neuralops/ops/triton/op_registry.py`.
 4. **Autograd Differentiability**: Computational kernels used in training must implement `torch.autograd.Function` with `.backward()` support or fall back to PyTorch autograd.
-5. **Parity Tests**: Must include test cases in `tests/test_triton_parity.py` comparing the Triton kernel against the fallback across `fp32` and `fp16`.
+5. **Parity Tests**: Must include test cases in `tests/triton_parity/` comparing the Triton kernel against the fallback across `fp32` and `fp16`.
+
+---
+
+## 🧪 Test Layout & Execution Tiers
+
+### Test Directory Layout Rules
+- Subsystem tests belong strictly in `tests/<subsystem>/` mirroring `neuralops/<subsystem>/`.
+- Do not add new flat test files to the root `tests/` directory unless they are cross-cutting conformance or end-to-end integration tests.
+- CI enforces this structure via `python scripts/ci/check_test_layout.py`.
+
+### Execution Tiers
+1. **CPU Smoke (Fast)**:
+   ```bash
+   pytest -m "not gpu and not triton and not slow" -q
+   ```
+2. **GPU & Triton Correctness**:
+   ```bash
+   pytest -m "gpu or triton" -v --tb=short
+   ```
+3. **Full Hardware Suite**:
+   ```bash
+   pytest -v --tb=short
+   ```
+For further testing details, see `docs/CONTRIBUTING_TESTING.md`.
 
 ---
 
