@@ -47,9 +47,11 @@ def build_eval_parser(subparser: Optional[argparse.ArgumentParser] = None) -> ar
     )
     parser.add_argument(
         "--model",
+        "--model-path",
+        dest="model",
         type=str,
         required=True,
-        help="Target model identifier or local checkpoint path to evaluate",
+        help="Target model identifier or local checkpoint path to evaluate (alias: --model-path)",
     )
     parser.add_argument(
         "--dataset",
@@ -79,9 +81,11 @@ def build_eval_parser(subparser: Optional[argparse.ArgumentParser] = None) -> ar
     )
     parser.add_argument(
         "--seq-len",
+        "--context-lengths",
+        dest="seq_len",
         type=int,
         default=512,
-        help="Context sequence length (default: 512)",
+        help="Context sequence length (default: 512, alias: --context-lengths)",
     )
     parser.add_argument(
         "--max-samples",
@@ -110,9 +114,17 @@ def build_eval_parser(subparser: Optional[argparse.ArgumentParser] = None) -> ar
     )
     parser.add_argument(
         "--output-file",
+        "--output-dir",
+        dest="output_file",
         type=str,
         default=None,
-        help="Destination file path to save evaluation results JSON",
+        help="Destination file path or directory to save evaluation results JSON (alias: --output-dir)",
+    )
+    parser.add_argument(
+        "--experiment",
+        type=str,
+        default=None,
+        help="Optional standalone experiment suite name",
     )
     return parser
 
@@ -237,11 +249,20 @@ def cmd_eval(args: Any) -> int:
             print("-----------------------------------------------------------------")
 
     if output_file:
-        os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
-        with open(output_file, "w", encoding="utf-8") as fp:
+        out_str = str(output_file)
+        if os.path.isdir(out_str) or out_str.endswith(("/", "\\")):
+            os.makedirs(out_str, exist_ok=True)
+            save_path = os.path.join(out_str, "eval_results.json")
+        else:
+            parent_dir = os.path.dirname(os.path.abspath(out_str))
+            if parent_dir:
+                os.makedirs(parent_dir, exist_ok=True)
+            save_path = out_str
+
+        with open(save_path, "w", encoding="utf-8") as fp:
             json.dump(results_data, fp, indent=2)
         if not output_json:
-            print(f"[✓] Results saved to '{output_file}'.")
+            print(f"[✓] Results saved to '{save_path}'.")
 
     return 0
 

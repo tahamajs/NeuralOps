@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **CLI Fail-Fast Subcommand Registration & Standalone Evaluation Unification (F-58, F-63):**
+  - Hardened `neuralops/cli/main.py`: completely eliminated all `try: ... except Exception: pass` swallow blocks across all 10 subcommand registrations, ensuring broken imports raise immediately with full diagnostics and fail fast. Unified dispatch contract exclusively on standard `func` (`set_defaults(func=...)`), removing legacy dual-contract branching and adding structured `logger.debug` registration trace points.
+  - Unified evaluation entrypoint: transformed `neuralops/evaluation/standalone/cli.py` into a thin delegator forwarding to canonical `neuralops.cli.eval_cmd:cmd_eval` via `build_eval_parser()`, achieving exact flag and parameter parity between `neuralops eval` and `neuralops-eval`.
+  - Retained `neuralops-eval` in `pyproject.toml` as an official documented console script alias to `neuralops.evaluation.standalone.cli:main` without breaking external CLI scripts.
+  - Added unit test suites `tests/cli/test_cli_main.py` (verifying 10 core subcommands registered and import errors fail fast) and `tests/evaluation/test_standalone_cli.py` (verifying delegation and option flag parity) (4 passed in 6.81s).
 - **Validation Gates Disambiguation & Legacy Validator Modernization (F-57):**
   - Disambiguated duplicate perplexity validation gates across levels: designated `neuralops.validation.gates.empirical.PerplexityGate` as canonical L4 empirical absolute perplexity gate (with alias `EmpiricalPerplexityGate`), and renamed `neuralops.validation.gates.behavioral.perplexity.PerplexityDeltaGate` as canonical L3 behavioral relative degradation gate (retaining `PerplexityGate` alias for backward compatibility). Added explicit scope distinction docstrings in both files.
   - Updated `neuralops/validation/gates/__init__.py` to unambiguously export L4 `PerplexityGate` from `empirical` and L3 `PerplexityDeltaGate` from `behavioral`.
