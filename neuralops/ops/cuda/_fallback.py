@@ -127,8 +127,11 @@ def reset_dispatch_stats() -> None:
     }
 
 
-def _is_first_tensor_cpu(*args: Any, **kwargs: Any) -> bool:
-    """Check if the first tensor argument is on CPU."""
+def _is_first_tensor_non_cuda(*args: Any, **kwargs: Any) -> bool:
+    """Check if the first tensor argument is non-CUDA (CPU or MPS).
+
+    MPS tensors go directly to the PyTorch reference because neither CUDA nor Triton can run on MPS.
+    """
     for arg in args:
         if isinstance(arg, torch.Tensor):
             return not arg.is_cuda
@@ -239,7 +242,9 @@ def dispatch(
 ) -> Any:
     """
     Executes through the 3-level fallback chain:
-    1. Check CPU: if CPU tensor, route immediately to PyTorch reference without logging warnings.
+    1. Check CPU/MPS: if non-CUDA tensor (CPU or MPS), route immediately to PyTorch reference
+       without logging warnings (MPS tensors go directly to PyTorch reference because neither
+       CUDA nor Triton can run on MPS).
     2. If forced backend:
        - 'cuda': try cuda_fn only (or fail if None/error)
        - 'triton': try triton_fn only (or fail if None/error)
@@ -266,7 +271,7 @@ def dispatch(
         not FORCE_PYTORCH_FALLBACK
         and forced == "auto"
         and kernel_name != "unknown"
-        and _is_first_tensor_cpu(*args, **kwargs)
+        and _is_first_tensor_non_cuda(*args, **kwargs)
     ):
         _DISPATCH_STATS["pytorch"] += 1
         _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"

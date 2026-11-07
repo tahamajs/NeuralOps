@@ -186,19 +186,21 @@ def dispatch(op_name: str, *args: Any, backend: Optional[str] = None, **kwargs: 
             return torch.nn.functional.kl_div(p.log(), q, reduction="batchmean")
 
     else:
-        # Route unknown ops through ops.cuda._fallback.dispatch
+        # Route unknown ops through UniversalDispatcher.dispatch as canonical multi-tier dispatcher (F-44)
+        from neuralops.core.device import UniversalDispatcher
         from neuralops.core.exceptions import KernelNotAvailableError
-        from neuralops.ops.cuda._fallback import dispatch as fallback_dispatch
 
-        pytorch_fn = kwargs.pop("pytorch_fn", kwargs.pop("pytorch_ref", None))
+        native_fn = kwargs.pop("native_fn", kwargs.pop("cuda_fn", None))
+        triton_fn = kwargs.pop("triton_fn", None)
+        pytorch_fn = kwargs.pop("pytorch_fn", kwargs.pop("pytorch_ref", kwargs.pop("pytorch_fallback_fn", None)))
+
         try:
-            return fallback_dispatch(
-                None,
-                None,
-                pytorch_fn,
+            return UniversalDispatcher.dispatch(
+                op_name,
                 *args,
-                backend=backend or "auto",
-                kernel_name=op_name,
+                native_fn=native_fn,
+                triton_fn=triton_fn,
+                pytorch_fallback_fn=pytorch_fn,
                 **kwargs,
             )
         except RuntimeError as exc:

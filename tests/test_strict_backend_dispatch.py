@@ -27,7 +27,7 @@ def test_cuda_forcing_selects_cuda_backend(monkeypatch: pytest.MonkeyPatch) -> N
     reset_dispatch_stats()
     x = torch.tensor([1.0])
     monkeypatch.setattr(
-        "neuralops.core.cuda_kernels._fallback._is_first_tensor_cpu",
+        "neuralops.core.cuda_kernels._fallback._is_first_tensor_non_cuda",
         lambda *_args, **_kwargs: False,
     )
     with force_kernel_backend("cuda"):
@@ -48,7 +48,7 @@ def test_pytorch_forcing_selects_reference_backend() -> None:
 def test_auto_fallback_after_cuda_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     reset_dispatch_stats()
     monkeypatch.setattr(
-        "neuralops.core.cuda_kernels._fallback._is_first_tensor_cpu",
+        "neuralops.core.cuda_kernels._fallback._is_first_tensor_non_cuda",
         lambda *_args, **_kwargs: False,
     )
 

@@ -98,6 +98,31 @@ _ARCH_SHMEM_MAP = {
 }
 
 
+def _detect_cpu_bf16_support() -> bool:
+    """Detect whether host CPU hardware natively supports bfloat16 acceleration (F-45)."""
+    # 1. Check PyTorch CPU capability report
+    try:
+        if hasattr(torch.backends, "cpu") and hasattr(torch.backends.cpu, "get_cpu_capability"):
+            cap = str(torch.backends.cpu.get_cpu_capability()).upper()
+            if any(feat in cap for feat in ("AVX512_BF16", "AMX_BF16", "BF16")):
+                return True
+    except Exception as exc:
+        logger.debug("Querying torch.backends.cpu.get_cpu_capability() failed: %s", exc)
+
+    # 2. Check torch.__config__.show() build configuration
+    try:
+        config_str = torch.__config__.show()
+        if "AVX512_BF16" in config_str or "AMX_BF16" in config_str:
+            return True
+    except Exception as exc:
+        logger.debug("Querying torch.__config__.show() failed: %s", exc)
+
+    # 3. If hardware capability detection cannot confirm AVX512_BF16 / AMX_BF16,
+    # use conservative default False to avoid claiming unsupported hardware acceleration.
+    # Detection unavailable or CPU lacks BF16 vector extensions: default is conservative False.
+    return False
+
+
 @functools.lru_cache(maxsize=32)
 def probe_hardware(device: Optional[torch.device | str | int] = None) -> HardwareTopology:
     """
@@ -137,8 +162,9 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
             logger.debug("Failed querying os.cpu_count(): %s; defaulting to 1", exc)
             num_cores = 1
 
+        cpu_bf16 = _detect_cpu_bf16_support()
         supported_dtypes = [torch.float32, torch.float64, torch.int32, torch.int64, torch.bool]
-        if hasattr(torch, "bfloat16"):
+        if cpu_bf16 and hasattr(torch, "bfloat16"):
             supported_dtypes.append(torch.bfloat16)
 
         return HardwareTopology(
@@ -160,7 +186,7 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
             supports_xpu=False,
             supports_tensor_cores=False,
             supports_fp16=True,
-            supports_bf16=True,
+            supports_bf16=cpu_bf16,
             supports_tf32=False,
             supports_fp8=False,
             supported_dtypes=tuple(supported_dtypes),
@@ -239,6 +265,32 @@ def probe_hardware(device: Optional[torch.device | str | int] = None) -> Hardwar
         )
 
     if dev_type == "cuda":
+        if not torch.cuda.is_available():
+            return HardwareTopology(
+                vendor=HardwareVendor.NVIDIA,
+                backend=HardwareBackend.CUDA,
+                device_name="",
+                device_index=target_device.index or 0,
+                sm_major=0,
+                sm_minor=0,
+                compute_capability="0.0",
+                total_memory_bytes=0,
+                max_shared_memory_bytes=0,
+                warp_size=32,
+                num_compute_units=0,
+                supports_triton_jit=False,
+                supports_cuda_cpp=False,
+                supports_hip=False,
+                supports_mps=False,
+                supports_xpu=False,
+                supports_tensor_cores=False,
+                supports_fp16=False,
+                supports_bf16=False,
+                supports_tf32=False,
+                supports_fp8=False,
+                supported_dtypes=(torch.float32,),
+            )
+
         is_rocm = bool(hasattr(torch.version, "hip") and torch.version.hip is not None)
         backend = HardwareBackend.ROCM if is_rocm else HardwareBackend.CUDA
         vendor = HardwareVendor.AMD if is_rocm else HardwareVendor.NVIDIA

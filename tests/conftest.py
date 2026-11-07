@@ -250,6 +250,7 @@ def pytest_collection_modifyitems(config, items):
                 "test_shard_placeholder",
                 "test_changelog_sync",
                 "test_notebook_catalog",
+                "test_hardware_probe",
             )
         ) or ("test_notebook_structure_and_syntax" in item_name or "test_notebook_smoke" in item_name)
         if ("cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name) and not is_static_config_test:

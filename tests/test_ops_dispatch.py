@@ -157,3 +157,38 @@ def test_core_backend_dispatch_routes_unknown_op_to_fallback() -> None:
     res = core_dispatch("non_existent_kernel_op_12345", x, pytorch_fn=custom_ref)
     assert res == "custom_fallback_output"
     assert custom_ref.called
+
+
+def test_mps_tensor_routes_to_pytorch_reference() -> None:
+    """Verify that MPS tensor routes directly to PyTorch reference without CUDA attempt (F-43)."""
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        x = torch.randn(2, 2, device="mps")
+    else:
+        x = MagicMock(spec=torch.Tensor)
+        x.is_cuda = False
+        mock_dev = MagicMock()
+        mock_dev.type = "mps"
+        x.device = mock_dev
+
+    mock_cuda = MagicMock(return_value="cuda_val")
+    mock_pytorch = MagicMock(return_value="pytorch_val")
+
+    out = dispatch(mock_cuda, None, mock_pytorch, x, kernel_name="test_mps_kernel", backend="auto")
+    assert out == "pytorch_val"
+    assert mock_pytorch.called
+    assert not mock_cuda.called
+
+
+def test_universal_dispatcher_has_callers_or_is_canonical() -> None:
+    """Verify UniversalDispatcher is wired as canonical multi-tier dispatcher in core.backend.dispatch (F-44)."""
+    from neuralops.core.backend.dispatch import dispatch as core_dispatch
+    from neuralops.core.device import UniversalDispatcher
+
+    x = torch.randn(2, 2)
+    mock_ref = MagicMock(return_value="wired_output")
+
+    with patch.object(UniversalDispatcher, "dispatch", wraps=UniversalDispatcher.dispatch) as spy_disp:
+        out = core_dispatch("custom_test_op", x, pytorch_fn=mock_ref)
+        assert out == "wired_output"
+        assert spy_disp.called
+        assert spy_disp.call_args[0][0] == "custom_test_op"
