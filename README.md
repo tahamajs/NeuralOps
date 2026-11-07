@@ -1093,8 +1093,12 @@ neuralops search --model distilbert-base-uncased --target-param-ratio 0.5 --outp
 # 13. Needle-In-A-Haystack (NIAH) Long-Context Passkey Retrieval
 neuralops niah --model gpt2 --context-lengths 1024,2048,4096 --output-plot niah.png
 
-# 14. NeuralOps Web UI Dashboard & Interactive Two-Pane UNIX TUI Inspector
-neuralops ui          # Launch Web UI dashboard (FastAPI + htmx)
+# 14. NeuralOps Modern Web UI Dashboard (FastAPI + HTMX + Observable Plot)
+neuralops ui start --port 8080               # Launch Web UI dashboard
+neuralops ui start --share --auth admin      # Secure public Cloudflare tunnel
+neuralops ui --static ./dist                 # Export static bundle for Hugging Face Spaces
+
+# 15. Interactive Two-Pane UNIX TUI Inspector
 neuralops tui         # Launch interactive Terminal User Interface (TUI mode)
 neuralops tui --snapshot
 ```
@@ -1482,9 +1486,33 @@ flowchart TD
 
 ---
 
-## 9. Web Dashboard, Real-Time Monitoring & Telemetry Studio
+## 9. Web UI Dashboard, Real-Time Monitoring & Telemetry Studio
 
-NeuralOps v2.0.6 bundles an integrated, asynchronous Telemetry Studio and Web HUD (`neuralops/runners/monitor/`) built on FastAPI, Uvicorn, Server-Sent Events (SSE), WebSockets, and Three.js WebGL:
+NeuralOps v2.0.6 bundles a modern Web UI dashboard (`neuralops ui`) along with an integrated, asynchronous Telemetry Studio and Web HUD (`neuralops monitor`) built on FastAPI, HTMX, Observable Plot, Server-Sent Events (SSE), WebSockets, and Three.js WebGL:
+
+### 9.1 NeuralOps Modern Web UI Dashboard (`neuralops ui`)
+
+The Web UI provides a reactive, server-driven interface powered by **HTMX** with dynamic charts rendered via locally-vendored **Observable Plot**:
+- **Benchmarks Explorer**: Interactive search, debounced filtering across all attention and compressor modules, with dynamic Roofline (arithmetic intensity vs. latency) and Pareto frontier charts.
+- **Model Zoo & Notebooks**: Visual catalog of 94 demonstration notebooks and supported foundation model backbones.
+- **Static Site Generator**: Export the entire dashboard as a static HTML bundle ready for deployment to **Hugging Face Spaces** or static web hosts.
+- **Secure Public Sharing**: Built-in Cloudflare tunnel with Basic Auth for remote collaboration without opening firewall ports.
+
+```bash
+# 1. Start the interactive Web UI dashboard (default: http://127.0.0.1:8080)
+neuralops ui start --port 8080
+
+# 2. Start in background with no browser auto-launch
+neuralops ui start --port 8080 --no-browser
+
+# 3. Share with teammates via public Cloudflare Tunnel + Basic Auth
+NEURALOPS_UI_AUTH=secret123 neuralops ui start --share --auth admin
+
+# 4. Export static bundle for Hugging Face Spaces or static hosting
+neuralops ui --static ./dist
+```
+
+### 9.2 Real-Time Telemetry Studio & HUD (`neuralops monitor`)
 
 | Interface Route | Protocol | Primary Telemetry & Analytical Capability |
 | :--- | :---: | :--- |
@@ -1498,7 +1526,7 @@ NeuralOps v2.0.6 bundles an integrated, asynchronous Telemetry Studio and Web HU
 | `/roofline` | Interactive WebGL | Dynamic Plotly/D3 roofline diagram plotting operational arithmetic intensity against GDDR6 memory bandwidth |
 | `/visualizer/3d` | Three.js WebGL | Interactive 3D spatial canvas rendering Pareto trade-off surfaces and SVD singular value spectral decay curves |
 
-### Launching the Studio & Telemetry Server
+#### Launching the Studio & Telemetry Server
 
 ```bash
 # 1. Launch via canonical CLI command (default: http://127.0.0.1:8080)
