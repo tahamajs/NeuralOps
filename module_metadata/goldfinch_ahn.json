@@ -1,0 +1,33 @@
+{
+  "module_name": "goldfinch_ahn",
+  "class_name": "GatedDeltaNetLayer",
+  "category": "attention",
+  "family": "Gated Linear Recurrences",
+  "params": [
+    "d_model",
+    "use_spectral_norm",
+    "config",
+    "rank",
+    "window_size",
+    "is_causal",
+    "pretrained_attn",
+    "gate_init_bias"
+  ],
+  "ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "view",
+    "matmul"
+  ],
+  "docstring": "Gated DeltaNet Recurrent Memory Layer.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 6.282637061220384e+37,
+  "paradigm": "gated",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

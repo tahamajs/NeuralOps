@@ -1,0 +1,32 @@
+{
+  "module_name": "aegis_hybrid",
+  "class_name": "AegisHybridAttention",
+  "category": "attention",
+  "family": "Hybrid Linear-Recurrent & Attention-SSM Architectures",
+  "params": [
+    "lin1",
+    "lin2",
+    "config",
+    "hidden_size",
+    "num_heads",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "view",
+    "softmax",
+    "dropout",
+    "einsum",
+    "matmul",
+    "reshape"
+  ],
+  "docstring": "Aegis-Hybrid Attention combining Local Windowed Attention and Global Linear Attention.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.5958864526252666e+38,
+  "paradigm": "hybrid",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

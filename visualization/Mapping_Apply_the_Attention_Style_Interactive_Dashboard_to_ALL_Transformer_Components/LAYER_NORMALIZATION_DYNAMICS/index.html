@@ -1,0 +1,3691 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/visualization/Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/LAYER_NORMALIZATION_DYNAMICS/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>🧪 LAYER NORMALIZATION DYNAMICS — "The Stabilizer Lab" - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#layer-normalization-dynamics-the-stabilizer-lab" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🧪 LAYER NORMALIZATION DYNAMICS — "The Stabilizer Lab"
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#complete-implementation-blueprint-no-code-full-architecture-technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Implementation Blueprint (No Code — Full Architecture &amp; Technology Stack)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-0-architecture-philosophy-the-four-tier-computation-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📐 PART 0: ARCHITECTURE PHILOSOPHY — The Four-Tier Computation Stack
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📐 PART 0: ARCHITECTURE PHILOSOPHY — The Four-Tier Computation Stack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture-diagram-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Diagram (Data Flow)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-zone-by-zone-implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🏗️ PART 1: ZONE-BY-ZONE IMPLEMENTATION DETAILS
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🏗️ PART 1: ZONE-BY-ZONE IMPLEMENTATION DETAILS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#zone-a-norm-statistics-dashboard-the-vital-signs-monitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ZONE A: NORM STATISTICS DASHBOARD — "The Vital Signs Monitor"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ZONE A: NORM STATISTICS DASHBOARD — &#34;The Vital Signs Monitor&#34;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-a1-prepost-mean-variance-line-charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature A1: Pre/Post Mean &amp; Variance Line Charts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-a2-distribution-histogram-per-layer-prepost" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature A2: Distribution Histogram (Per-Layer Pre/Post)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-a3-gradient-flow-through-normalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature A3: Gradient Flow Through Normalization
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zone-b-vector-field-visualization-the-sphere-mapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ZONE B: VECTOR FIELD VISUALIZATION — "The Sphere Mapper"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ZONE B: VECTOR FIELD VISUALIZATION — &#34;The Sphere Mapper&#34;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-b1-the-unit-sphere-prepost-vectors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature B1: The Unit Sphere + Pre/Post Vectors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-b2-layernorm-magnifying-glass-single-vector-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature B2: LayerNorm "Magnifying Glass" — Single Vector Detail
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zone-c-parameter-visualization-the-scalingshifting-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ZONE C: γ/β PARAMETER VISUALIZATION — "The Scaling/Shifting Dashboard"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ZONE C: γ/β PARAMETER VISUALIZATION — &#34;The Scaling/Shifting Dashboard&#34;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-c1-3d-bar-chart-of-and" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature C1: 3D Bar Chart of γ and β
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-c2-distribution-histogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature C2: γ/β Distribution Histogram
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zone-d-math-panel-the-formula-lab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ZONE D: MATH PANEL — "The Formula Lab"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ZONE D: MATH PANEL — &#34;The Formula Lab&#34;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-d1-layernorm-step-by-step-animator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature D1: LayerNorm Step-by-Step Animator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-d2-rmsnorm-comparison-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature D2: RMSNorm Comparison Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-d3-interactive-parameter-tweaking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature D3: Interactive Parameter Tweaking
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zone-e-interpretability-diagnostics-the-doctors-toolkit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ZONE E: INTERPRETABILITY &amp; DIAGNOSTICS — "The Doctor's Toolkit"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ZONE E: INTERPRETABILITY &amp; DIAGNOSTICS — &#34;The Doctor&#39;s Toolkit&#34;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-e1-norm-ablation-what-happens-if-we-remove-layernorm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature E1: Norm Ablation — What Happens If We Remove LayerNorm?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-e2-pre-ln-vs-post-ln-architecture-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature E2: Pre-LN vs. Post-LN Architecture Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sub-feature-e3-rmsnorm-vs-layernorm-side-by-side-analyzer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sub-Feature E3: RMSNorm vs. LayerNorm Side-by-Side Analyzer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-framework-by-framework-setup-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔧 PART 2: FRAMEWORK-BY-FRAMEWORK SETUP GUIDE
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔧 PART 2: FRAMEWORK-BY-FRAMEWORK SETUP GUIDE">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-transformersjs-browser-ml-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Transformers.js (Browser ML Inference)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-pyodide-scientific-computing-in-browser" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Pyodide (Scientific Computing in Browser)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-react-three-fiber-3d-visualization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 React Three Fiber (3D Visualization)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-deckgl-gpu-accelerated-2d3d-charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Deck.gl (GPU-Accelerated 2D/3D Charts)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-echarts-gl-3d-bar-charts-line-charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5 ECharts-GL (3D Bar Charts, Line Charts)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#26-katex-formula-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.6 KaTeX (Formula Rendering)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-data-flow-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔄 PART 3: DATA FLOW ARCHITECTURE
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔄 PART 3: DATA FLOW ARCHITECTURE">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-initial-load-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Initial Load Sequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-real-time-update-sequence-user-changes-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Real-Time Update Sequence (User Changes Input)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-websocket-stream-for-training-dynamics-gradient-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 WebSocket Stream (For Training Dynamics / Gradient Flow)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-4-performance-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📊 PART 4: PERFORMANCE STRATEGY
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📊 PART 4: PERFORMANCE STRATEGY">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-what-runs-where" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 What Runs Where
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-memory-budget" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Memory Budget
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-fallback-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Fallback Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-5-zustand-store-design-global-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📋 PART 5: ZUSTAND STORE DESIGN (Global State)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-6-implementation-priority-phasing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🎯 PART 6: IMPLEMENTATION PRIORITY &amp; PHASING
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="layer-normalization-dynamics-the-stabilizer-lab">🧪 LAYER NORMALIZATION DYNAMICS — "The Stabilizer Lab"</h1>
+<h2 id="complete-implementation-blueprint-no-code-full-architecture-technology-stack">Complete Implementation Blueprint (No Code — Full Architecture &amp; Technology Stack)</h2>
+<hr />
+<h2 id="part-0-architecture-philosophy-the-four-tier-computation-stack">📐 PART 0: ARCHITECTURE PHILOSOPHY — The Four-Tier Computation Stack</h2>
+<p>The Stabilizer Lab requires a <strong>hybrid computation architecture</strong> because it must simultaneously: (a) run real ML model inference to extract hidden states before/after normalization, (b) perform heavy mathematical computations (mean, variance, RMS, gradient norms), (c) render GPU-accelerated 3D vector field visualizations, and (d) keep the UI responsive with 60fps interactivity. No single technology can handle all four demands alone, so we use a <strong>four-tier stack</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Technology</th>
+<th>Responsibility</th>
+<th>Why This Choice</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tier 1 — Browser ML Inference</strong></td>
+<td>Transformers.js (Xenova) + ONNX Runtime Web with WebGPU backend</td>
+<td>Run actual GPT-2/BERT models in-browser to extract hidden states before/after LayerNorm. No server needed.</td>
+<td>Transformers.js "uses ONNX Runtime to run models in the browser" and "WebGPU + JavaScript: How Browsers Became Real AI Runtimes" proves this is production-ready. Firefox's native ONNX Runtime integration demonstrates "accelerating inference by replacing the default onnxruntime-web with its native C++ counterpart."</td>
+</tr>
+<tr>
+<td><strong>Tier 2 — Scientific Computation</strong></td>
+<td>Pyodide (Python-in-Wasm) with NumPy + SciPy</td>
+<td>Compute per-layer statistics (mean, variance, RMS, gradient norms), run PCA/t-SNE for vector field projections, compute cosine similarity between pre/post normalization vectors. Runs in a Web Worker to avoid blocking the UI.</td>
+<td>Pyodide "includes NumPy, Pandas, Matplotlib, and SciPy out-of-the-box" enabling "powerful data analysis, math, and visualization right inside the browser." The Web Worker with SharedArrayBuffer approach enables "zero-copy data transfer" between the ML thread and the computation thread.</td>
+</tr>
+<tr>
+<td><strong>Tier 3 — GPU-Accelerated Visualization</strong></td>
+<td>React Three Fiber (@react-three/fiber + @react-three/drei) + Deck.gl + ECharts-GL</td>
+<td>Render 3D vector field (how LayerNorm maps vectors onto unit sphere), 3D bar charts for γ/β parameters, real-time line charts for norm statistics, heatmaps for gradient flow.</td>
+<td>Helios-Web demonstrates "real-time visualization and interactive analysis of massive-scale networks and high-dimensional embeddings" using "GPU-based rendering, modern web technologies (WebGL and WebAssembly)." ECharts-GL provides "3D visualization capabilities through WebGL" with "hardware acceleration for large-scale datasets." Deck.gl is "GPU-driven" and handles "millions of data points."</td>
+</tr>
+<tr>
+<td><strong>Tier 4 — Reactive UI &amp; Dashboard</strong></td>
+<td>React 18 + TypeScript + Tailwind CSS + Framer Motion + Zustand</td>
+<td>Dashboard layout, zone management, user interactions, state synchronization across zones, animation orchestration.</td>
+<td>Standard modern stack; Framer Motion for layout animations; Zustand for lightweight global state without Redux boilerplate.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="architecture-diagram-data-flow">Architecture Diagram (Data Flow)</h3>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────────────────┐
+│                        THE STABILIZER LAB                            │
+│                                                                      │
+│  USER INPUT: Text + Model Selection                                  │
+│       │                                                              │
+│       ▼                                                              │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │ TIER 1: ML INFERENCE ENGINE (Web Worker #1)                  │   │
+│  │ ┌────────────────────┐  ┌────────────────────────────────┐   │   │
+│  │ │ Transformers.js    │  │ ONNX Runtime Web (WebGPU)      │   │   │
+│  │ │ (Xenova)           │  │ - Run GPT-2 / BERT             │   │   │
+│  │ │ - Load model       │  │ - Extract hidden states per    │   │   │
+│  │ │ - Tokenize text    │  │   layer BEFORE LayerNorm       │   │   │
+│  │ │ - Run forward pass │  │ - Extract hidden states AFTER  │   │   │
+│  │ │                    │  │   LayerNorm                    │   │   │
+│  │ └────────────────────┘  └────────────────────────────────┘   │   │
+│  │                         │                                     │   │
+│  │         SharedArrayBuffer (zero-copy)                         │   │
+│  │                         ▼                                     │   │
+│  │ ┌────────────────────────────────────────────────────────┐   │   │
+│  │ │ TIER 2: SCIENTIFIC COMPUTE (Web Worker #2 — Pyodide)    │   │   │
+│  │ │ - NumPy: mean, var, RMS per layer                       │   │   │
+│  │ │ - SciPy: PCA of pre/post-norm vectors                   │   │   │
+│  │ │ - Compute cosine similarity (pre vs post)               │   │   │
+│  │ │ - Compute gradient norms per layer                      │   │   │
+│  │ │ - Compute vector field transformation (sphere mapping)  │   │   │
+│  │ └────────────────────────────────────────────────────────┘   │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│       │                                                              │
+│       ▼ (Computed data → Main Thread via postMessage)               │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │ TIER 3: GPU VISUALIZATION (Main Thread — WebGL/WebGPU)       │   │
+│  │ ┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐  │   │
+│  │ │ React Three  │ │ Deck.gl      │ │ ECharts-GL           │  │   │
+│  │ │ Fiber        │ │ - Heatmaps   │ │ - 3D Bar Charts      │  │   │
+│  │ │ - 3D Vector  │ │ - Line charts│ │ - Line Charts        │  │   │
+│  │ │   Field      │ │ - Scatter    │ │ - Surface Plots      │  │   │
+│  │ │ - Unit Sphere│ │   plots      │ │                      │  │   │
+│  │ │ - Particle   │ │              │ │                      │  │   │
+│  │ │   Systems    │ │              │ │                      │  │   │
+│  │ └──────────────┘ └──────────────┘ └──────────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│       │                                                              │
+│       ▼                                                              │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │ TIER 4: REACTIVE UI (React 18 + Tailwind + Framer Motion)    │   │
+│  │ - Dashboard shell with 5 zones                               │   │
+│  │ - Zustand global state                                       │   │
+│  │ - React Query for data fetching                              │   │
+│  │ - Framer Motion for layout animations                        │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h2 id="part-1-zone-by-zone-implementation-details">🏗️ PART 1: ZONE-BY-ZONE IMPLEMENTATION DETAILS</h2>
+<hr />
+<h3 id="zone-a-norm-statistics-dashboard-the-vital-signs-monitor">ZONE A: NORM STATISTICS DASHBOARD — "The Vital Signs Monitor"</h3>
+<p><strong>What it shows:</strong> Per-layer, a comprehensive dashboard of what happens to hidden states before and after LayerNorm. Think of it as the "vital signs monitor" for each transformer layer — you can instantly see if a layer is healthy (stable activations) or sick (vanishing/exploding activations).</p>
+<h4 id="sub-feature-a1-prepost-mean-variance-line-charts">Sub-Feature A1: Pre/Post Mean &amp; Variance Line Charts</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Data Source:</strong> Pyodide Web Worker computes <code>np.mean(hidden_states, axis=-1)</code> and <code>np.var(hidden_states, axis=-1)</code> for each layer, both before and after LayerNorm, across all tokens in the input sequence.</li>
+<li><strong>Visualization Library:</strong> <strong>ECharts-GL</strong> (not D3 or Plotly). Why? Because with 12+ layers × 768+ dimensions × potentially hundreds of tokens, we need GPU-accelerated rendering for smooth pan/zoom. ECharts-GL "extends the core ECharts library to enable the creation of 3D charts... while maintaining a similar API to standard ECharts." The <code>renderer: 'webgl'</code> option activates hardware acceleration.</li>
+<li><strong>Rendering Strategy:</strong> Two overlaid line series per chart: (1) Pre-LayerNorm values in <strong>orange/red</strong> (indicating "before stabilization"), (2) Post-LayerNorm values in <strong>blue/green</strong> (indicating "after stabilization"). The Y-axis shows the statistic value; the X-axis shows layer index.</li>
+<li><strong>Interactivity:</strong> Hover over any point to see the exact numerical value. Click a layer to "zoom into" that layer and see per-dimension breakdown in Zone B. A toggle switches between "Mean View" and "Variance View."</li>
+<li><strong>Performance:</strong> For 12 layers × 768 dimensions, ECharts-GL with WebGL backend renders 60fps even with animated transitions. The "Performance Optimization" page documents "techniques and best practices for optimizing the performance of 3D visualizations in ECharts-GL."</li>
+</ul>
+<h4 id="sub-feature-a2-distribution-histogram-per-layer-prepost">Sub-Feature A2: Distribution Histogram (Per-Layer Pre/Post)</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Data Source:</strong> Pyodide computes histograms of hidden state values for each layer, before and after LayerNorm.</li>
+<li><strong>Visualization:</strong> <strong>Deck.gl</strong> <code>HexagonLayer</code> or standard ECharts histogram. Deck.gl is chosen because it's "GPU-driven" and can handle millions of data points — important when we're binning 768 dimensions × 128 tokens = ~98K values per layer.</li>
+<li><strong>Rendering:</strong> Two overlapping semi-transparent histograms: pre-norm in red, post-norm in blue. The post-norm distribution should be visibly more "compact" (around mean 0, variance 1). The before-norm distribution reveals if the layer has activation drift or exploding values.</li>
+<li><strong>Animation:</strong> When the user changes the selected layer, the histogram smoothly transitions between layers using Deck.gl's built-in transition system.</li>
+</ul>
+<h4 id="sub-feature-a3-gradient-flow-through-normalization">Sub-Feature A3: Gradient Flow Through Normalization</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Data Source:</strong> This requires running a backward pass through the model. Transformers.js supports this? Actually, for a production system, we use the <strong>ONNX Runtime Web with WebGPU</strong> to compute gradients via a custom training loop. Alternatively, we pre-compute gradients server-side and stream them via WebSocket (using your existing Channels infrastructure).</li>
+<li><strong>Visualization:</strong> A heatmap (Deck.gl <code>ScreenGridLayer</code> or ECharts heatmap) showing gradient magnitude per layer × per training step (or per input token). The Visual Sandbox paper "gains insights into training dynamics, circuit transferability, and the causes of loss spikes, including those induced by the high curvature of normalization layers" — this is exactly what we want to visualize.</li>
+<li><strong>Color Scale:</strong> Green = healthy gradient flow, Yellow = warning (gradient getting small), Red = critical (vanishing gradient). The Pre-LN vs Post-LN comparison from the literature "clearly visualizes the instability and spikes inherent in Post-LN, validating the modern preference for Pre-LN stability."</li>
+<li><strong>Key Insight Display:</strong> A prominent banner shows: "Layer 7 gradient norm: 0.003 (⚠️ Vanishing)" or "Layer 3 gradient norm: 1.2 (✅ Healthy)" based on configurable thresholds.</li>
+</ul>
+<hr />
+<h3 id="zone-b-vector-field-visualization-the-sphere-mapper">ZONE B: VECTOR FIELD VISUALIZATION — "The Sphere Mapper"</h3>
+<p><strong>What it shows:</strong> A 3D interactive view of how LayerNorm transforms vectors. Before LayerNorm, vectors are scattered throughout space. After LayerNorm, they're projected onto (or near) a unit sphere. This is the most visually striking and educationally powerful feature.</p>
+<h4 id="sub-feature-b1-the-unit-sphere-prepost-vectors">Sub-Feature B1: The Unit Sphere + Pre/Post Vectors</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Visualization Library:</strong> <strong>React Three Fiber (@react-three/fiber + @react-three/drei)</strong> — this is the gold standard for 3D in React. TensorSpace.js "translates neural network data into interactive 3D objects using THREE.js" and "enables the 3D representation of neural network components, handling both the visual elements and the interaction with neural network data."</li>
+<li><strong>Scene Composition:</strong></li>
+<li><strong>Unit Sphere:</strong> A semi-transparent wireframe sphere (radius=1) rendered with <code>&lt;Sphere&gt;</code> from @react-three/drei. The sphere represents the "target" — after LayerNorm, all vectors should lie on or near this sphere.</li>
+<li><strong>Pre-Norm Vectors:</strong> Each token's hidden state (before LayerNorm) is rendered as an <strong>arrow</strong> pointing from the origin to its vector position. Color-coded by token index (using a viridis colormap). These arrows will be scattered at various distances from the origin.</li>
+<li><strong>Post-Norm Vectors:</strong> Each token's hidden state (after LayerNorm) is rendered as a <strong>dot on (or near) the sphere surface</strong>. The same color coding shows which pre-norm vector mapped to which post-norm position.</li>
+<li><strong>Connection Lines:</strong> Dashed lines connect each token's pre-norm position to its post-norm position, showing the "journey" through LayerNorm.</li>
+<li><strong>Camera Controls:</strong> <code>&lt;OrbitControls&gt;</code> from @react-three/drei allows rotation, zoom, and pan. The initial camera position shows the sphere from a slight angle so the 3D nature is immediately apparent.</li>
+<li><strong>Animation:</strong> When the user changes the layer or input text, the vectors <strong>animate</strong> from their old positions to new positions using <code>react-spring/three</code> or Framer Motion 3D. This is crucial — without animation, users can't track which vector moved where.</li>
+<li><strong>Performance:</strong> For 128 tokens × 768 dimensions, we use PCA (computed in Pyodide) to reduce to 3 dimensions before rendering. The 3D scene handles 128 arrows + 128 dots + 128 lines = ~384 objects, which React Three Fiber renders effortlessly at 60fps.</li>
+</ul>
+<h4 id="sub-feature-b2-layernorm-magnifying-glass-single-vector-detail">Sub-Feature B2: LayerNorm "Magnifying Glass" — Single Vector Detail</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li>When the user <strong>clicks on a single vector</strong> (either pre-norm arrow or post-norm dot), a "magnifying glass" panel appears showing:</li>
+<li>The <strong>raw 768-dimensional vector</strong> as a mini bar chart (too many bars to be readable, but gives a sense of distribution)</li>
+<li>The <strong>mean and variance</strong> of that specific token</li>
+<li>The <strong>cosine similarity</strong> between pre-norm and post-norm vectors (computed in Pyodide)</li>
+<li>The <strong>LayerNorm formula</strong> applied to this specific vector, showing: <code>x - μ = [...]</code>, <code>σ = [...]</code>, <code>(x - μ)/σ = [...]</code>, <code>γ ⊙ (x-μ)/σ + β = [...]</code></li>
+<li>This is the "3Blue1Brown moment" — the user sees the math applied to concrete numbers, making the abstract formula tangible.</li>
+<li><strong>Implementation Approach:</strong> The formula rendering uses <strong>KaTeX</strong> (fastest LaTeX renderer for web) with live-substituted numerical values. The Transformer Explainer similarly "visualizes different operations within the transformer block: Layer Normalization — visualized as a curved line and a circle with tooltips."</li>
+</ul>
+<hr />
+<h3 id="zone-c-parameter-visualization-the-scalingshifting-dashboard">ZONE C: γ/β PARAMETER VISUALIZATION — "The Scaling/Shifting Dashboard"</h3>
+<p><strong>What it shows:</strong> LayerNorm has two learnable parameter vectors: <strong>γ (scale)</strong> and <strong>β (shift)</strong>, each of dimension <code>d_model</code>. This zone shows which dimensions the model has learned to amplify vs. suppress, revealing the model's "feature importance" per layer.</p>
+<h4 id="sub-feature-c1-3d-bar-chart-of-and">Sub-Feature C1: 3D Bar Chart of γ and β</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Visualization Library:</strong> <strong>ECharts-GL</strong> <code>Bar3D</code> chart type. ECharts-GL "provides 3D visualization capabilities through WebGL" including "3D bar charts." The 3D nature is important because 768 dimensions cannot be shown in a 2D bar chart without scrolling.</li>
+<li><strong>Rendering:</strong> The X-axis represents dimension index (0 to 767), the Z-axis represents the parameter value, and the Y-axis can represent different layers (or vice versa). Bars for γ are colored <strong>warm</strong> (red/orange) for values &gt; 1 (amplifying), <strong>cool</strong> (blue) for values &lt; 1 (suppressing). Bars for β are colored <strong>green</strong> for positive shifts, <strong>purple</strong> for negative shifts.</li>
+<li><strong>Interactivity:</strong> The user can rotate the 3D view, zoom into specific dimension ranges, and hover over any bar to see exact values. A "Top 10" panel lists the most amplified and most suppressed dimensions.</li>
+<li><strong>Alternative View:</strong> A 2D heatmap (using Deck.gl or ECharts) where rows = layers, columns = dimension ranges (binned into groups of 32), and color = average γ or β value.</li>
+</ul>
+<h4 id="sub-feature-c2-distribution-histogram">Sub-Feature C2: γ/β Distribution Histogram</h4>
+<ul>
+<li>A simple histogram showing the distribution of γ values and β values across all dimensions. Are they clustered around 1 and 0 (the initialization values)? Has the model learned to deviate significantly?</li>
+<li><strong>Library:</strong> ECharts with <code>renderer: 'webgl'</code> for smooth rendering.</li>
+</ul>
+<hr />
+<h3 id="zone-d-math-panel-the-formula-lab">ZONE D: MATH PANEL — "The Formula Lab"</h3>
+<p><strong>What it shows:</strong> Interactive, step-by-step visualization of the LayerNorm and RMSNorm formulas, with live numerical values from the currently selected token/vector.</p>
+<h4 id="sub-feature-d1-layernorm-step-by-step-animator">Sub-Feature D1: LayerNorm Step-by-Step Animator</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Math Rendering:</strong> <strong>KaTeX</strong> (via <code>react-katex</code>) for LaTeX formula rendering. KaTeX is "the fastest math typesetting library for the web."</li>
+<li><strong>Animation Engine:</strong> <strong>Framer Motion</strong> for step-by-step reveal animations. The formula is displayed as a sequence of steps:</li>
+<li><code>x = [0.847, -0.312, 1.203, ...]</code> — show the raw vector</li>
+<li><code>μ = 0.042</code> — compute and display the mean</li>
+<li><code>σ² = 0.891</code> — compute and display the variance</li>
+<li><code>(x - μ) / √(σ² + ε) = [...]</code> — show the normalized vector</li>
+<li><code>γ ⊙ norm + β = [...]</code> — show the final output</li>
+<li><strong>Each step</strong> reveals with a Framer Motion animation (fade + slide). The numerical values update in real-time as the user changes the selected token (by clicking on a vector in the 3D view) or the selected layer.</li>
+<li><strong>Color coding:</strong> Raw values in gray, computed statistics in yellow, normalized values in green, final output in blue.</li>
+</ul>
+<h4 id="sub-feature-d2-rmsnorm-comparison-mode">Sub-Feature D2: RMSNorm Comparison Mode</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Side-by-side display</strong> of LayerNorm and RMSNorm formulas. The key difference (RMSNorm skips mean subtraction) is <strong>highlighted in red</strong>.</li>
+<li><strong>Numerical comparison table:</strong> For the same input vector, show:</li>
+<li>LayerNorm output vs. RMSNorm output</li>
+<li>Cosine similarity between the two outputs</li>
+<li>Computational cost comparison (RMSNorm "少了求均值和减均值两个操作，在大模型里能明显提速")</li>
+<li><strong>Performance note:</strong> A small badge shows: "RMSNorm: 2 fewer operations per dimension → ~15% faster in large models."</li>
+</ul>
+<h4 id="sub-feature-d3-interactive-parameter-tweaking">Sub-Feature D3: Interactive Parameter Tweaking</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li>Two <strong>sliders</strong> (using your existing <code>Slider</code> component) allow the user to manually adjust γ and β values for any dimension.</li>
+<li>As the user drags the slider, the 3D vector field (Zone B) updates in real-time, showing how the vector moves.</li>
+<li>This is the "what if" experimentation mode — researchers can test hypotheses like "What if γ was 2.0 for dimension 42?"</li>
+</ul>
+<hr />
+<h3 id="zone-e-interpretability-diagnostics-the-doctors-toolkit">ZONE E: INTERPRETABILITY &amp; DIAGNOSTICS — "The Doctor's Toolkit"</h3>
+<h4 id="sub-feature-e1-norm-ablation-what-happens-if-we-remove-layernorm">Sub-Feature E1: Norm Ablation — What Happens If We Remove LayerNorm?</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Data Source:</strong> This requires running the model twice — once normally, once with LayerNorm bypassed (identity function). Pyodide can't do this efficiently; we use the <strong>Django backend</strong> to run the ablation and stream results via WebSocket (your existing Channels infrastructure).</li>
+<li><strong>Visualization:</strong> A side-by-side comparison:</li>
+<li><strong>Left:</strong> Attention patterns WITH LayerNorm</li>
+<li><strong>Right:</strong> Attention patterns WITHOUT LayerNorm</li>
+<li><strong>Bottom:</strong> A "difference heatmap" showing where attention changed most</li>
+<li><strong>Metrics display:</strong> "Without LayerNorm at Layer 5: attention entropy increased by 23%, output probability of correct token dropped from 0.87 to 0.12."</li>
+</ul>
+<h4 id="sub-feature-e2-pre-ln-vs-post-ln-architecture-comparison">Sub-Feature E2: Pre-LN vs. Post-LN Architecture Comparison</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Diagram Rendering:</strong> Use <strong>D3.js</strong> (not a charting library — raw D3 for custom SVG) to draw two architecture diagrams side-by-side:</li>
+<li><strong>Post-LN (original Transformer):</strong> <code>x → Attention → Add → LayerNorm → FFN → Add → LayerNorm</code></li>
+<li><strong>Pre-LN (modern):</strong> <code>x → LayerNorm → Attention → Add → LayerNorm → FFN → Add</code></li>
+<li><strong>Gradient Flow Comparison:</strong> Below each diagram, show a line chart of gradient norms per layer during training. Post-LN typically shows a U-shaped curve (large gradients at first and last layers, small in middle), while Pre-LN shows a flatter, more uniform distribution. The literature "clearly visualizes the instability and spikes inherent in Post-LN, validating the modern preference for Pre-LN stability."</li>
+<li><strong>Animation:</strong> The user can scrub through "training steps" to see how gradient flow evolves over time.</li>
+</ul>
+<h4 id="sub-feature-e3-rmsnorm-vs-layernorm-side-by-side-analyzer">Sub-Feature E3: RMSNorm vs. LayerNorm Side-by-Side Analyzer</h4>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><strong>Data Source:</strong> The Django backend runs the same model twice — once with LayerNorm, once with RMSNorm substituted — and streams the hidden states for comparison.</li>
+<li><strong>Visualization:</strong> Three panels:</li>
+<li><strong>Statistics comparison table:</strong> Per layer, show mean, variance, and RMS for both normalization methods.</li>
+<li><strong>Output cosine similarity:</strong> Per layer, how similar are the outputs of LayerNorm vs. RMSNorm? (Should be very high for most layers.)</li>
+<li><strong>Performance comparison:</strong> Bar chart showing FLOPs per layer for each method.</li>
+<li><strong>Key Insight:</strong> RMSNorm "保持非零均值分布，不执行均值对零的对齐操作" — the visualization should make this geometric difference visible.</li>
+</ul>
+<hr />
+<h2 id="part-2-framework-by-framework-setup-guide">🔧 PART 2: FRAMEWORK-BY-FRAMEWORK SETUP GUIDE</h2>
+<h3 id="21-transformersjs-browser-ml-inference">2.1 Transformers.js (Browser ML Inference)</h3>
+<div class="highlight"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>@xenova/transformers
+</code></pre></div>
+<p><strong>Key Configuration:</strong>
+- Use <code>pipeline('feature-extraction', model_name)</code> to get hidden states.
+- For attention-specific work, use the lower-level API to extract per-layer hidden states before/after LayerNorm.
+- Enable <code>quantized: true</code> for faster loading (the model runs in-browser, so quantization is essential).
+- The library "uses ONNX Runtime to run models in the browser" and supports WebGPU backend for hardware acceleration.</p>
+<h3 id="22-pyodide-scientific-computing-in-browser">2.2 Pyodide (Scientific Computing in Browser)</h3>
+<div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="o">=</span><span class="s">"https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+</code></pre></div>
+<p><strong>Key Configuration:</strong>
+- Load in a <strong>Web Worker</strong> (not the main thread) to avoid blocking the UI.
+- Pre-load packages: <code>await pyodide.loadPackage(['numpy', 'scipy'])</code>.
+- Use <code>SharedArrayBuffer</code> for zero-copy data transfer between the ML worker and the compute worker.
+- Pyodide "includes NumPy, Pandas, Matplotlib, and SciPy out-of-the-box" enabling "powerful data analysis, math, and visualization right inside the browser."</p>
+<h3 id="23-react-three-fiber-3d-visualization">2.3 React Three Fiber (3D Visualization)</h3>
+<div class="highlight"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>@react-three/fiber<span class="w"> </span>@react-three/drei<span class="w"> </span>three
+</code></pre></div>
+<p><strong>Key Configuration:</strong>
+- Use <code>&lt;Canvas&gt;</code> with <code>gl={{ antialias: true, alpha: true }}</code> for high-quality rendering.
+- Use <code>&lt;OrbitControls&gt;</code> for camera interaction.
+- Use <code>react-spring/three</code> for smooth animation transitions.
+- Reference implementation: TensorSpace.js "translates neural network data into interactive 3D objects using THREE.js."</p>
+<h3 id="24-deckgl-gpu-accelerated-2d3d-charts">2.4 Deck.gl (GPU-Accelerated 2D/3D Charts)</h3>
+<div class="highlight"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>deck.gl<span class="w"> </span>@deck.gl/react<span class="w"> </span>@deck.gl/layers
+</code></pre></div>
+<p><strong>Key Configuration:</strong>
+- Use <code>DeckGL</code> component with <code>WebGLRenderer</code>.
+- Primary layers: <code>ScatterplotLayer</code> (vector field points), <code>LineLayer</code> (connections), <code>HeatmapLayer</code> (gradient flow).
+- Deck.gl is "GPU-driven" and handles "millions of data points."</p>
+<h3 id="25-echarts-gl-3d-bar-charts-line-charts">2.5 ECharts-GL (3D Bar Charts, Line Charts)</h3>
+<div class="highlight"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>echarts<span class="w"> </span>echarts-gl
+</code></pre></div>
+<p><strong>Key Configuration:</strong>
+- Register ECharts-GL: <code>import 'echarts-gl'</code>.
+- Set <code>renderer: 'webgl'</code> in chart options for GPU acceleration.
+- Primary chart types: <code>bar3D</code>, <code>line3D</code>, <code>scatter3D</code>, <code>surface</code>.
+- ECharts-GL "extends the core ECharts library to enable the creation of 3D charts, globe visualizations, and other WebGL-accelerated graphics."</p>
+<h3 id="26-katex-formula-rendering">2.6 KaTeX (Formula Rendering)</h3>
+<div class="highlight"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>katex<span class="w"> </span>react-katex
+</code></pre></div>
+<p><strong>Key Configuration:</strong>
+- Use <code>\\displaystyle</code> for full-size formulas.
+- Use <code>\\color{...}</code> for color-coded formula elements.
+- Wrap in <code>React.memo</code> since formulas don't change often.</p>
+<hr />
+<h2 id="part-3-data-flow-architecture">🔄 PART 3: DATA FLOW ARCHITECTURE</h2>
+<h3 id="31-initial-load-sequence">3.1 Initial Load Sequence</h3>
+<div class="highlight"><pre><span></span><code>1. User enters text + selects model
+2. Transformers.js loads model in Web Worker #1 (may take 5-15 seconds for first load)
+3. Model runs forward pass → hidden states extracted at each layer (before/after LN)
+4. Hidden states transferred to Web Worker #2 via SharedArrayBuffer
+5. Pyodide computes statistics (mean, var, RMS, PCA)
+6. Computed data posted back to main thread
+7. All 5 zones render simultaneously with smooth entrance animations
+</code></pre></div>
+<h3 id="32-real-time-update-sequence-user-changes-input">3.2 Real-Time Update Sequence (User Changes Input)</h3>
+<div class="highlight"><pre><span></span><code>1. User changes text or layer selection
+2. If text changed: Steps 3-6 from above repeat
+3. If only layer changed: Only Zone B (3D view) and Zone C (γ/β) need updates
+4. Zone A (statistics) updates the highlighted layer marker
+5. All transitions animated with Framer Motion (200ms duration)
+</code></pre></div>
+<h3 id="33-websocket-stream-for-training-dynamics-gradient-flow">3.3 WebSocket Stream (For Training Dynamics / Gradient Flow)</h3>
+<div class="highlight"><pre><span></span><code>1. Django backend runs training loop
+2. At each logging step, backend sends WebSocket message:
+   { layer: 5, pre_mean: 0.04, post_mean: 0.00, gradient_norm: 0.023, ... }
+3. Frontend Zustand store updates
+4. Zone A (statistics line charts) appends new data point
+5. Zone D (math panel) shows live-updating gradient values
+</code></pre></div>
+<hr />
+<h2 id="part-4-performance-strategy">📊 PART 4: PERFORMANCE STRATEGY</h2>
+<h3 id="41-what-runs-where">4.1 What Runs Where</h3>
+<table>
+<thead>
+<tr>
+<th>Computation</th>
+<th>Location</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Model inference (forward pass)</td>
+<td>Web Worker #1 (Transformers.js + ONNX Runtime Web)</td>
+<td>Avoids blocking main thread; uses WebGPU for GPU acceleration</td>
+</tr>
+<tr>
+<td>Statistical computation (NumPy)</td>
+<td>Web Worker #2 (Pyodide)</td>
+<td>Heavy computation offloaded; SharedArrayBuffer enables zero-copy data transfer</td>
+</tr>
+<tr>
+<td>3D rendering (Three.js)</td>
+<td>Main thread (WebGL)</td>
+<td>Must be on main thread for DOM access; GPU-accelerated</td>
+</tr>
+<tr>
+<td>2D charts (ECharts-GL, Deck.gl)</td>
+<td>Main thread (WebGL)</td>
+<td>GPU-accelerated; lightweight compared to 3D</td>
+</tr>
+<tr>
+<td>React UI updates</td>
+<td>Main thread</td>
+<td>Standard React rendering; Zustand for efficient state updates</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-memory-budget">4.2 Memory Budget</h3>
+<ul>
+<li><strong>Model weights (GPT-2 small):</strong> ~500MB in browser memory (quantized to 8-bit)</li>
+<li><strong>Hidden states cache (12 layers × 2 states × 768 dims × 128 tokens × 4 bytes):</strong> ~9.4MB</li>
+<li><strong>3D scene geometry (vectors, sphere, lines):</strong> ~2MB GPU memory</li>
+<li><strong>Total browser memory:</strong> &lt;600MB — feasible for modern browsers</li>
+</ul>
+<h3 id="43-fallback-strategy">4.3 Fallback Strategy</h3>
+<ul>
+<li>If WebGPU is unavailable → fallback to WebAssembly (ONNX Runtime Web WASM backend)</li>
+<li>If Pyodide fails to load → fallback to pure JavaScript computation (using <code>math.js</code> or manual implementation)</li>
+<li>If WebGL is unavailable → degrade 3D view to 2D projection using ECharts with Canvas renderer</li>
+</ul>
+<hr />
+<h2 id="part-5-zustand-store-design-global-state">📋 PART 5: ZUSTAND STORE DESIGN (Global State)</h2>
+<div class="highlight"><pre><span></span><code>Store: useStabilizerLabStore
+├── modelId: string                    // which model is loaded
+├── inputText: string                  // user's input text
+├── selectedLayer: number              // which layer is selected
+├── selectedTokenIndex: number | null  // which token is selected (clicked in 3D)
+├── selectedDimRange: [number, number] // which dimension range is zoomed in
+├── viewMode: 'layernorm' | 'rmsnorm' | 'both'
+├── data: {
+│   ├── layers: Array&lt;{
+│   │   ├── layerIndex: number
+│   │   ├── preNorm: { mean, var, rms, histogram, hiddenStates }
+│   │   ├── postNorm: { mean, var, rms, histogram, hiddenStates }
+│   │   ├── gamma: number[]  // γ parameters
+│   │   ├── beta: number[]   // β parameters
+│   │   └── gradientNorms: number[]  // per training step
+│   │   }&gt;,
+│   └── tokens: string[]
+├── computationStatus: 'idle' | 'loading' | 'computing' | 'ready' | 'error'
+├── viewConfig: {
+│   ├── showPreNormVectors: boolean
+│   ├── showPostNormVectors: boolean
+│   ├── showConnectionLines: boolean
+│   └── colorMode: 'token' | 'magnitude' | 'direction'
+├── actions: {
+│   ├── loadModel(modelId: string)
+│   ├── runInference(text: string)
+│   ├── selectLayer(layerIndex: number)
+│   ├── selectToken(tokenIndex: number | null)
+│   ├── tweakGamma(layerIndex: number, dimIndex: number, value: number)
+│   ├── tweakBeta(layerIndex: number, dimIndex: number, value: number)
+│   └── toggleViewConfig(key: string)
+}
+</code></pre></div>
+<hr />
+<h2 id="part-6-implementation-priority-phasing">🎯 PART 6: IMPLEMENTATION PRIORITY &amp; PHASING</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Features</th>
+<th>Timeline</th>
+<th>Key Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phase 1: Core Inference</strong></td>
+<td>Transformers.js setup, hidden state extraction, basic statistics display (Zone A)</td>
+<td>Week 1-2</td>
+<td>Working model inference in browser with pre/post norm statistics</td>
+</tr>
+<tr>
+<td><strong>Phase 2: 3D Vector Field</strong></td>
+<td>React Three Fiber sphere + vector visualization (Zone B), PCA in Pyodide</td>
+<td>Week 3-4</td>
+<td>Interactive 3D view of LayerNorm mapping</td>
+</tr>
+<tr>
+<td><strong>Phase 3: Parameters &amp; Math</strong></td>
+<td>γ/β bar charts (Zone C), KaTeX formula panel (Zone D)</td>
+<td>Week 5-6</td>
+<td>Complete educational experience</td>
+</tr>
+<tr>
+<td><strong>Phase 4: Diagnostics</strong></td>
+<td>Ablation, Pre-LN vs Post-LN, RMSNorm comparison (Zone E)</td>
+<td>Week 7-8</td>
+<td>Research-grade analysis tools</td>
+</tr>
+<tr>
+<td><strong>Phase 5: Polish</strong></td>
+<td>Animation polish, performance optimization, fallback handling</td>
+<td>Week 9-10</td>
+<td>Production-ready dashboard</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="references">📚 References</h2>
+<ol>
+<li>
+<p><strong>Transformer Explainer</strong> (Georgia Tech, AAAI 2025) — "An interactive visualization tool designed for non-experts to learn about Transformers through the GPT-2 model. Layer Normalization is visualized as a curved line and a circle with tooltips."</p>
+</li>
+<li>
+<p><strong>Visual Sandbox</strong> (Stanford, NeurIPS 2024) — "A visual sandbox designed to explore the training dynamics of a small-scale transformer model... gains insights into training dynamics... including those induced by the high curvature of normalization layers."</p>
+</li>
+<li>
+<p><strong>Geometric Interpretation of LayerNorm vs RMSNorm</strong> (ACL) — "All LLMs naturally operate orthogonal to the uniform vector at inference time."</p>
+</li>
+<li>
+<p><strong>Helios-Web</strong> (2025) — "An open-source, web-based platform designed for real-time visualization and interactive analysis of massive-scale networks and high-dimensional embeddings using GPU-based rendering."</p>
+</li>
+<li>
+<p><strong>Pyodide</strong> — "Brings the Python data science stack to the browser... includes NumPy, Pandas, Matplotlib, and SciPy out-of-the-box."</p>
+</li>
+<li>
+<p><strong>Pre-LN vs Post-LN</strong> (He et al., 2020) — "Pre-LN对梯度下降更加友好，收敛更快，对训练时的超参数如学习率等更加鲁棒."</p>
+</li>
+<li>
+<p><strong>Transformers.js</strong> (Xenova, 2025) — "Run Transformers directly in your browser, with no need for a server... uses ONNX Runtime to run models in the browser."</p>
+</li>
+<li>
+<p><strong>TensorSpace.js</strong> — "基于TensorFlow.js、Three.js和Tween.js开发，用于对神经网络进行3D可视化呈现."</p>
+</li>
+<li>
+<p><strong>RMSNorm vs LayerNorm</strong> — "RMSNorm比LayerNorm少了求均值和减均值两个操作，在大模型里能明显提速."</p>
+</li>
+<li>
+<p><strong>ECharts-GL</strong> — "An extension pack for Apache ECharts that provides 3D visualization capabilities through WebGL."</p>
+</li>
+<li>
+<p><strong>Deck.gl</strong> — "GPU-driven framework for rendering massive datasets."</p>
+</li>
+<li>
+<p><strong>Web Workers + SharedArrayBuffer</strong> — "Allows the web application to use additional CPU processing threads so the user interface remains responsive."</p>
+</li>
+<li>
+<p><strong>ONNX Runtime Web with WebGPU</strong> — "Ship fast, private, and efficient AI in the browser with ONNX Runtime Web, WebGPU, and a proven pipeline."</p>
+</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

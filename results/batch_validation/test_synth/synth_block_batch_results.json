@@ -1,0 +1,1258 @@
+{
+  "model": "synth_block",
+  "seeds": [
+    0
+  ],
+  "ranks": [
+    8,
+    16
+  ],
+  "aggregate": {
+    "direct_svd_rank8": {
+      "method": "direct_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.2745741009712219,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.2745741009712219,
+      "rel_err_max": 0.2745741009712219,
+      "top1_mean": 0.638671875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0838
+    },
+    "hnc_svd_rank8": {
+      "method": "hnc_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.18424838781356812,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.18424838781356812,
+      "rel_err_max": 0.18424838781356812,
+      "top1_mean": 0.7373046875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.1576
+    },
+    "erc_svd_rank8": {
+      "method": "erc_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.04905039817094803,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.04905039817094803,
+      "rel_err_max": 0.04905039817094803,
+      "top1_mean": 0.9326171875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0332
+    },
+    "aa_svd_rank8": {
+      "method": "aa_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0085
+    },
+    "whitened_svd_rank8": {
+      "method": "whitened_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19496601819992065,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19496601819992065,
+      "rel_err_max": 0.19496601819992065,
+      "top1_mean": 0.7314453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0481
+    },
+    "fisher_svd_rank8": {
+      "method": "fisher_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03991303592920303,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03991303592920303,
+      "rel_err_max": 0.03991303592920303,
+      "top1_mean": 0.9404296875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0066
+    },
+    "dobi_svd_rank8": {
+      "method": "dobi_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03991303592920303,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03991303592920303,
+      "rel_err_max": 0.03991303592920303,
+      "top1_mean": 0.9404296875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "fwsvd_rank8": {
+      "method": "fwsvd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03991303592920303,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03991303592920303,
+      "rel_err_max": 0.03991303592920303,
+      "top1_mean": 0.9404296875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0066
+    },
+    "asvd_compressor_rank8": {
+      "method": "asvd_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.007
+    },
+    "wanda_real_rank8": {
+      "method": "wanda_real",
+      "rank": 8,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "RuntimeError: The size of tensor a (512) must match the size of tensor b (256) at non-singleton dimension 1"
+      ]
+    },
+    "sparsegpt_rank8": {
+      "method": "sparsegpt",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11843489110469818,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11843489110469818,
+      "rel_err_max": 0.11843489110469818,
+      "top1_mean": 0.8232421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "flap_rank8": {
+      "method": "flap",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11503191292285919,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11503191292285919,
+      "rel_err_max": 0.11503191292285919,
+      "top1_mean": 0.8408203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0078
+    },
+    "slicegpt_rank8": {
+      "method": "slicegpt",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1559145450592041,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1559145450592041,
+      "rel_err_max": 0.1559145450592041,
+      "top1_mean": 0.7724609375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0052
+    },
+    "admm_pruner_rank8": {
+      "method": "admm_pruner",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1168452650308609,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1168452650308609,
+      "rel_err_max": 0.1168452650308609,
+      "top1_mean": 0.8203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0174
+    },
+    "gptq_real_rank8": {
+      "method": "gptq_real",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.020185280591249466,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.020185280591249466,
+      "rel_err_max": 0.020185280591249466,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0707
+    },
+    "smoothquant_real_rank8": {
+      "method": "smoothquant_real",
+      "rank": 8,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "RuntimeError: The size of tensor a (256) must match the size of tensor b (512) at non-singleton dimension 0"
+      ]
+    },
+    "quarot_rank8": {
+      "method": "quarot",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0874
+    },
+    "w4a16_rank8": {
+      "method": "w4a16",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.028799356892704964,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.028799356892704964,
+      "rel_err_max": 0.028799356892704964,
+      "top1_mean": 0.9453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0031
+    },
+    "int4_lut_quantizer_rank8": {
+      "method": "int4_lut_quantizer",
+      "rank": 8,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "kronecker_compressor_rank8": {
+      "method": "kronecker_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.033564839512109756,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.033564839512109756,
+      "rel_err_max": 0.033564839512109756,
+      "top1_mean": 0.9462890625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "tt_compressor_rank8": {
+      "method": "tt_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19819217920303345,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19819217920303345,
+      "rel_err_max": 0.19819217920303345,
+      "top1_mean": 0.71875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0209
+    },
+    "rpca_compressor_rank8": {
+      "method": "rpca_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19697797298431396,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19697797298431396,
+      "rel_err_max": 0.19697797298431396,
+      "top1_mean": 0.7197265625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.1183
+    },
+    "tucker_compressor_rank8": {
+      "method": "tucker_compressor",
+      "rank": 8,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "adaptive_ranks_rank8": {
+      "method": "adaptive_ranks",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0473
+    },
+    "adasvd_compressor_rank8": {
+      "method": "adasvd_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0166
+    },
+    "entropy_budget_allocation_rank8": {
+      "method": "entropy_budget_allocation",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1949394941329956,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1949394941329956,
+      "rel_err_max": 0.1949394941329956,
+      "top1_mean": 0.7138671875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.025
+    },
+    "direct_svd_rank16": {
+      "method": "direct_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.2505607008934021,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.2505607008934021,
+      "rel_err_max": 0.2505607008934021,
+      "top1_mean": 0.6572265625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0206
+    },
+    "hnc_svd_rank16": {
+      "method": "hnc_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.176938995718956,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.176938995718956,
+      "rel_err_max": 0.176938995718956,
+      "top1_mean": 0.7333984375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0783
+    },
+    "erc_svd_rank16": {
+      "method": "erc_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.26335057616233826,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.26335057616233826,
+      "rel_err_max": 0.26335057616233826,
+      "top1_mean": 0.6376953125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.021
+    },
+    "aa_svd_rank16": {
+      "method": "aa_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.007
+    },
+    "whitened_svd_rank16": {
+      "method": "whitened_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1890539973974228,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1890539973974228,
+      "rel_err_max": 0.1890539973974228,
+      "top1_mean": 0.7333984375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.048
+    },
+    "fisher_svd_rank16": {
+      "method": "fisher_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03787059709429741,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03787059709429741,
+      "rel_err_max": 0.03787059709429741,
+      "top1_mean": 0.939453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0066
+    },
+    "dobi_svd_rank16": {
+      "method": "dobi_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03787059709429741,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03787059709429741,
+      "rel_err_max": 0.03787059709429741,
+      "top1_mean": 0.939453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "fwsvd_rank16": {
+      "method": "fwsvd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03787059709429741,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03787059709429741,
+      "rel_err_max": 0.03787059709429741,
+      "top1_mean": 0.939453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0066
+    },
+    "asvd_compressor_rank16": {
+      "method": "asvd_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.007
+    },
+    "wanda_real_rank16": {
+      "method": "wanda_real",
+      "rank": 16,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "RuntimeError: The size of tensor a (512) must match the size of tensor b (256) at non-singleton dimension 1"
+      ]
+    },
+    "sparsegpt_rank16": {
+      "method": "sparsegpt",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11843489110469818,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11843489110469818,
+      "rel_err_max": 0.11843489110469818,
+      "top1_mean": 0.8232421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "flap_rank16": {
+      "method": "flap",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11503191292285919,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11503191292285919,
+      "rel_err_max": 0.11503191292285919,
+      "top1_mean": 0.8408203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0009
+    },
+    "slicegpt_rank16": {
+      "method": "slicegpt",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.15489119291305542,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.15489119291305542,
+      "rel_err_max": 0.15489119291305542,
+      "top1_mean": 0.775390625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0049
+    },
+    "admm_pruner_rank16": {
+      "method": "admm_pruner",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1168452650308609,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1168452650308609,
+      "rel_err_max": 0.1168452650308609,
+      "top1_mean": 0.8203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0122
+    },
+    "gptq_real_rank16": {
+      "method": "gptq_real",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.020185280591249466,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.020185280591249466,
+      "rel_err_max": 0.020185280591249466,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0617
+    },
+    "smoothquant_real_rank16": {
+      "method": "smoothquant_real",
+      "rank": 16,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "RuntimeError: The size of tensor a (256) must match the size of tensor b (512) at non-singleton dimension 0"
+      ]
+    },
+    "quarot_rank16": {
+      "method": "quarot",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0803
+    },
+    "w4a16_rank16": {
+      "method": "w4a16",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.028799356892704964,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.028799356892704964,
+      "rel_err_max": 0.028799356892704964,
+      "top1_mean": 0.9453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0022
+    },
+    "int4_lut_quantizer_rank16": {
+      "method": "int4_lut_quantizer",
+      "rank": 16,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "kronecker_compressor_rank16": {
+      "method": "kronecker_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.17084968090057373,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.17084968090057373,
+      "rel_err_max": 0.17084968090057373,
+      "top1_mean": 0.7451171875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "tt_compressor_rank16": {
+      "method": "tt_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19674435257911682,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19674435257911682,
+      "rel_err_max": 0.19674435257911682,
+      "top1_mean": 0.71875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0208
+    },
+    "rpca_compressor_rank16": {
+      "method": "rpca_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19492268562316895,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19492268562316895,
+      "rel_err_max": 0.19492268562316895,
+      "top1_mean": 0.71484375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.1231
+    },
+    "tucker_compressor_rank16": {
+      "method": "tucker_compressor",
+      "rank": 16,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "adaptive_ranks_rank16": {
+      "method": "adaptive_ranks",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.047
+    },
+    "adasvd_compressor_rank16": {
+      "method": "adasvd_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0131
+    },
+    "entropy_budget_allocation_rank16": {
+      "method": "entropy_budget_allocation",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1949394941329956,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1949394941329956,
+      "rel_err_max": 0.1949394941329956,
+      "top1_mean": 0.7138671875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0248
+    }
+  },
+  "raw": {
+    "direct_svd_rank8": [
+      {
+        "rel_err": 0.2745741009712219,
+        "top1_match": 0.638671875,
+        "status": "SUCCESS",
+        "time_s": 0.0838,
+        "peak_vram_mb": 24.5,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "hnc_svd_rank8": [
+      {
+        "rel_err": 0.18424838781356812,
+        "top1_match": 0.7373046875,
+        "status": "SUCCESS",
+        "time_s": 0.1576,
+        "peak_vram_mb": 65.0,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "erc_svd_rank8": [
+      {
+        "rel_err": 0.04905039817094803,
+        "top1_match": 0.9326171875,
+        "status": "SUCCESS",
+        "time_s": 0.0332,
+        "peak_vram_mb": 34.4,
+        "method": "erc_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "aa_svd_rank8": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0085,
+        "peak_vram_mb": 34.6,
+        "method": "aa_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "whitened_svd_rank8": [
+      {
+        "rel_err": 0.19496601819992065,
+        "top1_match": 0.7314453125,
+        "status": "SUCCESS",
+        "time_s": 0.0481,
+        "peak_vram_mb": 63.4,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "fisher_svd_rank8": [
+      {
+        "rel_err": 0.03991303592920303,
+        "top1_match": 0.9404296875,
+        "status": "SUCCESS",
+        "time_s": 0.0066,
+        "peak_vram_mb": 34.4,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "dobi_svd_rank8": [
+      {
+        "rel_err": 0.03991303592920303,
+        "top1_match": 0.9404296875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "fwsvd_rank8": [
+      {
+        "rel_err": 0.03991303592920303,
+        "top1_match": 0.9404296875,
+        "status": "SUCCESS",
+        "time_s": 0.0066,
+        "peak_vram_mb": 34.4,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "asvd_compressor_rank8": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.007,
+        "peak_vram_mb": 34.6,
+        "method": "asvd_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "wanda_real_rank8": [
+      {
+        "status": "FAILED",
+        "error": "RuntimeError: The size of tensor a (512) must match the size of tensor b (256) at non-singleton dimension 1",
+        "method": "wanda_real",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "sparsegpt_rank8": [
+      {
+        "rel_err": 0.11843489110469818,
+        "top1_match": 0.8232421875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.1,
+        "method": "sparsegpt",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "flap_rank8": [
+      {
+        "rel_err": 0.11503191292285919,
+        "top1_match": 0.8408203125,
+        "status": "SUCCESS",
+        "time_s": 0.0078,
+        "peak_vram_mb": 34.1,
+        "method": "flap",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "slicegpt_rank8": [
+      {
+        "rel_err": 0.1559145450592041,
+        "top1_match": 0.7724609375,
+        "status": "SUCCESS",
+        "time_s": 0.0052,
+        "peak_vram_mb": 35.7,
+        "method": "slicegpt",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "admm_pruner_rank8": [
+      {
+        "rel_err": 0.1168452650308609,
+        "top1_match": 0.8203125,
+        "status": "SUCCESS",
+        "time_s": 0.0174,
+        "peak_vram_mb": 38.9,
+        "method": "admm_pruner",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "gptq_real_rank8": [
+      {
+        "rel_err": 0.020185280591249466,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0707,
+        "peak_vram_mb": 34.1,
+        "method": "gptq_real",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "smoothquant_real_rank8": [
+      {
+        "status": "FAILED",
+        "error": "RuntimeError: The size of tensor a (256) must match the size of tensor b (512) at non-singleton dimension 0",
+        "method": "smoothquant_real",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "quarot_rank8": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0874,
+        "peak_vram_mb": 34.1,
+        "method": "quarot",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "w4a16_rank8": [
+      {
+        "rel_err": 0.028799356892704964,
+        "top1_match": 0.9453125,
+        "status": "SUCCESS",
+        "time_s": 0.0031,
+        "peak_vram_mb": 37.4,
+        "method": "w4a16",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "int4_lut_quantizer_rank8": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "int4_lut_quantizer",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "kronecker_compressor_rank8": [
+      {
+        "rel_err": 0.033564839512109756,
+        "top1_match": 0.9462890625,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.5,
+        "method": "kronecker_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "tt_compressor_rank8": [
+      {
+        "rel_err": 0.19819217920303345,
+        "top1_match": 0.71875,
+        "status": "SUCCESS",
+        "time_s": 0.0209,
+        "peak_vram_mb": 33.2,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "rpca_compressor_rank8": [
+      {
+        "rel_err": 0.19697797298431396,
+        "top1_match": 0.7197265625,
+        "status": "SUCCESS",
+        "time_s": 0.1183,
+        "peak_vram_mb": 34.3,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "tucker_compressor_rank8": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "tucker_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "adaptive_ranks_rank8": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0473,
+        "peak_vram_mb": 34.1,
+        "method": "adaptive_ranks",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "adasvd_compressor_rank8": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0166,
+        "peak_vram_mb": 34.1,
+        "method": "adasvd_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "entropy_budget_allocation_rank8": [
+      {
+        "rel_err": 0.1949394941329956,
+        "top1_match": 0.7138671875,
+        "status": "SUCCESS",
+        "time_s": 0.025,
+        "peak_vram_mb": 33.5,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "direct_svd_rank16": [
+      {
+        "rel_err": 0.2505607008934021,
+        "top1_match": 0.6572265625,
+        "status": "SUCCESS",
+        "time_s": 0.0206,
+        "peak_vram_mb": 33.5,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "hnc_svd_rank16": [
+      {
+        "rel_err": 0.176938995718956,
+        "top1_match": 0.7333984375,
+        "status": "SUCCESS",
+        "time_s": 0.0783,
+        "peak_vram_mb": 66.1,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "erc_svd_rank16": [
+      {
+        "rel_err": 0.26335057616233826,
+        "top1_match": 0.6376953125,
+        "status": "SUCCESS",
+        "time_s": 0.021,
+        "peak_vram_mb": 33.5,
+        "method": "erc_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "aa_svd_rank16": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.007,
+        "peak_vram_mb": 34.6,
+        "method": "aa_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "whitened_svd_rank16": [
+      {
+        "rel_err": 0.1890539973974228,
+        "top1_match": 0.7333984375,
+        "status": "SUCCESS",
+        "time_s": 0.048,
+        "peak_vram_mb": 63.5,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "fisher_svd_rank16": [
+      {
+        "rel_err": 0.03787059709429741,
+        "top1_match": 0.939453125,
+        "status": "SUCCESS",
+        "time_s": 0.0066,
+        "peak_vram_mb": 34.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "dobi_svd_rank16": [
+      {
+        "rel_err": 0.03787059709429741,
+        "top1_match": 0.939453125,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.4,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "fwsvd_rank16": [
+      {
+        "rel_err": 0.03787059709429741,
+        "top1_match": 0.939453125,
+        "status": "SUCCESS",
+        "time_s": 0.0066,
+        "peak_vram_mb": 34.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "asvd_compressor_rank16": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.007,
+        "peak_vram_mb": 34.6,
+        "method": "asvd_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "wanda_real_rank16": [
+      {
+        "status": "FAILED",
+        "error": "RuntimeError: The size of tensor a (512) must match the size of tensor b (256) at non-singleton dimension 1",
+        "method": "wanda_real",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "sparsegpt_rank16": [
+      {
+        "rel_err": 0.11843489110469818,
+        "top1_match": 0.8232421875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.1,
+        "method": "sparsegpt",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "flap_rank16": [
+      {
+        "rel_err": 0.11503191292285919,
+        "top1_match": 0.8408203125,
+        "status": "SUCCESS",
+        "time_s": 0.0009,
+        "peak_vram_mb": 34.1,
+        "method": "flap",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "slicegpt_rank16": [
+      {
+        "rel_err": 0.15489119291305542,
+        "top1_match": 0.775390625,
+        "status": "SUCCESS",
+        "time_s": 0.0049,
+        "peak_vram_mb": 35.7,
+        "method": "slicegpt",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "admm_pruner_rank16": [
+      {
+        "rel_err": 0.1168452650308609,
+        "top1_match": 0.8203125,
+        "status": "SUCCESS",
+        "time_s": 0.0122,
+        "peak_vram_mb": 38.9,
+        "method": "admm_pruner",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "gptq_real_rank16": [
+      {
+        "rel_err": 0.020185280591249466,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0617,
+        "peak_vram_mb": 34.1,
+        "method": "gptq_real",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "smoothquant_real_rank16": [
+      {
+        "status": "FAILED",
+        "error": "RuntimeError: The size of tensor a (256) must match the size of tensor b (512) at non-singleton dimension 0",
+        "method": "smoothquant_real",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "quarot_rank16": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0803,
+        "peak_vram_mb": 34.1,
+        "method": "quarot",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "w4a16_rank16": [
+      {
+        "rel_err": 0.028799356892704964,
+        "top1_match": 0.9453125,
+        "status": "SUCCESS",
+        "time_s": 0.0022,
+        "peak_vram_mb": 37.4,
+        "method": "w4a16",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "int4_lut_quantizer_rank16": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "int4_lut_quantizer",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "kronecker_compressor_rank16": [
+      {
+        "rel_err": 0.17084968090057373,
+        "top1_match": 0.7451171875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 35.1,
+        "method": "kronecker_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "tt_compressor_rank16": [
+      {
+        "rel_err": 0.19674435257911682,
+        "top1_match": 0.71875,
+        "status": "SUCCESS",
+        "time_s": 0.0208,
+        "peak_vram_mb": 33.3,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "rpca_compressor_rank16": [
+      {
+        "rel_err": 0.19492268562316895,
+        "top1_match": 0.71484375,
+        "status": "SUCCESS",
+        "time_s": 0.1231,
+        "peak_vram_mb": 34.4,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "tucker_compressor_rank16": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "tucker_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "adaptive_ranks_rank16": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.047,
+        "peak_vram_mb": 34.1,
+        "method": "adaptive_ranks",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "adasvd_compressor_rank16": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0131,
+        "peak_vram_mb": 34.1,
+        "method": "adasvd_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "entropy_budget_allocation_rank16": [
+      {
+        "rel_err": 0.1949394941329956,
+        "top1_match": 0.7138671875,
+        "status": "SUCCESS",
+        "time_s": 0.0248,
+        "peak_vram_mb": 33.5,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 0
+      }
+    ]
+  }
+}

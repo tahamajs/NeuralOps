@@ -1,0 +1,11 @@
+{
+  "module": "cur_moe_compressor",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 4038.53,
+  "duration_sec": 162.0,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:48:47"
+}

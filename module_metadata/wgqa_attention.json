@@ -1,0 +1,29 @@
+{
+  "module_name": "wgqa_attention",
+  "class_name": "WeightedGroupedQueryAttention",
+  "category": "attention",
+  "family": "Modern Positional, Rotary & Geometric Attention Variants",
+  "params": [
+    "config",
+    "num_kv_heads",
+    "rank",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "view",
+    "transpose",
+    "softmax",
+    "dropout",
+    "matmul"
+  ],
+  "docstring": "Weighted Grouped-Query Attention with learnable per-channel KV importance weights\nand head-pooling pretrained weight transfer.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 8.777053587569182e+37,
+  "paradigm": "positional",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

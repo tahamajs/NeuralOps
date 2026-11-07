@@ -1,0 +1,67 @@
+{
+  "serving_ttft_itl": [
+    {
+      "concurrency": 1,
+      "ttft_mean_ms": 0.128,
+      "ttft_p99_ms": 0.384,
+      "itl_mean_ms": 0.108,
+      "generation_tokens_per_sec": 9216.59,
+      "peak_vram_mb": 14.26,
+      "status": "OK"
+    },
+    {
+      "concurrency": 4,
+      "ttft_mean_ms": 0.158,
+      "ttft_p99_ms": 0.485,
+      "itl_mean_ms": 0.101,
+      "generation_tokens_per_sec": 39721.95,
+      "peak_vram_mb": 14.68,
+      "status": "OK"
+    },
+    {
+      "concurrency": 8,
+      "ttft_mean_ms": 0.267,
+      "ttft_p99_ms": 0.616,
+      "itl_mean_ms": 0.1,
+      "generation_tokens_per_sec": 79840.32,
+      "peak_vram_mb": 15.23,
+      "status": "OK"
+    },
+    {
+      "concurrency": 16,
+      "ttft_mean_ms": 0.517,
+      "ttft_p99_ms": 0.858,
+      "itl_mean_ms": 0.1,
+      "generation_tokens_per_sec": 159840.16,
+      "peak_vram_mb": 16.33,
+      "status": "OK"
+    },
+    {
+      "concurrency": 32,
+      "ttft_mean_ms": 1.089,
+      "ttft_p99_ms": 1.268,
+      "itl_mean_ms": 0.101,
+      "generation_tokens_per_sec": 317460.32,
+      "peak_vram_mb": 18.53,
+      "status": "OK"
+    }
+  ],
+  "kv_cache_comparison": [
+    {
+      "block_size": 16,
+      "paged_static_vram_mb": 82.16,
+      "contiguous_vram_mb": 210.16,
+      "memory_savings_ratio": 2.56,
+      "dynamic_insert_ms": 175.7,
+      "max_supported_concurrent_seqs": 64
+    },
+    {
+      "block_size": 32,
+      "paged_static_vram_mb": 274.16,
+      "contiguous_vram_mb": 274.16,
+      "memory_savings_ratio": 1.0,
+      "dynamic_insert_ms": 179.95,
+      "max_supported_concurrent_seqs": 128
+    }
+  ]
+}

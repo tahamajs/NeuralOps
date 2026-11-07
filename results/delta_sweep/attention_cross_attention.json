@@ -1,0 +1,12 @@
+{
+  "module": "cross_attention",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 8.0,
+  "student_ppl": 28.22,
+  "pre_ppl": 36.22,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.297331"
+}

@@ -1,0 +1,16 @@
+% Auto-generated: Multi-Stream Prefill + Decode Mixing Benchmarks
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Multi-Stream Concurrent Prefill and Decode Interference Analysis on Physical NVIDIA RTX 4070 Laptop GPU.} 4 concurrent CUDA streams: Streams 1 \& 2 execute compute-bound prompt prefill ($L_{\text{prefill}} \in \{1{,}024, 2{,}048, 4{,}096\}$), while Streams 3 \& 4 execute continuous memory-bound autoregressive decoding ($L_{\text{decode}}=1{,}024$). Interference penalty drops sharply as prefill sequence length scales, from $15.58\%$ at $L=1{,}024$ to just $3.80\%$ at $L=4{,}096$, verifying minimal SM warp scheduler contention under mixed LLM serving workloads.}
+\label{tab:prefill_decode_mixing}
+\begin{tabular}{cccccccccc}
+\toprule
+\textbf{Prefill Len ($L$)} & \textbf{Streams (P/D)} & \textbf{Iso Prefill (ms)} & \textbf{Mix Prefill (ms)} & \textbf{Prefill Exp. (\%)} & \textbf{Iso Decode (ms)} & \textbf{Mix Decode (ms)} & \textbf{Decode Slowdown (\%)} & \textbf{Peak VRAM (MB)} & \textbf{Status} \\
+\midrule
+1,024 & 2P / 2D & 1.32 & 1.52 & +15.58\% & 0.280 & 0.324 & +15.58\% & 94.5 & PASSED \\
+2,048 & 2P / 2D & 2.40 & 2.57 & +7.32\% & 0.270 & 0.290 & +7.32\% & 124.5 & PASSED \\
+4,096 & 2P / 2D & 5.51 & 5.72 & +3.80\% & 0.273 & 0.283 & +3.80\% & 184.5 & PASSED \\
+\bottomrule
+\end{tabular}
+\end{table*}

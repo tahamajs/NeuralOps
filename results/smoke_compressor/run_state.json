@@ -1,0 +1,16 @@
+{
+  "run_id": "366a8964-d8c3-4ecc-aa93-d69f917381a0",
+  "completed": [
+    [
+      "direct_svd",
+      "distilbert-base-uncased",
+      "sst2",
+      64
+    ]
+  ],
+  "failed": [],
+  "skipped": [],
+  "total_runs": 1,
+  "status": "finished",
+  "start_time": 1791560753.386665
+}

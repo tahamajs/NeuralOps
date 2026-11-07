@@ -1,0 +1,32 @@
+{
+  "module_name": "aa_svd_compressor",
+  "class_name": "AASVDCompressor",
+  "category": "compression",
+  "family": "Activation-Aware & Standard Low-Rank SVD Factorization",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "use_fused_kernel",
+    "dtype",
+    "device",
+    "model",
+    "tokenizer",
+    "ema_beta",
+    "calibration_texts"
+  ],
+  "ops": [
+    "linear"
+  ],
+  "docstring": "Activation-Aware SVD Compressor with streaming EMA covariance accumulation\nand true module replacement.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.97775549946556e+38,
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

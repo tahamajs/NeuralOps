@@ -1,0 +1,11 @@
+{
+  "module": "kmeans_quantize",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 37.28,
+  "duration_sec": 187.7,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:43:27"
+}

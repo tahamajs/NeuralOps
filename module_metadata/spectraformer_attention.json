@@ -1,0 +1,25 @@
+{
+  "module_name": "spectraformer_attention",
+  "class_name": "SpectraformerAttention",
+  "category": "attention",
+  "family": "SVD Spectral & Low-Rank Decomposed Attentions",
+  "params": [
+    "config",
+    "rank"
+  ],
+  "ops": [
+    "relu",
+    "einsum",
+    "view"
+  ],
+  "docstring": "Spectraformer: Random Feature Linear Attention with Flexible Kernel Approximation. Replaces softmax attention with random orthogonal feature projections, enabling true linear O(N·r·d) time and memory complexity.  Production-Hardened with: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Frobenius norm validat",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.2653091582678682e+38,
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

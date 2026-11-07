@@ -1,0 +1,3519 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/visualization/Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/Embedding_Explorer/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>🧬 Embedding Explorer — Complete Implementation Specification - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#embedding-explorer-complete-implementation-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🧬 Embedding Explorer — Complete Implementation Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layer-0-core-computation-engine-rust-webassembly-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔧 Layer 0: Core Computation Engine — Rust → WebAssembly Pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔧 Layer 0: Core Computation Engine — Rust → WebAssembly Pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#framework-wasm-pack-rustc-wasm-binary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Framework: wasm-pack + rustc → .wasm binary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-1-3d-embedding-space-explorer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧭 Zone 1: 3D Embedding Space Explorer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🧭 Zone 1: 3D Embedding Space Explorer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rendering-framework-react-threefiber-r3f-threejs-webgpu-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rendering Framework: @react-three/fiber (R3F) + Three.js + WebGPU backend
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Architecture:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gpu-instanced-rendering-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GPU Instanced Rendering Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-search-teleport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token Search &amp; Teleport
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#semantic-cluster-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic Cluster Rendering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-trajectory-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token Trajectory View
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-2-embedding-matrix-heatmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔬 Zone 2: Embedding Matrix Heatmap
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔬 Zone 2: Embedding Matrix Heatmap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rendering-html5-canvas-2d-with-offscreencanvas-web-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rendering: HTML5 Canvas 2D with OffscreenCanvas + Web Worker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dimension-importance-via-pca" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dimension Importance via PCA
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-3-live-math-panel-embedding-formulas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📐 Zone 3: Live Math Panel — Embedding Formulas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📐 Zone 3: Live Math Panel — Embedding Formulas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rendering-react-latex-katex-for-latex-framer-motion-for-animation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rendering: react-latex / katex for LaTeX, framer-motion for animation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#animated-computation-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Animated Computation Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cosine-similarity-calculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cosine Similarity Calculator
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-4-embedding-statistics-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📈 Zone 4: Embedding Statistics Dashboard
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📈 Zone 4: Embedding Statistics Dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vocabulary-coverage-histogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vocabulary Coverage Histogram
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#embedding-norm-distribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Embedding Norm Distribution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nearestneighbor-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nearest‑Neighbor Graph
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#semantic-axis-discovery-icabased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic Axis Discovery (ICA‑Based)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-5-interpretability-linear-probe-playground" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔬 Zone 5: Interpretability — Linear Probe Playground
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔬 Zone 5: Interpretability — Linear Probe Playground">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#framework-wlearnliblinear-webassembly-liblinear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Framework: @wlearn/liblinear (WebAssembly LIBLINEAR)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-activation-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token Activation Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-6-social-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💬 Zone 6: Social Features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="💬 Zone 6: Social Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#embedding-of-the-day" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Embedding of the Day"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#embedding-visualization-sharing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Embedding Visualization Sharing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#collections-interesting-embedding-clusters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Collections: "Interesting Embedding Clusters"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-7-gamification-embedding-detective" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🎮 Zone 7: Gamification — "Embedding Detective"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-8-crossplatform-integration-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔗 Zone 8: Cross‑Platform Integration Points
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🏗️ Implementation Roadmap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technology-stack-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📊 Technology Stack Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="embedding-explorer-complete-implementation-specification">🧬 Embedding Explorer — Complete Implementation Specification</h1>
+<hr />
+<h2 id="architecture-overview">Architecture Overview</h2>
+<p>The Embedding Explorer is designed as a <strong>browser‑native, zero‑upload application</strong> following the architecture pioneered by Apple's Embedding Atlas — all computation (embedding generation, dimensionality reduction, clustering, similarity search) executes entirely on the client side via WebAssembly, eliminating the need for any backend server beyond your existing Django API. The rendering pipeline uses <strong>WebGPU</strong> as the primary backend with <strong>WebGL2 fallback</strong>, enabling smooth interaction with millions of data points while maintaining 60fps on consumer hardware.</p>
+<p>The system is organized into <strong>six interconnected architectural layers</strong> that map to the dashboard zones the user specified:</p>
+<hr />
+<h2 id="layer-0-core-computation-engine-rust-webassembly-pipeline">🔧 Layer 0: Core Computation Engine — Rust → WebAssembly Pipeline</h2>
+<h3 id="framework-wasm-pack-rustc-wasm-binary">Framework: <code>wasm-pack</code> + <code>rustc</code> → <code>.wasm</code> binary</h3>
+<p>The heart of the embedding explorer is a <strong>Rust codebase compiled to WebAssembly</strong> that handles all heavy computation directly in the browser. This follows Apple's approach of combining "Rust‑based clustering modules with WebAssembly UMAP implementations to significantly optimize dimensionality reduction performance".</p>
+<p><strong>Modules compiled to WASM:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Rust Crate</th>
+<th>WASM Package</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dimensionality Reduction</td>
+<td><code>umap-rs</code></td>
+<td><code>@neuralops/umap-wasm</code></td>
+<td>UMAP/t‑SNE/PCA projection of 768‑dim vectors to 2D/3D</td>
+</tr>
+<tr>
+<td>Vector Similarity</td>
+<td><code>simsimd</code></td>
+<td><code>@neuralops/simd-wasm</code></td>
+<td>SIMD‑accelerated cosine similarity, dot product, Euclidean distance on Float32 arrays</td>
+</tr>
+<tr>
+<td>Clustering Engine</td>
+<td><code>linfa-clustering</code></td>
+<td><code>@neuralops/cluster-wasm</code></td>
+<td>HDBSCAN, k‑means, mean‑shift for automatic cluster labeling</td>
+</tr>
+<tr>
+<td>Linear Classification</td>
+<td><code>liblinear-rs</code> wrapper</td>
+<td><code>@wlearn/liblinear</code></td>
+<td>Logistic regression / linear SVM for probe training directly in browser</td>
+</tr>
+<tr>
+<td>KDE Renderer</td>
+<td><code>kde-rs</code></td>
+<td><code>@neuralops/kde-wasm</code></td>
+<td>Kernel density estimation for contour/density heatmap generation</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Communication Pattern:</strong> The WASM modules receive <code>Float64Array</code> typed arrays via a shared <code>ArrayBuffer</code> to avoid JavaScript↔WASM copy overhead. The <code>@wlearn/liblinear</code> package demonstrates this pattern — it exposes an API accepting <code>{ data: Float64Array, rows, cols }</code> for zero‑copy training.</p>
+<p><strong>Initialization Sequence (on page load):</strong>
+1. Web Worker spawns and loads all WASM modules in parallel via <code>WebAssembly.instantiateStreaming</code>
+2. Worker exposes a message‑passing API: <code>{ type: 'umap_project', vectors: Float64Array, params: {...} }</code>
+3. Main thread sends typed arrays via <code>postMessage</code> (transferred, not copied, via <code>transferList</code>)
+4. Worker returns projected coordinates, cluster labels, or similarity scores
+5. Results flow into the React state via a Zustand store slice</p>
+<hr />
+<h2 id="zone-1-3d-embedding-space-explorer">🧭 Zone 1: 3D Embedding Space Explorer</h2>
+<h3 id="rendering-framework-react-threefiber-r3f-threejs-webgpu-backend">Rendering Framework: <code>@react-three/fiber</code> (R3F) + Three.js + WebGPU backend</h3>
+<p>The 3D canvas uses <strong>React Three Fiber</strong> as the declarative React wrapper around Three.js, with the <strong>WebGPURenderer</strong> (<code>three@latest</code> with <code>WebGPURenderer</code> from <code>three/webgpu</code>) as the primary renderer and <code>WebGLRenderer</code> as fallback. This approach mirrors Apple's strategy: "WebGPU is adopted as the default rendering backend (with WebGL 2 compatibility layer)". The Project Golem project validates this architecture — it "uses UMAP to project high‑dimensional embeddings into 3D and Three.js to render them interactively in the browser".</p>
+<h3 id="component-architecture">Component Architecture:</h3>
+<div class="highlight"><pre><span></span><code>&lt;EmbeddingSpace3D&gt;
+  ├── &lt;WebGPURenderer fallback={&lt;WebGLRenderer /&gt;} /&gt;
+  ├── &lt;OrbitControls /&gt;                          ← camera rotation/zoom/pan
+  ├── &lt;TokenSphereCloud&gt;                         ← primary rendering
+  │   ├── &lt;InstancedMesh args={[sphereGeometry, material, count]}&gt;
+  │   │   ← GPU‑instanced rendering for millions of spheres
+  │   └── &lt;HoverHighlight /&gt;                     ← raycasting on hover
+  ├── &lt;SemanticClusters&gt;                         ← cluster envelopes
+  │   └── &lt;ConvexHullMesh /&gt;                     ← transparent hull per cluster
+  ├── &lt;TokenTrajectoryLines&gt;                     ← semantic pathway
+  │   └── &lt;Line segments /&gt;                      ← line from layer N to N+1
+  ├── &lt;SearchTeleporter /&gt;                       ← "teleport to token"
+  ├── &lt;SemanticAxisIndicator /&gt;                  ← PCA/ICA axis arrows
+  └── &lt;DensityContour /&gt;                         ← KDE contour overlay
+</code></pre></div>
+<h3 id="gpu-instanced-rendering-strategy">GPU Instanced Rendering Strategy</h3>
+<p>For <strong>1 million+ spheres</strong>, standard React rendering (one <code>&lt;mesh&gt;</code> per sphere) would crash. Instead, the <code>TokenSphereCloud</code> component uses <strong>GPU instancing</strong> via Three.js <code>InstancedMesh</code>:</p>
+<ol>
+<li><strong>Geometry:</strong> A single <code>SphereGeometry(radius=0.02, segments=8, rings=8)</code> is created once</li>
+<li><strong>Material:</strong> <code>MeshStandardMaterial</code> with per‑instance color via <code>instanceColor</code> buffer attribute</li>
+<li><strong>Matrix Buffer:</strong> A <code>Float32Array</code> of size <code>count × 16</code> holds the model matrix for each instance (position from UMAP coords, uniform scale)</li>
+<li><strong>Color Buffer:</strong> A <code>Float32Array</code> of size <code>count × 3</code> holds the color for each token (mapped from cluster label, token type, or attention weight)</li>
+<li><strong>Update on hover:</strong> The raycasting system identifies the instance index; the matrix and color for that instance are updated to show a glow/highlight</li>
+</ol>
+<p>This is the same technique used by DiVE: "an interactive 3D web viewer of up to million points on one screen ... based on graphosaurus.js and three.js". The Helios‑Web project further validates "GPU‑based rendering for real‑time visualization and interactive analysis of massive‑scale networks and high‑dimensional embeddings" using WebGL.</p>
+<h3 id="token-search-teleport">Token Search &amp; Teleport</h3>
+<p>The <strong>Search Teleporter</strong> component provides a text input where users type any word/token. Under the hood:</p>
+<ol>
+<li><strong>Frontend:</strong> User types "Paris" → React state updates</li>
+<li><strong>WASM Worker:</strong> The token's embedding vector is retrieved from the model's embedding matrix (loaded as a <code>Float32Array</code> at page initialization)</li>
+<li><strong>Nearest‑neighbor search:</strong> The WASM similarity module finds the 50 nearest tokens in embedding space and returns their indices + distances</li>
+<li><strong>Camera animation:</strong> <code>useFrame</code> in R3F animates the camera from its current position to the target sphere's position using <code>THREE.Vector3.lerp</code> with an easing function</li>
+<li><strong>Highlight effect:</strong> The target sphere's emissive intensity is set to 1.0, and its scale is temporarily increased</li>
+</ol>
+<h3 id="semantic-cluster-rendering">Semantic Cluster Rendering</h3>
+<p>After the WASM clustering module computes cluster assignments, each cluster is rendered as a <strong>transparent convex hull</strong> (or alpha shape). The implementation uses the <code>quickhull3d</code> algorithm compiled to WASM or a JavaScript port:</p>
+<ol>
+<li>Cluster centers and boundaries are computed by the WASM clustering module</li>
+<li>For each cluster with ≥ 5 points, a <code>ConvexGeometry</code> is generated from the outermost points</li>
+<li>The hull is rendered as a semi‑transparent mesh with cluster‑specific color</li>
+<li>A <strong>text label</strong> (the cluster's auto‑generated name like "food words" or "location terms") is positioned at the hull centroid using <code>@react-three/drei</code>'s <code>&lt;Text&gt;</code> component</li>
+</ol>
+<h3 id="token-trajectory-view">Token Trajectory View</h3>
+<p>Inspired by <strong>Prompt Rover</strong> which "builds a minimum path graph between embeddings and projects it with t‑SNE to trace the semantic trajectory from input to output", and by <strong>InterpreT</strong> which provides "the ability to track and visualize token embeddings through each layer of a Transformer":</p>
+<ol>
+<li>When a user selects a specific token in a specific sentence, the system queries your Django API for that token's hidden state at <strong>every layer</strong> of the model</li>
+<li>Each layer's hidden state is projected into the same 3D space (using the same UMAP projection previously computed)</li>
+<li>The positions are connected by a <strong>curved tube</strong> (using <code>CatmullRomCurve3</code> in Three.js) with a color gradient from blue (layer 0) to red (layer 12)</li>
+<li>The tube thickness varies to represent the <strong>change magnitude</strong> between consecutive layers (where the representation changes most)</li>
+<li>The tube animates on hover — a glowing particle travels along the path from input to output</li>
+</ol>
+<hr />
+<h2 id="zone-2-embedding-matrix-heatmap">🔬 Zone 2: Embedding Matrix Heatmap</h2>
+<h3 id="rendering-html5-canvas-2d-with-offscreencanvas-web-worker">Rendering: HTML5 Canvas 2D with OffscreenCanvas + Web Worker</h3>
+<p>For the <code>vocab_size × d_model</code> matrix (typically 30,000+ × 768), a canvas‑based approach is required because SVG with that many elements would crash. The implementation:</p>
+<ol>
+<li><strong>OffscreenCanvas</strong> in a Web Worker renders the full matrix at high resolution into an <code>ImageBitmap</code></li>
+<li>The <code>ImageBitmap</code> is <code>transferToImageBitmap()</code> to the main thread and drawn onto a visible canvas</li>
+<li><strong>Zoom/Pan:</strong> The visible canvas shows a viewport into the full matrix. Zooming in triggers re‑rendering at higher resolution for the visible region only</li>
+<li><strong>Color scale:</strong> Blue for negative values, white for zero, red for positive (matching the 3Blue1Brown visualization convention)</li>
+<li><strong>Search:</strong> Typing a token name scrolls the viewport to that row and highlights it with a yellow border</li>
+<li><strong>Row comparison:</strong> Selecting two tokens renders both rows side‑by‑side with a difference row showing the delta</li>
+</ol>
+<h3 id="dimension-importance-via-pca">Dimension Importance via PCA</h3>
+<p>The WASM PCA module computes:
+1. <strong>Explained variance ratio</strong> per principal component
+2. The top‑10 dimensions are rendered as a bar chart
+3. The "semantic axis discovery" feature (powered by ICA) is described in Zone 5 below</p>
+<hr />
+<h2 id="zone-3-live-math-panel-embedding-formulas">📐 Zone 3: Live Math Panel — Embedding Formulas</h2>
+<h3 id="rendering-react-latex-katex-for-latex-framer-motion-for-animation">Rendering: <code>react-latex</code> / <code>katex</code> for LaTeX, <code>framer-motion</code> for animation</h3>
+<p>The math panel displays the embedding computation formula:</p>
+<div class="highlight"><pre><span></span><code>E[token] = W_e[token_id, :] + W_p[pos, :]
+</code></pre></div>
+<p>Where:
+- <code>W_e</code>: The token embedding matrix (learned during training)
+- <code>W_p</code>: The positional encoding matrix (sinusoidal or learned)</p>
+<h3 id="animated-computation-steps">Animated Computation Steps</h3>
+<p>Inspired by the Self Attention Flow tool and 3Blue1Brown's Manim animations:</p>
+<ol>
+<li><strong>Step 1:</strong> The token embedding row is highlighted in the heatmap, values animate from gray to color</li>
+<li><strong>Step 2:</strong> The positional encoding vector is rendered as a separate bar chart</li>
+<li><strong>Step 3:</strong> The two vectors "merge" (element‑wise addition animation) to form the final embedding</li>
+<li><strong>Step 4:</strong> The final embedding vector is shown, and the user can see which dimensions are dominated by token identity vs. position</li>
+</ol>
+<h3 id="cosine-similarity-calculator">Cosine Similarity Calculator</h3>
+<ol>
+<li>User selects any two tokens from dropdowns</li>
+<li>The WASM similarity module computes <code>cos(a,b) = (a·b) / (||a||·||b||)</code></li>
+<li>The result is displayed as a large number (0.0–1.0) with a color‑coded bar</li>
+<li><strong>Dimension contribution breakdown:</strong> A bar chart shows which dimensions contribute most to the similarity (the element‑wise product <code>a_i × b_i</code> before summation)</li>
+<li>The computation uses the <code>wasm-similarity</code> library which "moves the hot loop into WebAssembly compiled from Rust" for "high-performance vector similarity and distance metrics"</li>
+</ol>
+<hr />
+<h2 id="zone-4-embedding-statistics-dashboard">📈 Zone 4: Embedding Statistics Dashboard</h2>
+<h3 id="vocabulary-coverage-histogram">Vocabulary Coverage Histogram</h3>
+<p>Rendered using <code>recharts</code> (already in your project). The histogram shows how often each token appears in a calibration corpus, revealing the long‑tail distribution typical of language.</p>
+<h3 id="embedding-norm-distribution">Embedding Norm Distribution</h3>
+<p>A box‑plot or violin plot showing the distribution of L2 norms across all token embeddings. Tokens with unusually high norms (like <code>[CLS]</code> or <code>[SEP]</code>) are annotated. This reveals "anisotropy" — the tendency of embeddings to cluster in a narrow cone.</p>
+<h3 id="nearestneighbor-graph">Nearest‑Neighbor Graph</h3>
+<p>The WASM similarity module computes the top‑5 nearest neighbors for every token in the vocabulary (or a user‑selected subset). The graph is rendered as a D3 force‑directed graph, where edge thickness = similarity. This is the same concept as the GPT‑2 Token Similarity Visualizer which "visualizes token similarity relationships across GPT‑2 layers ... providing an interactive 'microscope' into how language models process and understand text".</p>
+<h3 id="semantic-axis-discovery-icabased">Semantic Axis Discovery (ICA‑Based)</h3>
+<p>This is the most novel feature, inspired by the research "Discovering Universal Geometry in Embeddings with ICA" which demonstrates "that each embedding can be expressed as a composition of a few intrinsic interpretable axes and that these semantic axes remain consistent across different languages, algorithms, and modalities".</p>
+<p><strong>Implementation approach:</strong></p>
+<ol>
+<li>
+<p><strong>WASM ICA module:</strong> An Independent Component Analysis implementation compiled to WebAssembly. ICA differs from PCA in that it finds <strong>statistically independent</strong> components rather than merely uncorrelated ones, which tend to align with interpretable semantic concepts.</p>
+</li>
+<li>
+<p><strong>Axis discovery workflow:</strong></p>
+</li>
+<li>User selects a subset of the vocabulary (e.g., all nouns, or all emotion‑related words)</li>
+<li>The ICA module decomposes their embeddings into independent components</li>
+<li>Each component is tested for correlation with known semantic labels (e.g., sentiment scores from SentiWordNet, concreteness ratings)</li>
+<li>
+<p>Components that strongly correlate with known labels are presented as "discovered semantic axes"</p>
+</li>
+<li>
+<p><strong>Visualization:</strong> Each discovered axis is rendered as a <strong>labeled arrow</strong> in the 3D embedding space. For example, an axis pointing from "sad" tokens to "happy" tokens is labeled "Sentiment (+)". The axes are overlaid on the 3D scatter plot.</p>
+</li>
+<li>
+<p><strong>User‑defined axes:</strong> Following Parallax's approach which "allows the user to explicitly define the axes of the projection through algebraic formulae", users can also define custom axes by providing word pairs (e.g., "king – man + woman = queen") and the system computes and visualizes the resulting direction.</p>
+</li>
+</ol>
+<hr />
+<h2 id="zone-5-interpretability-linear-probe-playground">🔬 Zone 5: Interpretability — Linear Probe Playground</h2>
+<h3 id="framework-wlearnliblinear-webassembly-liblinear">Framework: <code>@wlearn/liblinear</code> (WebAssembly LIBLINEAR)</h3>
+<p>The linear probe playground uses LIBLINEAR v2.50 compiled to WebAssembly. This enables <strong>browser‑side training of linear classifiers on embedding vectors</strong> — no server, no GPU, no Python required.</p>
+<p><strong>Workflow:</strong></p>
+<ol>
+<li><strong>Data preparation:</strong> The user selects a classification task from a dropdown (e.g., "POS tagging: Noun vs. Verb", "Sentiment: Positive vs. Negative", or a custom task defined by the user)</li>
+<li><strong>Feature extraction:</strong> For the selected tokens, their embedding vectors are extracted from the loaded model's embedding matrix. The WASM module receives these as <code>Float64Array</code> typed arrays.</li>
+<li><strong>Training:</strong> The <code>LinearModel</code> is instantiated with <code>solver: 'L2R_LR'</code> (L2‑regularized logistic regression) and fit on the training split. Training completes in milliseconds on a few thousand examples.</li>
+<li><strong>Evaluation:</strong> Accuracy, precision, recall, and F1 are displayed. The decision boundary is visualized as a <strong>plane in the 3D embedding space</strong> — tokens correctly classified appear in their true color; misclassified tokens appear in the predicted color with an X marker.</li>
+<li><strong>Layer comparison:</strong> Users can train probes on embeddings from different layers of a transformer (layer 0, 3, 6, 9, 12) to see how semantic information becomes more linearly separable in deeper layers.</li>
+</ol>
+<p><strong>Why this works in the browser:</strong> LIBLINEAR uses a dual coordinate descent algorithm that is highly efficient for linear models. When compiled to WebAssembly, it runs at near‑native speed because the hot loop consists of simple arithmetic operations that WASM executes efficiently. The <code>@wlearn/liblinear</code> package demonstrates this by providing <code>model.fit()</code>, <code>model.predict()</code>, <code>model.predictProba()</code>, and <code>model.score()</code> APIs that all execute entirely client‑side.</p>
+<h3 id="token-activation-comparison">Token Activation Comparison</h3>
+<p>After fine‑tuning a model (tracked in your <code>experiment</code> app), users can compare embeddings before and after fine‑tuning:</p>
+<ol>
+<li>Load the original model's embeddings and the fine‑tuned model's embeddings</li>
+<li>For each token, compute the cosine similarity between its original and fine‑tuned embedding</li>
+<li>Render a <strong>scatter plot</strong> where X = original norm, Y = fine‑tuned norm, color = cosine similarity</li>
+<li>Tokens that moved most during fine‑tuning (low cosine similarity) are highlighted as "most affected by fine‑tuning"</li>
+<li>One‑click link to the training run that produced the fine‑tuned model</li>
+</ol>
+<hr />
+<h2 id="zone-6-social-features">💬 Zone 6: Social Features</h2>
+<h3 id="embedding-of-the-day">"Embedding of the Day"</h3>
+<p>A community‑curated daily feature where:
+1. Users submit interesting embedding relationships they've discovered (e.g., "The embedding of 'dog' is closer to 'cat' in BERT than in GPT‑2")
+2. The community votes on submissions
+3. The winning submission is featured on the dashboard homepage
+4. Submissions include the interactive 3D visualization embedded (not just a screenshot)</p>
+<h3 id="embedding-visualization-sharing">Embedding Visualization Sharing</h3>
+<p>Every embedding visualization state (camera position, selected tokens, cluster view, projection method) is serialized to a URL parameter. Sharing the URL recreates the exact same view for another researcher. This uses the same pattern as your attention dashboard's sharing system.</p>
+<h3 id="collections-interesting-embedding-clusters">Collections: "Interesting Embedding Clusters"</h3>
+<p>Users create themed collections of embedding discoveries, similar to GitHub Stars or Pinterest boards. Example collections: "Multilingual Embedding Comparisons" (showing how the same concept clusters in English vs. French vs. Chinese models), "Fine‑tuning Effects" (before/after comparisons), "Semantic Axis Gallery" (showcasing discovered interpretable axes).</p>
+<hr />
+<h2 id="zone-7-gamification-embedding-detective">🎮 Zone 7: Gamification — "Embedding Detective"</h2>
+<p>A daily puzzle game where:</p>
+<ol>
+<li>The system selects a random token from the vocabulary</li>
+<li>Its embedding vector is displayed (as a bar chart or radar plot of the top‑20 PCA dimensions)</li>
+<li>The user must <strong>guess which token</strong> it represents</li>
+<li>After guessing, the correct token is revealed along with its nearest neighbors</li>
+<li><strong>Scoring:</strong> Points awarded based on how close the guess was (measured by cosine similarity between the guessed token's embedding and the target)</li>
+<li><strong>Streaks:</strong> Consecutive days played are tracked and displayed</li>
+<li><strong>XP rewards:</strong> XP contributes to the user's overall platform level</li>
+</ol>
+<hr />
+<h2 id="zone-8-crossplatform-integration-points">🔗 Zone 8: Cross‑Platform Integration Points</h2>
+<p>The embedding explorer connects to every other part of your platform:</p>
+<table>
+<thead>
+<tr>
+<th>Platform App</th>
+<th>Integration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>experiment</code></td>
+<td>Load embeddings from any training run; compare before/after fine‑tuning</td>
+</tr>
+<tr>
+<td><code>model_versioning</code></td>
+<td>Load embeddings from any saved model version</td>
+</tr>
+<tr>
+<td><code>notes</code></td>
+<td>Save embedding analysis as a researcher note with embedded 3D scene</td>
+</tr>
+<tr>
+<td><code>paper</code></td>
+<td>Export embedding visualizations as LaTeX figures</td>
+</tr>
+<tr>
+<td><code>community</code></td>
+<td>Discuss embedding discoveries in linked Q&amp;A threads</td>
+</tr>
+<tr>
+<td><code>portfolios</code></td>
+<td>Embedding discoveries appear in the researcher's portfolio</td>
+</tr>
+<tr>
+<td><code>leaderboards</code></td>
+<td>"Embedding Detective" scores on weekly leaderboards</td>
+</tr>
+<tr>
+<td><code>gpu_reputation</code></td>
+<td>XP from embedding exploration contributes to overall reputation</td>
+</tr>
+<tr>
+<td><code>profiles</code></td>
+<td>User's embedding expertise badges displayed on profile</td>
+</tr>
+<tr>
+<td><code>messaging</code></td>
+<td>Share embedding discoveries via private messages</td>
+</tr>
+<tr>
+<td><code>organizations</code></td>
+<td>Team‑level embedding collections for research groups</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="implementation-roadmap">🏗️ Implementation Roadmap</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Duration</th>
+<th>Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phase 1: Core Rendering</strong></td>
+<td>Weeks 1‑3</td>
+<td>WebGPU canvas, R3F scene, instanced sphere rendering, orbit controls, camera animation, WASM module loader</td>
+</tr>
+<tr>
+<td><strong>Phase 2: Computation</strong></td>
+<td>Weeks 4‑5</td>
+<td>WASM UMAP/PCA/ICA, clustering, similarity search, embedding matrix heatmap</td>
+</tr>
+<tr>
+<td><strong>Phase 3: Interactivity</strong></td>
+<td>Weeks 6‑7</td>
+<td>Token search/teleport, trajectory view, cluster hulls, density contours</td>
+</tr>
+<tr>
+<td><strong>Phase 4: Analysis</strong></td>
+<td>Weeks 8‑9</td>
+<td>Linear probe playground, semantic axis discovery, embedding statistics dashboard, cosine similarity calculator</td>
+</tr>
+<tr>
+<td><strong>Phase 5: Social</strong></td>
+<td>Weeks 10‑11</td>
+<td>Sharing, collections, "Embedding of the Day", gamification</td>
+</tr>
+<tr>
+<td><strong>Phase 6: Integration</strong></td>
+<td>Weeks 12‑13</td>
+<td>Cross‑platform links (experiments, notes, paper, community)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="technology-stack-summary">📊 Technology Stack Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>3D Rendering</strong></td>
+<td>Three.js via R3F + WebGPU</td>
+<td>GPU‑accelerated sphere cloud, camera, effects</td>
+</tr>
+<tr>
+<td><strong>2D Rendering</strong></td>
+<td>HTML5 Canvas + OffscreenCanvas</td>
+<td>Embedding matrix heatmap at scale</td>
+</tr>
+<tr>
+<td><strong>WASM Compute</strong></td>
+<td>Rust → wasm‑pack</td>
+<td>UMAP, PCA, ICA, clustering, similarity</td>
+</tr>
+<tr>
+<td><strong>Linear Classification</strong></td>
+<td><code>@wlearn/liblinear</code> (WASM)</td>
+<td>Browser‑side linear probe training</td>
+</tr>
+<tr>
+<td><strong>Data Analysis</strong></td>
+<td>DuckDB‑WASM</td>
+<td>Client‑side SQL queries on embedding metadata</td>
+</tr>
+<tr>
+<td><strong>State Management</strong></td>
+<td>Zustand + immer</td>
+<td>Reactive embedding state, undo/redo</td>
+</tr>
+<tr>
+<td><strong>Animation</strong></td>
+<td><code>framer-motion</code> + GSAP</td>
+<td>Math panel step animations, camera transitions</td>
+</tr>
+<tr>
+<td><strong>Charts</strong></td>
+<td><code>recharts</code> + <code>d3</code></td>
+<td>Statistics dashboard charts</td>
+</tr>
+<tr>
+<td><strong>Math Rendering</strong></td>
+<td><code>katex</code> / <code>react-latex</code></td>
+<td>Live LaTeX formula display</td>
+</tr>
+<tr>
+<td><strong>Backend</strong></td>
+<td>Django REST API</td>
+<td>Model loading, embedding extraction, experiment data</td>
+</tr>
+<tr>
+<td><strong>Real‑time</strong></td>
+<td>WebSocket / Channels</td>
+<td>Collaborative exploration, live updates</td>
+</tr>
+</tbody>
+</table>
+<p>The entire system operates with <strong>zero data upload</strong> — all computation happens client‑side through WebAssembly, following Apple's "privacy‑preserving, reproducible" design that "completes all computational tasks including embedding generation and projection locally within the browser". This architecture makes the Embedding Explorer both fast and privacy‑respecting, suitable for researchers working with proprietary models or sensitive text data.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

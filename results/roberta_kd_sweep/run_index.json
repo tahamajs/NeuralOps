@@ -1,0 +1,13 @@
+{
+  "gated_delta_net__textattack/roberta-base-SST-2__sst2__rank64__9d73e4f959e1": {
+    "run_id": "fab3e0d4-ef4f-4468-9e03-797233688b3d",
+    "timestamp": "2026-10-14T18:28:33Z",
+    "status": "success",
+    "module": "gated_delta_net",
+    "model": "textattack/roberta-base-SST-2",
+    "dataset": "sst2",
+    "rank": 64,
+    "accuracy": 0.76,
+    "result_path": "results/roberta_kd_sweep/05_glue_finetuning/gated_delta_net/textattack_roberta-base-SST-2/sst2/rank_64/fab3e0d4-ef4f-4468-9e03-797233688b3d.json"
+  }
+}

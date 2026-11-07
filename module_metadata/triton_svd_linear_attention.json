@@ -1,0 +1,25 @@
+{
+  "module_name": "triton_svd_linear_attention",
+  "class_name": "TritonSVDLinearAttention",
+  "category": "attention",
+  "family": "SVD Spectral & Low-Rank Decomposed Attentions",
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Triton-Accelerated SVD Linear Attention & Chunked Causal Linear Attention.  High-performance GPU implementation using OpenAI Triton language (tl) with:   1. Chunked Causal Linear Attention Kernel (_triton_chunked_causal_linear_attn_fwd):      - Keeps the recurrent key-value state S \\in R^{D_k x D_v} strictly in GPU SRAM/registers.      - Tiled in b",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

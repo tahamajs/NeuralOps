@@ -1,0 +1,28 @@
+{
+  "module_name": "swift_svd",
+  "class_name": "SwiftSVDCompressor",
+  "category": "compression",
+  "family": "Activation-Aware & Standard Low-Rank SVD Factorization",
+  "params": [
+    "model",
+    "rank",
+    "rank_ratio",
+    "target_modules"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Swift-SVD Compressor: Fast Closed-Form Truncated SVD.\n\nDecomposes dense weight matrices into rank-r factorized layers with symmetric\nsquare-root singular value splitting (U_r * sqrt(Sigma_r), sqrt(Sigma_r) * V_r^T)\nand replaces nn.Linear with factorized SVDLinear modules.\n\nArgs:\n    model: Model to compress.\n    rank: Target rank r. If None, computed from rank_ratio.\n    rank_ratio: Retention ratio of maximum rank (0.0 < rank_ratio <= 1.0).\n    target_modules: Optional list of layer name filters.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.800900051628041e+38,
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

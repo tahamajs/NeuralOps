@@ -1,0 +1,29 @@
+{
+  "module_name": "soka_compressor",
+  "class_name": "LowRankCompressor",
+  "category": "compression",
+  "family": "Dynamic Rank & Entropy-Guided Budget Allocation",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "device",
+    "dtype",
+    "model",
+    "energy_threshold"
+  ],
+  "ops": [
+    "matmul"
+  ],
+  "docstring": "SoKA Low-Rank Linear Compressor.\nReplaces dense nn.Linear layers with factorized LowRankLinear layers.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.051968014610903e+38,
+  "paradigm": "dynamic_rank",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

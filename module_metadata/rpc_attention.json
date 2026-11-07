@@ -1,0 +1,27 @@
+{
+  "module_name": "rpc_attention",
+  "class_name": "RPCAttention",
+  "category": "attention",
+  "family": "Kernelized & Feature-Map Linear Attentions",
+  "params": [
+    "config",
+    "rank"
+  ],
+  "ops": [
+    "view",
+    "softmax",
+    "matmul",
+    "svd",
+    "transpose"
+  ],
+  "docstring": "Random Projection Compressed (RPC) Attention — Production-Hardened (v2).  Randomized linear subspace sketching via fixed head-wise Gaussian random projection buffers to compress query-key similarity evaluations.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.4043793474420068e+38,
+  "paradigm": "linear",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

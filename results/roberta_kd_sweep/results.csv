@@ -1,0 +1,2 @@
+run_id,run_key,timestamp,status,module,module_type,model,dataset,rank,training_type,pre_ppl,post_ppl,post_ppl_stage1,post_ppl_stage2,accuracy,f1,loss,perplexity,kd_gain,recovery_pct,duration_s,peak_vram_mb,checksum
+fab3e0d4-ef4f-4468-9e03-797233688b3d,gated_delta_net__textattack/roberta-base-SST-2__sst2__rank64__9d73e4f959e1,2026-10-14T18:28:33Z,success,gated_delta_net,attention,textattack/roberta-base-SST-2,sst2,64,finetune,,,,,0.76,0.7615894039735099,1.001993758181159,,,,551.29,1217.93603515625,a5fff626d1aa00a1

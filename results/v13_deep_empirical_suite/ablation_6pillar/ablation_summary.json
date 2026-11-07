@@ -1,0 +1,362 @@
+[
+  {
+    "architecture": "cosformer",
+    "arch_label": "Cosformer",
+    "regime": "regime_0",
+    "regime_label": "Regime 0: Zero-Shot (alpha=1.0)",
+    "cosine_sim": 0.5519,
+    "kl_div": 2.9356,
+    "peak_vram_mb": 488.9,
+    "time_sec": 0.0
+  },
+  {
+    "architecture": "cosformer",
+    "arch_label": "Cosformer",
+    "regime": "regime_1",
+    "regime_label": "Regime 1: Naive CE (50 steps)",
+    "cosine_sim": 0.2286,
+    "kl_div": 4.4928,
+    "peak_vram_mb": 566.9,
+    "time_sec": 0.82
+  },
+  {
+    "architecture": "cosformer",
+    "arch_label": "Cosformer",
+    "regime": "regime_2",
+    "regime_label": "Regime 2: Forward KL (50 steps)",
+    "cosine_sim": 0.9495,
+    "kl_div": 0.3248,
+    "peak_vram_mb": 766.9,
+    "time_sec": 1.15
+  },
+  {
+    "architecture": "cosformer",
+    "arch_label": "Cosformer",
+    "regime": "regime_3",
+    "regime_label": "Regime 3: Reverse KL (50 steps)",
+    "cosine_sim": 0.9491,
+    "kl_div": 0.3271,
+    "peak_vram_mb": 766.9,
+    "time_sec": 1.41
+  },
+  {
+    "architecture": "cosformer",
+    "arch_label": "Cosformer",
+    "regime": "regime_4",
+    "regime_label": "Regime 4: Decoupled KD (50 steps)",
+    "cosine_sim": 0.9487,
+    "kl_div": 0.3302,
+    "peak_vram_mb": 1029.2,
+    "time_sec": 1.56
+  },
+  {
+    "architecture": "cosformer",
+    "arch_label": "Cosformer",
+    "regime": "regime_5",
+    "regime_label": "Regime 5: 6-Pillar Suite (50 steps)",
+    "cosine_sim": 0.9184,
+    "kl_div": 0.5125,
+    "peak_vram_mb": 1029.2,
+    "time_sec": 2.09
+  },
+  {
+    "architecture": "gla_attention",
+    "arch_label": "Chunk GLA",
+    "regime": "regime_0",
+    "regime_label": "Regime 0: Zero-Shot (alpha=1.0)",
+    "cosine_sim": 0.0994,
+    "kl_div": 5.8951,
+    "peak_vram_mb": 1029.2,
+    "time_sec": 0.0
+  },
+  {
+    "architecture": "gla_attention",
+    "arch_label": "Chunk GLA",
+    "regime": "regime_1",
+    "regime_label": "Regime 1: Naive CE (50 steps)",
+    "cosine_sim": 0.1578,
+    "kl_div": 4.895,
+    "peak_vram_mb": 551.6,
+    "time_sec": 2.54
+  },
+  {
+    "architecture": "gla_attention",
+    "arch_label": "Chunk GLA",
+    "regime": "regime_2",
+    "regime_label": "Regime 2: Forward KL (50 steps)",
+    "cosine_sim": 0.8293,
+    "kl_div": 1.0196,
+    "peak_vram_mb": 751.6,
+    "time_sec": 0.97
+  },
+  {
+    "architecture": "gla_attention",
+    "arch_label": "Chunk GLA",
+    "regime": "regime_3",
+    "regime_label": "Regime 3: Reverse KL (50 steps)",
+    "cosine_sim": 0.8197,
+    "kl_div": 1.0678,
+    "peak_vram_mb": 751.6,
+    "time_sec": 1.27
+  },
+  {
+    "architecture": "gla_attention",
+    "arch_label": "Chunk GLA",
+    "regime": "regime_4",
+    "regime_label": "Regime 4: Decoupled KD (50 steps)",
+    "cosine_sim": 0.8265,
+    "kl_div": 1.0344,
+    "peak_vram_mb": 1013.9,
+    "time_sec": 1.5
+  },
+  {
+    "architecture": "gla_attention",
+    "arch_label": "Chunk GLA",
+    "regime": "regime_5",
+    "regime_label": "Regime 5: 6-Pillar Suite (50 steps)",
+    "cosine_sim": 0.7871,
+    "kl_div": 1.2447,
+    "peak_vram_mb": 1014.4,
+    "time_sec": 1.97
+  },
+  {
+    "architecture": "gdn2_attention",
+    "arch_label": "GDN-2",
+    "regime": "regime_0",
+    "regime_label": "Regime 0: Zero-Shot (alpha=1.0)",
+    "cosine_sim": 0.3793,
+    "kl_div": 4.0607,
+    "peak_vram_mb": 1014.4,
+    "time_sec": 0.0
+  },
+  {
+    "architecture": "gdn2_attention",
+    "arch_label": "GDN-2",
+    "regime": "regime_1",
+    "regime_label": "Regime 1: Naive CE (50 steps)",
+    "cosine_sim": 0.2005,
+    "kl_div": 4.7151,
+    "peak_vram_mb": 816.0,
+    "time_sec": 9.75
+  },
+  {
+    "architecture": "gdn2_attention",
+    "arch_label": "GDN-2",
+    "regime": "regime_2",
+    "regime_label": "Regime 2: Forward KL (50 steps)",
+    "cosine_sim": 0.9577,
+    "kl_div": 0.2723,
+    "peak_vram_mb": 1016.0,
+    "time_sec": 9.3
+  },
+  {
+    "architecture": "gdn2_attention",
+    "arch_label": "GDN-2",
+    "regime": "regime_3",
+    "regime_label": "Regime 3: Reverse KL (50 steps)",
+    "cosine_sim": 0.9581,
+    "kl_div": 0.2691,
+    "peak_vram_mb": 1016.0,
+    "time_sec": 9.66
+  },
+  {
+    "architecture": "gdn2_attention",
+    "arch_label": "GDN-2",
+    "regime": "regime_4",
+    "regime_label": "Regime 4: Decoupled KD (50 steps)",
+    "cosine_sim": 0.9563,
+    "kl_div": 0.281,
+    "peak_vram_mb": 1278.2,
+    "time_sec": 9.85
+  },
+  {
+    "architecture": "gdn2_attention",
+    "arch_label": "GDN-2",
+    "regime": "regime_5",
+    "regime_label": "Regime 5: 6-Pillar Suite (50 steps)",
+    "cosine_sim": 0.9514,
+    "kl_div": 0.3111,
+    "peak_vram_mb": 1278.8,
+    "time_sec": 11.34
+  },
+  {
+    "architecture": "pgdn_attention",
+    "arch_label": "PGDN",
+    "regime": "regime_0",
+    "regime_label": "Regime 0: Zero-Shot (alpha=1.0)",
+    "cosine_sim": 0.6808,
+    "kl_div": 2.0872,
+    "peak_vram_mb": 1278.8,
+    "time_sec": 0.0
+  },
+  {
+    "architecture": "pgdn_attention",
+    "arch_label": "PGDN",
+    "regime": "regime_1",
+    "regime_label": "Regime 1: Naive CE (50 steps)",
+    "cosine_sim": 0.2129,
+    "kl_div": 4.6734,
+    "peak_vram_mb": 681.4,
+    "time_sec": 5.17
+  },
+  {
+    "architecture": "pgdn_attention",
+    "arch_label": "PGDN",
+    "regime": "regime_2",
+    "regime_label": "Regime 2: Forward KL (50 steps)",
+    "cosine_sim": 0.9851,
+    "kl_div": 0.0981,
+    "peak_vram_mb": 881.4,
+    "time_sec": 5.22
+  },
+  {
+    "architecture": "pgdn_attention",
+    "arch_label": "PGDN",
+    "regime": "regime_3",
+    "regime_label": "Regime 3: Reverse KL (50 steps)",
+    "cosine_sim": 0.9848,
+    "kl_div": 0.0998,
+    "peak_vram_mb": 881.4,
+    "time_sec": 5.93
+  },
+  {
+    "architecture": "pgdn_attention",
+    "arch_label": "PGDN",
+    "regime": "regime_4",
+    "regime_label": "Regime 4: Decoupled KD (50 steps)",
+    "cosine_sim": 0.985,
+    "kl_div": 0.0989,
+    "peak_vram_mb": 1143.7,
+    "time_sec": 6.18
+  },
+  {
+    "architecture": "pgdn_attention",
+    "arch_label": "PGDN",
+    "regime": "regime_5",
+    "regime_label": "Regime 5: 6-Pillar Suite (50 steps)",
+    "cosine_sim": 0.9781,
+    "kl_div": 0.1423,
+    "peak_vram_mb": 1144.2,
+    "time_sec": 6.06
+  },
+  {
+    "architecture": "mamba_block",
+    "arch_label": "Mamba Block",
+    "regime": "regime_0",
+    "regime_label": "Regime 0: Zero-Shot (alpha=1.0)",
+    "cosine_sim": 0.8416,
+    "kl_div": 1.0345,
+    "peak_vram_mb": 1144.2,
+    "time_sec": 0.0
+  },
+  {
+    "architecture": "mamba_block",
+    "arch_label": "Mamba Block",
+    "regime": "regime_1",
+    "regime_label": "Regime 1: Naive CE (50 steps)",
+    "cosine_sim": 0.2223,
+    "kl_div": 4.5791,
+    "peak_vram_mb": 643.4,
+    "time_sec": 2.41
+  },
+  {
+    "architecture": "mamba_block",
+    "arch_label": "Mamba Block",
+    "regime": "regime_2",
+    "regime_label": "Regime 2: Forward KL (50 steps)",
+    "cosine_sim": 0.9893,
+    "kl_div": 0.071,
+    "peak_vram_mb": 843.4,
+    "time_sec": 2.61
+  },
+  {
+    "architecture": "mamba_block",
+    "arch_label": "Mamba Block",
+    "regime": "regime_3",
+    "regime_label": "Regime 3: Reverse KL (50 steps)",
+    "cosine_sim": 0.9896,
+    "kl_div": 0.0694,
+    "peak_vram_mb": 843.4,
+    "time_sec": 2.9
+  },
+  {
+    "architecture": "mamba_block",
+    "arch_label": "Mamba Block",
+    "regime": "regime_4",
+    "regime_label": "Regime 4: Decoupled KD (50 steps)",
+    "cosine_sim": 0.9896,
+    "kl_div": 0.0692,
+    "peak_vram_mb": 1105.7,
+    "time_sec": 3.19
+  },
+  {
+    "architecture": "mamba_block",
+    "arch_label": "Mamba Block",
+    "regime": "regime_5",
+    "regime_label": "Regime 5: 6-Pillar Suite (50 steps)",
+    "cosine_sim": 0.9827,
+    "kl_div": 0.1124,
+    "peak_vram_mb": 1105.7,
+    "time_sec": 3.77
+  },
+  {
+    "architecture": "cosformer_aasvd",
+    "arch_label": "Cosformer + AASVD",
+    "regime": "regime_0",
+    "regime_label": "Regime 0: Zero-Shot (alpha=1.0)",
+    "cosine_sim": 0.5713,
+    "kl_div": 2.8069,
+    "peak_vram_mb": 1105.7,
+    "time_sec": 0.0
+  },
+  {
+    "architecture": "cosformer_aasvd",
+    "arch_label": "Cosformer + AASVD",
+    "regime": "regime_1",
+    "regime_label": "Regime 1: Naive CE (50 steps)",
+    "cosine_sim": 0.2258,
+    "kl_div": 4.556,
+    "peak_vram_mb": 572.9,
+    "time_sec": 0.8
+  },
+  {
+    "architecture": "cosformer_aasvd",
+    "arch_label": "Cosformer + AASVD",
+    "regime": "regime_2",
+    "regime_label": "Regime 2: Forward KL (50 steps)",
+    "cosine_sim": 0.9691,
+    "kl_div": 0.2022,
+    "peak_vram_mb": 772.9,
+    "time_sec": 1.03
+  },
+  {
+    "architecture": "cosformer_aasvd",
+    "arch_label": "Cosformer + AASVD",
+    "regime": "regime_3",
+    "regime_label": "Regime 3: Reverse KL (50 steps)",
+    "cosine_sim": 0.9691,
+    "kl_div": 0.2014,
+    "peak_vram_mb": 772.9,
+    "time_sec": 1.32
+  },
+  {
+    "architecture": "cosformer_aasvd",
+    "arch_label": "Cosformer + AASVD",
+    "regime": "regime_4",
+    "regime_label": "Regime 4: Decoupled KD (50 steps)",
+    "cosine_sim": 0.9694,
+    "kl_div": 0.1999,
+    "peak_vram_mb": 1035.1,
+    "time_sec": 1.55
+  },
+  {
+    "architecture": "cosformer_aasvd",
+    "arch_label": "Cosformer + AASVD",
+    "regime": "regime_5",
+    "regime_label": "Regime 5: 6-Pillar Suite (50 steps)",
+    "cosine_sim": 0.9432,
+    "kl_div": 0.3624,
+    "peak_vram_mb": 1035.1,
+    "time_sec": 2.08
+  }
+]

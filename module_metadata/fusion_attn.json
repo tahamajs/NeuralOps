@@ -1,0 +1,33 @@
+{
+  "module_name": "fusion_attn",
+  "class_name": "FUSIONATTN",
+  "category": "attention",
+  "family": "Hardware-Fused, Low-Precision & Spectral-Transform Attentions",
+  "params": [
+    "config",
+    "hidden_size",
+    "num_heads",
+    "block_size",
+    "top_k_blocks",
+    "rank",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "transpose",
+    "view",
+    "softmax",
+    "dropout",
+    "matmul",
+    "reshape"
+  ],
+  "docstring": "FUSIONATTN: Hybrid Sparse Attention with Block Gating and Subspace Estimation.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.5370561125087393e+38,
+  "paradigm": "hardware",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

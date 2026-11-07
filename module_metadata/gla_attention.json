@@ -1,0 +1,25 @@
+{
+  "module_name": "gla_attention",
+  "class_name": "GlaAttention",
+  "category": "attention",
+  "family": "Gated Linear Recurrences",
+  "paradigm": "gated",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Gla Attention operator from the Gated Linear Recurrences family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

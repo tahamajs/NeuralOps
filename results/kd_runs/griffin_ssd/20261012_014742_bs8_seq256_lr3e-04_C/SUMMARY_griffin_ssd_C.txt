@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: griffin_ssd / C
+================================================================================
+
+MODEL INFO:
+  Total params:      132.96 M
+  Trainable params:  1.47 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        126.9100
+  Post-KD PPL:       2.6200
+  Stage 1 (KD) PPL:  23.3900
+  Stage 2 (Self) PPL:2.6200
+  KD Gain:           +103.52
+  Self Gain:         +20.77
+  Total Gain:        +124.29
+  Aligned w/ Teacher:YES
+  Beat Teacher:      YES
+  PPL Ratio:         0.0724
+  Recovery:          100.00%
+  Peak VRAM:         2894.14 MB
+  Train time:        269.77 s (Stage 1: 206.0s, Stage 2: 63.7s)
+  s/step:            0.5395
+  Loss (final):      23.4640
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0204
+  Repetition-3:      0.9792
+  Train PPL:         2.4000
+  Test PPL:          2.6200
+  Overfit Gap:       0.22
+  Latency (mean):    667.42 ms
+  Latency (std):     11.91 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        842433a75e0f
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=1.1053 | lr=1.74e-04
+  step   420 | loss=0.9466 | lr=1.50e-04
+  step   430 | loss=0.9321 | lr=1.27e-04
+  step   440 | loss=0.7870 | lr=1.04e-04
+  step   450 | loss=0.9091 | lr=8.20e-05
+  step   460 | loss=0.7845 | lr=6.19e-05
+  step   470 | loss=0.7981 | lr=4.40e-05
+  step   480 | loss=0.8374 | lr=2.87e-05
+  step   490 | loss=0.8157 | lr=1.64e-05
+  step   500 | loss=0.7680 | lr=7.44e-06

@@ -1,0 +1,246 @@
+{
+  "scaling_records": [
+    {
+      "type": "seq_len_scaling",
+      "batch_size": 2,
+      "seq_len": 512,
+      "sdpa_ms": 0.06,
+      "sdpa_vram_mb": 6.1,
+      "gla_ms": 0.412,
+      "gla_vram_mb": 6.0,
+      "gdn_ms": 0.476,
+      "gdn_vram_mb": 6.0,
+      "cosformer_ms": 0.253,
+      "cosformer_vram_mb": 6.0,
+      "gla_speedup_vs_sdpa": 0.15,
+      "vram_reduction_pct": 0.8
+    },
+    {
+      "type": "seq_len_scaling",
+      "batch_size": 2,
+      "seq_len": 1024,
+      "sdpa_ms": 0.181,
+      "sdpa_vram_mb": 12.2,
+      "gla_ms": 0.658,
+      "gla_vram_mb": 12.1,
+      "gdn_ms": 0.768,
+      "gdn_vram_mb": 12.1,
+      "cosformer_ms": 0.899,
+      "cosformer_vram_mb": 12.1,
+      "gla_speedup_vs_sdpa": 0.27,
+      "vram_reduction_pct": 0.8
+    },
+    {
+      "type": "seq_len_scaling",
+      "batch_size": 2,
+      "seq_len": 2048,
+      "sdpa_ms": 0.651,
+      "sdpa_vram_mb": 24.3,
+      "gla_ms": 1.318,
+      "gla_vram_mb": 24.1,
+      "gdn_ms": 1.54,
+      "gdn_vram_mb": 24.2,
+      "cosformer_ms": 3.527,
+      "cosformer_vram_mb": 24.2,
+      "gla_speedup_vs_sdpa": 0.49,
+      "vram_reduction_pct": 0.8
+    },
+    {
+      "type": "seq_len_scaling",
+      "batch_size": 2,
+      "seq_len": 4096,
+      "sdpa_ms": 2.588,
+      "sdpa_vram_mb": 48.7,
+      "gla_ms": 3.439,
+      "gla_vram_mb": 48.3,
+      "gdn_ms": 4.048,
+      "gdn_vram_mb": 48.4,
+      "cosformer_ms": 13.676,
+      "cosformer_vram_mb": 48.4,
+      "gla_speedup_vs_sdpa": 0.75,
+      "vram_reduction_pct": 0.8
+    },
+    {
+      "type": "seq_len_scaling",
+      "batch_size": 2,
+      "seq_len": 8192,
+      "sdpa_ms": 10.11,
+      "sdpa_vram_mb": 97.3,
+      "gla_ms": 6.884,
+      "gla_vram_mb": 96.6,
+      "gdn_ms": 8.104,
+      "gdn_vram_mb": 96.8,
+      "cosformer_ms": 54.464,
+      "cosformer_vram_mb": 96.8,
+      "gla_speedup_vs_sdpa": 1.47,
+      "vram_reduction_pct": 0.8
+    },
+    {
+      "type": "batch_scaling",
+      "batch_size": 1,
+      "seq_len": 1024,
+      "sdpa_ms": 0.095,
+      "sdpa_vram_mb": 6.4,
+      "gla_ms": 0.671,
+      "gla_vram_mb": 6.4,
+      "tok_per_sec": 1525437.0
+    },
+    {
+      "type": "batch_scaling",
+      "batch_size": 2,
+      "seq_len": 1024,
+      "sdpa_ms": 0.181,
+      "sdpa_vram_mb": 12.5,
+      "gla_ms": 0.661,
+      "gla_vram_mb": 12.4,
+      "tok_per_sec": 3098133.0
+    },
+    {
+      "type": "batch_scaling",
+      "batch_size": 4,
+      "seq_len": 1024,
+      "sdpa_ms": 0.327,
+      "sdpa_vram_mb": 24.7,
+      "gla_ms": 0.845,
+      "gla_vram_mb": 24.5,
+      "tok_per_sec": 4849660.0
+    },
+    {
+      "type": "batch_scaling",
+      "batch_size": 8,
+      "seq_len": 1024,
+      "sdpa_ms": 0.654,
+      "sdpa_vram_mb": 48.9,
+      "gla_ms": 1.137,
+      "gla_vram_mb": 48.6,
+      "tok_per_sec": 7206558.0
+    },
+    {
+      "type": "batch_scaling",
+      "batch_size": 16,
+      "seq_len": 1024,
+      "sdpa_ms": 1.264,
+      "sdpa_vram_mb": 97.5,
+      "gla_ms": 2.687,
+      "gla_vram_mb": 96.8,
+      "tok_per_sec": 6096515.0
+    }
+  ],
+  "precision_records": [
+    {
+      "operator": "gla_scan",
+      "precision": "FP32",
+      "max_abs_diff": 0.15625,
+      "cos_sim": 1.0,
+      "nan_count": 0,
+      "parity_pass": false
+    },
+    {
+      "operator": "gla_scan",
+      "precision": "FP16",
+      "max_abs_diff": NaN,
+      "cos_sim": NaN,
+      "nan_count": 0,
+      "parity_pass": false
+    },
+    {
+      "operator": "gla_scan",
+      "precision": "BF16",
+      "max_abs_diff": 2048.0,
+      "cos_sim": 1.0,
+      "nan_count": 0,
+      "parity_pass": false
+    }
+  ],
+  "e2e_records": [
+    {
+      "batch_size": 1,
+      "seq_len": 512,
+      "mha_latency_ms": 5.53,
+      "mha_vram_mb": 789.8,
+      "mha_tok_per_sec": 92644.0,
+      "linear_latency_ms": 8.65,
+      "linear_vram_mb": 797.7,
+      "linear_tok_per_sec": 59183.0,
+      "speedup": 0.64
+    },
+    {
+      "batch_size": 2,
+      "seq_len": 512,
+      "mha_latency_ms": 10.32,
+      "mha_vram_mb": 1119.7,
+      "mha_tok_per_sec": 99177.0,
+      "linear_latency_ms": 11.05,
+      "linear_vram_mb": 1139.1,
+      "linear_tok_per_sec": 92699.0,
+      "speedup": 0.93
+    },
+    {
+      "batch_size": 4,
+      "seq_len": 512,
+      "mha_latency_ms": 22.88,
+      "mha_vram_mb": 1750.1,
+      "mha_tok_per_sec": 89530.0,
+      "linear_latency_ms": 22.77,
+      "linear_vram_mb": 1788.0,
+      "linear_tok_per_sec": 89952.0,
+      "speedup": 1.0
+    },
+    {
+      "batch_size": 1,
+      "seq_len": 1024,
+      "mha_latency_ms": 10.67,
+      "mha_vram_mb": 1120.2,
+      "mha_tok_per_sec": 95992.0,
+      "linear_latency_ms": 11.66,
+      "linear_vram_mb": 1139.1,
+      "linear_tok_per_sec": 87853.0,
+      "speedup": 0.92
+    },
+    {
+      "batch_size": 2,
+      "seq_len": 1024,
+      "mha_latency_ms": 23.52,
+      "mha_vram_mb": 1750.1,
+      "mha_tok_per_sec": 87090.0,
+      "linear_latency_ms": 22.84,
+      "linear_vram_mb": 1788.0,
+      "linear_tok_per_sec": 89658.0,
+      "speedup": 1.03
+    },
+    {
+      "batch_size": 4,
+      "seq_len": 1024,
+      "mha_latency_ms": 55.97,
+      "mha_vram_mb": 3030.4,
+      "mha_tok_per_sec": 73183.0,
+      "linear_latency_ms": 55.71,
+      "linear_vram_mb": 3106.2,
+      "linear_tok_per_sec": 73527.0,
+      "speedup": 1.0
+    },
+    {
+      "batch_size": 1,
+      "seq_len": 2048,
+      "mha_latency_ms": 24.8,
+      "mha_vram_mb": 1750.0,
+      "mha_tok_per_sec": 82584.0,
+      "linear_latency_ms": 24.02,
+      "linear_vram_mb": 1787.9,
+      "linear_tok_per_sec": 85275.0,
+      "speedup": 1.03
+    },
+    {
+      "batch_size": 2,
+      "seq_len": 2048,
+      "mha_latency_ms": 58.12,
+      "mha_vram_mb": 3030.5,
+      "mha_tok_per_sec": 70477.0,
+      "linear_latency_ms": 55.69,
+      "linear_vram_mb": 3106.2,
+      "linear_tok_per_sec": 73551.0,
+      "speedup": 1.04
+    }
+  ],
+  "device": "NVIDIA GeForce RTX 4070 Laptop GPU"
+}

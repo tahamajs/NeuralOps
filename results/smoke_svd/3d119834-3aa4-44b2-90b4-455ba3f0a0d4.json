@@ -1,0 +1,61 @@
+{
+  "run_id": "3d119834-3aa4-44b2-90b4-455ba3f0a0d4",
+  "run_name": "svd_linear_attention_distilbert-base-uncased_sst2",
+  "timestamp_start": "2026-10-09T15:38:19Z",
+  "timestamp_end": "2026-10-09T15:44:28Z",
+  "git_commit": "4add232b51",
+  "module": {
+    "name": "svd_linear_attention",
+    "type": "attention",
+    "family": "svd",
+    "supports_causal": true,
+    "supports_gqa": true,
+    "supports_rope": false,
+    "requires_cuda": false,
+    "rank": 64
+  },
+  "model": {
+    "name": "distilbert-base-uncased",
+    "family": "distilbert",
+    "num_params": 55803722,
+    "hidden_size": 768,
+    "num_heads": 12,
+    "num_layers": 6
+  },
+  "dataset": {
+    "name": "sst2",
+    "task": "classification",
+    "num_labels": 2,
+    "num_train": 67349,
+    "num_eval": 67349
+  },
+  "config": {
+    "rank": 64,
+    "epochs": 1,
+    "lr": 2e-05,
+    "batch_size": 32,
+    "max_length": 128,
+    "seed": 42,
+    "eval_only": false
+  },
+  "metrics": {
+    "accuracy": 0.8910550458715596,
+    "f1": 0.8936170212765958,
+    "precision": 0.888641425389755,
+    "recall": 0.8986486486486487,
+    "loss": 0.2775569433080299
+  },
+  "resources": {
+    "peak_vram_mb": 578.142578125,
+    "latency_ms_per_token": 0.011033715820474299,
+    "throughput_tok_per_sec": 90631.29921693177,
+    "duration_s": 368.8,
+    "num_params_after": 55803722
+  },
+  "status": "success",
+  "error": null,
+  "traceback": null,
+  "warnings": [],
+  "timeout_s": 1800,
+  "timed_out": false
+}

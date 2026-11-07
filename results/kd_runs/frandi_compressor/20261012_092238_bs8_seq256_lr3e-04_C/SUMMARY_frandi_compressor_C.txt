@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: frandi_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      44.22 M
+  Trainable params:  1.81 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        9887.0500
+  Post-KD PPL:       683.4100
+  Stage 1 (KD) PPL:  1308.9000
+  Stage 2 (Self) PPL:683.4100
+  KD Gain:           +8578.15
+  Self Gain:         +625.49
+  Total Gain:        +9203.64
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         18.8735
+  Recovery:          93.43%
+  Peak VRAM:         2677.69 MB
+  Train time:        142.09 s (Stage 1: 116.0s, Stage 2: 26.1s)
+  s/step:            0.2842
+  Loss (final):      26.5156
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8571
+  Repetition-3:      0.0000
+  Train PPL:         827.1200
+  Test PPL:          683.4100
+  Overfit Gap:       -143.71
+  Latency (mean):    183.49 ms
+  Latency (std):     2.57 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=6.6980 | lr=1.74e-04
+  step   420 | loss=6.5219 | lr=1.50e-04
+  step   430 | loss=6.4474 | lr=1.27e-04
+  step   440 | loss=6.5334 | lr=1.04e-04
+  step   450 | loss=6.6819 | lr=8.20e-05
+  step   460 | loss=6.5832 | lr=6.19e-05
+  step   470 | loss=6.5815 | lr=4.40e-05
+  step   480 | loss=6.3540 | lr=2.87e-05
+  step   490 | loss=6.7559 | lr=1.64e-05
+  step   500 | loss=6.4744 | lr=7.44e-06

@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: dobi_svd / C
+================================================================================
+
+MODEL INFO:
+  Total params:      71.06 M
+  Trainable params:  1.81 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        3489.9400
+  Post-KD PPL:       1370.6400
+  Stage 1 (KD) PPL:  5675.8700
+  Stage 2 (Self) PPL:1370.6400
+  KD Gain:           -2185.93
+  Self Gain:         +4305.23
+  Total Gain:        +2119.30
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         37.8421
+  Recovery:          61.36%
+  Peak VRAM:         2103.61 MB
+  Train time:        98.62 s (Stage 1: 35.9s, Stage 2: 62.8s)
+  s/step:            0.3287
+  Loss (final):      15.0123
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.7143
+  Repetition-3:      0.0543
+  Train PPL:         1524.2300
+  Test PPL:          1370.6400
+  Overfit Gap:       -153.59
+  Latency (mean):    1934.24 ms
+  Latency (std):     23.01 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        0f67bb39bfa9
+
+TRAINING HISTORY (last 10 steps):
+  step   210 | loss=7.7433 | lr=1.74e-04
+  step   220 | loss=7.8582 | lr=1.50e-04
+  step   230 | loss=7.3487 | lr=1.27e-04
+  step   240 | loss=7.7315 | lr=1.04e-04
+  step   250 | loss=7.5355 | lr=8.20e-05
+  step   260 | loss=7.5571 | lr=6.19e-05
+  step   270 | loss=7.9598 | lr=4.40e-05
+  step   280 | loss=7.1922 | lr=2.87e-05
+  step   290 | loss=7.7705 | lr=1.64e-05
+  step   300 | loss=7.4953 | lr=7.44e-06

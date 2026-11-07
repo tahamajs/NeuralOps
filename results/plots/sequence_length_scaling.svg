@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+  <rect width="100%" height="100%" fill="#0f172a"/>
+  <text x="450.0" y="36" fill="#f8fafc" font-size="18" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-weight="bold" text-anchor="middle">Sequence Length Scaling: Latency (ms) vs. Context Length T</text>
+  <text x="450.0" y="56" fill="#38bdf8" font-size="12" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">Empirical Scaling on RTX 4070 (B=2, H=12, D=64) from T=512 to T=8,192</text>
+  <rect x="100" y="80" width="740" height="460" fill="#1e293b" rx="6" stroke="#334155"/>
+  <line x1="100.0" y1="80" x2="100.0" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="100.0" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">256</text>
+  <line x1="223.33333333333331" y1="80" x2="223.33333333333331" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="223.33333333333331" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">512</text>
+  <line x1="346.66666666666663" y1="80" x2="346.66666666666663" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="346.66666666666663" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">1K</text>
+  <line x1="470.0" y1="80" x2="470.0" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="470.0" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">2K</text>
+  <line x1="593.3333333333333" y1="80" x2="593.3333333333333" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="593.3333333333333" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">4K</text>
+  <line x1="716.6666666666667" y1="80" x2="716.6666666666667" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="716.6666666666667" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">8K</text>
+  <line x1="840.0" y1="80" x2="840.0" y2="540" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="840.0" y="560" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">16K</text>
+  <line x1="100" y1="511.0320927280728" x2="840" y2="511.0320927280728" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="515.0320927280728" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">0.05 ms</text>
+  <line x1="100" y1="471.7250918297458" x2="840" y2="471.7250918297458" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="475.7250918297458" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">0.1 ms</text>
+  <line x1="100" y1="380.4570621181575" x2="840" y2="380.4570621181575" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="384.4570621181575" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">0.5 ms</text>
+  <line x1="100" y1="341.1500612198305" x2="840" y2="341.1500612198305" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="345.1500612198305" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">1.0 ms</text>
+  <line x1="100" y1="249.88203150824222" x2="840" y2="249.88203150824222" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="253.88203150824222" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">5.0 ms</text>
+  <line x1="100" y1="210.5750306099153" x2="840" y2="210.5750306099153" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="214.5750306099153" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">10.0 ms</text>
+  <line x1="100" y1="119.30700089832698" x2="840" y2="119.30700089832698" stroke="#334155" stroke-dasharray="3,3"/>
+  <text x="88" y="123.30700089832698" fill="#94a3b8" font-size="11" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="end">50.0 ms</text>
+  <text x="470.0" y="585" fill="#94a3b8" font-size="13" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle">Sequence Context Length T (Tokens, Log2 Scale)</text>
+  <text x="35" y="310.0" fill="#94a3b8" font-size="13" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" text-anchor="middle" transform="rotate(-90 35 310.0)">Kernel Latency (ms, Log10 Scale) [Lower is Faster]</text>
+  <path d="M 223.3 500.7 L 346.7 438.4 L 470.0 365.6 L 593.3 287.2 L 716.7 210.0" fill="none" stroke="#f87171" stroke-width="2.5" stroke-dasharray="none"/>
+  <circle cx="223.3" cy="500.7" r="5" fill="#f87171"/>
+  <circle cx="346.7" cy="438.4" r="5" fill="#f87171"/>
+  <circle cx="470.0" cy="365.6" r="5" fill="#f87171"/>
+  <circle cx="593.3" cy="287.2" r="5" fill="#f87171"/>
+  <circle cx="716.7" cy="210.0" r="5" fill="#f87171"/>
+  <path d="M 223.3 391.7 L 346.7 364.7 L 470.0 325.4 L 593.3 271.1 L 716.7 231.8" fill="none" stroke="#34d399" stroke-width="2.5" stroke-dasharray="none"/>
+  <circle cx="223.3" cy="391.7" r="5" fill="#34d399"/>
+  <circle cx="346.7" cy="364.7" r="5" fill="#34d399"/>
+  <circle cx="470.0" cy="325.4" r="5" fill="#34d399"/>
+  <circle cx="593.3" cy="271.1" r="5" fill="#34d399"/>
+  <circle cx="716.7" cy="231.8" r="5" fill="#34d399"/>
+  <path d="M 223.3 382.8 L 346.7 356.0 L 470.0 316.7 L 593.3 261.8 L 716.7 222.5" fill="none" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="4,4"/>
+  <circle cx="223.3" cy="382.8" r="5" fill="#22d3ee"/>
+  <circle cx="346.7" cy="356.0" r="5" fill="#22d3ee"/>
+  <circle cx="470.0" cy="316.7" r="5" fill="#22d3ee"/>
+  <circle cx="593.3" cy="261.8" r="5" fill="#22d3ee"/>
+  <circle cx="716.7" cy="222.5" r="5" fill="#22d3ee"/>
+  <path d="M 223.3 419.8 L 346.7 347.1 L 470.0 269.6 L 593.3 192.8 L 716.7 114.5" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="2,2"/>
+  <circle cx="223.3" cy="419.8" r="5" fill="#fbbf24"/>
+  <circle cx="346.7" cy="347.1" r="5" fill="#fbbf24"/>
+  <circle cx="470.0" cy="269.6" r="5" fill="#fbbf24"/>
+  <circle cx="593.3" cy="192.8" r="5" fill="#fbbf24"/>
+  <circle cx="716.7" cy="114.5" r="5" fill="#fbbf24"/>
+  <rect x="120" y="95" width="300" height="90" fill="#0f172a" rx="4" stroke="#334155" opacity="0.9"/>
+  <line x1="132" y1="113" x2="156" y2="113" stroke="#f87171" stroke-width="2.5" stroke-dasharray="none"/>
+  <circle cx="144" cy="113" r="4" fill="#f87171"/>
+  <text x="164" y="117" fill="#94a3b8" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">PyTorch SDPA (Dense O(T^2))</text>
+  <line x1="132" y1="131" x2="156" y2="131" stroke="#34d399" stroke-width="2.5" stroke-dasharray="none"/>
+  <circle cx="144" cy="131" r="4" fill="#34d399"/>
+  <text x="164" y="135" fill="#94a3b8" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Chunk GLA (Triton O(T))</text>
+  <line x1="132" y1="149" x2="156" y2="149" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="4,4"/>
+  <circle cx="144" cy="149" r="4" fill="#22d3ee"/>
+  <text x="164" y="153" fill="#94a3b8" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Chunk GDN (Triton O(T))</text>
+  <line x1="132" y1="167" x2="156" y2="167" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="2,2"/>
+  <circle cx="144" cy="167" r="4" fill="#fbbf24"/>
+  <text x="164" y="171" fill="#94a3b8" font-size="10.5" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">Cosformer (Triton)</text>
+</svg>

@@ -1,0 +1,28 @@
+{
+  "module_name": "samba_moe",
+  "class_name": "SambaMoEBlock",
+  "category": "attention",
+  "family": "Mixture-of-Experts (MoE) & Sparsely-Gated Attentions",
+  "params": [
+    "config",
+    "d_model",
+    "n_heads",
+    "n_experts",
+    "window",
+    "rank",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "norm"
+  ],
+  "docstring": "SambaMoE: SAMBA-M3 + REAP-MoE Hybrid Architecture with pretrained weight copying.",
+  "rank": 32,
+  "d_state": 16,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.9748615640521372e+38,
+  "paradigm": "moe",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

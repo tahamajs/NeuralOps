@@ -1,0 +1,33 @@
+{
+  "module_name": "hymba_transx",
+  "class_name": "HeadRoPE",
+  "category": "attention",
+  "family": "Hybrid Linear-Recurrent & Attention-SSM Architectures",
+  "params": [
+    "head_dim",
+    "max_seq_len",
+    "base",
+    "config",
+    "rank",
+    "num_heads",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "transpose",
+    "softmax",
+    "relu",
+    "dropout",
+    "view",
+    "matmul"
+  ],
+  "docstring": "Head-wise Rotary Position Embedding (RoPE) applied to Q and K.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.269411637097828e+37,
+  "paradigm": "hybrid",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

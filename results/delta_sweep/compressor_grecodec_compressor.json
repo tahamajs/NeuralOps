@@ -1,0 +1,11 @@
+{
+  "module": "grecodec_compressor",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 9877.22,
+  "duration_sec": 189.1,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 09:31:28"
+}

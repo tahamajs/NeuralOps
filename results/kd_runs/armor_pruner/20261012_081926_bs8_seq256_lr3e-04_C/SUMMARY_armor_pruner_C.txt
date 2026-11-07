@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: armor_pruner / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.3 M
+  Trainable params:  0.86 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        39.7300
+  Post-KD PPL:       31.1500
+  Stage 1 (KD) PPL:  36.7700
+  Stage 2 (Self) PPL:31.1500
+  KD Gain:           +2.96
+  Self Gain:         +5.62
+  Total Gain:        +8.58
+  Aligned w/ Teacher:NO
+  Beat Teacher:      YES
+  PPL Ratio:         0.8603
+  Recovery:          100.00%
+  Peak VRAM:         2866.83 MB
+  Train time:        151.63 s (Stage 1: 120.7s, Stage 2: 30.9s)
+  s/step:            0.3033
+  Loss (final):      23.6943
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8980
+  Repetition-3:      0.0104
+  Train PPL:         31.7300
+  Test PPL:          31.1500
+  Overfit Gap:       -0.58
+  Latency (mean):    204.60 ms
+  Latency (std):     0.81 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=3.9146 | lr=1.74e-04
+  step   420 | loss=3.3494 | lr=1.50e-04
+  step   430 | loss=3.8353 | lr=1.27e-04
+  step   440 | loss=3.5829 | lr=1.04e-04
+  step   450 | loss=3.8776 | lr=8.20e-05
+  step   460 | loss=3.6158 | lr=6.19e-05
+  step   470 | loss=3.6105 | lr=4.40e-05
+  step   480 | loss=3.5513 | lr=2.87e-05
+  step   490 | loss=3.5807 | lr=1.64e-05
+  step   500 | loss=3.6895 | lr=7.44e-06

@@ -1,0 +1,3293 @@
+{
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "cuda_version": "12.8",
+  "pytorch_version": "2.11.0+cu128",
+  "mode": "reduce-overhead",
+  "dynamic_shapes": true,
+  "seq_lens": [
+    128,
+    256,
+    512
+  ],
+  "total_canonical_modules": 125,
+  "total_deprecated_aliases": 6,
+  "modules": {
+    "adaptive_span_attention": {
+      "name": "adaptive_span_attention",
+      "status": "PASS",
+      "compile_status": "FULLY_COMPILED",
+      "reliability": "RELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.417,
+      "compiled_latency_ms": 0.479,
+      "speedup": 1.0,
+      "max_discrepancy": 1.2e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 4,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 1.2e-07
+        },
+        "256": {
+          "graphs": 4,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 4,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "adaptive_sparse_attention": {
+      "name": "adaptive_sparse_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.385,
+      "compiled_latency_ms": 0.71,
+      "speedup": 1.0,
+      "max_discrepancy": 0.00012207,
+      "per_seq_len": {
+        "128": {
+          "graphs": 16,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00012207
+        },
+        "256": {
+          "graphs": 17,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 18,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "adaptive_svd_attention": {
+      "name": "adaptive_svd_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.359,
+      "compiled_latency_ms": 0.826,
+      "speedup": 1.0,
+      "max_discrepancy": 7.2e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 25,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 7.2e-07
+        },
+        "256": {
+          "graphs": 25,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 25,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "adasplash_attention": {
+      "name": "adasplash_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.362,
+      "compiled_latency_ms": 0.277,
+      "speedup": 1.3,
+      "max_discrepancy": 4e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 28,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 4e-08
+        },
+        "256": {
+          "graphs": 28,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 28,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "aegis_hybrid": {
+      "name": "aegis_hybrid",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.0,
+      "compiled_latency_ms": 0.873,
+      "speedup": 1.14,
+      "max_discrepancy": 0.00164151,
+      "per_seq_len": {
+        "128": {
+          "graphs": 35,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00164151
+        },
+        "256": {
+          "graphs": 35,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 35,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "aegis_spectron_fp8": {
+      "name": "aegis_spectron_fp8",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.991,
+      "compiled_latency_ms": 0.833,
+      "speedup": 1.19,
+      "max_discrepancy": 0.00398636,
+      "per_seq_len": {
+        "128": {
+          "graphs": 42,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00398636
+        },
+        "256": {
+          "graphs": 42,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 42,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "aegis_v1": {
+      "name": "aegis_v1",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.991,
+      "compiled_latency_ms": 0.846,
+      "speedup": 1.17,
+      "max_discrepancy": 0.00212076,
+      "per_seq_len": {
+        "128": {
+          "graphs": 49,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00212076
+        },
+        "256": {
+          "graphs": 49,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 49,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "aegis_v2": {
+      "name": "aegis_v2",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.993,
+      "compiled_latency_ms": 0.835,
+      "speedup": 1.19,
+      "max_discrepancy": 0.00414133,
+      "per_seq_len": {
+        "128": {
+          "graphs": 56,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00414133
+        },
+        "256": {
+          "graphs": 56,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 56,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "aegis_v3": {
+      "name": "aegis_v3",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.019,
+      "compiled_latency_ms": 0.846,
+      "speedup": 1.2,
+      "max_discrepancy": 0.00433064,
+      "per_seq_len": {
+        "128": {
+          "graphs": 63,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00433064
+        },
+        "256": {
+          "graphs": 63,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 63,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "aegis_v4": {
+      "name": "aegis_v4",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.987,
+      "compiled_latency_ms": 0.84,
+      "speedup": 1.17,
+      "max_discrepancy": 0.00509501,
+      "per_seq_len": {
+        "128": {
+          "graphs": 70,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00509501
+        },
+        "256": {
+          "graphs": 70,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 70,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "aegis_v5": {
+      "name": "aegis_v5",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.022,
+      "compiled_latency_ms": 0.835,
+      "speedup": 1.22,
+      "max_discrepancy": 0.00763798,
+      "per_seq_len": {
+        "128": {
+          "graphs": 77,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00763798
+        },
+        "256": {
+          "graphs": 77,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 77,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "aegis_v6": {
+      "name": "aegis_v6",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.361,
+      "compiled_latency_ms": 1.24,
+      "speedup": 1.1,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 87,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 87,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 87,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "alibi": {
+      "name": "alibi",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 92,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        }
+      },
+      "error": "RuntimeError: Error: accessing tensor output of CUDAGraphs that has been overwritten by a subsequent run. Stack trace: File \"/mnt/d/SVD_linear_Attention/neuralops/attentions/modern/alibi.py\", line 576, in torch_dynamo_resume_in_forward_at_536\n    alibi_bias = self._compute_alibi_bias(N_q, N_k, past_len, device, causal=is_causal)\n  File \"/mnt/d/SVD_linear_Attention/neuralops/attentions/modern/alibi.py\", line 296, in _compute_alibi_bias\n    bias = fused_alibi_bias_triton(\n  File \"/mnt/d/SVD_linear_Attention/neuralops/core/triton_kernels/elementwise.py\", line 547, in fused_alibi_bias_triton\n    out = torch.empty((1, num_heads, N_q, N_k), device=device, dtype=slopes.dtype). To prevent overwriting, clone the tensor outside of torch.compile() or call torch.compiler.cudagraph_mark_step_begin() before each model invocation.\n\nfrom user code:\n   File \"/mnt/d/SVD_linear_Attention/neuralops/attentions/modern/alibi.py\", line 595, in torch_dynamo_resume_in_forward_at_536\n    try:\n\nSet TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"\n"
+    },
+    "asvd_attention": {
+      "name": "asvd_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.546,
+      "compiled_latency_ms": 0.966,
+      "speedup": 1.0,
+      "max_discrepancy": 0.00012207,
+      "per_seq_len": {
+        "128": {
+          "graphs": 99,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00012207
+        },
+        "256": {
+          "graphs": 99,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 99,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "bam_umoe": {
+      "name": "bam_umoe",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.368,
+      "compiled_latency_ms": 0.171,
+      "speedup": 2.16,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 100,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 100,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 100,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "block_transformer_hiba": {
+      "name": "block_transformer_hiba",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.248,
+      "compiled_latency_ms": 0.549,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 105,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 105,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 105,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "chela_slay": {
+      "name": "chela_slay",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.684,
+      "compiled_latency_ms": 0.558,
+      "speedup": 1.23,
+      "max_discrepancy": 2.5e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 110,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 2.5e-07
+        },
+        "256": {
+          "graphs": 110,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 110,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "cluster_attention": {
+      "name": "cluster_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.327,
+      "compiled_latency_ms": 0.633,
+      "speedup": 1.0,
+      "max_discrepancy": 6e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 115,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 115,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 115,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "compressed_attention": {
+      "name": "compressed_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.171,
+      "compiled_latency_ms": 0.513,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 120,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 120,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 120,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "compressed_mha_attention": {
+      "name": "compressed_mha_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.232,
+      "compiled_latency_ms": 0.623,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 125,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 125,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 125,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "cosformer": {
+      "name": "cosformer",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.292,
+      "compiled_latency_ms": 1.737,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 134,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 134,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 134,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "cross_attention": {
+      "name": "cross_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.232,
+      "compiled_latency_ms": 0.599,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 140,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 140,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 140,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "decay_linear_attention": {
+      "name": "decay_linear_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.093,
+      "compiled_latency_ms": 1.624,
+      "speedup": 1.0,
+      "max_discrepancy": 0.00048828,
+      "per_seq_len": {
+        "128": {
+          "graphs": 148,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00048828
+        },
+        "256": {
+          "graphs": 148,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 148,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "dynamic_conv_attention": {
+      "name": "dynamic_conv_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.239,
+      "compiled_latency_ms": 0.318,
+      "speedup": 1.0,
+      "max_discrepancy": 2.4e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 151,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 2.4e-07
+        },
+        "256": {
+          "graphs": 151,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 151,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "eat": {
+      "name": "eat",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.387,
+      "compiled_latency_ms": 0.427,
+      "speedup": 1.0,
+      "max_discrepancy": 1.2e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 155,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 1.2e-07
+        },
+        "256": {
+          "graphs": 155,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 155,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "expert_choice_moe": {
+      "name": "expert_choice_moe",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "name 's5' is not defined"
+    },
+    "factorised_matrix_state": {
+      "name": "factorised_matrix_state",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "name 's5' is not defined"
+    },
+    "flash_attention3": {
+      "name": "flash_attention3",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.187,
+      "compiled_latency_ms": 0.438,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 167,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 167,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 167,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "flash_attention3_fp8": {
+      "name": "flash_attention3_fp8",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.188,
+      "compiled_latency_ms": 0.434,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 171,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 171,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 171,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "full": {
+      "name": "full",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.191,
+      "compiled_latency_ms": 0.45,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 175,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 175,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 175,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "full_attention": {
+      "name": "full_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.191,
+      "compiled_latency_ms": 0.455,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 179,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 179,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 179,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "fused_svd_kernel": {
+      "name": "fused_svd_kernel",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.33,
+      "compiled_latency_ms": 0.254,
+      "speedup": 1.3,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 182,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 182,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 182,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "fusion_attn": {
+      "name": "fusion_attn",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 5,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.55,
+      "compiled_latency_ms": 0.772,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 189,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 194,
+          "recompilations": 5,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 194,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "galerkin_attention": {
+      "name": "galerkin_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "name 's5' is not defined"
+    },
+    "gated_delta_net": {
+      "name": "gated_delta_net",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.452,
+      "compiled_latency_ms": 0.874,
+      "speedup": 1.0,
+      "max_discrepancy": 3e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 208,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 3e-08
+        },
+        "256": {
+          "graphs": 208,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 208,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "gated_deltanet_block": {
+      "name": "gated_deltanet_block",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.479,
+      "compiled_latency_ms": 0.926,
+      "speedup": 1.0,
+      "max_discrepancy": 3e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 219,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 3e-08
+        },
+        "256": {
+          "graphs": 219,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 219,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "gated_linear_attention": {
+      "name": "gated_linear_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.099,
+      "compiled_latency_ms": 1.64,
+      "speedup": 1.0,
+      "max_discrepancy": 0.00048828,
+      "per_seq_len": {
+        "128": {
+          "graphs": 227,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00048828
+        },
+        "256": {
+          "graphs": 227,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 227,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "gla_attention": {
+      "name": "gla_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.532,
+      "compiled_latency_ms": 0.643,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 228,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 228,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 228,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "goldfinch_ahn": {
+      "name": "goldfinch_ahn",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.44,
+      "compiled_latency_ms": 0.535,
+      "speedup": 1.0,
+      "max_discrepancy": 1.2e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 233,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 1.2e-07
+        },
+        "256": {
+          "graphs": 234,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 235,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "gqa_attention": {
+      "name": "gqa_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "'float' object cannot be interpreted as an integer"
+    },
+    "granite_hybrid": {
+      "name": "granite_hybrid",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.064,
+      "compiled_latency_ms": 0.951,
+      "speedup": 1.12,
+      "max_discrepancy": 7.63e-06,
+      "per_seq_len": {
+        "128": {
+          "graphs": 245,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 7.63e-06
+        },
+        "256": {
+          "graphs": 246,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 247,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "griffin_ssd": {
+      "name": "griffin_ssd",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.51,
+      "compiled_latency_ms": 0.624,
+      "speedup": 1.0,
+      "max_discrepancy": 4e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 253,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 4e-08
+        },
+        "256": {
+          "graphs": 253,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 253,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "halo_regla": {
+      "name": "halo_regla",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.586,
+      "compiled_latency_ms": 0.833,
+      "speedup": 1.0,
+      "max_discrepancy": 0.00097656,
+      "per_seq_len": {
+        "128": {
+          "graphs": 262,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00097656
+        },
+        "256": {
+          "graphs": 263,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 264,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "hamming_attention": {
+      "name": "hamming_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.288,
+      "compiled_latency_ms": 0.476,
+      "speedup": 1.0,
+      "max_discrepancy": 6e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 269,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 269,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 269,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "hgrn2_gated_deltanet": {
+      "name": "hgrn2_gated_deltanet",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.158,
+      "compiled_latency_ms": 1.697,
+      "speedup": 1.0,
+      "max_discrepancy": 6.104e-05,
+      "per_seq_len": {
+        "128": {
+          "graphs": 287,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6.104e-05
+        },
+        "256": {
+          "graphs": 287,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 287,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "hgrn2_gated_layer": {
+      "name": "hgrn2_gated_layer",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.445,
+      "compiled_latency_ms": 0.548,
+      "speedup": 1.0,
+      "max_discrepancy": 3.052e-05,
+      "per_seq_len": {
+        "128": {
+          "graphs": 294,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 3.052e-05
+        },
+        "256": {
+          "graphs": 294,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 294,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "hgrn2_gated_outer": {
+      "name": "hgrn2_gated_outer",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "name 's5' is not defined"
+    },
+    "hla_attention": {
+      "name": "hla_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.953,
+      "compiled_latency_ms": 0.539,
+      "speedup": 1.77,
+      "max_discrepancy": 6e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 303,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-07
+        },
+        "256": {
+          "graphs": 304,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 305,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "hybrid_attention": {
+      "name": "hybrid_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.788,
+      "compiled_latency_ms": 0.933,
+      "speedup": 1.0,
+      "max_discrepancy": 0.00386715,
+      "per_seq_len": {
+        "128": {
+          "graphs": 313,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00386715
+        },
+        "256": {
+          "graphs": 313,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 313,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "hybrid_local_kernel": {
+      "name": "hybrid_local_kernel",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.058,
+      "compiled_latency_ms": 0.885,
+      "speedup": 1.2,
+      "max_discrepancy": 0.00279456,
+      "per_seq_len": {
+        "128": {
+          "graphs": 320,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00279456
+        },
+        "256": {
+          "graphs": 320,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 320,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "hymba_transx": {
+      "name": "hymba_transx",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 3,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 4.012,
+      "compiled_latency_ms": 0.967,
+      "speedup": 4.15,
+      "max_discrepancy": 1.2e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 330,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 1.2e-07
+        },
+        "256": {
+          "graphs": 332,
+          "recompilations": 2,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 333,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "jamba": {
+      "name": "jamba",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.218,
+      "compiled_latency_ms": 1.744,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 345,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 345,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 345,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "jamba_info": {
+      "name": "jamba_info",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 4.211,
+      "compiled_latency_ms": 1.071,
+      "speedup": 3.93,
+      "max_discrepancy": 4.8e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 355,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 4.8e-07
+        },
+        "256": {
+          "graphs": 356,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 357,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "kda_attention": {
+      "name": "kda_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.772,
+      "compiled_latency_ms": 1.233,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 367,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 367,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 367,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "landmark_local_attention": {
+      "name": "landmark_local_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.94,
+      "compiled_latency_ms": 0.34,
+      "speedup": 2.76,
+      "max_discrepancy": 6e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 371,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 371,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 371,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "linformer_attention": {
+      "name": "linformer_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 372,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00012207
+        },
+        "256": {
+          "graphs": 372,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      },
+      "error": "CantSplit: 512*s47*s5 not divisible by 512*s47*s5*Min(512, s12)\n\nSet TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"\n"
+    },
+    "lola_attention": {
+      "name": "lola_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.494,
+      "compiled_latency_ms": 0.154,
+      "speedup": 3.22,
+      "max_discrepancy": 1.8e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 373,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 1.8e-07
+        },
+        "256": {
+          "graphs": 373,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 373,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "lora_attention": {
+      "name": "lora_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.287,
+      "compiled_latency_ms": 0.494,
+      "speedup": 1.0,
+      "max_discrepancy": 6e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 377,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 377,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 377,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "lsh_attention": {
+      "name": "lsh_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.334,
+      "compiled_latency_ms": 0.144,
+      "speedup": 2.31,
+      "max_discrepancy": 6e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 378,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 378,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 378,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "mamba_block": {
+      "name": "mamba_block",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 5,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 14.711,
+      "compiled_latency_ms": 1.149,
+      "speedup": 12.8,
+      "max_discrepancy": 3e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 383,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 3e-08
+        },
+        "256": {
+          "graphs": 387,
+          "recompilations": 4,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 388,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "mamba_svd_flash": {
+      "name": "mamba_svd_flash",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 10.743,
+      "compiled_latency_ms": 1.556,
+      "speedup": 6.9,
+      "max_discrepancy": 6e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 393,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 394,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 395,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "minimal_nova": {
+      "name": "minimal_nova",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.315,
+      "compiled_latency_ms": 0.965,
+      "speedup": 1.0,
+      "max_discrepancy": 8.3e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 402,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 8.3e-07
+        },
+        "256": {
+          "graphs": 402,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 402,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "minimal_svd": {
+      "name": "minimal_svd",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.253,
+      "compiled_latency_ms": 0.799,
+      "speedup": 1.0,
+      "max_discrepancy": 7.2e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 409,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 7.2e-07
+        },
+        "256": {
+          "graphs": 409,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 409,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "mixattention_moska": {
+      "name": "mixattention_moska",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.233,
+      "compiled_latency_ms": 0.585,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 414,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 414,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 414,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "mla_attention": {
+      "name": "mla_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.327,
+      "compiled_latency_ms": 0.365,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 417,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 417,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 417,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "moba_attention": {
+      "name": "moba_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "'float' object cannot be interpreted as an integer"
+    },
+    "moe_deltakv_paged": {
+      "name": "moe_deltakv_paged",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "RuntimeError when making fake tensor call\n  Explanation: Dynamo failed to run FX node with fake tensors: call_function <built-in function lshift>(*(1, s3 - 1), **{}): got AttributeError(\"'LazyExceptionMessage' object has no attribute 'startswith'\")\n  Hint: Your code may result in an error when running in eager. Please double check that your code doesn't contain a similar error when actually running eager/uncompiled. You can do this by removing the `torch.compile` call, or by using `torch.compiler.set_stance(\"force_eager\")`. \n\n  Developer debug context: \n\n For more details about this graph break, please visit: https://meta-pytorch.github.io/compile-graph-break-site/gb/gb4315.html\n\nfrom user code:\n   File \"/mnt/d/SVD_linear_Attention/neuralops/attentions/sparse/moe_deltakv_paged.py\", line 835, in torch_dynamo_resume_in_forward_at_819\n    scores = scores.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)\n  File \"/mnt/d/SVD_linear_Attention/neuralops/attentions/sparse/moe_deltakv_paged.py\", line 113, in simulate_paged_delta_kv\n    return K, V, err_K, err_V\n  File \"/mnt/d/SVD_linear_Attention/neuralops/attentions/sparse/moe_deltakv_paged.py\", line 85, in low_rank_delta_compress\n  File \"/mnt/d/SVD_linear_Attention/neuralops/attentions/sparse/moe_deltakv_paged.py\", line 44, in ste_quantize\n    return x + (x_q - x).detach()\n\nSet TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS=\"+dynamo\"\n"
+    },
+    "mqa": {
+      "name": "mqa",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.236,
+      "compiled_latency_ms": 0.531,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 430,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.0
+        },
+        "256": {
+          "graphs": 430,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 430,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "naive_svd": {
+      "name": "naive_svd",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.16,
+      "compiled_latency_ms": 0.51,
+      "speedup": 1.0,
+      "max_discrepancy": 9.5e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 436,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 9.5e-07
+        },
+        "256": {
+          "graphs": 436,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 436,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "nasc_attention": {
+      "name": "nasc_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 2.486,
+      "compiled_latency_ms": 0.74,
+      "speedup": 3.36,
+      "max_discrepancy": 1.2e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 444,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 1.2e-07
+        },
+        "256": {
+          "graphs": 445,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 446,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "native_hybrid_attention": {
+      "name": "native_hybrid_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.541,
+      "compiled_latency_ms": 0.484,
+      "speedup": 1.12,
+      "max_discrepancy": 6e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 450,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 450,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 450,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "nexus": {
+      "name": "nexus",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 1,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.816,
+      "compiled_latency_ms": 0.565,
+      "speedup": 1.45,
+      "max_discrepancy": 3.6e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 454,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 3.6e-07
+        },
+        "256": {
+          "graphs": 454,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 455,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "nsa_attention": {
+      "name": "nsa_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 3,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 458,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 460,
+          "recompilations": 2,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 461,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      },
+      "error": "name 's1' is not defined"
+    },
+    "nystrom_attention": {
+      "name": "nystrom_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 1,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.372,
+      "compiled_latency_ms": 0.476,
+      "speedup": 1.0,
+      "max_discrepancy": 1.2e-07,
+      "per_seq_len": {
+        "128": {
+          "graphs": 466,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 1.2e-07
+        },
+        "256": {
+          "graphs": 466,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 467,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "optimized_hybrid_attention": {
+      "name": "optimized_hybrid_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.788,
+      "compiled_latency_ms": 1.07,
+      "speedup": 1.0,
+      "max_discrepancy": 6e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 473,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 6e-08
+        },
+        "256": {
+          "graphs": 473,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 473,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "orion": {
+      "name": "orion",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.97,
+      "compiled_latency_ms": 0.483,
+      "speedup": 2.01,
+      "max_discrepancy": 7e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 474,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 7e-08
+        },
+        "256": {
+          "graphs": 475,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 476,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "padre_attention": {
+      "name": "padre_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.353,
+      "compiled_latency_ms": 0.477,
+      "speedup": 1.0,
+      "max_discrepancy": 5e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 480,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 5e-08
+        },
+        "256": {
+          "graphs": 480,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 480,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "performer_attention": {
+      "name": "performer_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 1.099,
+      "compiled_latency_ms": 0.872,
+      "speedup": 1.26,
+      "max_discrepancy": 0.00024414,
+      "per_seq_len": {
+        "128": {
+          "graphs": 490,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 0.00024414
+        },
+        "256": {
+          "graphs": 491,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 492,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "phantom": {
+      "name": "phantom",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.257,
+      "compiled_latency_ms": 0.143,
+      "speedup": 1.8,
+      "max_discrepancy": 1e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 493,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 1e-08
+        },
+        "256": {
+          "graphs": 493,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 493,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "positive_kernel_linear_attention": {
+      "name": "positive_kernel_linear_attention",
+      "status": "FAIL",
+      "compile_status": "RECOMPILE_LIMIT",
+      "reliability": "UNRELIABLE",
+      "recompilations": 2,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.868,
+      "compiled_latency_ms": 0.398,
+      "speedup": 2.18,
+      "max_discrepancy": 7e-08,
+      "per_seq_len": {
+        "128": {
+          "graphs": 496,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 7e-08
+        },
+        "256": {
+          "graphs": 497,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 498,
+          "recompilations": 1,
+          "has_nan": false,
+          "has_inf": false
+        }
+      }
+    },
+    "primal_attention": {
+      "name": "primal_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {
+        "128": {
+          "graphs": 502,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false,
+          "discrepancy": 3e-08
+        },
+        "256": {
+          "graphs": 502,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        },
+        "512": {
+          "graphs": 502,
+          "recompilations": 0,
+          "has_nan": false,
+          "has_inf": false
+        }
+      },
+      "error": "CUDA error: operation failed due to a previous error during capture\nSearch for `cudaErrorStreamCaptureInvalidated' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n"
+    },
+    "progressive_token_pruning": {
+      "name": "progressive_token_pruning",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "projection_factorized_attn": {
+      "name": "projection_factorized_attn",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "qcqa_attention": {
+      "name": "qcqa_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "rala_attention": {
+      "name": "rala_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "reap_moe": {
+      "name": "reap_moe",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "refined_landmark_attention": {
+      "name": "refined_landmark_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "regla_attention": {
+      "name": "regla_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "residual_svd_attention": {
+      "name": "residual_svd_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "routing_attention": {
+      "name": "routing_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "rpc_attention": {
+      "name": "rpc_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "salt_attention": {
+      "name": "salt_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "samba_m3": {
+      "name": "samba_m3",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "samba_moe": {
+      "name": "samba_moe",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "selective_ssm": {
+      "name": "selective_ssm",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "simple_ssm": {
+      "name": "simple_ssm",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "sink_attention": {
+      "name": "sink_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "soa_attn": {
+      "name": "soa_attn",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "spectraformer_attention": {
+      "name": "spectraformer_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "spectron": {
+      "name": "spectron",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "spectron_fp8": {
+      "name": "spectron_fp8",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "split_head_hybrid": {
+      "name": "split_head_hybrid",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_compressed": {
+      "name": "svd_compressed",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_linear": {
+      "name": "svd_linear",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_linear_attention": {
+      "name": "svd_linear_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_linear_attn": {
+      "name": "svd_linear_attn",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_linear_decay": {
+      "name": "svd_linear_decay",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_linear_inject": {
+      "name": "svd_linear_inject",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_llm_v2_attention": {
+      "name": "svd_llm_v2_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_mamba": {
+      "name": "svd_mamba",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_projection_attention": {
+      "name": "svd_projection_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "svd_seq": {
+      "name": "svd_seq",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "template_attention": {
+      "name": "template_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "token_compressed_attention": {
+      "name": "token_compressed_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "tri_branch_hybrid": {
+      "name": "tri_branch_hybrid",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "triton_cosformer": {
+      "name": "triton_cosformer",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "triton_svd_linear_attention": {
+      "name": "triton_svd_linear_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "ttt_linear_attention": {
+      "name": "ttt_linear_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "unified_rope": {
+      "name": "unified_rope",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "upi_stuffed_mamba": {
+      "name": "upi_stuffed_mamba",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "vig_attention": {
+      "name": "vig_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "vspec": {
+      "name": "vspec",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "wgqa_attention": {
+      "name": "wgqa_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "xattention": {
+      "name": "xattention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    },
+    "zeros_attention": {
+      "name": "zeros_attention",
+      "status": "FAIL",
+      "compile_status": "COMPILE_ERROR",
+      "reliability": "UNRELIABLE",
+      "recompilations": 0,
+      "zero_nan": true,
+      "zero_inf": true,
+      "eager_latency_ms": 0.0,
+      "compiled_latency_ms": 0.0,
+      "speedup": 1.0,
+      "max_discrepancy": 0.0,
+      "per_seq_len": {},
+      "error": "Offset increment outside graph capture encountered unexpectedly."
+    }
+  },
+  "summary": {
+    "all_passed": false,
+    "total_canonical_modules": 125,
+    "total_recompilations": 40,
+    "zero_recompilations_guaranteed": false,
+    "zero_nan_guaranteed": true,
+    "zero_inf_guaranteed": true,
+    "average_speedup": 1.32
+  }
+}

@@ -1,0 +1,25 @@
+% Auto-generated Low-Bit Quantized GEMM Scaling LaTeX Benchmark Tables on RTX 4070 (Ada Lovelace SM 8.9)
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Batch $B$} & \textbf{Precision / Kernel} & \textbf{Latency (ms)} & \textbf{Weights (MB)} & \textbf{Eff. BW (GB/s)} & \textbf{BW Util (\\%)} & \textbf{Arith. Intensity (FLOP/B)} \\
+\midrule
+1 & cuBLAS FP16 & 0.0134 & 8.0 & 628.57 & 100.0\% & 1.0 \\
+1 & FP4 (E2M1) & 0.483 & 2.0 & 4.38 & 1.7\% & 3.97 \\
+1 & Ternary (1.58-bit) & 0.0335 & 1.0 & 31.8 & 12.4\% & 7.88 \\
+4 & cuBLAS FP16 & 0.0116 & 8.0 & 728.44 & 100.0\% & 3.98 \\
+4 & FP4 (E2M1) & 0.4829 & 2.0 & 4.43 & 1.7\% & 15.69 \\
+4 & Ternary (1.58-bit) & 0.0387 & 1.0 & 28.13 & 11.0\% & 30.8 \\
+16 & cuBLAS FP16 & 0.0125 & 8.0 & 680.66 & 100.0\% & 15.75 \\
+16 & FP4 (E2M1) & 0.4861 & 2.0 & 4.6 & 1.8\% & 60.01 \\
+16 & Ternary (1.58-bit) & 0.1228 & 1.0 & 9.67 & 3.8\% & 112.99 \\
+64 & cuBLAS FP16 & 0.0208 & 8.0 & 429.22 & 100.0\% & 60.24 \\
+64 & FP4 (E2M1) & 1.8768 & 2.0 & 1.4 & 0.5\% & 204.16 \\
+64 & Ternary (1.58-bit) & 0.424 & 1.0 & 3.73 & 1.5\% & 339.56 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical scaling and memory bandwidth utilization profile for sub-byte quantized GEMMs (FP4 E2M1 and 1.58-bit Ternary vs FP16) on NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace SM 8.9, peak bandwidth 256 GB/s, $N=2048, K=2048$).}
+\label{tab:lowbit_gemm_scaling}
+\end{table*}

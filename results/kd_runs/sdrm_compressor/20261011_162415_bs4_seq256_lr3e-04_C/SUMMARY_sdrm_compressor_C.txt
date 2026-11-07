@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: sdrm_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      109.57 M
+  Trainable params:  21.97 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        1462.7400
+  Post-KD PPL:       51.8400
+  Stage 1 (KD) PPL:  67.1900
+  Stage 2 (Self) PPL:51.8400
+  KD Gain:           +1395.55
+  Self Gain:         +15.35
+  Total Gain:        +1410.90
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.4313
+  Recovery:          98.91%
+  Peak VRAM:         2435.26 MB
+  Train time:        154.42 s (Stage 1: 98.1s, Stage 2: 56.3s)
+  s/step:            0.3088
+  Loss (final):      24.3062
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8321
+  Repetition-3:      0.0551
+  Train PPL:         29.6000
+  Test PPL:          51.8400
+  Overfit Gap:       22.24
+  Latency (mean):    2041.11 ms
+  Latency (std):     28.31 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        0f67bb39bfa9
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=3.7223 | lr=1.74e-04
+  step   420 | loss=3.8908 | lr=1.50e-04
+  step   430 | loss=3.1712 | lr=1.27e-04
+  step   440 | loss=3.7858 | lr=1.04e-04
+  step   450 | loss=3.7784 | lr=8.20e-05
+  step   460 | loss=3.5881 | lr=6.19e-05
+  step   470 | loss=3.8752 | lr=4.40e-05
+  step   480 | loss=3.5746 | lr=2.87e-05
+  step   490 | loss=4.1635 | lr=1.64e-05
+  step   500 | loss=3.7276 | lr=7.44e-06

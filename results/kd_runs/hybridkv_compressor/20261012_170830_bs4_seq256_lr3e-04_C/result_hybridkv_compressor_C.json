@@ -1,0 +1,452 @@
+{
+  "method": "C",
+  "pre_ppl": 36.21,
+  "post_ppl": 33.52,
+  "ppl_ratio": 0.9257,
+  "recovery_pct": NaN,
+  "peak_vram_mb": 2029.77,
+  "train_time_s": 16.99,
+  "s_per_step": 0.5663,
+  "loss_final": 2.4982,
+  "cached": true,
+  "post_ppl_stage1": 37.6,
+  "post_ppl_stage2": 33.52,
+  "kd_gain": -1.39,
+  "self_gain": 4.08,
+  "total_gain": 2.69,
+  "aligned_with_teacher": false,
+  "beat_teacher_after_self": true,
+  "stage1_time_s": 10.74,
+  "stage2_time_s": 6.25,
+  "self_train_steps": 10,
+  "teacher_params": 124439808,
+  "student_params": 124439808,
+  "trainable_params": 28348416,
+  "batch_size": 4,
+  "seq_len": 256,
+  "learning_rate": 0.0003,
+  "recovery_steps": 20,
+  "train_scope": "module",
+  "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "eval_protocol": {
+    "max_tokens": 15000,
+    "stride": 128,
+    "seq_len": 256,
+    "precision": "fp16",
+    "dataset": "test"
+  },
+  "loss_history": [
+    [
+      0,
+      1.9685940742492676
+    ],
+    [
+      1,
+      1.8166698217391968
+    ],
+    [
+      2,
+      2.1950063705444336
+    ],
+    [
+      3,
+      1.8686232566833496
+    ],
+    [
+      4,
+      1.9495060443878174
+    ],
+    [
+      5,
+      2.498239278793335
+    ],
+    [
+      6,
+      2.0125207901000977
+    ],
+    [
+      7,
+      2.119067430496216
+    ],
+    [
+      8,
+      2.205108404159546
+    ],
+    [
+      9,
+      2.3794960975646973
+    ],
+    [
+      10,
+      2.8488826751708984
+    ],
+    [
+      11,
+      2.9098174571990967
+    ],
+    [
+      12,
+      3.019468307495117
+    ],
+    [
+      13,
+      3.33500599861145
+    ],
+    [
+      14,
+      3.448366165161133
+    ],
+    [
+      15,
+      4.14448356628418
+    ],
+    [
+      16,
+      4.316258430480957
+    ],
+    [
+      17,
+      4.651620864868164
+    ],
+    [
+      18,
+      5.061093330383301
+    ],
+    [
+      19,
+      5.438597202301025
+    ],
+    [
+      30,
+      3.8952744007110596
+    ]
+  ],
+  "ppl_history": {
+    "20": 37.6,
+    "stage2_10": 33.52
+  },
+  "lr_history": [
+    [
+      0,
+      0.0
+    ],
+    [
+      1,
+      2.9999999999999997e-06
+    ],
+    [
+      2,
+      5.999999999999999e-06
+    ],
+    [
+      3,
+      8.999999999999999e-06
+    ],
+    [
+      4,
+      1.1999999999999999e-05
+    ],
+    [
+      5,
+      1.4999999999999999e-05
+    ],
+    [
+      6,
+      1.7999999999999997e-05
+    ],
+    [
+      7,
+      2.1e-05
+    ],
+    [
+      8,
+      2.3999999999999997e-05
+    ],
+    [
+      9,
+      2.6999999999999996e-05
+    ],
+    [
+      10,
+      2.9999999999999997e-05
+    ],
+    [
+      11,
+      3.2999999999999996e-05
+    ],
+    [
+      12,
+      3.5999999999999994e-05
+    ],
+    [
+      13,
+      3.9e-05
+    ],
+    [
+      14,
+      4.2e-05
+    ],
+    [
+      15,
+      4.4999999999999996e-05
+    ],
+    [
+      16,
+      4.7999999999999994e-05
+    ],
+    [
+      17,
+      5.1e-05
+    ],
+    [
+      18,
+      5.399999999999999e-05
+    ],
+    [
+      19,
+      5.6999999999999996e-05
+    ],
+    [
+      30,
+      0.00015
+    ]
+  ],
+  "generation": {
+    "distinct_2": 0.9592,
+    "repetition_3": 0.0052,
+    "samples": [
+      {
+        "prompt": "The quick brown fox",
+        "text": "es are not normally seen as big, but they have a hardy, furry body that is capable of carrying a pack of at least 50 pounds.\n\nThey are also known for their bite marks on flesh, from biting their prey to biting their",
+        "first_50_tokens": [
+          274,
+          389,
+          407,
+          7685,
+          1775,
+          355,
+          1263,
+          11,
+          475,
+          484,
+          423,
+          257,
+          1327,
+          88,
+          11,
+          40857,
+          1767,
+          326,
+          318,
+          6007,
+          286,
+          6872,
+          257,
+          2353,
+          286,
+          379,
+          1551,
+          2026,
+          8059,
+          13,
+          198,
+          198,
+          2990,
+          389,
+          635,
+          1900,
+          329,
+          511,
+          13197,
+          8849,
+          319,
+          11222,
+          11,
+          422,
+          30791,
+          511,
+          15974,
+          284,
+          30791,
+          511
+        ]
+      },
+      {
+        "prompt": "Once upon a time",
+        "text": ", he had had the audacity to ask the question. But when he did so, he lost himself in a dream, waking up in his own brain as if he were in some sort of lucid dream. He had come to realize that he had",
+        "first_50_tokens": [
+          11,
+          339,
+          550,
+          550,
+          262,
+          2709,
+          4355,
+          284,
+          1265,
+          262,
+          1808,
+          13,
+          887,
+          618,
+          339,
+          750,
+          523,
+          11,
+          339,
+          2626,
+          2241,
+          287,
+          257,
+          4320,
+          11,
+          23137,
+          510,
+          287,
+          465,
+          898,
+          3632,
+          355,
+          611,
+          339,
+          547,
+          287,
+          617,
+          3297,
+          286,
+          45464,
+          4320,
+          13,
+          679,
+          550,
+          1282,
+          284,
+          6537,
+          326,
+          339,
+          550
+        ]
+      },
+      {
+        "prompt": "In the beginning",
+        "text": " of the year, however, the campaign for a more robust role for the CIA in the CIA operation began to fade. The CIA's most senior officers began to worry about the dangers of using covert action for personal gain, and a new CIA commander,",
+        "first_50_tokens": [
+          286,
+          262,
+          614,
+          11,
+          2158,
+          11,
+          262,
+          1923,
+          329,
+          257,
+          517,
+          12373,
+          2597,
+          329,
+          262,
+          7688,
+          287,
+          262,
+          7688,
+          4905,
+          2540,
+          284,
+          22100,
+          13,
+          383,
+          7688,
+          338,
+          749,
+          4664,
+          3790,
+          2540,
+          284,
+          5490,
+          546,
+          262,
+          16169,
+          286,
+          1262,
+          22624,
+          2223,
+          329,
+          2614,
+          4461,
+          11,
+          290,
+          257,
+          649,
+          7688,
+          11561,
+          11
+        ]
+      },
+      {
+        "prompt": "The future of AI is",
+        "text": " largely unknown. For the past five years, scientists have struggled to create AI that can do things like perform complex tasks and perform complex tasks well. In order to build AI that does some of these tasks, researchers have to rely on basic AI in order",
+        "first_50_tokens": [
+          5688,
+          6439,
+          13,
+          1114,
+          262,
+          1613,
+          1936,
+          812,
+          11,
+          5519,
+          423,
+          11615,
+          284,
+          2251,
+          9552,
+          326,
+          460,
+          466,
+          1243,
+          588,
+          1620,
+          3716,
+          8861,
+          290,
+          1620,
+          3716,
+          8861,
+          880,
+          13,
+          554,
+          1502,
+          284,
+          1382,
+          9552,
+          326,
+          857,
+          617,
+          286,
+          777,
+          8861,
+          11,
+          4837,
+          423,
+          284,
+          8814,
+          319,
+          4096,
+          9552,
+          287,
+          1502
+        ]
+      }
+    ]
+  },
+  "latency": {
+    "mean_latency_ms": 338.25,
+    "std_latency_ms": 0.13
+  },
+  "train_ppl": 34.56,
+  "test_ppl": 33.52,
+  "overfit_gap": -1.04,
+  "lambada_acc": null
+}

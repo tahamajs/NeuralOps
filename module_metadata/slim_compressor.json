@@ -1,0 +1,29 @@
+{
+  "module_name": "slim_compressor",
+  "class_name": "SLiMCompressor",
+  "category": "compression",
+  "family": "Structured Channel & Head Pruning",
+  "params": [
+    "model",
+    "bits",
+    "sparsity",
+    "rank",
+    "structured_24"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "SLiM Compressor: One-shot joint b-bit quantization, 2:4 structured sparsity, and low-rank residual recovery.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.3626321830453663e+38,
+  "paradigm": "pruning",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

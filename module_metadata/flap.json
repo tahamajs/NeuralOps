@@ -1,0 +1,32 @@
+{
+  "module_name": "flap",
+  "class_name": "FLAPCompressor",
+  "category": "compression",
+  "family": "Structured Channel & Head Pruning",
+  "params": [
+    "model",
+    "tokenizer",
+    "sparsity",
+    "metric_type",
+    "calibration_loader",
+    "calibration_texts",
+    "device",
+    "structured_24"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "FLAP Compressor: Fluctuation-based Adaptive Structured Pruning.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.2801199378461375e+38,
+  "paradigm": "pruning",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

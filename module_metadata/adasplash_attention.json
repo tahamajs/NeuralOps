@@ -1,0 +1,31 @@
+{
+  "module_name": "adasplash_attention",
+  "class_name": "AdaSplashAttention",
+  "category": "attention",
+  "family": "Block-Sparse, Dilated & Sliding-Window Attentions",
+  "params": [
+    "config",
+    "rank",
+    "alpha",
+    "n_iter",
+    "splash_radius",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "transpose",
+    "dropout",
+    "matmul",
+    "view",
+    "softmax"
+  ],
+  "docstring": "AdaSplash Attention Layer with α-Entmax and Local Splash Radius.\n\nMathematical Formulation:\n    1. Query-Key Relevance:\n       $$S_{ij} = \\frac{Q_i K_j^\\top}{\\sqrt{d_h}}$$\n    \n    2. Adaptive Splash Masking:\n       Retains all local tokens within splash radius $W$ while applying sparse 1.5-entmax:\n       $$\\mathcal{M}^{\\text{splash}}_{ij} = \\begin{cases} 1 & \\text{if } |i - j| \\le W \\\\ 1 & \\text{if valid token} \\\\ 0 & \\text{if padding} \\end{cases}$$\n    \n    3. Sparse Entmax Normalization:\n       $$A = \\text{1.5-entmax}(S, \\text{dim}=-1)$$\n       $$O = A V W_O$$",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.2902885722579667e+38,
+  "paradigm": "sparse",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

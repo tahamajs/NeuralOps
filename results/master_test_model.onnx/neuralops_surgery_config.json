@@ -1,0 +1,210 @@
+{
+  "version": "1.4.2",
+  "base_model_name": null,
+  "attentions": [
+    {
+      "layer_path": "all_attention",
+      "attention_type": "gated_delta_net",
+      "kwargs": {
+        "rank": null,
+        "copy_weights": true,
+        "layers": null
+      },
+      "has_sidecar_gate": false,
+      "has_learnable_sink": false,
+      "peft_recovery_type": null,
+      "peft_rank": 0,
+      "arch_pattern": null
+    }
+  ],
+  "compressions": [
+    {
+      "layer_path": "layers.0.self_attn._wrapped_attention.lora_beta_proj",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 4,
+      "rank": 2,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.0.self_attn._wrapped_attention.lora_alpha_proj",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 4,
+      "rank": 2,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.0.self_attn._wrapped_attention.source_attn.out_proj",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 64,
+      "rank": 31,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.0.self_attn._wrapped_attention.source_attn.query",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 64,
+      "rank": 31,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.0.self_attn._wrapped_attention.source_attn.key",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 64,
+      "rank": 31,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.0.self_attn._wrapped_attention.source_attn.value",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 64,
+      "rank": 31,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.0.linear1",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 128,
+      "rank": 32,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.0.linear2",
+      "compressor_name": "direct_svd",
+      "in_features": 128,
+      "out_features": 64,
+      "rank": 32,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.1.self_attn._wrapped_attention.lora_beta_proj",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 4,
+      "rank": 2,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.1.self_attn._wrapped_attention.lora_alpha_proj",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 4,
+      "rank": 2,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.1.self_attn._wrapped_attention.source_attn.out_proj",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 64,
+      "rank": 31,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.1.self_attn._wrapped_attention.source_attn.query",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 64,
+      "rank": 31,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.1.self_attn._wrapped_attention.source_attn.key",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 64,
+      "rank": 31,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.1.self_attn._wrapped_attention.source_attn.value",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 64,
+      "rank": 31,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.1.linear1",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 128,
+      "rank": 32,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "layers.1.linear2",
+      "compressor_name": "direct_svd",
+      "in_features": 128,
+      "out_features": 64,
+      "rank": 32,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    },
+    {
+      "layer_path": "head",
+      "compressor_name": "direct_svd",
+      "in_features": 64,
+      "out_features": 100,
+      "rank": 32,
+      "bits": null,
+      "group_size": null,
+      "has_bias": true,
+      "wrapper_class": "SVDLinear"
+    }
+  ],
+  "metadata": {}
+}

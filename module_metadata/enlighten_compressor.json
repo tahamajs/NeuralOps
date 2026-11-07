@@ -1,0 +1,27 @@
+{
+  "module_name": "enlighten_compressor",
+  "class_name": "ENLightenCompressor",
+  "category": "compression",
+  "family": "Optimal Subspace Projection & Latent Dimensionality Reduction",
+  "params": [
+    "model",
+    "rank",
+    "sparsity"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "ENLighten: Low-rank SVD + 2:4 structured sparsity (photonic-aligned).\nDecomposes linear layers into low-rank representations plus 2:4 structured sparse residuals.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.4343670625028195e+38,
+  "paradigm": "subspace",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

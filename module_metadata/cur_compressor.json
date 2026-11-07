@@ -1,0 +1,30 @@
+{
+  "module_name": "cur_compressor",
+  "class_name": "CURCompressor",
+  "category": "compression",
+  "family": "Tensor Decomposition (Tensor-Train, Tucker & Kronecker)",
+  "params": [
+    "model",
+    "rank",
+    "method",
+    "cfg",
+    "target_names",
+    "deterministic"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Compressor that replaces eligible Linear layers with CURLinear.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.2196205067886614e+38,
+  "paradigm": "tensor_decomp",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

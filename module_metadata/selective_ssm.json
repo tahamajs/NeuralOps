@@ -1,0 +1,25 @@
+{
+  "module_name": "selective_ssm",
+  "class_name": "SelectiveSSM",
+  "category": "attention",
+  "family": "Continuous-Time & Selective State-Space Models (SSMs)",
+  "paradigm": "ssm",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Selective State Space Model (SelectiveSSM).  Faithful implementation of Mamba-style selective state space recurrence block. Features: - State dimension (B, D, L, N) - Selective (input-dependent) Delta, B, C parameters - Structured A matrix initialization (Mamba paper Eq. 11) - Depthwise 1D convolution with SiLU gating - Bidirectional support with i",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

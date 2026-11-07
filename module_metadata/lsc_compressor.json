@@ -1,0 +1,27 @@
+{
+  "module_name": "lsc_compressor",
+  "class_name": "LSCCompressor",
+  "category": "compression",
+  "family": "Optimal Subspace Projection & Latent Dimensionality Reduction",
+  "params": [
+    "model",
+    "rank",
+    "energy_ratio"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "LSC Compressor: 2D Fourier spectral low-rank and frequency filtering compressor.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.3184672326668542e+38,
+  "paradigm": "subspace",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

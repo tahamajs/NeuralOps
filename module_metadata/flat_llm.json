@@ -1,0 +1,32 @@
+{
+  "module_name": "flat_llm",
+  "class_name": "FLATLLMCompressor",
+  "category": "compression",
+  "family": "Rotational Smoothing & Incoherent Matrix Transformation",
+  "params": [
+    "model",
+    "tokenizer",
+    "keep_ratio",
+    "damping",
+    "calibration_loader",
+    "calibration_texts",
+    "device",
+    "structured_24"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "FLAT-LLM Compressor: Activation-aware neuron and output channel pruning.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.527529365755303e+38,
+  "paradigm": "rotational",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

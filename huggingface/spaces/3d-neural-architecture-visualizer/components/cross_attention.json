@@ -1,0 +1,13 @@
+{
+  "id": "cross_attention",
+  "name": "Cross Attention: Modern Positional, Rotary & Geometric Attention Variants",
+  "type": "Attention Module",
+  "family": "Modern Positional, Rotary & Geometric Attention Variants",
+  "category": "Modern Positional, Rotary & Geometric Attention Variants",
+  "paradigm": "positional",
+  "icon": "📐",
+  "file": "neuralops/layers/modern/cross_attention.py",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "description": "Cross Attention operator from the Modern Positional, Rotary & Geometric Attention Variants family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "math": "O = \\operatorname{Attention}(Q, K, V)"
+}

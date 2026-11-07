@@ -1,0 +1,24 @@
+=== SEQUENCE LENGTH SCALING ===
+Sequence_Length,Standard_Attn_VRAM_MB,Standard_Attn_Latency_MS,GLA_Scan_VRAM_MB,GLA_Scan_Latency_MS,Sparse_Attn_VRAM_MB,Sparse_Attn_Latency_MS,Flash_GQA_VRAM_MB,Flash_GQA_Latency_MS
+512,34.75,1.07,89.01,193.52,27.26,5.2,18.25,0.58
+1024,85.25,3.59,161.77,431.08,38.27,11.23,20.25,0.79
+2048,282.25,13.2,307.31,1031.13,60.33,39.69,24.25,3.22
+4096,1060.25,78.5,598.37,1627.77,104.56,149.79,32.25,6.61
+8192,OOM,OOM,1204.49,4159.38,217.5,420.33,72.25,22.3
+16384,OOM,OOM,2392.74,18877.19,421.25,1055.23,128.25,39.5
+
+=== MULTI-TENANT STREAM CONCURRENCY ===
+Num_Streams,Sequential_Latency_MS,Concurrent_Latency_MS,Speedup,Seq_Throughput_QPS,Concurrent_Throughput_QPS
+1,0.319,0.317,1.01,3134.8,3154.6
+2,0.68,0.404,1.68,2941.2,4950.5
+4,1.311,0.544,2.41,3051.1,7352.9
+8,2.726,1.002,2.72,2934.7,7984.0
+
+=== 1000-ITERATION MEMORY FRAGMENTATION ===
+Metric,Value
+Iterations,1000
+Elapsed_Seconds,2.06
+Net_Memory_Drift_MB,0.0
+Zero_Leak_Verified,True
+Final_Fragmentation_Pct,8.85
+Strictly_Below_5_Pct,False

@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: spectraformer_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        16494.5900
+  Post-KD PPL:       9980.0100
+  Stage 1 (KD) PPL:  40435.6700
+  Stage 2 (Self) PPL:9980.0100
+  KD Gain:           -23941.08
+  Self Gain:         +30455.66
+  Total Gain:        +6514.58
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         275.6147
+  Recovery:          39.58%
+  Peak VRAM:         2837.82 MB
+  Train time:        110.06 s (Stage 1: 73.9s, Stage 2: 36.1s)
+  s/step:            0.2752
+  Loss (final):      18.9030
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.3316
+  Repetition-3:      0.5208
+  Train PPL:         8531.2700
+  Test PPL:          9980.0100
+  Overfit Gap:       1448.74
+  Latency (mean):    336.99 ms
+  Latency (std):     0.43 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   310 | loss=8.8773 | lr=1.74e-04
+  step   320 | loss=9.0862 | lr=1.50e-04
+  step   330 | loss=8.6751 | lr=1.27e-04
+  step   340 | loss=8.9418 | lr=1.04e-04
+  step   350 | loss=9.1793 | lr=8.20e-05
+  step   360 | loss=9.0473 | lr=6.19e-05
+  step   370 | loss=9.1733 | lr=4.40e-05
+  step   380 | loss=8.8313 | lr=2.87e-05
+  step   390 | loss=9.0435 | lr=1.64e-05
+  step   400 | loss=9.3069 | lr=7.44e-06

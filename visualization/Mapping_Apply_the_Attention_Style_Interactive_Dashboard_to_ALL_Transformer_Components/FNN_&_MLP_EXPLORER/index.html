@@ -1,0 +1,3554 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/visualization/Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/FNN_%26_MLP_EXPLORER/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>🧠 FFN/MLP EXPLORER — Complete Implementation Blueprint - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ffnmlp-explorer-complete-implementation-blueprint" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🧠 FFN/MLP EXPLORER — Complete Implementation Blueprint
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#neuron-activation-universe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Neuron Activation Universe"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overall-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📐 OVERALL ARCHITECTURE
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-1-canvas-neuron-activation-heatmap-tokens-neurons" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📊 ZONE 1: CANVAS — Neuron Activation Heatmap (tokens × neurons)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📊 ZONE 1: CANVAS — Neuron Activation Heatmap (tokens × neurons)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#top-activating-examples-explorer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Top-Activating Examples Explorer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neuron-planet-3d-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neuron "Planet" 3D Map
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-2-math-panel-live-formula-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📐 ZONE 2: MATH PANEL — Live Formula Rendering
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📐 ZONE 2: MATH PANEL — Live Formula Rendering">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#implementation-stack_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation-details_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#svd-of-w1-feature-direction-explorer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SVD of W₁ — Feature Direction Explorer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-3-analytics-diagnostic-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📈 ZONE 3: ANALYTICS — Diagnostic Dashboard
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📈 ZONE 3: ANALYTICS — Diagnostic Dashboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neuron-importance-ranking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neuron Importance Ranking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dead-neuron-detector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dead Neuron Detector
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neuron-co-activation-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neuron Co-Activation Graph
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-4-interpretability-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔬 ZONE 4: INTERPRETABILITY TOOLS
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔬 ZONE 4: INTERPRETABILITY TOOLS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neuron-ablation-laboratory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neuron Ablation Laboratory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sae-sparse-autoencoder-feature-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SAE (Sparse Autoencoder) Feature View
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neuron-labeling-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neuron Labeling System
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-5-social-community" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💬 ZONE 5: SOCIAL &amp; COMMUNITY
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="💬 ZONE 5: SOCIAL &amp; COMMUNITY">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#neuron-of-the-week" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Neuron of the Week"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#neuron-labeling-game" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Neuron Labeling Game
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zone-6-gamification-neuron-hunter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🎮 ZONE 6: GAMIFICATION — "Neuron Hunter"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🎮 ZONE 6: GAMIFICATION — &#34;Neuron Hunter&#34;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#game-mechanics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Game Mechanics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technology-stack-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔧 TECHNOLOGY STACK SUMMARY
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-storage-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🗄️ DATA STORAGE &amp; CACHING
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📏 PERFORMANCE TARGETS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🚀 IMPLEMENTATION PHASES
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="ffnmlp-explorer-complete-implementation-blueprint">🧠 FFN/MLP EXPLORER — Complete Implementation Blueprint</h1>
+<h2 id="neuron-activation-universe">"Neuron Activation Universe"</h2>
+<hr />
+<h2 id="overall-architecture">📐 OVERALL ARCHITECTURE</h2>
+<p>The FFN/MLP Explorer follows a <strong>six-tier architecture</strong> identical to the approach used by OpenAI's Transformer Debugger: a React frontend, a FastAPI activation server, and a specialized model inference library with hooking capabilities. This architecture separates concerns into: Model &amp; Inference System → Activation Data Management → Activation Server → Frontend Canvas.</p>
+<p>The core data abstraction is the <code>ActivationRecord</code> (a <code>@dataclass</code> pairing activation values with token strings) and the <code>NeuronRecord</code> (organizing multiple activation records per neuron with statistical moments: mean, variance, skewness, kurtosis). The <code>NeuronId</code> uniquely identifies each neuron by <code>(neuron_index, layer_index)</code>. This simple but powerful data model underpins every visualization zone.</p>
+<hr />
+<h2 id="zone-1-canvas-neuron-activation-heatmap-tokens-neurons">📊 ZONE 1: CANVAS — Neuron Activation Heatmap (<code>tokens × neurons</code>)</h2>
+<h3 id="implementation-stack">Implementation Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Technology</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Activation Extraction</strong></td>
+<td><code>TransformerLens</code> 3.0+ via <code>TransformerBridge</code></td>
+<td>Supports 50+ architectures, exposes all internal activations through hook points including <code>mlp.post_act</code></td>
+</tr>
+<tr>
+<td><strong>Backend Server</strong></td>
+<td>FastAPI (Python 3.11+) with <code>asyncio</code></td>
+<td>OpenAI's TDB uses FastAPI activation server; AXON uses the same pattern with WebSocket streaming</td>
+</tr>
+<tr>
+<td><strong>Data Format</strong></td>
+<td>Apache Arrow via <code>pyarrow</code></td>
+<td>Zero-copy columnar transfer between Python and JavaScript; critical for matrices with up to 16384 neurons × 1024 tokens (16M values)</td>
+</tr>
+<tr>
+<td><strong>Frontend Rendering</strong></td>
+<td><code>@deck.gl/layers</code> (BitmapLayer + ColumnLayer)</td>
+<td>GPU-powered via WebGL2/WebGPU; renders millions of rectangles at 60fps using instanced rendering</td>
+</tr>
+<tr>
+<td><strong>Color Scale</strong></td>
+<td>Custom GLSL fragment shader (Viridis/Inferno)</td>
+<td>Bypasses CPU color computation; all color mapping happens on GPU</td>
+</tr>
+<tr>
+<td><strong>Zoom/Pan</strong></td>
+<td><code>deck.gl</code> built-in <code>OrthographicView</code> with <code>viewState</code></td>
+<td>Handles coordinate transforms in WebGL without re-rendering data</td>
+</tr>
+</tbody>
+</table>
+<h3 id="implementation-details">Implementation Details</h3>
+<p><strong>Backend Pipeline (FastAPI)</strong>:</p>
+<div class="highlight"><pre><span></span><code>POST /api/ffn/activations
+Body: { model_id, text, layers: [0..N] }
+→ TransformerLens runs forward pass with hooks on mlp.post_act for each layer
+→ ActivationCache stores all values
+→ For each layer, extract tensor [n_tokens, d_mlp] as float32
+→ Convert to Arrow RecordBatch (columns: token_index, neuron_index, activation_value)
+→ Return as Arrow IPC stream (binary)
+</code></pre></div>
+<p>The model system uses <code>TransformerHooks</code> to intercept activations at <code>mlp.post_act</code> for each transformer block. The activation server exposes API endpoints for accessing model activations and managing inference operations.</p>
+<p><strong>Frontend Rendering Pipeline</strong>:</p>
+<div class="highlight"><pre><span></span><code>1. Receive Arrow IPC stream → deserialize into TypedArray (Float32Array)
+2. Upload to GPU as SSBO (Shader Storage Buffer Object) via WebGL2
+3. Vertex shader: each instance = one (token, neuron) pair; position computed from indices
+4. Fragment shader: sample Viridis colormap from 1D texture based on activation value
+5. Instanced rendering: single draw call for entire heatmap (up to 16M quads)
+6. Hover detection: render separate "picking layer" with encoded (token_idx, neuron_idx)
+</code></pre></div>
+<p>For real-time updates (e.g., changing input text), use <code>deck.gl</code>'s <code>data</code> prop reactivity — only the SSBO buffer is updated, not the shader program.</p>
+<h3 id="top-activating-examples-explorer">Top-Activating Examples Explorer</h3>
+<p>For each neuron, display the top-10 text snippets that maximally activate it. Implementation: <code>NeuronRecord</code> stores <code>most_positive_activation_records</code> — the highest-activating examples for each neuron. These are pre-computed during a calibration pass over a corpus.</p>
+<p><strong>Backend</strong>:
+<div class="highlight"><pre><span></span><code>GET /api/ffn/neuron/{layer}/{neuron}/examples?n=10
+→ Query pre-computed NeuronRecord
+→ Return list of {text, tokens, activations_per_token, max_activation_value}
+</code></pre></div></p>
+<p><strong>Frontend</strong>: Render as a scrollable Masonry gallery using <code>react-virtuoso</code> for virtualized scrolling. Each card shows the text with tokens color-highlighted by activation intensity, plus the max activation value.</p>
+<h3 id="neuron-planet-3d-map">Neuron "Planet" 3D Map</h3>
+<p><strong>Implementation Stack</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Technology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dimensionality Reduction</strong></td>
+<td><code>umap-learn</code> 0.5+ (Python) with <code>n_components=3</code>; fitted once per model on activation matrix <code>[n_neurons, n_tokens]</code></td>
+</tr>
+<tr>
+<td><strong>3D Rendering</strong></td>
+<td><code>@react-three/fiber</code> + <code>@react-three/drei</code> (Three.js React bindings)</td>
+</tr>
+<tr>
+<td><strong>Point Cloud</strong></td>
+<td><code>three.js</code> <code>InstancedMesh</code> with <code>SphereGeometry</code> — single draw call for all neurons</td>
+</tr>
+<tr>
+<td><strong>Labels</strong></td>
+<td><code>drei</code> <code>Text</code> component using <code>troika-three-text</code> for SDF (signed distance field) text rendering</td>
+</tr>
+<tr>
+<td><strong>Post-Processing</strong></td>
+<td><code>@react-three/postprocessing</code> for bloom (glow effect on high-activation neurons)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pipeline</strong>:
+<div class="highlight"><pre><span></span><code>1. Python: collect activation vectors for all neurons → matrix [N_neurons, D_tokens]
+2. Python: fit UMAP(n_components=3) → 3D coordinates for each neuron
+3. Store coordinates in SQLite/PostgreSQL (updated only when model changes)
+4. Frontend: fetch coordinates + metadata (neuron_index, layer, specialty_label)
+5. Three.js: InstancedMesh with 1 sphere per neuron, colored by cluster, sized by avg_activation
+6. Interaction: Raycaster for hover/click → show neuron detail panel
+</code></pre></div></p>
+<p>The AXON project demonstrates this exact pattern: "3D force graph where nodes = SAE features, node size &amp; brightness = activation magnitude".</p>
+<hr />
+<h2 id="zone-2-math-panel-live-formula-rendering">📐 ZONE 2: MATH PANEL — Live Formula Rendering</h2>
+<h3 id="implementation-stack_1">Implementation Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Technology</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LaTeX Rendering</strong></td>
+<td><code>KaTeX</code> 0.16+ (client-side)</td>
+<td>5-10× faster than MathJax; renders to DOM not SVG</td>
+</tr>
+<tr>
+<td><strong>Animation Engine</strong></td>
+<td><code>GSAP</code> (GreenSock) + <code>Framer Motion</code></td>
+<td>GSAP for math step animations; Framer Motion for layout transitions</td>
+</tr>
+<tr>
+<td><strong>Numerical Computation</strong></td>
+<td><code>Pyodide</code> (Python in WebAssembly)</td>
+<td>Runs NumPy in browser for live attention computation on small matrices</td>
+</tr>
+<tr>
+<td><strong>Formula Typesetting</strong></td>
+<td>Custom React component wrapping KaTeX</td>
+<td>Renders formula from JSON-serializable AST (not raw LaTeX strings)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="implementation-details_1">Implementation Details</h3>
+<p>The FFN formula panel shows:</p>
+<div class="highlight"><pre><span></span><code>FFN(x) = W_2 · GELU(W_1 · x + b_1) + b_2
+</code></pre></div>
+<p>Each term is clickable/hoverable, triggering animations that expand the computation:</p>
+<ol>
+<li><strong>W₁ · x</strong>: Shows W₁ as a matrix, x as a column vector, and the resulting intermediate vector</li>
+<li><strong>b₁ addition</strong>: Shows bias being added</li>
+<li><strong>GELU</strong>: Shows the GELU curve with a red dot tracking the current value</li>
+<li><strong>W₂ · GELU(...)</strong>: Shows the final projection</li>
+</ol>
+<p><strong>Architecture</strong>:
+<div class="highlight"><pre><span></span><code>FormulaAST (JSON)
+  ├── term: "W_2"
+  ├── term: "GELU"
+  │   ├── term: "W_1"
+  │   ├── term: "x"
+  │   └── term: "b_1"
+  └── term: "b_2"
+</code></pre></div></p>
+<p>Each AST node maps to a React component that renders KaTeX and accepts <code>onHover</code>, <code>onClick</code>, <code>highlighted</code> props. When a user hovers over "W₁" in the formula, the corresponding weight matrix lights up in the visualization canvas, and the numerical panel shows the actual values.</p>
+<h3 id="svd-of-w1-feature-direction-explorer">SVD of W₁ — Feature Direction Explorer</h3>
+<p><strong>Backend</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Compute once when model loads</span>
+<span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">Vh</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">W1</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># Store top-K singular vectors (K=256)</span>
+<span class="c1"># Each right singular vector Vh[i] is a "feature direction" in the input space</span>
+</code></pre></div></p>
+<p><strong>Frontend</strong>: Display the top singular vectors as interactive bar charts. Each bar represents a dimension's contribution. Click a singular vector to see which neurons are most aligned with it (via dot product). The LM Transparency Tool provides exactly this: <code>decomposed_ffn_out(batch_i, layer, pos)</code> showing "the decomposed contribution of each neuron in the feed-forward network".</p>
+<hr />
+<h2 id="zone-3-analytics-diagnostic-dashboard">📈 ZONE 3: ANALYTICS — Diagnostic Dashboard</h2>
+<h3 id="neuron-importance-ranking">Neuron Importance Ranking</h3>
+<p><strong>Computation</strong> (Python backend, pre-computed):
+<div class="highlight"><pre><span></span><code><span class="c1"># For each neuron i in layer l:</span>
+<span class="n">importance_score</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_activation</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="c1"># Average activation across corpus</span>
+<span class="n">selectivity</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">entropy</span><span class="p">(</span><span class="n">normalized_activation_distribution</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>  <span class="c1"># How selective</span>
+<span class="n">dead_score</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">max_activation</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">)</span>  <span class="c1"># Binary: is this neuron dead?</span>
+</code></pre></div></p>
+<p>NeuroX provides built-in methods for neuron importance extraction: "The toolkit can extract either a local ranking of neurons important to a particular target class, or a global ranking of neurons important to all the target classes".</p>
+<p><strong>Frontend</strong>: Render as a sortable table using <code>@tanstack/react-table</code> with virtualized rows. Columns: Rank, Layer, Neuron Index, Importance Score, Selectivity, Status (Active/Dead). Click a row → scroll to that neuron in the heatmap.</p>
+<h3 id="dead-neuron-detector">Dead Neuron Detector</h3>
+<p>Flag neurons where <code>max_activation &lt; 1e-6</code> across the entire calibration corpus. Display count per layer as a "health bar" (green → yellow → red). The Neuron Record stores statistical moments (mean, variance, skewness, kurtosis) that enable systematic detection of inactive neurons.</p>
+<h3 id="neuron-co-activation-graph">Neuron Co-Activation Graph</h3>
+<p><strong>Computation</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># For each pair of neurons (i, j):</span>
+<span class="n">co_activation</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">correlation</span><span class="p">(</span><span class="n">activation_i</span><span class="p">,</span> <span class="n">activation_j</span><span class="p">)</span>  <span class="c1"># Pearson r</span>
+<span class="c1"># Threshold at 0.7 → create edge list</span>
+</code></pre></div></p>
+<p><strong>Frontend</strong>: Render as an interactive force-directed graph using <code>deck.gl</code> <code>GraphLayer</code> with GPU-powered layout computation. Nodes = neurons, edges = co-activation relationships. Node color = layer, node size = importance score. Double-click a node to "expand" — show its top-10 activating examples and connected neurons.</p>
+<hr />
+<h2 id="zone-4-interpretability-tools">🔬 ZONE 4: INTERPRETABILITY TOOLS</h2>
+<h3 id="neuron-ablation-laboratory">Neuron Ablation Laboratory</h3>
+<p><strong>Implementation</strong>: Uses TransformerLens hook system to zero out specific neurons during forward pass. The hook system "enables the inspection and/or alteration of activations in individual components like attention heads and MLP layers".</p>
+<p><strong>Backend Pipeline</strong>:
+<div class="highlight"><pre><span></span><code>POST /api/ffn/ablate
+Body: { model_id, text, ablated_neurons: [{layer, neuron_index}] }
+→ TransformerLens runs forward pass with ablation hooks
+→ Returns { original_logits, ablated_logits, logit_diff, affected_tokens }
+</code></pre></div></p>
+<p><strong>Frontend</strong>: Toggle switches per neuron (rendered as a grid with <code>react-window</code> for performance). Each toggle triggers an API call; results stream back via WebSocket for real-time feedback. Show a "diff view" highlighting which output tokens changed probability.</p>
+<h3 id="sae-sparse-autoencoder-feature-view">SAE (Sparse Autoencoder) Feature View</h3>
+<p><strong>Implementation Stack</strong>: <code>SAELens</code> library (maintained and actively developed) for training and loading SAEs. SAELens "exists to help researchers train sparse autoencoders and analyse sparse autoencoders" and integrates with <code>sae-vis</code> for visualization.</p>
+<p><strong>Pipeline</strong>:
+<div class="highlight"><pre><span></span><code>1. Train SAE on MLP activations using SAELens (offline, GPU)
+2. Store encoder/decoder weights + feature labels
+3. Frontend: for each token, run SAE encode → sparse feature vector
+4. Display top-K activated features per token as a "feature cloud"
+</code></pre></div></p>
+<p>The SAE visualizer provides two complementary views: "a feature-centric view (which sequences in a large dataset this feature fires strongest on) and a prompt-centric view (which features score highest on a custom prompt)".</p>
+<h3 id="neuron-labeling-system">Neuron Labeling System</h3>
+<p>Community-contributed labels (e.g., "this neuron detects French text") stored in a dedicated model:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">NeuronLabel</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">model_id</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="n">layer_index</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span>
+    <span class="n">neuron_index</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">()</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+    <span class="n">confidence</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>  <span class="c1"># 0-1, from voting</span>
+    <span class="n">proposed_by</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">User</span><span class="p">,</span> <span class="n">on_delete</span><span class="o">=</span><span class="n">models</span><span class="o">.</span><span class="n">CASCADE</span><span class="p">)</span>
+    <span class="n">votes_up</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">votes_down</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">evidence</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">JSONField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>  <span class="c1"># links to top-activating examples</span>
+</code></pre></div>
+<p>This integrates with your existing <code>community</code> voting infrastructure and <code>gpu_reputation</code> scoring. Neuronpedia provides the model: "EXPLANATION TYPE np_max-act — Forces concise explanations and shows the model the top activating tokens and texts".</p>
+<hr />
+<h2 id="zone-5-social-community">💬 ZONE 5: SOCIAL &amp; COMMUNITY</h2>
+<h3 id="neuron-of-the-week">"Neuron of the Week"</h3>
+<p>A scheduled Celery task that selects the most interesting neuron based on: (a) community votes for "interesting" reactions, (b) uniqueness of activation pattern (low similarity to other neurons), (c) quality of community labels. The selected neuron appears on the homepage spotlight, in the weekly digest email, and gets a dedicated discussion thread in the <code>community</code> Q&amp;A app.</p>
+<h3 id="neuron-labeling-game">Neuron Labeling Game</h3>
+<p>A gamified interface where users are shown a neuron's top-10 activating examples and asked to propose a label. Labels are voted on by the community. Correct labels (those that survive community voting with high confidence) earn XP and badges. Incorrect labels lose XP. This follows the Yupp model of "token-incentivized feedback" where "diverse user feedback flows freely under blockchain and cryptocurrency economic incentives."</p>
+<p><strong>Architecture</strong>:
+<div class="highlight"><pre><span></span><code>Frontend: NeuronLabelingGame component
+  → Shows neuron metadata + activating examples
+  → Text input for label proposal
+  → Submit → POST /api/ffn/neuron/{id}/label
+Backend: Django view
+  → Creates NeuronLabel with proposed_by and confidence=0
+  → Emits WebSocket event for real-time leaderboard update
+Community: Voting system (up/down) using existing Vote model
+</code></pre></div></p>
+<hr />
+<h2 id="zone-6-gamification-neuron-hunter">🎮 ZONE 6: GAMIFICATION — "Neuron Hunter"</h2>
+<h3 id="game-mechanics">Game Mechanics</h3>
+<p>A daily challenge where users are given a description (e.g., "Find the neuron that activates most strongly on question marks") and must navigate the Neuron Activation Universe to locate it. The game uses:</p>
+<ol>
+<li><strong>Search mode</strong>: Users can filter neurons by activation statistics (top-activating tokens, activation distribution metrics)</li>
+<li><strong>Hints</strong>: Progressively revealed clues (first hint: layer range, second hint: activation pattern description, third hint: specific example)</li>
+<li><strong>Scoring</strong>: Points based on time-to-find and number of hints used</li>
+<li><strong>Leaderboard</strong>: Daily/weekly/all-time rankings connected to your existing leaderboard infrastructure</li>
+</ol>
+<p><strong>Implementation</strong>:
+<div class="highlight"><pre><span></span><code>Backend:
+  - DailyNeuronChallenge model (date, neuron_id, description, hints[])
+  - Pre-compute challenge neuron each day (random selection from "interesting" neurons)
+  - POST /api/ffn/challenge/check → verify if user found the correct neuron
+
+Frontend:
+  - NeuronHunterGame component with timer, hint system, search interface
+  - Connects to Neuron Activation Heatmap (click neuron to "submit guess")
+  - Score animation and XP reward on success
+</code></pre></div></p>
+<hr />
+<h2 id="technology-stack-summary">🔧 TECHNOLOGY STACK SUMMARY</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Technology</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Model Inference</strong></td>
+<td><code>TransformerLens</code> 3.0+ with <code>TransformerBridge</code></td>
+<td>Hook into 50+ model architectures, extract MLP activations</td>
+</tr>
+<tr>
+<td><strong>SAE Training</strong></td>
+<td><code>SAELens</code> + <code>sae-vis</code></td>
+<td>Sparse autoencoder training and feature visualization</td>
+</tr>
+<tr>
+<td><strong>Neuron Analysis</strong></td>
+<td><code>NeuroX</code> toolkit</td>
+<td>Activation extraction, probe training, clustering, ablation</td>
+</tr>
+<tr>
+<td><strong>Backend Server</strong></td>
+<td>FastAPI + <code>asyncio</code></td>
+<td>REST + WebSocket endpoints for activation data</td>
+</tr>
+<tr>
+<td><strong>Data Transfer</strong></td>
+<td>Apache Arrow (<code>pyarrow</code>)</td>
+<td>Zero-copy columnar format for large activation matrices</td>
+</tr>
+<tr>
+<td><strong>Dimensionality Reduction</strong></td>
+<td><code>umap-learn</code> 0.5+</td>
+<td>3D projection of neuron activation space</td>
+</tr>
+<tr>
+<td><strong>Frontend Framework</strong></td>
+<td>React 18 + TypeScript</td>
+<td>Component architecture, state management</td>
+</tr>
+<tr>
+<td><strong>State Management</strong></td>
+<td><code>@tanstack/react-query</code> + <code>zustand</code></td>
+<td>Server state caching + client state</td>
+</tr>
+<tr>
+<td><strong>GPU Rendering</strong></td>
+<td><code>deck.gl</code> 9.0 (WebGL2/WebGPU)</td>
+<td>GPU-powered heatmap, graph, and scatter layers</td>
+</tr>
+<tr>
+<td><strong>3D Rendering</strong></td>
+<td><code>@react-three/fiber</code> + Three.js</td>
+<td>Neuron planet map, 3D topology</td>
+</tr>
+<tr>
+<td><strong>Math Rendering</strong></td>
+<td><code>KaTeX</code> 0.16+</td>
+<td>Client-side LaTeX formula rendering</td>
+</tr>
+<tr>
+<td><strong>Animation</strong></td>
+<td>GSAP + Framer Motion</td>
+<td>Step-by-step math animations, transitions</td>
+</tr>
+<tr>
+<td><strong>In-Browser Compute</strong></td>
+<td>Pyodide (Python in WebAssembly)</td>
+<td>Live attention/FFN computation on small matrices</td>
+</tr>
+<tr>
+<td><strong>Virtual Scrolling</strong></td>
+<td><code>react-virtuoso</code></td>
+<td>Efficient rendering of large neuron lists</td>
+</tr>
+<tr>
+<td><strong>WebSocket</strong></td>
+<td>Django Channels (existing)</td>
+<td>Real-time ablation feedback, collaborative features</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="data-storage-caching">🗄️ DATA STORAGE &amp; CACHING</h2>
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Storage</th>
+<th>Retention</th>
+<th>Size Estimate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Raw activations (per text)</td>
+<td>Redis (temporary)</td>
+<td>1 hour</td>
+<td>~50MB per text (12 layers × 3072 neurons × 512 tokens)</td>
+</tr>
+<tr>
+<td>Neuron statistics</td>
+<td>PostgreSQL</td>
+<td>Permanent</td>
+<td>~10MB per model</td>
+</tr>
+<tr>
+<td>Top-activating examples</td>
+<td>PostgreSQL (JSONField)</td>
+<td>Permanent</td>
+<td>~5MB per model</td>
+</tr>
+<tr>
+<td>UMAP coordinates</td>
+<td>PostgreSQL (3× float)</td>
+<td>Until model changes</td>
+<td>~200KB per model</td>
+</tr>
+<tr>
+<td>SAE features</td>
+<td>PostgreSQL + file storage</td>
+<td>Permanent</td>
+<td>~500MB per model</td>
+</tr>
+<tr>
+<td>Neuron labels</td>
+<td>PostgreSQL</td>
+<td>Permanent</td>
+<td>~1MB per model</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="performance-targets">📏 PERFORMANCE TARGETS</h2>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Target Latency</th>
+<th>Approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Activation extraction (single text, 512 tokens)</td>
+<td>&lt; 2 seconds</td>
+<td>GPU inference with cached model</td>
+</tr>
+<tr>
+<td>Heatmap render (16M cells)</td>
+<td>60fps</td>
+<td>GPU instanced rendering via deck.gl</td>
+</tr>
+<tr>
+<td>3D neuron map (10K neurons)</td>
+<td>60fps</td>
+<td>InstancedMesh with LOD</td>
+</tr>
+<tr>
+<td>Neuron ablation (single neuron)</td>
+<td>&lt; 500ms</td>
+<td>Single forward pass with hook</td>
+</tr>
+<tr>
+<td>Top-examples query</td>
+<td>&lt; 100ms</td>
+<td>Pre-computed, indexed by neuron_id</td>
+</tr>
+<tr>
+<td>SAE feature extraction (per token)</td>
+<td>&lt; 50ms</td>
+<td>Pre-loaded encoder weights</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="implementation-phases">🚀 IMPLEMENTATION PHASES</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Duration</th>
+<th>Deliverables</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phase 1: Core Activation Pipeline</strong></td>
+<td>Weeks 1-3</td>
+<td>TransformerLens integration, FastAPI server, Arrow data transfer, basic heatmap</td>
+</tr>
+<tr>
+<td><strong>Phase 2: Neuron Analytics</strong></td>
+<td>Weeks 4-5</td>
+<td>Importance ranking, dead neuron detection, co-activation graph, top-examples explorer</td>
+</tr>
+<tr>
+<td><strong>Phase 3: Advanced Visualization</strong></td>
+<td>Weeks 6-7</td>
+<td>3D neuron planet map (UMAP + Three.js), math panel with KaTeX + Pyodide</td>
+</tr>
+<tr>
+<td><strong>Phase 4: Interpretability Tools</strong></td>
+<td>Weeks 8-9</td>
+<td>Ablation laboratory, SAE feature view, neuron labeling system</td>
+</tr>
+<tr>
+<td><strong>Phase 5: Social &amp; Gamification</strong></td>
+<td>Weeks 10-11</td>
+<td>Neuron of the Week, labeling game, Neuron Hunter game, community voting</td>
+</tr>
+<tr>
+<td><strong>Phase 6: Polish &amp; Performance</strong></td>
+<td>Weeks 12-14</td>
+<td>GPU rendering optimization, caching, load testing, documentation</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p>This provides a complete, production-grade implementation blueprint for the FFN/MLP Explorer with every zone detailed in terms of specific technologies, data flow architectures, performance targets, and integration points with your existing Django + React platform.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

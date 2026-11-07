@@ -1,0 +1,12 @@
+{
+  "module": "decay_linear_attention",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 15162.67,
+  "student_ppl": 60.89,
+  "pre_ppl": 15198.88,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.297940"
+}

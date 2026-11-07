@@ -1,0 +1,224 @@
+[
+  {
+    "name": "flash_attention3",
+    "actual_key": "flash_attention3",
+    "display_name": "Quadratic FlashAttention (O(N^2))",
+    "precisions": {
+      "FP32": {
+        "latency_ms": 2.6981,
+        "tokens_per_sec": 1518115.21,
+        "tflops_per_sec": 3.582,
+        "bandwidth_gb_s": 6.22,
+        "bandwidth_util_pct": 2.36,
+        "peak_vram_mb": 42.25,
+        "status": "OK",
+        "error": null
+      },
+      "FP16": {
+        "latency_ms": 0.5255,
+        "tokens_per_sec": 7794823.61,
+        "tflops_per_sec": 18.39,
+        "bandwidth_gb_s": 15.96,
+        "bandwidth_util_pct": 6.05,
+        "peak_vram_mb": 27.69,
+        "status": "OK",
+        "error": null
+      },
+      "BF16": {
+        "latency_ms": 0.5499,
+        "tokens_per_sec": 7448522.69,
+        "tflops_per_sec": 17.573,
+        "bandwidth_gb_s": 15.25,
+        "bandwidth_util_pct": 5.78,
+        "peak_vram_mb": 27.69,
+        "status": "OK",
+        "error": null
+      }
+    }
+  },
+  {
+    "name": "gated_delta_net",
+    "actual_key": "gated_delta_net",
+    "display_name": "Gated Delta Net (GDN)",
+    "precisions": {
+      "FP32": {
+        "latency_ms": 4.8246,
+        "tokens_per_sec": 848979.6,
+        "tflops_per_sec": 2.003,
+        "bandwidth_gb_s": 3.48,
+        "bandwidth_util_pct": 1.32,
+        "peak_vram_mb": 71.05,
+        "status": "OK",
+        "error": null
+      },
+      "FP16": {
+        "latency_ms": 4.6134,
+        "tokens_per_sec": 887841.69,
+        "tflops_per_sec": 2.095,
+        "bandwidth_gb_s": 1.82,
+        "bandwidth_util_pct": 0.69,
+        "peak_vram_mb": 50.34,
+        "status": "OK",
+        "error": null
+      },
+      "BF16": {
+        "latency_ms": 4.4907,
+        "tokens_per_sec": 912104.69,
+        "tflops_per_sec": 2.152,
+        "bandwidth_gb_s": 1.87,
+        "bandwidth_util_pct": 0.71,
+        "peak_vram_mb": 50.34,
+        "status": "OK",
+        "error": null
+      }
+    }
+  },
+  {
+    "name": "gated_linear_attention",
+    "actual_key": "gated_linear_attention",
+    "display_name": "Gated Linear Attention (GLA)",
+    "precisions": {
+      "FP32": {
+        "latency_ms": 2.3746,
+        "tokens_per_sec": 1724922.55,
+        "tflops_per_sec": 0.452,
+        "bandwidth_gb_s": 7.07,
+        "bandwidth_util_pct": 2.68,
+        "peak_vram_mb": 58.45,
+        "status": "OK",
+        "error": null
+      },
+      "FP16": {
+        "latency_ms": 3.0075,
+        "tokens_per_sec": 1361928.37,
+        "tflops_per_sec": 0.357,
+        "bandwidth_gb_s": 2.79,
+        "bandwidth_util_pct": 1.06,
+        "peak_vram_mb": 45.82,
+        "status": "OK",
+        "error": null
+      },
+      "BF16": {
+        "latency_ms": 4.4962,
+        "tokens_per_sec": 910990.12,
+        "tflops_per_sec": 0.239,
+        "bandwidth_gb_s": 1.87,
+        "bandwidth_util_pct": 0.71,
+        "peak_vram_mb": 45.82,
+        "status": "OK",
+        "error": null
+      }
+    }
+  },
+  {
+    "name": "cosformer",
+    "actual_key": "cosformer",
+    "display_name": "Cosformer Linear",
+    "precisions": {
+      "FP32": {
+        "latency_ms": 2.1935,
+        "tokens_per_sec": 1867306.75,
+        "tflops_per_sec": 4.406,
+        "bandwidth_gb_s": 7.65,
+        "bandwidth_util_pct": 2.9,
+        "peak_vram_mb": 90.6,
+        "status": "OK",
+        "error": null
+      },
+      "FP16": {
+        "latency_ms": 3.1951,
+        "tokens_per_sec": 1281962.38,
+        "tflops_per_sec": 3.025,
+        "bandwidth_gb_s": 2.63,
+        "bandwidth_util_pct": 0.99,
+        "peak_vram_mb": 79.9,
+        "status": "OK",
+        "error": null
+      },
+      "BF16": {
+        "latency_ms": 3.1148,
+        "tokens_per_sec": 1315024.15,
+        "tflops_per_sec": 3.103,
+        "bandwidth_gb_s": 2.69,
+        "bandwidth_util_pct": 1.02,
+        "peak_vram_mb": 79.9,
+        "status": "OK",
+        "error": null
+      }
+    }
+  },
+  {
+    "name": "svd_linear_attention",
+    "actual_key": "svd_linear_attention",
+    "display_name": "SVD Linear Attention",
+    "precisions": {
+      "FP32": {
+        "latency_ms": 2.8018,
+        "tokens_per_sec": 1461906.12,
+        "tflops_per_sec": 0.383,
+        "bandwidth_gb_s": 5.99,
+        "bandwidth_util_pct": 2.27,
+        "peak_vram_mb": 46.63,
+        "status": "OK",
+        "error": null
+      },
+      "FP16": {
+        "latency_ms": 0.602,
+        "tokens_per_sec": 6804501.51,
+        "tflops_per_sec": 1.784,
+        "bandwidth_gb_s": 13.94,
+        "bandwidth_util_pct": 5.28,
+        "peak_vram_mb": 27.82,
+        "status": "OK",
+        "error": null
+      },
+      "BF16": {
+        "latency_ms": 0.6049,
+        "tokens_per_sec": 6771356.67,
+        "tflops_per_sec": 1.775,
+        "bandwidth_gb_s": 13.87,
+        "bandwidth_util_pct": 5.25,
+        "peak_vram_mb": 27.82,
+        "status": "OK",
+        "error": null
+      }
+    }
+  },
+  {
+    "name": "selective_ssm",
+    "actual_key": "selective_ssm",
+    "display_name": "Selective SSM (Mamba)",
+    "precisions": {
+      "FP32": {
+        "latency_ms": 188.5052,
+        "tokens_per_sec": 21728.85,
+        "tflops_per_sec": 0.051,
+        "bandwidth_gb_s": 0.09,
+        "bandwidth_util_pct": 0.03,
+        "peak_vram_mb": 413.41,
+        "status": "OK",
+        "error": null
+      },
+      "FP16": {
+        "latency_ms": 8.6626,
+        "tokens_per_sec": 472838.5,
+        "tflops_per_sec": 1.116,
+        "bandwidth_gb_s": 0.97,
+        "bandwidth_util_pct": 0.37,
+        "peak_vram_mb": 203.25,
+        "status": "OK",
+        "error": null
+      },
+      "BF16": {
+        "latency_ms": 7.5667,
+        "tokens_per_sec": 541322.7,
+        "tflops_per_sec": 1.277,
+        "bandwidth_gb_s": 1.11,
+        "bandwidth_util_pct": 0.42,
+        "peak_vram_mb": 203.25,
+        "status": "OK",
+        "error": null
+      }
+    }
+  }
+]

@@ -1,0 +1,54 @@
+================================================================================
+RUN SUMMARY: gated_linear_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.73 M
+  Trainable params:  1.29 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        15226.3900
+  Post-KD PPL:       13247.8100
+  Stage 1 (KD) PPL:  14860.2300
+  Stage 2 (Self) PPL:13247.8100
+  KD Gain:           +366.16
+  Self Gain:         +1612.42
+  Total Gain:        +1978.58
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         365.8605
+  Recovery:          13.03%
+  Peak VRAM:         2837.34 MB
+  Train time:        5.07 s (Stage 1: 2.2s, Stage 2: 2.8s)
+  s/step:            1.2675
+  Loss (final):      7.7581
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0255
+  Repetition-3:      0.9740
+  Train PPL:         13578.0300
+  Test PPL:          13247.8100
+  Overfit Gap:       -330.22
+  Latency (mean):    335.99 ms
+  Latency (std):     0.83 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        6d9b481f7657
+
+TRAINING HISTORY (last 10 steps):
+  step     0 | loss=14.3222 | lr=0.00e+00
+  step     1 | loss=7.7581 | lr=1.50e-05
+  step     4 | loss=9.5167 | lr=3.00e-05

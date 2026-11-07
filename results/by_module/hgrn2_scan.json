@@ -1,0 +1,155 @@
+{
+  "module_name": "hgrn2_scan",
+  "category": "triton_kernel",
+  "family": "recurrent_scan",
+  "total_runs": 2,
+  "latest_version": "v1.3.7",
+  "latest_revision": 2,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:35:16.078400+00:00",
+  "latest_record": {
+    "record_id": "7c2f1c7100466281",
+    "module_name": "hgrn2_scan",
+    "category": "triton_kernel",
+    "family": "recurrent_scan",
+    "version_tag": "v1.3.7",
+    "revision": 2,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+      "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=4,N=512,dim=256",
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.0782,
+      "latency_pytorch_ms": 10.6053,
+      "speedup_x": 135.7,
+      "launch_overhead_ms": 0.0004,
+      "cosine_sim": 1.0,
+      "max_diff": 0.000122
+    },
+    "notes": "Triton vs PyTorch benchmark for hgrn2_scan: 135.70x speedup"
+  },
+  "active_records": [
+    {
+      "record_id": "bb6876c8d2c6ad12",
+      "module_name": "hgrn2_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T08:33:14.128901+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "hgrn2_scan_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, T=2048"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.02,
+        "latency_pytorch_ms": 0.151,
+        "speedup_x": 7.44,
+        "sram_bytes_saved_mb": 0.12
+      },
+      "notes": "Parity: PASS"
+    },
+    {
+      "record_id": "7c2f1c7100466281",
+      "module_name": "hgrn2_scan",
+      "category": "triton_kernel",
+      "family": "recurrent_scan",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,N=512,dim=256",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.0782,
+        "latency_pytorch_ms": 10.6053,
+        "speedup_x": 135.7,
+        "launch_overhead_ms": 0.0004,
+        "cosine_sim": 1.0,
+        "max_diff": 0.000122
+      },
+      "notes": "Triton vs PyTorch benchmark for hgrn2_scan: 135.70x speedup"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "bb6876c8d2c6ad12",
+      "module_name": "hgrn2_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T08:33:14.128901+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "hgrn2_scan_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, T=2048"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.02,
+        "latency_pytorch_ms": 0.151,
+        "speedup_x": 7.44,
+        "sram_bytes_saved_mb": 0.12
+      },
+      "notes": "Parity: PASS"
+    },
+    {
+      "record_id": "7c2f1c7100466281",
+      "module_name": "hgrn2_scan",
+      "category": "triton_kernel",
+      "family": "recurrent_scan",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,N=512,dim=256",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.0782,
+        "latency_pytorch_ms": 10.6053,
+        "speedup_x": 135.7,
+        "launch_overhead_ms": 0.0004,
+        "cosine_sim": 1.0,
+        "max_diff": 0.000122
+      },
+      "notes": "Triton vs PyTorch benchmark for hgrn2_scan: 135.70x speedup"
+    }
+  ]
+}

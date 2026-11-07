@@ -1,0 +1,4025 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/visualization/Attention_Visualization_Dashboard/Zone_7_Social_%26_Community_Layer/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>🧠 Zone 7: Social & Community Layer — Complete Implementation Specification - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#zone-7-social-community-layer-complete-implementation-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🧠 Zone 7: Social &amp; Community Layer — Complete Implementation Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overall-architecture-for-zone-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📐 Overall Architecture for Zone 7
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📐 Overall Architecture for Zone 7">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technology Stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-bus-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event Bus Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-25-multidimensional-reaction-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 25: Multi‑Dimensional Reaction System
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 25: Multi‑Dimensional Reaction System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#251-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#252-backend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25.2 Backend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#253-frontend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25.3 Frontend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#254-integration-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25.4 Integration Points
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#255-performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25.5 Performance Considerations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-26-attention-arena-blind-pairwise-voting-compariastyle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 26: Attention Arena — Blind Pairwise Voting (ComparIA‑Style)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 26: Attention Arena — Blind Pairwise Voting (ComparIA‑Style)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#261-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#262-backend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.2 Backend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#263-frontend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.3 Frontend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#264-integration-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.4 Integration Points
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#265-antigaming-measures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.5 Anti‑Gaming Measures
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-27-fork-remix-lineage-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 27: Fork &amp; Remix — Lineage Tracking
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 27: Fork &amp; Remix — Lineage Tracking">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#271-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#272-backend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.2 Backend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#273-frontend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.3 Frontend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#274-integration-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.4 Integration Points
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-28-attention-challenge-creator-leaderboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 28: Attention Challenge Creator &amp; Leaderboard
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 28: Attention Challenge Creator &amp; Leaderboard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#281-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        28.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#282-backend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        28.2 Backend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#283-frontend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        28.3 Frontend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#284-integration-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        28.4 Integration Points
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-29-inline-pattern-discussion-threads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 29: Inline Pattern Discussion Threads
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 29: Inline Pattern Discussion Threads">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#291-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        29.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#292-backend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        29.2 Backend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#293-frontend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        29.3 Frontend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#294-integration-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        29.4 Integration Points
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-30-oneclick-share-cards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 30: One‑Click Share Cards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 30: One‑Click Share Cards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#301-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        30.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#302-implementation-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        30.2 Implementation Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#303-frontend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        30.3 Frontend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-31-attention-pattern-collections-curated-galleries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 31: Attention Pattern Collections (Curated Galleries)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 31: Attention Pattern Collections (Curated Galleries)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#311-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        31.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#312-backend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        31.2 Backend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#313-frontend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        31.3 Frontend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-32-embed-anywhere-widget" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 32: Embed Anywhere Widget
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 32: Embed Anywhere Widget">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#321-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        32.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#322-implementation-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        32.2 Implementation Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#323-analytics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        32.3 Analytics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-33-attention-portfolio-researcher-showcase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 33: Attention Portfolio — Researcher Showcase
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 33: Attention Portfolio — Researcher Showcase">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#331-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        33.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#332-backend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        33.2 Backend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#333-frontend-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        33.3 Frontend Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#334-integration-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        33.4 Integration Points
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#crosscutting-concerns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross‑Cutting Concerns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cross‑Cutting Concerns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#security-access-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security &amp; Access Control
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-optimization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance Optimization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-priority-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📊 Implementation Priority Matrix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔗 Integration Map
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="zone-7-social-community-layer-complete-implementation-specification">🧠 Zone 7: Social &amp; Community Layer — Complete Implementation Specification</h1>
+<p>After extensive research across 15+ production systems—including ComparIA (FastAPI + SvelteKit arena architecture), Neuronpedia (microservices with open‑source circuit‑tracer integration), Yupp ($33M a16z blockchain‑incentivized evaluation), Polis (PCA + k‑means consensus visualization), Anthropic Circuit Tracer (open‑source attribution graphs), HeedVision (WebXR collaborative attention‑aware visualizations), Yorkie (CRDT‑based real‑time collaboration), and Liveblocks (sync engine architecture)—here is the <strong>complete, production‑ready implementation specification</strong> for all nine Zone 7 features.</p>
+<hr />
+<h2 id="overall-architecture-for-zone-7">📐 Overall Architecture for Zone 7</h2>
+<p>Zone 7 follows a <strong>decoupled micro‑frontend architecture</strong> where each social feature is an independent module that communicates through a shared event bus and centralized state management. The architecture is inspired by ComparIA's "decoupled web application featuring a SvelteKit frontend and a FastAPI backend" and Neuronpedia's "microservices architecture, separating the webapp, database, inference, and auto‑interpretation services."</p>
+<h3 id="technology-stack">Technology Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Frontend Framework</strong></td>
+<td>React 19 with Concurrent Mode</td>
+<td>Enables 60FPS rendering during real‑time updates, even with large reaction counts. As noted in research: "利用其最新的 use 钩子和增强的并发模式（Concurrent Mode），显著降低了重绘频率，确保在万人大群消息滚动时依然保持 60FPS 的流畅度。"</td>
+</tr>
+<tr>
+<td><strong>State Management</strong></td>
+<td>Zustand + Immer</td>
+<td>Lightweight, performant stores for reaction state, voting sessions, and discussion threads. Zustand's immutable update pattern via Immer prevents unnecessary re‑renders.</td>
+</tr>
+<tr>
+<td><strong>Real‑time Communication</strong></td>
+<td>WebSocket (Django Channels) + Server‑Sent Events (SSE)</td>
+<td>Dual protocol: WebSocket for bidirectional communication (discussions, collaboration), SSE for unidirectional streaming (vote count updates, reaction notifications). ComparIA uses "a hybrid approach combining FastAPI for the web server and REST endpoints with a custom SSE (Server‑Sent Events)" for real‑time streaming.</td>
+</tr>
+<tr>
+<td><strong>Collaborative Editing</strong></td>
+<td>Yjs + y‑websocket provider</td>
+<td>CRDT‑based conflict‑free synchronization for simultaneous annotation and discussion editing. "True CRDTs underpin frameworks like Yjs and Automerge, powering many collaborative text editors and document tools."</td>
+</tr>
+<tr>
+<td><strong>Data Fetching</strong></td>
+<td>TanStack Query (React Query) v5</td>
+<td>Automatic cache invalidation, optimistic updates for reactions/votes, and background refetching. The research confirms: "With React Query, you'll master efficient data fetching."</td>
+</tr>
+<tr>
+<td><strong>Backend API</strong></td>
+<td>Django REST Framework + FastAPI microservice</td>
+<td>DRF for core CRUD; FastAPI for high‑throughput endpoints (Elo rating computation, feed aggregation). ComparIA's architecture validates this hybrid: "ComparIA uses a hybrid approach combining FastAPI for the web server and REST endpoints."</td>
+</tr>
+<tr>
+<td><strong>Graph Visualization</strong></td>
+<td>D3.js 7.9.0 + react-force-graph-2d</td>
+<td>For knowledge graph and lineage visualization. The research confirms: "核心采用D3.js 7.9.0实现力导向图布局、节点拖拽和缩放交互，结合React 19.2.3进行组件化开发，使用TypeScript确保类型安全。"</td>
+</tr>
+<tr>
+<td><strong>Widget Embedding</strong></td>
+<td>iframe + postMessage API</td>
+<td>Isolated sandbox for embedded attention visualizations. "The inter‑frame communication system uses the browser's postMessage API to enable secure, cross‑origin communication between the parent page and the iframe."</td>
+</tr>
+<tr>
+<td><strong>Caching</strong></td>
+<td>Redis + IndexedDB (via idb‑keyval)</td>
+<td>Redis for server‑side caching of aggregated reaction counts and Elo ratings; IndexedDB for client‑side persistence of draft comments and vote history.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="event-bus-architecture">Event Bus Architecture</h3>
+<p>All Zone 7 features communicate through a centralized <code>AttentionEventBus</code> (implemented as a Zustand store with middleware):</p>
+<div class="highlight"><pre><span></span><code><span class="c1">// Conceptual architecture (not implementation code)</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">AttentionEvent</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kr">type</span><span class="o">:</span><span class="w"> </span><span class="s1">'reaction'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'vote'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'comment'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'fork'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'challenge_submission'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'collection_update'</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">payload</span><span class="o">:</span><span class="w"> </span><span class="kt">Record</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">unknown</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">patternId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">userId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">timestamp</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Features subscribe to relevant event types</span>
+<span class="nx">eventBus</span><span class="p">.</span><span class="nx">subscribe</span><span class="p">(</span><span class="s1">'reaction'</span><span class="p">,</span><span class="w"> </span><span class="nx">updateReactionCounts</span><span class="p">);</span>
+<span class="nx">eventBus</span><span class="p">.</span><span class="nx">subscribe</span><span class="p">(</span><span class="s1">'vote'</span><span class="p">,</span><span class="w"> </span><span class="nx">updateEloRatings</span><span class="p">);</span>
+<span class="nx">eventBus</span><span class="p">.</span><span class="nx">subscribe</span><span class="p">(</span><span class="s1">'comment'</span><span class="p">,</span><span class="w"> </span><span class="nx">notifyDiscussionParticipants</span><span class="p">);</span>
+</code></pre></div>
+<p>This pattern follows the "decoupled web application" approach validated by ComparIA, where "the backend handles complex logic for LLM orchestration via LiteLLM, session management, and persistent logging."</p>
+<hr />
+<h2 id="feature-25-multidimensional-reaction-system">Feature 25: Multi‑Dimensional Reaction System</h2>
+<h3 id="251-core-concept">25.1 Core Concept</h3>
+<p>Researchers react to attention patterns with context‑rich signals beyond binary like/dislike: 🔬 <strong>Interesting</strong>, ⚡ <strong>Efficient</strong>, 🎯 <strong>Specialized</strong>, 🔄 <strong>Redundant</strong>, 🧩 <strong>Novel</strong>. Each reaction is a distinct data point that contributes to a multi‑faceted "pattern quality score" displayed on every attention visualization and feeding into the recommendation engine.</p>
+<h3 id="252-backend-implementation">25.2 Backend Implementation</h3>
+<p><strong>Database Model (Django ORM, extends existing <code>reaction</code> system):</strong></p>
+<p>The model uses a composite unique constraint to prevent duplicate reactions per user per pattern, with a JSON field for extensible metadata.</p>
+<p><strong>API Endpoint:</strong> <code>POST /api/attention/{pattern_id}/react/</code></p>
+<p>The endpoint handles both creation and toggling (if user already reacted with the same type, remove it; otherwise, add it). This follows the toggle pattern used by HuggingFace model likes and GitHub star/unstar interactions.</p>
+<p><strong>Aggregation Service (Celery task):</strong></p>
+<p>A periodic Celery task (every 60 seconds) recalculates the aggregate reaction counts and quality scores for patterns that have received new reactions. This avoids expensive real‑time aggregation on every reaction. The task:
+1. Queries all patterns with <code>reactions_updated_at &gt; last_run</code>
+2. Groups reactions by pattern and type
+3. Computes weighted quality score: <code>score = Σ (reaction_count × reaction_weight) / total_reactions</code>
+4. Updates the pattern's cached score in Redis and the database</p>
+<p><strong>Reaction Weights (configurable per community norms):</strong>
+| Reaction | Weight | Rationale |
+|----------|--------|-----------|
+| 🔬 Interesting | +2 | Indicates research value |
+| ⚡ Efficient | +3 | Strong signal for compression |
+| 🎯 Specialized | +3 | Indicates clear head function |
+| 🔄 Redundant | -1 | Negative signal, useful for pruning |
+| 🧩 Novel | +4 | Highest value, rare discovery |</p>
+<h3 id="253-frontend-implementation">25.3 Frontend Implementation</h3>
+<p><strong>Component:</strong> <code>ReactionBar</code> (rendered below every attention pattern in Zone 2)</p>
+<p>The component uses React 19's <code>useOptimistic</code> hook for instant UI feedback. When a user clicks a reaction, the UI updates immediately (optimistic), the API call is dispatched in the background, and if the API fails, the optimistic update is rolled back. This approach is validated by React 19's "use 钩子和增强的并发模式（Concurrent Mode），显著降低了重绘频率。"</p>
+<p><strong>State Management:</strong> A Zustand store <code>useReactionStore</code> holds reaction state per pattern. The store subscribes to the <code>AttentionEventBus</code> for real‑time reaction updates from other users (received via WebSocket).</p>
+<p><strong>Real‑time Updates:</strong> When User A reacts to a pattern, the backend broadcasts the event via Django Channels to all other users currently viewing that pattern. The WebSocket message contains <code>{ pattern_id, reaction_type, user_id, action: 'add' | 'remove' }</code>. Other clients update their local state immediately.</p>
+<h3 id="254-integration-points">25.4 Integration Points</h3>
+<ul>
+<li><strong>Recommendation Engine (Zone 7, Feature "For You" Feed):</strong> The quality score computed from reactions is one of the primary signals for the personalized recommendation algorithm.</li>
+<li><strong>Leaderboards (existing <code>leaderboards</code> app):</strong> Patterns with the most reactions per type appear on dedicated leaderboards ("Most Interesting Patterns", "Most Novel Discoveries").</li>
+<li><strong>Portfolio (existing <code>portfolios</code> app):</strong> The reactions a user has given and received are displayed on their Attention Portfolio, contributing to their reputation score.</li>
+<li><strong>Activity Feed (existing <code>activity</code> system):</strong> Each reaction generates an activity event visible to the user's followers.</li>
+</ul>
+<h3 id="255-performance-considerations">25.5 Performance Considerations</h3>
+<ul>
+<li><strong>Debounced aggregation:</strong> Reaction counts are not recomputed on every click. The Celery task runs every 60 seconds, and interim counts are cached in Redis with a 60‑second TTL.</li>
+<li><strong>Optimistic UI:</strong> The frontend updates immediately; the user never waits for a server response.</li>
+<li><strong>Batch WebSocket messages:</strong> If a pattern receives many reactions in a short time (e.g., during a live demo), the backend batches WebSocket messages every 500ms to avoid flooding clients.</li>
+</ul>
+<hr />
+<h2 id="feature-26-attention-arena-blind-pairwise-voting-compariastyle">Feature 26: Attention Arena — Blind Pairwise Voting (ComparIA‑Style)</h2>
+<h3 id="261-core-concept">26.1 Core Concept</h3>
+<p>Two attention visualizations are shown side‑by‑side, <strong>anonymized</strong> (hiding which model/head produced them). Users vote on specific criteria: "Which pattern is more interpretable?" or "Which better captures syntax?" Votes generate <strong>Elo ratings</strong> for attention patterns, enabling a community‑driven ranking system.</p>
+<p>The implementation is directly inspired by ComparIA's architecture: "users interact with two anonymous models simultaneously, vote on the better response, and subsequently reveal the models' identities" — generating "high‑quality preference datasets." The Bradley‑Terry model, which "is a statistical basis for ELO‑like ratings," is used with "bootstrap resampling to provide robust confidence intervals."</p>
+<h3 id="262-backend-implementation">26.2 Backend Implementation</h3>
+<p><strong>Database Models:</strong></p>
+<ol>
+<li><code>ArenaMatch</code> — Records each pairwise comparison session.</li>
+<li><code>ArenaVote</code> — Records each individual vote with criterion and winner.</li>
+<li><code>AttentionPatternElo</code> — Stores current Elo rating and match history for each pattern.</li>
+</ol>
+<p><strong>Elo Rating Algorithm:</strong></p>
+<p>The Elo computation uses the standard formula:
+<div class="highlight"><pre><span></span><code>E_A = 1 / (1 + 10^((R_B - R_A) / 400))
+R_A_new = R_A + K × (S_A - E_A)
+</code></pre></div></p>
+<p>Where:
+- <code>R_A</code>, <code>R_B</code> are current ratings (starting at 1500)
+- <code>E_A</code> is the expected probability of A winning
+- <code>S_A</code> is the actual outcome (1 for win, 0 for loss, 0.5 for tie)
+- <code>K</code> is the development factor (32 for new patterns, 16 for established ones)</p>
+<p>The implementation follows the <code>elote</code> Python library approach: "a powerful Python library for implementing and comparing rating systems ... sports teams, or prioritizing features in your product backlog." The K‑factor decays as the pattern accumulates matches: <code>K = max(16, 32 / sqrt(1 + matches_played))</code>.</p>
+<p><strong>Arena Session Management:</strong></p>
+<p>The arena uses a session‑based approach where each user is assigned a unique arena session. The backend selects two patterns for comparison using a smart pairing algorithm:</p>
+<ol>
+<li>First, select patterns within ±200 Elo of each other (balanced matches provide more information)</li>
+<li>Prioritize patterns that have fewer total matches (exploration vs. exploitation trade‑off)</li>
+<li>Ensure the user hasn't already voted on this exact pair</li>
+<li>Randomly assign which pattern appears on the left vs. right (to avoid position bias)</li>
+</ol>
+<p><strong>API Endpoints:</strong></p>
+<ul>
+<li><code>GET /api/attention/arena/next-pair/</code> — Returns the next pair of patterns for the user to compare. The response includes anonymized visualization data (SVG/JSON) with model/head metadata stripped.</li>
+<li><code>POST /api/attention/arena/vote/</code> — Submits a vote. Body: <code>{ match_id, winner_id, criterion }</code>. The backend updates Elo ratings synchronously within the transaction.</li>
+<li><code>GET /api/attention/arena/leaderboard/</code> — Returns the current Elo rankings, filterable by criterion and model architecture.</li>
+<li><code>GET /api/attention/arena/my-stats/</code> — Returns the user's voting history, accuracy (how often they agree with consensus), and contribution to the dataset.</li>
+</ul>
+<p><strong>Bootstrap Resampling for Confidence Intervals:</strong></p>
+<p>Following ComparIA's approach, the backend periodically (daily) runs bootstrap resampling to compute confidence intervals for Elo ratings. This "provides robust confidence intervals for model positions." The process:
+1. Sample the vote history with replacement 1000 times
+2. Recompute Elo ratings for each bootstrap sample
+3. Report the 2.5th and 97.5th percentiles as the 95% confidence interval</p>
+<h3 id="263-frontend-implementation">26.3 Frontend Implementation</h3>
+<p><strong>Arena Page Layout:</strong></p>
+<p>The arena page displays two attention visualizations side‑by‑side in a split‑screen layout. Each visualization is rendered in a sandboxed component that strips identifying information (model name, layer/head numbers replaced with "Pattern A" and "Pattern B").</p>
+<p><strong>Reactive State Management:</strong></p>
+<p>ComparIA's approach is replicated: "The arena interface is powered by a reactive state object arena defined in chatService.svelte.ts." In React, this translates to a Zustand store <code>useArenaStore</code> that manages:
+- Current match pair
+- User's vote history for this session
+- Loading states for next pair fetching
+- Anonymized visualization data</p>
+<p><strong>Vote Flow:</strong></p>
+<ol>
+<li>User arrives at the arena → automatically fetches the first pair</li>
+<li>Both visualizations render simultaneously with a loading skeleton</li>
+<li>User examines both patterns (hover, zoom, pan — all standard interactions work)</li>
+<li>User clicks a vote button below either pattern</li>
+<li><strong>Optimistic update:</strong> The UI immediately shows a checkmark on the winner and a subtle animation</li>
+<li>The API call is dispatched in the background</li>
+<li>After a brief transition (500ms), the next pair slides in</li>
+<li>After 5 votes, the user can optionally reveal the identities of the patterns they just voted on</li>
+</ol>
+<p><strong>Reveal Mechanism:</strong> After voting, a "Reveal Identities" button becomes available. Clicking it replaces the "Pattern A/B" labels with the actual model names, attention types, layer/head numbers, and the current Elo ratings. This delayed reveal prevents bias during voting.</p>
+<h3 id="264-integration-points">26.4 Integration Points</h3>
+<ul>
+<li><strong>Leaderboards (existing <code>leaderboards</code> app):</strong> Elo ratings are displayed on the Attention Pattern Leaderboard, with weekly/monthly/all‑time rankings.</li>
+<li><strong>Recommendation Engine:</strong> High‑Elo patterns are prioritized in the "For You" feed.</li>
+<li><strong>Reputation System (existing <code>gpu_reputation</code> app):</strong> Users earn reputation points for voting consistently with consensus. Inversely, users who consistently vote against consensus have their vote weight reduced.</li>
+<li><strong>Dataset Generation:</strong> Arena votes are exported as a preference dataset (JSONL format) for research use, following ComparIA's model of "collecting real‑world interaction data."</li>
+</ul>
+<h3 id="265-antigaming-measures">26.5 Anti‑Gaming Measures</h3>
+<ul>
+<li><strong>Minimum account age:</strong> Users must have been registered for at least 24 hours and have completed at least 5 attention explorations before voting.</li>
+<li><strong>Vote consistency scoring:</strong> Users who always vote for the left option (position bias) are flagged and their votes are weighted lower.</li>
+<li><strong>Time‑based filtering:</strong> Votes cast in under 2 seconds are discarded (insufficient time to evaluate).</li>
+<li><strong>CAPTCHA on rapid voting:</strong> If a user submits more than 10 votes per minute, a CAPTCHA challenge is triggered.</li>
+</ul>
+<hr />
+<h2 id="feature-27-fork-remix-lineage-tracking">Feature 27: Fork &amp; Remix — Lineage Tracking</h2>
+<h3 id="271-core-concept">27.1 Core Concept</h3>
+<p>Every published attention visualization can be <strong>forked</strong> by another researcher, maintaining full lineage tracking. The implementation follows Neuronpedia's model where the platform "fully supports uploading your own graphs, regardless of whether or not you use the circuit‑tracer library, your own library, or different models." GitHub's fork model is adapted for attention visualization: each fork creates a new exploration with the original's configuration, maintains a parent pointer, and visualizes the lineage as a directed acyclic graph.</p>
+<h3 id="272-backend-implementation">27.2 Backend Implementation</h3>
+<p><strong>Database Models:</strong></p>
+<ol>
+<li><code>AttentionFork</code> — Links a forked exploration to its parent.</li>
+<li><code>ForkChain</code> — Denormalized table storing the full lineage path for efficient querying: <code>{ exploration_id, ancestor_id, depth }</code>.</li>
+</ol>
+<p><strong>Lineage Chain Query:</strong></p>
+<p>Using Django's recursive CTE (Common Table Expression) support, the full lineage is retrieved in a single query:</p>
+<div class="highlight"><pre><span></span><code><span class="k">WITH</span><span class="w"> </span><span class="k">RECURSIVE</span><span class="w"> </span><span class="n">lineage</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">parent_id</span><span class="p">,</span><span class="w"> </span><span class="n">creator_id</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">depth</span>
+<span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="n">attention_fork</span>
+<span class="w">    </span><span class="k">WHERE</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">{</span><span class="n">fork_id</span><span class="err">}</span>
+<span class="w">    </span><span class="k">UNION</span><span class="w"> </span><span class="k">ALL</span>
+<span class="w">    </span><span class="k">SELECT</span><span class="w"> </span><span class="n">af</span><span class="p">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">af</span><span class="p">.</span><span class="n">parent_id</span><span class="p">,</span><span class="w"> </span><span class="n">af</span><span class="p">.</span><span class="n">creator_id</span><span class="p">,</span><span class="w"> </span><span class="n">l</span><span class="p">.</span><span class="n">depth</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="k">FROM</span><span class="w"> </span><span class="n">attention_fork</span><span class="w"> </span><span class="n">af</span>
+<span class="w">    </span><span class="k">JOIN</span><span class="w"> </span><span class="n">lineage</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">af</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">l</span><span class="p">.</span><span class="n">parent_id</span>
+<span class="p">)</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">lineage</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">depth</span><span class="p">;</span>
+</code></pre></div>
+<p>This returns the complete ancestor chain, enabling the lineage tree/graph visualization.</p>
+<p><strong>Fork Operation:</strong></p>
+<p>When a user clicks "Fork," the backend:
+1. Creates a new <code>AttentionExploration</code> record with the same configuration (model, attention type, text, layer/head)
+2. Creates an <code>AttentionFork</code> record linking the new exploration to the original
+3. Copies any annotations/discussions from the original (optional, user‑selectable)
+4. Generates a fork notification for the original creator</p>
+<h3 id="273-frontend-implementation">27.3 Frontend Implementation</h3>
+<p><strong>Fork Button:</strong> A prominent "Fork" button (⑂ icon, like GitHub) appears in the pattern toolbar. Clicking it opens a modal with options:
+- Fork name (auto‑generated: "fork of [original_name]")
+- What to copy: configuration only, or configuration + annotations
+- Visibility: public / team / private</p>
+<p><strong>Lineage Graph Visualization:</strong></p>
+<p>The lineage is visualized using <code>react-force-graph-2d</code> (a React wrapper around D3.js force simulation). The research confirms this approach: "核心采用D3.js 7.9.0实现力导向图布局、节点拖拽和缩放交互，结合React 19.2.3进行组件化开发，使用TypeScript确保类型安全。"</p>
+<p>The graph shows:
+- <strong>Nodes:</strong> Each exploration as a colored circle (color = attention type, size = number of reactions)
+- <strong>Edges:</strong> Fork relationships as directed arrows
+- <strong>Current node:</strong> Highlighted with a glowing border
+- <strong>Root node:</strong> The original exploration marked with a star icon
+- <strong>Interactions:</strong> Click a node to navigate to that exploration, hover to see metadata (creator, date, fork count), drag to rearrange</p>
+<p><strong>Graph Component Implementation:</strong></p>
+<p>The component uses <code>react-force-graph-2d</code> with the following configuration:
+- Physics simulation: d3‑force with centering, collision detection, and link distance proportional to time between forks
+- Zoom: mouse wheel with limits (0.5x to 3x)
+- Pan: drag on empty space
+- Node color: mapped from attention type color palette
+- Node size: <code>5 + (reaction_count * 0.5)</code> pixels
+- Link width: <code>1 + (depth * 0.5)</code> pixels (thicker for deeper lineages)</p>
+<h3 id="274-integration-points">27.4 Integration Points</h3>
+<ul>
+<li><strong>Attention Portfolio (Feature 33):</strong> Forked explorations appear on the creator's portfolio with "Forked by X users" count.</li>
+<li><strong>Activity Feed (existing <code>activity</code> system):</strong> Fork events are broadcast to followers of both the original creator and the forker.</li>
+<li><strong>Knowledge Graph (future Zone 7 feature):</strong> The lineage graph is integrated into the larger platform knowledge graph, connecting explorations, models, and researchers.</li>
+</ul>
+<hr />
+<h2 id="feature-28-attention-challenge-creator-leaderboard">Feature 28: Attention Challenge Creator &amp; Leaderboard</h2>
+<h3 id="281-core-concept">28.1 Core Concept</h3>
+<p>Users create challenges for the community, the community submits attention patterns as entries, votes determine winners, and badges/platform credits are awarded. This feature combines elements of Kaggle competitions, SciArena's community‑driven evaluation ("collected over 20,000 votes from human researchers across diverse scientific domains"), and ComparIA's preference dataset generation.</p>
+<h3 id="282-backend-implementation">28.2 Backend Implementation</h3>
+<p><strong>Database Models:</strong></p>
+<ol>
+<li><code>AttentionChallenge</code> — Challenge definition with title, description, criteria, deadline, prize pool.</li>
+<li><code>ChallengeSubmission</code> — Links an attention exploration to a challenge.</li>
+<li><code>ChallengeVote</code> — Community votes on submissions.</li>
+<li><code>ChallengeBadge</code> — Badges awarded to winners and participants.</li>
+</ol>
+<p><strong>Challenge Lifecycle:</strong></p>
+<ol>
+<li><strong>Draft:</strong> Creator defines the challenge, criteria, and rules</li>
+<li><strong>Open:</strong> Community can submit attention patterns</li>
+<li><strong>Voting:</strong> Community votes on submissions (blind pairwise voting or ranked choice)</li>
+<li><strong>Finalized:</strong> Winners are calculated, prizes distributed</li>
+<li><strong>Archived:</strong> Challenge is preserved for reference</li>
+</ol>
+<p><strong>Winner Determination:</strong></p>
+<p>Two modes are supported:
+- <strong>Community Vote:</strong> Winner is the submission with the highest vote score (upvotes − downvotes)
+- <strong>Expert Panel:</strong> A designated panel of expert judges scores each submission on defined criteria</p>
+<p>For community vote mode, the system uses a Bayesian ranking approach (similar to Reddit's "best" sorting) to avoid the "first‑mover advantage":
+<div class="highlight"><pre><span></span><code>score = (upvotes / (upvotes + downvotes)) × log(upvotes + downvotes + 1)
+</code></pre></div></p>
+<h3 id="283-frontend-implementation">28.3 Frontend Implementation</h3>
+<p><strong>Challenge Creation Wizard:</strong></p>
+<p>A multi‑step form (like your existing experiment launcher) guides the creator through:
+1. <strong>Basic Info:</strong> Title, description, category
+2. <strong>Criteria:</strong> What makes a winning submission? (e.g., "Most interpretable attention pattern in BERT‑base Layer 5")
+3. <strong>Rules:</strong> Submission limits, voting period, eligibility
+4. <strong>Prize Pool:</strong> Platform credits, exclusive badges, featured spotlight
+5. <strong>Preview &amp; Publish:</strong> Review before making the challenge public</p>
+<p><strong>Challenge Dashboard:</strong></p>
+<p>Each challenge has a dedicated dashboard showing:
+- <strong>Leaderboard:</strong> Ranked submissions with scores
+- <strong>Submit Button:</strong> Opens a modal to select an existing attention exploration or create a new one
+- <strong>Voting Interface:</strong> For active challenges, a voting panel for community members
+- <strong>Timeline:</strong> Key dates (submission deadline, voting start, results announcement)</p>
+<h3 id="284-integration-points">28.4 Integration Points</h3>
+<ul>
+<li><strong>Leaderboards (existing):</strong> Challenge rankings integrate with the global leaderboard system. The "Ladder" framework's approach is adopted: "a robust adaptive mechanism that updates leaderboards only when statistically significant improvements are detected."</li>
+<li><strong>Badge System (Zone 8):</strong> Winners receive exclusive badges ("🏆 Challenge Champion").</li>
+<li><strong>Reputation (existing <code>gpu_reputation</code>):</strong> Challenge participation and wins contribute to reputation score.</li>
+<li><strong>Portfolio:</strong> Challenge achievements are prominently displayed.</li>
+</ul>
+<hr />
+<h2 id="feature-29-inline-pattern-discussion-threads">Feature 29: Inline Pattern Discussion Threads</h2>
+<h3 id="291-core-concept">29.1 Core Concept</h3>
+<p>Every attention pattern has threaded discussions anchored to specific elements: per‑head, per‑token‑pair, per‑layer. Supports @mentions, LaTeX equations, and embedded attention SVGs. Powered by the existing <code>community</code> Q&amp;A infrastructure.</p>
+<h3 id="292-backend-implementation">29.2 Backend Implementation</h3>
+<p>The implementation leverages the existing <code>community</code> app's <code>Question</code>, <code>Answer</code>, and <code>Comment</code> models, extended with polymorphic association to attention pattern elements.</p>
+<p><strong>Database Extensions:</strong></p>
+<p>A <code>DiscussionAnchor</code> model links a discussion thread to a specific element within an attention visualization:</p>
+<p>The <code>element_type</code> field supports: <code>'head'</code>, <code>'token_pair'</code>, <code>'layer'</code>, <code>'entire_pattern'</code>. The <code>element_identifier</code> is a JSON field storing context‑specific data (e.g., <code>{ "layer": 5, "head": 7 }</code> for a head discussion, or <code>{ "query_index": 3, "key_index": 7 }</code> for a token‑pair discussion).</p>
+<p><strong>WebSocket Integration for Real‑time Discussions:</strong></p>
+<p>Discussions use Django Channels for real‑time updates. When a user posts a comment:
+1. The comment is saved to the database via REST API
+2. The backend broadcasts the comment to all users currently viewing the same pattern via WebSocket
+3. Other users see the comment appear in real‑time without page refresh
+4. The comment count badge updates instantly</p>
+<h3 id="293-frontend-implementation">29.3 Frontend Implementation</h3>
+<p><strong>Threaded Comment Component:</strong></p>
+<p>The discussion panel renders below each attention pattern in Zone 2. The component uses a tree‑structured rendering for threaded replies (like Reddit or GitHub Issues).</p>
+<p><strong>LaTeX Rendering:</strong></p>
+<p>Mathematical expressions within comments are rendered using KaTeX (faster than MathJax, server‑side rendering compatible). Users wrap LaTeX in <code>$...$</code> for inline and <code>$$...$$</code> for block equations. The frontend uses <code>react‑katex</code> for client‑side rendering.</p>
+<p><strong>Embedded Attention SVGs:</strong></p>
+<p>Users can embed a snapshot of the current attention visualization in their comment by clicking a "Capture View" button. This generates a base64‑encoded SVG of the current canvas state and inserts it into the comment as an image. The SVG is stored as a <code>NoteImage</code> (using your existing <code>notes</code> infrastructure) and referenced by URL in the comment.</p>
+<p><strong>@Mentions:</strong></p>
+<p>The mention system is implemented using <code>tiptap</code> (a headless rich‑text editor) with the <code>@mentions</code> extension. As the user types <code>@</code>, a dropdown appears with suggested users (filtered from the platform user base). Selecting a user inserts a mention tag that triggers a notification.</p>
+<h3 id="294-integration-points">29.4 Integration Points</h3>
+<ul>
+<li><strong>Notifications (existing):</strong> @mentions generate notifications via the existing notification pipeline.</li>
+<li><strong>Notes (existing <code>notes</code> app):</strong> A "Save Discussion as Note" button exports the entire thread to a <code>ResearcherNote</code> for permanent reference.</li>
+<li><strong>Search (existing <code>search</code> infrastructure):</strong> Discussion content is indexed for global search, enabling queries like "discussions about induction heads in BERT."</li>
+</ul>
+<hr />
+<h2 id="feature-30-oneclick-share-cards">Feature 30: One‑Click Share Cards</h2>
+<h3 id="301-core-concept">30.1 Core Concept</h3>
+<p>Export any attention visualization as a beautiful, social‑media‑optimized share card with one click. The card includes the heatmap, key statistics, model info, a QR code linking back to the interactive dashboard, and researcher attribution.</p>
+<h3 id="302-implementation-architecture">30.2 Implementation Architecture</h3>
+<p><strong>Server‑Side Rendering with Puppeteer:</strong></p>
+<p>The share card is generated server‑side using Puppeteer (headless Chrome) to render a dedicated HTML template. This ensures:
+- Consistent rendering across all devices (no CSS differences)
+- High‑resolution output (2x for Retina displays)
+- Inclusion of WebGL/Canvas content (which can't be captured by simple DOM serialization)</p>
+<p><strong>Generation Pipeline:</strong></p>
+<ol>
+<li>User clicks "Share" → Frontend sends <code>POST /api/attention/share-card/</code> with the current exploration state (model, layer, head, view type, zoom level)</li>
+<li>Backend launches a Puppeteer instance (from a pool to avoid cold starts)</li>
+<li>Puppeteer loads a dedicated share‑card HTML page with the same React components used in the dashboard</li>
+<li>The page renders the attention visualization at the specified state</li>
+<li>Puppeteer captures a screenshot of the card region</li>
+<li>The image is saved to cloud storage (S3 or similar)</li>
+<li>A unique short URL is generated</li>
+<li>Response: <code>{ image_url, share_url, twitter_text, linkedin_text }</code></li>
+</ol>
+<p><strong>QR Code Generation:</strong></p>
+<p>The QR code is generated server‑side using the <code>qrcode</code> Python library, encoding the full URL to the interactive dashboard with all parameters (model, layer, head, text). This ensures anyone scanning the code lands on the exact same visualization state.</p>
+<h3 id="303-frontend-implementation">30.3 Frontend Implementation</h3>
+<p><strong>Share Modal:</strong></p>
+<p>Clicking the "Share" button opens a modal with multiple sharing options:
+- <strong>Copy Link:</strong> Copies the short URL to clipboard
+- <strong>Download Image:</strong> Downloads the PNG image
+- <strong>Twitter/X:</strong> Pre‑filled tweet with image and text
+- <strong>LinkedIn:</strong> Pre‑filled post
+- <strong>Reddit:</strong> Pre‑filled post to r/MachineLearning
+- <strong>Embed Code:</strong> Copy‑paste HTML snippet for embedding (see Feature 32)</p>
+<p><strong>Preview:</strong> The modal shows a live preview of the share card before sharing, with options to customize:
+- Card title (default: pattern description)
+- Subtitle (default: model + attention type)
+- Show/hide specific statistics
+- Color theme (dark/light)</p>
+<hr />
+<h2 id="feature-31-attention-pattern-collections-curated-galleries">Feature 31: Attention Pattern Collections (Curated Galleries)</h2>
+<h3 id="311-core-concept">31.1 Core Concept</h3>
+<p>Users create themed collections of attention patterns. Collections can be public, team‑scoped, or private. Each collection has its own discussion thread and can be forked.</p>
+<h3 id="312-backend-implementation">31.2 Backend Implementation</h3>
+<p><strong>Database Models:</strong></p>
+<ol>
+<li><code>AttentionCollection</code> — Collection metadata (name, description, creator, visibility, fork_of).</li>
+<li><code>CollectionItem</code> — Ordered membership of patterns in a collection, with optional notes.</li>
+</ol>
+<p><strong>Visibility Model:</strong></p>
+<p>Following Notion's teamspace model: <code>public</code> (visible to all, appears in gallery), <code>team</code> (visible to members of a specific organization), <code>private</code> (visible only to creator).</p>
+<p><strong>Forking Collections:</strong></p>
+<p>When a collection is forked, all items are copied into a new collection with a <code>forked_from</code> pointer. The forked collection can be independently modified. The lineage is tracked similarly to Feature 27.</p>
+<h3 id="313-frontend-implementation">31.3 Frontend Implementation</h3>
+<p><strong>Collection Grid View:</strong></p>
+<p>The collections gallery page displays collections as cards in a responsive grid (1 column on mobile, 2 on tablet, 3 on desktop). Each card shows:
+- Collection name and description
+- Creator avatar and username
+- Number of patterns in the collection
+- Number of stars and forks
+- Preview thumbnails of the first 4 patterns (mosaic layout)
+- Visibility badge (public/team/private)</p>
+<p><strong>Collection Detail Page:</strong></p>
+<p>Opening a collection shows:
+- Header with metadata and action buttons (Star, Fork, Share, Edit)
+- Discussion thread below the header (powered by the same infrastructure as Feature 29)
+- Pattern grid/list toggle with sorting options (date added, reaction count, pattern type)
+- Each pattern card links to the full interactive visualization</p>
+<p><strong>Curated Collections Leaderboard:</strong></p>
+<p>The homepage and attention dashboard feature a "Trending Collections" section showing the most starred and forked collections this week. The ranking algorithm uses a time‑decay weighted score: <code>score = stars × 2 + forks × 3 / (hours_since_creation + 2) ^ 1.5</code>.</p>
+<hr />
+<h2 id="feature-32-embed-anywhere-widget">Feature 32: Embed Anywhere Widget</h2>
+<h3 id="321-core-concept">32.1 Core Concept</h3>
+<p>Every attention pattern has an embeddable interactive widget (like YouTube embeds) that researchers can paste into personal websites, blogs, or paper supplementary materials.</p>
+<h3 id="322-implementation-architecture">32.2 Implementation Architecture</h3>
+<p><strong>iframe‑Based Embedding with postMessage Communication:</strong></p>
+<p>The widget is implemented as a standalone React application that runs inside a sandboxed iframe. Communication between the host page and the widget uses the browser's postMessage API, validated by research: "The inter‑frame communication system uses the browser's postMessage API to enable secure, cross‑origin communication between the parent page (where the giscus script is embedded) and the iframe (where the widget renders). The protocol is bidirectional."</p>
+<p><strong>Widget Application Architecture:</strong></p>
+<p>Following the Chatwoot widget model: "The widget application is a standalone Vue.js 3 single‑page application that runs inside an iframe created by the SDK." In our implementation:
+1. The widget is a React application built with Vite, outputting a single JavaScript bundle and HTML file
+2. The iframe loads <code>https://neuralops.com/embed/{pattern_id}</code>
+3. The host page includes a lightweight SDK script (<code>neuralops‑embed.js</code>) that creates the iframe and manages postMessage communication
+4. The SDK supports responsive sizing: the iframe automatically resizes based on content height</p>
+<p><strong>postMessage Protocol:</strong></p>
+<p>The host page and widget communicate via a JSON‑RPC‑style protocol:</p>
+<p><strong>Host → Widget:</strong>
+- <code>{ type: 'init', patternId: '...', theme: 'dark' | 'light', token: '...' }</code> — Initialize the widget
+- <code>{ type: 'resize', width: 800, height: 600 }</code> — Resize the widget
+- <code>{ type: 'setLayer', layer: 5 }</code> — Change the displayed layer
+- <code>{ type: 'setHead', head: 7 }</code> — Change the displayed head</p>
+<p><strong>Widget → Host:</strong>
+- <code>{ type: 'ready' }</code> — Widget is loaded and ready
+- <code>{ type: 'resize', width: 800, height: 600 }</code> — Widget requests resize (for responsive content)
+- <code>{ type: 'interaction', action: 'hover', data: {...} }</code> — User interacted with the visualization</p>
+<p><strong>Security:</strong></p>
+<p>The iframe is sandboxed with <code>sandbox="allow-scripts allow-same-origin"</code>. "The MCP App widget already runs inside a host‑sandboxed iframe, but HTML outputs need a nested iframe with sandbox='allow‑scripts' (no allow‑same‑origin) to prevent kernel‑generated scripts from accessing the parent's PostMessageTransport." The widget validates the origin of postMessage events to prevent cross‑origin attacks.</p>
+<h3 id="323-analytics">32.3 Analytics</h3>
+<p>The widget SDK includes analytics tracking (using the existing platform analytics infrastructure):
+- <strong>Impressions:</strong> How many times the widget was loaded
+- <strong>Interactions:</strong> Hover, click, zoom events within the widget
+- <strong>Session duration:</strong> How long users interact with the embedded visualization
+- <strong>Referrer:</strong> Which websites are embedding the widget</p>
+<p>These analytics are displayed on the pattern owner's portfolio dashboard.</p>
+<hr />
+<h2 id="feature-33-attention-portfolio-researcher-showcase">Feature 33: Attention Portfolio — Researcher Showcase</h2>
+<h3 id="331-core-concept">33.1 Core Concept</h3>
+<p>Every researcher has a public portfolio showing: published patterns, collections curated, challenges won, reputation score, activity graph, expertise tags. The portfolio is embeddable on personal websites and serves as a professional credential.</p>
+<h3 id="332-backend-implementation">33.2 Backend Implementation</h3>
+<p><strong>Data Aggregation Service:</strong></p>
+<p>The portfolio is powered by an aggregation service that collects data from across the platform:
+- <strong>Patterns Published:</strong> From <code>AttentionExploration</code> model
+- <strong>Collections Curated:</strong> From <code>AttentionCollection</code> model
+- <strong>Challenges Won:</strong> From <code>ChallengeSubmission</code> + <code>AttentionChallenge</code> models
+- <strong>Reactions Received:</strong> Sum across all published patterns
+- <strong>Reputation Score:</strong> From <code>gpu_reputation</code> app
+- <strong>Badges Earned:</strong> From <code>UserBadge</code> model (Zone 8)
+- <strong>Activity History:</strong> From <code>ActivityLog</code> model (existing)</p>
+<p><strong>API Endpoint:</strong> <code>GET /api/attention/portfolio/{username}/</code></p>
+<p>Returns a comprehensive JSON object with all portfolio data. The endpoint is optimized with Redis caching (5‑minute TTL for public portfolios, real‑time for the owner's view).</p>
+<h3 id="333-frontend-implementation">33.3 Frontend Implementation</h3>
+<p><strong>Portfolio Layout:</strong></p>
+<p>The portfolio page follows a layout inspired by GitHub profile pages and Kaggle profiles:</p>
+<p><strong>Header Section:</strong>
+- Avatar, display name, username
+- Headline/bio from user profile
+- Reputation score with tier badge
+- Social links (GitHub, Twitter, LinkedIn, Google Scholar)
+- "Edit Profile" button (for the owner)</p>
+<p><strong>Stats Bar:</strong>
+- Total patterns published
+- Total collections curated
+- Total challenges won
+- Total reactions received
+- Total forks of their patterns
+- Followers count</p>
+<p><strong>Activity Graph (GitHub‑Style Contribution Chart):</strong></p>
+<p>A heatmap showing attention‑related activity over the past year. Each cell represents a day, colored by activity level (number of patterns published, reactions given, discussions participated in). The implementation uses D3.js with a calendar heatmap layout.</p>
+<p><strong>Tabs Section:</strong></p>
+<ol>
+<li><strong>Patterns:</strong> Grid of published attention patterns with thumbnail previews, reaction counts, and fork counts</li>
+<li><strong>Collections:</strong> Grid of curated collections</li>
+<li><strong>Challenges:</strong> List of challenges created and participated in</li>
+<li><strong>Badges:</strong> Grid of earned badges with tooltips</li>
+<li><strong>Activity:</strong> Chronological feed of recent actions</li>
+</ol>
+<p><strong>Expertise Tags:</strong></p>
+<p>Auto‑generated tags based on the researcher's activity patterns:
+- "Induction Head Expert" (if they've published 5+ patterns classified as induction heads)
+- "Vision Attention Specialist" (if they've analyzed 10+ vision transformer patterns)
+- "Compression Researcher" (if they've used the compression pipeline on attention heads)
+- "Community Mentor" (if they've answered 20+ discussion questions)</p>
+<h3 id="334-integration-points">33.4 Integration Points</h3>
+<ul>
+<li><strong>Embed Widget (Feature 32):</strong> The entire portfolio can be embedded on external websites using the same widget infrastructure.</li>
+<li><strong>Profile (existing <code>profiles</code> app):</strong> The Attention Portfolio extends the existing user profile with attention‑specific sections.</li>
+<li><strong>Social Graph (existing <code>social_graph</code>):</strong> Follow/unfollow buttons on the portfolio, follower/following counts.</li>
+<li><strong>Messaging (existing <code>messaging</code> app):</strong> A "Message" button on the portfolio opens a direct message with the researcher.</li>
+</ul>
+<hr />
+<h2 id="crosscutting-concerns">Cross‑Cutting Concerns</h2>
+<h3 id="security-access-control">Security &amp; Access Control</h3>
+<ul>
+<li><strong>Row‑Level Security:</strong> All social features respect the existing platform permission model. Patterns marked as private are only visible to their creator and explicitly shared users.</li>
+<li><strong>Rate Limiting:</strong> Reaction and vote endpoints are rate‑limited to 60 requests per minute per user (via Django REST Framework throttling).</li>
+<li><strong>Content Moderation:</strong> Discussion comments are filtered through a profanity filter and optional AI‑based toxicity detection before publication.</li>
+<li><strong>GDPR Compliance:</strong> Users can export all their social data (reactions, comments, votes) via a "Download My Data" button, and request deletion of their social footprint.</li>
+</ul>
+<h3 id="performance-optimization">Performance Optimization</h3>
+<ul>
+<li><strong>CDN Caching:</strong> Share card images and widget assets are served via CDN with long cache TTLs (1 year for versioned assets).</li>
+<li><strong>Lazy Loading:</strong> The discussion thread component is lazy‑loaded only when the user scrolls to the discussion section.</li>
+<li><strong>Virtual Scrolling:</strong> Collections with hundreds of patterns use virtual scrolling (via <code>@tanstack/react‑virtual</code>) to maintain performance.</li>
+<li><strong>WebSocket Connection Pooling:</strong> Multiple Zone 7 features share a single WebSocket connection, multiplexed by message type.</li>
+</ul>
+<h3 id="testing-strategy">Testing Strategy</h3>
+<table>
+<thead>
+<tr>
+<th>Test Type</th>
+<th>Scope</th>
+<th>Tools</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit Tests</td>
+<td>Individual reaction/vote/discussion components</td>
+<td>Vitest + React Testing Library</td>
+</tr>
+<tr>
+<td>Integration Tests</td>
+<td>End‑to‑end vote flow, fork lineage chain</td>
+<td>Playwright</td>
+</tr>
+<tr>
+<td>Load Tests</td>
+<td>Arena voting under 1000 concurrent users</td>
+<td>Locust</td>
+</tr>
+<tr>
+<td>Accessibility</td>
+<td>WCAG 2.1 AA compliance for all interactive elements</td>
+<td>axe‑core + pa11y</td>
+</tr>
+<tr>
+<td>Visual Regression</td>
+<td>Share card rendering consistency</td>
+<td>Percy (for server‑side rendered cards)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="implementation-priority-matrix">📊 Implementation Priority Matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Complexity</th>
+<th>Impact</th>
+<th>Dependencies</th>
+<th>Estimated Effort</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Feature 25: Reaction System</td>
+<td>Medium</td>
+<td>High</td>
+<td>Event bus, Redis</td>
+<td>2 weeks</td>
+</tr>
+<tr>
+<td>Feature 26: Attention Arena</td>
+<td>High</td>
+<td>Very High</td>
+<td>Elo engine, session mgmt</td>
+<td>3 weeks</td>
+</tr>
+<tr>
+<td>Feature 27: Fork &amp; Remix</td>
+<td>Medium</td>
+<td>High</td>
+<td>Lineage DB, graph viz</td>
+<td>2 weeks</td>
+</tr>
+<tr>
+<td>Feature 28: Challenge Creator</td>
+<td>High</td>
+<td>High</td>
+<td>Leaderboard integration</td>
+<td>3 weeks</td>
+</tr>
+<tr>
+<td>Feature 29: Inline Discussions</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Community Q&amp;A, WebSocket</td>
+<td>2 weeks</td>
+</tr>
+<tr>
+<td>Feature 30: Share Cards</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Puppeteer, CDN</td>
+<td>2 weeks</td>
+</tr>
+<tr>
+<td>Feature 31: Collections</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Fork system</td>
+<td>2 weeks</td>
+</tr>
+<tr>
+<td>Feature 32: Embed Widget</td>
+<td>High</td>
+<td>Medium</td>
+<td>iframe SDK, postMessage</td>
+<td>3 weeks</td>
+</tr>
+<tr>
+<td>Feature 33: Portfolio</td>
+<td>Medium</td>
+<td>High</td>
+<td>Aggregation service</td>
+<td>2 weeks</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="integration-map">🔗 Integration Map</h2>
+<div class="highlight"><pre><span></span><code>Zone 7: Social &amp; Community Layer
+│
+├── Reaction System ──────────────→ Recommendation Engine
+│                                   → Leaderboards (reaction leaderboards)
+│                                   → Portfolios (reaction counts)
+│                                   → Activity Feed
+│
+├── Attention Arena ──────────────→ Elo Rating Engine
+│                                   → Leaderboards (Elo rankings)
+│                                   → Reputation (vote consistency scoring)
+│                                   → Dataset Export (preference data)
+│
+├── Fork &amp; Remix ────────────────→ Lineage Graph (D3 force‑directed)
+│                                   → Activity Feed
+│                                   → Portfolios (fork counts)
+│
+├── Challenge Creator ────────────→ Leaderboards (challenge rankings)
+│                                   → Badge System (challenge badges)
+│                                   → Reputation (participation scoring)
+│
+├── Inline Discussions ───────────→ Community Q&amp;A (reuses models)
+│                                   → Notifications (@mentions)
+│                                   → Notes (export discussion as note)
+│                                   → WebSocket (real‑time updates)
+│
+├── Share Cards ─────────────────→ Puppeteer rendering service
+│                                   → CDN (card image hosting)
+│                                   → Widget SDK (embed preview)
+│
+├── Collections ─────────────────→ Fork system (collection forking)
+│                                   → Discussion threads
+│                                   → Search indexing
+│
+├── Embed Widget ────────────────→ iframe SDK + postMessage
+│                                   → Analytics (impressions, interactions)
+│                                   → CDN (widget assets)
+│
+└── Portfolio ───────────────────→ Profiles (extends existing)
+                                    → Social Graph (follow/unfollow)
+                                    → Messaging (direct message)
+                                    → Embed Widget (portfolio embed)
+</code></pre></div>
+<p>All nine features are designed to work with your existing React 19 + TypeScript + Tailwind CSS frontend, Django REST Framework + FastAPI backend, Django Channels WebSocket infrastructure, and the full suite of platform apps (community, leaderboards, gpu_reputation, notes, portfolios, profiles, messaging, search, activity). Each feature is independently deployable, enabling incremental rollout based on priority.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

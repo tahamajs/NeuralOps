@@ -1,0 +1,19 @@
+Budget_MB,Policy,Batch_Size,Seq_Len,Total_Tokens,Latency_ms,Throughput_tok_per_sec,Peak_VRAM_MB,VRAM_Efficiency_pct,Effective_Capacity_pct,Status
+1024,Standard Dense Attention,2,4096,8192,4.31,1900841.8,89.06,8.7,100.0,PASSED
+1024,Paged KV Evict (Retention=50%),2,4096,8192,0.085,95961617.2,136.59,13.3,50.0,PASSED
+1024,Paged KV Evict (Retention=25%),2,4096,8192,0.021,392798693.3,120.57,11.8,25.0,PASSED
+1024,Dynamic Sparse Attention (Block Sparsity=50%),2,4096,8192,85.123,96236.9,256.6,25.1,50.0,PASSED
+1024,Dynamic Sparse Attention (Block Sparsity=75%),2,4096,8192,41.262,198534.5,256.6,25.1,25.0,PASSED
+1024,Selective Scan SSM (Linear State-Space),2,4096,8192,4.04,2027849.1,258.42,25.2,100.0,PASSED
+2048,Standard Dense Attention,4,4096,16384,6.7,2445461.5,242.17,11.8,100.0,PASSED
+2048,Paged KV Evict (Retention=50%),4,4096,16384,0.265,61774321.5,297.21,14.5,50.0,PASSED
+2048,Paged KV Evict (Retention=25%),4,4096,16384,0.101,162266661.4,265.18,12.9,25.0,PASSED
+2048,Dynamic Sparse Attention (Block Sparsity=50%),4,4096,16384,152.062,107745.7,537.18,26.2,50.0,PASSED
+2048,Dynamic Sparse Attention (Block Sparsity=75%),4,4096,16384,80.136,204451.8,537.18,26.2,25.0,PASSED
+2048,Selective Scan SSM (Linear State-Space),4,4096,16384,5.593,2929276.2,508.19,24.8,100.0,PASSED
+4096,Standard Dense Attention,4,8192,32768,nan,0.0,nan,0.0,0.0,OOM
+4096,Paged KV Evict (Retention=50%),4,8192,32768,0.526,62353858.6,457.9,11.2,50.0,PASSED
+4096,Paged KV Evict (Retention=25%),4,8192,32768,0.277,118226595.7,393.84,9.6,25.0,PASSED
+4096,Dynamic Sparse Attention (Block Sparsity=50%),4,8192,32768,603.832,54266.7,1065.81,26.0,50.0,PASSED
+4096,Dynamic Sparse Attention (Block Sparsity=75%),4,8192,32768,398.524,82223.5,1065.81,26.0,25.0,PASSED
+4096,Selective Scan SSM (Linear State-Space),4,8192,32768,11.165,2934882.2,1007.31,24.6,100.0,PASSED

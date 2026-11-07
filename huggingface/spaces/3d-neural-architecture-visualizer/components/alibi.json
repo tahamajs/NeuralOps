@@ -1,0 +1,13 @@
+{
+  "id": "alibi",
+  "name": "Alibi: Modern Positional, Rotary & Geometric Attention Variants",
+  "type": "Attention Module",
+  "family": "Modern Positional, Rotary & Geometric Attention Variants",
+  "category": "Modern Positional, Rotary & Geometric Attention Variants",
+  "paradigm": "positional",
+  "icon": "📐",
+  "file": "neuralops/layers/modern/alibi.py",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "description": "Alibi operator from the Modern Positional, Rotary & Geometric Attention Variants family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "math": "O = \\operatorname{Attention}(Q, K, V)"
+}

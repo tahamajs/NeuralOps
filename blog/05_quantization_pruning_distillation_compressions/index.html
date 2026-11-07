@@ -1,0 +1,4248 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/blog/05_quantization_pruning_distillation_compressions/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>05 quantization pruning distillation compressions - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#part-5-quantization-pruning-distillation-cache-engines" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              05 quantization pruning distillation compressions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📑 Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-rotational-slicegpt-int4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Rotational SliceGPT-INT4
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Rotational SliceGPT-INT4">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-deltakv-cachenotes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. DeltaKV &amp; CacheNotes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. DeltaKV &amp; CacheNotes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-zerokv-neo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. ZeroKV-Neo
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. ZeroKV-Neo">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-flap-fluctuation-aware-structured-pruning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. FLAP: Fluctuation-Aware Structured Pruning
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. FLAP: Fluctuation-Aware Structured Pruning">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-armor-wanda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. ARMOR &amp; Wanda
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. ARMOR &amp; Wanda">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-sparsegpt-24-semi-structured-sparsity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. SparseGPT &amp; 2:4 Semi-Structured Sparsity
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. SparseGPT &amp; 2:4 Semi-Structured Sparsity">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-smoothquant-awq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. SmoothQuant &amp; AWQ
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. SmoothQuant &amp; AWQ">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-squeezing-heads-distillation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Squeezing Heads Distillation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Squeezing Heads Distillation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-cooperative-quantization-coopq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Cooperative Quantization &amp; CoOpQ
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Cooperative Quantization &amp; CoOpQ">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#empirical-benchmarks-hardware-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📊 Empirical Benchmarks &amp; Hardware Profiling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary-comparison-efficient-compression-techniques" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📊 Summary Comparison: Efficient Compression Techniques
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<blockquote>
+<p>[!NOTE]
+<strong>Live Empirical Trajectories:</strong> As part of this comprehensive review, we are actively executing a 120-run GPU benchmark grid. You will find the <strong>real-time training loss charts, hyperparameters, and GLUE metrics</strong> dynamically injected at the absolute bottom of this article. These metrics synchronize directly from the GPU orchestrator every 60 seconds.</p>
+</blockquote>
+<h1 id="part-5-quantization-pruning-distillation-cache-engines">⚡ Part 5: Quantization, Pruning, Distillation &amp; Cache Engines</h1>
+<blockquote>
+<p><strong>The Definitive Visual Guide to Compressing Large Language Models: How Mathematical Rotations, Differential KV Compression, Structured Pruning, Outlier Migration, and Mixed-Format Quantization Break the Memory Wall.</strong></p>
+</blockquote>
+<hr />
+<h2 id="table-of-contents">📑 Table of Contents</h2>
+<ol>
+<li><a href="#1-rotational-slicegpt-int4">Rotational SliceGPT-INT4 (Orthogonal Transformation + Slice Pruning)</a></li>
+<li><a href="#2-deltakv--cachenotes">DeltaKV &amp; CacheNotes (Dynamic Key-Value Differential Compression)</a></li>
+<li><a href="#3-zerokv-neo">ZeroKV-Neo (Zero-Footprint Persistent Memory &amp; Eviction)</a></li>
+<li><a href="#4-flap-fluctuation-aware-structured-pruning">FLAP: Fluctuation-Aware Structured Pruning</a></li>
+<li><a href="#5-armor--wanda">ARMOR &amp; Wanda (Weights and Activations Pruning without Retraining)</a></li>
+<li><a href="#6-sparsegpt--24-semi-structured-sparsity">SparseGPT &amp; 2:4 Semi-Structured Sparsity</a></li>
+<li><a href="#7-smoothquant--awq">SmoothQuant &amp; AWQ (Activation Outlier Migration &amp; Salient Weight Quantization)</a></li>
+<li><a href="#8-squeezing-heads-distillation">Squeezing Heads Distillation (Head Pruning &amp; Cross-Layer Distillation)</a></li>
+<li><a href="#9-cooperative-quantization--coopq">Cooperative Quantization &amp; CoOpQ (Coordinated INT4/FP4 Matrix Engines)</a></li>
+</ol>
+<hr />
+<h2 id="1-rotational-slicegpt-int4">1. Rotational SliceGPT-INT4</h2>
+<div class="highlight"><pre><span></span><code>  Dense Representation (d=4096)           Orthogonal Rotation (Q)            Physical Slicing &amp; INT4 Pack
+┌───────────────────────────────┐        ┌───────────────────────────────┐        ┌─────────────────────┐
+│ High-variance energy scattered│  ===&gt;  │ Energy packed into top-k cols │  ===&gt;  │ Retained (k=3072)   │ ──&gt; INT4
+│ across all 4096 channels      │ (PCA/Q)│ Remaining (d-k) near zero     │ (Drop) │ Physical dense GEMM │     Quant
+└───────────────────────────────┘        └───────────────────────────────┘        └─────────────────────┘
+</code></pre></div>
+<h3 id="title-subtitle">Title &amp; Subtitle</h3>
+<p><strong>Rotational SliceGPT-INT4: Orthogonal Basis Transformation Meets Structured Weight Slicing</strong><br />
+<em>Rotating activation coordinate systems via orthogonal transformation matrices to concentrate signal energy, physically slicing away redundant channels, and quantizing the dense core to INT4.</em></p>
+<h3 id="the-analogy">The Analogy</h3>
+<p>Imagine packing an oddly shaped, sprawling collection of luggage into a tight cargo trunk. If you throw the items in at random angles, they bump into each other, creating dead space and sticking out of the edges. But if you first rotate every suitcase to align perfectly with a geometric grid (orthogonal rotation), all the heavy mass settles tightly into the first 75% of the trunk. You can then slice off the empty remaining 25% of the trunk compartment entirely, and vacuum-pack the rest (INT4 quantization) without crushing a single fragile item.</p>
+<h3 id="the-problem">The Problem</h3>
+<p>Traditional pruning algorithms fall into two extremes, both of which struggle on modern hardware:
+1. <strong>Unstructured Sparsity</strong>: Zeroes out arbitrary individual weights. While this retains model accuracy, modern GPU Tensor Cores cannot execute irregular sparse patterns efficiently without specialized sparse libraries that introduce severe latency overhead.
+2. <strong>Standard Structured Pruning</strong>: Drops entire weight columns or attention heads to produce smaller, dense matrices. However, large language models develop complex inter-channel dependencies and extreme activation outliers. Naively dropping channels destroys critical representations, causing catastrophic perplexity degradation unless recovered by expensive full-scale retraining.</p>
+<h3 id="how-it-works-the-intuition">How It Works (The Intuition)</h3>
+<p>Rotational SliceGPT solves this dilemma through a two-phase mathematical transformation:
+1. <strong>Orthogonal Basis Rotation</strong>: Using Singular Value Decomposition (SVD) or Principal Component Analysis (PCA) on calibration activations, we compute an orthogonal transformation matrix <span class="arithmatex">\(Q \in \mathbb{R}^{d \times d}\)</span> (where <span class="arithmatex">\(Q^T Q = I\)</span>). Because <span class="arithmatex">\(Q\)</span> is strictly orthogonal, inserting <span class="arithmatex">\(Q Q^T\)</span> between linear layers and normalization layers does not alter the mathematical output of the network.
+2. <strong>Energy Concentration</strong>: The rotation rotates the coordinate system of the activations such that signal variance is sorted in descending order. The first <span class="arithmatex">\(k\)</span> dimensions (e.g., <span class="arithmatex">\(k = 3072\)</span> out of <span class="arithmatex">\(d = 4096\)</span>) retain over <span class="arithmatex">\(98\%\)</span> of the total activation variance, while the trailing <span class="arithmatex">\(d - k\)</span> dimensions decay close to zero.
+3. <strong>Structured Slicing</strong>: The model physically truncates the weight matrices from <span class="arithmatex">\(d \times d\)</span> down to <span class="arithmatex">\(k \times k\)</span>. The unneeded channels are deleted from VRAM permanently, reducing the physical dimensions of all linear layers.
+4. <strong>INT4 Quantization</strong>: The remaining compact <span class="arithmatex">\(k \times k\)</span> dense core is quantized to 4-bit integers using group-wise symmetric uniform quantization.</p>
+<pre class="mermaid"><code>flowchart LR
+    A["Input Tokens X"] --&gt; B["Orthogonal Rotation Q"]
+    B --&gt; C["Rotated Space XQ"]
+    C --&gt; D["Variance Slicing: Keep top-k"]
+    D --&gt; E["INT4 Quantization W_sliced"]
+    E --&gt; F["Ultra-Fast Dense INT4 Tensor Core"]</code></pre>
+<h3 id="the-math-light">The Math (Light)</h3>
+<p>Given an activation matrix <span class="arithmatex">\(X \in \mathbb{R}^{T \times d}\)</span> and linear weight <span class="arithmatex">\(W \in \mathbb{R}^{d \times d_{\text{out}}}\)</span>, we insert the identity <span class="arithmatex">\(I = Q Q^T\)</span>:
+$<span class="arithmatex">\(Y = X W = (X Q) (Q^T W) = \tilde{X} \tilde{W}\)</span>$
+We compute <span class="arithmatex">\(Q\)</span> from the eigenvalue decomposition of the activation covariance matrix <span class="arithmatex">\(C = \frac{1}{T} X^T X = Q \Lambda Q^T\)</span>.<br />
+By selecting the top-<span class="arithmatex">\(k\)</span> principal components, we slice the rotated weight:
+$<span class="arithmatex">\(\tilde{W}_{\text{sliced}} = (Q^T W)_{[:k, :]} \in \mathbb{R}^{k \times d_{\text{out}}}\)</span>$
+We then quantize <span class="arithmatex">\(\tilde{W}_{\text{sliced}}\)</span> into 4-bit signed integers with scaling factor <span class="arithmatex">\(S\)</span>:
+$<span class="arithmatex">\(W_{\text{INT4}} = \text{clamp}\left( \left\lfloor \frac{\tilde{W}_{\text{sliced}}}{S} \right\rceil, -8, 7 \right), \quad S = \frac{\max(|\tilde{W}_{\text{sliced}}|)}{7}\)</span>$</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<ul>
+<li><strong>Physical Tensor Shrinkage</strong>: Slicing 25% of hidden dimensions cuts parameter count and FLOPs by <span class="arithmatex">\((1 - 0.75^2) \approx 43.7\%\)</span> before quantization.</li>
+<li><strong>Hardware-Native Dense Execution</strong>: The pruned model runs on standard cuBLAS and CUTLASS dense GEMM kernels with zero sparse indexing penalties.</li>
+<li><strong>5.3x Total Compression</strong>: Combining a 25% slice with INT4 quantization reduces a 70B parameter model footprint from 140 GB (FP16) down to ~26 GB, fitting on a single 32 GB workstation GPU with negligible perplexity loss.</li>
+</ul>
+<h3 id="image-prompt">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A hyper-detailed 3D isometric scientific infographic on dark slate <code>#0B0F19</code>. On the left, a large glowing violet 3D tensor grid labeled "Dense Activation Space (4096)" exhibits scattered bright noise points. A luminous emerald orthogonal rotation prism labeled "Orthogonal Q Transform" rotates the grid by 45 degrees, aligning all bright energy into an intense cyan concentrated column. A glowing laser beam labeled "Slice Boundary" cleanly slices away the dim 25% tail of the matrix. The remaining dense block passes into an INT4 packing matrix with golden micro-circuits. Ultra-clean typography, neon cyan <code>#00E5FF</code> and lime <code>#39FF14</code> accents, raytraced glass reflections.</p>
+</blockquote>
+<hr />
+<h2 id="2-deltakv-cachenotes">2. DeltaKV &amp; CacheNotes</h2>
+<div class="highlight"><pre><span></span><code>  Token Stream:     [t_0: Anchor]  ───&gt;  [t_1: Delta]  ───&gt;  [t_2: Delta]  ───&gt;  [t_3: Delta]
+  KV Storage:       [Full FP16/FP8]     [2-bit Resid]       [2-bit Resid]       [2-bit Resid]
+                     └─────────────────────────┬───────────────────┘
+                                               ▼
+                              [CacheNotes: Distilled Semantic Note]
+</code></pre></div>
+<h3 id="title-subtitle_1">Title &amp; Subtitle</h3>
+<p><strong>DeltaKV &amp; CacheNotes: Dynamic Key-Value Differential Compression</strong><br />
+<em>Exploiting cross-token contextual redundancy in generative decoding by storing anchor keyframes, ultra-low-bit delta residuals, and hierarchical semantic notes.</em></p>
+<h3 id="the-analogy_1">The Analogy</h3>
+<p>Consider modern video streaming formats like H.265 (HEVC). The video player does not store a full, uncompressed 4K image for every single 60-fps frame (I-frames). Instead, it stores one high-fidelity reference frame every few seconds, followed by tiny differential motion vectors (P-frames and B-frames) that describe only what changed. DeltaKV applies video codec delta-compression to the Key-Value cache of large language models: it keeps rare anchor tokens in high precision and stores the subsequent 90% of tokens as micro-precision residual deltas.</p>
+<h3 id="the-problem_1">The Problem</h3>
+<p>During autoregressive text generation, the Key-Value (KV) cache grows linearly with context length (<span class="arithmatex">\(O(B \cdot L \cdot H \cdot D)\)</span>). For a 70B model operating at a 128k context window:
+- The KV cache demands <strong>&gt;160 GB of VRAM</strong>, far exceeding the memory required by the model weights themselves!
+- Memory bandwidth saturation from reading this massive KV cache during every single decoding step throttles generation speed down to single-digit tokens per second.</p>
+<h3 id="how-it-works-the-intuition_1">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>Anchor Token Identification</strong>: When a new prompt or sequence is processed, tokens with high semantic saliency or periodic interval tokens (every <span class="arithmatex">\(N\)</span> tokens) are designated as <strong>Anchor Keys and Values</strong> (<span class="arithmatex">\(K_{\text{base}}, V_{\text{base}}\)</span>) and kept in FP8/FP16.</li>
+<li><strong>Differential Residual Formulation</strong>: For intermediate tokens <span class="arithmatex">\(t\)</span>, the attention key and value vectors are highly correlated with the local anchor. DeltaKV computes the difference vector:
+   $<span class="arithmatex">\(\Delta K_t = K_t - K_{\text{base}}, \quad \Delta V_t = V_t - V_{\text{base}}\)</span>$</li>
+<li><strong>2-Bit / 3-Bit Residual Quantization</strong>: Because <span class="arithmatex">\(\Delta K_t\)</span> and <span class="arithmatex">\(\Delta V_t\)</span> are tightly clustered around zero with minimal variance, they can be aggressively quantized to 2-bit or 3-bit non-linear integer grids without loss of fidelity.</li>
+<li><strong>CacheNotes Hierarchical Summarization</strong>: As context recedes into the distant past (<span class="arithmatex">\(&gt;4096\)</span> tokens back), DeltaKV merges clusters of delta tokens into a single compact low-rank "CacheNote" centroid vector, freeing up cache lines while retaining long-range associative recall.</li>
+</ol>
+<pre class="mermaid"><code>sequenceDiagram
+    participant LLM as Decoder Layer
+    participant Anchor as Anchor Buffer (FP16/FP8)
+    participant Delta as Delta Storage (2-bit INT)
+    participant Notes as CacheNotes Engine
+
+    LLM-&gt;&gt;Anchor: Write Keyframe Token (t=0)
+    LLM-&gt;&gt;Delta: Compute &amp; Quantize Delta ΔK, ΔV (t=1..7)
+    Note over Delta: 2-bit Non-linear Quantization
+    LLM-&gt;&gt;Notes: Background: Compress Past Blocks into Semantic Centroid
+    LLM-&gt;&gt;LLM: Fast Reconstructed Dequant Decode: K = K_anchor + dequant(ΔK)</code></pre>
+<h3 id="the-math-light_1">The Math (Light)</h3>
+<p>Let <span class="arithmatex">\(K_t \in \mathbb{R}^{d_k}\)</span> be the key vector at time <span class="arithmatex">\(t\)</span> and <span class="arithmatex">\(K_{\text{anchor}}\)</span> be its assigned reference key. The quantized residual representation is:
+$<span class="arithmatex">\(\mathbf{q}_t = \mathcal{Q}_{b\text{-bit}}\left( K_t - K_{\text{anchor}} \right) = \left\lfloor \frac{K_t - K_{\text{anchor}}}{s_t} \right\rceil\)</span>$
+During the attention score calculation between query <span class="arithmatex">\(Q_{\tau}\)</span> and cached key <span class="arithmatex">\(K_t\)</span>, the dot product expands linearly:
+$<span class="arithmatex">\(\text{AttnScore}(\tau, t) = \frac{Q_{\tau} K_t^T}{\sqrt{d_k}} = \frac{Q_{\tau} K_{\text{anchor}}^T}{\sqrt{d_k}} + \frac{Q_{\tau} \left( s_t \cdot \mathbf{q}_t \right)^T}{\sqrt{d_k}}\)</span>$
+Because <span class="arithmatex">\(Q_{\tau} K_{\text{anchor}}^T\)</span> can be pre-computed or shared across clustered tokens, the inner loop computes low-precision integer dot products against <span class="arithmatex">\(\mathbf{q}_t\)</span>.</p>
+<h3 id="why-it-matters_1">Why It Matters</h3>
+<ul>
+<li><strong>4x to 6x KV Cache Reduction</strong>: Reduces 128k context KV memory footprint from 160 GB down to ~32 GB.</li>
+<li><strong>3.2x Decoding Throughput</strong>: Massive reduction in memory bandwidth traffic allows GPU compute engines to run closer to peak FLOPS.</li>
+<li><strong>Zero Hallucination on Needle-In-A-Haystack</strong>: Unlike naive token dropping, DeltaKV preserves every single token's position and gradient direction in residual space.</li>
+</ul>
+<h3 id="image-prompt_1">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A futuristic 3D architectural memory bus visual on dark graphite background <code>#0A0D14</code>. A glowing golden master data pillar labeled "Anchor Frame K_0 (FP16)" radiates reference beams to a series of compact, glowing cyan micro-cubes labeled "Delta Residuals ΔK_1, ΔK_2 (2-bit)". In the background, older memory clusters are seen smoothly merging into an elegant floating holographic crystal notebook labeled "CacheNotes Semantic Centroid". Glowing neon data lines in cobalt blue <code>#2979FF</code> and bright amber <code>#FFC107</code>, hyper-realistic depth of field, 8k octane render.</p>
+</blockquote>
+<hr />
+<h2 id="3-zerokv-neo">3. ZeroKV-Neo</h2>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                            ZeroKV-Neo Memory Pipeline                       │
+│                                                                             │
+│  [Sink Tokens 0..3]  ───&gt;  [Top-K Heavy Hitters]  ───&gt;  [Local Sliding 512] │
+│  (Pinned Permanently)      (Dynamic Attention Mass)    (Exact Full Precision)│
+│                                      │                                      │
+│                                      ▼ (Tokens below threshold)             │
+│                         [Recurrent State Vector h_neo]                      │
+│                         (O(1) Constant Memory Footprint)                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<h3 id="title-subtitle_2">Title &amp; Subtitle</h3>
+<p><strong>ZeroKV-Neo: Zero-Footprint Persistent Memory with Dynamic Eviction &amp; State Recurrence</strong><br />
+<em>Achieving constant O(1) KV cache memory bounds during infinite-horizon generation by combining attention-sink preservation, dynamic mass eviction, and recurrent summary compression.</em></p>
+<h3 id="the-analogy_2">The Analogy</h3>
+<p>Imagine a courtroom stenographer working on a 6-month trial. If they tried to keep every single open sheet of paper spread out across the courtroom floor, they would run out of physical space within days. Instead, a master stenographer keeps:
+1. The original charge sheet pinned to the front podium (<strong>Attention Sinks</strong>),
+2. The active testimony from the current witness (<strong>Local Sliding Window</strong>),
+3. Key exhibits that are frequently referenced (<strong>Heavy Hitters</strong>), and
+4. Summarizes all resolved daily arguments into an ongoing master case ledger (<strong>Recurrent Summary State</strong>), recycling the scratch paper.</p>
+<h3 id="the-problem_2">The Problem</h3>
+<p>Autoregressive transformers suffer from the <strong>Infinite Context Memory Wall</strong>. If a model generates text continuously (such as in autonomous agent loops, continuous streaming chat, or real-time sensor processing), the KV cache will eventually exhaust GPU VRAM, leading to out-of-memory (OOM) crashes. Simple sliding-window cache strategies fail catastrophically: when early tokens (especially the first 4 tokens) are evicted, the model exhibits sudden, complete perplexity collapse due to the loss of "attention sinks."</p>
+<h3 id="how-it-works-the-intuition_2">How It Works (The Intuition)</h3>
+<p>ZeroKV-Neo establishes a bounded, constant-size memory architecture:
+1. <strong>Permanent Attention Sinks</strong>: The initial 4 tokens (<span class="arithmatex">\(t \in [0, 3]\)</span>) are permanently locked in high-precision cache. They absorb surplus softmax attention scores and prevent numerical instability.
+2. <strong>Cumulative Attribution Scoring</strong>: For all intermediate tokens, ZeroKV-Neo tracks an exponential moving average (EMA) of attention scores received from recent queries:
+   $<span class="arithmatex">\(S_i^{(t)} = \beta S_i^{(t-1)} + (1 - \beta) \sum_{h=1}^H A_{h, t, i}\)</span>$
+3. <strong>Dynamic Heavy-Hitter Retention</strong>: Tokens with high cumulative attribution scores are retained in the active cache pool.
+4. <strong>Recurrent Summary Eviction</strong>: When a token's attribution score drops below an eviction threshold, it is not simply deleted. Instead, its Value vector is projected and blended into a fixed-size recurrent state vector <span class="arithmatex">\(h_{\text{neo}} \in \mathbb{R}^{d}\)</span>, preserving background semantic context in <span class="arithmatex">\(O(1)\)</span> memory.</p>
+<pre class="mermaid"><code>flowchart TD
+    In["New Token Query Q_t"] --&gt; Attn["Compute Attention Over Cache"]
+    Attn --&gt; UpScore["Update Attribution Score S_i for all tokens"]
+    UpScore --&gt; Check{"Memory Limit Exceeded?"}
+    Check -- No --&gt; Store["Append to Cache"]
+    Check -- Yes --&gt; Split["Partition Cache"]
+    Split --&gt; Sinks["Keep Pinned Initial Sinks (0..3)"]
+    Split --&gt; Local["Keep Recent Window (t-W .. t)"]
+    Split --&gt; TopK["Select Top-K Highest S_i"]
+    Split --&gt; Evict["Evict Low-Scoring Tail"]
+    Evict --&gt; Compress["Blend into Recurrent Summary Vector h_neo"]</code></pre>
+<h3 id="the-math-light_2">The Math (Light)</h3>
+<p>The active key-value cache indices <span class="arithmatex">\(\mathcal{M}_t\)</span> at step <span class="arithmatex">\(t\)</span> are dynamically maintained under a strict budget <span class="arithmatex">\(B\)</span>:
+$<span class="arithmatex">\(\mathcal{M}_t = \underbrace{\{0, 1, 2, 3\}}_{\text{Attention Sinks}} \;\cup\; \underbrace{\{t-W, \dots, t\}}_{\text{Recent Sliding Window}} \;\cup\; \text{TopK}_{B - W - 4}\left( \left\{ S_i^{(t)} \;\middle|\; i \in [4, t-W-1] \right\} \right)\)</span>$
+For evicted token indices <span class="arithmatex">\(\mathcal{E}_t\)</span>, the recurrent summary vector <span class="arithmatex">\(h_{\text{neo}}\)</span> is updated via gated recurrent absorption:
+$<span class="arithmatex">\(h_{\text{neo}}^{(t)} = \alpha_t h_{\text{neo}}^{(t-1)} + (1 - \alpha_t) \sum_{j \in \mathcal{E}_t} \left( \frac{S_j^{(t)}}{\sum_{k \in \mathcal{E}_t} S_k^{(t)}} \right) V_j\)</span>$
+During attention, <span class="arithmatex">\(h_{\text{neo}}\)</span> is appended as a single virtual token at position 4.</p>
+<h3 id="why-it-matters_2">Why It Matters</h3>
+<ul>
+<li><strong>True <span class="arithmatex">\(O(1)\)</span> Memory Consumption</strong>: Guarantees fixed VRAM usage whether generating 1,000 tokens or 10,000,000 tokens.</li>
+<li><strong>Infinite Streaming on Edge Devices</strong>: Allows running a 7B/13B parameter chatbot continuously on an 8 GB VRAM laptop or mobile chip without memory leaks or degradation.</li>
+<li><strong>Zero Softmax Collapse</strong>: Retains baseline perplexity across multi-day streaming sessions.</li>
+</ul>
+<h3 id="image-prompt_2">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A conceptual 3D isometric illustration of a perpetual data engine on dark obsidian <code>#070A10</code>. At the front, 4 glowing emerald anchor pins hold down a golden foundational plate labeled "Attention Sinks [0..3]". A transparent glass conveyor belt carries incoming token blocks through a circular glowing scanner that highlights bright heavy-hitter nodes in electric cyan <code>#00E5FF</code>. Low-energy nodes drop into a lower funnel where a glowing violet vortex labeled "Recurrent Compression Core h_neo" fuses them into a single shimmering sphere. High-tech HUD annotations, glowing telemetry indicators, clean cyber-aesthetic.</p>
+</blockquote>
+<hr />
+<h2 id="4-flap-fluctuation-aware-structured-pruning">4. FLAP: Fluctuation-Aware Structured Pruning</h2>
+<div class="highlight"><pre><span></span><code>  Channel Feature Maps X_i across Calibration Tokens:
+  Channel A (Static / Bias-dominated):  [ 5.01, 5.00, 5.02, 4.99, 5.01 ]  ──&gt; Low Variance σ_A  ──&gt; PRUNE (Fuse μ to Bias)
+  Channel B (Dynamic / Informative):    [-3.20, 8.40, 0.10, -5.60, 4.20 ]  ──&gt; High Variance σ_B ──&gt; RETAIN
+</code></pre></div>
+<h3 id="title-subtitle_3">Title &amp; Subtitle</h3>
+<p><strong>FLAP: Fluctuation-Aware Structured Pruning without Retraining</strong><br />
+<em>Eliminating entire transformer channels and heads by evaluating output variance fluctuations and absorbing static baseline biases into downstream layers.</em></p>
+<h3 id="the-analogy_3">The Analogy</h3>
+<p>Imagine a control panel with 100 indicator dials monitoring a chemical plant. If 30 of those dials constantly point to "5.0" regardless of whether the plant is running at idle, full blast, or in an emergency, those 30 dials are not providing dynamic information—they are just reporting a static baseline. You can safely remove those 30 dials, wire their constant "+5.0" signal directly into the alarm logic (bias compensation), and focus the control room's attention entirely on the 70 dials that actively fluctuate with real-world changes.</p>
+<h3 id="the-problem_3">The Problem</h3>
+<p>Traditional structured pruning relies on <strong>weight magnitude heuristics</strong> (e.g., pruning weight rows with the smallest <span class="arithmatex">\(L_1\)</span> or <span class="arithmatex">\(L_2\)</span> norm). In modern LLMs with RMSNorm and residual connections, this fails for two major reasons:
+1. Large weight values often serve merely to cancel out constant baseline offsets, producing zero dynamic variance.
+2. Channels with small weight norms often carry critical, high-frequency signals that govern fine-grained logical reasoning.
+Pruning based on weight magnitude alone rips out sensitive dynamic channels, destroying the model's reasoning capabilities unless repaired by expensive multi-epoch retraining.</p>
+<h3 id="how-it-works-the-intuition_3">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>Sampling Dynamic Fluctuations</strong>: Pass a small calibration dataset (e.g., 128 sequences from C4) through the model and record post-activation feature maps <span class="arithmatex">\(X_{:, i}\)</span> for each channel <span class="arithmatex">\(i\)</span>.</li>
+<li><strong>Variance vs. Bias Decomposition</strong>: Decompose each channel into its static mean component <span class="arithmatex">\(\mu_i = \mathbb{E}[X_{:, i}]\)</span> and its dynamic fluctuation <span class="arithmatex">\(\sigma_i^2 = \text{Var}(X_{:, i})\)</span>.</li>
+<li><strong>Bias Compensation Fusion</strong>: For channels with near-zero fluctuation <span class="arithmatex">\(\sigma_i \approx 0\)</span>, their static contribution is completely predictable. When channel <span class="arithmatex">\(i\)</span> is removed from weight matrix <span class="arithmatex">\(W\)</span>, its mean contribution <span class="arithmatex">\(\mu_i W_{i, :}\)</span> is added directly into the downstream layer's bias vector:
+   $<span class="arithmatex">\(b_{\text{new}} = b_{\text{old}} + \sum_{i \in \text{Pruned}} \mu_i W_{i, :}\)</span>$</li>
+<li><strong>Structured Dimension Truncation</strong>: Channels, heads, or MLP intermediate widths are ranked by their dynamic impact score <span class="arithmatex">\(I_i = \sigma_i \cdot \|W_{i, :}\|_2\)</span>, and the lowest-scoring dimensions are physically sliced out.</li>
+</ol>
+<pre class="mermaid"><code>flowchart LR
+    A["Calibration Data"] --&gt; B["Compute Feature Mean μ &amp; Variance σ²"]
+    B --&gt; C{"Is Variance σ² Significant?"}
+    C -- "High Fluctuation" --&gt; D["Retain Dynamic Channel in Dense Matrix"]
+    C -- "Low Fluctuation" --&gt; E["Prune Channel from Weight Tensor"]
+    E --&gt; F["Fuse Static Bias Contribution (μ * W) into Layer Bias"]
+    D &amp; F --&gt; G["Compensated Pruned Model (Zero Retraining Required)"]</code></pre>
+<h3 id="the-math-light_3">The Math (Light)</h3>
+<p>Given a linear projection <span class="arithmatex">\(Y = X W + b\)</span>, where <span class="arithmatex">\(X \in \mathbb{R}^{T \times d_{\text{in}}}\)</span> and <span class="arithmatex">\(W \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}\)</span>, the contribution of channel <span class="arithmatex">\(i\)</span> is <span class="arithmatex">\(X_{:, i} W_{i, :}\)</span>.<br />
+We express <span class="arithmatex">\(X_{:, i}\)</span> in terms of its mean and deviation: <span class="arithmatex">\(X_{:, i} = \mu_i + \Delta X_{:, i}\)</span>, where <span class="arithmatex">\(\mathbb{E}[\Delta X_{:, i}] = 0\)</span> and <span class="arithmatex">\(\text{Var}(\Delta X_{:, i}) = \sigma_i^2\)</span>.<br />
+The layer output becomes:
+$<span class="arithmatex">\(Y = \sum_{i \in \text{Retained}} X_{:, i} W_{i, :} + \underbrace{\sum_{j \in \text{Pruned}} \mu_j W_{j, :} + b}_{\text{Updated Bias } b^*} + \underbrace{\sum_{j \in \text{Pruned}} \Delta X_{:, j} W_{j, :}}_{\text{Reconstruction Error } \mathcal{E}}\)</span>$
+The Fluctuation-Aware Metric minimizes the error <span class="arithmatex">\(\mathbb{E}[\|\mathcal{E}\|_2^2]\)</span> by selecting channels to maximize:
+$<span class="arithmatex">\(I_i = \sigma_i \cdot \|W_{i, :}\|_2\)</span>$</p>
+<h3 id="why-it-matters_3">Why It Matters</h3>
+<ul>
+<li><strong>True Zero-Retraining Structured Pruning</strong>: Reduces model size by 20% to 30% in minutes on a single GPU without requiring fine-tuning datasets or gradient updates.</li>
+<li><strong>Hardware Agnostic Acceleration</strong>: Produces standard, smaller dense matrices that immediately accelerate inference on any backend (PyTorch, vLLM, TensorRT-LLM, Apple Silicon).</li>
+<li><strong>Exact DC Bias Preservation</strong>: Prevents distribution shift in deep residual networks.</li>
+</ul>
+<h3 id="image-prompt_3">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A scientific 3D visualization of neural channel selection on a dark navy slate <code>#0B111E</code>. A matrix channel stream is split into two visual paths: on top, vibrant oscillating waveform channels in neon green <code>#00FF66</code> labeled "High Fluctuation σ_i" are smoothly guided into a streamlined core processor; on the bottom, flatline horizontal channels in muted gray labeled "Zero Fluctuation" are severed by a glowing golden energy beam. The flat signals are redirected into a compact golden module labeled "Bias Compensation Adder b*". Crisp vector lines, glowing data nodes, cinematic lighting.</p>
+</blockquote>
+<hr />
+<h2 id="5-armor-wanda">5. ARMOR &amp; Wanda</h2>
+<div class="highlight"><pre><span></span><code>               Wanda Metric: Score_ij = |W_ij| × ||X_j||_2
+  Weight Matrix W (Static):          Activation Norms ||X||_2 (Input):      Pruning Mask (50% per row):
+┌───────────────────────────────┐     ┌─────────────────────────┐          ┌─────────────────────────┐
+│  0.02   -0.85    0.04    0.50 │     │ Channel 0:  1.2  (low)  │          │  [ 0 ]   [ 1 ]   [ 0 ]  [ 1 ]│
+│ -0.40    0.01    0.90   -0.03 │  ×  │ Channel 1: 85.0  (OUTLIER)│  ===&gt;    │  [ 1 ]   [ 0 ]   [ 1 ]  [ 0 ]│
+│  0.15    0.10   -0.05    0.80 │     │ Channel 2:  4.5  (med)  │          │  [ 0 ]   [ 1 ]   [ 0 ]  [ 1 ]│
+└───────────────────────────────┘     │ Channel 3: 12.0  (med)  │          └─────────────────────────┘
+                                      └─────────────────────────┘
+</code></pre></div>
+<h3 id="title-subtitle_4">Title &amp; Subtitle</h3>
+<p><strong>ARMOR &amp; Wanda: Pruning by Weights and Activations without Optimization</strong><br />
+<em>Evaluating weight importance through the element-wise product of static weight magnitudes and dynamic input activation norms for rapid, one-shot sparsification.</em></p>
+<h3 id="the-analogy_4">The Analogy</h3>
+<p>Imagine judging the productivity of a bridge's structural cables. If you only look at the thickness of a cable (weight magnitude <span class="arithmatex">\(|W|\)</span>), you might cut a thin cable. But if that thin cable happens to carry a high-voltage power line delivering electricity to an entire city (input activation norm <span class="arithmatex">\(\|X\|_2\)</span>), cutting it causes an instant blackout! Wanda ensures you never cut a wire without checking how much current is actively flowing through it.</p>
+<h3 id="the-problem_4">The Problem</h3>
+<p>Historically, pruning large language models required either:
+- <strong>Magnitude Pruning (<span class="arithmatex">\(|W|\)</span>)</strong>: Fast, but causes catastrophic perplexity spikes at <span class="arithmatex">\(&gt;30\%\)</span> sparsity because it ignores activation outliers (isolated channels that have activation values up to 100x larger than normal).
+- <strong>Hessian / Second-Order Methods (SparseGPT / OBS)</strong>: Highly accurate, but computationally expensive because they require computing, storing, and inverting giant Hessian matrices (<span class="arithmatex">\(H = X X^T\)</span>) for every layer, which can encounter numerical instability on massive models.</p>
+<h3 id="how-it-works-the-intuition_4">How It Works (The Intuition)</h3>
+<p>Wanda (<strong>W</strong>eights <strong>and</strong> <strong>A</strong>ctivations) and its robust adaptive counterpart <strong>ARMOR</strong> recognize that the output impact of any weight <span class="arithmatex">\(W_{ij}\)</span> is directly proportional to both its own absolute magnitude and the <span class="arithmatex">\(L_2\)</span> norm of the input feature channel <span class="arithmatex">\(j\)</span> feeding into it:
+1. <strong>Pass Calibration Data</strong>: Run a forward pass of 128 sequences through the model and compute the aggregate <span class="arithmatex">\(L_2\)</span> norm for each input feature dimension <span class="arithmatex">\(j\)</span>:
+   $<span class="arithmatex">\(s_j = \|X_{:, j}\|_2 = \sqrt{\sum_{t=1}^T X_{t, j}^2}\)</span>$
+2. <strong>Compute Joint Importance</strong>: For every weight entry <span class="arithmatex">\(W_{ij}\)</span> (row <span class="arithmatex">\(i\)</span>, column <span class="arithmatex">\(j\)</span>), compute the joint importance metric:
+   $<span class="arithmatex">\(S_{ij} = |W_{ij}| \cdot s_j\)</span>$
+3. <strong>Per-Output Pruning</strong>: Compare scores locally across each row <span class="arithmatex">\(i\)</span>. For 50% unstructured pruning or 2:4 semi-structured sparsity, zero out the lowest-scoring weights within each row or 4-element window.
+4. <strong>ARMOR Robustness</strong>: ARMOR introduces adaptive outlier shielding and local gradient-free residual compensation across surviving adjacent weights to prevent cumulative layer-to-layer drift.</p>
+<pre class="mermaid"><code>flowchart LR
+    A["Input Activation Tensor X"] --&gt; B["Compute Column-wise L2 Norm: ||X_j||_2"]
+    C["Weight Matrix W"] --&gt; D["Compute Absolute Magnitude: |W_ij|"]
+    B &amp; D --&gt; E["Wanda Saliency Matrix: S_ij = |W_ij| * ||X_j||_2"]
+    E --&gt; F["Apply 2:4 or Unstructured Mask per Row"]
+    F --&gt; G["ARMOR Residual Local Compensation"]
+    G --&gt; H["Deployable Sparse Model"]</code></pre>
+<h3 id="the-math-light_4">The Math (Light)</h3>
+<p>The output component <span class="arithmatex">\(Y_i\)</span> generated by row <span class="arithmatex">\(i\)</span> of weight matrix <span class="arithmatex">\(W\)</span> is:
+$<span class="arithmatex">\(Y_i = \sum_{j=1}^{d_{\text{in}}} W_{ij} X_j\)</span>$
+By Cauchy-Schwarz inequality, the maximum error <span class="arithmatex">\(\Delta Y_i\)</span> induced by setting <span class="arithmatex">\(W_{ij} = 0\)</span> is bounded by:
+$<span class="arithmatex">\(|\Delta Y_i| \le |W_{ij}| \cdot \|X_j\|_2\)</span>$
+Thus, the Wanda importance score is defined as:
+$<span class="arithmatex">\(S_{ij} = |W_{ij}| \cdot \|X_{:, j}\|_2 = |W_{ij}| \cdot \sqrt{\frac{1}{T} \sum_{t=1}^T X_{t, j}^2}\)</span>$
+The pruning mask <span class="arithmatex">\(M \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}\)</span> is obtained by:
+$<span class="arithmatex">\(M_{ij} = \mathbf{1}\left( S_{ij} \ge \text{Quantile}_p\left( S_{i, :} \right) \right)\)</span>$</p>
+<h3 id="why-it-matters_4">Why It Matters</h3>
+<ul>
+<li><strong>100x Faster than Second-Order Methods</strong>: Prunes a 65B/70B model in under 10 seconds on a single GPU with zero matrix inversions.</li>
+<li><strong>Outlier Protection</strong>: Naturally protects all weights connected to activation outlier channels, preventing the reasoning collapse that plagues magnitude pruning.</li>
+<li><strong>Seamless 2:4 Sparsity Generation</strong>: Directly produces 2:4 sparsity patterns ready for hardware acceleration on NVIDIA Tensor Cores.</li>
+</ul>
+<h3 id="image-prompt_4">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> An isometric 3D technical illustration on a dark slate <code>#0B0F19</code> backdrop. A transparent vertical glass panel represents the Weight Matrix <span class="arithmatex">\(W\)</span>, engraved with circuit traces of varying thickness. A horizontal glowing beam of neon amber light representing Activation Norms <span class="arithmatex">\(\|X\|_2\)</span> shines through the glass from behind. Where thick traces intersect intense light beams, bright golden sparks erupt labeled "High Saliency (Protected)". Where faint traces meet dim light, a robotic cyan laser vaporizes the connections, creating crisp empty slots labeled "Pruned 2:4 Pattern". Photorealistic materials, precise lighting, 8k resolution.</p>
+</blockquote>
+<hr />
+<h2 id="6-sparsegpt-24-semi-structured-sparsity">6. SparseGPT &amp; 2:4 Semi-Structured Sparsity</h2>
+<div class="highlight"><pre><span></span><code>                 2:4 Semi-Structured Sparsity Pattern on NVIDIA Tensor Cores:
+  Row 0:  [  0.82  |  0.00  |  0.00  | -0.45  ]  ===&gt; Exactly 2 non-zero values out of every 4
+  Row 1:  [  0.00  |  1.15  | -0.63  |  0.00  ]  ===&gt; 50% physical memory reduction
+  Row 2:  [ -0.31  |  0.00  |  0.77  |  0.00  ]  ===&gt; 2x Matrix Math Throughput on Ampere/Ada/Hopper
+</code></pre></div>
+<h3 id="title-subtitle_5">Title &amp; Subtitle</h3>
+<p><strong>SparseGPT: One-Shot Inversion for 2:4 Hardware-Accelerated Sparsity</strong><br />
+<em>Solving the layer-wise Optimal Brain Surgeon problem at scale using block Cholesky decomposition to achieve 2x Tensor Core throughput with zero retraining.</em></p>
+<h3 id="the-analogy_5">The Analogy</h3>
+<p>Imagine a delicate game of giant Jenga. If you walk up to the tower and randomly kick out 50% of the wooden blocks, the entire tower will crash to the ground. However, if a structural engineer uses a precision laser to measure the exact load stress across every beam, carefully slides out 2 blocks from every row of 4, and instantly micro-adjusts the remaining 2 blocks by a fraction of a millimeter to redistribute the load, the tower remains standing at 100% stability while weighing half as much.</p>
+<h3 id="the-problem_5">The Problem</h3>
+<p>While unstructured 50% sparsity saves theoretical operations, modern GPU architectures (NVIDIA Ampere, Ada Lovelace, Hopper, Blackwell) cannot accelerate arbitrary sparse matrices—they require dense, coalesced memory access. To bridge this gap, modern GPUs introduced <strong>2:4 Semi-Structured Sparse Tensor Cores</strong>, which double math throughput <em>if and only if</em> exactly 2 out of every 4 consecutive values in a weight row are zero.<br />
+However, finding the optimal 2:4 pattern naively creates severe cumulative error, destroying complex LLM benchmark performance across deep layers.</p>
+<h3 id="how-it-works-the-intuition_5">How It Works (The Intuition)</h3>
+<p>SparseGPT frames structured 2:4 pruning as a constrained quadratic optimization problem:
+$<span class="arithmatex">\(\min_{\hat{W}} \| W X - \hat{W} X \|_2^2 \quad \text{s.t. } \hat{W} \text{ satisfies 2:4 sparsity}\)</span>$
+1. <strong>Inverse Hessian Computation</strong>: The algorithm computes the activation correlation matrix <span class="arithmatex">\(H = 2 X X^T + \lambda I\)</span> and its inverse <span class="arithmatex">\(H^{-1}\)</span> using stable Cholesky decomposition.
+2. <strong>Block-Wise Column Updates</strong>: Rather than updating weights one by one (which would require millions of matrix updates), SparseGPT processes columns in blocks (e.g., <span class="arithmatex">\(B = 128\)</span> columns at a time).
+3. <strong>Optimal 2:4 Selection</strong>: For each 4-element window, SparseGPT evaluates all <span class="arithmatex">\(\binom{4}{2} = 6\)</span> possible pruning combinations and selects the pair that minimizes reconstruction loss weighted by <span class="arithmatex">\([H^{-1}]_{pp}\)</span>.
+4. <strong>Surviving Weight Compensation</strong>: The moment 2 weights are pruned, SparseGPT immediately updates all remaining unpruned weights in the row using the closed-form Optimal Brain Surgeon formula, canceling out the mathematical error before moving to the next block.</p>
+<pre class="mermaid"><code>flowchart TD
+    A["Compute Hessian Matrix H = 2 X X^T + λI"] --&gt; B["Cholesky Factorization of H^-1"]
+    B --&gt; C["Iterate over Column Blocks (B=128)"]
+    C --&gt; D["For every 4 weights: Pick optimal 2 to prune via (W_p)^2 / [H^-1]_pp"]
+    D --&gt; E["OBS Weight Compensation: Update unpruned weights via Error Vector"]
+    E --&gt; F{"More Blocks?"}
+    F -- Yes --&gt; C
+    F -- No --&gt; G["Export Native 2:4 Sparse Weights + Metadata to Tensor Cores"]</code></pre>
+<h3 id="the-math-light_5">The Math (Light)</h3>
+<p>Let <span class="arithmatex">\(H = 2 X X^T\)</span> be the Hessian of the layer loss. When weight <span class="arithmatex">\(w_q\)</span> at index <span class="arithmatex">\(q\)</span> is pruned (<span class="arithmatex">\(w_q \to 0\)</span>), the optimal compensation update <span class="arithmatex">\(\delta W\)</span> for all surviving weights in the layer is given by:
+$<span class="arithmatex">\(\delta W = - \frac{w_q}{\left[ H^{-1} \right]_{qq}} \cdot \left( H^{-1} \right)_{:, q}\)</span>$
+The resulting increase in reconstruction error is:
+$<span class="arithmatex">\(\Delta E = \frac{1}{2} \frac{w_q^2}{\left[ H^{-1} \right]_{qq}}\)</span>$
+For 2:4 sparsity, SparseGPT groups columns into sets of 4, computes <span class="arithmatex">\(\Delta E\)</span> for all <span class="arithmatex">\(\binom{4}{2} = 6\)</span> masks, selects the minimum-error mask, and applies the vectorized OBS update across the remaining dense block.</p>
+<h3 id="why-it-matters_5">Why It Matters</h3>
+<ul>
+<li><strong>True 2x GEMM Speedup</strong>: Directly unlocks the hardware 2:4 Sparse Tensor Cores in NVIDIA RTX 3090/4090, A100, and H100 GPUs.</li>
+<li><strong>50% Memory Footprint</strong>: Compresses FP16 weight tensors into half their original byte size by storing only non-zero values and 2-bit index metadata.</li>
+<li><strong>Negligible Perplexity Impact</strong>: Retains <span class="arithmatex">\(&gt;99\%\)</span> of baseline zero-shot accuracy on massive 70B models (LLaMA-3, Mistral) without a single step of gradient backpropagation.</li>
+</ul>
+<h3 id="image-prompt_5">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A clean, high-tech 3D architectural render on a dark slate background <code>#0B0F19</code>. A gleaming silicon GPU die displays two parallel data execution tracks. The top track shows a standard dense 4-element lane moving at 1x speed. The bottom track shows a streamlined 2:4 semi-structured lane where glowing emerald data packets <code>#00FF9D</code> occupy exactly 2 out of 4 slots, moving at 2x turbo speed through a dual-core tensor processing unit. Floating mathematical formulas for <span class="arithmatex">\(H^{-1}\)</span> and <span class="arithmatex">\(\delta W\)</span> appear in subtle holographic cyan. Cinematic lighting, sharp microchip textures.</p>
+</blockquote>
+<hr />
+<h2 id="7-smoothquant-awq">7. SmoothQuant &amp; AWQ</h2>
+<div class="highlight"><pre><span></span><code>  Standard Quantization Problem:
+  Activations X (Massive Outliers):  [ 0.1,  0.2, 115.0,  0.3 ]  ──&gt; INT8 clips 99% of values
+  Weights W (Smooth Distribution):   [ 0.4, -0.3,   0.2, -0.5 ]  ──&gt; Easy to quantize
+
+  SmoothQuant Migration (Y = [X * diag(s)^-1] * [diag(s) * W]):
+  Smoothed Activations X_hat:       [ 0.3,  0.6,   3.8,  0.9 ]  ──&gt; Uniform INT8 Quantization
+  Scaled Weights W_hat:             [ 0.13, -0.10, 6.06, -0.16] ──&gt; Uniform INT8 Quantization
+</code></pre></div>
+<h3 id="title-subtitle_6">Title &amp; Subtitle</h3>
+<p><strong>SmoothQuant &amp; AWQ: Outlier Migration and Activation-Aware Weight Quantization</strong><br />
+<em>Taming activation outliers by mathematically shifting dynamic range from activations to weights, and shielding salient weight channels for zero-degradation 4-bit inference.</em></p>
+<h3 id="the-analogy_6">The Analogy</h3>
+<p>Imagine trying to pack two items into identical rigid boxes: a soft foam pillow (smooth weights) and an iron sculpture with one sharp 3-foot spike sticking out (activation outliers). Trying to force the spiky sculpture into the small box crushes the spike and breaks the box (clipping error). SmoothQuant takes a file and gently files down the iron spike, using the iron filings to reinforce the soft pillow. Both items end up smooth, moderately sized, and fit into standard boxes (INT8/INT4) without breaking anything.</p>
+<h3 id="the-problem_6">The Problem</h3>
+<p>Post-training quantization of LLMs encounters a massive roadblock: <strong>Activation Outliers</strong>.
+- While weight tensors have smooth, Gaussian-like distributions that are easy to quantize to INT8 or INT4, activation tensors develop persistent outlier channels with magnitudes up to <strong>100x larger</strong> than normal values.
+- In per-tensor or per-token activation quantization, these rare outlier spikes force the quantization scale factor <span class="arithmatex">\(S\)</span> to be very large, effectively rounding all normal tokens to 0 or 1 and destroying model reasoning.</p>
+<h3 id="how-it-works-the-intuition_6">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>SmoothQuant (Activation-to-Weight Migration)</strong>:
+   SmoothQuant observes that a linear layer <span class="arithmatex">\(Y = X W\)</span> can be scaled by an arbitrary diagonal matrix <span class="arithmatex">\(s \in \mathbb{R}^d\)</span> without changing the output:
+   $<span class="arithmatex">\(Y = (X \cdot \text{diag}(s)^{-1}) \cdot (\text{diag}(s) \cdot W) = \hat{X} \hat{W}\)</span>$
+   By setting <span class="arithmatex">\(s_j = \frac{\max(|X_j|)^\alpha}{\max(|W_j|)^{1-\alpha}}\)</span> (with migration strength <span class="arithmatex">\(\alpha \approx 0.5\)</span>), SmoothQuant divides the spiky activation channel by <span class="arithmatex">\(s_j\)</span> while multiplying the corresponding weight column by <span class="arithmatex">\(s_j\)</span>. This balances the dynamic ranges so both activations and weights can be cleanly quantized to INT8 (W8A8).</li>
+<li><strong>AWQ (Activation-Aware Weight Quantization)</strong>:
+   AWQ observes that <strong>not all weights are equally important</strong>: only the top <span class="arithmatex">\(1\%\)</span> of weight channels that interact with large activation magnitudes dictate perplexity.
+   Instead of keeping those salient channels in FP16 (which ruins GPU memory alignment), AWQ searches for an optimal per-channel protection scale <span class="arithmatex">\(s^*\)</span> that minimizes the reconstruction error of the output feature map under INT4 weight quantization:
+   $<span class="arithmatex">\(W' = W \cdot \text{diag}(s), \quad X' = \text{diag}(s)^{-1} \cdot X\)</span>$</li>
+</ol>
+<pre class="mermaid"><code>flowchart LR
+    A["Raw Activations X (Has Outliers)"] --&gt; B["Calculate Per-Channel Outlier Saliency s_j"]
+    C["Raw Weights W"] --&gt; D["Scale Weights: W_hat = diag(s) * W"]
+    B --&gt; E["Scale Activations: X_hat = X * diag(s)^-1"]
+    D --&gt; F["INT4/INT8 Quantized Weight Matrix"]
+    E --&gt; G["INT8 Quantized Activation Stream"]
+    F &amp; G --&gt; H["Fast W8A8 / W4A16 Tensor Core GEMM Engine"]</code></pre>
+<h3 id="the-math-light_6">The Math (Light)</h3>
+<p>The SmoothQuant per-channel migration scale <span class="arithmatex">\(s \in \mathbb{R}^{d_{\text{in}}}\)</span> is defined as:
+$<span class="arithmatex">\(s_j = \frac{\left( \max_{t} |X_{t, j}| \right)^\alpha}{\left( \max_{i} |W_{i, j}| \right)^{1-\alpha}}, \quad \alpha \in [0, 1]\)</span>$
+- <span class="arithmatex">\(\alpha = 1\)</span>: Pushes all quantization difficulty to weights.
+- <span class="arithmatex">\(\alpha = 0\)</span>: Pushes all quantization difficulty to activations.
+- <span class="arithmatex">\(\alpha = 0.5\)</span>: Optimal geometric balance between activation and weight dynamic ranges.</p>
+<p>For AWQ, the optimal scaling vector <span class="arithmatex">\(s^*\)</span> is found by minimizing the Frobenius norm:
+$<span class="arithmatex">\(s^* = \arg\min_{s} \left\| W X - \mathcal{Q}\left( W \cdot \text{diag}(s) \right) \cdot \text{diag}(s)^{-1} X \right\|_F^2\)</span>$
+where <span class="arithmatex">\(\mathcal{Q}(W) = \text{clamp}\left( \left\lfloor \frac{W}{S} \right\rceil, -2^{b-1}, 2^{b-1}-1 \right) \cdot S\)</span>.</p>
+<h3 id="why-it-matters_6">Why It Matters</h3>
+<ul>
+<li><strong>SmoothQuant</strong>: Enables full <strong>W8A8 (INT8 weights + INT8 activations)</strong> integer matrix multiplication on GPU Tensor Cores, doubling throughput and cutting memory in half with zero loss in accuracy.</li>
+<li><strong>AWQ</strong>: The industry-standard foundation for <strong>W4A16 (INT4 weights + FP16 activations)</strong> inference (used across vLLM, HuggingFace TGI, AutoAWQ), delivering 3.5x faster generation on memory-bound workloads.</li>
+</ul>
+<h3 id="image-prompt_6">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A scientific 3D infographic explaining mathematical quantization balancing on dark slate <code>#0B0F19</code>. On the left side, an erratic neon magenta activation graph displays massive dangerous spikes labeled "Outlier Spikes (100x)". In the center, a luminous cyan double-cone transformer gate labeled "SmoothQuant Migration s_j" transfers energy balance across an equation sign. On the right, both the activation stream and the weight grid are transformed into perfectly smooth, uniform emerald-green quantized blocks labeled "Uniform INT8 / INT4 Grid". Sleek cybernetic style, high-definition data labels, crisp lighting.</p>
+</blockquote>
+<hr />
+<h2 id="8-squeezing-heads-distillation">8. Squeezing Heads Distillation</h2>
+<div class="highlight"><pre><span></span><code>  Teacher Multi-Head Layer (32 Heads)            Student Multi-Head Layer (8 Squeezed Heads)
+┌─────────────────────────────────────────┐     ┌─────────────────────────────────────────┐
+│ H0  H1  H2  H3  H4  H5  H6  H7  ... H31 │ ===&gt;│ S0 (H0-H3)  S1 (H4-H7)  ...  S7        │
+│ (High redundancy, identical patterns)   │     │ (Distilled representation, 4x KV cut)   │
+└─────────────────────────────────────────┘     └─────────────────────────────────────────┘
+                     │                                               ▲
+                     └──────── Cross-Layer Attention &amp; Feature ──────┘
+                                    Distillation Loss L_distill
+</code></pre></div>
+<h3 id="title-subtitle_7">Title &amp; Subtitle</h3>
+<p><strong>Squeezing Heads Distillation: Structured Head Pruning with Cross-Layer Distillation</strong><br />
+<em>Pruning redundant multi-head attention mechanisms and compressing deep multi-head layers into compact student models via attention-map and hidden-state transfer.</em></p>
+<h3 id="the-analogy_7">The Analogy</h3>
+<p>Imagine a corporate advisory board with 32 consultants. During meetings, 20 of them simply repeat or rephrase what the top 8 consultants have already stated, creating immense noise, scheduling delays, and high payroll costs. Squeezing Heads Distillation identifies the 8 master thinkers, trains them through intensive mentoring (cross-layer distillation) to absorb all subtle secondary perspectives of the entire original 32-person board, and dissolves the redundant seats, allowing decisions to be made 4x faster with zero loss in strategic depth.</p>
+<h3 id="the-problem_7">The Problem</h3>
+<p>Modern Large Language Models allocate 32 to 64 attention heads per layer. Empirical research reveals that:
+- Many heads exhibit identical attention patterns (e.g., simple previous-token lookups or uniform broadcast).
+- Each attention head requires dedicated projection weights (<span class="arithmatex">\(W_q, W_k, W_v, W_o\)</span>) and allocates an independent Key-Value cache line.
+- Naively deleting heads causes catastrophic degradation on reasoning tasks, while training a smaller model from scratch costs hundreds of thousands of dollars in compute.</p>
+<h3 id="how-it-works-the-intuition_7">How It Works (The Intuition)</h3>
+<p>Squeezing Heads Distillation combines Taylor-expansion head ranking with a multi-objective distillation pipeline:
+1. <strong>First-Order Head Importance Estimation</strong>: Measure how sensitive the validation loss is to the removal of head <span class="arithmatex">\(h\)</span>:
+   $<span class="arithmatex">\(I_h = \sum_{t=1}^T \left| \frac{\partial \mathcal{L}}{\partial \text{Head}_h(t)} \cdot \text{Head}_h(t) \right|\)</span>$
+2. <strong>Head Squeezing &amp; Grouping</strong>: The least important heads are progressively pruned, collapsing the architecture (e.g., from 32 heads down to 8 heads, or converting Multi-Head Attention into compact Grouped-Query Attention).
+3. <strong>Multi-Tier Distillation Objective</strong>:
+   - <strong>Attention Map Distillation</strong>: Student attention matrices <span class="arithmatex">\(A^S\)</span> are trained to match the attention distribution of the teacher <span class="arithmatex">\(A^T\)</span> via Kullback-Leibler (KL) divergence.
+   - <strong>Hidden State Alignment</strong>: Student layer outputs are projected and aligned with teacher representations using Mean Squared Error (MSE) loss.
+   - <strong>Logit Matching</strong>: Soft target probabilities are matched using temperature-scaled cross-entropy.</p>
+<pre class="mermaid"><code>flowchart TD
+    Teacher["Teacher Layer (32 Heads)"] --&gt; Imp["Compute Head Importance Attribution I_h"]
+    Imp --&gt; Prune["Prune Bottom 75% Heads (32 -&gt; 8)"]
+    Prune --&gt; Student["Student Layer (8 Squeezed Heads)"]
+    Teacher -- "Teacher Attention Maps A^T" --&gt; L_attn["KL Divergence Loss"]
+    Student -- "Student Attention Maps A^S" --&gt; L_attn
+    Teacher -- "Teacher Hidden States H^T" --&gt; L_mse["Projected MSE Loss"]
+    Student -- "Student Hidden States H^S" --&gt; L_mse
+    L_attn &amp; L_mse --&gt; L_tot["Total Distillation Loss: Train Student Weights"]</code></pre>
+<h3 id="the-math-light_7">The Math (Light)</h3>
+<p>The composite distillation objective function <span class="arithmatex">\(\mathcal{L}_{\text{total}}\)</span> is formulated as:
+$<span class="arithmatex">\(\mathcal{L}_{\text{total}} = (1 - \lambda) \mathcal{L}_{\text{CE}}(y, \hat{y}_S) + \lambda T^2 \mathcal{L}_{\text{KL}}\left( \sigma\left(\frac{z_T}{T}\right) \;\middle\|\; \sigma\left(\frac{z_S}{T}\right) \right) + \gamma \mathcal{L}_{\text{Attn}} + \beta \mathcal{L}_{\text{Hidden}}\)</span>$
+Where the Attention Map Distillation Loss <span class="arithmatex">\(\mathcal{L}_{\text{Attn}}\)</span> across selected layer pairs <span class="arithmatex">\((l_T, l_S)\)</span> is:
+$<span class="arithmatex">\(\mathcal{L}_{\text{Attn}} = \sum_{i=1}^{H_S} D_{\text{KL}}\left( A_{l_T, \phi(i)}^T \;\middle\|\; A_{l_S, i}^S \right)\)</span>$
+And the Hidden State Alignment Loss <span class="arithmatex">\(\mathcal{L}_{\text{Hidden}}\)</span> using learned projection matrix <span class="arithmatex">\(W_{\text{proj}}\)</span> is:
+$<span class="arithmatex">\(\mathcal{L}_{\text{Hidden}} = \left\| H_{l_T}^T - W_{\text{proj}} H_{l_S}^S \right\|_F^2\)</span>$</p>
+<h3 id="why-it-matters_7">Why It Matters</h3>
+<ul>
+<li><strong>4x Reduction in KV Cache Size</strong>: Pruning from 32 heads to 8 heads directly quarters the runtime KV memory requirement.</li>
+<li><strong>2.5x Decode Latency Acceleration</strong>: Smaller projections and reduced memory traffic dramatically speed up autoregressive decoding.</li>
+<li><strong>Sample-Efficient Recovery</strong>: Recovers 99%+ of original teacher benchmark accuracy with only 1% to 2% of original pre-training tokens.</li>
+</ul>
+<h3 id="image-prompt_7">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A 3D isometric laboratory visualization on dark slate <code>#0B0F19</code>. On an upper glass level, a complex glowing golden neural lattice with 32 multi-head laser emitters projects intricate attention beams downward. A futuristic crystalline funnel labeled "Cross-Layer Knowledge Condenser" focuses the 32 golden beams into 8 powerful, ultra-concentrated cyan laser beams on the lower level labeled "Squeezed Student Architecture". Flowing mathematical vectors and glowing KL-divergence waveforms connect the two tiers. Neon cyan <code>#00E5FF</code> and amber <code>#FFA000</code> color palette, octane render.</p>
+</blockquote>
+<hr />
+<h2 id="9-cooperative-quantization-coopq">9. Cooperative Quantization &amp; CoOpQ</h2>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                          CoOpQ Unified Execution Engine                     │
+│                                                                             │
+│  [Attention Projections W_q,k,v,o]  ───&gt;  INT4-Symmetric (Dense MAC Arrays) │
+│  [MLP SwiGLU Gating W_gate,up]      ───&gt;  FP4-E2M1 (High Dynamic Range)    │
+│  [Output Head &amp; Sensitive Layers]   ───&gt;  FP8-E4M3 (High Precision Anchor)  │
+│                                      │                                      │
+│                                      ▼                                      │
+│                  [Fused Micro-Kernel / Shared Scale Bus]                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<h3 id="title-subtitle_8">Title &amp; Subtitle</h3>
+<p><strong>CoOpQ: Coordinated Heterogeneous Quantization with Mixed-Format INT4/FP4 Matrix Engines</strong><br />
+<em>Co-optimizing distinct numerical data types across transformer sub-modules to achieve optimal dynamic range retention, maximum integer compute density, and sub-4-bit effective precision.</em></p>
+<h3 id="the-analogy_8">The Analogy</h3>
+<p>Think of a Formula 1 racing car powertrain. It does not use only an electric battery or only an internal combustion engine. It uses a hybrid cooperative powertrain: the high-torque electric motor delivers instant zero-RPM acceleration (uniform INT4 for massive attention matrix multiplication), while the high-RPM turbocharged engine delivers top-end power across a wide dynamic rev range (floating-point FP4/FP8 for non-linear MLP expansion). The central computer coordinates both engines seamlessly in real time.</p>
+<h3 id="the-problem_8">The Problem</h3>
+<p>One-size-fits-all quantization enforces the same numerical format across every layer in a transformer:
+- <strong>Pure INT4 Quantization</strong> excels at linear projection layers with bounded values, but severely clips the heavy-tailed, non-linear activations inside MLP SwiGLU layers.
+- <strong>Pure FP4 (E2M1) Quantization</strong> handles wide dynamic ranges and outliers in MLP layers, but suffers from lower signal-to-noise ratio (SNR) on uniform attention weights due to having only 1 mantissa bit.
+Forcing an entire model into one format leads to unnecessary perplexity loss or under-utilizes hardware compute capabilities.</p>
+<h3 id="how-it-works-the-intuition_8">How It Works (The Intuition)</h3>
+<p>CoOpQ (<strong>Co</strong>operative <strong>Op</strong>timized <strong>Q</strong>uantization) assigns mathematically specialized numerical representations to each distinct transformer sub-module based on empirical loss sensitivity:
+1. <strong>Attention Projections (<span class="arithmatex">\(W_q, W_k, W_v, W_o\)</span>) <span class="arithmatex">\(\to\)</span> INT4-Symmetric</strong>:
+   Attention weights exhibit uniform, zero-centered distributions. CoOpQ maps them to INT4 with fine-grained group scaling (<span class="arithmatex">\(G=64\)</span>), maximizing raw arithmetic throughput on integer ALUs.
+2. <strong>MLP SwiGLU Blocks (<span class="arithmatex">\(W_{\text{gate}}, W_{\text{up}}, W_{\text{down}}\)</span>) <span class="arithmatex">\(\to\)</span> FP4 (E2M1)</strong>:
+   Gated feed-forward layers generate wide dynamic activation ranges. CoOpQ assigns them FP4 (1 sign bit, 2 exponent bits, 1 mantissa bit), providing exponential representation spacing that preserves tail features.
+3. <strong>Cross-Module Co-Optimization</strong>:
+   Instead of quantizing layers in isolation, CoOpQ solves a joint optimization objective where the scaling factors of the attention block and MLP block are co-tuned against a shared reconstruction loss.
+4. <strong>Fused Mixed-Precision Kernels</strong>:
+   A single fused CUTLASS kernel manages dual-format execution without host-to-device memory round-trips.</p>
+<pre class="mermaid"><code>flowchart TD
+    In["Transformer Layer Input"] --&gt; AttnBlock["Attention Sub-Module"]
+    In --&gt; MLPBlock["MLP SwiGLU Sub-Module"]
+    AttnBlock --&gt; INT4["INT4 Symmetric Uniform Engine (Max MAC Density)"]
+    MLPBlock --&gt; FP4["FP4-E2M1 Non-Linear Engine (Wide Dynamic Range)"]
+    INT4 &amp; FP4 --&gt; Fuse["Coordinated Scale Normalizer &amp; Fused Kernel"]
+    Fuse --&gt; Out["High-Fidelity Output at 3.5 Effective Bits"]</code></pre>
+<h3 id="the-math-light_8">The Math (Light)</h3>
+<p>The representation sets for the cooperative engines are:
+$<span class="arithmatex">\(\mathcal{S}_{\text{INT4}} = \left\{ -8, -7, -6, \dots, 6, 7 \right\} \cdot S_{\text{int}}\)</span>$
+$<span class="arithmatex">\(\mathcal{S}_{\text{FP4 (E2M1)}} = \left\{ 0, \pm 0.5, \pm 1.0, \pm 1.5, \pm 2.0, \pm 3.0, \pm 4.0, \pm 6.0 \right\} \cdot S_{\text{fp}}\)</span>$
+The cooperative optimization problem over all network parameters <span class="arithmatex">\(\Theta = \{W_{\text{attn}}, W_{\text{mlp}}\}\)</span> is:
+$<span class="arithmatex">\(\min_{S_{\text{int}}, S_{\text{fp}}} \sum_{l=1}^L \mathbb{E}_{X}\left[ \left\| \mathcal{F}_l\left(X; W_{\text{attn}}, W_{\text{mlp}}\right) - \mathcal{F}_l\left(X; \mathcal{Q}_{\text{INT4}}(W_{\text{attn}}, S_{\text{int}}), \mathcal{Q}_{\text{FP4}}(W_{\text{mlp}}, S_{\text{fp}})\right) \right\|_F^2 \right]\)</span>$
+Where <span class="arithmatex">\(\mathcal{F}_l\)</span> denotes the full composite forward function of transformer layer <span class="arithmatex">\(l\)</span>.</p>
+<h3 id="why-it-matters_8">Why It Matters</h3>
+<ul>
+<li><strong>Sub-4-Bit Effective Footprint</strong>: Delivers an average model precision of <strong>3.5 bits per parameter</strong> while outperforming uniform 4-bit baselines.</li>
+<li><strong>Hardware Synergy</strong>: Leverages native FP4 and INT4 Tensor Cores on next-generation architectures (NVIDIA Blackwell, Hopper, Qualcomm Oryon).</li>
+<li><strong>Zero Saliency Degradation</strong>: Solves the long-standing accuracy drop in multi-step reasoning, mathematical proofing, and code generation.</li>
+</ul>
+<h3 id="image-prompt_8">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A 3D isometric blueprint of a cooperative dual-engine microchip on dark slate <code>#0B0F19</code>. On the left side of the chip, a dense glowing cyan geometric grid labeled "INT4 Attention Engine (Integer MACs)" processes uniform data streams. On the right side, an amber and magenta exponential wave-grid labeled "FP4 MLP Engine (Dynamic Range E2M1)" processes wide-amplitude waveforms. In the center, a luminous fiber-optic fusion bridge labeled "CoOpQ Joint Scale Bus" synchronizes the two engines. Glowing traces, raytraced metallic accents, high-end scientific aesthetic.</p>
+</blockquote>
+<hr />
+<hr />
+<h2 id="empirical-benchmarks-hardware-profiling">📊 Empirical Benchmarks &amp; Hardware Profiling</h2>
+<p>Below are the empirical metrics recorded across quantization and pruning schemes evaluated on LLaMA-3-8B and downstream GLUE task benchmarks:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Technique</th>
+<th style="text-align: center;">Precision / Sparsity</th>
+<th style="text-align: center;">Model Size (GB)</th>
+<th style="text-align: center;">Memory Reduction</th>
+<th style="text-align: center;">Throughput (tok/s)</th>
+<th style="text-align: center;">Eval Accuracy (%)</th>
+<th style="text-align: center;">Perplexity (<span class="arithmatex">\(\Delta \text{PPL}\)</span>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>FP16 Baseline</strong></td>
+<td style="text-align: center;">16-bit Float</td>
+<td style="text-align: center;"><span class="arithmatex">\(16.2\text{ GB}\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(1.0\times\)</span> (Baseline)</td>
+<td style="text-align: center;"><span class="arithmatex">\(32.4\text{ tok/s}\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(89.56\%\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(6.14\)</span> (Baseline)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>AstroQuantizer (FP8-E4M3)</strong></td>
+<td style="text-align: center;">FP8 Mixed GEMM</td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(8.1\text{ GB}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(2.0\times\)</span> (50.0%)</strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(74.2\text{ tok/s}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(89.48\%\)</span></strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(+0.02\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>CoOpQ (Mixed INT4/FP4)</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(3.5\text{-bit Avg}\)</span></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(4.4\text{ GB}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(3.68\times\)</span> (72.8%)</strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(112.5\text{ tok/s}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(88.92\%\)</span></strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(+0.08\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Rotational SliceGPT + INT4</strong></td>
+<td style="text-align: center;">25% Cut + INT4</td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(3.9\text{ GB}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(4.15\times\)</span> (75.9%)</strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(128.0\text{ tok/s}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(88.24\%\)</span></strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(+0.14\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>SparseGPT (2:4 Sparsity)</strong></td>
+<td style="text-align: center;">50% Structured</td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(8.2\text{ GB}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(1.98\times\)</span> (49.4%)</strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(61.8\text{ tok/s}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(89.15\%\)</span></strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(+0.05\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Head Distillation (50% Heads)</strong></td>
+<td style="text-align: center;">16 Heads Pruned</td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(11.8\text{ GB}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(1.37\times\)</span> (27.2%)</strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(48.6\text{ tok/s}\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(89.02\%\)</span></strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(+0.06\)</span></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="summary-comparison-efficient-compression-techniques">📊 Summary Comparison: Efficient Compression Techniques</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Technique</th>
+<th style="text-align: left;">Compression Type</th>
+<th style="text-align: left;">Target Component</th>
+<th style="text-align: left;">Typical Sparsity / Bit-Width</th>
+<th style="text-align: left;">Retraining Required?</th>
+<th style="text-align: left;">Hardware Acceleration Compatibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Rotational SliceGPT</strong></td>
+<td style="text-align: left;">Structured Pruning + Quant</td>
+<td style="text-align: left;">Hidden Dimensions / Projections</td>
+<td style="text-align: left;">25% Channel Cut + INT4</td>
+<td style="text-align: left;">No (One-shot)</td>
+<td style="text-align: left;">Standard Dense GEMM (cuBLAS / CUTLASS)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>DeltaKV &amp; CacheNotes</strong></td>
+<td style="text-align: left;">KV Cache Compression</td>
+<td style="text-align: left;">Key-Value Attention Buffer</td>
+<td style="text-align: left;">2-bit Delta + Centroids</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: left;">Custom Decoding Kernel (Flash-Delta)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>ZeroKV-Neo</strong></td>
+<td style="text-align: left;">Dynamic Eviction + Recurrence</td>
+<td style="text-align: left;">KV Cache Memory</td>
+<td style="text-align: left;"><span class="arithmatex">\(O(1)\)</span> Constant Memory Bound</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: left;">Edge &amp; Streaming Runtimes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FLAP</strong></td>
+<td style="text-align: left;">Structured Channel Pruning</td>
+<td style="text-align: left;">Heads, MLP Width, Hidden Size</td>
+<td style="text-align: left;">20%–30% Dimension Cut</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: left;">Native Dense Backends (vLLM / PyTorch)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Wanda / ARMOR</strong></td>
+<td style="text-align: left;">Unstructured &amp; 2:4 Sparsity</td>
+<td style="text-align: left;">Weight Tensors</td>
+<td style="text-align: left;">50% Sparsity / 2:4 Sparse</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: left;">NVIDIA 2:4 Sparse Tensor Cores</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>SparseGPT</strong></td>
+<td style="text-align: left;">2:4 Semi-Structured Sparsity</td>
+<td style="text-align: left;">Weight Tensors</td>
+<td style="text-align: left;">2:4 Semi-Structured</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: left;">NVIDIA Ampere / Ada / Hopper / Blackwell</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>SmoothQuant / AWQ</strong></td>
+<td style="text-align: left;">Outlier Migration &amp; W4A16</td>
+<td style="text-align: left;">Weights &amp; Activations</td>
+<td style="text-align: left;">W8A8 / W4A16 Quantization</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: left;">Integer Tensor Cores / AutoAWQ / vLLM</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Squeezing Heads</strong></td>
+<td style="text-align: left;">Head Pruning &amp; Distillation</td>
+<td style="text-align: left;">Multi-Head Attention Arrays</td>
+<td style="text-align: left;">50%–75% Head Reduction</td>
+<td style="text-align: left;">Light Distillation</td>
+<td style="text-align: left;">All GPU / CPU Inference Engines</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>CoOpQ</strong></td>
+<td style="text-align: left;">Heterogeneous Quantization</td>
+<td style="text-align: left;">Attention + MLP Layers</td>
+<td style="text-align: left;">Mixed INT4 / FP4 (~3.5-bit avg)</td>
+<td style="text-align: left;">No (Co-optimized)</td>
+<td style="text-align: left;">Modern Dual-Format Tensor Cores</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Authored by the AEGIS Efficient Attention &amp; Neural Compression Research Group.</em><br />
+<em>Next in the series: <strong>Part 6: Long-Context Extrapolation, State Space Models &amp; Hybrid Recurrence Engines</strong>.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

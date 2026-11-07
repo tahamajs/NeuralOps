@@ -1,0 +1,66 @@
+{
+  "device": "cuda",
+  "device_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "step_throughput": {
+    "cosformer": {
+      "decode_steps": 128,
+      "step_time_ms": 53.58365199936088,
+      "tokens_per_sec": 2388.7882819470146,
+      "ms_per_token": 0.4186222812450069
+    },
+    "gla_attention": {
+      "decode_steps": 128,
+      "step_time_ms": 35.87970200169366,
+      "tokens_per_sec": 3567.4766750838094,
+      "ms_per_token": 0.2803101718882317
+    },
+    "gated_delta_net": {
+      "decode_steps": 128,
+      "step_time_ms": 57.849693002935965,
+      "tokens_per_sec": 2212.6305837699742,
+      "ms_per_token": 0.4519507265854372
+    },
+    "kda_attention": {
+      "decode_steps": 128,
+      "step_time_ms": 43.94548800337361,
+      "tokens_per_sec": 2912.6994787308695,
+      "ms_per_token": 0.34332412502635634
+    },
+    "hla_attention": {
+      "decode_steps": 128,
+      "step_time_ms": 43.300495999574196,
+      "tokens_per_sec": 2956.0862305424566,
+      "ms_per_token": 0.3382851249966734
+    }
+  },
+  "sequence_scaling": {
+    "cosformer": {
+      "512": 1.1178110005857889,
+      "1024": 1.1157170003571082,
+      "2048": 0.9418041998287663,
+      "4096": 1.562470399949234
+    },
+    "gla_attention": {
+      "512": 0.5191121999814641,
+      "1024": 0.48929600015981123,
+      "2048": 0.5174002006242517,
+      "4096": 0.6123690000094939
+    },
+    "kda_attention": {
+      "512": 0.8761716999288183,
+      "1024": 1.1674457004119176,
+      "2048": 1.7656240997894201,
+      "4096": 2.921170900663128
+    }
+  },
+  "fp8_benchmark": {
+    "matrix_shape": [
+      2048,
+      2048,
+      2048
+    ],
+    "fp16_ms": 0.43900855991523713,
+    "fp8_ms": 0.7660604199918453,
+    "speedup": 0.5730730219946756
+  }
+}

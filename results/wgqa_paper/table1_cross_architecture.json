@@ -1,0 +1,37 @@
+{
+  "distilbert_sst2": {
+    "softmax": 96.88,
+    "gqa": 90.62,
+    "wgqa": 90.62
+  },
+  "distilbert_mnli": {
+    "softmax": 87.5,
+    "gqa": 37.5,
+    "wgqa": 37.5
+  },
+  "distilbert_ag_news": {
+    "softmax": 93.75,
+    "gqa": 78.12,
+    "wgqa": 78.12
+  },
+  "roberta_sst2": {
+    "softmax": 93.75,
+    "gqa": 43.75,
+    "wgqa": 43.75
+  },
+  "roberta_mnli": {
+    "softmax": 87.5,
+    "gqa": 37.5,
+    "wgqa": 37.5
+  },
+  "roberta_ag_news": {
+    "softmax": 96.88,
+    "gqa": 93.75,
+    "wgqa": 93.75
+  },
+  "gpt2_wikitext2_ppl": {
+    "softmax": 1.6,
+    "gqa": 118.14,
+    "wgqa": 146.41
+  }
+}

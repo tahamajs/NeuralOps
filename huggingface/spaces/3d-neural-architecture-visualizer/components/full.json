@@ -1,0 +1,13 @@
+{
+  "id": "full",
+  "name": "Full: Exact Softmax & IO-Aware Dense Attention",
+  "type": "Attention Module",
+  "family": "Exact Softmax & IO-Aware Dense Attention",
+  "category": "Exact Softmax & IO-Aware Dense Attention",
+  "paradigm": "dense",
+  "icon": "💎",
+  "file": "neuralops/layers/dense/full_attention.py",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "description": "Full operator from the Exact Softmax & IO-Aware Dense Attention family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "math": "O = \\operatorname{Attention}(Q, K, V)"
+}

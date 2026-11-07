@@ -1,0 +1,31 @@
+{
+  "module_name": "optimal_subspace_projection",
+  "class_name": "OptimalSubspaceProjectionCompressor",
+  "category": "compression",
+  "family": "Optimal Subspace Projection & Latent Dimensionality Reduction",
+  "params": [
+    "model",
+    "calibration_loader",
+    "rank_ratio",
+    "power_iters",
+    "tokenizer",
+    "calibration_texts",
+    "device"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Optimal Subspace Projection Compressor using activation-aware randomized SVD.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.2782479879038716e+38,
+  "paradigm": "subspace",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

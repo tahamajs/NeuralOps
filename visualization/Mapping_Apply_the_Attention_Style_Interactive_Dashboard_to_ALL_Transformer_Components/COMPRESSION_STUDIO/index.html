@@ -1,0 +1,4107 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/visualization/Mapping_Apply_the_Attention_Style_Interactive_Dashboard_to_ALL_Transformer_Components/COMPRESSION_STUDIO/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>🏗️ Compression Studio — Complete Implementation Specification - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#compression-studio-complete-implementation-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🏗️ Compression Studio — Complete Implementation Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#interactive-model-surgery-for-the-attention-visualization-dashboard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Interactive Model Surgery" for the Attention Visualization Dashboard
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-architectural-overview-technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Architectural Overview &amp; Technology Stack
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Architectural Overview &amp; Technology Stack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-technology-stack-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Technology Stack Table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-browserside-compute-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Browser‑Side Compute Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-project-directory-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Project Directory Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-zonebyzone-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Zone‑by‑Zone Implementation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Zone‑by‑Zone Implementation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#3-zone-1-model-architecture-map-the-interactive-tree-canvas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Zone 1: Model Architecture Map — The Interactive Tree Canvas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Zone 1: Model Architecture Map — The Interactive Tree Canvas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-technology-framework-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Technology &amp; Framework Choices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-component-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Component Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-key-implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 Key Implementation Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-zone-2-compression-impact-heatmap-the-webglwebgpu-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Zone 2: Compression Impact Heatmap — The WebGL/WebGPU Layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Zone 2: Compression Impact Heatmap — The WebGL/WebGPU Layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-technology-framework-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Technology &amp; Framework Choices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-component-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Component Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-key-implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.5 Key Implementation Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-zone-3-live-math-panel-the-latex-computation-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Zone 3: Live Math Panel — The LaTeX Computation Engine
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Zone 3: Live Math Panel — The LaTeX Computation Engine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-technology-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Technology Choices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-component-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 Component Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-key-implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 Key Implementation Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-zone-4-controls-the-compression-parameter-orchestrator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Zone 4: Controls — The Compression Parameter Orchestrator
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Zone 4: Controls — The Compression Parameter Orchestrator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-technology-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 Technology Choices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-component-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 Component Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64-key-implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 Key Implementation Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-zone-5-crossplatform-integration-the-action-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Zone 5: Cross‑Platform Integration — The Action Pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Zone 5: Cross‑Platform Integration — The Action Pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71-core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 Core Concept
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-technology-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 Technology Choices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-component-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 Component Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74-key-implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 Key Implementation Details
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-state-management-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. State Management Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. State Management Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-dualstore-architecture-zustand-xstate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Dual‑Store Architecture: Zustand + XState
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-xstate-machine-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 XState Machine Definition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83-zustand-store-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 Zustand Store Design
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-performance-rendering-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Performance &amp; Rendering Strategy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Performance &amp; Rendering Strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91-rendering-tiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 Rendering Tiers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92-memory-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 Memory Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93-debouncing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 Debouncing Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-implementation-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Implementation Roadmap
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Implementation Roadmap">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-foundation-weeks-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Foundation (Weeks 1‑3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-webgl-visualization-weeks-46" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: WebGL Visualization (Weeks 4‑6)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-crossplatform-integration-weeks-78" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Cross‑Platform Integration (Weeks 7‑8)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-polish-performance-weeks-910" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Polish &amp; Performance (Weeks 9‑10)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="compression-studio-complete-implementation-specification">🏗️ Compression Studio — Complete Implementation Specification</h1>
+<h2 id="interactive-model-surgery-for-the-attention-visualization-dashboard">"Interactive Model Surgery" for the Attention Visualization Dashboard</h2>
+<p>This document provides an <strong>exhaustive, production‑grade implementation blueprint</strong> for the Compression Studio — a full‑featured interactive model compression environment integrated into the NeuralOps Attention Dashboard. Every section specifies the technologies, architectural patterns, component hierarchies, data flow designs, rendering strategies, and integration touchpoints needed to build this system from scratch.</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#1-architectural-overview--technology-stack">Architectural Overview &amp; Technology Stack</a></li>
+<li><a href="#2-zone‑by‑zone-implementation">Zone‑by‑Zone Implementation</a></li>
+<li><a href="#3-zone-1-model-architecture-map">Zone 1: Model Architecture Map — The Interactive Tree Canvas</a></li>
+<li><a href="#4-zone-2-compression-impact-heatmap">Zone 2: Compression Impact Heatmap — The WebGL/WebGPU Layer</a></li>
+<li><a href="#5-zone-3-live-math-panel">Zone 3: Live Math Panel — The LaTeX Computation Engine</a></li>
+<li><a href="#6-zone-4-controls">Zone 4: Controls — The Compression Parameter Orchestrator</a></li>
+<li><a href="#7-zone-5-cross‑platform-integration">Zone 5: Cross‑Platform Integration — The Action Pipeline</a></li>
+<li><a href="#8-state-management-architecture">State Management Architecture</a></li>
+<li><a href="#9-performance--rendering-strategy">Performance &amp; Rendering Strategy</a></li>
+<li><a href="#10-implementation-roadmap">Implementation Roadmap</a></li>
+</ol>
+<hr />
+<h2 id="1-architectural-overview-technology-stack">1. Architectural Overview &amp; Technology Stack</h2>
+<p>The Compression Studio is not a single component — it is a <strong>multi‑layer, multi‑runtime application</strong> composed of five tightly coupled zones that share state through a centralized state machine. The architecture draws from: <strong>OpenAI's circuit_sparsity Streamlit dashboard</strong> (parameterized pruning sweep exploration), <strong>DL‑Playground's</strong> drag‑and‑drop neural network editor with visual architecture construction, <strong>Penzai + Treescope's</strong> interactive tensor visualization from Google DeepMind, <strong>React Flow's</strong> node‑graph rendering substrate (used by AgentForge and FlowiseAI), <strong>deck.gl's</strong> GPU‑powered large‑scale data visualization framework, and <strong>GPT2‑WebGL's</strong> browser‑based transformer implementation with WebGL2 matrix visualization.</p>
+<h3 id="11-technology-stack-table">1.1 Technology Stack Table</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>UI Framework</strong></td>
+<td>React 18+ with TypeScript</td>
+<td>Component rendering, hooks, context</td>
+</tr>
+<tr>
+<td><strong>Build Tool</strong></td>
+<td>Vite 5+</td>
+<td>Fast HMR, optimized builds, code splitting</td>
+</tr>
+<tr>
+<td><strong>3D Rendering Engine</strong></td>
+<td>React Three Fiber (@react‑three/fiber 9.x)</td>
+<td>3D model architecture visualization, WebGL/WebGPU rendering</td>
+</tr>
+<tr>
+<td><strong>3D Utilities</strong></td>
+<td>@react‑three/drei</td>
+<td>OrbitControls, Text, Line, shaders, environment maps</td>
+</tr>
+<tr>
+<td><strong>2D Graph Editor</strong></td>
+<td>React Flow 12.x (xyflow)</td>
+<td>Interactive node‑based model architecture tree editor</td>
+</tr>
+<tr>
+<td><strong>GPU Data Visualization</strong></td>
+<td>deck.gl 9.x + @deck.gl/react</td>
+<td>Large‑scale compression impact heatmap, scatter plots, layers</td>
+</tr>
+<tr>
+<td><strong>Math Rendering</strong></td>
+<td>KaTeX (katex 0.16+)</td>
+<td>Client‑side LaTeX rendering for compression formulas</td>
+</tr>
+<tr>
+<td><strong>State Management</strong></td>
+<td>Zustand 5.x + XState 5.x</td>
+<td>Global application state + finite state machines for compression workflows</td>
+</tr>
+<tr>
+<td><strong>Server State</strong></td>
+<td>TanStack Query 5.x (React Query)</td>
+<td>API caching, optimistic updates, background refetching</td>
+</tr>
+<tr>
+<td><strong>Animation</strong></td>
+<td>Framer Motion 11.x</td>
+<td>Component transitions, layout animations, gesture handling</td>
+</tr>
+<tr>
+<td><strong>Drag &amp; Drop</strong></td>
+<td>@dnd‑kit/core + @dnd‑kit/sortable</td>
+<td>Layer/head reordering, compression priority drag</td>
+</tr>
+<tr>
+<td><strong>Color Scales</strong></td>
+<td>d3‑scale + d3‑interpolate</td>
+<td>Scientific color maps (viridis, magma, cividis)</td>
+</tr>
+<tr>
+<td><strong>Python Runtime (Browser)</strong></td>
+<td>Pyodide 0.27+ (CPython 3.12 compiled to WASM)</td>
+<td>Client‑side SVD computation, matrix operations, validation</td>
+</tr>
+<tr>
+<td><strong>ML Inference (Browser)</strong></td>
+<td>ONNX Runtime Web (ort‑web 1.19+) + WebGPU backend</td>
+<td>Browser‑side model inference for before/after comparison</td>
+</tr>
+<tr>
+<td><strong>Web Worker</strong></td>
+<td>Comlink</td>
+<td>Off‑main‑thread SVD and compression computation</td>
+</tr>
+<tr>
+<td><strong>WebSocket</strong></td>
+<td>Native WebSocket + ReconnectingWebSocket</td>
+<td>Real‑time compression progress from Django backend</td>
+</tr>
+<tr>
+<td><strong>Testing</strong></td>
+<td>Vitest + Testing Library + Playwright</td>
+<td>Unit, integration, visual regression, E2E</td>
+</tr>
+<tr>
+<td><strong>CSS</strong></td>
+<td>Tailwind CSS 3.4+ + CSS Modules</td>
+<td>Utility‑first styling with scoped component styles</td>
+</tr>
+</tbody>
+</table>
+<h3 id="12-browserside-compute-architecture">1.2 Browser‑Side Compute Architecture</h3>
+<p>The Compression Studio performs <strong>actual SVD computation in the browser</strong> using a dual‑approach strategy:</p>
+<ol>
+<li>
+<p><strong>Small matrices (&lt; 1000×1000):</strong> Compute via <strong>Pyodide</strong> (NumPy/SciPy running in WebAssembly). Pyodide compiles CPython 3.12 to WebAssembly, enabling <code>numpy.linalg.svd()</code> directly in the browser without server round‑trips. This is ideal for per‑layer weight matrices and singular value spectrum visualization.</p>
+</li>
+<li>
+<p><strong>Large matrices (≥ 1000×1000):</strong> Offload to a <strong>Web Worker</strong> using Comlink for RPC‑style communication, or delegate to the Django backend via REST API. The Web Worker runs the SVD using either Pyodide or a pure JavaScript implementation, keeping the main thread responsive.</p>
+</li>
+<li>
+<p><strong>GPU‑accelerated visualization:</strong> The compression impact heatmap renders via <strong>deck.gl's WebGL2/WebGPU layer system</strong>, which can handle millions of data points (weight entries, activation differences) at 60fps. GPT2‑WebGL demonstrates that full transformer model matrices can be loaded as WebGL textures and visualized in‑browser.</p>
+</li>
+</ol>
+<h3 id="13-project-directory-structure">1.3 Project Directory Structure</h3>
+<div class="highlight"><pre><span></span><code>src/features/compression-studio/
+├── index.tsx                          # Entry point, lazy‑loaded by router
+├── CompressionStudio.tsx              # Root layout orchestrator (5 zones)
+├── context/
+│   ├── CompressionContext.tsx          # React Context provider
+│   └── CompressionStudioProvider.tsx   # Combines Zustand + XState + React Query
+├── store/
+│   ├── compressionStore.ts            # Zustand store (model, compressor, params, budget)
+│   ├── compressionMachine.ts          # XState state machine (idle→analyzing→compressing→comparing)
+│   └── selectors.ts                   # Derived state selectors (effective rank, FLOPs, etc.)
+├── hooks/
+│   ├── useCompressionAnalysis.ts      # TanStack Query hook for backend analysis
+│   ├── useBrowserSVD.ts               # Pyodide/Web Worker SVD computation
+│   ├── useCompressionProgress.ts      # WebSocket subscription for live progress
+│   ├── useModelArchitecture.ts        # Fetch and parse model architecture tree
+│   ├── useParameterCount.ts           # Real‑time parameter count computation
+│   └── useBudgetConstraint.ts         # Budget constraint solver
+├── workers/
+│   ├── svd.worker.ts                  # Web Worker for SVD computation
+│   └── compression.worker.ts          # Web Worker for compression simulation
+├── zone1-architecture-map/
+│   ├── ModelArchitectureTree.tsx       # React Flow‑based tree view
+│   ├── ArchitectureNode.tsx            # Custom React Flow node (layer/head/neuron)
+│   ├── CompressionNodeOverlay.tsx      # Overlay showing compression options
+│   ├── BeforeAfterSplitView.tsx        # Side‑by‑side original vs compressed
+│   └── hooks/
+│       └── useArchitectureLayout.ts    # Dagre layout computation
+├── zone2-impact-heatmap/
+│   ├── CompressionImpactHeatmap.tsx    # deck.gl‑based impact visualization
+│   ├── ImpactHeatmapLayer.ts           # Custom deck.gl layer
+│   ├── ImpactColorScale.ts             # d3 color scale for impact
+│   └── ImpactTooltip.tsx               # Hover tooltip with per‑parameter detail
+├── zone3-math-panel/
+│   ├── LiveMathPanel.tsx               # LaTeX formula renderer
+│   ├── CompressionFormulaDisplay.tsx   # Shows selected compressor's formula
+│   ├── ParameterCountComparison.tsx    # Before/after parameter count bar chart
+│   └── FLOPsEstimator.tsx             # Real‑time FLOPs estimation
+├── zone4-controls/
+│   ├── CompressorSelector.tsx          # Dropdown with all 60+ compressors
+│   ├── ParameterSliders.tsx            # Rank/ratio/sparsity/bit‑width sliders
+│   ├── BudgetConstraintInput.tsx       # "Keep model under X MB" input
+│   ├── CompressionPresetSelector.tsx    # "Fast", "Accurate", "Balanced" presets
+│   └── ApplyButton.tsx                 # "Compress Now" action button
+├── zone5-cross-platform/
+│   ├── OneClickApply.tsx               # Bridge to your compression pipeline
+│   ├── BeforeAfterLeaderboard.tsx       # Submit compressed model to leaderboard
+│   └── CompressionHistoryPanel.tsx      # History of compression runs
+└── components/
+    ├── SingularValueSpectrum.tsx        # Interactive singular value plot (Recharts)
+    ├── WeightDistributionChart.tsx      # Weight histogram before/after
+    ├── CompressionDiffView.tsx          # Side‑by‑side output comparison
+    ├── ModelStatsCard.tsx               # Parameter count, FLOPs, memory usage
+    └── CompressionProgressBar.tsx       # Animated progress bar for compression job
+</code></pre></div>
+<hr />
+<h2 id="2-zonebyzone-implementation">2. Zone‑by‑Zone Implementation</h2>
+<h3 id="3-zone-1-model-architecture-map-the-interactive-tree-canvas">3. Zone 1: Model Architecture Map — The Interactive Tree Canvas</h3>
+<h4 id="31-core-concept">3.1 Core Concept</h4>
+<p>The Model Architecture Map is a <strong>React Flow‑based interactive tree</strong> that renders the complete model architecture as a navigable graph. Each node represents a component (attention head, FFN neuron, embedding dimension, normalization layer). The user clicks any component to inspect its parameters, importance scores, and available compression options. A <strong>split‑view mode</strong> shows the original architecture side‑by‑side with a <strong>live preview</strong> of the compressed architecture.</p>
+<h4 id="32-technology-framework-choices">3.2 Technology &amp; Framework Choices</h4>
+<p><strong>Primary rendering substrate: React Flow 12.x (xyflow)</strong></p>
+<p>React Flow is chosen as the rendering engine because it provides:
+- Built‑in node dragging, zooming, panning, and minimap
+- Custom node rendering with React components
+- Edge (connection) rendering with labels and styling
+- Event handling for node click, hover, selection
+- Programmatic layout control</p>
+<p>Multiple production AI workflow editors use React Flow as their foundation, including the Workflow Designer UI for Giselle (which uses Zustand for state management alongside React Flow), AgentForge's pipeline editor, and FlowiseAI's agent flow editor.</p>
+<p><strong>Layout engine: Dagre</strong></p>
+<p>Dagre is used to compute a hierarchical (top‑to‑bottom or left‑to‑right) layout for the model architecture tree. The layout is computed once when the model loads and recalculated when layers are pruned or compressed. React Flow provides a <code>useNodesInitialized</code> hook that integrates with Dagre's positioning.</p>
+<p><strong>3D complement: React Three Fiber (r3f)</strong></p>
+<p>For an alternative "immersive" view, the same architecture data can be rendered in 3D using React Three Fiber. The <code>r3f-nn-visualizer</code> project demonstrates interactive neural network visualization with tf.js and react‑three‑fiber, including live demos with layer‑by‑layer inspection. The Vercel AI SDK's json‑render project further shows how structured JSON specifications (model architecture) can be rendered as 3D scenes with React Three Fiber components.</p>
+<h4 id="33-component-hierarchy">3.3 Component Hierarchy</h4>
+<div class="highlight"><pre><span></span><code>ModelArchitectureTree (React Flow wrapper)
+├── ReactFlow
+│   ├── ArchitectureNode (custom node — per layer/head/neuron)
+│   │   ├── NodeBody (colored rectangle with label)
+│   │   ├── ImportanceIndicator (circular gauge showing importance score)
+│   │   ├── CompressionBadge (icon indicating compressibility)
+│   │   └── NodeTooltip (hover tooltip with detailed stats)
+│   ├── CompressionEdge (custom edge — connections between layers)
+│   │   ├── EdgePath (SVG path, thickness = parameter count)
+│   │   └── EdgeLabel (connection type: "Q", "K", "V", "FFN", "Residual")
+│   └── Minimap (small overview in corner)
+├── BeforeAfterSplitView
+│   ├── OriginalArchitecturePanel (left side)
+│   └── CompressedArchitecturePanel (right side, updates live)
+└── NodeInspector (detail panel, slides in from right)
+    ├── ParameterTable (weight shape, bias, count)
+    ├── ImportanceScoreGauge (circular gauge, 0-100)
+    ├── SingularValueSpectrum (small inline chart)
+    └── CompressionOptions (checkboxes/sliders for this node)
+</code></pre></div>
+<h4 id="34-data-flow">3.4 Data Flow</h4>
+<div class="highlight"><pre><span></span><code>Django Backend
+    │
+    │ GET /api/models/{id}/architecture/
+    ▼
+useModelArchitecture() hook (TanStack Query)
+    │
+    │ Fetches architecture JSON: { layers: [{ type, heads, neurons, params }] }
+    ▼
+useArchitectureLayout() hook (Dagre)
+    │
+    │ Computes x, y positions for each node based on hierarchy
+    ▼
+compressionStore (Zustand)
+    │
+    │ Stores: selectedCompressor, compressorParams, compressedArchitecture
+    ▼
+ModelArchitectureTree renders nodes + edges
+    │
+    │ User clicks a node → NodeInspector opens
+    ▼
+NodeInspector shows per‑component compression options
+    │
+    │ User adjusts sliders → Zustand updates → compressedArchitecture recalculated
+    ▼
+BeforeAfterSplitView re‑renders with updated compressed view
+</code></pre></div>
+<h4 id="35-key-implementation-details">3.5 Key Implementation Details</h4>
+<p><strong>Custom React Flow Node (ArchitectureNode)</strong></p>
+<p>The custom node uses React Flow's <code>Handle</code> components for connection points and renders a styled card with:
+- Background color gradient based on importance score (green=important, red=prunable)
+- A circular gauge (SVG arc) showing the importance percentage
+- An icon badge indicating the compression method applied (scissors for pruning, sigma for SVD, etc.)
+- The node is <strong>resizable</strong> — larger nodes have more parameters</p>
+<p><strong>Node selection behavior:</strong>
+- Single click → opens <code>NodeInspector</code> with per‑component details
+- Double click → zooms into that node (expands to show sub‑components like individual heads)
+- Shift+click → adds to multi‑selection for batch compression operations
+- Right click → context menu with "Compress this component," "Exclude from compression," "Set as compression anchor"</p>
+<p><strong>Before/After Split View</strong></p>
+<p>The split view uses two synchronized React Flow instances (locked viewport). The left shows the original architecture; the right shows a live preview of the compressed architecture. Differences are highlighted:
+- <strong>Green outline:</strong> component unchanged
+- <strong>Orange outline:</strong> component compressed
+- <strong>Red outline with strikethrough:</strong> component pruned</p>
+<p>The split view is draggable (the divider can be moved). When the user hovers over a compressed component, a tooltip shows the <strong>delta</strong>: "Parameters: 589K → 98K (83% reduction), FLOPs: 2.3M → 0.4M."</p>
+<p><strong>Model Architecture JSON Schema</strong></p>
+<p>The backend serves architecture data in a standardized JSON format:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"model_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bert-base-uncased"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"total_parameters"</span><span class="p">:</span><span class="w"> </span><span class="mi">109482240</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"total_flops_estimate"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.3e10</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"layers"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"layer_index"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"encoder"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"components"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"attention"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"heads"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">              </span><span class="nt">"head_index"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">              </span><span class="nt">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"q_weight"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">768</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="p">],</span><span class="w"> </span><span class="nt">"k_weight"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">768</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="p">],</span><span class="w"> </span><span class="nt">"v_weight"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">768</span><span class="p">,</span><span class="w"> </span><span class="mi">64</span><span class="p">]},</span>
+<span class="w">              </span><span class="nt">"importance_score"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.87</span><span class="p">,</span>
+<span class="w">              </span><span class="nt">"stability_score"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.92</span><span class="p">,</span>
+<span class="w">              </span><span class="nt">"similarity_score"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.45</span><span class="p">,</span>
+<span class="w">              </span><span class="nt">"svd_spectrum"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">12.3</span><span class="p">,</span><span class="w"> </span><span class="mf">8.7</span><span class="p">,</span><span class="w"> </span><span class="mf">5.2</span><span class="p">,</span><span class="w"> </span><span class="mf">3.1</span><span class="p">,</span><span class="w"> </span><span class="mf">1.8</span><span class="p">,</span><span class="w"> </span><span class="mf">0.9</span><span class="p">,</span><span class="w"> </span><span class="err">...</span><span class="p">]</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">          </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ffn"</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"intermediate_weight"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">3072</span><span class="p">,</span><span class="w"> </span><span class="mi">768</span><span class="p">],</span><span class="w"> </span><span class="nt">"output_weight"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">768</span><span class="p">,</span><span class="w"> </span><span class="mi">3072</span><span class="p">]},</span>
+<span class="w">          </span><span class="nt">"importance_score"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.65</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h3 id="4-zone-2-compression-impact-heatmap-the-webglwebgpu-layer">4. Zone 2: Compression Impact Heatmap — The WebGL/WebGPU Layer</h3>
+<h4 id="41-core-concept">4.1 Core Concept</h4>
+<p>The Compression Impact Heatmap shows a <strong>layer‑by‑layer, parameter‑by‑parameter visualization</strong> of how a selected compression strategy will affect the model. Each "cell" in the heatmap represents a weight matrix entry; the <strong>color intensity</strong> encodes the <strong>relative change</strong> in that entry after compression (original value minus compressed value, normalized). Users can zoom into individual weight matrices, hover to see exact before/after values, and compare different compression strategies side‑by‑side.</p>
+<h4 id="42-technology-framework-choices">4.2 Technology &amp; Framework Choices</h4>
+<p><strong>Primary rendering: deck.gl 9.x</strong></p>
+<p>deck.gl is chosen because it is "the definitive high‑performance, GPU‑powered framework for rendering massive datasets on the web, specifically addressing the challenge of visualizing millions of data points". The compression impact heatmap may need to render weight matrices with hundreds of thousands of entries — deck.gl's <code>BitmapLayer</code>, <code>HeatmapLayer</code>, and custom <code>CompositeLayer</code> can handle this at 60fps using WebGL2/WebGPU.</p>
+<p>deck.gl also provides a React integration (<code>@deck.gl/react</code>) that wraps deck.gl into React's lifecycle, including a <code>DeckGL</code> React component and hooks for state management.</p>
+<p><strong>Alternative: GPT2‑WebGL approach</strong></p>
+<p>GPT2‑WebGL demonstrates that full transformer weight matrices can be loaded as WebGL2 textures and rendered in‑browser. For weight matrices up to 4096×4096, a WebGL2 fragment shader approach (treating weights as texture data) can provide real‑time updates as compression parameters change. The implementation uses "GPU‑accelerated matrix operations on the GPU" via WebGL2 shaders.</p>
+<p><strong>Color scale: d3‑scale‑chromatic</strong></p>
+<p>Scientific color scales from d3 (<code>interpolateViridis</code>, <code>interpolatePlasma</code>, <code>interpolateRdYlBu</code>) are used to encode the impact magnitude. The <code>interpolateRdYlBu</code> scale (red=high impact, blue=low impact) is particularly intuitive for compression visualization.</p>
+<h4 id="43-component-hierarchy">4.3 Component Hierarchy</h4>
+<div class="highlight"><pre><span></span><code>CompressionImpactHeatmap
+├── DeckGL (canvas)
+│   ├── ImpactHeatmapLayer (custom deck.gl CompositeLayer)
+│   │   ├── BitmapLayer (renders weight matrix as 2D image)
+│   │   ├── ColumnLayer (renders singular value bars)
+│   │   └── ScatterplotLayer (highlights top‑changed entries)
+│   └── TextLayer (axis labels: input features, output features)
+├── ImpactTooltip (HTML overlay, positioned via deck.gl picking)
+│   ├── OriginalValue
+│   ├── CompressedValue
+│   ├── DeltaIndicator
+│   └── ParameterLocation
+├── LayerSelector (dropdown: which weight matrix to display)
+│   └── Shows all weight matrices in the selected component
+├── StrategySelector (dropdown: which compression strategy to preview)
+│   └── Shows only strategies applicable to this component
+└── ZoomControls
+    ├── ZoomIn / ZoomOut buttons
+    ├── FitToScreen button
+    └── CoordinateDisplay (current cursor position in matrix)
+</code></pre></div>
+<h4 id="44-data-flow">4.4 Data Flow</h4>
+<div class="highlight"><pre><span></span><code>compressionStore (Zustand)
+    │
+    │ selectedCompressor, compressorParams, originalWeights, compressedWeights
+    ▼
+useBrowserSVD() hook OR backend API
+    │
+    │ Computes compressed weights based on selected strategy and params
+    │ For SVD: runs numpy.linalg.svd in Pyodide or Web Worker
+    │ For pruning: applies threshold mask
+    │ For quantization: applies uniform quantization
+    ▼
+impactMatrix = |originalWeights - compressedWeights| / max(|originalWeights|)
+    │
+    ▼
+ImpactHeatmapLayer receives impactMatrix as data prop
+    │
+    │ Renders via WebGL2 texture (BitmapLayer) with color mapping
+    ▼
+User hovers over cell → deck.gl picking → ImpactTooltip displays exact values
+</code></pre></div>
+<h4 id="45-key-implementation-details">4.5 Key Implementation Details</h4>
+<p><strong>Custom deck.gl CompositeLayer</strong></p>
+<p>The <code>ImpactHeatmapLayer</code> extends <code>deck.gl.CompositeLayer</code> and composites three sub‑layers:</p>
+<ol>
+<li>
+<p><strong>BitmapLayer:</strong> Renders the full weight matrix as a 2D image where each pixel's color encodes the impact magnitude. For a 768×768 matrix, this is a 768×768 pixel image rendered via WebGL texture. The bitmap is regenerated on the GPU whenever compression parameters change (via <code>shouldUpdateState</code>).</p>
+</li>
+<li>
+<p><strong>ColumnLayer:</strong> Renders the singular value spectrum as vertical bars along the bottom edge. Each bar height represents a singular value; colored bars are retained, gray bars are pruned. This directly visualizes the SVD truncation.</p>
+</li>
+<li>
+<p><strong>ScatterplotLayer:</strong> Highlights the top‑N most affected weight entries (largest delta) as glowing dots, making it easy to spot where compression has the greatest impact.</p>
+</li>
+</ol>
+<p><strong>Web Worker SVD Computation</strong></p>
+<p>The <code>svd.worker.ts</code> file implements off‑main‑thread SVD computation:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">// Conceptual architecture (not code)</span>
+<span class="c1">// Main thread:</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">svdWorker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">wrap</span><span class="p">(</span><span class="ow">new</span><span class="w"> </span><span class="nx">Worker</span><span class="p">(</span><span class="s1">'./svd.worker.ts'</span><span class="p">));</span>
+<span class="kd">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">U</span><span class="p">,</span><span class="w"> </span><span class="nx">S</span><span class="p">,</span><span class="w"> </span><span class="nx">Vt</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">svdWorker</span><span class="p">.</span><span class="nx">computeSVD</span><span class="p">(</span><span class="nx">weightMatrix</span><span class="p">,</span><span class="w"> </span><span class="nx">targetRank</span><span class="p">);</span>
+
+<span class="c1">// Worker thread:</span>
+<span class="c1">// Option A: Pyodide</span>
+<span class="nx">self</span><span class="p">.</span><span class="nx">importScripts</span><span class="p">(</span><span class="s1">'pyodide.js'</span><span class="p">);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">pyodide</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="nx">loadPyodide</span><span class="p">();</span>
+<span class="k">await</span><span class="w"> </span><span class="nx">pyodide</span><span class="p">.</span><span class="nx">loadPackage</span><span class="p">([</span><span class="s1">'numpy'</span><span class="p">,</span><span class="w"> </span><span class="s1">'scipy'</span><span class="p">]);</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">pyodide</span><span class="p">.</span><span class="nx">runPython</span><span class="p">(</span><span class="sb">`</span>
+<span class="sb">    import numpy as np</span>
+<span class="sb">    U, S, Vt = np.linalg.svd(weight_matrix, full_matrices=False)</span>
+<span class="sb">    U_r = U[:, :rank]</span>
+<span class="sb">    S_r = np.diag(S[:rank])</span>
+<span class="sb">    Vt_r = Vt[:rank, :]</span>
+<span class="sb">    (U_r.tolist(), S_r.tolist(), Vt_r.tolist())</span>
+<span class="sb">`</span><span class="p">);</span>
+
+<span class="c1">// Option B: Pure JS (for small matrices)</span>
+<span class="c1">// Uses numeric.js or ml-matrix for SVD</span>
+</code></pre></div>
+<p><strong>Pyodide Integration</strong></p>
+<p>Pyodide is loaded lazily (only when the user first opens the Compression Studio) via dynamic import. The Pyodide runtime (~6.5MB compressed) is cached by the browser's service worker. For SVD computation, Pyodide loads <code>numpy</code> and <code>scipy</code> packages on‑demand.</p>
+<p><strong>Progressive rendering strategy:</strong>
+- Matrices &lt; 256×256: render instantly via Pyodide in main thread (fast enough)
+- Matrices 256×256 to 1024×1024: compute in Web Worker, show skeleton loading state
+- Matrices &gt; 1024×1024: fetch pre‑computed impact data from backend API, show progressive loading</p>
+<hr />
+<h3 id="5-zone-3-live-math-panel-the-latex-computation-engine">5. Zone 3: Live Math Panel — The LaTeX Computation Engine</h3>
+<h4 id="51-core-concept">5.1 Core Concept</h4>
+<p>The Live Math Panel renders the <strong>mathematical formula</strong> for the selected compression method in real‑time, showing the actual numerical values plugged into the equation. It also displays <strong>parameter count before/after</strong> and <strong>estimated FLOPs reduction</strong>. The panel is inspired by 3Blue1Brown's Manim animations and the SVD‑vis interactive tool.</p>
+<h4 id="52-technology-choices">5.2 Technology Choices</h4>
+<p><strong>LaTeX rendering: KaTeX</strong></p>
+<p>KaTeX is chosen over MathJax for its speed (renders synchronously, no DOM scanning) and smaller bundle size. KaTeX renders LaTeX strings to HTML in under 5ms for typical formulas, which is critical for real‑time updates as the user drags sliders.</p>
+<p><strong>Numerical computation: Pyodide (NumPy) or pure JS</strong></p>
+<p>Parameter counts and FLOPs estimations are computed client‑side:
+- Parameter count: simple multiplication of matrix dimensions × (1 − compression_ratio)
+- FLOPs estimation: uses formulas from the compression library (e.g., for SVD: <code>r(M+N)</code> vs original <code>MN</code>)
+- Singular value energy: <code>Σ σ²_kept / Σ σ²_total</code> computed via NumPy in Pyodide</p>
+<h4 id="53-component-hierarchy">5.3 Component Hierarchy</h4>
+<div class="highlight"><pre><span></span><code>LiveMathPanel
+├── CompressionFormulaDisplay
+│   ├── KaTeX rendered formula (e.g., "W ≈ U_r Σ_r V_r^T")
+│   ├── VariableHighlighter (highlights variables as user hovers visualization)
+│   └── NumericalSubstitution (shows actual numbers: "W ≈ U_32 · Σ_32 · V_32^T")
+├── ParameterCountComparison
+│   ├── BeforeBar (horizontal bar, full width)
+│   └── AfterBar (overlay, reduced width, animated transition)
+├── FLOPsEstimator
+│   ├── OriginalFLOPs (number with label)
+│   ├── CompressedFLOPs (number with label)
+│   └── SpeedupRatio ("4.2× speedup")
+├── EnergyRetentionIndicator
+│   ├── CircularGauge (0-100%, shows retained singular value energy)
+│   └── EnergyLabel ("99.7% of energy retained")
+└── BudgetTracker (if budget constraint is set)
+    ├── CurrentSize ("187MB / 200MB")
+    ├── ProgressBar (colored bar, green→yellow→red as budget fills)
+    └── OverBudgetWarning (appears if compressed size exceeds budget)
+</code></pre></div>
+<h4 id="54-key-implementation-details">5.4 Key Implementation Details</h4>
+<p><strong>Real‑time formula updates</strong></p>
+<p>The formula display uses a debounced (16ms) update loop: as the user drags a rank slider, the KaTeX string is regenerated with the new numerical values and re‑rendered. KaTeX's synchronous rendering ensures no flicker.</p>
+<p><strong>Supported compression formula templates:</strong></p>
+<p>Each compression method in the registry has an associated formula template:</p>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">FORMULA_TEMPLATES</span><span class="o">:</span><span class="w"> </span><span class="kt">Record</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">FormulaTemplate</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="s1">'a3'</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">latex</span><span class="o">:</span><span class="w"> </span><span class="s1">'W \\approx U_{{$rank}} \\Sigma_{{$rank}} V_{{$rank}}^T'</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">variables</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">'rank'</span><span class="p">],</span>
+<span class="w">    </span><span class="nx">paramCountFn</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">m</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">,</span><span class="w"> </span><span class="nx">rank</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">rank</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="nx">m</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">n</span><span class="p">),</span>
+<span class="w">    </span><span class="nx">flopsFn</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">m</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">,</span><span class="w"> </span><span class="nx">rank</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">rank</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="nx">m</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">n</span><span class="p">),</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="s1">'ast_pruner'</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">latex</span><span class="o">:</span><span class="w"> </span><span class="s1">'W_{2:4} = \\text{TopK}_{k=2}(W_{ij}), \\; j \\in \\{0,4,8,...\\}'</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">variables</span><span class="o">:</span><span class="w"> </span><span class="p">[],</span>
+<span class="w">    </span><span class="nx">paramCountFn</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">m</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">m</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nx">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w">  </span><span class="c1">// 50% sparsity</span>
+<span class="w">    </span><span class="nx">flopsFn</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">m</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">m</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nx">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.5</span><span class="p">,</span><span class="w">        </span><span class="c1">// 50% fewer multiplies</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="s1">'kmeans'</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">latex</span><span class="o">:</span><span class="w"> </span><span class="s1">'W \\approx \\text{KMeans}_{k={$clusters}}(W)'</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">variables</span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="s1">'clusters'</span><span class="p">],</span>
+<span class="w">    </span><span class="nx">paramCountFn</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">m</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">,</span><span class="w"> </span><span class="nx">clusters</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">clusters</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">m</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nx">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">Math</span><span class="p">.</span><span class="nx">ceil</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">log2</span><span class="p">(</span><span class="nx">clusters</span><span class="p">))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">32</span><span class="p">,</span>
+<span class="w">    </span><span class="nx">flopsFn</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">m</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">m</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nx">n</span><span class="p">,</span><span class="w">  </span><span class="c1">// No FLOP reduction</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="c1">// ... templates for all 60+ compressors</span>
+<span class="p">};</span>
+</code></pre></div>
+<p><strong>Parameter count bar chart animation</strong></p>
+<p>The before/after parameter count comparison uses an animated bar chart (Framer Motion <code>layout</code> animation). When the user changes compression parameters, the "after" bar smoothly animates to its new width, with the percentage reduction displayed as a label that counts up/down.</p>
+<hr />
+<h3 id="6-zone-4-controls-the-compression-parameter-orchestrator">6. Zone 4: Controls — The Compression Parameter Orchestrator</h3>
+<h4 id="61-core-concept">6.1 Core Concept</h4>
+<p>The Controls Zone is the <strong>command center</strong> where users select compression strategies, adjust parameters via sliders, set budget constraints, and trigger compression. It is designed to be immediately understandable while exposing the full power of the 60+ compression library.</p>
+<h4 id="62-technology-choices">6.2 Technology Choices</h4>
+<p><strong>Slider library: Custom React components + @radix‑ui/react‑slider</strong></p>
+<p>Custom slider components are built on top of Radix UI's accessible slider primitive. Each slider is annotated with:
+- Real‑time numerical value display
+- A mini sparkline showing the parameter's effect on model size
+- Color‑coded range indicators (green=recommended, yellow=aggressive, red=extreme)</p>
+<p><strong>Compressor selector: Combobox with search</strong></p>
+<p>A command palette‑style combobox (built with cmdk or @radix‑ui/react‑popover) allows users to search and filter through all 60+ compression methods. Each result shows:
+- Compressor name
+- Category badge (SVD, Pruning, Quantization, Hybrid)
+- Short description
+- Typical compression ratio range</p>
+<p><strong>Budget constraint solver: Custom algorithm</strong></p>
+<p>The budget constraint input accepts a target model size (in MB) and uses a <strong>greedy allocation algorithm</strong> to suggest per‑layer compression parameters that meet the budget. The solver runs in a Web Worker to avoid blocking the UI.</p>
+<h4 id="63-component-hierarchy">6.3 Component Hierarchy</h4>
+<div class="highlight"><pre><span></span><code>ParameterSliders
+├── CompressorSelector (combobox with search)
+│   └── CompressorOption (icon + name + category + description)
+├── RankSlider (when compressor uses rank parameter)
+│   ├── SliderTrack (with gradient fill)
+│   ├── SliderThumb (draggable)
+│   ├── RankValueLabel ("rank=64")
+│   └── RankSparkline (mini chart showing parameter count vs rank)
+├── SparsitySlider (when compressor uses sparsity)
+│   ├── SliderTrack
+│   ├── SparsityValueLabel ("sparsity=0.5")
+│   └── SparsitySparkline
+├── BitsSlider (when compressor uses quantization)
+│   ├── DiscreteMarkers (ticks at 2, 4, 8, 16, 32)
+│   ├── BitsValueLabel ("4-bit")
+│   └── MemorySavingsLabel ("8× memory reduction")
+├── BudgetConstraintInput
+│   ├── TextInput ("200 MB")
+│   ├── AutoAllocateButton ("Auto‑allocate compression budget")
+│   └── BudgetFeasibilityIndicator (checkmark or warning)
+├── CompressionPresetSelector
+│   ├── PresetButton ("Fast" — speed‑optimized)
+│   ├── PresetButton ("Accurate" — quality‑preserving)
+│   └── PresetButton ("Balanced" — default compromise)
+└── ApplyButton
+    ├── PrimaryButton ("Compress Now")
+    ├── ProgressIndicator (spinner during compression)
+    └── SuccessCheckmark (on completion)
+</code></pre></div>
+<h4 id="64-key-implementation-details">6.4 Key Implementation Details</h4>
+<p><strong>Budget constraint solver algorithm</strong></p>
+<div class="highlight"><pre><span></span><code>Input: target_size_mb, model_layers (with parameter counts and compressibility scores)
+Output: per_layer_params (rank, sparsity, bits for each layer)
+
+Algorithm:
+1. Calculate current total size: Σ layer_params_count × 4 bytes / (1024²)
+2. Calculate required reduction: current_total - target_size_mb
+3. Sort layers by compressibility_score (high score = can be compressed more)
+4. For each layer (in descending compressibility order):
+   a. Apply maximum compression (lowest rank, highest sparsity)
+   b. Recalculate total size
+   c. If total ≤ target_size_mb, stop and return params
+5. If still over budget, show warning: "Target size not achievable with this compressor"
+</code></pre></div>
+<p>This solver runs in a Web Worker and returns results in &lt; 100ms for models with up to 100 layers.</p>
+<p><strong>Slider‑to‑visualization reactivity</strong></p>
+<p>All sliders are connected to the Zustand store via <code>useStore</code> selectors. When a slider value changes:
+1. Zustand store updates immediately (synchronous)
+2. The Live Math Panel re‑renders (KaTeX, sub‑millisecond)
+3. The Compression Impact Heatmap schedules a re‑computation (debounced at 100ms)
+4. The Model Architecture Tree re‑renders the compressed view (debounced at 100ms)</p>
+<p>This architecture ensures smooth slider dragging (60fps) without expensive recomputation on every frame.</p>
+<hr />
+<h3 id="7-zone-5-crossplatform-integration-the-action-pipeline">7. Zone 5: Cross‑Platform Integration — The Action Pipeline</h3>
+<h4 id="71-core-concept">7.1 Core Concept</h4>
+<p>The Cross‑Platform Integration Zone connects the Compression Studio to the rest of the NeuralOps platform — the compression pipeline, the leaderboard, the experiment launcher, and the model versioning system. A single "Compress Now" button triggers the full workflow.</p>
+<h4 id="72-technology-choices">7.2 Technology Choices</h4>
+<p><strong>API calls: TanStack Query mutations</strong></p>
+<p>TanStack Query's <code>useMutation</code> hook is used for the compression API call. It provides:
+- Optimistic updates (immediately show "compressing" state)
+- Automatic retry on failure (3 retries with exponential backoff)
+- Cache invalidation (refresh model version list after compression)
+- Progress tracking via <code>onMutate</code>, <code>onSuccess</code>, <code>onError</code> callbacks</p>
+<p><strong>Real‑time progress: WebSocket</strong></p>
+<p>During compression, the Django backend sends progress updates via WebSocket (e.g., "Compressing layer 5/12... 42%"). The <code>useCompressionProgress</code> hook subscribes to the WebSocket channel and updates the progress bar.</p>
+<p><strong>Before/After Leaderboard: Your existing leaderboard infrastructure</strong></p>
+<p>The compressed model can be submitted to the benchmark leaderboard via your existing <code>gpu_benchmark</code> app. The submission includes:
+- Original model name and version
+- Compression method and parameters
+- Before/after metrics (accuracy, FLOPs, model size)
+- The attention pattern visualization captured at the time of compression</p>
+<h4 id="73-component-hierarchy">7.3 Component Hierarchy</h4>
+<div class="highlight"><pre><span></span><code>OneClickApply
+├── ApplyButton ("Compress Now")
+│   └── onClick → triggers compression pipeline
+├── CompressionProgressBar
+│   ├── ProgressBar (animated, shows current layer and percentage)
+│   ├── CurrentOperationLabel ("Compressing Layer 5: Q projection...")
+│   └── ETAIndicator ("~2 minutes remaining")
+└── CompressionResultCard (appears on completion)
+    ├── SuccessMessage ("Model compressed successfully!")
+    ├── StatsComparison
+    │   ├── SizeBefore ("589 MB → 187 MB (68% reduction)")
+    │   ├── FLOPsBefore ("2.3M → 0.4M (83% reduction)")
+    │   └── AccuracyBefore (if benchmarked)
+    ├── ActionButtons
+    │   ├── "Download Model"
+    │   ├── "Submit to Leaderboard"
+    │   ├── "Start Experiment with Compressed Model"
+    │   └── "Create Note with Compression Report"
+    └── CompressionReportPreview (auto‑generated note)
+
+BeforeAfterLeaderboard
+├── LeaderboardTable (sortable by compression ratio, accuracy retention, etc.)
+├── SubmitButton (opens submission modal)
+└── SubmissionModal
+    ├── CompressionSummary (auto‑filled)
+    ├── OptionalNotes (text area)
+    └── SubmitConfirmButton
+
+CompressionHistoryPanel
+├── HistoryTable (list of past compression runs for this model)
+│   ├── DateColumn
+│   ├── CompressorColumn
+│   ├── ParamsColumn
+│   ├── SizeReductionColumn
+│   └── ActionsColumn (download, compare, delete)
+└── CompareButton (select two runs for side‑by‑side comparison)
+</code></pre></div>
+<h4 id="74-key-implementation-details">7.4 Key Implementation Details</h4>
+<p><strong>Compression Pipeline Integration</strong></p>
+<p>The <code>OneClickApply</code> component sends a POST request to your existing compression API:</p>
+<div class="highlight"><pre><span></span><code>POST /api/runs/start-compress/
+Body: {
+  "model_name": "bert-base-uncased",
+  "compressor": "a3",
+  "compressor_config": { "rank": 32 },
+  "attention_type": "galerkin",
+  "sample_text": "The quick brown fox jumps over the lazy dog",
+  "save_to_registry": true,
+  "submit_to_leaderboard": true
+}
+</code></pre></div>
+<p>The backend processes the compression (using your existing 60+ compression library), saves the compressed model to the model versioning system, and returns a run ID. The frontend then subscribes to WebSocket updates for progress tracking.</p>
+<p><strong>Auto‑generated compression report</strong></p>
+<p>After compression completes, an auto‑generated note is created using your <code>notes/report_generator.py</code>. The note includes:
+- The compression method and parameters
+- Before/after parameter counts and FLOPs estimates
+- The singular value spectrum (embedded as SVG)
+- The compression impact heatmap (embedded as PNG)
+- Links to the compressed model version and leaderboard submission</p>
+<p><strong>Attention pattern capture</strong></p>
+<p>At the moment of compression, the attention pattern visualization is serialized (including layer/head selection, sample text, and the rendered SVG). This is stored as metadata on the compression run and linked to both the model version and the compression report.</p>
+<hr />
+<h2 id="8-state-management-architecture">8. State Management Architecture</h2>
+<h3 id="81-dualstore-architecture-zustand-xstate">8.1 Dual‑Store Architecture: Zustand + XState</h3>
+<p>The Compression Studio uses a <strong>dual‑store</strong> approach:</p>
+<p><strong>Zustand</strong> manages the <strong>application data state</strong> — the model being compressed, the selected compressor, the slider values, the compressed architecture preview, and the impact matrix. Zustand is chosen for its simplicity, performance (no provider wrapper needed), and excellent TypeScript support. The Workflow Designer UI for Giselle demonstrates this pattern: React Flow for graph visualization combined with Zustand for state management.</p>
+<p><strong>XState</strong> manages the <strong>compression workflow state machine</strong> — the sequence of states the compression process goes through. XState provides formal state machine semantics: each state has defined transitions, guards, and actions. This prevents "impossible states" (e.g., "comparing" before "compressing") and makes the workflow predictable and testable. XState is recommended for "complex orchestration with guards, timers, and hierarchies".</p>
+<h3 id="82-xstate-machine-definition">8.2 XState Machine Definition</h3>
+<div class="highlight"><pre><span></span><code>States:
+  idle
+    → analyzing (on SELECT_COMPRESSOR)
+  analyzing
+    → ready (on ANALYSIS_COMPLETE)
+    → error (on ANALYSIS_FAILED)
+  ready
+    → compressing (on APPLY_COMPRESSION)
+    → idle (on CLEAR_SELECTION)
+  compressing
+    → completed (on COMPRESSION_SUCCESS)
+    → failed (on COMPRESSION_FAILED)
+    → idle (on CANCEL)
+  completed
+    → comparing (on COMPARE_WITH_ORIGINAL)
+    → idle (on NEW_COMPRESSION)
+    → submitted (on SUBMIT_TO_LEADERBOARD)
+  comparing
+    → completed (on CLOSE_COMPARISON)
+    → submitted (on SUBMIT_TO_LEADERBOARD)
+  submitted
+    → completed (on CLOSE)
+    → idle (on NEW_COMPRESSION)
+
+Guards:
+  canCompress: selectedCompressor !== null &amp;&amp; selectedModel !== null
+  canSubmit: compressionRunId !== null
+  hasBudget: budgetConstraint !== null
+
+Actions (side effects):
+  onCompressing: start WebSocket subscription, show progress bar
+  onCompleted: fetch compressed model architecture, update Zustand store
+  onFailed: show error toast, log to activity feed
+</code></pre></div>
+<h3 id="83-zustand-store-design">8.3 Zustand Store Design</h3>
+<p>The Zustand store is sliced into logical domains using the <code>slice</code> pattern:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">// compressionStore.ts — conceptual structure</span>
+<span class="kd">interface</span><span class="w"> </span><span class="nx">CompressionStore</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Model slice</span>
+<span class="w">  </span><span class="nx">model</span><span class="o">:</span><span class="w"> </span><span class="kt">ModelArchitecture</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">setModel</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">model</span><span class="o">:</span><span class="w"> </span><span class="kt">ModelArchitecture</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Compressor slice</span>
+<span class="w">  </span><span class="nx">selectedCompressor</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">compressorParams</span><span class="o">:</span><span class="w"> </span><span class="kt">Record</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="kt">number</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">setCompressor</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">name</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">setParam</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">key</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">value</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Preview slice</span>
+<span class="w">  </span><span class="nx">compressedArchitecture</span><span class="o">:</span><span class="w"> </span><span class="kt">ModelArchitecture</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">impactMatrix</span><span class="o">:</span><span class="w"> </span><span class="kt">Float32Array</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">paramCountBefore</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">paramCountAfter</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">flopsBefore</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">flopsAfter</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Budget slice</span>
+<span class="w">  </span><span class="nx">budgetConstraint</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span><span class="w"> </span><span class="c1">// in MB</span>
+<span class="w">  </span><span class="nx">setBudget</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">mb</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">isBudgetFeasible</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// UI slice</span>
+<span class="w">  </span><span class="nx">selectedNode</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">splitViewEnabled</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">heatmapLayer</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">setSelectedNode</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">nodeId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">toggleSplitView</span><span class="o">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// History slice</span>
+<span class="w">  </span><span class="nx">compressionHistory</span><span class="o">:</span><span class="w"> </span><span class="kt">CompressionRun</span><span class="p">[];</span>
+<span class="w">  </span><span class="nx">addToHistory</span><span class="o">:</span><span class="w"> </span><span class="p">(</span><span class="nx">run</span><span class="o">:</span><span class="w"> </span><span class="kt">CompressionRun</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="ow">void</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="9-performance-rendering-strategy">9. Performance &amp; Rendering Strategy</h2>
+<h3 id="91-rendering-tiers">9.1 Rendering Tiers</h3>
+<p>The Compression Studio implements a <strong>three‑tier rendering strategy</strong> based on the complexity of the visualization:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Data Size</th>
+<th>Rendering Approach</th>
+<th>Target FPS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tier 1: Small</strong></td>
+<td>&lt; 10K data points (single weight matrix &lt; 100×100)</td>
+<td>Standard React rendering (SVG with React)</td>
+<td>60fps</td>
+</tr>
+<tr>
+<td><strong>Tier 2: Medium</strong></td>
+<td>10K–500K data points (weight matrix 100×100 to 700×700)</td>
+<td>deck.gl BitmapLayer via WebGL2 texture</td>
+<td>60fps</td>
+</tr>
+<tr>
+<td><strong>Tier 3: Large</strong></td>
+<td>&gt; 500K data points (weight matrix &gt; 700×700)</td>
+<td>deck.gl with progressive loading + Web Worker computation</td>
+<td>30fps (acceptable for static exploration)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="92-memory-management">9.2 Memory Management</h3>
+<p><strong>Float32Array for impact matrices:</strong> The impact matrix is stored as a <code>Float32Array</code> (4 bytes per entry) rather than a regular JavaScript array (8+ bytes per entry), reducing memory usage by 50%+ for large matrices.</p>
+<p><strong>Web Worker offloading:</strong> SVD computation and compression simulation are offloaded to Web Workers. The main thread only receives the results (U, S, Vt matrices), keeping it responsive for UI interactions.</p>
+<p><strong>Lazy Pyodide loading:</strong> Pyodide is loaded only when the user first opens the Compression Studio. The 6.5MB download is cached by the browser's service worker. Subsequent visits load Pyodide from cache in &lt; 1 second.</p>
+<h3 id="93-debouncing-strategy">9.3 Debouncing Strategy</h3>
+<div class="highlight"><pre><span></span><code>User drags slider
+  │
+  ├─→ Zustand store updates (immediate, synchronous)
+  │
+  ├─→ Live Math Panel re‑renders (immediate, KaTeX &lt; 5ms)
+  │
+  ├─→ Parameter count / FLOPs recompute (immediate, simple arithmetic)
+  │
+  ├─→ Architecture Tree compressed preview (debounced 100ms)
+  │
+  └─→ Impact Heatmap recompute (debounced 200ms, Web Worker)
+</code></pre></div>
+<hr />
+<h2 id="10-implementation-roadmap">10. Implementation Roadmap</h2>
+<h3 id="phase-1-foundation-weeks-13">Phase 1: Foundation (Weeks 1‑3)</h3>
+<ul>
+<li>Set up Compression Studio project structure</li>
+<li>Implement Zustand + XState dual‑store architecture</li>
+<li>Build ModelArchitectureTree with React Flow</li>
+<li>Implement basic compressor selector and parameter sliders</li>
+<li>Integrate KaTeX for formula rendering</li>
+<li>Build parameter count / FLOPs estimation logic</li>
+<li>Connect to existing compression API</li>
+</ul>
+<h3 id="phase-2-webgl-visualization-weeks-46">Phase 2: WebGL Visualization (Weeks 4‑6)</h3>
+<ul>
+<li>Integrate deck.gl and build ImpactHeatmapLayer</li>
+<li>Implement Web Worker SVD computation (Pyodide)</li>
+<li>Build Before/After Split View</li>
+<li>Implement SingularValueSpectrum chart</li>
+<li>Add budget constraint solver</li>
+</ul>
+<h3 id="phase-3-crossplatform-integration-weeks-78">Phase 3: Cross‑Platform Integration (Weeks 7‑8)</h3>
+<ul>
+<li>Build OneClickApply pipeline</li>
+<li>Integrate WebSocket progress tracking</li>
+<li>Build BeforeAfterLeaderboard submission flow</li>
+<li>Implement auto‑generated compression reports</li>
+<li>Build CompressionHistoryPanel</li>
+</ul>
+<h3 id="phase-4-polish-performance-weeks-910">Phase 4: Polish &amp; Performance (Weeks 9‑10)</h3>
+<ul>
+<li>Optimize Web Worker computation for large matrices</li>
+<li>Implement progressive loading for large heatmaps</li>
+<li>Add animation transitions (Framer Motion)</li>
+<li>Build NodeInspector detail panel</li>
+<li>Add compression presets</li>
+<li>Accessibility audit and fixes</li>
+<li>E2E testing with Playwright</li>
+</ul>
+<hr />
+<h2 id="summary">Summary</h2>
+<p>The Compression Studio is a <strong>six‑layer, multi‑runtime application</strong> that combines:</p>
+<ul>
+<li><strong>React 18 + TypeScript</strong> for the UI framework</li>
+<li><strong>React Flow</strong> for the interactive model architecture tree</li>
+<li><strong>deck.gl + WebGL2</strong> for GPU‑accelerated impact heatmaps</li>
+<li><strong>Pyodide (CPython 3.12 in WASM)</strong> for client‑side SVD computation</li>
+<li><strong>Web Workers</strong> for off‑main‑thread computation</li>
+<li><strong>KaTeX</strong> for real‑time LaTeX formula rendering</li>
+<li><strong>Zustand + XState</strong> for dual‑layer state management</li>
+<li><strong>TanStack Query</strong> for server state caching</li>
+<li><strong>Framer Motion</strong> for animation</li>
+<li><strong>WebSocket</strong> for real‑time compression progress</li>
+<li><strong>Your existing 60+ compression library</strong> for actual model compression</li>
+<li><strong>Your existing leaderboard, experiment launcher, notes, and model versioning apps</strong> for cross‑platform integration</li>
+</ul>
+<p>Every component is designed to be independently testable, lazy‑loaded for code splitting, and accessible via keyboard navigation and screen readers. The entire system operates at 60fps for interactive exploration while supporting matrices with millions of entries via GPU‑accelerated rendering.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

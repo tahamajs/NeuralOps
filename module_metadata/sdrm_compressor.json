@@ -1,0 +1,26 @@
+{
+  "module_name": "sdrm_compressor",
+  "class_name": "SDRMCompressor",
+  "category": "compression",
+  "family": "Dynamic Rank & Entropy-Guided Budget Allocation",
+  "params": [
+    "model",
+    "total_param_ratio"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "SDRM: Scaled Dimension Rank Modulation.\nAssigns layer rank proportional to parameter budget for edge inference.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.4976121879767463e+36,
+  "paradigm": "dynamic_rank",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

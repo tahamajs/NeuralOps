@@ -1,0 +1,27 @@
+{
+  "module_name": "mlorq_compressor",
+  "class_name": "MLoRQCompressor",
+  "category": "compression",
+  "family": "Dynamic Rank & Entropy-Guided Budget Allocation",
+  "params": [
+    "model",
+    "total_memory_budget_mb",
+    "bits_candidates"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "MLoRQ: Multi-Layer Optimal Rank & Quantisation under a Total Memory Budget.  Registered as 'mlorq', 'mlorq_compressor', 'mlorq_factory'.  This version stores U, S, Vt as PACKED INT tensors (bits ∈ {2,4,8}), so the memory budget formula `(out*r + r*in + r) * bits` is exact. The forward pass dequantizes on the fly and never materializes the dense wei",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.3467920957818177e+38,
+  "paradigm": "dynamic_rank",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

@@ -1,0 +1,25 @@
+{
+  "module_name": "aatc_xkv_compressor",
+  "class_name": "AatcXkvCompressor",
+  "category": "compression",
+  "family": "KV-Cache Memory Optimization & Virtual Page Eviction",
+  "paradigm": "kv_cache",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "AATC-XKV: Attention-Aware Cross-Layer KV Cache Compression (Production-Ready v2).  Real KV cache compression:   1. AATC sensitivity-weighted bit allocation (reverse waterfilling).   2. xKV cross-layer shared subspace via joint SVD on REAL calibration data.   3. DynamicCache subclass that stores int8 quantized coefficients instead of fp16 K/V.   4. ",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

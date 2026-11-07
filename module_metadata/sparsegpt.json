@@ -1,0 +1,35 @@
+{
+  "module_name": "sparsegpt",
+  "class_name": "SparseGPTCompressor",
+  "category": "compression",
+  "family": "Structured Channel & Head Pruning",
+  "params": [
+    "model",
+    "tokenizer",
+    "sparsity",
+    "prunen",
+    "prunem",
+    "block_size",
+    "percdamp",
+    "calibration_loader",
+    "calibration_texts",
+    "device",
+    "structured_24"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "In-memory PyTorch SparseGPT Compressor.\n\nPerforms layer-by-layer second-order pruning with Optimal Brain Surgeon (OBS) weight\ncompensation, supporting unstructured sparsity, block sparsity, and strict 2:4 structured sparsity.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0.56,
+  "bits": 4,
+  "hash_val": 2.5749561945418882e+38,
+  "paradigm": "pruning",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

@@ -1,0 +1,117 @@
+# ==============================================================================
+# NeuralOps Release Integrity & Zenodo Deposition Manifest: v1.4.0
+# Generation Timestamp: 2026-10-18T06:45:00Z
+# Platform: macOS Darwin (Local Workspace) & Ubuntu 24.04 LTS (Remote GPU Server)
+# Hardware: NVIDIA GeForce RTX 4070 Laptop GPU (Ada Lovelace, SM 8.9, 8GB GDDR6)
+# Verification: Bit-exact parity across Local, /mnt/d/SVD_Project, and /mnt/d/SVD_linear_Attention
+# Invariants: 131 Attentions | 72 Compressors | 108 CUDA C++ Kernels | 26 Triton JIT Modules
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Core Production Artifacts & Manuscripts
+# ------------------------------------------------------------------------------
+# Academic Master Thesis (818 pages)
+SHA256 (thesis_final/master_thesis.pdf) = e6db57ff004430d7722822c1194e24460bf1d921a5e17b337ea736da598a8321
+MD5    (thesis_final/master_thesis.pdf) = efddd0a97be436b2bee903f904433360
+
+# Academic Defense Presentation (19 pages)
+SHA256 (academic/slides/defense_presentation.pdf) = 573e0c7e8aa00de21055d41a024746af026cddfc9e9646b78b826e69b3d532cb
+MD5    (academic/slides/defense_presentation.pdf) = 6c8dd210ed816aef4dd2e5d57dd822fd
+
+# ICLR 2027 Conference Submission Manuscript (62 pages)
+SHA256 (paper/iclr2027-submission/iclr2027_conference.pdf) = 0e806e3ff49fd2010b1a9a9c248ba06dee8f51303cf03adb09cb84ba2dd11849
+MD5    (paper/iclr2027-submission/iclr2027_conference.pdf) = 36ab2358f775c04734e3ef6950f79e5c
+
+# NeurIPS 2026 Conference Submission Manuscript (61 pages)
+SHA256 (paper/neurips2026-submission/neurips2026_conference.pdf) = b73feea3a929c9c9e149fc8ee07c990ec49b4fcb03616b7d8fd346e631bbe184
+MD5    (paper/neurips2026-submission/neurips2026_conference.pdf) = 386eb7016615eac589fa9d004a9eb707
+
+# Master Results Matrix (CSV)
+SHA256 (results/MASTER_RESULTS_MATRIX.csv) = ea1ded52336154bc0cf966f7c6af4966cb47eb51e7710d1a27177b651509de69
+MD5    (results/MASTER_RESULTS_MATRIX.csv) = 05b53338659a7b5d755e28e54afdaa04
+
+# Master SQLite Ledger & Empirical Registry
+SHA256 (results/registry/master_ledger.sqlite) = 26429867571502beab74a22c59e3e6a2bf07716a259b1fa0f2f57c09693aeaa9
+MD5    (results/registry/master_ledger.sqlite) = ea21ec7b92bc46f77ff5359bed8c6dd3
+
+# ------------------------------------------------------------------------------
+# 2. Publication Figures (All 10 Core Submissions Figures)
+# ------------------------------------------------------------------------------
+# Figure: KV-Cache Latent Memory Scaling
+SHA256 (results/plots/kv_cache_latent_memory_scaling.pdf) = b75f10cfb229a255728e1b785257509fc1548dfb31125ed3f78cf4922421b834
+MD5    (results/plots/kv_cache_latent_memory_scaling.pdf) = 247eb743b0341f56f3b7abfe8a8e0b09
+
+# Figure: Pareto Accuracy vs Compression Ratio
+SHA256 (results/plots/pareto_accuracy_vs_compression.pdf) = 75601d152cb14e36bbb283ba4a75099bf57679650b32be7b3e23eb7be990dfce
+MD5    (results/plots/pareto_accuracy_vs_compression.pdf) = db31e862dbbd4eb596031d51e7b5f202
+
+# Figure: Pareto Accuracy vs Throughput (tok/sec)
+SHA256 (results/plots/pareto_accuracy_vs_throughput.pdf) = 04e99d06837bd083f469245d722fda0a7b4eb9b6890c752f3b06c8176dca342d
+MD5    (results/plots/pareto_accuracy_vs_throughput.pdf) = c89e06b0474feafe980d6b811aaa9a76
+
+# Figure: Pareto Accuracy vs Peak VRAM Allocation
+SHA256 (results/plots/pareto_accuracy_vs_vram.pdf) = 356663101112dab33004b56cc6ddc963e2a0f1bfe59ac662f6d2c4692ff44dcd
+MD5    (results/plots/pareto_accuracy_vs_vram.pdf) = 4023129146f8a142e99ab3b821d0439c
+
+# Figure: Master 2D Pareto Frontier
+SHA256 (results/plots/pareto_frontier.pdf) = 2918d2643b24394481acdc171ffd1b67e51b30d8d945e6df7dde5c6a866cdf62
+MD5    (results/plots/pareto_frontier.pdf) = 0852a2d2dbf2d2239af726ed248c8d60
+
+# Figure: Pareto Perplexity vs Compression
+SHA256 (results/plots/pareto_ppl_vs_compression.pdf) = f4cae2a7d4546ec0edef9c61494f7e021512cfd682658f7d142a99285dc9291c
+MD5    (results/plots/pareto_ppl_vs_compression.pdf) = 8fb56bd84e4350f1d6c4bae8166ebd3f
+
+# Figure: Sequence Length Context Scaling (T in [128, 8192])
+SHA256 (results/plots/sequence_length_scaling.pdf) = d441dd03475d077160d08bdb963b544ceb8598362d24810db1f22cd682ee2396
+MD5    (results/plots/sequence_length_scaling.pdf) = 41156040f53d91dd2c0cfdce05c86e4a
+
+# Figure: SVD-LLM v2 Truncation Optimality
+SHA256 (results/plots/svd_llm_v2_truncation_optimality.pdf) = ef163b85e1dbc85bb552fb2a868069f9e90f5b23c0f51d1671eaebe578d29b4b
+MD5    (results/plots/svd_llm_v2_truncation_optimality.pdf) = 3ee02d39412fb02002fe14da6928af1b
+
+# Figure: 3-Level Latency Fallback Hierarchy Comparison
+SHA256 (results/plots/three_level_latency_comparison.pdf) = 8b755582b27095ee7e18e1becaf2f9057730652d7098e34fd2020e99e79dc430
+MD5    (results/plots/three_level_latency_comparison.pdf) = ccd07d746af53ec5666ab5c68b943ab0
+
+# Figure: Triton Flagship Kernel Acceleration Leaderboard
+SHA256 (results/plots/triton_speedup_leaderboard.pdf) = dd6cc8105a257ef76f6b0afc1cbc0e408afe69cd0e4ed45a9c3456105d2d59e8
+MD5    (results/plots/triton_speedup_leaderboard.pdf) = 9364f517837ec57b957f04d64af4ba6b
+
+# ------------------------------------------------------------------------------
+# 3. Canonical Standard Checksum Listings
+# ------------------------------------------------------------------------------
+# SHA-256 Checksums
+e6db57ff004430d7722822c1194e24460bf1d921a5e17b337ea736da598a8321  thesis_final/master_thesis.pdf
+573e0c7e8aa00de21055d41a024746af026cddfc9e9646b78b826e69b3d532cb  academic/slides/defense_presentation.pdf
+0e806e3ff49fd2010b1a9a9c248ba06dee8f51303cf03adb09cb84ba2dd11849  paper/iclr2027-submission/iclr2027_conference.pdf
+b73feea3a929c9c9e149fc8ee07c990ec49b4fcb03616b7d8fd346e631bbe184  paper/neurips2026-submission/neurips2026_conference.pdf
+ea1ded52336154bc0cf966f7c6af4966cb47eb51e7710d1a27177b651509de69  results/MASTER_RESULTS_MATRIX.csv
+26429867571502beab74a22c59e3e6a2bf07716a259b1fa0f2f57c09693aeaa9  results/registry/master_ledger.sqlite
+b75f10cfb229a255728e1b785257509fc1548dfb31125ed3f78cf4922421b834  results/plots/kv_cache_latent_memory_scaling.pdf
+75601d152cb14e36bbb283ba4a75099bf57679650b32be7b3e23eb7be990dfce  results/plots/pareto_accuracy_vs_compression.pdf
+04e99d06837bd083f469245d722fda0a7b4eb9b6890c752f3b06c8176dca342d  results/plots/pareto_accuracy_vs_throughput.pdf
+356663101112dab33004b56cc6ddc963e2a0f1bfe59ac662f6d2c4692ff44dcd  results/plots/pareto_accuracy_vs_vram.pdf
+2918d2643b24394481acdc171ffd1b67e51b30d8d945e6df7dde5c6a866cdf62  results/plots/pareto_frontier.pdf
+f4cae2a7d4546ec0edef9c61494f7e021512cfd682658f7d142a99285dc9291c  results/plots/pareto_ppl_vs_compression.pdf
+d441dd03475d077160d08bdb963b544ceb8598362d24810db1f22cd682ee2396  results/plots/sequence_length_scaling.pdf
+ef163b85e1dbc85bb552fb2a868069f9e90f5b23c0f51d1671eaebe578d29b4b  results/plots/svd_llm_v2_truncation_optimality.pdf
+8b755582b27095ee7e18e1becaf2f9057730652d7098e34fd2020e99e79dc430  results/plots/three_level_latency_comparison.pdf
+dd6cc8105a257ef76f6b0afc1cbc0e408afe69cd0e4ed45a9c3456105d2d59e8  results/plots/triton_speedup_leaderboard.pdf
+
+# MD5 Checksums
+efddd0a97be436b2bee903f904433360  thesis_final/master_thesis.pdf
+6c8dd210ed816aef4dd2e5d57dd822fd  academic/slides/defense_presentation.pdf
+36ab2358f775c04734e3ef6950f79e5c  paper/iclr2027-submission/iclr2027_conference.pdf
+386eb7016615eac589fa9d004a9eb707  paper/neurips2026-submission/neurips2026_conference.pdf
+05b53338659a7b5d755e28e54afdaa04  results/MASTER_RESULTS_MATRIX.csv
+ea21ec7b92bc46f77ff5359bed8c6dd3  results/registry/master_ledger.sqlite
+247eb743b0341f56f3b7abfe8a8e0b09  results/plots/kv_cache_latent_memory_scaling.pdf
+db31e862dbbd4eb596031d51e7b5f202  results/plots/pareto_accuracy_vs_compression.pdf
+c89e06b0474feafe980d6b811aaa9a76  results/plots/pareto_accuracy_vs_throughput.pdf
+4023129146f8a142e99ab3b821d0439c  results/plots/pareto_accuracy_vs_vram.pdf
+0852a2d2dbf2d2239af726ed248c8d60  results/plots/pareto_frontier.pdf
+8fb56bd84e4350f1d6c4bae8166ebd3f  results/plots/pareto_ppl_vs_compression.pdf
+41156040f53d91dd2c0cfdce05c86e4a  results/plots/sequence_length_scaling.pdf
+3ee02d39412fb02002fe14da6928af1b  results/plots/svd_llm_v2_truncation_optimality.pdf
+ccd07d746af53ec5666ab5c68b943ab0  results/plots/three_level_latency_comparison.pdf
+9364f517837ec57b957f04d64af4ba6b  results/plots/triton_speedup_leaderboard.pdf

@@ -1,0 +1,29 @@
+{
+  "module_name": "cur_moe_compressor",
+  "class_name": "CURMoECompressor",
+  "category": "compression",
+  "family": "Tensor Decomposition (Tensor-Train, Tucker & Kronecker)",
+  "params": [
+    "model",
+    "rank",
+    "method",
+    "cfg",
+    "deterministic"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Compresses Mixture of Experts (MoE) layers using CUR cross-approximation.\n\nArgs:\n    model: PyTorch model containing MoE modules.\n    rank: Target rank for CUR decomposition of expert weights.\n    method: 'leverage' (statistical leverage scores) or 'energy' (Frobenius energy).\n    cfg: Optional configuration object.\n    deterministic: Whether to use deterministic top-k selection (default True).\n    **kwargs: Additional parameters for BaseCompressor.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 8,
+  "top_k": 2,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.5216974158237093e+38,
+  "paradigm": "tensor_decomp",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

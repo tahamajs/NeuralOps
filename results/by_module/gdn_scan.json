@@ -1,0 +1,155 @@
+{
+  "module_name": "gdn_scan",
+  "category": "triton_kernel",
+  "family": "linear_attention",
+  "total_runs": 2,
+  "latest_version": "v1.3.7",
+  "latest_revision": 2,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:35:16.078400+00:00",
+  "latest_record": {
+    "record_id": "55bde69d9f93b03f",
+    "module_name": "gdn_scan",
+    "category": "triton_kernel",
+    "family": "linear_attention",
+    "version_tag": "v1.3.7",
+    "revision": 2,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+      "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "shape": "B=4,H=8,N=512,D=64",
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.3839,
+      "latency_pytorch_ms": 45.4731,
+      "speedup_x": 118.44,
+      "launch_overhead_ms": 0.0005,
+      "cosine_sim": 1.0,
+      "max_diff": 0.000977
+    },
+    "notes": "Triton vs PyTorch benchmark for gdn_scan: 118.44x speedup"
+  },
+  "active_records": [
+    {
+      "record_id": "06fd734e40bc2c52",
+      "module_name": "gdn_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T08:33:14.128901+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "gdn_scan_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, T=1024, d=64"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.764,
+        "latency_pytorch_ms": 90.465,
+        "speedup_x": 118.44,
+        "sram_bytes_saved_mb": 256.0
+      },
+      "notes": "Parity: PASS"
+    },
+    {
+      "record_id": "55bde69d9f93b03f",
+      "module_name": "gdn_scan",
+      "category": "triton_kernel",
+      "family": "linear_attention",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,H=8,N=512,D=64",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.3839,
+        "latency_pytorch_ms": 45.4731,
+        "speedup_x": 118.44,
+        "launch_overhead_ms": 0.0005,
+        "cosine_sim": 1.0,
+        "max_diff": 0.000977
+      },
+      "notes": "Triton vs PyTorch benchmark for gdn_scan: 118.44x speedup"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "06fd734e40bc2c52",
+      "module_name": "gdn_scan",
+      "category": "triton_kernel",
+      "family": "Recurrent Scan",
+      "version_tag": "v1.3.6",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-15T08:33:14.128901+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Triton vs PyTorch Benchmark v136",
+        "primitive": "gdn_scan_triton",
+        "source_artifact": "results/triton_full_leaderboard_v136.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=2, H=8, T=1024, d=64"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.764,
+        "latency_pytorch_ms": 90.465,
+        "speedup_x": 118.44,
+        "sram_bytes_saved_mb": 256.0
+      },
+      "notes": "Parity: PASS"
+    },
+    {
+      "record_id": "55bde69d9f93b03f",
+      "module_name": "gdn_scan",
+      "category": "triton_kernel",
+      "family": "linear_attention",
+      "version_tag": "v1.3.7",
+      "revision": 2,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:35:16.078400+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "26 Core Triton JIT Kernel Benchmark Suite",
+        "source_artifact": "results/benchmark_all_26_comprehensive_matrix.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "shape": "B=4,H=8,N=512,D=64",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.3839,
+        "latency_pytorch_ms": 45.4731,
+        "speedup_x": 118.44,
+        "launch_overhead_ms": 0.0005,
+        "cosine_sim": 1.0,
+        "max_diff": 0.000977
+      },
+      "notes": "Triton vs PyTorch benchmark for gdn_scan: 118.44x speedup"
+    }
+  ]
+}

@@ -1,0 +1,3293 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/content/attentions/phantom/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>PHANTOM: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping via Deterministic CUR Decomposition and Angular LSH - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#phantom-parameter-hashed-attention-with-token-wise-orthogonal-mapping-via-deterministic-cur-decomposition-and-angular-lsh" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              PHANTOM: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping via Deterministic CUR Decomposition and Angular LSH
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-executive-abstract-architectural-motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Executive Abstract &amp; Architectural Motivation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-mathematical-formulations-derivations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Mathematical Formulations &amp; Derivations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Mathematical Formulations &amp; Derivations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-statistical-leverage-score-cur-matrix-decomposition-factorisedlinear_cur" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Statistical Leverage-Score CUR Matrix Decomposition (FactorisedLinear_CUR)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-multi-round-angular-lsh-bucketing-lsh_attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Multi-Round Angular LSH Bucketing (lsh_attention)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-intra-bucket-softpick-rectified-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Intra-Bucket Softpick Rectified Attention
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-multi-round-accumulation-final-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Multi-Round Accumulation &amp; Final Projection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-step-by-step-tensor-execution-trace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Step-by-Step Tensor Execution Trace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-analytical-complexity-hardware-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Analytical Complexity &amp; Hardware Profiling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Analytical Complexity &amp; Hardware Profiling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-flops-computation-breakdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 FLOPs Computation Breakdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-macs-memory-footprint-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 MACs &amp; Memory Footprint Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-asymptotic-scalability-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Asymptotic Scalability Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-architectural-bottlenecks-rank-collapse-edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Architectural Bottlenecks, Rank Collapse &amp; Edge Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Architectural Bottlenecks, Rank Collapse &amp; Edge Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-cur-intersection-matrix-ill-conditioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 CUR Intersection Matrix Ill-Conditioning
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-lsh-bucket-imbalance-hash-collisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 LSH Bucket Imbalance &amp; Hash Collisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-softpick-intra-bucket-empty-bucket-underflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 Softpick Intra-Bucket Empty-Bucket Underflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-hardware-acceleration-blueprint-triton-kernel-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Hardware Acceleration Blueprint &amp; Triton Kernel Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Hardware Acceleration Blueprint &amp; Triton Kernel Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-triton-strategy-1-fused-dual-gemm-cur-projection-kernel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Triton Strategy 1: Fused Dual-GEMM CUR Projection Kernel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-triton-strategy-2-fused-sram-hyperplane-hashing-kernel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 Triton Strategy 2: Fused SRAM Hyperplane Hashing Kernel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-triton-strategy-3-block-sparse-intra-bucket-softpick-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 Triton Strategy 3: Block-Sparse Intra-Bucket Softpick Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-next-generation-innovations-synthesis-opportunities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Next-Generation Innovations &amp; Synthesis Opportunities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-empirical-benchmark-results-comparative-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Empirical Benchmark Results &amp; Comparative Profiling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Empirical Benchmark Results &amp; Comparative Profiling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-language-modeling-quality-throughput" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Language Modeling Quality &amp; Throughput
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-sequence-length-scaling-profiling-l512-to-8192" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 Sequence Length Scaling Profiling (\(L=512 \to 8192\))
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="phantom-parameter-hashed-attention-with-token-wise-orthogonal-mapping-via-deterministic-cur-decomposition-and-angular-lsh">PHANTOM: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping via Deterministic CUR Decomposition and Angular LSH</h1>
+<h2 id="1-executive-abstract-architectural-motivation">1. Executive Abstract &amp; Architectural Motivation</h2>
+<p>Standard Multi-Head Self-Attention (MHSA) in Transformer models requires quadratic computational time and memory scaling <span class="arithmatex">\(\mathcal{O}(N^2)\)</span> with sequence length <span class="arithmatex">\(N\)</span>, presenting significant bottlenecks for long-context deployment. While dense low-rank projections reduce parameter counts, standard SVD linear layers discard structural column/row interpretable sparsity. Furthermore, sparse attention heuristics often fail to dynamically route non-local dependencies.</p>
+<p><strong>PHANTOM</strong> (Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping) presents an integrated sparse attention architecture combining two structural advances:
+1. <strong>Deterministic Statistical Leverage-Score CUR Decomposition</strong>: Pre-trained weight matrices (<span class="arithmatex">\(W_Q, W_K, W_V, W_O\)</span>) are decomposed via CUR matrix factorization. Down and up projection matrices are explicitly formed from the top-<span class="arithmatex">\(r\)</span> rows <span class="arithmatex">\(R\)</span> and columns <span class="arithmatex">\(C\)</span> exhibiting highest empirical statistical leverage scores <span class="arithmatex">\(\ell_{\text{row}}, \ell_{\text{col}}\)</span>, joined by the pseudoinverse of their intersection submatrix <span class="arithmatex">\(W_{\cap}^{\dagger}\)</span>.
+2. <strong>Multi-Round Angular Locality-Sensitive Hashing (LSH)</strong>: L2-normalized queries and keys are projected across <span class="arithmatex">\(M\)</span> independent hashing rounds using random Gaussian hyperplane matrices <span class="arithmatex">\(P \in \mathbb{R}^{d_h \times B_s}\)</span>. Binary hash codes bucket semantically aligned tokens into discrete buckets, reducing attention computation from <span class="arithmatex">\(\mathcal{O}(N^2)\)</span> to expected sub-quadratic complexity <span class="arithmatex">\(\mathcal{O}\left(M \cdot \frac{N^2}{2^{B_s}} \cdot d_h\right)\)</span>.
+3. <strong>Softpick Rectified Activation</strong>: Intra-bucket attention scores are evaluated using a rectified non-linear probability mapping (<code>softpick</code>), preventing soft background noise accumulation and artificial sink token collapse.</p>
+<hr />
+<h2 id="2-mathematical-formulations-derivations">2. Mathematical Formulations &amp; Derivations</h2>
+<h3 id="21-statistical-leverage-score-cur-matrix-decomposition-factorisedlinear_cur">2.1 Statistical Leverage-Score CUR Matrix Decomposition (<code>FactorisedLinear_CUR</code>)</h3>
+<p>For a pre-trained projection weight matrix <span class="arithmatex">\(W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\)</span>, the full singular value decomposition <span class="arithmatex">\(W = U \Sigma V^T\)</span> is evaluated. Empirical row and column leverage scores are defined as:</p>
+<div class="arithmatex">\[\ell_{\text{row}}(i) = \frac{\|U_{i, :}\|_2^2}{\sum_{i'=1}^{d_{\text{out}}} \|U_{i', :}\|_2^2}, \quad \ell_{\text{col}}(j) = \frac{\|V_{:, j}\|_2^2}{\sum_{j'=1}^{d_{\text{in}}} \|V_{:, j'}\|_2^2}\]</div>
+<p>Selecting the top-<span class="arithmatex">\(r\)</span> row indices <span class="arithmatex">\(\mathcal{I}_{\text{row}}\)</span> and column indices <span class="arithmatex">\(\mathcal{I}_{\text{col}}\)</span> yields row matrix <span class="arithmatex">\(R \in \mathbb{R}^{r \times d_{\text{in}}}\)</span>, column matrix <span class="arithmatex">\(C \in \mathbb{R}^{d_{\text{out}} \times r}\)</span>, and intersection matrix <span class="arithmatex">\(W_{\cap} \in \mathbb{R}^{r \times r}\)</span>:</p>
+<div class="arithmatex">\[R = W_{\mathcal{I}_{\text{row}}, :}, \quad C = W_{:, \mathcal{I}_{\text{col}}}, \quad W_{\cap} = W_{\mathcal{I}_{\text{row}}, \mathcal{I}_{\text{col}}}\]</div>
+<p>The CUR matrix approximation evaluates:</p>
+<div class="arithmatex">\[W \approx C W_{\cap}^{\dagger} R, \quad \text{where } W_{\cap}^{\dagger} = \text{pinv}(W_{\cap}) \in \mathbb{R}^{r \times r}\]</div>
+<p>The factorized down-projection layer <span class="arithmatex">\(W_{\text{down}} \in \mathbb{R}^{r \times d_{\text{in}}}\)</span> and up-projection layer <span class="arithmatex">\(W_{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r}\)</span> are initialized as:</p>
+<div class="arithmatex">\[W_{\text{down}} = R, \quad W_{\text{up}} = C W_{\cap}^{\dagger}\]</div>
+<p>For activation tensor <span class="arithmatex">\(X \in \mathbb{R}^{B \times N \times d_{\text{in}}}\)</span>, projection output evaluates:</p>
+<div class="arithmatex">\[Y = (X W_{\text{down}}^T) W_{\text{up}}^T + b = (X R^T) (C W_{\cap}^{\dagger})^T + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}\]</div>
+<h3 id="22-multi-round-angular-lsh-bucketing-lsh_attention">2.2 Multi-Round Angular LSH Bucketing (<code>lsh_attention</code>)</h3>
+<p>For queries and keys <span class="arithmatex">\(Q, K \in \mathbb{R}^{B \times H \times N \times d_h}\)</span>, L2-normalization is enforced:</p>
+<div class="arithmatex">\[\hat{Q} = \frac{Q}{\|Q\|_2 + \epsilon}, \quad \hat{K} = \frac{K}{\|K\|_2 + \epsilon}\]</div>
+<p>For each hashing round <span class="arithmatex">\(m \in \{1, \dots, M\}\)</span>, a random Gaussian projection matrix <span class="arithmatex">\(P^{(m)} \in \mathbb{R}^{d_h \times B_s}\)</span> is sampled, where <span class="arithmatex">\(B_s\)</span> is the binary bit-width. Discrete integer hash codes <span class="arithmatex">\(h(q), h(k) \in \{0, \dots, 2^{B_s}-1\}\)</span> are computed via inner-product sign bit shifting:</p>
+<div class="arithmatex">\[h(q_{b, h, i}) = \sum_{k=0}^{B_s-1} 2^k \cdot \mathbb{I}\left( \langle \hat{Q}_{b, h, i}, P_{:, k}^{(m)} \rangle &gt; 0 \right)\]</div>
+<div class="arithmatex">\[h(k_{b, h, j}) = \sum_{k=0}^{B_s-1} 2^k \cdot \mathbb{I}\left( \langle \hat{K}_{b, h, j}, P_{:, k}^{(m)} \rangle &gt; 0 \right)\]</div>
+<h3 id="23-intra-bucket-softpick-rectified-attention">2.3 Intra-Bucket Softpick Rectified Attention</h3>
+<p>Tokens sharing matching hash codes <span class="arithmatex">\(h(q_i) = h(k_j) = c\)</span> are grouped into hash buckets <span class="arithmatex">\(\mathcal{B}_c\)</span>. Scaled dot-product attention logits are evaluated exclusively within bucket key sets <span class="arithmatex">\(\mathcal{B}_{h(q_i)}\)</span>:</p>
+<div class="arithmatex">\[S_{b, h, i, j} = \frac{Q_{b, h, i} \cdot K_{b, h, j}^T}{\sqrt{d_h}}, \quad \text{for } j \in \mathcal{B}_{h(q_i)}\]</div>
+<p>The <strong>Softpick</strong> activation applies temperature scaling <span class="arithmatex">\(\tau\)</span> and subtracts the maximum tail threshold:</p>
+<div class="arithmatex">\[m_i = \max_{j \in \mathcal{B}_{h(q_i)}} S_{i, j}, \quad e_{i, j} = \exp\left( \frac{S_{i, j} - m_i}{\tau} \right)\]</div>
+<div class="arithmatex">\[p_{i, j} = \frac{\max\left(0, e_{i, j} - \exp(-m_i / \tau)\right)}{\sum_{k \in \mathcal{B}_{h(q_i)}} \max\left(0, e_{i, k} - \exp(-m_i / \tau)\right) + \epsilon}\]</div>
+<div class="arithmatex">\[O_{b, h, i}^{(m)} = \sum_{j \in \mathcal{B}_{h(q_i)}} p_{b, h, i, j} V_{b, h, j}\]</div>
+<h3 id="24-multi-round-accumulation-final-projection">2.4 Multi-Round Accumulation &amp; Final Projection</h3>
+<p>Context outputs are averaged across all <span class="arithmatex">\(M\)</span> independent hashing rounds:</p>
+<div class="arithmatex">\[O^{\text{fused}} = \frac{1}{M} \sum_{m=1}^M O^{(m)} \in \mathbb{R}^{B \times H \times N \times d_h}\]</div>
+<p>Reshaping into <span class="arithmatex">\([B, N, H \cdot d_h]\)</span>, the context tensor is projected through the CUR factorized output layer:</p>
+<div class="arithmatex">\[Y = \text{FactorisedLinear\_CUR}_{\text{out}}\left( \text{Reshape}(O^{\text{fused}}) \right) \in \mathbb{R}^{B \times N \times D}\]</div>
+<hr />
+<h2 id="3-step-by-step-tensor-execution-trace">3. Step-by-Step Tensor Execution Trace</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Execution Step</th>
+<th style="text-align: left;">Tensor Symbol</th>
+<th style="text-align: left;">Shape Transformation</th>
+<th style="text-align: left;">Operational Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Input Hidden State</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(X\)</span></td>
+<td style="text-align: left;"><code>[B, N, D]</code></td>
+<td style="text-align: left;">Base activation state</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>CUR Projection Q/K/V</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(X R^T (C W_{\cap}^{\dagger})^T\)</span></td>
+<td style="text-align: left;"><code>[B, N, D] -&gt; [B, N, r] -&gt; [B, N, H * d_h]</code></td>
+<td style="text-align: left;">Leverage-score CUR down/up projection</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Head Partitioning</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(Q, K, V\)</span></td>
+<td style="text-align: left;"><code>[B, N, H * d_h] -&gt; [B, H, N, d_h]</code></td>
+<td style="text-align: left;">Transpose to multi-head view</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>L2 Normalization</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\hat{Q}, \hat{K}\)</span></td>
+<td style="text-align: left;"><code>[B, H, N, d_h]</code></td>
+<td style="text-align: left;">L2 normalization along head dimension</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Hyperplane Projection</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\hat{Q} P, \hat{K} P\)</span></td>
+<td style="text-align: left;"><code>[B, H, N, d_h] * [d_h, B_s] -&gt; [B, H, N, B_s]</code></td>
+<td style="text-align: left;">Sign inner-product hyperplane projection</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Bit-Shift Hashing</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(h(q), h(k)\)</span></td>
+<td style="text-align: left;"><code>[B, H, N, B_s] -&gt; [B, H, N]</code></td>
+<td style="text-align: left;">Integer bucket code evaluation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Bucket Partitioning</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{B}_c\)</span></td>
+<td style="text-align: left;"><code>[B, H, N]</code></td>
+<td style="text-align: left;">Group key/query indices by hash code</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Intra-Bucket Softpick</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(O^{(m)}\)</span></td>
+<td style="text-align: left;"><code>[B, H, N, d_h]</code></td>
+<td style="text-align: left;">Sparse Softpick attention within buckets</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Multi-Round Averaging</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(O^{\text{fused}}\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\frac{1}{M} \sum O^{(m)} \in [B, H, N, d_h]\)</span></td>
+<td style="text-align: left;">Accumulation across <span class="arithmatex">\(M\)</span> LSH rounds</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>CUR Output Projection</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(Y\)</span></td>
+<td style="text-align: left;"><code>[B, N, H * d_h] -&gt; [B, N, r] -&gt; [B, N, D]</code></td>
+<td style="text-align: left;">Leverage-score CUR output projection</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>                       [B, N, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+     CUR Q, K, V Projections     Check Mask Format
+      [B, H, N, d_h]             (Prepare 2D Boolean Token Validity)
+             │
+             ▼
+      Iterate across M LSH Rounds
+      - L2 Normalization Q_norm, K_norm
+      - Sample Random Hyperplanes P [d_h, B_s]
+      - Hash Codes h(q), h(k) via Bit-Shift Sum
+             │
+             ▼
+      Group Keys &amp; Queries into Buckets B_c
+             │
+             ▼
+      Intra-Bucket Softpick Rectified Attention
+      O^(m) = Softpick(Q_b K_b^T / sqrt(d_h)) V_b
+             │
+             ▼
+      Average Multi-Round Outputs O_fused = (1/M) Sum(O^(m))
+             │
+             ▼
+      Output Low-Rank CUR Projection (FactorisedLinear_CUR)
+             │
+             ▼
+                       [B, N, D] Output
+</code></pre></div>
+<hr />
+<h2 id="4-analytical-complexity-hardware-profiling">4. Analytical Complexity &amp; Hardware Profiling</h2>
+<h3 id="41-flops-computation-breakdown">4.1 FLOPs Computation Breakdown</h3>
+<p>Let <span class="arithmatex">\(B\)</span> be batch size, <span class="arithmatex">\(N\)</span> sequence length, <span class="arithmatex">\(D\)</span> model dimension, <span class="arithmatex">\(H\)</span> head count, <span class="arithmatex">\(d_h = D/H\)</span> head dimension, <span class="arithmatex">\(r\)</span> CUR compression rank, <span class="arithmatex">\(M\)</span> LSH rounds, and <span class="arithmatex">\(B_s\)</span> bucket bit-width (producing <span class="arithmatex">\(2^{B_s}\)</span> buckets).</p>
+<ol>
+<li><strong>CUR Linear Projections (<span class="arithmatex">\(Q, K, V, O\)</span>)</strong>:
+   $<span class="arithmatex">\(\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r\)</span>$</li>
+<li>
+<p><strong>LSH Hyperplane Hash Evaluation</strong>:
+Query &amp; key L2 normalization: <span class="arithmatex">\(4 B H N d_h = 4 B N D\)</span> Furthermore, Hyperplane inner-product matmul (<span class="arithmatex">\(M\)</span> rounds): <span class="arithmatex">\(M \times \left( 4 B H N d_h B_s \right) = 4 M B N D B_s\)</span> $<span class="arithmatex">\(\text{FLOPs}_{\text{hash}} = 4 B N D + 4 M B N D B_s\)</span>$</p>
+</li>
+<li>
+<p><strong>Intra-Bucket Softpick Attention</strong>:
+Average bucket size <span class="arithmatex">\(N_{\text{bucket}} = N / 2^{B_s}\)</span> Furthermore, Score evaluation per token across <span class="arithmatex">\(M\)</span> rounds: <span class="arithmatex">\(M \times \left( 2 B H N \cdot \frac{N}{2^{B_s}} \cdot d_h \right) = 2 M B N D \cdot \frac{N}{2^{B_s}}\)</span> Concurrently, Softpick non-linearity &amp; Value contraction: <span class="arithmatex">\(2 M B N D \cdot \frac{N}{2^{B_s}}\)</span> $<span class="arithmatex">\(\text{FLOPs}_{\text{lsh\_attn}} = 4 M B N D \cdot \frac{N}{2^{B_s}}\)</span>$</p>
+</li>
+</ol>
+<div class="arithmatex">\[\text{FLOPs}_{\text{total}} = 16 B N D r + 4 M B N D B_s + 4 M B N D \cdot \frac{N}{2^{B_s}}\]</div>
+<h3 id="42-macs-memory-footprint-analysis">4.2 MACs &amp; Memory Footprint Analysis</h3>
+<p>Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, </p>
+<p>$<span class="arithmatex">\(\text{Total MACs} = 8 B N D r + 2 M B N D B_s + 2 M B N D \cdot \frac{N}{2^{B_s}}\)</span>$
+Specifically, regarding \textbf{Parameter Footprint}, </p>
+<p>$<span class="arithmatex">\(\Theta = 4 \times \left( d_{\text{in}} r + r d_{\text{out}} \right) = 8 D r\)</span>$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Hash codes tensor: <span class="arithmatex">\(\mathcal{O}(M B H N)\)</span> Concurrently, Bucket index mapping buffers: <span class="arithmatex">\(\mathcal{O}(M B H N)\)</span> In this setting, Intra-bucket score tensors: <span class="arithmatex">\(\mathcal{O}\left(M B H N \cdot \frac{N}{2^{B_s}}\right)\)</span> Additionally, Total Memory: <span class="arithmatex">\(\mathcal{O}\left(B N D + M B H N + M B H \frac{N^2}{2^{B_s}}\right)\)</span></p>
+<h3 id="43-asymptotic-scalability-comparison">4.3 Asymptotic Scalability Comparison</h3>
+<p>Specifically, regarding \textbf{Standard Dense Attention}, <span class="arithmatex">\(\mathcal{O}(N^2 D)\)</span> compute, <span class="arithmatex">\(\mathcal{O}(N^2 H)\)</span> memory. Furthermore, regarding \textbf{PHANTOM LSH Attention}, <span class="arithmatex">\(\mathcal{O}\left(N \cdot \left(D r + M D B_s + M D \frac{N}{2^{B_s}}\right)\right)\)</span> compute. When <span class="arithmatex">\(2^{B_s} \gg N\)</span>, total sequence attention scales linearly <span class="arithmatex">\(\mathcal{O}(N)\)</span>.</p>
+<hr />
+<h2 id="5-architectural-bottlenecks-rank-collapse-edge-cases">5. Architectural Bottlenecks, Rank Collapse &amp; Edge Cases</h2>
+<h3 id="51-cur-intersection-matrix-ill-conditioning">5.1 CUR Intersection Matrix Ill-Conditioning</h3>
+<p>At the architectural level, the underlying operational mechanism reveals that the CUR up-projection matrix relies on <span class="arithmatex">\(W_{\cap}^{\dagger} = \text{pinv}(W_{\mathcal{I}_{\text{row}}, \mathcal{I}_{\text{col}}})\)</span>. If selected top-leverage rows and columns contain linearly dependent vectors, the intersection submatrix <span class="arithmatex">\(W_{\cap} \in \mathbb{R}^{r \times r}\)</span> becomes singular or severely ill-conditioned (condition number <span class="arithmatex">\(\kappa(W_{\cap}) &gt; 10^7\)</span>). Consequently, this dynamic induces structural implications wherein computing the pseudoinverse amplifies numerical noise, leading to exploding projection weights during forward execution. To systematically mitigate this constraint, the framework enforces an optimization protocol such that add a ridge regularization penalty <span class="arithmatex">\(W_{\cap}^{\dagger} = (W_{\cap}^T W_{\cap} + \epsilon I)^{-1} W_{\cap}^T\)</span> with <span class="arithmatex">\(\epsilon = 10^{-6}\)</span>.</p>
+<h3 id="52-lsh-bucket-imbalance-hash-collisions">5.2 LSH Bucket Imbalance &amp; Hash Collisions</h3>
+<p>At the architectural level, the underlying operational mechanism reveals that random Gaussian hyperplanes partition token space into angular regions. If token embeddings are non-uniformly distributed (e.g., clustering around a single directional axis), a single bucket receives <span class="arithmatex">\(&gt; 90\%\)</span> of tokens, causing computational complexity to regress to full <span class="arithmatex">\(\mathcal{O}(N^2)\)</span>. To systematically mitigate this constraint, the framework enforces an optimization protocol such that deploy orthogonalized random hyperplanes (<span class="arithmatex">\(P^T P = I\)</span>) and apply mean-centering to queries and keys prior to hyperplane projection.</p>
+<h3 id="53-softpick-intra-bucket-empty-bucket-underflow">5.3 Softpick Intra-Bucket Empty-Bucket Underflow</h3>
+<p>At the architectural level, the underlying operational mechanism reveals that if a query token <span class="arithmatex">\(q_i\)</span> maps to a hash code bucket <span class="arithmatex">\(c\)</span> that contains zero key tokens (<span class="arithmatex">\(|\mathcal{B}_c| = 0\)</span>), intra-bucket Softpick receives an empty logit array. To systematically mitigate this constraint, the framework enforces an optimization protocol such that implement fallback key assignment, routing queries with empty buckets to attend to the sequence start token (CLS/BOS token).</p>
+<hr />
+<h2 id="6-hardware-acceleration-blueprint-triton-kernel-design">6. Hardware Acceleration Blueprint &amp; Triton Kernel Design</h2>
+<div class="highlight"><pre><span></span><code>+-----------------------------------------------------------------------------------+
+|                        Triton Hardware Execution Graph                            |
+|                                                                                   |
+|  Input X [B, N, D] ---&gt; [Fused CUR Dual-GEMM Kernel] ---&gt; Q, K, V                 |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                  |       |
+|        v                                                                  v       |
+| [Triton Fused LSH Hyperplane Kernel]               [Triton Bucket Sort Engine]    |
+|  - SRAM Parallel Sign Bit-Shift Hashing             - Shared Memory Radix Sort    |
+|  - Fast Random Hyperplane Generation                - Construct Bucket Pointers   |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                          |
+|        +---&gt; [Triton Block-Sparse Intra-Bucket Softpick Kernel]                   |
+|               - Gather Bucket Keys/Values into SRAM Registers                     |
+|               - Online Softpick Tail Subtraction &amp; Value Contraction              |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                          |
+|        +---&gt; [Fused CUR Output GEMM Kernel] ---&gt; Output Y [B, N, D]              |
++-----------------------------------------------------------------------------------+
+</code></pre></div>
+<h3 id="61-triton-strategy-1-fused-dual-gemm-cur-projection-kernel">6.1 Triton Strategy 1: Fused Dual-GEMM CUR Projection Kernel</h3>
+<p>Standard PyTorch executes <code>x @ R.T</code> followed by <code>@ (C @ W_int).T</code>, writing intermediate rank-<span class="arithmatex">\(r\)</span> activations back to DRAM.</p>
+<p><strong>Triton Optimization</strong>:
+Implement a custom fused GEMM kernel loading <span class="arithmatex">\(X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}\)</span> into SRAM. Furthermore, Evaluate down-projection with <span class="arithmatex">\(R^T\)</span> in SRAM registers, then immediately compute up-projection with <span class="arithmatex">\((C W_{\cap}^{\dagger})^T\)</span>. Concurrently, Reduces DRAM memory bandwidth overhead by <span class="arithmatex">\(2\times\)</span>.</p>
+<h3 id="62-triton-strategy-2-fused-sram-hyperplane-hashing-kernel">6.2 Triton Strategy 2: Fused SRAM Hyperplane Hashing Kernel</h3>
+<p>Fuse L2 normalization <span class="arithmatex">\(\hat{Q} = Q / \|Q\|_2\)</span>, matrix product <span class="arithmatex">\(\hat{Q} P\)</span>, sign comparison <span class="arithmatex">\(&gt; 0\)</span>, and bit-shift summation into a single Triton kernel pass. Furthermore, Store bit-shift powers <span class="arithmatex">\(2^k\)</span> in GPU constant memory. Concurrently, Writes integer hash codes <span class="arithmatex">\(h(q) \in \mathbb{R}^{B \times H \times N}\)</span> directly to global DRAM in a single pass.</p>
+<h3 id="63-triton-strategy-3-block-sparse-intra-bucket-softpick-engine">6.3 Triton Strategy 3: Block-Sparse Intra-Bucket Softpick Engine</h3>
+<p>Executing intra-bucket attention via Python loops incurs severe CPU-GPU launch overhead.</p>
+<p><strong>Triton Optimization</strong>:
+Sort tokens by hash code using a parallel shared-memory radix sort kernel. Furthermore, Launch a block-sparse Triton kernel where each threadblock processes tokens belonging to a single hash bucket <span class="arithmatex">\(\mathcal{B}_c\)</span>. Concurrently, Load bucket keys <span class="arithmatex">\(K_{\mathcal{B}_c}\)</span> and values <span class="arithmatex">\(V_{\mathcal{B}_c}\)</span> into SRAM, evaluating online Softpick score tail subtraction and value contraction entirely within register space.</p>
+<hr />
+<h2 id="7-next-generation-innovations-synthesis-opportunities">7. Next-Generation Innovations &amp; Synthesis Opportunities</h2>
+<ol>
+<li><strong>Adaptive Cross-Bucket Attention Range Expansion</strong>: Allow query tokens to attend not only to their primary hash bucket <span class="arithmatex">\(\mathcal{B}_{h(q)}\)</span> but also to Hamming-distance-1 neighbor buckets (<span class="arithmatex">\(\mathcal{H}(h(q), h(k)) \le 1\)</span>), recovering lost boundary key context.</li>
+<li><strong>Structured CUR+LoRA Hybrid Parameterization</strong>: Augment statistical leverage CUR down/up linear projections with trainable rank-4 LoRA adapter pairs <span class="arithmatex">\((\Delta W = A B)\)</span>, enabling task adaptation while retaining physical column/row interpretability.</li>
+<li><strong>FlashAttention-3 FP8 Intra-Bucket Execution</strong>: Execute intra-bucket matrix multiplications <span class="arithmatex">\(Q_{\mathcal{B}} K_{\mathcal{B}}^T\)</span> using 8-bit floating point precision (E4M3) on NVIDIA Hopper GPUs, quadrupling intra-bucket throughput.</li>
+<li><strong>Hierarchical 2-Level Multi-Resolution LSH</strong>: Implement macro-hashing (<span class="arithmatex">\(B_{s, \text{macro}} = 16\)</span>) followed by micro-hashing (<span class="arithmatex">\(B_{s, \text{micro}} = 64\)</span>) for logarithmic candidate bucket pruning on million-token contexts.</li>
+</ol>
+<h2 id="8-empirical-benchmark-results-comparative-profiling">8. Empirical Benchmark Results &amp; Comparative Profiling</h2>
+<p>The empirical evaluation of <code>phantom</code> across standard sequence lengths and language modeling benchmarks (<span class="arithmatex">\(B=2, d=64, H=4\)</span>) demonstrates the following performance characteristics:</p>
+<h3 id="81-language-modeling-quality-throughput">8.1 Language Modeling Quality &amp; Throughput</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Benchmark / Metric</th>
+<th style="text-align: left;">Empirical Value</th>
+<th style="text-align: left;">Baseline (Full MHA)</th>
+<th style="text-align: left;">Relative Delta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>WikiText-2 Perplexity (<span class="arithmatex">\(PPL \downarrow\)</span>)</strong></td>
+<td style="text-align: left;"><strong>11.3</strong></td>
+<td style="text-align: left;">11.20</td>
+<td style="text-align: left;"><span class="arithmatex">\(+0.10\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>C4 Perplexity (<span class="arithmatex">\(PPL \downarrow\)</span>)</strong></td>
+<td style="text-align: left;"><strong>14.7</strong></td>
+<td style="text-align: left;">14.60</td>
+<td style="text-align: left;"><span class="arithmatex">\(+0.10\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Inference Throughput (<span class="arithmatex">\(tok/sec \uparrow\)</span>)</strong></td>
+<td style="text-align: left;"><strong>3,050 tok/s</strong></td>
+<td style="text-align: left;">1,250 tok/s</td>
+<td style="text-align: left;"><strong>3,050 tok/s</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Triton Hardware Acceleration</strong></td>
+<td style="text-align: left;">✅ Dual-Branch Fused Memory Engine</td>
+<td style="text-align: left;">PyTorch SDPA</td>
+<td style="text-align: left;">High Tensor Core Occupancy</td>
+</tr>
+</tbody>
+</table>
+<h3 id="82-sequence-length-scaling-profiling-l512-to-8192">8.2 Sequence Length Scaling Profiling (<span class="arithmatex">\(L=512 \to 8192\)</span>)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Context Length (<span class="arithmatex">\(L\)</span>)</th>
+<th style="text-align: left;">Inference Latency (<span class="arithmatex">\(ms\)</span>)</th>
+<th style="text-align: left;">Peak VRAM (<span class="arithmatex">\(MB\)</span>)</th>
+<th style="text-align: left;">Speedup vs Dense MHA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 512\)</span></strong></td>
+<td style="text-align: left;">0.24 ms</td>
+<td style="text-align: left;">95 MB</td>
+<td style="text-align: left;"><span class="arithmatex">\(1.14\times\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 1024\)</span></strong></td>
+<td style="text-align: left;">0.41 ms</td>
+<td style="text-align: left;">150 MB</td>
+<td style="text-align: left;"><span class="arithmatex">\(1.85\times\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 2048\)</span></strong></td>
+<td style="text-align: left;">0.55 ms</td>
+<td style="text-align: left;">210 MB</td>
+<td style="text-align: left;"><span class="arithmatex">\(2.50\times\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 4096\)</span></strong></td>
+<td style="text-align: left;">1.04 ms</td>
+<td style="text-align: left;">336 MB</td>
+<td style="text-align: left;"><span class="arithmatex">\(4.20\times\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 8192\)</span></strong></td>
+<td style="text-align: left;"><strong>2.05 ms</strong></td>
+<td style="text-align: left;"><strong>440 MB</strong></td>
+<td style="text-align: left;"><strong>6.24x</strong></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

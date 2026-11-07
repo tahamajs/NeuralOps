@@ -1,0 +1,29 @@
+{
+  "module_name": "mixattention_moska",
+  "class_name": "MixAttentionMoSKA",
+  "category": "attention",
+  "family": "Mixture-of-Experts (MoE) & Sparsely-Gated Attentions",
+  "params": [
+    "config",
+    "rank",
+    "fasa_keep_ratio",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "softmax",
+    "dropout",
+    "view",
+    "matmul",
+    "transpose"
+  ],
+  "docstring": "MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).\nPrunes key-value tokens based on variance importance while strictly protecting [CLS] (index 0).",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.516854074422948e+38,
+  "paradigm": "moe",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

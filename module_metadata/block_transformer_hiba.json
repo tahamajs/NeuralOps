@@ -1,0 +1,32 @@
+{
+  "module_name": "block_transformer_hiba",
+  "class_name": "BlockTransformerHIBA",
+  "category": "attention",
+  "family": "Block-Sparse, Dilated & Sliding-Window Attentions",
+  "params": [
+    "config",
+    "rank",
+    "block_size",
+    "top_k_inter",
+    "rectification_interval",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "view",
+    "softmax",
+    "dropout",
+    "matmul",
+    "cat",
+    "transpose"
+  ],
+  "docstring": "Block Transformer with Hierarchical Intra-Block and Inter-Block Attention (HIBA).  Production-hardened implementation supporting: 1. Robust Pretrained Weight Extraction across DistilBERT, RoBERTa/BERT nested encoders,    GPT-2 (fused Conv1D), and Qwen/LLaMA/Mistral. 2. Nested Encoder Detection to prevent double output projection signal attenuation ",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.8558470027081155e+38,
+  "paradigm": "sparse",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

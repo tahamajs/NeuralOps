@@ -1,0 +1,92 @@
+{
+  "module_name": "gla_scan_fp8_e5m2",
+  "category": "triton_kernel",
+  "family": "multi_precision_quantization",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:34:02.788599+00:00",
+  "latest_record": {
+    "record_id": "27c757ad5ee0595b",
+    "module_name": "gla_scan_fp8_e5m2",
+    "category": "triton_kernel",
+    "family": "multi_precision_quantization",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:34:02.788599+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "Multi-Precision Pareto Trade-off (FP8_E5M2)",
+      "source_artifact": "results/benchmark_multiprecision_pareto.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "dtype": "FP8_E5M2"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.311,
+      "throughput_tflops": 0.86,
+      "frob_rel_error": 0.090548,
+      "zero_nan": 1.0
+    },
+    "notes": "Multi-precision trade-off for gla_scan under FP8_E5M2"
+  },
+  "active_records": [
+    {
+      "record_id": "27c757ad5ee0595b",
+      "module_name": "gla_scan_fp8_e5m2",
+      "category": "triton_kernel",
+      "family": "multi_precision_quantization",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:34:02.788599+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Multi-Precision Pareto Trade-off (FP8_E5M2)",
+        "source_artifact": "results/benchmark_multiprecision_pareto.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "FP8_E5M2"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.311,
+        "throughput_tflops": 0.86,
+        "frob_rel_error": 0.090548,
+        "zero_nan": 1.0
+      },
+      "notes": "Multi-precision trade-off for gla_scan under FP8_E5M2"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "27c757ad5ee0595b",
+      "module_name": "gla_scan_fp8_e5m2",
+      "category": "triton_kernel",
+      "family": "multi_precision_quantization",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:34:02.788599+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Multi-Precision Pareto Trade-off (FP8_E5M2)",
+        "source_artifact": "results/benchmark_multiprecision_pareto.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "FP8_E5M2"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.311,
+        "throughput_tflops": 0.86,
+        "frob_rel_error": 0.090548,
+        "zero_nan": 1.0
+      },
+      "notes": "Multi-precision trade-off for gla_scan under FP8_E5M2"
+    }
+  ]
+}

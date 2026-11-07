@@ -1,0 +1,29 @@
+{
+  "module_name": "qcqa_attention",
+  "class_name": "QCQAAttention",
+  "category": "attention",
+  "family": "Multi-Head Latent & Key-Value Compressed Attentions",
+  "params": [
+    "config",
+    "num_kv_heads",
+    "router_temp"
+  ],
+  "ops": [
+    "view",
+    "softmax",
+    "reshape",
+    "transpose",
+    "dropout",
+    "matmul"
+  ],
+  "docstring": "Quality and Capacity-Aware Grouped Query Attention layer.\n\nArgs:\n    config: Model configuration specifying `hidden_size`, `num_attention_heads`, and `dropout`.\n    num_kv_heads: Number of compressed key-value heads ($H_{kv}$).\n    router_temp: Temperature scaling factor $\\tau$ for soft routing softmax.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.076385580642216e+38,
+  "paradigm": "mla",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

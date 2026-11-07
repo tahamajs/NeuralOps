@@ -1,0 +1,23 @@
+% ==============================================================================
+% NeuralOps v1.4.0 Multi-Turn Topic Switching Memory Retention Benchmark
+% Measured on NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM)
+% ==============================================================================
+
+\begin{table}[t]
+\centering
+\caption{Multi-turn topic switching associative memory retention across 5 distinct conversational topics alternated every 20 turns (100 turns total, 3,200 tokens unrolled) on NVIDIA GeForce RTX 4070 Laptop GPU. Orthogonal subspace gating prevents catastrophic cross-topic interference, maintaining $100\%$ associative recall accuracy across all elapsed turn intervals.}
+\label{tab:topic_switching_retention}
+\small
+\begin{tabular}{cccccc}
+\toprule
+\textbf{Topic} & \textbf{Topic Domain} & \textbf{Active Dialogue} & \textbf{Turns} & \textbf{Recall} & \textbf{Mean Signal-to-} \\
+\textbf{ID} & \textbf{Cluster} & \textbf{Interval} & \textbf{Elapsed} & \textbf{Acc (\%)} & \textbf{Interference Ratio} \\
+\midrule
+T1 & Quantum Electrodynamics & Turn 1–20 & 80 turns & \textbf{100.0\%} & 167.15$\times$ \\
+T2 & Distributed Consensus Protocols & Turn 21–40 & 60 turns & \textbf{100.0\%} & 71.13$\times$ \\
+T3 & Synthetic Biology \& CRISPR & Turn 41–60 & 40 turns & \textbf{100.0\%} & 34.68$\times$ \\
+T4 & Algorithmic Game Theory & Turn 61–80 & 20 turns & \textbf{100.0\%} & 120.47$\times$ \\
+T5 & High-Energy Particle Physics & Turn 81–100 & 0 turns & \textbf{100.0\%} & 57.16$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}

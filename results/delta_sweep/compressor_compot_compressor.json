@@ -1,0 +1,11 @@
+{
+  "module": "compot_compressor",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 5452.94,
+  "duration_sec": 161.1,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:37:28"
+}

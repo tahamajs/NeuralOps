@@ -1,0 +1,454 @@
+[
+  {
+    "method": "C",
+    "pre_ppl": 36.21,
+    "post_ppl": 33.17,
+    "ppl_ratio": 0.916,
+    "recovery_pct": NaN,
+    "peak_vram_mb": 2044.95,
+    "train_time_s": 487.64,
+    "s_per_step": 16.2547,
+    "loss_final": 1.946,
+    "cached": true,
+    "post_ppl_stage1": 37.68,
+    "post_ppl_stage2": 33.17,
+    "kd_gain": -1.47,
+    "self_gain": 4.51,
+    "total_gain": 3.04,
+    "aligned_with_teacher": false,
+    "beat_teacher_after_self": true,
+    "stage1_time_s": 485.72,
+    "stage2_time_s": 1.92,
+    "self_train_steps": 10,
+    "teacher_params": 124439808,
+    "student_params": 124439808,
+    "trainable_params": 28348416,
+    "batch_size": 4,
+    "seq_len": 256,
+    "learning_rate": 0.0003,
+    "recovery_steps": 20,
+    "train_scope": "module",
+    "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "eval_protocol": {
+      "max_tokens": 15000,
+      "stride": 128,
+      "seq_len": 256,
+      "precision": "fp16",
+      "dataset": "test"
+    },
+    "loss_history": [
+      [
+        0,
+        2.5953166484832764
+      ],
+      [
+        1,
+        2.7691450119018555
+      ],
+      [
+        2,
+        3.4888665676116943
+      ],
+      [
+        3,
+        1.9256031513214111
+      ],
+      [
+        4,
+        1.9614789485931396
+      ],
+      [
+        5,
+        1.9459900856018066
+      ],
+      [
+        6,
+        2.7936322689056396
+      ],
+      [
+        7,
+        2.3597378730773926
+      ],
+      [
+        8,
+        2.3739025592803955
+      ],
+      [
+        9,
+        3.472593307495117
+      ],
+      [
+        10,
+        3.1188600063323975
+      ],
+      [
+        11,
+        3.294604539871216
+      ],
+      [
+        12,
+        3.0741055011749268
+      ],
+      [
+        13,
+        3.3468785285949707
+      ],
+      [
+        14,
+        3.935861825942993
+      ],
+      [
+        15,
+        3.8976094722747803
+      ],
+      [
+        16,
+        4.289611339569092
+      ],
+      [
+        17,
+        5.043808937072754
+      ],
+      [
+        18,
+        5.086732387542725
+      ],
+      [
+        19,
+        5.574047088623047
+      ],
+      [
+        30,
+        3.991426467895508
+      ]
+    ],
+    "ppl_history": {
+      "20": 37.68,
+      "stage2_10": 33.17
+    },
+    "lr_history": [
+      [
+        0,
+        0.0
+      ],
+      [
+        1,
+        2.9999999999999997e-06
+      ],
+      [
+        2,
+        5.999999999999999e-06
+      ],
+      [
+        3,
+        8.999999999999999e-06
+      ],
+      [
+        4,
+        1.1999999999999999e-05
+      ],
+      [
+        5,
+        1.4999999999999999e-05
+      ],
+      [
+        6,
+        1.7999999999999997e-05
+      ],
+      [
+        7,
+        2.1e-05
+      ],
+      [
+        8,
+        2.3999999999999997e-05
+      ],
+      [
+        9,
+        2.6999999999999996e-05
+      ],
+      [
+        10,
+        2.9999999999999997e-05
+      ],
+      [
+        11,
+        3.2999999999999996e-05
+      ],
+      [
+        12,
+        3.5999999999999994e-05
+      ],
+      [
+        13,
+        3.9e-05
+      ],
+      [
+        14,
+        4.2e-05
+      ],
+      [
+        15,
+        4.4999999999999996e-05
+      ],
+      [
+        16,
+        4.7999999999999994e-05
+      ],
+      [
+        17,
+        5.1e-05
+      ],
+      [
+        18,
+        5.399999999999999e-05
+      ],
+      [
+        19,
+        5.6999999999999996e-05
+      ],
+      [
+        30,
+        0.00015
+      ]
+    ],
+    "generation": {
+      "distinct_2": 0.8878,
+      "repetition_3": 0.0365,
+      "samples": [
+        {
+          "prompt": "The quick brown fox",
+          "text": "es are not normally seen as big, but they are able to easily climb up trees and are able to pick up fruit (which will then fall on the trees in the process)\n\nThey are most often seen on high country mountainsides\n\n",
+          "first_50_tokens": [
+            274,
+            389,
+            407,
+            7685,
+            1775,
+            355,
+            1263,
+            11,
+            475,
+            484,
+            389,
+            1498,
+            284,
+            3538,
+            12080,
+            510,
+            7150,
+            290,
+            389,
+            1498,
+            284,
+            2298,
+            510,
+            8234,
+            357,
+            4758,
+            481,
+            788,
+            2121,
+            319,
+            262,
+            7150,
+            287,
+            262,
+            1429,
+            8,
+            198,
+            198,
+            2990,
+            389,
+            749,
+            1690,
+            1775,
+            319,
+            1029,
+            1499,
+            12269,
+            1460,
+            198,
+            198
+          ]
+        },
+        {
+          "prompt": "Once upon a time",
+          "text": ", he had had the audacity to ask the question. But when he did so, he lost himself in a sudden, inexplicable feeling that his own soul was drifting back to his own body.\n\nIt was only when he finally got back to",
+          "first_50_tokens": [
+            11,
+            339,
+            550,
+            550,
+            262,
+            2709,
+            4355,
+            284,
+            1265,
+            262,
+            1808,
+            13,
+            887,
+            618,
+            339,
+            750,
+            523,
+            11,
+            339,
+            2626,
+            2241,
+            287,
+            257,
+            4802,
+            11,
+            49602,
+            4203,
+            326,
+            465,
+            898,
+            5848,
+            373,
+            38193,
+            736,
+            284,
+            465,
+            898,
+            1767,
+            13,
+            198,
+            198,
+            1026,
+            373,
+            691,
+            618,
+            339,
+            3443,
+            1392,
+            736,
+            284
+          ]
+        },
+        {
+          "prompt": "In the beginning",
+          "text": " of the year, however, the two were separated. During the summer, however, the two became friends. On September 1, he flew to Seattle for a two-day vacation.\n\nAt the time, he was a member of the Seattle",
+          "first_50_tokens": [
+            286,
+            262,
+            614,
+            11,
+            2158,
+            11,
+            262,
+            734,
+            547,
+            11266,
+            13,
+            5856,
+            262,
+            3931,
+            11,
+            2158,
+            11,
+            262,
+            734,
+            2627,
+            2460,
+            13,
+            1550,
+            2693,
+            352,
+            11,
+            339,
+            13112,
+            284,
+            7312,
+            329,
+            257,
+            734,
+            12,
+            820,
+            14600,
+            13,
+            198,
+            198,
+            2953,
+            262,
+            640,
+            11,
+            339,
+            373,
+            257,
+            2888,
+            286,
+            262,
+            7312
+          ]
+        },
+        {
+          "prompt": "The future of AI is",
+          "text": " largely unknown. For the past five years, scientists have been studying how AI could replace humans as the most complex machine in the world. However, there are no conclusive evidence of how AI could replace human intelligence in the near future. While AI is currently",
+          "first_50_tokens": [
+            5688,
+            6439,
+            13,
+            1114,
+            262,
+            1613,
+            1936,
+            812,
+            11,
+            5519,
+            423,
+            587,
+            11065,
+            703,
+            9552,
+            714,
+            6330,
+            5384,
+            355,
+            262,
+            749,
+            3716,
+            4572,
+            287,
+            262,
+            995,
+            13,
+            2102,
+            11,
+            612,
+            389,
+            645,
+            39689,
+            2370,
+            286,
+            703,
+            9552,
+            714,
+            6330,
+            1692,
+            4430,
+            287,
+            262,
+            1474,
+            2003,
+            13,
+            2893,
+            9552,
+            318,
+            3058
+          ]
+        }
+      ]
+    },
+    "latency": {
+      "mean_latency_ms": 159.71,
+      "std_latency_ms": 0.39
+    },
+    "train_ppl": 34.57,
+    "test_ppl": 33.17,
+    "overfit_gap": -1.4,
+    "lambada_acc": null
+  }
+]

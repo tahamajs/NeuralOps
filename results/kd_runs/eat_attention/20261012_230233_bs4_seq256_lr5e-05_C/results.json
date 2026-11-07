@@ -1,0 +1,527 @@
+[
+  {
+    "method": "C",
+    "pre_ppl": 36.53,
+    "post_ppl": 36.51,
+    "ppl_ratio": 1.0083,
+    "recovery_pct": 6.25,
+    "peak_vram_mb": 3325.47,
+    "train_time_s": 11.2,
+    "s_per_step": 0.3733,
+    "loss_final": 2.3637,
+    "cached": true,
+    "post_ppl_stage1": 36.51,
+    "post_ppl_stage2": 36.51,
+    "kd_gain": 0.02,
+    "self_gain": 0.0,
+    "total_gain": 0.02,
+    "aligned_with_teacher": false,
+    "beat_teacher_after_self": false,
+    "stage1_time_s": 11.2,
+    "stage2_time_s": 0.0,
+    "self_train_steps": 0,
+    "teacher_params": 124439808,
+    "student_params": 125619456,
+    "trainable_params": 1179648,
+    "batch_size": 4,
+    "seq_len": 256,
+    "learning_rate": 5e-05,
+    "recovery_steps": 30,
+    "train_scope": "module",
+    "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "eval_protocol": {
+      "max_tokens": 15000,
+      "stride": 128,
+      "seq_len": 256,
+      "precision": "fp32",
+      "dataset": "test"
+    },
+    "loss_history": [
+      [
+        0,
+        1.8813228607177734
+      ],
+      [
+        1,
+        1.3772614002227783
+      ],
+      [
+        2,
+        1.5430232286453247
+      ],
+      [
+        3,
+        1.6228959560394287
+      ],
+      [
+        4,
+        1.692389726638794
+      ],
+      [
+        5,
+        2.363671064376831
+      ],
+      [
+        6,
+        1.7739791870117188
+      ],
+      [
+        7,
+        1.945542335510254
+      ],
+      [
+        8,
+        3.0066356658935547
+      ],
+      [
+        9,
+        2.206261396408081
+      ],
+      [
+        10,
+        2.7413737773895264
+      ],
+      [
+        11,
+        2.65507173538208
+      ],
+      [
+        12,
+        2.7871296405792236
+      ],
+      [
+        13,
+        2.9730470180511475
+      ],
+      [
+        14,
+        3.2893002033233643
+      ],
+      [
+        15,
+        3.7294745445251465
+      ],
+      [
+        16,
+        3.564939260482788
+      ],
+      [
+        17,
+        3.891026735305786
+      ],
+      [
+        18,
+        4.104144096374512
+      ],
+      [
+        19,
+        4.533082962036133
+      ],
+      [
+        20,
+        4.658786773681641
+      ],
+      [
+        21,
+        5.128498077392578
+      ],
+      [
+        22,
+        5.463300704956055
+      ],
+      [
+        23,
+        5.639474391937256
+      ],
+      [
+        24,
+        5.965086460113525
+      ],
+      [
+        25,
+        6.409060955047607
+      ],
+      [
+        26,
+        6.8853759765625
+      ],
+      [
+        27,
+        7.235779762268066
+      ],
+      [
+        28,
+        7.610246658325195
+      ],
+      [
+        29,
+        8.30218505859375
+      ]
+    ],
+    "ppl_history": {
+      "10": 36.54,
+      "20": 36.57,
+      "30": 36.51
+    },
+    "lr_history": [
+      [
+        0,
+        0.0
+      ],
+      [
+        1,
+        5.000000000000001e-07
+      ],
+      [
+        2,
+        1.0000000000000002e-06
+      ],
+      [
+        3,
+        1.5e-06
+      ],
+      [
+        4,
+        2.0000000000000003e-06
+      ],
+      [
+        5,
+        2.5e-06
+      ],
+      [
+        6,
+        3e-06
+      ],
+      [
+        7,
+        3.5000000000000004e-06
+      ],
+      [
+        8,
+        4.000000000000001e-06
+      ],
+      [
+        9,
+        4.5e-06
+      ],
+      [
+        10,
+        5e-06
+      ],
+      [
+        11,
+        5.500000000000001e-06
+      ],
+      [
+        12,
+        6e-06
+      ],
+      [
+        13,
+        6.5000000000000004e-06
+      ],
+      [
+        14,
+        7.000000000000001e-06
+      ],
+      [
+        15,
+        7.5e-06
+      ],
+      [
+        16,
+        8.000000000000001e-06
+      ],
+      [
+        17,
+        8.500000000000002e-06
+      ],
+      [
+        18,
+        9e-06
+      ],
+      [
+        19,
+        9.5e-06
+      ],
+      [
+        20,
+        1e-05
+      ],
+      [
+        21,
+        1.05e-05
+      ],
+      [
+        22,
+        1.1000000000000001e-05
+      ],
+      [
+        23,
+        1.1500000000000002e-05
+      ],
+      [
+        24,
+        1.2e-05
+      ],
+      [
+        25,
+        1.25e-05
+      ],
+      [
+        26,
+        1.3000000000000001e-05
+      ],
+      [
+        27,
+        1.3500000000000001e-05
+      ],
+      [
+        28,
+        1.4000000000000001e-05
+      ],
+      [
+        29,
+        1.45e-05
+      ]
+    ],
+    "generation": {
+      "distinct_2": 0.9286,
+      "repetition_3": 0.0208,
+      "samples": [
+        {
+          "prompt": "The quick brown fox",
+          "text": "es you see today are those that are highly territorial and attack in an effort to capture prey, even if the foxes are not actively hunting. They eat a few plants (like garlic) in order to help them survive and defend themselves.\n\n",
+          "first_50_tokens": [
+            274,
+            345,
+            766,
+            1909,
+            389,
+            883,
+            326,
+            389,
+            4047,
+            22414,
+            290,
+            1368,
+            287,
+            281,
+            3626,
+            284,
+            8006,
+            15974,
+            11,
+            772,
+            611,
+            262,
+            21831,
+            274,
+            389,
+            407,
+            10630,
+            10988,
+            13,
+            1119,
+            4483,
+            257,
+            1178,
+            6134,
+            357,
+            2339,
+            17644,
+            8,
+            287,
+            1502,
+            284,
+            1037,
+            606,
+            7866,
+            290,
+            4404,
+            2405,
+            13,
+            198,
+            198
+          ]
+        },
+        {
+          "prompt": "Once upon a time",
+          "text": ", he had had enough of his personal troubles. He felt that when he returned to his family, they would all be the wiser. He would have the same hope. He was right.\n\nSo he left his wife, sister, and all",
+          "first_50_tokens": [
+            11,
+            339,
+            550,
+            550,
+            1576,
+            286,
+            465,
+            2614,
+            14979,
+            13,
+            679,
+            2936,
+            326,
+            618,
+            339,
+            4504,
+            284,
+            465,
+            1641,
+            11,
+            484,
+            561,
+            477,
+            307,
+            262,
+            47897,
+            13,
+            679,
+            561,
+            423,
+            262,
+            976,
+            2911,
+            13,
+            679,
+            373,
+            826,
+            13,
+            198,
+            198,
+            2396,
+            339,
+            1364,
+            465,
+            3656,
+            11,
+            6621,
+            11,
+            290,
+            477
+          ]
+        },
+        {
+          "prompt": "In the beginning",
+          "text": ", the government needed to build infrastructure, and that was done by building hospitals and schools, and not by building schools and hospitals. It didn't have a plan for the infrastructure. It lacked a plan for the public.\n\nThe government's plans",
+          "first_50_tokens": [
+            11,
+            262,
+            1230,
+            2622,
+            284,
+            1382,
+            6884,
+            11,
+            290,
+            326,
+            373,
+            1760,
+            416,
+            2615,
+            11301,
+            290,
+            4266,
+            11,
+            290,
+            407,
+            416,
+            2615,
+            4266,
+            290,
+            11301,
+            13,
+            632,
+            1422,
+            470,
+            423,
+            257,
+            1410,
+            329,
+            262,
+            6884,
+            13,
+            632,
+            19989,
+            257,
+            1410,
+            329,
+            262,
+            1171,
+            13,
+            198,
+            198,
+            464,
+            1230,
+            338,
+            3352
+          ]
+        },
+        {
+          "prompt": "The future of AI is",
+          "text": " largely unknown. For the past decade, the company has struggled to convince consumers that it is viable for them. The company's first major product was a touchscreen computer, which allowed users to choose between different visual effects on the screen. And it was known",
+          "first_50_tokens": [
+            5688,
+            6439,
+            13,
+            1114,
+            262,
+            1613,
+            5707,
+            11,
+            262,
+            1664,
+            468,
+            11615,
+            284,
+            11508,
+            7008,
+            326,
+            340,
+            318,
+            13971,
+            329,
+            606,
+            13,
+            383,
+            1664,
+            338,
+            717,
+            1688,
+            1720,
+            373,
+            257,
+            39965,
+            3644,
+            11,
+            543,
+            3142,
+            2985,
+            284,
+            3853,
+            1022,
+            1180,
+            5874,
+            3048,
+            319,
+            262,
+            3159,
+            13,
+            843,
+            340,
+            373,
+            1900
+          ]
+        }
+      ]
+    },
+    "latency": {
+      "mean_latency_ms": 465.7,
+      "std_latency_ms": 1.2
+    },
+    "train_ppl": 37.2,
+    "test_ppl": 36.51,
+    "overfit_gap": -0.69,
+    "lambada_acc": null
+  }
+]

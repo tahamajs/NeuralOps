@@ -1,0 +1,25 @@
+{
+  "module_name": "hybrid_attention",
+  "class_name": "HybridAttention",
+  "category": "attention",
+  "family": "Hybrid Linear-Recurrent & Attention-SSM Architectures",
+  "paradigm": "hybrid",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Hybrid softmax + linear attention with per-head gated fusion.  Valid attention REPLACEMENT (not a compressor). Adds a small number of parameters (the gate) but reduces attention computation at long sequence lengths by routing some heads to linear attention.  NOVELTY STATEMENT:     Hybrid softmax + linear attention is NOT novel by itself     (cf. ME",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

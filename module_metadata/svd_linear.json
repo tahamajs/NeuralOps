@@ -1,0 +1,27 @@
+{
+  "module_name": "svd_linear",
+  "class_name": "SVDLinearCompressor",
+  "category": "compression",
+  "family": "Activation-Aware & Standard Low-Rank SVD Factorization",
+  "params": [
+    "linear_layer",
+    "rank",
+    "use_fused_kernel",
+    "use_rms_norm",
+    "eps",
+    "model"
+  ],
+  "ops": [
+    "matmul"
+  ],
+  "docstring": "Compresses model by replacing Linear layers with SVDLinearLayer.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.3359258538381212e+38,
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

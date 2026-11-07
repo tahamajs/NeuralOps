@@ -1,0 +1,4462 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/reports/benchmarks/CLI_AUDIT_AND_UX_REMEDIATION_PLAN/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>NeuralOps CLI: Complete Audit, Cleanup, and User-Experience Remediation Plan - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#neuralops-cli-complete-audit-cleanup-and-user-experience-remediation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              NeuralOps CLI: Complete Audit, Cleanup, and User-Experience Remediation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-current-cli-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Current CLI surface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-main-ux-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Main UX problems
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Main UX problems">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-the-command-surface-is-too-flat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 The command surface is too flat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-run-has-too-many-unrelated-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 run has too many unrelated flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-configuration-behavior-is-not-obvious" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Configuration behavior is not obvious
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-device-names-are-inconsistent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Device names are inconsistent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-output-policy-is-inconsistent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5 Output policy is inconsistent
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#26-error-messages-are-not-consistently-actionable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.6 Error messages are not consistently actionable
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-command-by-command-remediation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Command-by-command remediation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Command-by-command remediation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-neuralops-benchmark-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 neuralops benchmark run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-neuralops-benchmark-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 neuralops benchmark plan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-neuralops-benchmark-resume" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 neuralops benchmark resume
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-neuralops-module-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 neuralops module list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-neuralops-module-inspect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 neuralops module inspect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-neuralops-module-validate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 neuralops module validate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-neuralops-system-verify-and-doctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 neuralops system verify and doctor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#38-neuralops-compress" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.8 neuralops compress
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#39-neuralops-transplant-and-calibrate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.9 neuralops transplant and calibrate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#310-neuralops-generate-and-serve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.10 neuralops generate and serve
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#311-neuralops-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.11 neuralops results
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#312-neuralops-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.12 neuralops export
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-parser-design-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Parser design rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Parser design rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-common-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Common options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-strong-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Strong validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-configuration-precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Configuration precedence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-output-streams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Output streams
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-exit-code-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Exit-code contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-error-and-logging-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Error and logging contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-gpu-and-backend-ux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. GPU and backend UX
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-completion-and-progress-ux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Completion and progress UX
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-completion-suggestions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Completion suggestions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-recommended-implementation-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Recommended implementation order
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Recommended implementation order">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-parser-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: parser foundation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-benchmark-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: benchmark command
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-results-and-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: results and errors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-module-and-system-ux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: module and system UX
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-migration-and-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: migration and cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-required-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Required tests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. Required tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parser-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parser tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UX tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-acceptance-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Acceptance commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-definition-of-done" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Definition of done
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-concrete-implementation-blueprint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Concrete implementation blueprint
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="14. Concrete implementation blueprint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#141-proposed-package-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.1 Proposed package layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#142-typed-exit-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.2 Typed exit codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#143-configuration-merge-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.3 Configuration merge implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#144-device-normalization-and-preflight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.4 Device normalization and preflight
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#145-shared-parser-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.5 Shared parser construction
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#146-command-dispatch-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.6 Command dispatch table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#147-run-directory-and-locking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.7 Run directory and locking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#148-atomic-result-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.8 Atomic result writes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#149-result-status-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.9 Result status model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1410-numerical-parity-helper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.10 Numerical parity helper
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1411-backward-validation-helper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.11 Backward validation helper
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1412-standard-command-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.12 Standard command output
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1413-shell-completion-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14.13 Shell completion generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-exact-migration-table-to-create" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Exact migration table to create
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-detailed-test-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. Detailed test matrix
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-recommended-user-workflows-after-remediation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17. Recommended user workflows after remediation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="17. Recommended user workflows after remediation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inspect-the-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inspect the environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#preview-a-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Preview a benchmark
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-a-quick-correctness-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run a quick correctness benchmark
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-an-exhaustive-suite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run an exhaustive suite
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compare-two-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare two runs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18-final-implementation-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18. Final implementation checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="neuralops-cli-complete-audit-cleanup-and-user-experience-remediation-plan">NeuralOps CLI: Complete Audit, Cleanup, and User-Experience Remediation Plan</h1>
+<h2 id="executive-summary">Executive summary</h2>
+<p>The NeuralOps CLI is powerful but currently behaves like several products
+merged into one parser. The top-level command exposes benchmark execution,
+model surgery, compression, generation, serving, diagnostics, export, TUI,
+roofline analysis, result management, and training commands. That breadth is
+useful, but it also creates a high risk of confusing defaults, inconsistent
+configuration, partial output, and commands that appear successful while using
+another execution path.</p>
+<p>This document defines how to make the CLI predictable, discoverable, safe for
+GPU work, and pleasant for both interactive users and CI. It is an audit and an
+implementation plan; the CLI should not be declared complete until the gates at
+the end have evidence.</p>
+<h2 id="1-current-cli-surface">1. Current CLI surface</h2>
+<p>The primary implementation is <code>neuralops/benchmarks/cli.py</code>, entered through:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>neuralops
+python<span class="w"> </span>-m<span class="w"> </span>neuralops.benchmarks
+neuralops
+neuralops-cli
+nops
+</code></pre></div>
+<p>The parser currently exposes a very broad command set, including:</p>
+<div class="highlight"><pre><span></span><code>run / benchmark
+resume
+plan
+list
+verify
+doctor
+info
+search
+compress
+generate
+niah
+benchmark-fused
+transplant / surgery
+compose
+roofline
+recommend
+calibrate
+inspect
+ui
+validate
+scaffold
+results
+ledger
+train
+eval / evaluate
+serve
+monitor
+distill
+export
+test
+recipe
+evidence
+ops
+compat
+</code></pre></div>
+<p>The first cleanup task is not to remove commands. It is to make every command
+belong to a documented command family and give it the same conventions for
+help, configuration, errors, output, dry runs, and exit codes.</p>
+<h2 id="2-main-ux-problems">2. Main UX problems</h2>
+<h3 id="21-the-command-surface-is-too-flat">2.1 The command surface is too flat</h3>
+<p><code>run</code>, <code>compress</code>, <code>generate</code>, <code>export</code>, <code>serve</code>, <code>test</code>, and <code>results</code> are
+different products but are exposed next to each other without a clear family
+structure. A new user cannot easily infer which commands are safe read-only
+operations and which commands allocate GPUs, download models, write files, or
+modify checkpoints.</p>
+<p>Recommended grouping in documentation and help:</p>
+<div class="highlight"><pre><span></span><code>neuralops benchmark ...    # benchmark execution and planning
+neuralops module ...       # list, inspect, validate, scaffold
+neuralops model ...        # compress, transplant, calibrate, export
+neuralops run ...          # generation, serving, training workloads
+neuralops system ...       # doctor, info, verify, compat
+neuralops results ...      # summarize, compare, ledger, evidence
+</code></pre></div>
+<p>Backward-compatible aliases can remain, but the help output should promote the
+grouped form.</p>
+<h3 id="22-run-has-too-many-unrelated-flags">2.2 <code>run</code> has too many unrelated flags</h3>
+<p>The benchmark parser combines module selection, model and dataset grids,
+training, compression, calibration, distributed execution, tracking, Hugging
+Face credentials, output policy, comparison backends, and recipe parsing.</p>
+<p>This creates several failure modes:</p>
+<ul>
+<li>invalid combinations are accepted and fail late;</li>
+<li>a flag is parsed but ignored by a downstream runner;</li>
+<li>two flags express the same concept with different names;</li>
+<li><code>--parallel</code> and <code>--parallel-workers</code> can disagree;</li>
+<li><code>--dtype</code>, <code>--mixed-precision</code>, and config <code>precision</code> can disagree;</li>
+<li><code>--output</code> and <code>--output-dir</code> can produce different artifact locations;</li>
+<li>a command intended as a benchmark can unexpectedly fine-tune a model.</li>
+</ul>
+<p>The parser should be split into common options and command-family options.
+Each command should reject unsupported combinations before importing a model or
+allocating a GPU.</p>
+<h3 id="23-configuration-behavior-is-not-obvious">2.3 Configuration behavior is not obvious</h3>
+<p>The CLI declares <code>--config</code> as a YAML configuration path in its help text, while
+the canonical configuration now supports JSON and YAML depending on optional
+dependencies. Users need a single, explicit policy:</p>
+<ul>
+<li>JSON works with the base installation;</li>
+<li>YAML requires PyYAML and must give an actionable error if absent;</li>
+<li>CLI flags override config values only when explicitly supplied;</li>
+<li>the effective merged configuration is printed or saved before execution;</li>
+<li>unknown configuration keys fail with a useful key list;</li>
+<li>environment-variable expansion is explicit and safe.</li>
+</ul>
+<p>The current argparse defaults make it difficult to distinguish “not supplied”
+from “supplied with the default”. Use <code>None</code> as the parser default for fields
+that need config precedence, then apply defaults during merge.</p>
+<h3 id="24-device-names-are-inconsistent">2.4 Device names are inconsistent</h3>
+<p>Some commands use <code>cuda</code>, some use <code>cuda:0</code>, some accept <code>mps</code>, and some pass
+the string directly into <code>torch.device</code>. The CLI must normalize:</p>
+<div class="highlight"><pre><span></span><code>cpu       -&gt; cpu
+cuda      -&gt; cuda:0 or the explicitly selected CUDA index
+cuda:1    -&gt; cuda:1
+mps       -&gt; mps
+auto      -&gt; selected device recorded in metadata
+</code></pre></div>
+<p><code>auto</code> must never silently choose CPU when the user explicitly requested CUDA.
+For <code>--device cuda</code>, unavailable CUDA is a hard error. For <code>--device auto</code>, the
+fallback policy may choose CPU, but it must be printed and recorded.</p>
+<h3 id="25-output-policy-is-inconsistent">2.5 Output policy is inconsistent</h3>
+<p>Some commands use <code>--output</code>, some <code>--output-json</code>, some <code>--output-dir</code>, and
+some write fixed files under <code>results/</code>. This makes parallel execution unsafe.</p>
+<p>All commands should support:</p>
+<div class="highlight"><pre><span></span><code>--output-dir PATH
+--run-id ID
+--overwrite / --no-overwrite
+--format jsonl,csv,markdown
+--quiet
+--json
+</code></pre></div>
+<p>The default should be a unique run directory, not a shared “latest” file.
+Every output must contain <code>config.json</code>, <code>environment.json</code>, and a manifest.</p>
+<h3 id="26-error-messages-are-not-consistently-actionable">2.6 Error messages are not consistently actionable</h3>
+<p>The CLI has rich error formatting and <code>diagnose_error</code>, but not every command
+routes exceptions through the same handler. A good error must say:</p>
+<ol>
+<li>what failed;</li>
+<li>which command and module were active;</li>
+<li>whether an artifact is partial;</li>
+<li>how to reproduce with <code>--verbose</code>;</li>
+<li>the safest next command.</li>
+</ol>
+<p>Tracebacks should be hidden by default for user errors and shown with
+<code>--debug</code> or <code>--traceback</code>.</p>
+<h2 id="3-command-by-command-remediation">3. Command-by-command remediation</h2>
+<h3 id="31-neuralops-benchmark-run">3.1 <code>neuralops benchmark run</code></h3>
+<p>Make this the canonical benchmark command. Keep <code>neuralops run</code> as a backward
+compatible alias only if its behavior is identical.</p>
+<p>Recommended interface:</p>
+<div class="highlight"><pre><span></span><code>neuralops<span class="w"> </span>benchmark<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config<span class="w"> </span>benchmarks/configs/quick_cuda.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--category<span class="w"> </span>attention<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--device<span class="w"> </span>cuda:0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output-dir<span class="w"> </span>results/attention_quick
+</code></pre></div>
+<p>Required behavior:</p>
+<ul>
+<li>validate config before importing optional model dependencies;</li>
+<li>show an execution plan with module count, shapes, dtype, device, and output;</li>
+<li>require <code>--yes</code> for a large or destructive run in non-interactive mode;</li>
+<li>fail closed on explicit CUDA requests;</li>
+<li>isolate every module result;</li>
+<li>record failures rather than relabelling them as passes;</li>
+<li>return non-zero if any required module fails;</li>
+<li>provide <code>--continue-on-error</code> only when failures remain visible and the final
+  exit code still reflects them.</li>
+</ul>
+<h3 id="32-neuralops-benchmark-plan">3.2 <code>neuralops benchmark plan</code></h3>
+<p><code>plan</code> should be side-effect free. It must not load datasets, compile kernels,
+write result rows, or allocate large tensors.</p>
+<p>It should print:</p>
+<ul>
+<li>effective config;</li>
+<li>selected modules and their source locations;</li>
+<li>expected number of cases;</li>
+<li>estimated memory and duration when known;</li>
+<li>unavailable backends;</li>
+<li>exact command that will execute the plan.</li>
+</ul>
+<p>With <code>--json</code>, it should emit a machine-readable plan and nothing else on
+stdout.</p>
+<h3 id="33-neuralops-benchmark-resume">3.3 <code>neuralops benchmark resume</code></h3>
+<p>Resume must validate that the original run was created by the same code and
+config. It must refuse to resume when:</p>
+<ul>
+<li>the config hash changed without <code>--force</code>;</li>
+<li>the output directory belongs to another run;</li>
+<li>a result row is malformed;</li>
+<li>the run is already complete;</li>
+<li>two workers claim the same module.</li>
+</ul>
+<p>Use a lock file and atomic result writes. A resume summary must identify skipped,
+reused, rerun, and failed cases.</p>
+<h3 id="34-neuralops-module-list">3.4 <code>neuralops module list</code></h3>
+<p>This command should be the main discovery tool. It needs consistent filters:</p>
+<div class="highlight"><pre><span></span><code>neuralops<span class="w"> </span>module<span class="w"> </span>list<span class="w"> </span>--kind<span class="w"> </span>attention<span class="w"> </span>--backend<span class="w"> </span>cuda<span class="w"> </span>--supports<span class="w"> </span>causal
+neuralops<span class="w"> </span>module<span class="w"> </span>list<span class="w"> </span>--kind<span class="w"> </span>compressor<span class="w"> </span>--json
+</code></pre></div>
+<p>The output should include canonical key, aliases, implementation path, family,
+backend support, causal support, dtype support, and known status. Aliases must
+not inflate canonical counts.</p>
+<h3 id="35-neuralops-module-inspect">3.5 <code>neuralops module inspect</code></h3>
+<p>Inspect must be read-only and must not compile a kernel by default. Add:</p>
+<div class="highlight"><pre><span></span><code>--source
+--schema
+--json
+--check-import
+--check-backends
+</code></pre></div>
+<p>Any live check must be clearly labelled and must return a non-zero status when
+the requested backend cannot load.</p>
+<h3 id="36-neuralops-module-validate">3.6 <code>neuralops module validate</code></h3>
+<p>Validation should expose named gates rather than a single opaque “6-point”
+operation:</p>
+<div class="highlight"><pre><span></span><code>--gate forward
+--gate backward
+--gate finite
+--gate causal
+--gate parity
+--gate dispatch
+--all-gates
+</code></pre></div>
+<p>The report must distinguish <code>PASS</code>, <code>FAIL</code>, <code>SKIP_UNSUPPORTED</code>, and
+<code>ERROR_INFRASTRUCTURE</code>. A skipped backend must never be rendered as passed.</p>
+<h3 id="37-neuralops-system-verify-and-doctor">3.7 <code>neuralops system verify</code> and <code>doctor</code></h3>
+<p>These commands should be clearly different:</p>
+<ul>
+<li><code>verify</code>: fast, read-only hardware and dependency checks;</li>
+<li><code>doctor</code>: deep diagnostics, registry scans, import checks, and optional
+  compilation probes.</li>
+</ul>
+<p>Both should support <code>--json</code>, and <code>verify --device cuda</code> must fail if CUDA is
+not available. They should print the exact Python executable and Torch/CUDA
+versions.</p>
+<h3 id="38-neuralops-compress">3.8 <code>neuralops compress</code></h3>
+<p>Compression is a mutating operation. It needs:</p>
+<ul>
+<li>explicit <code>--output-dir</code> required in non-interactive mode;</li>
+<li>refusal to overwrite unless <code>--overwrite</code> is supplied;</li>
+<li>compressor capability validation before model loading;</li>
+<li>a manifest containing original and compressed parameter counts;</li>
+<li>a reconstruction/parity gate;</li>
+<li>exact error reporting when the named compressor fails;</li>
+<li>no substitute compressor or generic SVD under the requested name.</li>
+</ul>
+<h3 id="39-neuralops-transplant-and-calibrate">3.9 <code>neuralops transplant</code> and <code>calibrate</code></h3>
+<p>These commands should share a checkpoint manifest contract. The manifest must
+include source model, target attention, rank, calibration data identity, seed,
+software versions, and output files. Partial checkpoints must be written to a
+temporary directory and atomically renamed only after validation.</p>
+<h3 id="310-neuralops-generate-and-serve">3.10 <code>neuralops generate</code> and <code>serve</code></h3>
+<p>Generation and serving need a clear distinction between a functional smoke
+test and a performance benchmark. Add explicit modes:</p>
+<div class="highlight"><pre><span></span><code>--mode smoke
+--mode benchmark
+</code></pre></div>
+<p>Benchmark mode must warm up, synchronize CUDA, measure TTFT/ITL separately,
+record token counts, and fail on non-finite output. It must not report a
+throughput number when the engine was unavailable.</p>
+<h3 id="311-neuralops-results">3.11 <code>neuralops results</code></h3>
+<p>Results should become a command group with predictable subcommands:</p>
+<div class="highlight"><pre><span></span><code>neuralops results inspect PATH
+neuralops results summarize PATH
+neuralops results compare BASELINE CANDIDATE --metric p95_ms
+neuralops results validate PATH
+neuralops results export PATH --format csv
+neuralops results ledger PATH
+</code></pre></div>
+<p>Validation must reject missing metrics, malformed statuses, duplicate run IDs,
+and records claiming GPU execution without GPU metadata.</p>
+<h3 id="312-neuralops-export">3.12 <code>neuralops export</code></h3>
+<p>Export must be fail-closed for every format. Never create an artifact with a
+valid-looking extension when conversion failed. The command should validate the
+resulting file before reporting success.</p>
+<h2 id="4-parser-design-rules">4. Parser design rules</h2>
+<h3 id="41-common-options">4.1 Common options</h3>
+<p>Create one reusable parent parser for:</p>
+<div class="highlight"><pre><span></span><code>--config
+--device
+--seed
+--output-dir
+--run-id
+--json
+--quiet
+--verbose
+--debug
+--dry-run
+--overwrite
+</code></pre></div>
+<p>Do not redeclare these independently in every subparser.</p>
+<h3 id="42-strong-validation">4.2 Strong validation</h3>
+<p>Validate at parse time where possible:</p>
+<ul>
+<li>positive batch size, rank, sequence length, warmup, and iterations;</li>
+<li><code>0 &lt;= tolerance</code>;</li>
+<li>valid comma-separated integer lists;</li>
+<li>no duplicate modules after alias expansion;</li>
+<li><code>--parallel-workers &gt;= 1</code>;</li>
+<li>incompatible device/backend combinations rejected early;</li>
+<li>output path is writable before expensive work begins.</li>
+</ul>
+<h3 id="43-configuration-precedence">4.3 Configuration precedence</h3>
+<p>Document and implement this exact order:</p>
+<div class="highlight"><pre><span></span><code>built-in defaults
+    &lt; config file
+    &lt; environment variables
+    &lt; explicit CLI flags
+</code></pre></div>
+<p>The effective config must be printed in verbose mode and always saved in the
+run directory. Explicit CLI flags need a sentinel default so they can override
+config values without accidentally overriding them with argparse defaults.</p>
+<h3 id="44-output-streams">4.4 Output streams</h3>
+<p>Use stdout for results and concise progress, stderr for diagnostics and logs.
+With <code>--json</code>, stdout must contain valid JSON only. This is essential for shell
+pipelines and CI.</p>
+<h2 id="5-exit-code-contract">5. Exit-code contract</h2>
+<p>Define constants and document them:</p>
+<div class="highlight"><pre><span></span><code>0  success
+1  benchmark or validation failure
+2  CLI usage/configuration error
+3  requested backend unavailable
+4  numerical parity failure
+5  partial run with recorded failures
+6  output/schema error
+70 unexpected internal error
+</code></pre></div>
+<p>Do not use <code>0</code> for a run in which the requested GPU backend was unavailable.</p>
+<h2 id="6-error-and-logging-contract">6. Error and logging contract</h2>
+<p>Every command should include a stable error code, for example:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"error_code"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CUDA_UNAVAILABLE"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"benchmark run"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CUDA was requested but is unavailable"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"hint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Run `neuralops system verify --device cuda`"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"run_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Logging levels:</p>
+<ul>
+<li><code>ERROR</code>: command cannot produce the requested result;</li>
+<li><code>WARNING</code>: optional artifact unavailable or an explicit fallback occurred;</li>
+<li><code>INFO</code>: selected device, config, progress, and output paths;</li>
+<li><code>DEBUG</code>: backend attempts, compiler commands, and tracebacks.</li>
+</ul>
+<p>Warnings must state the fallback level and reason. No <code>except: pass</code> is allowed
+in result-producing code.</p>
+<h2 id="7-gpu-and-backend-ux">7. GPU and backend UX</h2>
+<p>Before a GPU benchmark starts, print and record:</p>
+<div class="highlight"><pre><span></span><code>Python executable
+Torch version
+Torch CUDA version
+CUDA availability
+GPU name and index
+driver/runtime information when available
+dtype and tensor shapes
+</code></pre></div>
+<p>For the three-level dispatch hierarchy, each attempt must be visible:</p>
+<div class="highlight"><pre><span></span><code>CUDA extension failed: &lt;error&gt;; trying Triton
+Triton failed: &lt;error&gt;; trying PyTorch reference
+</code></pre></div>
+<p>The final result must identify the backend that actually executed. A PyTorch
+fallback must not be labelled CUDA or Triton.</p>
+<h2 id="8-completion-and-progress-ux">8. Completion and progress UX</h2>
+<p>Interactive mode should show progress bars or concise progress lines. CI mode
+should use plain text with stable prefixes:</p>
+<div class="highlight"><pre><span></span><code>NEURALOPS_RUN_START
+NEURALOPS_MODULE_START name=...
+NEURALOPS_MODULE_RESULT name=... status=success
+NEURALOPS_RUN_SUMMARY passed=... failed=... skipped=...
+</code></pre></div>
+<p>Add <code>--no-progress</code> for log collectors and automatically disable rich output
+when stdout is not a TTY.</p>
+<h2 id="9-completion-suggestions">9. Completion suggestions</h2>
+<p>Shell completions should derive from the parser or a single command catalog,
+not maintain a manually duplicated command list. They should complete:</p>
+<ul>
+<li>command names;</li>
+<li>categories and backends;</li>
+<li>config files;</li>
+<li>registered modules;</li>
+<li>supported output formats;</li>
+<li>device names visible on the host.</li>
+</ul>
+<p>The current completion generator should not advertise commands that are not
+actually registered in the parser.</p>
+<h2 id="10-recommended-implementation-order">10. Recommended implementation order</h2>
+<h3 id="phase-1-parser-foundation">Phase 1: parser foundation</h3>
+<ol>
+<li>Create common parent parsers.</li>
+<li>Normalize device, dtype, list, and path parsing.</li>
+<li>Add explicit exit-code constants.</li>
+<li>Add config precedence and effective-config serialization.</li>
+<li>Add <code>--json</code>, <code>--quiet</code>, <code>--verbose</code>, <code>--debug</code>, and <code>--dry-run</code> behavior.</li>
+</ol>
+<h3 id="phase-2-benchmark-command">Phase 2: benchmark command</h3>
+<ol>
+<li>Make <code>neuralops benchmark run</code> canonical.</li>
+<li>Move all standard benchmark dispatch into one suite runner.</li>
+<li>Keep root scripts as thin wrappers.</li>
+<li>Validate device/backend before execution.</li>
+<li>Add unique run directories and run locks.</li>
+</ol>
+<h3 id="phase-3-results-and-errors">Phase 3: results and errors</h3>
+<ol>
+<li>Add <code>results validate</code>, <code>compare</code>, and <code>summarize</code>.</li>
+<li>Validate typed schema before ingestion.</li>
+<li>Separate warnings from failures.</li>
+<li>Make JSON stdout pure JSON.</li>
+</ol>
+<h3 id="phase-4-module-and-system-ux">Phase 4: module and system UX</h3>
+<ol>
+<li>Group list/inspect/validate/scaffold.</li>
+<li>Improve <code>verify</code> and <code>doctor</code> output.</li>
+<li>Add machine-readable diagnostics.</li>
+</ol>
+<h3 id="phase-5-migration-and-cleanup">Phase 5: migration and cleanup</h3>
+<ol>
+<li>Build a command migration table for <code>scripts/benchmarks</code>.</li>
+<li>Convert wrappers to call package implementations.</li>
+<li>Mark non-migrated scripts legacy.</li>
+<li>Remove only scripts with no callers, no catalog entry, and no historical
+   preservation requirement.</li>
+</ol>
+<h2 id="11-required-tests">11. Required tests</h2>
+<h3 id="parser-tests">Parser tests</h3>
+<ul>
+<li>every advertised command parses;</li>
+<li>aliases resolve to the same handler;</li>
+<li>invalid combinations fail before execution;</li>
+<li>config values and explicit flags merge correctly;</li>
+<li>comma-separated values reject malformed tokens;</li>
+<li>help output contains no unregistered command;</li>
+<li>completion commands match parser commands.</li>
+</ul>
+<h3 id="backend-tests">Backend tests</h3>
+<ul>
+<li>explicit CUDA unavailable raises and returns exit code 3;</li>
+<li><code>auto</code> behavior is explicit and recorded;</li>
+<li>backend fallback emits warnings and records the actual backend;</li>
+<li>unavailable Triton/CUDA never becomes <code>PASS</code>.</li>
+</ul>
+<h3 id="output-tests">Output tests</h3>
+<ul>
+<li>unique run directory is created;</li>
+<li>effective config and environment metadata are written;</li>
+<li>JSON mode produces parseable JSON only;</li>
+<li>duplicate run IDs are refused;</li>
+<li>malformed result files are rejected;</li>
+<li>missing metrics raise instead of defaulting.</li>
+</ul>
+<h3 id="ux-tests">UX tests</h3>
+<ul>
+<li><code>--help</code> succeeds for every command;</li>
+<li>non-TTY output contains no terminal escape sequences;</li>
+<li><code>--quiet</code> suppresses progress but preserves errors;</li>
+<li><code>--verbose</code> includes backend and timing diagnostics;</li>
+<li><code>--debug</code> includes the original traceback.</li>
+</ul>
+<h2 id="12-acceptance-commands">12. Acceptance commands</h2>
+<p>Host-side static checks:</p>
+<div class="highlight"><pre><span></span><code>ruff<span class="w"> </span>check<span class="w"> </span>neuralops/benchmarks<span class="w"> </span>benchmarks<span class="w"> </span>tests/benchmarks
+bash<span class="w"> </span>-n<span class="w"> </span>benchmarks/run_suite.sh<span class="w"> </span>scripts/*.pbs
+git<span class="w"> </span>diff<span class="w"> </span>--check
+</code></pre></div>
+<p>CPU-safe/authorized environment checks:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>neuralops<span class="w"> </span>--help
+python<span class="w"> </span>-m<span class="w"> </span>neuralops.benchmarks<span class="w"> </span>--help
+pytest<span class="w"> </span>tests/benchmarks/test_benchmark_contracts.py<span class="w"> </span>-v<span class="w"> </span>--tb<span class="o">=</span>short
+</code></pre></div>
+<p>GPU checks on the actual GPU host:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>neuralops<span class="w"> </span>system<span class="w"> </span>verify<span class="w"> </span>--device<span class="w"> </span>cuda<span class="w"> </span>--json
+python<span class="w"> </span>-m<span class="w"> </span>neuralops<span class="w"> </span>benchmark<span class="w"> </span>plan<span class="w"> </span>--config<span class="w"> </span>benchmarks/configs/quick_cuda.json<span class="w"> </span>--json
+python<span class="w"> </span>-m<span class="w"> </span>neuralops<span class="w"> </span>benchmark<span class="w"> </span>run<span class="w"> </span>--config<span class="w"> </span>benchmarks/configs/quick_cuda.json
+pytest<span class="w"> </span>tests/gpu_exhaustive<span class="w"> </span>-v<span class="w"> </span>--tb<span class="o">=</span>short
+</code></pre></div>
+<p>Every GPU report must include the final pytest summary and exit code. A partial
+log is not evidence of completion.</p>
+<h2 id="13-definition-of-done">13. Definition of done</h2>
+<p>The CLI cleanup is complete only when:</p>
+<ul>
+<li>all advertised commands are registered and documented;</li>
+<li>common options have one implementation;</li>
+<li>config precedence is deterministic and tested;</li>
+<li>explicit GPU requests fail closed;</li>
+<li>JSON output is machine-readable and uncontaminated;</li>
+<li>every run has isolated, typed artifacts;</li>
+<li>exit codes distinguish usage, backend, numerical, and benchmark failures;</li>
+<li>completions match the parser;</li>
+<li>legacy scripts have a documented migration status;</li>
+<li>all parser, backend, output, and UX tests pass;</li>
+<li>the exhaustive GPU suite has a final summary;</li>
+<li>no command reports success for an artifact it did not actually produce.</li>
+</ul>
+<p>Until these conditions are met, the CLI should be described as under
+remediation rather than production-complete.</p>
+<h2 id="14-concrete-implementation-blueprint">14. Concrete implementation blueprint</h2>
+<p>The following sections turn the policy into code-level work. The examples are
+intended as contracts: names may be adjusted to match existing modules, but the
+behavior must remain the same.</p>
+<h3 id="141-proposed-package-layout">14.1 Proposed package layout</h3>
+<p>Add the following focused modules under <code>neuralops/benchmarks/cli/</code> rather than
+continuing to grow one 1,000-line parser file:</p>
+<div class="highlight"><pre><span></span><code>neuralops/benchmarks/cli/
+  __init__.py
+  app.py                 # main() and top-level parser
+  common.py              # shared options and parser helpers
+  config_merge.py        # defaults/config/env/CLI precedence
+  devices.py             # device normalization and preflight
+  errors.py              # typed errors and exit codes
+  output.py              # stdout/stderr and JSON discipline
+  locks.py               # run-directory and run-id locking
+  commands/
+    benchmark.py
+    module.py
+    system.py
+    results.py
+    model.py
+</code></pre></div>
+<p>If moving the existing file immediately is too risky, implement these helpers
+in existing files first, add tests, and migrate the parser incrementally.</p>
+<h3 id="142-typed-exit-codes">14.2 Typed exit codes</h3>
+<p>Create one source of truth instead of returning arbitrary integers from command
+handlers:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># neuralops/benchmarks/cli/errors.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntEnum</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ExitCode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">OK</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">FAILURE</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">USAGE</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">BACKEND_UNAVAILABLE</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">NUMERICAL_FAILURE</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">PARTIAL</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">OUTPUT_FAILURE</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">INTERNAL</span> <span class="o">=</span> <span class="mi">70</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CliError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Expected user-facing error with a stable machine-readable code."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="n">ExitCode</span><span class="p">,</span> <span class="n">hint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hint</span> <span class="o">=</span> <span class="n">hint</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BackendUnavailableError</span><span class="p">(</span><span class="n">CliError</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">ExitCode</span><span class="o">.</span><span class="n">BACKEND_UNAVAILABLE</span><span class="p">,</span> <span class="n">hint</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NumericalGateError</span><span class="p">(</span><span class="n">CliError</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">ExitCode</span><span class="o">.</span><span class="n">NUMERICAL_FAILURE</span><span class="p">,</span> <span class="n">hint</span><span class="p">)</span>
+</code></pre></div>
+<p>The application boundary should catch only <code>CliError</code> and known exceptions. It
+must not turn every exception into a success return:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">build_parser</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">dispatch</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">CliError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">emit_error</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">code</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="n">emit_error</span><span class="p">(</span><span class="n">CliError</span><span class="p">(</span><span class="s2">"Interrupted by user"</span><span class="p">,</span> <span class="n">ExitCode</span><span class="o">.</span><span class="n">FAILURE</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">ExitCode</span><span class="o">.</span><span class="n">FAILURE</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="n">emit_internal_error</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">ExitCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="143-configuration-merge-implementation">14.3 Configuration merge implementation</h3>
+<p>The main bug to avoid is allowing argparse defaults to overwrite values loaded
+from a config file. Use <code>None</code> for parser defaults and merge explicitly:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># neuralops/benchmarks/cli/config_merge.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">replace</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">neuralops.benchmarks.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BenchmarkConfig</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_csv</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cast</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+    <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tokens</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"comma-separated value must contain at least one item"</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">cast</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"invalid comma-separated value: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cli_overrides</span><span class="p">(</span><span class="n">namespace</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span>
+    <span class="n">aliases</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"dtype"</span><span class="p">:</span> <span class="s2">"precision"</span><span class="p">,</span> <span class="s2">"batch_size"</span><span class="p">:</span> <span class="s2">"batch_sizes"</span><span class="p">,</span> <span class="s2">"seq_len"</span><span class="p">:</span> <span class="s2">"seq_lens"</span><span class="p">}</span>
+    <span class="n">result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">raw</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"config"</span><span class="p">,</span> <span class="s2">"subcommand"</span><span class="p">}:</span>
+            <span class="k">continue</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">aliases</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">target</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"batch_sizes"</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">"batch_sizes"</span><span class="p">]</span> <span class="o">=</span> <span class="n">parse_csv</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">"batch_sizes"</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"seq_lens"</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">"seq_lens"</span><span class="p">]</span> <span class="o">=</span> <span class="n">parse_csv</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">"seq_lens"</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">load_effective_config</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BenchmarkConfig</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">BenchmarkConfig</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">config</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">config</span> <span class="k">else</span> <span class="n">BenchmarkConfig</span><span class="p">()</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+    <span class="n">values</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cli_overrides</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"NEURALOPS_DEVICE"</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"device"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cli_overrides</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">values</span><span class="p">[</span><span class="s2">"device"</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"NEURALOPS_DEVICE"</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">BenchmarkConfig</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+</code></pre></div>
+<p>Before accepting unknown config keys, produce a useful error:</p>
+<div class="highlight"><pre><span></span><code><span class="n">valid</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">BenchmarkConfig</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="p">)</span>
+<span class="n">unknown</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="n">valid</span> <span class="o">-</span> <span class="p">{</span><span class="s2">"dtype"</span><span class="p">})</span>
+<span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="n">CliError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"Unknown benchmark config key(s): </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">ExitCode</span><span class="o">.</span><span class="n">USAGE</span><span class="p">,</span>
+        <span class="s2">"Run `neuralops benchmark config-schema` to see valid keys."</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+<h3 id="144-device-normalization-and-preflight">14.4 Device normalization and preflight</h3>
+<p>Do not scatter <code>torch.cuda.is_available()</code> checks throughout commands. Use one
+preflight function:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># neuralops/benchmarks/cli/devices.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">BackendUnavailableError</span>
+
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeviceInfo</span><span class="p">:</span>
+    <span class="n">requested</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">resolved</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">cuda_version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve_device</span><span class="p">(</span><span class="n">requested</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">allow_auto</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceInfo</span><span class="p">:</span>
+    <span class="n">requested</span> <span class="o">=</span> <span class="n">requested</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">requested</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">allow_auto</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"auto device selection is disabled for this command"</span><span class="p">)</span>
+        <span class="n">requested</span> <span class="o">=</span> <span class="s2">"cuda:0"</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"cpu"</span>
+
+    <span class="k">if</span> <span class="n">requested</span> <span class="o">==</span> <span class="s2">"cuda"</span><span class="p">:</span>
+        <span class="n">requested</span> <span class="o">=</span> <span class="s2">"cuda:0"</span>
+    <span class="k">if</span> <span class="n">requested</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"cuda"</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">BackendUnavailableError</span><span class="p">(</span>
+                <span class="s2">"CUDA was requested but is unavailable; refusing CPU fallback"</span><span class="p">,</span>
+                <span class="s2">"Run `neuralops system verify --device cuda`."</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">requested</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="s2">":"</span> <span class="ow">in</span> <span class="n">requested</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">BackendUnavailableError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CUDA device index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> does not exist"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">requested</span><span class="o">=</span><span class="n">requested</span><span class="p">,</span>
+            <span class="n">resolved</span><span class="o">=</span><span class="sa">f</span><span class="s2">"cuda:</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">"cuda"</span><span class="p">,</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_name</span><span class="p">(</span><span class="n">index</span><span class="p">),</span>
+            <span class="n">cuda_version</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">cuda</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">requested</span> <span class="o">==</span> <span class="s2">"mps"</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">mps</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">BackendUnavailableError</span><span class="p">(</span><span class="s2">"MPS was requested but is unavailable"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">requested</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"cpu"</span><span class="p">,</span> <span class="s2">"mps"</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported device: </span><span class="si">{</span><span class="n">requested</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">DeviceInfo</span><span class="p">(</span><span class="n">requested</span><span class="o">=</span><span class="n">requested</span><span class="p">,</span> <span class="n">resolved</span><span class="o">=</span><span class="n">requested</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">requested</span><span class="p">,</span>
+                      <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cuda_version</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+<p>Every benchmark should store <code>DeviceInfo</code> in its environment metadata and use
+the resolved device object for allocations.</p>
+<h3 id="145-shared-parser-construction">14.5 Shared parser construction</h3>
+<p>Build common options once:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_common_options</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--config"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--device"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"cpu, mps, cuda, cuda:N, or auto"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--seed"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--output-dir"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--run-id"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--json"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--quiet"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--verbose"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--debug"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--dry-run"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--overwrite"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"store_true"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">add_benchmark_options</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--category"</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">KNOWN_CATEGORIES</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--modules"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--batch-sizes"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--seq-lens"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--dtype"</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">"precision"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--warmup"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">non_negative_int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--iters"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--parallel-workers"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">positive_int</span><span class="p">)</span>
+</code></pre></div>
+<p>Use <code>parser.set_defaults(handler=...)</code> so dispatch does not depend on a large
+chain of string comparisons.</p>
+<h3 id="146-command-dispatch-table">14.6 Command dispatch table</h3>
+<p>Prefer a table over a fragile if/elif chain:</p>
+<div class="highlight"><pre><span></span><code><span class="n">HANDLERS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">(</span><span class="s2">"benchmark"</span><span class="p">,</span> <span class="s2">"run"</span><span class="p">):</span> <span class="n">run_benchmark_command</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"benchmark"</span><span class="p">,</span> <span class="s2">"plan"</span><span class="p">):</span> <span class="n">plan_benchmark_command</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"module"</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">):</span> <span class="n">list_modules_command</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"module"</span><span class="p">,</span> <span class="s2">"inspect"</span><span class="p">):</span> <span class="n">inspect_module_command</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"system"</span><span class="p">,</span> <span class="s2">"verify"</span><span class="p">):</span> <span class="n">verify_system_command</span><span class="p">,</span>
+    <span class="p">(</span><span class="s2">"results"</span><span class="p">,</span> <span class="s2">"compare"</span><span class="p">):</span> <span class="n">compare_results_command</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">dispatch</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">group</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">command</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="n">HANDLERS</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">CliError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No handler registered for </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">ExitCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+    <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+</code></pre></div>
+<p>The parser test should compare all help-advertised command names with the keys
+in the dispatch table.</p>
+<h3 id="147-run-directory-and-locking">14.7 Run directory and locking</h3>
+<p>Parallel execution requires atomic ownership:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># neuralops/benchmarks/cli/locks.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">create_run_directory</span><span class="p">(</span><span class="n">root</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">run_id</span>
+    <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"run directory already exists: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">; use --run-id another-id "</span>
+            <span class="s2">"or --overwrite only if replacement is intentional"</span>
+        <span class="p">)</span>
+    <span class="n">path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
+    <span class="n">lock</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="s2">".active.lock"</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">fd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">lock</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">O_CREAT</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_EXCL</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_WRONLY</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">FileExistsError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"run is already active: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+    <span class="k">with</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">stream</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">"pid"</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span> <span class="s2">"created"</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()},</span> <span class="n">stream</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">path</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">release_run_directory</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">(</span><span class="n">path</span> <span class="o">/</span> <span class="s2">".active.lock"</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+<p>Use a <code>try/finally</code> around the command so locks are released even after a
+failure. Never write two processes to the same <code>results/latest</code> file.</p>
+<h3 id="148-atomic-result-writes">14.8 Atomic result writes</h3>
+<p>Write to a temporary file in the same directory and rename it:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">atomic_write_json</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">temporary</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">+</span> <span class="s2">".tmp"</span><span class="p">)</span>
+    <span class="n">temporary</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">temporary</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</code></pre></div>
+<p>If a process dies halfway through a write, result validation must ignore the
+temporary file and report the run as incomplete rather than treating partial
+JSON as a valid pass.</p>
+<h3 id="149-result-status-model">14.9 Result status model</h3>
+<p>Use a constrained status vocabulary:</p>
+<div class="highlight"><pre><span></span><code><span class="n">ResultStatus</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span>
+    <span class="s2">"success"</span><span class="p">,</span>
+    <span class="s2">"FAIL"</span><span class="p">,</span>
+    <span class="s2">"FAIL_NUMERICS"</span><span class="p">,</span>
+    <span class="s2">"FAIL_BACKWARD"</span><span class="p">,</span>
+    <span class="s2">"FAIL_DISPATCH"</span><span class="p">,</span>
+    <span class="s2">"SKIPPED_UNSUPPORTED"</span><span class="p">,</span>
+    <span class="s2">"SKIPPED_OPTIONAL_DEPENDENCY"</span><span class="p">,</span>
+    <span class="s2">"INCOMPLETE"</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<p>Do not mix <code>PASS</code>, <code>pass</code>, <code>success</code>, and <code>ok</code> across exporters. Normalize once
+at result creation and reject unknown statuses on ingestion.</p>
+<h3 id="1410-numerical-parity-helper">14.10 Numerical parity helper</h3>
+<p>Centralize the numerical gate:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">check_parity</span><span class="p">(</span>
+    <span class="n">reference</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">candidate</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">bool</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">reference</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NumericalGateError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"shape mismatch: reference=</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"candidate=</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">NumericalGateError</span><span class="p">(</span><span class="s2">"candidate contains NaN or Inf"</span><span class="p">)</span>
+    <span class="n">max_diff</span> <span class="o">=</span> <span class="nb">float</span><span class="p">((</span><span class="n">candidate</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">-</span> <span class="n">reference</span><span class="o">.</span><span class="n">float</span><span class="p">())</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+    <span class="n">passed</span> <span class="o">=</span> <span class="n">max_diff</span> <span class="o">&lt;=</span> <span class="n">tolerance</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"max_diff"</span><span class="p">:</span> <span class="n">max_diff</span><span class="p">,</span> <span class="s2">"tolerance"</span><span class="p">:</span> <span class="n">tolerance</span><span class="p">,</span> <span class="s2">"passed"</span><span class="p">:</span> <span class="n">passed</span><span class="p">}</span>
+</code></pre></div>
+<p>Call it for CUDA and Triton outputs before timing results are marked usable.
+Timing a numerically invalid kernel is allowed only as a diagnostic, never as a
+successful benchmark.</p>
+<h3 id="1411-backward-validation-helper">14.11 Backward validation helper</h3>
+<p>The helper must inspect all parameters and the input gradient:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_backward</span><span class="p">(</span><span class="n">module</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">module</span><span class="p">(</span><span class="o">*</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">square</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">parameter</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"missing gradient for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">parameter</span><span class="o">.</span><span class="n">grad</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"non-finite gradient for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">tensor</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">and</span> <span class="n">tensor</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"missing input gradient at index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="1412-standard-command-output">14.12 Standard command output</h3>
+<p>Interactive output may be rich, but machine output must be strict:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">emit</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">json_mode</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">quiet</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">json_mode</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">quiet</span><span class="p">:</span>
+        <span class="n">console</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</code></pre></div>
+<p>Never print a warning, progress line, or traceback to stdout in JSON mode.
+Warnings belong on stderr.</p>
+<h3 id="1413-shell-completion-generation">14.13 Shell completion generation</h3>
+<p>Do not keep a manually typed command list. Generate completion names from the
+parser:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">parser_command_names</span><span class="p">(</span><span class="n">parser</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">parser</span><span class="o">.</span><span class="n">_actions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">argparse</span><span class="o">.</span><span class="n">_SubParsersAction</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">choices</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[]</span>
+</code></pre></div>
+<p>The implementation can use a small public helper around argparse internals,
+but the test must fail if a completion command is not parseable.</p>
+<h2 id="15-exact-migration-table-to-create">15. Exact migration table to create</h2>
+<p>Create <code>benchmarks/CLI_MIGRATION_MATRIX.csv</code> with these columns:</p>
+<div class="highlight"><pre><span></span><code>legacy_path,canonical_handler,category,flags_mapped,output_schema,
+status,blocking_issue,test_file,owner
+</code></pre></div>
+<p>Classify every file in <code>scripts/benchmarks/</code> as:</p>
+<ul>
+<li><code>MIGRATE</code>: active and suitable for canonicalization;</li>
+<li><code>WRAPPER</code>: keep only as a compatibility entry point;</li>
+<li><code>HISTORICAL</code>: retain but exclude from standard suite;</li>
+<li><code>REMOVE_AFTER_REVIEW</code>: no callers, no unique behavior, no documentation use.</li>
+</ul>
+<p>Do not delete a historical script until <code>rg</code> proves there are no callers and
+the migration matrix records its replacement.</p>
+<h2 id="16-detailed-test-matrix">16. Detailed test matrix</h2>
+<p>Add or extend tests under <code>tests/benchmarks/</code>:</p>
+<div class="highlight"><pre><span></span><code>test_cli_parser.py
+  test_every_command_has_handler
+  test_aliases_share_handler
+  test_help_has_no_stale_commands
+  test_json_output_is_single_json_document
+
+test_cli_config_merge.py
+  test_defaults_then_config_then_cli_precedence
+  test_unknown_key_is_rejected
+  test_dtype_alias_is_normalized
+  test_csv_lists_are_validated
+
+test_cli_devices.py
+  test_explicit_cuda_unavailable_is_error
+  test_auto_device_is_recorded
+  test_invalid_cuda_index_is_error
+
+test_cli_outputs.py
+  test_run_directory_is_unique
+  test_active_lock_prevents_duplicate_run
+  test_atomic_result_write
+  test_missing_metric_is_not_defaulted
+
+test_cli_numerics.py
+  test_parity_passes_within_tolerance
+  test_parity_returns_fail_numerics_above_tolerance
+  test_nan_candidate_fails
+
+test_cli_completion.py
+  test_completion_commands_are_parseable
+</code></pre></div>
+<p>GPU-only tests must live in the GPU suite and must report <code>SKIPPED_UNSUPPORTED</code>
+only when the requested hardware capability is genuinely absent.</p>
+<h2 id="17-recommended-user-workflows-after-remediation">17. Recommended user workflows after remediation</h2>
+<h3 id="inspect-the-environment">Inspect the environment</h3>
+<div class="highlight"><pre><span></span><code>neuralops<span class="w"> </span>system<span class="w"> </span>verify<span class="w"> </span>--device<span class="w"> </span>cuda<span class="w"> </span>--json
+neuralops<span class="w"> </span>system<span class="w"> </span>doctor<span class="w"> </span>--json<span class="w"> </span>--output-dir<span class="w"> </span>results/doctor
+</code></pre></div>
+<h3 id="preview-a-benchmark">Preview a benchmark</h3>
+<div class="highlight"><pre><span></span><code>neuralops<span class="w"> </span>benchmark<span class="w"> </span>plan<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config<span class="w"> </span>benchmarks/configs/quick_cuda.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--device<span class="w"> </span>cuda:0<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--json
+</code></pre></div>
+<h3 id="run-a-quick-correctness-benchmark">Run a quick correctness benchmark</h3>
+<div class="highlight"><pre><span></span><code>neuralops<span class="w"> </span>benchmark<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config<span class="w"> </span>benchmarks/configs/quick_cuda.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--category<span class="w"> </span>numerics<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output-dir<span class="w"> </span>results/quick_numerics<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--verbose
+</code></pre></div>
+<h3 id="run-an-exhaustive-suite">Run an exhaustive suite</h3>
+<div class="highlight"><pre><span></span><code>neuralops<span class="w"> </span>benchmark<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--config<span class="w"> </span>benchmarks/configs/exhaustive_cuda.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--category<span class="w"> </span>all<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output-dir<span class="w"> </span>results/exhaustive_<span class="k">$(</span>date<span class="w"> </span>+%Y%m%d_%H%M%S<span class="k">)</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--yes
+</code></pre></div>
+<h3 id="compare-two-runs">Compare two runs</h3>
+<div class="highlight"><pre><span></span><code>neuralops<span class="w"> </span>results<span class="w"> </span>validate<span class="w"> </span>results/baseline
+neuralops<span class="w"> </span>results<span class="w"> </span>validate<span class="w"> </span>results/candidate
+neuralops<span class="w"> </span>results<span class="w"> </span>compare<span class="w"> </span>results/baseline<span class="w"> </span>results/candidate<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--metric<span class="w"> </span>p95_ms<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--max-regression<span class="w"> </span><span class="m">5</span>
+</code></pre></div>
+<h2 id="18-final-implementation-checklist">18. Final implementation checklist</h2>
+<div class="highlight"><pre><span></span><code>[ ] Common parser options exist once
+[ ] Config merge precedence is tested
+[ ] Unknown config keys fail early
+[ ] Device resolution is centralized
+[ ] Explicit CUDA requests fail closed
+[ ] Exit codes are typed and documented
+[ ] JSON stdout contains JSON only
+[ ] Run directories are unique and locked
+[ ] Result writes are atomic
+[ ] Status vocabulary is normalized
+[ ] Numerical parity helper is shared
+[ ] Backward helper rejects None/NaN gradients
+[ ] Completion names come from the parser
+[ ] Every command has a handler
+[ ] Legacy scripts have migration status
+[ ] CLI migration matrix is complete
+[ ] Parser tests pass
+[ ] Backend tests pass
+[ ] Output/schema tests pass
+[ ] GPU benchmark has final summary and exit code
+[ ] ruff, bash -n, diff check, and repository audits pass
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

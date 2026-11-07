@@ -1,0 +1,25 @@
+sequence_length,module,framework,latency_ms,throughput_tok_s,peak_vram_mb,speedup_vs_baseline,cosine_similarity
+512,pytorch_mha_baseline,PyTorch Reference,0.324,3161437.7,35.13,1.0,1.0
+512,gated_delta_net,NeuralOps (Triton Fused),0.997,1027196.6,44.42,0.32,1.0
+512,gla_attention,NeuralOps (Triton Fused),0.495,2067147.6,41.21,0.65,1.0
+512,hgrn2_gated_deltanet,NeuralOps (Triton Fused),1.673,612031.8,62.9,0.19,1.0
+512,cosformer,NeuralOps (Triton Fused),1.601,639572.1,87.98,0.2,1.0
+512,minimal_svd,NeuralOps (Triton Fused),0.576,1777336.1,25.07,0.56,1.0
+1024,pytorch_mha_baseline,PyTorch Reference,1.715,1194479.8,83.32,1.0,1.0
+1024,gated_delta_net,NeuralOps (Triton Fused),1.935,1058484.5,70.32,0.89,1.0
+1024,gla_attention,NeuralOps (Triton Fused),0.952,2150457.8,65.51,1.8,1.0
+1024,hgrn2_gated_deltanet,NeuralOps (Triton Fused),2.763,741303.5,94.18,0.62,1.0
+1024,cosformer,NeuralOps (Triton Fused),3.401,602152.2,156.47,0.5,1.0
+1024,minimal_svd,NeuralOps (Triton Fused),0.547,3741446.1,35.82,3.14,1.0
+2048,pytorch_mha_baseline,PyTorch Reference,5.174,791657.6,255.57,1.0,1.0
+2048,gated_delta_net,NeuralOps (Triton Fused),3.683,1112094.3,120.22,1.4,1.0
+2048,gla_attention,NeuralOps (Triton Fused),1.494,2741562.5,109.97,3.46,1.0
+2048,hgrn2_gated_deltanet,NeuralOps (Triton Fused),6.271,653213.9,156.16,0.83,1.0
+2048,cosformer,NeuralOps (Triton Fused),5.03,814292.9,290.69,1.03,1.0
+2048,minimal_svd,NeuralOps (Triton Fused),1.206,3396112.0,56.57,4.29,1.0
+4096,pytorch_mha_baseline,PyTorch Reference,19.116,428551.8,912.57,1.0,1.0
+4096,gated_delta_net,NeuralOps (Triton Fused),8.126,1008133.1,219.28,2.35,1.0
+4096,gla_attention,NeuralOps (Triton Fused),3.228,2538085.5,198.54,5.92,1.0
+4096,hgrn2_gated_deltanet,NeuralOps (Triton Fused),13.605,602111.9,283.15,1.41,1.0
+4096,cosformer,NeuralOps (Triton Fused),12.116,676154.9,560.38,1.58,1.0
+4096,minimal_svd,NeuralOps (Triton Fused),3.451,2373698.3,98.57,5.54,1.0

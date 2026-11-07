@@ -1,0 +1,12 @@
+{
+  "module": "jamba_info",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 3072.72,
+  "student_ppl": 38.0,
+  "pre_ppl": 3108.93,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.318057"
+}

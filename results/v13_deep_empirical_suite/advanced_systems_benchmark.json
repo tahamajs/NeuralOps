@@ -1,0 +1,37 @@
+{
+  "w4a16_bench": {
+    "fp16_weight_mb": 32.0,
+    "w4a16_weight_mb": 8.5,
+    "w4a16_compression_ratio": 3.76,
+    "svd_w4a16_weight_mb": 0.37,
+    "svd_w4a16_compression_ratio": 85.56
+  },
+  "hadamard_svd_bench": {
+    "standard_svd_rel_err": 0.7995,
+    "hadamard_svd_rel_err": 0.7995,
+    "error_reduction_pct": 0.0
+  },
+  "speculative_decoding_bench": {
+    "tokens_generated": 40,
+    "target_forward_passes": 18,
+    "mean_accepted_tokens_per_step": 2.22,
+    "speedup_over_standard": 2.22,
+    "tokens_per_sec": 382.62
+  },
+  "niah_bench": {
+    "context_lengths": [
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "needle_depths": [
+      0.1,
+      0.3,
+      0.5,
+      0.7,
+      0.9
+    ],
+    "mean_retrieval_accuracy": 0.0
+  }
+}

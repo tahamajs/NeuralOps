@@ -1,0 +1,67 @@
+{
+    "model": "gpt2_regla_attention",
+    "performance": {
+        "accuracy_pct": 63.19,
+        "f1_score": 0.6997,
+        "f1_macro": 0.6121,
+        "precision": 0.6575,
+        "recall": 0.6279,
+        "val_loss": 0.6446,
+        "perplexity": null,
+        "status": "PASS",
+        "elapsed_s": 45.7,
+        "baseline_acc": 52.52,
+        "pass_threshold_pct": 56.0
+    },
+    "efficiency": {
+        "total_params_before": 148061952,
+        "total_params_after": 134514444,
+        "trainable_recovery_params": 9988608,
+        "compression_rate": 1.1007,
+        "compression_ratio_pct": 9.15,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 12,
+        "lora_params": 2949120,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "transformer.h.0.attn": 64,
+            "transformer.h.1.attn": 64,
+            "transformer.h.2.attn": 64,
+            "transformer.h.3.attn": 64,
+            "transformer.h.4.attn": 64,
+            "transformer.h.5.attn": 64,
+            "transformer.h.6.attn": 64,
+            "transformer.h.7.attn": 64,
+            "transformer.h.8.attn": 64,
+            "transformer.h.9.attn": 64,
+            "transformer.h.10.attn": 64,
+            "transformer.h.11.attn": 64
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 620.79,
+        "tokens_per_sec": 9844.52
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 256.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 478.12,
+        "L_256_vram_mb": 482.99,
+        "L_512_vram_mb": 492.75,
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
+    },
+    "seed": 42,
+    "git_sha": "4b230f0d85",
+    "git_dirty": true,
+    "torch_version": "2.11.0+cu128",
+    "transformers_version": "5.19.0",
+    "cuda_version": "12.8",
+    "timestamp": "2026-10-12T18:30:05.429032+00:00"
+}

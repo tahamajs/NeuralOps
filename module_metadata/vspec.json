@@ -1,0 +1,38 @@
+{
+  "module_name": "vspec",
+  "class_name": "VSpecAttention",
+  "category": "attention",
+  "family": "Hardware-Fused, Low-Precision & Spectral-Transform Attentions",
+  "params": [
+    "hidden_dim",
+    "rank",
+    "n_heads",
+    "keep_ratio",
+    "min_tokens",
+    "weight",
+    "in_dim",
+    "out_dim",
+    "config",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "chunk",
+    "clamp",
+    "topk",
+    "matmul",
+    "transpose",
+    "softmax",
+    "dropout",
+    "view"
+  ],
+  "docstring": "VSpec++ Attention: Variational Spectral Token-Adaptive Attention Module.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.5257887502605593e+38,
+  "paradigm": "hardware",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

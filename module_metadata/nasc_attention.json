@@ -1,0 +1,34 @@
+{
+  "module_name": "nasc_attention",
+  "class_name": "NASCAttention",
+  "category": "attention",
+  "family": "Memory-Augmented & External Latent Recurrences",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "lora_rank",
+    "pretrained_weight",
+    "config",
+    "window_size",
+    "block_size",
+    "top_k",
+    "rff_features",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "matmul",
+    "view",
+    "softmax"
+  ],
+  "docstring": "NASC: NEXUS-AEGIS Spectral Cascade Attention. Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.  NOTE: This module is LoRA-only. The rank argument is accepted but not used for SVD compression. Use lora_rank to control adapter size.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.773134076562447e+38,
+  "paradigm": "memory",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

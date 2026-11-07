@@ -1,0 +1,28 @@
+{
+  "module_name": "kronecker_compressor",
+  "class_name": "KroneckerCompressor",
+  "category": "compression",
+  "family": "Tensor Decomposition (Tensor-Train, Tucker & Kronecker)",
+  "params": [
+    "model",
+    "rank",
+    "cfg",
+    "target_layers"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Compresses a model by replacing every eligible nn.Linear layer with a\nKronecker product decomposition (A ⊗ B), falling back to low-rank SVD\nwhen dimensions do not allow composite factorization.\n\nArgs:\n    model: PyTorch model to compress (optional if instantiated as standalone engine).\n    rank: Rank parameter used for fallback or rank constraints.\n    cfg: Optional configuration object.\n    target_layers: Optional list of layer names or substrings to compress.\n    **kwargs: Additional parameters passed to BaseCompressor.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.144955499146672e+37,
+  "paradigm": "tensor_decomp",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

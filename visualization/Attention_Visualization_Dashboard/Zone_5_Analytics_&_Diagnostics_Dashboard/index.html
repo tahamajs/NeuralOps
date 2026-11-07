@@ -1,0 +1,4318 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/visualization/Attention_Visualization_Dashboard/Zone_5_Analytics_%26_Diagnostics_Dashboard/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>📈 Zone 5: Analytics & Diagnostics Dashboard — Complete Implementation Specification - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#zone-5-analytics-diagnostics-dashboard-complete-implementation-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              📈 Zone 5: Analytics &amp; Diagnostics Dashboard — Complete Implementation Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shared-infrastructure-for-all-zone-5-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared Infrastructure for All Zone 5 Features
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Shared Infrastructure for All Zone 5 Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-data-pipeline-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Data Pipeline Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-state-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. State Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-computation-trigger-loading-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. Computation Trigger &amp; Loading States
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-16-head-importance-stability-similarity-3d-scatter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 16: Head Importance × Stability × Similarity 3D Scatter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 16: Head Importance × Stability × Similarity 3D Scatter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#161-scientific-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.1 Scientific Foundation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#162-metric-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.2 Metric Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#163-technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.3 Technology Stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#164-why-deckgl-over-plotly-or-threejs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.4 Why Deck.gl Over Plotly or Three.js
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#165-component-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.5 Component Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#166-rendering-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.6 Rendering Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#167-interactive-behaviors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.7 Interactive Behaviors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#168-performance-optimizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.8 Performance Optimizations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#169-edge-cases-error-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.9 Edge Cases &amp; Error States
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1610-accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16.10 Accessibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-17-head-clustering-dendrogram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 17: Head Clustering Dendrogram
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 17: Head Clustering Dendrogram">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#171-scientific-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17.1 Scientific Foundation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#172-technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17.2 Technology Stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#173-component-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17.3 Component Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#174-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17.4 Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#175-interactive-behaviors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17.5 Interactive Behaviors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#176-performance-optimizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17.6 Performance Optimizations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#177-edge-cases-error-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17.7 Edge Cases &amp; Error States
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#178-autolabeling-algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17.8 Auto‑Labeling Algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#179-accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17.9 Accessibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-18-logit-lens-prediction-timeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 18: Logit Lens Prediction Timeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 18: Logit Lens Prediction Timeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#181-scientific-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18.1 Scientific Foundation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#182-technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18.2 Technology Stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#183-component-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18.3 Component Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#184-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18.4 Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#185-interactive-behaviors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18.5 Interactive Behaviors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#186-canvas-word-cloud-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18.6 Canvas Word Cloud Rendering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#187-edge-cases-error-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18.7 Edge Cases &amp; Error States
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-19-attention-pattern-evolution-timelapse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 19: Attention Pattern Evolution Time‑Lapse
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 19: Attention Pattern Evolution Time‑Lapse">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#191-scientific-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.1 Scientific Foundation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#192-technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.2 Technology Stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#193-component-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.3 Component Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#194-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.4 Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#195-animation-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.5 Animation Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#196-interactive-behaviors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.6 Interactive Behaviors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#197-edge-cases-error-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.7 Edge Cases &amp; Error States
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-20-semantic-pathway-crosslayer-trajectories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature 20: Semantic Pathway Cross‑Layer Trajectories
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Feature 20: Semantic Pathway Cross‑Layer Trajectories">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#201-scientific-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20.1 Scientific Foundation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#202-technology-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20.2 Technology Stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#203-component-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20.3 Component Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#204-data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20.4 Data Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#205-trajectory-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20.5 Trajectory Rendering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#206-influence-arcs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20.6 Influence Arcs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#207-interactive-behaviors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20.7 Interactive Behaviors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#208-performance-optimizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20.8 Performance Optimizations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#209-edge-cases-error-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20.9 Edge Cases &amp; Error States
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#crossfeature-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross‑Feature Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cross‑Feature Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#brushing-and-linking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Brushing and Linking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unified-export" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unified Export
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="zone-5-analytics-diagnostics-dashboard-complete-implementation-specification">📈 Zone 5: Analytics &amp; Diagnostics Dashboard — Complete Implementation Specification</h1>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>Zone 5 is the <strong>quantitative intelligence center</strong> of the attention dashboard. While Zone 2 shows <em>what</em> attention looks like and Zone 3 explains <em>how</em> it works mathematically, Zone 5 answers <em>why</em> certain heads matter, <em>which</em> heads are similar, <em>when</em> patterns emerge during training, and <em>where</em> token meaning travels across layers. It transforms raw attention tensors into <strong>actionable diagnostic metrics</strong> that directly inform model compression, architecture selection, and training monitoring.</p>
+<p>The five features in this zone are arranged as a <strong>tabbed panel</strong> occupying the right half of the dashboard (or the full width below the canvas on smaller screens). Each tab is a self‑contained analytical view, but all share a common data pipeline and state management architecture.</p>
+<hr />
+<h2 id="shared-infrastructure-for-all-zone-5-features">Shared Infrastructure for All Zone 5 Features</h2>
+<h3 id="a-data-pipeline-architecture">A. Data Pipeline Architecture</h3>
+<p>All five features consume the same underlying data but transform it differently. The pipeline follows a <strong>three‑stage ETL pattern</strong> optimized for browser execution:</p>
+<div class="highlight"><pre><span></span><code>┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
+│  RAW DATA    │────▶│  COMPUTE LAYER  │────▶│  RENDER LAYER    │
+│  (Zone 2)    │     │  (Web Worker)   │     │  (Main Thread)   │
+│              │     │                 │     │                  │
+│ • Attention  │     │ • Head scoring  │     │ • 3D Scatter     │
+│   matrices   │     │ • Clustering    │     │ • Dendrogram     │
+│ • Hidden     │     │ • Logit lens    │     │ • Timeline       │
+│   states     │     │ • UMAP/t‑SNE    │     │ • Trajectories   │
+│ • Gradients  │     │ • Time‑lapse    │     │ • Word cloud     │
+└──────────────┘     └─────────────────┘     └──────────────────┘
+        │                     │                       │
+        ▼                     ▼                       ▼
+   IndexedDB             Pyodide +              React + Three.js
+   (cache)              NumPy/SciPy            + Deck.gl + D3.js
+                         in Web Worker
+</code></pre></div>
+<p><strong>Stage 1 — Raw Data Extraction:</strong><br />
+Attention matrices and hidden states are extracted from the model via <code>transformers.js</code> (running ONNX Runtime in the browser) or fetched from the Django backend API. For models too large for client‑side inference, the backend computes attention and streams results via the existing WebSocket infrastructure or REST endpoints. Raw data is cached in <strong>IndexedDB</strong> using <code>idb-keyval</code> for instant recall on repeated explorations.</p>
+<p><strong>Stage 2 — Compute Layer (Web Worker with Pyodide):</strong><br />
+Heavy numerical computation—singular value decomposition, hierarchical clustering, t‑SNE/UMAP projection, head importance scoring—runs in a <strong>dedicated Web Worker</strong> using Pyodide (CPython compiled to WebAssembly). Pyodide provides NumPy, SciPy, and scikit‑learn directly in the browser, avoiding the need to re‑implement these algorithms in JavaScript. The worker receives raw tensors as JSON/ArrayBuffer, executes Python scripts, and returns computed results via <code>postMessage</code>. This keeps the main thread free for rendering and interaction, maintaining 60fps even during heavy computation.</p>
+<p><strong>Stage 3 — Render Layer (Main Thread):</strong><br />
+Computed results arrive as typed arrays or JSON and are passed to the visualization components. Each feature uses a specialized rendering library chosen for its performance characteristics with the expected data size:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Data Size</th>
+<th>Rendering Library</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3D Scatter</td>
+<td>144–1200 points (heads)</td>
+<td>Deck.gl (<code>ScatterplotLayer</code>)</td>
+<td>GPU‑accelerated via WebGL2; handles millions of points; built‑in picking, brushing, viewport</td>
+</tr>
+<tr>
+<td>Dendrogram</td>
+<td>144–1200 leaves</td>
+<td>D3.js (<code>d3-hierarchy</code>) + React‑wrapper</td>
+<td>SVG rendering for crisp vector output; interactive zoom/pan via <code>d3-zoom</code></td>
+</tr>
+<tr>
+<td>Logit Lens Timeline</td>
+<td>10–50 layers × top‑k words</td>
+<td>Custom Canvas + Framer Motion</td>
+<td>Canvas for word cloud rendering; Framer Motion for smooth timeline scrubbing</td>
+</tr>
+<tr>
+<td>Evolution Time‑Lapse</td>
+<td>144 heads × N epochs</td>
+<td>Deck.gl + <code>requestAnimationFrame</code></td>
+<td>GPU‑accelerated point updates; smooth animation loop</td>
+</tr>
+<tr>
+<td>Semantic Pathway</td>
+<td>10–50 tokens × 10–50 layers</td>
+<td>Deck.gl + Three.js lines</td>
+<td>GPU scatter for points; Three.js for curved trajectory tubes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b-state-management">B. State Management</h3>
+<p>All Zone 5 features share a single <strong>Zustand store</strong> (<code>useAnalyticsStore</code>) that holds computed metrics, derived from the raw attention data. This store is separate from the main <code>useAttentionContext</code> store (Zone 1) to avoid unnecessary re‑renders of the visualization canvas when only analytics data changes.</p>
+<div class="highlight"><pre><span></span><code><span class="kd">interface</span><span class="w"> </span><span class="nx">AnalyticsState</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Head metrics (Feature 16)</span>
+<span class="w">  </span><span class="nx">headScores</span><span class="o">:</span><span class="w"> </span><span class="kt">HeadScore</span><span class="p">[];</span><span class="w">           </span><span class="c1">// importance, stability, similarity per head</span>
+<span class="w">  </span><span class="nx">headClusters</span><span class="o">:</span><span class="w"> </span><span class="kt">ClusterResult</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span><span class="w"> </span><span class="c1">// dendrogram data (Feature 17)</span>
+
+<span class="w">  </span><span class="c1">// Logit lens (Feature 18)</span>
+<span class="w">  </span><span class="nx">layerPredictions</span><span class="o">:</span><span class="w"> </span><span class="kt">LayerPrediction</span><span class="p">[];</span><span class="w"> </span><span class="c1">// top‑k tokens per layer</span>
+
+<span class="w">  </span><span class="c1">// Evolution (Feature 19)</span>
+<span class="w">  </span><span class="nx">evolutionData</span><span class="o">:</span><span class="w"> </span><span class="kt">EvolutionSnapshot</span><span class="p">[];</span><span class="w">  </span><span class="c1">// head scores per epoch</span>
+<span class="w">  </span><span class="nx">currentEpoch</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Semantic pathway (Feature 20)</span>
+<span class="w">  </span><span class="nx">tokenEmbeddings</span><span class="o">:</span><span class="w"> </span><span class="kt">TokenEmbedding</span><span class="p">[];</span><span class="w">   </span><span class="c1">// 2D coordinates per token per layer</span>
+<span class="w">  </span><span class="nx">tokenTrajectories</span><span class="o">:</span><span class="w"> </span><span class="kt">Trajectory</span><span class="p">[];</span>
+
+<span class="w">  </span><span class="c1">// Computation state</span>
+<span class="w">  </span><span class="nx">isComputing</span><span class="o">:</span><span class="w"> </span><span class="kt">boolean</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">computeProgress</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span><span class="w">            </span><span class="c1">// 0–100</span>
+<span class="w">  </span><span class="nx">computeError</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="kc">null</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Components subscribe to <strong>granular selectors</strong> (e.g., <code>useAnalyticsStore(s =&gt; s.headScores)</code>) to prevent re‑renders when unrelated state changes.</p>
+<h3 id="c-computation-trigger-loading-states">C. Computation Trigger &amp; Loading States</h3>
+<p>All five features are computed <strong>lazily</strong>—only when the user opens the corresponding tab for the first time, or when the underlying model/text/layer changes. A <strong>progress indicator</strong> (skeleton shimmer with percentage) appears during computation. If the computation takes longer than 2 seconds, a <strong>"Running in background"</strong> toast appears, allowing the user to continue exploring other zones while analytics compute.</p>
+<hr />
+<h2 id="feature-16-head-importance-stability-similarity-3d-scatter">Feature 16: Head Importance × Stability × Similarity 3D Scatter</h2>
+<h3 id="161-scientific-foundation">16.1 Scientific Foundation</h3>
+<p>This feature directly implements the three pruning criteria proposed by BHPVAS (Liu et al., <em>Journal of Visualization</em>, 2024): importance score, stability score, and similarity score for evaluating self‑attention heads. These three metrics form a <strong>comprehensive diagnostic framework</strong> where each head can be assessed simultaneously for its contribution (importance), consistency (stability), and redundancy (similarity).</p>
+<h3 id="162-metric-definitions">16.2 Metric Definitions</h3>
+<p><strong>Importance Score:</strong><br />
+For head <code>h</code> in layer <code>l</code>, the importance measures how much the model output changes when this head is ablated (zeroed out). It is computed as:</p>
+<div class="highlight"><pre><span></span><code>I(l,h) = ‖L(x) − L_{¬(l,h)}(x)‖₂
+</code></pre></div>
+<p>where <code>L(x)</code> is the original loss (or output logits) and <code>L_{¬(l,h)}(x)</code> is the loss after masking head <code>(l,h)</code>. In practice, this is approximated using the first‑order Taylor expansion:</p>
+<div class="highlight"><pre><span></span><code>I(l,h) ≈ ‖∂L/∂A_{l,h} ⊙ A_{l,h}‖₂
+</code></pre></div>
+<p>where <code>A_{l,h}</code> is the attention weight matrix for head <code>(l,h)</code>. This avoids the computational cost of full ablation. The gradient <code>∂L/∂A_{l,h}</code> is obtained during a single backward pass on the calibration text.</p>
+<p><strong>Stability Score:</strong><br />
+Stability quantifies how consistent a head's attention pattern is across different inputs. Given a set of <code>K</code> calibration texts, the attention matrix <code>A_{l,h}^{(k)}</code> is computed for each. The stability is:</p>
+<div class="highlight"><pre><span></span><code>S(l,h) = 1 − σ( { ‖A_{l,h}^{(i)} − A_{l,h}^{(j)}‖_F } ) / μ
+</code></pre></div>
+<p>where <code>σ</code> is the standard deviation of pairwise Frobenius distances between attention matrices, and <code>μ</code> is their mean. A low stability score indicates a head whose behavior varies wildly with input, while high stability suggests a specialized, consistent function.</p>
+<p><strong>Similarity Score:</strong><br />
+Similarity measures how redundant a head is with respect to other heads in the same layer. For head <code>(l,h)</code>, the similarity is the average Jensen‑Shannon divergence between its attention distribution and every other head in layer <code>l</code>:</p>
+<div class="highlight"><pre><span></span><code>Sim(l,h) = (1/N) Σ_{j≠h} JSD( A_{l,h} ‖ A_{l,j} )
+</code></pre></div>
+<p>where JSD is the Jensen‑Shannon divergence between the row‑wise attention distributions. High similarity indicates a head that could potentially be pruned without significant loss.</p>
+<h3 id="163-technology-stack">16.3 Technology Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Computation</td>
+<td>Pyodide (NumPy/SciPy) in Web Worker</td>
+<td>SVD, JSD, pairwise distances—native Python scientific stack compiled to WASM</td>
+</tr>
+<tr>
+<td>3D Rendering</td>
+<td><strong>Deck.gl</strong> (<code>ScatterplotLayer</code>)</td>
+<td>GPU‑accelerated via WebGL2; handles millions of points at 60fps; built‑in picking, brushing, tooltip, viewport controls</td>
+</tr>
+<tr>
+<td>React Integration</td>
+<td><code>@deck.gl/react</code></td>
+<td>Declarative React component for Deck.gl layers</td>
+</tr>
+<tr>
+<td>Axes &amp; Labels</td>
+<td>Deck.gl <code>TextLayer</code> + <code>GridLayer</code></td>
+<td>GPU‑rendered text for axis labels</td>
+</tr>
+<tr>
+<td>Orbit Controls</td>
+<td>Custom <code>OrbitController</code> class wrapping Deck.gl view state</td>
+<td>Provides rotate, pan, zoom with inertia</td>
+</tr>
+<tr>
+<td>Color Mapping</td>
+<td><code>d3-scale-chromatic</code></td>
+<td>Continuous color scales (Viridis, Plasma, Turbo) for head type encoding</td>
+</tr>
+<tr>
+<td>Brushing</td>
+<td>Deck.gl <code>BrushingExtension</code></td>
+<td>Rectangle selection to filter heads by metric range</td>
+</tr>
+</tbody>
+</table>
+<h3 id="164-why-deckgl-over-plotly-or-threejs">16.4 Why Deck.gl Over Plotly or Three.js</h3>
+<p>Plotly.js 3D scatter plots struggle with more than a few thousand points and lack GPU acceleration for true 3D. React Three Fiber, while powerful, requires manual shader programming for optimal performance with large point clouds. Deck.gl provides the ideal middle ground: a <strong>pre‑built, GPU‑accelerated ScatterplotLayer</strong> designed explicitly for large‑scale data visualization, with built‑in interactivity (hover, click, brush) and seamless React integration via <code>@deck.gl/react</code>.</p>
+<h3 id="165-component-architecture">16.5 Component Architecture</h3>
+<div class="highlight"><pre><span></span><code>HeadScatter3D (container)
+├── DeckGL (canvas)
+│   ├── ScatterplotLayer (head points)
+│   │   └── Each point: position=[importance, stability, similarity]
+│   │                  radius=10, color=by head type, opacity=0.8
+│   ├── TextLayer (axis labels)
+│   │   └── "Importance →", "Stability →", "Similarity →"
+│   ├── GridLayer (reference grid on floor plane)
+│   └── BrushingExtension (rectangle selection)
+├── ScatterTooltip (floating div, positioned by Deck.gl picking)
+│   └── Shows: Layer, Head, Scores, Head Type, "Click to zoom"
+├── ScatterLegend (fixed position, bottom‑left)
+│   └── Color → Head Type mapping
+├── ScatterControls (top‑right overlay)
+│   ├── Metric selector: which metric on which axis (swappable)
+│   ├── Color by: [Head Type | Layer | Importance | Stability | Similarity]
+│   ├── Size by: [Uniform | Importance | Stability]
+│   ├── Reset view button
+│   └── Export PNG/SVG button
+└── SelectedHeadPanel (slides up from bottom when a head is clicked)
+    ├── Miniature attention heatmap preview
+    ├── Numerical scores
+    ├── "Zoom to Head View" button (switches Zone 2 to this head)
+    └── "Compare with…" button (opens side‑by‑side comparison)
+</code></pre></div>
+<h3 id="166-rendering-pipeline">16.6 Rendering Pipeline</h3>
+<ol>
+<li><strong>Data arrives</strong> from Web Worker as <code>Float32Array</code> of shape <code>(N_heads, 3)</code> for positions plus <code>(N_heads,)</code> for colors and sizes.</li>
+<li><strong>Deck.gl layer</strong> receives data as an array of plain objects: <code>[{importance, stability, similarity, layer, head, type, color, size}, …]</code>.</li>
+<li><strong>Vertex shader</strong> (GPU) transforms each point from data space to clip space using the current view matrix.</li>
+<li><strong>Fragment shader</strong> (GPU) applies Gaussian blur for depth‑of‑field effect (distant points appear softer).</li>
+<li><strong>Picking engine</strong> (GPU) renders an off‑screen framebuffer with unique color IDs per point. On mouse move, the color under the cursor is read back to identify the hovered point with zero CPU overhead.</li>
+<li><strong>Brushing</strong> uses the BrushingExtension to render a selection rectangle; selected points are highlighted and an <code>onBrushEnd</code> callback filters the dendrogram and other linked views.</li>
+</ol>
+<h3 id="167-interactive-behaviors">16.7 Interactive Behaviors</h3>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Orbit</strong> (left‑drag)</td>
+<td>Rotate the camera around the data center</td>
+</tr>
+<tr>
+<td><strong>Pan</strong> (right‑drag or shift+left‑drag)</td>
+<td>Translate the camera</td>
+</tr>
+<tr>
+<td><strong>Zoom</strong> (scroll)</td>
+<td>Zoom in/out; Deck.gl handles this natively</td>
+</tr>
+<tr>
+<td><strong>Hover</strong></td>
+<td>Tooltip appears showing head ID, layer, exact scores, head type</td>
+</tr>
+<tr>
+<td><strong>Click</strong></td>
+<td>Selects the head; opens the SelectedHeadPanel; highlights the head in the dendrogram and Model View</td>
+</tr>
+<tr>
+<td><strong>Double‑click</strong></td>
+<td>Zooms the camera to frame the selected head; resets on second double‑click</td>
+</tr>
+<tr>
+<td><strong>Brush</strong> (shift+drag)</td>
+<td>Rectangle selection; selects all heads within the rectangle; updates dendrogram to highlight selected cluster</td>
+</tr>
+<tr>
+<td><strong>Axis drag</strong></td>
+<td>Swap which metric is on which axis (drag "Importance" label to the Y‑axis, etc.)</td>
+</tr>
+<tr>
+<td><strong>Color legend click</strong></td>
+<td>Filter by head type (e.g., show only "Positional" heads)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="168-performance-optimizations">16.8 Performance Optimizations</h3>
+<ul>
+<li><strong>Instanced rendering</strong>: Deck.gl uses GPU instancing to render all points in a single draw call, avoiding per‑point CPU overhead.</li>
+<li><strong>Level‑of‑detail (LOD)</strong>: Points beyond a certain distance threshold are rendered as smaller dots or skipped entirely, controlled by Deck.gl's <code>pointRadiusMinPixels</code> and <code>radiusMaxPixels</code>.</li>
+<li><strong>Data update</strong>: When only colors or sizes change (not positions), Deck.gl updates only the affected GPU buffers without re‑uploading geometry.</li>
+<li><strong>Memoization</strong>: The <code>ScatterplotLayer</code> data array is wrapped in <code>useMemo</code> with dependencies on <code>[headScores, colorBy, sizeBy]</code>.</li>
+<li><strong>Web Worker offload</strong>: All scoring computation runs in the worker; the main thread only receives the final array of numbers.</li>
+</ul>
+<h3 id="169-edge-cases-error-states">16.9 Edge Cases &amp; Error States</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>No data</strong> (model not yet loaded)</td>
+<td>Shows placeholder: "Run a forward pass to compute head scores." with a CTA button</td>
+</tr>
+<tr>
+<td><strong>Single layer model</strong></td>
+<td>Z‑axis (Similarity) is disabled; scatter becomes 2D; a note explains "Similarity requires ≥2 heads per layer"</td>
+</tr>
+<tr>
+<td><strong>Computation timeout (&gt;30s)</strong></td>
+<td>Worker is terminated; error state shows "Computation timed out. Try a smaller model or fewer calibration texts." with retry</td>
+</tr>
+<tr>
+<td><strong>All heads identical</strong></td>
+<td>All points cluster at a single location; a warning banner: "All heads exhibit identical behavior—this model may be untrained or collapsed."</td>
+</tr>
+<tr>
+<td><strong>GPU not available</strong></td>
+<td>Falls back to SVG rendering via D3.js (slower but functional); a banner indicates "Software rendering mode"</td>
+</tr>
+</tbody>
+</table>
+<h3 id="1610-accessibility">16.10 Accessibility</h3>
+<ul>
+<li>Keyboard navigation: Tab to focus the scatter plot; arrow keys rotate the view; +/- zoom; Enter selects the hovered point.</li>
+<li><code>aria-label</code> on the Deck.gl canvas: "3D scatter plot of attention head scores. X‑axis: Importance. Y‑axis: Stability. Z‑axis: Similarity. {N} heads displayed."</li>
+<li>The SelectedHeadPanel announces via <code>aria-live="polite"</code> when a head is selected.</li>
+<li>Color‑blind safe mode: toggle in the controls switches from Viridis to a CVD‑friendly palette (Cividis).</li>
+</ul>
+<hr />
+<h2 id="feature-17-head-clustering-dendrogram">Feature 17: Head Clustering Dendrogram</h2>
+<h3 id="171-scientific-foundation">17.1 Scientific Foundation</h3>
+<p>Hierarchical clustering groups attention heads based on the similarity of their attention patterns. Heads that consistently produce similar attention distributions across multiple inputs are grouped into the same cluster. The resulting dendrogram reveals the <strong>functional organization</strong> of the attention mechanism—for example, BERT models typically exhibit distinct clusters for positional heads (attending to adjacent tokens), semantic heads (attending to related content words), delimiter heads (attending to punctuation/separators), and induction heads (copying previous token patterns).</p>
+<p>The clustering uses <strong>agglomerative hierarchical clustering</strong> with Ward's linkage criterion, which minimizes the within‑cluster variance. The input is the pairwise Jensen‑Shannon divergence matrix between all heads, computed across a set of calibration texts.</p>
+<h3 id="172-technology-stack">17.2 Technology Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Computation</td>
+<td>Pyodide (<code>scipy.cluster.hierarchy</code>) in Web Worker</td>
+<td>SciPy's <code>linkage</code> and <code>dendrogram</code> functions are the gold standard for hierarchical clustering; running in Pyodide avoids re‑implementation</td>
+</tr>
+<tr>
+<td>Dendrogram Rendering</td>
+<td><strong>D3.js</strong> (<code>d3-hierarchy</code> + custom <code>d3-cluster</code>)</td>
+<td>D3's cluster layout produces publication‑quality dendrograms with precise control over node positioning</td>
+</tr>
+<tr>
+<td>React Integration</td>
+<td>Custom <code>DendrogramView</code> component using <code>useRef</code> + <code>useEffect</code></td>
+<td>D3 manipulates the DOM directly within a React‑managed container; React owns the container, D3 owns the internals</td>
+</tr>
+<tr>
+<td>Zoom/Pan</td>
+<td><code>d3-zoom</code></td>
+<td>Built‑in zoom behavior with smooth transitions and touch support</td>
+</tr>
+<tr>
+<td>Color Coding</td>
+<td><code>d3-scale-chromatic</code></td>
+<td>Consistent color scheme with the scatter plot</td>
+</tr>
+<tr>
+<td>Export</td>
+<td><code>svg-crowbar</code> or manual <code>XMLSerializer</code></td>
+<td>Extracts the SVG for download as PNG/SVG</td>
+</tr>
+</tbody>
+</table>
+<h3 id="173-component-architecture">17.3 Component Architecture</h3>
+<div class="highlight"><pre><span></span><code>DendrogramPanel (container)
+├── DendrogramControls (top bar)
+│   ├── Linkage method selector: [Ward | Average | Complete | Single]
+│   ├── Distance metric selector: [JSD | Cosine | Euclidean]
+│   ├── Color by: [Auto‑label | Layer | Head Type]
+│   ├── Expand/Collapse all button
+│   ├── Export SVG button
+│   └── Search head input (highlights matching leaf)
+├── DendrogramSVG (scrollable SVG container)
+│   ├── &lt;g class="links"&gt; (the tree branches, as curved paths)
+│   ├── &lt;g class="nodes"&gt; (internal nodes, as circles)
+│   ├── &lt;g class="leaves"&gt; (leaf nodes = individual heads)
+│   │   └── Each leaf: colored rectangle + head label
+│   ├── &lt;g class="heatmap-strip"&gt; (optional: mini heatmap next to each leaf)
+│   └── &lt;g class="cluster-labels"&gt; (auto‑generated cluster names)
+├── ClusterDetailPanel (right sidebar, shown when a cluster is selected)
+│   ├── Prototypical attention pattern (the cluster centroid)
+│   ├── Head count in cluster
+│   ├── Average importance/stability/similarity for the cluster
+│   ├── "Prune this cluster" button (exports pruning recipe)
+│   └── "Explore cluster in 3D" button (highlights cluster in Feature 16)
+└── DendrogramTooltip (follows cursor on hover)
+    └── Shows: Head ID, Layer, Head Type, Cluster assignment
+</code></pre></div>
+<h3 id="174-data-flow">17.4 Data Flow</h3>
+<ol>
+<li><strong>Raw attention matrices</strong> for all heads across K calibration texts are fetched from the cache or computed.</li>
+<li><strong>Web Worker</strong> receives the matrices as a flat <code>Float32Array</code>.</li>
+<li><strong>Python (Pyodide)</strong> computes the pairwise JSD matrix using <code>scipy.spatial.distance.jensenshannon</code>, then runs <code>scipy.cluster.hierarchy.linkage</code> with Ward's method.</li>
+<li>The linkage matrix (a <code>(N-1)×4</code> array) and the leaf order are returned to the main thread.</li>
+<li><strong>D3.js</strong> receives the linkage data and renders the dendrogram using <code>d3.cluster()</code>. The <code>d3-hierarchy</code> module implements "several popular techniques for visualizing hierarchical data" including node‑link diagrams.</li>
+<li><strong>Auto‑labeling</strong>: The system traverses the dendrogram and assigns cluster labels based on the prototypical attention pattern of each cluster. The labeling uses a rule‑based classifier: if the centroid attention pattern shows a strong diagonal (token attending to itself), it's a "Positional" cluster; if attention is concentrated on semantically related tokens (detected via word embeddings), it's a "Semantic" cluster; if attention is on punctuation/CLS/SEP tokens, it's a "Delimiter" cluster.</li>
+</ol>
+<h3 id="175-interactive-behaviors">17.5 Interactive Behaviors</h3>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hover leaf</strong></td>
+<td>Tooltip with head details; highlights the corresponding point in the 3D scatter</td>
+</tr>
+<tr>
+<td><strong>Click leaf</strong></td>
+<td>Selects the head; switches Zone 2 to that head; opens the SelectedHeadPanel</td>
+</tr>
+<tr>
+<td><strong>Click internal node</strong></td>
+<td>Selects the cluster; opens ClusterDetailPanel; highlights all leaves in that cluster</td>
+</tr>
+<tr>
+<td><strong>Double‑click internal node</strong></td>
+<td>Collapses/expands the subtree below that node</td>
+</tr>
+<tr>
+<td><strong>Brush (drag on heatmap strip)</strong></td>
+<td>Selects a range of heads; filters the scatter plot to show only those heads</td>
+</tr>
+<tr>
+<td><strong>Scroll</strong></td>
+<td>Zooms the dendrogram in/out (using <code>d3-zoom</code>)</td>
+</tr>
+<tr>
+<td><strong>Drag</strong></td>
+<td>Pans the dendrogram</td>
+</tr>
+<tr>
+<td><strong>Search</strong></td>
+<td>Highlights the leaf matching the typed head ID; scrolls it into view</td>
+</tr>
+<tr>
+<td><strong>Linkage change</strong></td>
+<td>Recomputes clustering (triggers Web Worker) with the new method; dendrogram animates to the new layout</td>
+</tr>
+</tbody>
+</table>
+<h3 id="176-performance-optimizations">17.6 Performance Optimizations</h3>
+<ul>
+<li><strong>Lazy leaf rendering</strong>: Only leaves visible in the viewport (plus a buffer of 50) are rendered as full elements; off‑screen leaves are placeholder rectangles with the same dimensions to maintain scroll height.</li>
+<li><strong>Virtualized heatmap strip</strong>: The optional mini‑heatmap next to each leaf uses Canvas rendering for hundreds of leaves, avoiding SVG DOM bloat.</li>
+<li><strong>Memoized linkage</strong>: If the user switches between linkage methods and then back, the previous result is cached (in the Zustand store) to avoid recomputation.</li>
+<li><strong>Web Worker reuse</strong>: The Pyodide worker is kept alive between computations; subsequent clustering runs use the already‑initialized Python environment, reducing startup latency from ~3s to ~100ms.</li>
+</ul>
+<h3 id="177-edge-cases-error-states">17.7 Edge Cases &amp; Error States</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Single head in a layer</strong></td>
+<td>That layer's heads are excluded from clustering (or shown as isolated leaves); a note explains</td>
+</tr>
+<tr>
+<td><strong>All heads identical</strong></td>
+<td>The dendrogram shows a single deep branch with all leaves clustered at zero distance; warning displayed</td>
+</tr>
+<tr>
+<td><strong>Computation failure</strong></td>
+<td>Error state with "Clustering failed. Try a different distance metric or fewer heads."</td>
+</tr>
+<tr>
+<td><strong>Very large model (1000+ heads)</strong></td>
+<td>Dendrogram becomes too dense; auto‑switch to "circular dendrogram" layout (using <code>d3.cluster().size([360, radius])</code> for radial display)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="178-autolabeling-algorithm">17.8 Auto‑Labeling Algorithm</h3>
+<p>The auto‑labeling works as follows:</p>
+<ol>
+<li>For each cluster, compute the <strong>centroid attention pattern</strong> by averaging the attention matrices of all heads in the cluster (after aligning them via the leaf order).</li>
+<li>Extract <strong>diagnostic features</strong> from the centroid:</li>
+<li><code>diagonal_strength</code>: mean of the diagonal entries (token self‑attention)</li>
+<li><code>adjacent_strength</code>: mean of the first off‑diagonal (attention to immediate neighbors)</li>
+<li><code>delimiter_strength</code>: attention weight on [CLS], [SEP], punctuation tokens</li>
+<li><code>semantic_strength</code>: correlation between attention weights and word embedding similarity</li>
+<li>Classify using a <strong>decision tree</strong>:
+   <div class="highlight"><pre><span></span><code>if diagonal_strength &gt; 0.3: → "Positional"
+elif delimiter_strength &gt; 0.2: → "Delimiter"
+elif semantic_strength &gt; 0.15: → "Semantic"
+elif adjacent_strength &gt; 0.3: → "Local Context"
+else: → "Mixed / Diffuse"
+</code></pre></div></li>
+</ol>
+<h3 id="179-accessibility">17.9 Accessibility</h3>
+<ul>
+<li>The dendrogram SVG includes <code>aria-label</code> on each leaf: "Head L{layer}H{head}, cluster {name}, similarity score {score}."</li>
+<li>Keyboard: Arrow keys navigate between leaves; Enter selects; +/- expand/collapse.</li>
+<li>Screen reader announces "Dendrogram updated. {N} clusters identified: {cluster names}."</li>
+</ul>
+<hr />
+<h2 id="feature-18-logit-lens-prediction-timeline">Feature 18: Logit Lens Prediction Timeline</h2>
+<h3 id="181-scientific-foundation">18.1 Scientific Foundation</h3>
+<p>The Logit Lens (nostalgebraist, 2020) is a training‑free interpretability method that reveals how a transformer model's prediction evolves layer by layer. At each layer, the hidden state <code>h_l</code> is projected into vocabulary space using the model's unembedding matrix <code>W_U</code>:</p>
+<div class="highlight"><pre><span></span><code>p_l = softmax(W_U · h_l)
+</code></pre></div>
+<p>This "directly reads out the model's implicit prediction at each layer" without any extra machinery. The logit lens shows that early layers produce confused, diffuse predictions, mid layers gradually converge toward the correct token, and final layers refine the probability distribution.</p>
+<h3 id="182-technology-stack">18.2 Technology Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hidden state extraction</td>
+<td><code>transformers.js</code> (ONNX Runtime) or backend API</td>
+<td>Extracts hidden states from each transformer layer in the browser or via API</td>
+</tr>
+<tr>
+<td>Vocabulary projection</td>
+<td>Custom WebAssembly module or Pyodide (NumPy)</td>
+<td>Matrix multiplication <code>W_U @ h_l</code> for all layers; NumPy is sufficient</td>
+</tr>
+<tr>
+<td>Top‑k extraction</td>
+<td>Pyodide (NumPy <code>argsort</code>)</td>
+<td>Finds top‑k token indices and probabilities</td>
+</tr>
+<tr>
+<td>Timeline Scrubber</td>
+<td>Framer Motion + custom slider</td>
+<td>Smooth animation between layers; spring physics for scrubber</td>
+</tr>
+<tr>
+<td>Word Cloud</td>
+<td>Custom Canvas component</td>
+<td>Renders variable‑sized text with collision detection</td>
+</tr>
+<tr>
+<td>Token Highlighting</td>
+<td>React state + CSS transitions</td>
+<td>Highlights the predicted token in the original input text</td>
+</tr>
+</tbody>
+</table>
+<h3 id="183-component-architecture">18.3 Component Architecture</h3>
+<div class="highlight"><pre><span></span><code>LogitLensPanel (container)
+├── TimelineScrubber (top)
+│   ├── Layer indicator: "Layer 5 / 12"
+│   ├── Slider input (range 0 to N_layers-1)
+│   ├── Play/Pause button (auto‑advances through layers)
+│   ├── Speed control (0.5×, 1×, 2×)
+│   └── Current prediction display: "Model predicts: 'Paris' (87.3%)"
+├── PredictionWordCloud (center, main visualization)
+│   └── Canvas element rendering top‑k tokens as sized text
+├── TokenContributionBar (bottom)
+│   ├── Horizontal stacked bar showing which tokens contributed to the top prediction
+│   └── Each segment colored by attention head, width proportional to contribution
+├── LayerTimeline (vertical bar on the left)
+│   ├── 12–48 dots representing layers
+│   ├── Current layer dot is highlighted and pulsing
+│   ├── Click any dot to jump to that layer
+│   └── Color gradient: early layers (cold/blue) → late layers (hot/red)
+└── InputTextHighlight (overlaid on the original text display)
+    └── Each token colored by its attention to the predicted token
+</code></pre></div>
+<h3 id="184-data-flow">18.4 Data Flow</h3>
+<ol>
+<li>The model runs a forward pass on the input text. Hidden states <code>h_0, h_1, …, h_L</code> are captured at each layer's output (after the attention sub‑layer and FFN, before layer norm).</li>
+<li>The unembedding matrix <code>W_U</code> (also called the LM head) is extracted from the model. For BERT, this is the <code>cls.predictions.decoder.weight</code>; for GPT, it's <code>lm_head.weight</code>.</li>
+<li>For each layer <code>l</code>, the logit lens projection is computed: <code>logits_l = W_U @ h_l</code> (matrix multiplication of shape <code>[vocab_size, d_model] × [d_model]</code>).</li>
+<li>Softmax is applied to get probabilities: <code>p_l = softmax(logits_l)</code>.</li>
+<li>The top‑k (k=20) tokens and their probabilities are extracted.</li>
+<li>The Canvas word cloud renders each token as text sized proportionally to its probability, positioned using a force‑directed layout to avoid overlaps.</li>
+</ol>
+<h3 id="185-interactive-behaviors">18.5 Interactive Behaviors</h3>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Scrub timeline</strong></td>
+<td>Real‑time update of the word cloud and token contribution bar</td>
+</tr>
+<tr>
+<td><strong>Click a word in the cloud</strong></td>
+<td>Highlights that token's probability across all layers (shows a sparkline)</td>
+</tr>
+<tr>
+<td><strong>Click a layer dot</strong></td>
+<td>Jumps the timeline to that layer</td>
+</tr>
+<tr>
+<td><strong>Play</strong></td>
+<td>Auto‑advances through layers at the selected speed; word cloud animates smoothly</td>
+</tr>
+<tr>
+<td><strong>Hover a token in the input text</strong></td>
+<td>Shows which layers attend to that token most strongly</td>
+</tr>
+<tr>
+<td><strong>Double‑click a layer</strong></td>
+<td>Switches Zone 2 (Attention Canvas) to show the attention pattern at that layer</td>
+</tr>
+</tbody>
+</table>
+<h3 id="186-canvas-word-cloud-rendering">18.6 Canvas Word Cloud Rendering</h3>
+<p>The word cloud uses a custom Canvas implementation for performance:</p>
+<ol>
+<li><strong>Layout</strong>: A simple force‑directed algorithm places tokens. Each token is a circle (radius ∝ log(probability)). Tokens repel each other; the canvas center attracts all tokens. The simulation runs for 50 iterations (sufficient for 20 tokens).</li>
+<li><strong>Rendering</strong>: <code>ctx.font</code> is set proportionally to probability (min 12px, max 48px). <code>ctx.fillStyle</code> uses a gradient from the current layer's color. <code>ctx.fillText()</code> renders each token at its computed position.</li>
+<li><strong>Animation</strong>: When the layer changes, tokens smoothly transition to their new positions and sizes using <code>requestAnimationFrame</code> with linear interpolation over 300ms.</li>
+</ol>
+<h3 id="187-edge-cases-error-states">18.7 Edge Cases &amp; Error States</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Model without LM head</strong> (e.g., encoder‑only without pretraining head)</td>
+<td>Shows "This model does not have a language modeling head. Logit lens requires an unembedding matrix."</td>
+</tr>
+<tr>
+<td><strong>Vocabulary too large (100K+ tokens)</strong></td>
+<td>Top‑k is increased to 50; word cloud switches to "dense pack" layout</td>
+</tr>
+<tr>
+<td><strong>All layers predict the same token</strong></td>
+<td>Timeline shows a flat line; info banner: "This model converges early—all layers agree on the prediction."</td>
+</tr>
+<tr>
+<td><strong>Early layers produce uniform distribution</strong></td>
+<td>Word cloud shows many tiny, equally‑sized words; a note explains "Early layers have not yet focused on a specific token"</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="feature-19-attention-pattern-evolution-timelapse">Feature 19: Attention Pattern Evolution Time‑Lapse</h2>
+<h3 id="191-scientific-foundation">19.1 Scientific Foundation</h3>
+<p>During training, attention heads do not immediately specialize. Research shows that positional patterns emerge first (often within the first few hundred steps), followed by semantic patterns, and finally delimiter/induction patterns. This feature visualizes that <strong>developmental trajectory</strong>, allowing researchers to identify the "critical period" when each head crystallizes into its final function.</p>
+<p>The time‑lapse is generated from <strong>training checkpoints</strong> saved during the experiment. For each checkpoint, the attention patterns for all heads are extracted, and the head scores (importance, stability, similarity) are computed. The animation shows how heads move through the 3D metric space over training time.</p>
+<h3 id="192-technology-stack">19.2 Technology Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Checkpoint loading</td>
+<td>Backend API (<code>/api/experiments/{id}/checkpoints/</code>)</td>
+<td>Checkpoints are stored on the server; loaded on‑demand</td>
+</tr>
+<tr>
+<td>Head score computation</td>
+<td>Pyodide (NumPy) in Web Worker</td>
+<td>Same scoring pipeline as Feature 16, applied per checkpoint</td>
+</tr>
+<tr>
+<td>Animation</td>
+<td><code>requestAnimationFrame</code> + Deck.gl data updates</td>
+<td>Smooth 60fps animation; Deck.gl efficiently updates point positions without full re‑render</td>
+</tr>
+<tr>
+<td>Timeline</td>
+<td>Custom React slider + Framer Motion</td>
+<td>Scrubbable timeline with keyframe markers</td>
+</tr>
+<tr>
+<td>Sparklines</td>
+<td>D3.js (<code>d3-shape</code>) rendered to SVG</td>
+<td>Small inline charts showing individual head trajectories</td>
+</tr>
+</tbody>
+</table>
+<h3 id="193-component-architecture">19.3 Component Architecture</h3>
+<div class="highlight"><pre><span></span><code>EvolutionPanel (container)
+├── EvolutionTimeline (top)
+│   ├── Slider: epoch 0 → epoch N
+│   ├── Keyframe markers (vertical lines at significant events: "Head 7 crystallizes", "Loss drops")
+│   ├── Play/Pause/Step controls
+│   └── Speed selector
+├── EvolutionScatter3D (center, reuses Feature 16's Deck.gl component)
+│   └── Points animate along trajectories as the timeline scrubs
+├── HeadTrajectoryPanel (right sidebar)
+│   ├── Selected head's trajectory sparkline (importance over time)
+│   ├── "Crystallization epoch": when the head's pattern stabilized
+│   ├── "Pruning recommendation": based on final scores
+│   └── "Compare with another head" selector
+├── CrystallizationTimeline (bottom)
+│   ├── Horizontal Gantt‑style chart
+│   ├── Each row = one head; each bar = from first emergence to crystallization
+│   └── Color‑coded by final head type
+└── EventLog (bottom‑right)
+    └── Auto‑generated timeline of significant events during training
+</code></pre></div>
+<h3 id="194-data-flow">19.4 Data Flow</h3>
+<ol>
+<li><strong>Checkpoint list</strong> is fetched from the backend: <code>[{epoch: 0, checkpoint_path: …}, {epoch: 10, …}, …]</code>.</li>
+<li>For each checkpoint, the Web Worker loads the attention data (from cache or backend), computes head scores, and stores the result.</li>
+<li>The animation interpolates between consecutive checkpoints. For epochs between saved checkpoints, linear interpolation is used (with a note indicating "interpolated").</li>
+<li><strong>Crystallization detection</strong>: A head is considered "crystallized" when its attention pattern's JSD to the final pattern drops below a threshold (default 0.1) and remains below for at least 3 consecutive checkpoints.</li>
+</ol>
+<h3 id="195-animation-pipeline">19.5 Animation Pipeline</h3>
+<p>The animation loop uses <code>requestAnimationFrame</code>:</p>
+<ol>
+<li>On each frame, the current epoch (float) is computed from the timeline position.</li>
+<li>For each head, its position <code>(importance, stability, similarity)</code> is interpolated between the two nearest checkpoints.</li>
+<li>The Deck.gl <code>ScatterplotLayer</code> data array is updated in place (mutating the positions) and <code>layer.setChangeFlags({dataChanged: true})</code> is called to trigger a GPU buffer update.</li>
+<li>The frame rate is capped at 60fps; if computation takes longer than 16ms, frames are skipped to maintain smooth animation.</li>
+</ol>
+<h3 id="196-interactive-behaviors">19.6 Interactive Behaviors</h3>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Scrub timeline</strong></td>
+<td>Real‑time update of all head positions in the 3D scatter</td>
+</tr>
+<tr>
+<td><strong>Click a head</strong></td>
+<td>Pauses animation; shows that head's trajectory sparkline; highlights its row in the crystallization Gantt chart</td>
+</tr>
+<tr>
+<td><strong>Click a crystallization event</strong></td>
+<td>Jumps the timeline to that epoch</td>
+</tr>
+<tr>
+<td><strong>Compare mode</strong></td>
+<td>Select two heads; their trajectories are shown as colored lines in the 3D space</td>
+</tr>
+<tr>
+<td><strong>Export animation</strong></td>
+<td>Renders the full animation as an MP4 (using <code>MediaRecorder</code> API on the Deck.gl canvas)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="197-edge-cases-error-states">19.7 Edge Cases &amp; Error States</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>No checkpoints available</strong></td>
+<td>Shows "No training history available. Run an experiment with checkpointing enabled."</td>
+</tr>
+<tr>
+<td><strong>Single checkpoint</strong></td>
+<td>Static view; animation controls disabled; note: "Only one checkpoint available. Animation requires at least two."</td>
+</tr>
+<tr>
+<td><strong>Head never crystallizes</strong></td>
+<td>Marked as "Unstable" in the Gantt chart; sparkline shows continuing fluctuation</td>
+</tr>
+<tr>
+<td><strong>Very long training (10K+ epochs)</strong></td>
+<td>Checkpoints are subsampled (max 200 displayed); slider uses logarithmic scale</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="feature-20-semantic-pathway-crosslayer-trajectories">Feature 20: Semantic Pathway Cross‑Layer Trajectories</h2>
+<h3 id="201-scientific-foundation">20.1 Scientific Foundation</h3>
+<p>Semantic Pathway (IEEE VIS 2025) is a visual analytics tool that "reveals how token representations evolve across layers in autoregressive Transformer models" by integrating "layerwise semantic trajectories, attention overlays, and output probability views into a unified interface". The key insight is that each token's hidden state <code>h_l(token)</code> can be projected into a 2D space (via UMAP or t‑SNE), and connecting the same token across layers reveals how its <strong>meaning evolves</strong> as information flows through the model.</p>
+<h3 id="202-technology-stack">20.2 Technology Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dimension reduction</td>
+<td><strong>umap-js</strong> (JavaScript UMAP) or Pyodide (<code>sklearn.manifold.TSNE</code>)</td>
+<td>UMAP runs in the browser via WebAssembly; preserves global structure better than t‑SNE and is faster</td>
+</tr>
+<tr>
+<td>2D Scatter</td>
+<td>Deck.gl <code>ScatterplotLayer</code></td>
+<td>GPU‑accelerated; handles hundreds of points smoothly</td>
+</tr>
+<tr>
+<td>Trajectory Lines</td>
+<td>Deck.gl <code>LineLayer</code> or Three.js <code>Line</code> via <code>@react-three/fiber</code></td>
+<td>GPU‑rendered curved lines between token positions across layers</td>
+</tr>
+<tr>
+<td>Attention Influence Arcs</td>
+<td>Deck.gl <code>ArcLayer</code></td>
+<td>GPU‑rendered arcs showing which tokens influenced a token's position change</td>
+</tr>
+<tr>
+<td>Layer Selector</td>
+<td>Custom React slider</td>
+<td>Filters which layers are shown</td>
+</tr>
+<tr>
+<td>Token Labeling</td>
+<td>Deck.gl <code>TextLayer</code></td>
+<td>GPU‑rendered text labels for tokens</td>
+</tr>
+</tbody>
+</table>
+<h3 id="203-component-architecture">20.3 Component Architecture</h3>
+<div class="highlight"><pre><span></span><code>SemanticPathwayPanel (container)
+├── PathwayControls (top bar)
+│   ├── Dimensionality reduction: [UMAP | t‑SNE | PCA]
+│   ├── UMAP parameters: [n_neighbors, min_dist]
+│   ├── Color by: [Token | Layer | POS tag | Attention influence]
+│   ├── Show trajectories: [All tokens | Selected token only | None]
+│   ├── Show influence arcs: [On | Off]
+│   └── Export button
+├── PathwayScatter2D (center, main visualization)
+│   ├── Deck.gl canvas
+│   │   ├── ScatterplotLayer: token positions at each layer
+│   │   ├── LineLayer: trajectory paths connecting the same token across layers
+│   │   ├── ArcLayer: influence arcs between tokens
+│   │   └── TextLayer: token labels
+├── TokenSelector (left sidebar)
+│   ├── List of all tokens in the input text
+│   ├── Click to highlight that token's trajectory
+│   └── Color picker for custom trajectory colors
+├── LayerSlider (bottom)
+│   ├── Range slider: select which layers to display
+│   └── Preset buttons: "All layers", "Early only", "Late only"
+├── TokenInfluencePanel (right sidebar, shown when a token is selected)
+│   ├── List of tokens ranked by influence on the selected token
+│   ├── Influence score (JSD between trajectory with and without that token)
+│   └── Click to highlight the influencing token's trajectory
+└── PathwayLegend (bottom‑right)
+    └── Color → Layer mapping (gradient from blue/cold → red/hot)
+</code></pre></div>
+<h3 id="204-data-flow">20.4 Data Flow</h3>
+<ol>
+<li>Hidden states for all tokens across all layers are extracted (same pipeline as Logit Lens).</li>
+<li>The hidden states for all tokens at all layers are concatenated into a single matrix of shape <code>(N_tokens × N_layers, d_model)</code>. This ensures that UMAP/t‑SNE learns a shared embedding space where the same token at different layers can be compared.</li>
+<li><strong>UMAP</strong> (via <code>umap-js</code> or Pyodide) reduces this matrix to 2D, producing coordinates <code>(x, y)</code> for every token at every layer.</li>
+<li>The coordinates are split by layer and token, forming trajectories.</li>
+<li><strong>Attention influence</strong> is computed: for each token <code>t</code> at layer <code>l</code>, the change in its UMAP position from layer <code>l-1</code> to <code>l</code> is attributed to other tokens proportionally to the attention weight from <code>t</code> to them at layer <code>l</code>.</li>
+</ol>
+<h3 id="205-trajectory-rendering">20.5 Trajectory Rendering</h3>
+<p>Trajectories are rendered as <strong>curved paths</strong> (quadratic Bézier curves) connecting the same token's position at consecutive layers. The curve's control point is offset perpendicular to the line connecting the two points, with the offset magnitude proportional to the distance traveled (creating a visually pleasing "flow" effect).</p>
+<p>For the selected token, the trajectory is rendered as a <strong>thick, glowing line</strong> (using Deck.gl's <code>LineLayer</code> with <code>opacity: 1</code> and a larger <code>widthScale</code>). Other tokens' trajectories are rendered as thin, semi‑transparent lines.</p>
+<h3 id="206-influence-arcs">20.6 Influence Arcs</h3>
+<p>Influence arcs show how attention from one token "pulls" another token's representation. An arc from token A at layer <code>l</code> to token B at layer <code>l</code> is rendered if the attention weight <code>A_{l}(A→B)</code> exceeds a threshold (default 0.1). The arc's <strong>thickness</strong> is proportional to the attention weight, and its <strong>color</strong> matches the attention head that produced it.</p>
+<p>Deck.gl's <code>ArcLayer</code> is used for this purpose, as it "offers highly‑flexible API to customize how the data should be rendered" with GPU acceleration.</p>
+<h3 id="207-interactive-behaviors">20.7 Interactive Behaviors</h3>
+<table>
+<thead>
+<tr>
+<th>Interaction</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hover a point</strong></td>
+<td>Tooltip: token text, layer number, 2D coordinates</td>
+</tr>
+<tr>
+<td><strong>Click a point</strong></td>
+<td>Selects that token; highlights its full trajectory; opens TokenInfluencePanel</td>
+</tr>
+<tr>
+<td><strong>Click a trajectory</strong></td>
+<td>Selects the token; same as clicking a point on that trajectory</td>
+</tr>
+<tr>
+<td><strong>Drag the layer slider</strong></td>
+<td>Filters which layers' points and trajectories are visible</td>
+</tr>
+<tr>
+<td><strong>Hover an influence arc</strong></td>
+<td>Tooltip: "Token X attends to Token Y with weight 0.34 (Head 7)"</td>
+</tr>
+<tr>
+<td><strong>Double‑click empty space</strong></td>
+<td>Resets selection; shows all trajectories</td>
+</tr>
+<tr>
+<td><strong>Scroll</strong></td>
+<td>Zooms the scatter plot</td>
+</tr>
+<tr>
+<td><strong>Drag</strong></td>
+<td>Pans the scatter plot</td>
+</tr>
+</tbody>
+</table>
+<h3 id="208-performance-optimizations">20.8 Performance Optimizations</h3>
+<ul>
+<li><strong>UMAP caching</strong>: The UMAP projection is cached per (model, text) pair in IndexedDB. Re‑loading the same text uses the cached coordinates.</li>
+<li><strong>Progressive rendering</strong>: Trajectories for the first 5 tokens render immediately; remaining tokens render over subsequent frames to avoid frame drops.</li>
+<li><strong>Arc culling</strong>: Influence arcs below the threshold are not sent to the GPU, reducing the number of arcs from O(N²) to O(N) in practice.</li>
+<li><strong>Layer filtering</strong>: When the layer slider filters to a subset of layers, only those points and trajectories are sent to Deck.gl.</li>
+</ul>
+<h3 id="209-edge-cases-error-states">20.9 Edge Cases &amp; Error States</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Single‑token input</strong></td>
+<td>Trajectories view is replaced with a note: "Trajectories require at least 2 tokens to show cross‑token relationships."</td>
+</tr>
+<tr>
+<td><strong>UMAP produces overlapping points</strong></td>
+<td>A jitter toggle adds small random offsets to separate overlapping points</td>
+</tr>
+<tr>
+<td><strong>Very long text (500+ tokens)</strong></td>
+<td>Only the first 128 tokens are projected; a note explains the truncation</td>
+</tr>
+<tr>
+<td><strong>UMAP computation timeout</strong></td>
+<td>Falls back to PCA (faster but less expressive); a banner indicates "Using PCA for faster rendering. Switch to UMAP for better separation."</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="crossfeature-integration">Cross‑Feature Integration</h2>
+<h3 id="brushing-and-linking">Brushing and Linking</h3>
+<p>All five features are <strong>linked</strong> through the shared <code>useAnalyticsStore</code>. Interactions in one feature propagate to others:</p>
+<ul>
+<li><strong>Selecting a head in the 3D scatter</strong> highlights that leaf in the dendrogram, shows its trajectory in the evolution time‑lapse, and marks its tokens in the semantic pathway.</li>
+<li><strong>Selecting a cluster in the dendrogram</strong> filters the 3D scatter to show only those heads, updates the evolution view to show the cluster's collective trajectory, and highlights all tokens influenced by those heads.</li>
+<li><strong>Scrubbing the logit lens timeline</strong> updates the semantic pathway to show token positions at that specific layer.</li>
+</ul>
+<h3 id="unified-export">Unified Export</h3>
+<p>A single "Export Dashboard Report" button in Zone 5 generates a comprehensive PDF containing all five visualizations (as SVG/PNG), the computed metrics table, and an auto‑generated textual summary of findings (e.g., "Layer 5 contains 3 positional heads and 1 semantic head. Head L5H7 shows high importance (0.87) and low similarity (0.12), making it a strong candidate for retention during pruning.").</p>
+<hr />
+<h2 id="summary">Summary</h2>
+<p>Zone 5 transforms raw attention tensors into a comprehensive diagnostic toolkit. The five features work together to answer the full lifecycle of attention analysis: <strong>which heads matter</strong> (3D scatter), <strong>which heads are similar</strong> (dendrogram), <strong>what the model predicts</strong> (logit lens), <strong>how patterns evolve</strong> (time‑lapse), and <strong>where meaning flows</strong> (semantic pathway). Each feature uses specialized rendering technology (Deck.gl for GPU‑accelerated scatter plots, D3.js for dendrograms, Canvas for word clouds) and offloads heavy computation to a Pyodide Web Worker to maintain a responsive 60fps interface.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

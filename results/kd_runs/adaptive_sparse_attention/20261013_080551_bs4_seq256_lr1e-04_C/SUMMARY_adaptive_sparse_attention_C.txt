@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: adaptive_sparse_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      127.09 M
+  Trainable params:  31.0 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        49.3400
+  Post-KD PPL:       36.2500
+  Stage 1 (KD) PPL:  35.7400
+  Stage 2 (Self) PPL:36.2500
+  KD Gain:           +13.60
+  Self Gain:         -0.51
+  Total Gain:        +13.09
+  Aligned w/ Teacher:YES
+  Beat Teacher:      NO
+  PPL Ratio:         1.0011
+  Recovery:          99.70%
+  Peak VRAM:         3211.05 MB
+  Train time:        618.13 s (Stage 1: 455.9s, Stage 2: 162.3s)
+  s/step:            0.2060
+  Loss (final):      25.0105
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.9461
+  Repetition-3:      0.0123
+  Train PPL:         15.7100
+  Test PPL:          36.2500
+  Overfit Gap:       20.54
+  Latency (mean):    589.10 ms
+  Latency (std):     0.70 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        6c7a3c0c9784
+
+TRAINING HISTORY (last 10 steps):
+  step  2910 | loss=2.9023 | lr=2.31e-06
+  step  2920 | loss=2.8222 | lr=2.08e-06
+  step  2930 | loss=2.6433 | lr=1.88e-06
+  step  2940 | loss=3.0138 | lr=1.69e-06
+  step  2950 | loss=2.8230 | lr=1.53e-06
+  step  2960 | loss=2.4327 | lr=1.39e-06
+  step  2970 | loss=2.7312 | lr=1.27e-06
+  step  2980 | loss=2.5745 | lr=1.17e-06
+  step  2990 | loss=2.8465 | lr=1.10e-06
+  step  3000 | loss=2.4719 | lr=1.04e-06

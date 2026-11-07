@@ -1,0 +1,4508 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/blog/02_linear_kernel_recurrent_ssm_attentions/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>02 linear kernel recurrent ssm attentions - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#part-2-linear-kernelized-recurrent-state-space-ssm-attentions" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              02 linear kernel recurrent ssm attentions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📑 Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-katharopoulos-linear-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Katharopoulos Linear Attention
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Katharopoulos Linear Attention">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-performer-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Performer Attention
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Performer Attention">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-linformer-attention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Linformer Attention
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Linformer Attention">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-mamba-state-space-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Mamba &amp; State Space Models
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Mamba &amp; State Space Models">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-mambasvd-flash-hybrid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. MambaSVD-Flash Hybrid
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. MambaSVD-Flash Hybrid">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-retnet-retention-networks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. RetNet: Retention Networks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. RetNet: Retention Networks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-rwkv-time-mixing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. RWKV Time-Mixing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. RWKV Time-Mixing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-hgrn2-gated-deltanet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. HGRN2 &amp; Gated DeltaNet
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. HGRN2 &amp; Gated DeltaNet">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-griffin-hawk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Griffin &amp; Hawk
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Griffin &amp; Hawk">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#title-subtitle_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Title &amp; Subtitle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-analogy_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Analogy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-problem_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works-the-intuition_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works (The Intuition)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-math-light_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Math (Light)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-it-matters_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why It Matters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#image-prompt_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Image Prompt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#practical-pytorch-implementation-linear-recurrent-attention-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💻 Practical PyTorch Implementation: Linear Recurrent Attention Engine
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-empirical-benchmarks-glue-fine-tuning-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Empirical Benchmarks &amp; GLUE Fine-Tuning Results
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. Empirical Benchmarks &amp; GLUE Fine-Tuning Results">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architectural-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural Takeaways:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-master-comparison-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🏁 Architectural Master Comparison Table
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<blockquote>
+<p>[!NOTE]
+<strong>Live Empirical Trajectories:</strong> As part of this comprehensive review, we are actively executing a 120-run GPU benchmark grid. You will find the <strong>real-time training loss charts, hyperparameters, and GLUE metrics</strong> dynamically injected at the absolute bottom of this article. These metrics synchronize directly from the GPU orchestrator every 60 seconds.</p>
+</blockquote>
+<h1 id="part-2-linear-kernelized-recurrent-state-space-ssm-attentions">⚡ Part 2: Linear, Kernelized, Recurrent &amp; State Space (SSM) Attentions</h1>
+<blockquote>
+<p><strong>The Visual Guide to Escaping Quadratic Complexity: How Matrix Associativity, Kernel Maps, Selective Recurrences, and State Space Duality Power the Next Generation of Sub-Quadratic Language Models.</strong></p>
+</blockquote>
+<hr />
+<h2 id="table-of-contents">📑 Table of Contents</h2>
+<ol>
+<li><a href="#1-katharopoulos-linear-attention">Katharopoulos Linear Attention (Associative Kernel Property)</a></li>
+<li><a href="#2-performer-attention">Performer Attention (FAVOR+ Positive Random Features)</a></li>
+<li><a href="#3-linformer-attention">Linformer Attention (Low-Rank Projected Key-Value Length)</a></li>
+<li><a href="#4-mamba--state-space-models">Mamba &amp; State Space Models (Selective Structured SSMs)</a></li>
+<li><a href="#5-mambasvd-flash-hybrid">MambaSVD-Flash Hybrid (SSM Recurrence + Low-Rank Projections)</a></li>
+<li><a href="#6-retnet-retention-networks">RetNet: Retention Networks (Chunkwise Parallel &amp; Recurrent Inference)</a></li>
+<li><a href="#7-rwkv-time-mixing">RWKV Time-Mixing (Receptance Weighted Key Value)</a></li>
+<li><a href="#8-hgrn2--gated-deltanet">HGRN2 &amp; Gated DeltaNet (Hierarchical Gated Linear Recurrence)</a></li>
+<li><a href="#9-griffin--hawk">Griffin &amp; Hawk (Recurrent Gated Linear Attention with SSD)</a></li>
+<li><a href="#-practical-pytorch-implementation-linear-recurrent-attention-engine">💻 Practical PyTorch Implementation: Linear Recurrent Attention Engine</a></li>
+<li><a href="#-architectural-master-comparison-table">🏁 Architectural Master Comparison Table</a></li>
+</ol>
+<hr />
+<h2 id="1-katharopoulos-linear-attention">1. Katharopoulos Linear Attention</h2>
+<div class="highlight"><pre><span></span><code>Standard Quadratic Attention:        Linear Kernelized Attention:
+    (Q @ K.T) @ V                          Q @ (K.T @ V)
+   [N×d] [d×N]   [N×d]                    [N×d]   [d×N] [N×d]
+   └──┬──────┘     │                        │     └───┬─────┘
+    [N×N]          │                        │       [d×d]
+      └─────┬──────┘                        └─────┬───┘
+          [N×d]                                 [N×d]
+   O(N²d) Complexity                     O(Nd²) Complexity
+</code></pre></div>
+<h3 id="title-subtitle">Title &amp; Subtitle</h3>
+<p><strong>Katharopoulos Linear Attention: Flipping the Matrix Multiplication Order with Kernel Associativity</strong><br />
+<em>How swapping <span class="arithmatex">\((Q K^T) V\)</span> to <span class="arithmatex">\(Q (K^T V)\)</span> via positive feature maps unlocks linear time training and constant-memory recurrent inference.</em></p>
+<h3 id="the-analogy">The Analogy</h3>
+<p>Imagine an auditorium filled with 10,000 historians. In standard attention, every single historian must walk across the room and conduct a private one-on-one conversation with all other 9,999 historians (<span class="arithmatex">\(10,000 \times 10,000 = 100,000,000\)</span> pairwise interactions). </p>
+<p>In Katharopoulos Linear Attention, nobody talks to each other directly. Instead, there is a single shared <strong>blackboard</strong> (<span class="arithmatex">\(d \times d\)</span>) at the front of the stage. As each historian walks past, they write their key insight onto the blackboard (<span class="arithmatex">\(S_t = S_{t-1} + k_t v_t^T\)</span>). Any historian can read the blackboard in one instant glance (<span class="arithmatex">\(\phi(q_t) S_t\)</span>) without needing to interview the 9,999 people one by one!</p>
+<pre class="mermaid"><code>flowchart LR
+    subgraph StandardQuadratic["Standard Softmax Attention: O(N²d)"]
+        Q1["Q (N×d)"] --&gt; AttnMat["(Q @ Kᵀ) : [N×N] Softmax Matrix"]
+        K1["K (N×d)"] --&gt; AttnMat
+        AttnMat --&gt; Out1["AttnMat @ V : [N×d]"]
+        V1["V (N×d)"] --&gt; Out1
+    end
+
+    subgraph LinearAssociative["Linear Kernel Attention: O(Nd²)"]
+        K2["ϕ(K) (N×d)"] --&gt; State["(ϕ(K)ᵀ @ V) : [d×d] Global State S"]
+        V2["V (N×d)"] --&gt; State
+        Q2["ϕ(Q) (N×d)"] --&gt; Out2["ϕ(Q) @ S : [N×d]"]
+        State --&gt; Out2
+    end</code></pre>
+<h3 id="the-problem">The Problem</h3>
+<p>Standard scaled dot-product attention computes:
+$<span class="arithmatex">\(\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d}}\right) V\)</span>$
+The non-linear <span class="arithmatex">\(\text{softmax}(\cdot)\)</span> operation binds <span class="arithmatex">\(Q\)</span> and <span class="arithmatex">\(K^T\)</span> together <em>before</em> multiplying with <span class="arithmatex">\(V\)</span>. This forces the hardware to materialize an explicit <span class="arithmatex">\(N \times N\)</span> attention matrix. When sequence length <span class="arithmatex">\(N\)</span> scales from <span class="arithmatex">\(2\text{k} \to 32\text{k} \to 128\text{k}\)</span>, compute and memory costs skyrocket by <span class="arithmatex">\(4\times, 256\times, 4096\times\)</span>, hitting an impassable memory wall and requiring an ever-expanding KV cache during token generation.</p>
+<h3 id="how-it-works-the-intuition">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>The Kernel Perspective</strong>: We express the similarity between query <span class="arithmatex">\(q_i\)</span> and key <span class="arithmatex">\(k_j\)</span> as an inner product of non-linear feature representations: <span class="arithmatex">\(\text{Sim}(q_i, k_j) = \phi(q_i)^T \phi(k_j)\)</span>, where <span class="arithmatex">\(\phi(x) = \text{elu}(x) + 1\)</span> guarantees strictly positive weights.</li>
+<li><strong>Associativity Magic</strong>: Because matrix multiplication is associative (<span class="arithmatex">\(A(BC) = (AB)C\)</span>), removing the row-wise Softmax allows us to change the computation order:
+   $<span class="arithmatex">\(\left( \phi(Q) \phi(K)^T \right) V = \phi(Q) \left( \phi(K)^T V \right)\)</span>$</li>
+<li><strong>From Quadratic to Linear</strong>:</li>
+<li>Instead of computing <span class="arithmatex">\((N \times d) \times (d \times N) \to [N \times N]\)</span>, we compute <span class="arithmatex">\((d \times N) \times (N \times d) \to [d \times d]\)</span> first!</li>
+<li>For a fixed model dimension <span class="arithmatex">\(d = 64\)</span> and sequence length <span class="arithmatex">\(N = 100,000\)</span>, computing a <span class="arithmatex">\([64 \times 64]\)</span> matrix requires negligible memory compared to a <span class="arithmatex">\([100,000 \times 100,000]\)</span> matrix (<span class="arithmatex">\(4,096\)</span> floats vs. <span class="arithmatex">\(10\text{ billion}\)</span> floats).</li>
+<li><strong>The Dual Representation (Transformer <span class="arithmatex">\(\leftrightarrow\)</span> RNN)</strong>:</li>
+<li><strong>Parallel Training</strong>: Compute the cumulative sum prefix scan of <span class="arithmatex">\(\phi(K)^T V\)</span> across all <span class="arithmatex">\(N\)</span> tokens simultaneously.</li>
+<li><strong>Autoregressive Inference</strong>: Maintain a running state matrix <span class="arithmatex">\(S_t \in \mathbb{R}^{d \times d}\)</span> and normalizer vector <span class="arithmatex">\(z_t \in \mathbb{R}^d\)</span>. Generating token <span class="arithmatex">\(t+1\)</span> requires only a single matrix-vector multiply (<span class="arithmatex">\(\mathcal{O}(1)\)</span> memory, <span class="arithmatex">\(\mathcal{O}(d^2)\)</span> compute).</li>
+</ol>
+<h3 id="the-math-light">The Math (Light)</h3>
+<div class="arithmatex">\[\text{Feature Map: } \phi(x) = \text{elu}(x) + 1 \quad (\phi(x) &gt; 0 \; \forall x)\]</div>
+<div class="arithmatex">\[\text{Parallel Matrix Form: } Y = \frac{\phi(Q) \left(\phi(K)^T V\right)}{\phi(Q) \left(\phi(K)^T \mathbf{1}_N\right)} \implies \mathcal{O}(N d^2)\]</div>
+<div class="arithmatex">\[\text{Autoregressive Recurrent Form: } S_t = S_{t-1} + \phi(k_t) v_t^T \in \mathbb{R}^{d \times d}, \quad z_t = z_{t-1} + \phi(k_t) \in \mathbb{R}^d\]</div>
+<div class="arithmatex">\[\text{Token Output: } y_t = \frac{\phi(q_t)^T S_t}{\phi(q_t)^T z_t} \in \mathbb{R}^d \implies \mathcal{O}(1) \text{ memory per step}\]</div>
+<h3 id="why-it-matters">Why It Matters</h3>
+<ul>
+<li><strong>Strict Linear Scaling</strong>: Time complexity drops from <span class="arithmatex">\(\mathcal{O}(N^2 d)\)</span> to <span class="arithmatex">\(\mathcal{O}(N d^2)\)</span>. At <span class="arithmatex">\(N = 64\text{k}\)</span>, execution is over <strong>100x faster</strong>.</li>
+<li><strong>Constant <span class="arithmatex">\(O(1)\)</span> KV Footprint</strong>: Decouples inference memory from sequence length; generating token 1,000,000 takes the exact same 4KB of state memory as token 10.</li>
+<li><strong>Foundation for Modern SSMs</strong>: Laid the theoretical foundation for RetNet, RWKV, Mamba, and Linear Transformers.</li>
+</ul>
+<h3 id="image-prompt">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A high-end 3D isometric scientific infographic on dark cybernetic slate <code>#0B0F19</code>. On the left side, an enormous, blazing red-orange quadratic <span class="arithmatex">\(N \times N\)</span> matrix grid glowing with excessive memory heat. A bright cyan laser <code>#00E5FF</code> passes through an optical crystal labeled "Associative Kernel <span class="arithmatex">\(\phi(x)\)</span>", transforming the calculation into two ultra-compact, glowing emerald green matrices (<span class="arithmatex">\(d \times d\)</span>) labeled "Memory State <span class="arithmatex">\(S_t\)</span>". Sleek neon data streams bypass the giant red grid and flow through the compact state with glowing mathematical annotations <span class="arithmatex">\((\phi(Q)(\phi(K)^T V))\)</span>. 8k render, octane render style, futuristic HUD overlays.</p>
+</blockquote>
+<hr />
+<h2 id="2-performer-attention">2. Performer Attention</h2>
+<div class="highlight"><pre><span></span><code>FAVOR+ Positive Orthogonal Random Features:
+   x (d-dim) ──&gt; [ W_orth (m × d) ] ──&gt; Positive Exponential Kernel Map ──&gt; ϕ(x) (m-dim)
+
+Exact Softmax Kernel Approximation:
+   E[ ϕ(q)ᵀ ϕ(k) ] = exp( qᵀk / √d )   without any N×N matrix!
+</code></pre></div>
+<h3 id="title-subtitle_1">Title &amp; Subtitle</h3>
+<p><strong>Performer Attention: Approximating the True Softmax Kernel with FAVOR+</strong><br />
+<em>Unbiased, positive orthogonal random feature maps that emulate exact Softmax attention with provable linear complexity.</em></p>
+<h3 id="the-analogy_1">The Analogy</h3>
+<p>Imagine conducting a national census across 300 million citizens. Interviewing every single pair of citizens to measure cultural affinity would require <span class="arithmatex">\(9 \times 10^{16}\)</span> interviews. </p>
+<p>Instead, a world-class statistician selects 128 perfectly calibrated, mutually orthogonal demographic questions (<span class="arithmatex">\(m\)</span> orthogonal random feature probes). By projecting every citizen onto this standardized 128-dimensional questionnaire, the statistician calculates the exact nationwide cultural affinity matrix with provable mathematical accuracy and zero demographic bias.</p>
+<pre class="mermaid"><code>flowchart TD
+    InputQ["Query Vector q ∈ ℝᵈ"] --&gt; ProjQ["Orthogonal Random Projection: W_orth @ q"]
+    ProjQ --&gt; KernelMapQ["Positive Exponential Map: h(q) · exp(...)"]
+    KernelMapQ --&gt; PhiQ["ϕ(q) ∈ ℝᵐ (m « N)"]
+
+    InputK["Key Vector k ∈ ℝᵈ"] --&gt; ProjK["Orthogonal Random Projection: W_orth @ k"]
+    ProjK --&gt; KernelMapK["Positive Exponential Map: h(k) · exp(...)"]
+    KernelMapK --&gt; PhiK["ϕ(k) ∈ ℝᵐ (m « N)"]
+
+    PhiQ &amp; PhiK --&gt; InnerProd["Inner Product: ⟨ϕ(q), ϕ(k)⟩ ≈ exp(qᵀk / √d)"]</code></pre>
+<h3 id="the-problem_1">The Problem</h3>
+<p>While Katharopoulos linear attention used <span class="arithmatex">\(\text{elu}(x)+1\)</span>, it approximated an <em>arbitrary</em> polynomial kernel rather than the true <strong>exponential Softmax kernel</strong> (<span class="arithmatex">\(\exp(q^T k / \sqrt{d})\)</span>). This kernel mismatch caused attention weights to "dilute" over long sequences, degrading perplexity on language tasks and preventing zero-shot replacement of attention in pretrained Transformers. </p>
+<p>Standard Random Fourier Features (RFF) could approximate exponential kernels, but trigonometric basis functions produce negative values (<span class="arithmatex">\(\sin, \cos &lt; 0\)</span>). In attention, negative kernel values cause catastrophic denominator cancellation (<span class="arithmatex">\(z_t \to 0\)</span>), producing numerical infinities and model collapse.</p>
+<h3 id="how-it-works-the-intuition_1">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>FAVOR+ Mechanism</strong>: Fast Attention Via Positive Orthogonal Random features decomposes the Softmax exponential kernel into positive expectations:
+   $<span class="arithmatex">\(\exp\left(\frac{q^T k}{\sqrt{d}}\right) = \mathbb{E}_{\omega \sim \mathcal{N}(0, I_d)} \left[ \phi(q)^T \phi(k) \right]\)</span>$</li>
+<li><strong>Positive Random Features (PRF)</strong>: The feature map <span class="arithmatex">\(\phi(x)\)</span> uses an exponential projection:
+   $<span class="arithmatex">\(\phi(x) = \frac{\exp(-\|x\|^2 / 2\sqrt{d})}{\sqrt{m}} \left[ \exp(\omega_1^T x), \exp(\omega_2^T x), \dots, \exp(\omega_m^T x) \right]^T\)</span>$
+   Because <span class="arithmatex">\(\exp(z) &gt; 0\)</span> for all real numbers, <span class="arithmatex">\(\phi(x)\)</span> is strictly non-negative, completely eliminating negative denominator collapse.</li>
+<li><strong>Orthogonal Random Features (ORF)</strong>: Instead of sampling random Gaussian vectors <span class="arithmatex">\(\omega_i\)</span> independently (which can cluster or align by chance), Performer enforces exact orthogonality across blocks of vectors (<span class="arithmatex">\(W_{\text{orth}} W_{\text{orth}}^T = I\)</span>). This reduces the variance of the kernel approximation by over <strong>10x</strong> for the same number of features <span class="arithmatex">\(m\)</span>.</li>
+<li><strong>Linear Execution</strong>: With <span class="arithmatex">\(m \ll N\)</span> (typically <span class="arithmatex">\(m = 128\)</span> or <span class="arithmatex">\(256\)</span>), Performers compute <span class="arithmatex">\(\phi(Q) \left( \phi(K)^T V \right)\)</span> in <span class="arithmatex">\(\mathcal{O}(N \cdot m \cdot d)\)</span> time.</li>
+</ol>
+<h3 id="the-math-light_1">The Math (Light)</h3>
+<div class="arithmatex">\[\text{Softmax Kernel Factorization: } \exp\left(\frac{q^T k}{\sqrt{d}}\right) = \exp\left(-\frac{\|q\|^2}{2\sqrt{d}}\right) \cdot \exp\left(\frac{\|q+k\|^2}{2\sqrt{d}}\right) \cdot \exp\left(-\frac{\|k\|^2}{2\sqrt{d}}\right)\]</div>
+<div class="arithmatex">\[\text{FAVOR+ Feature Map: } \phi(x) = \frac{\exp\left(-\frac{\|x\|^2}{2\sqrt{d}}\right)}{\sqrt{m}} \left[ \exp\left(\omega_1^T x\right), \dots, \exp\left(\omega_m^T x\right) \right]^T \quad \text{where } \omega_i \in \mathbb{R}^d\]</div>
+<div class="arithmatex">\[\text{Orthogonal Constraint: } \Omega = \text{Gram-Schmidt}\left( G \right) \quad \text{such that } \Omega \Omega^T = I_m\]</div>
+<div class="arithmatex">\[\text{Performer Complexity: } \mathcal{O}(N \cdot m \cdot d) \quad (\text{Strictly linear in } N)\]</div>
+<h3 id="why-it-matters_1">Why It Matters</h3>
+<ul>
+<li><strong>Drop-In Softmax Approximation</strong>: Matches standard Transformer accuracy across language and vision benchmarks without modifying the Softmax loss objective.</li>
+<li><strong>Massive Context Scaling</strong>: Enables processing ultra-long sequences (<span class="arithmatex">\(N &gt; 100\text{k}\)</span>) in genomics, AlphaFold-style protein folding, and high-resolution imaging.</li>
+<li><strong>Backward Compatible</strong>: Pretrained standard Transformers can be converted to Performers with minimal fine-tuning steps.</li>
+</ul>
+<h3 id="image-prompt_1">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A 3D isometric scientific rendering of the FAVOR+ orthogonal kernel mechanism on dark navy slate <code>#0B0F19</code>. Glowing sphere showing multi-dimensional coordinate axes where unit vectors <span class="arithmatex">\(\omega_1, \omega_2, \dots, \omega_m\)</span> form perfectly perpendicular geometric laser beams in electric violet <code>#A855F7</code> and cyan <code>#00F5FF</code>. Raw token data passes through this spherical orthogonal filter, emerging as positive exponential energy waves that smoothly factorize a massive attention tensor into two slender hyper-efficient matrix flows. Clean mathematical formulas float in the ambient atmosphere.</p>
+</blockquote>
+<hr />
+<h2 id="3-linformer-attention">3. Linformer Attention</h2>
+<div class="highlight"><pre><span></span><code>Linformer Sequence Length Down-Projection:
+   Q: [N × d]
+   K: [N × d] ──[ Project E (k × N) ]──&gt;  K_proj: [k × d]
+   V: [N × d] ──[ Project F (k × N) ]──&gt;  V_proj: [k × d]
+
+   Attn Map = Softmax( Q @ K_proj.T / √d )  ──&gt;  Shape: [N × k]  (k « N)
+   Output   = Attn Map @ V_proj             ──&gt;  Shape: [N × d]
+</code></pre></div>
+<h3 id="title-subtitle_2">Title &amp; Subtitle</h3>
+<p><strong>Linformer: Compressing Sequence Length via Low-Rank Space Projections</strong><br />
+<em>Proving that attention matrices are intrinsically low-rank and down-projecting <span class="arithmatex">\(N \times d\)</span> keys and values to <span class="arithmatex">\(k \times d\)</span> landmarks.</em></p>
+<h3 id="the-analogy_2">The Analogy</h3>
+<p>Imagine writing a comprehensive index for a 10,000-page encyclopedia. Instead of cross-referencing every single word against all 10,000 pages, the editor creates a distilled table of <strong>256 master topic landmarks</strong> (<span class="arithmatex">\(k=256\)</span>). </p>
+<p>Every page in the book (<span class="arithmatex">\(N\)</span>) only needs to calculate its relevance to these 256 landmarks. The readers can quickly navigate anywhere in the entire 10,000-page encyclopedia by routing through this compact 256-landmark index.</p>
+<pre class="mermaid"><code>flowchart LR
+    subgraph FullAttention["Full Attention: N × N"]
+        Q_full["Q: [N × d]"] --&gt; Scores1["Q @ Kᵀ : [N × N]"]
+        K_full["K: [N × d]"] --&gt; Scores1
+        Scores1 --&gt; Out_full["Scores @ V : [N × d]"]
+        V_full["V: [N × d]"] --&gt; Out_full
+    end
+
+    subgraph LinformerAttention["Linformer: N × k"]
+        K_in["K: [N × d]"] --&gt; ProjE["Linear Proj E : [k × N]"] --&gt; K_comp["K_proj: [k × d]"]
+        V_in["V: [N × d]"] --&gt; ProjF["Linear Proj F : [k × N]"] --&gt; V_comp["V_proj: [k × d]"]
+        Q_in["Q: [N × d]"] &amp; K_comp --&gt; Scores2["Q @ K_projᵀ : [N × k]"]
+        Scores2 --&gt; Softmax2["Softmax_k"] --&gt; Out_comp["Attn @ V_proj : [N × d]"]
+        V_comp --&gt; Out_comp
+    end</code></pre>
+<h3 id="the-problem_2">The Problem</h3>
+<p>In standard Transformer layers, as sequence length <span class="arithmatex">\(N\)</span> grows, the rank of the <span class="arithmatex">\(N \times N\)</span> attention matrix does <em>not</em> grow proportionally. Singular value decomposition (SVD) of empirical attention maps reveals that the vast majority of spectral energy is concentrated in a tiny fraction of singular values. Computing full <span class="arithmatex">\(N \times N\)</span> pairwise interactions wastes massive compute on near-zero singular dimensions.</p>
+<h3 id="how-it-works-the-intuition_2">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>Mathematical Proof (Johnson-Lindenstrauss)</strong>: Wang et al. proved that for any attention matrix <span class="arithmatex">\(A \in \mathbb{R}^{N \times N}\)</span>, there exists a low-rank matrix <span class="arithmatex">\(\widetilde{A} \in \mathbb{R}^{N \times k}\)</span> with <span class="arithmatex">\(k = \mathcal{O}(d / \epsilon^2)\)</span> that approximates <span class="arithmatex">\(A\)</span> with error bounded by <span class="arithmatex">\(\epsilon\)</span>, regardless of how large <span class="arithmatex">\(N\)</span> becomes!</li>
+<li><strong>Dimension Reduction Projections</strong>: Two learned linear projection matrices <span class="arithmatex">\(E, F \in \mathbb{R}^{k \times N}\)</span> project the sequence dimension of Keys and Values:
+   $<span class="arithmatex">\(\widetilde{K} = E K \in \mathbb{R}^{k \times d}, \quad \widetilde{V} = F V \in \mathbb{R}^{k \times d}\)</span>$</li>
+<li><strong>Asymmetric Attention Computation</strong>:</li>
+<li>Queries <span class="arithmatex">\(Q \in \mathbb{R}^{N \times d}\)</span> multiply with compressed keys <span class="arithmatex">\(\widetilde{K}^T \in \mathbb{R}^{d \times k}\)</span>, generating a small score matrix of shape <span class="arithmatex">\([N \times k]\)</span>.</li>
+<li>Softmax is computed along the compact dimension <span class="arithmatex">\(k\)</span>.</li>
+<li>The <span class="arithmatex">\([N \times k]\)</span> probability matrix multiplies compressed values <span class="arithmatex">\(\widetilde{V} \in \mathbb{R}^{k \times d}\)</span> to reconstruct the full <span class="arithmatex">\([N \times d]\)</span> output.</li>
+<li><strong>Parameter Sharing</strong>: <span class="arithmatex">\(E\)</span> and <span class="arithmatex">\(F\)</span> can be shared across attention heads or across all layers to minimize parameter overhead.</li>
+</ol>
+<h3 id="the-math-light_2">The Math (Light)</h3>
+<div class="arithmatex">\[\widetilde{K}_h = E_h K_h \in \mathbb{R}^{k \times d_k}, \quad \widetilde{V}_h = F_h V_h \in \mathbb{R}^{k \times d_k} \quad (k \ll N)\]</div>
+<div class="arithmatex">\[\text{Linformer}(Q, K, V) = \text{Softmax}\left( \frac{Q (E K)^T}{\sqrt{d_k}} \right) (F V) \in \mathbb{R}^{N \times d}\]</div>
+<div class="arithmatex">\[\text{Time Complexity: } \mathcal{O}(N \cdot k \cdot d) \quad \text{vs.} \quad \text{Standard: } \mathcal{O}(N^2 \cdot d)\]</div>
+<div class="arithmatex">\[\text{Activation Memory: } \mathcal{O}(N \cdot k) \quad \text{vs.} \quad \text{Standard: } \mathcal{O}(N^2)\]</div>
+<h3 id="why-it-matters_2">Why It Matters</h3>
+<ul>
+<li><strong>True <span class="arithmatex">\(\mathcal{O}(N)\)</span> Scaling</strong>: Linear in sequence length <span class="arithmatex">\(N\)</span> while retaining exact row-wise Softmax normalization across dimension <span class="arithmatex">\(k\)</span>.</li>
+<li><strong>85% Memory Reduction</strong>: Enables handling <span class="arithmatex">\(32\text{k}+\)</span> token inputs on single GPU nodes for document classification and bidirectional encoding.</li>
+<li><strong>Ideal For Encoders &amp; ViTs</strong>: Excellent for Vision Transformers and BERT-style bidirectional encoders where sequence length is bounded at compile time.</li>
+</ul>
+<h3 id="image-prompt_2">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A 3D isometric diagram of the Linformer sequence compression architecture on a dark graphite background <code>#0B0F19</code>. A long translucent token ribbon of length <span class="arithmatex">\(N = 8192\)</span> enters from the left. Two glowing golden compression grates labeled "<span class="arithmatex">\(E\)</span>" and "<span class="arithmatex">\(F\)</span>" compress the length down into a sleek compact cylinder of size <span class="arithmatex">\(k = 256\)</span> in emerald neon <code>#00FF88</code>. Queries maintain their <span class="arithmatex">\(N\)</span> resolution, projecting onto the compact <span class="arithmatex">\(k\)</span> landmarks with precise luminous light beams. Crisp volumetric lighting, high-tech engineering schematic look.</p>
+</blockquote>
+<hr />
+<h2 id="4-mamba-state-space-models">4. Mamba &amp; State Space Models</h2>
+<div class="highlight"><pre><span></span><code>Continuous Dynamical System:          Discretized Selective Scan (ZOH):
+   h'(t) = A h(t) + B x(t)               h_t = Ā_t h_{t-1} + B̄_t x_t
+   y(t)  = C h(t)                        y_t = C_t h_t
+                                      where (Δ_t, B_t, C_t) = f(x_t)  &lt;-- Input Dependent!
+</code></pre></div>
+<h3 id="title-subtitle_3">Title &amp; Subtitle</h3>
+<p><strong>Mamba &amp; Selective SSMs: Continuous Dynamical Systems with Input-Dependent Memory Gates</strong><br />
+<em>How selective parameterization, hardware-aware parallel scans, and continuous state spaces dethroned Transformers on long-context modeling.</em></p>
+<h3 id="the-analogy_3">The Analogy</h3>
+<p>Imagine a courtroom stenographer. A standard Linear Time-Invariant (LTI) recorder writes down every background cough, door creak, and whispered comment at the exact same constant recording speed—quickly running out of paper. </p>
+<p>Mamba is an <strong>intelligent selective stenographer</strong>: when someone coughs or rambles about the weather, Mamba sets step-size <span class="arithmatex">\(\Delta_t \approx 0\)</span> (instantly ignoring the noise). But the moment the witness gives a critical testimony, Mamba cranks up <span class="arithmatex">\(\Delta_t\)</span>, expands its selective memory <span class="arithmatex">\(B_t\)</span>, and engraves the exact quote into the internal state matrix.</p>
+<pre class="mermaid"><code>flowchart LR
+    TokenInput["Input Token x_t"] --&gt; GateDelta["Linear -&gt; Softplus: Δ_t"]
+    TokenInput --&gt; GateB["Linear: B_t"]
+    TokenInput --&gt; GateC["Linear: C_t"]
+
+    A_Matrix["Structured Matrix A (Diagonal/HiPPO)"] --&gt; Discretize["Discretization: Ā_t = exp(Δ_t · A)"]
+    GateDelta --&gt; Discretize
+    GateDelta &amp; GateB --&gt; DiscretizeB["B̄_t = Δ_t · B_t"]
+
+    Discretize &amp; DiscretizeB --&gt; Recurrence["h_t = Ā_t · h_{t-1} + B̄_t · x_t"]
+    PrevState["h_{t-1}"] --&gt; Recurrence
+    Recurrence --&gt; Output["y_t = C_t · h_t"]
+    GateC --&gt; Output</code></pre>
+<h3 id="the-problem_3">The Problem</h3>
+<p>Prior State Space Models (like S4 and H3) were <strong>Linear Time-Invariant (LTI)</strong>: their transition matrices <span class="arithmatex">\((A, B, C)\)</span> were completely static and constant across all tokens. While LTI allowed S4 to train rapidly via global Fast Fourier Transform (FFT) 1D convolutions, it prevented the model from performing <strong>content-aware reasoning</strong> (e.g., selective token filtering, variable tracking, or the synthetic Associative Recall test).</p>
+<h3 id="how-it-works-the-intuition_3">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>The Selective Mechanism</strong>: Gu &amp; Dao made the SSM parameters dynamic functions of the current input token <span class="arithmatex">\(x_t\)</span>:
+   $<span class="arithmatex">\(B_t = W_B x_t, \quad C_t = W_C x_t, \quad \Delta_t = \text{softplus}(W_\Delta x_t + b_\Delta)\)</span>$</li>
+<li><span class="arithmatex">\(\Delta_t\)</span> acts as a continuous time-gate: large <span class="arithmatex">\(\Delta_t\)</span> causes the model to update state <span class="arithmatex">\(h_t\)</span> heavily with <span class="arithmatex">\(x_t\)</span>; small <span class="arithmatex">\(\Delta_t\)</span> causes the model to ignore <span class="arithmatex">\(x_t\)</span> and retain past memory <span class="arithmatex">\(h_{t-1}\)</span>.</li>
+<li><strong>Discretization via Zero-Order Hold (ZOH)</strong>: Converts continuous physical differential equations into discrete-time recurrences:
+   $<span class="arithmatex">\(\bar{A}_t = \exp(\Delta_t A), \quad \bar{B}_t = (\Delta_t A)^{-1}(\exp(\Delta_t A) - I) \cdot \Delta_t B_t \approx \Delta_t B_t\)</span>$</li>
+<li><strong>Hardware-Aware Parallel Associative Scan</strong>:</li>
+<li>Because <span class="arithmatex">\((A_t, B_t, C_t)\)</span> change at every token step, global FFT convolution is impossible.</li>
+<li>Mamba solves this by fusing the recurrence loop into GPU <strong>SRAM and Register memory</strong>. Instead of writing intermediate hidden states <span class="arithmatex">\(h_t \in \mathbb{R}^{B \times L \times D \times N}\)</span> to slow High-Bandwidth Memory (HBM), the associative scan executes entirely in fast on-chip SRAM, yielding blistering training speeds.</li>
+</ol>
+<h3 id="the-math-light_3">The Math (Light)</h3>
+<div class="arithmatex">\[\text{Continuous State Equation: } \dot{h}(t) = A h(t) + B x(t), \quad y(t) = C h(t)\]</div>
+<div class="arithmatex">\[\text{ZOH Discretization: } \bar{A}_t = \exp(\Delta_t A), \quad \bar{B}_t = \Delta_t B_t\]</div>
+<div class="arithmatex">\[\text{Selective Recurrence: } h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t \in \mathbb{R}^N, \quad y_t = C_t h_t \in \mathbb{R}\]</div>
+<div class="arithmatex">\[\text{Complexity: } \mathcal{O}(L \cdot D \cdot N) \text{ time}, \quad \mathcal{O}(1) \text{ KV cache memory per generation step}\]</div>
+<h3 id="why-it-matters_3">Why It Matters</h3>
+<ul>
+<li><strong>5x Inference Throughput</strong>: Generates tokens at constant <span class="arithmatex">\(O(1)\)</span> memory with zero KV cache bloat.</li>
+<li><strong>Million-Token Contexts</strong>: Linear scaling enables effortless scaling to context windows of <span class="arithmatex">\(1,000,000+\)</span> tokens on standard GPU hardware.</li>
+<li><strong>Matches Transformers at Scale</strong>: First non-Transformer architecture to match or beat dense Transformer perplexity on large-scale language benchmarks.</li>
+</ul>
+<h3 id="image-prompt_3">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A stunning 3D isometric cutaway of the Mamba hardware-aware selective state space engine on dark slate <code>#0B0F19</code>. A stream of multi-colored glowing data tokens flows into a central silicon processor die. Dynamic glowing gate valves labeled "<span class="arithmatex">\(\Delta_t\)</span>" and "<span class="arithmatex">\(B_t\)</span>" open and close in real-time, selectively routing critical golden data particles into a crystalline high-speed SRAM accumulator chamber glowing with emerald neon <code>#00FF9D</code>. Faded unimportant tokens evaporate into cool blue vapor. High-contrast ray-traced lighting, futuristic chip architecture.</p>
+</blockquote>
+<hr />
+<h2 id="5-mambasvd-flash-hybrid">5. MambaSVD-Flash Hybrid</h2>
+<div class="highlight"><pre><span></span><code>                      ┌──&gt; Online SVD-SSM Recurrence [O(L·D·r)] ──&gt; Y_ssm ──┐
+                      │    A_t = U_{t,r} @ Σ_{t,r} @ V_{t,r}ᵀ               │
+Input Tensor X ───────┤                                                     ├──&gt; Fusion: γ ⊙ Y_ssm + (1-γ) ⊙ O_attn
+                      │                                                     │
+                      └──&gt; FP8 FlashAttention-3 Path [High-Entropy] ──────&gt; O_attn ─┘
+</code></pre></div>
+<h3 id="title-subtitle_4">Title &amp; Subtitle</h3>
+<p><strong>MambaSVD-Flash Hybrid: Fusing Selective State-Space Recurrence with Low-Rank Tensor Core Attention</strong><br />
+<em>The dual-engine architecture combining the linear throughput of SVD-truncated SSM scans with the razor-sharp associative recall of FP8 FlashAttention-3.</em></p>
+<h3 id="the-analogy_4">The Analogy</h3>
+<p>Think of a high-performance Le Mans hybrid race car. On long, straight highway stretches, an ultra-efficient electric motor (the SVD-SSM path) delivers continuous linear torque with minimal fuel consumption. </p>
+<p>When entering tight, complex chicane curves requiring instantaneous explosive torque (complex multi-token syntactic lookups), the turbocharged combustion engine (FP8 FlashAttention-3) fires on all cylinders. A smart electronic ECU (learned gate <span class="arithmatex">\(\gamma\)</span>) automatically distributes power between both engines in microseconds.</p>
+<pre class="mermaid"><code>flowchart TD
+    InputX["Input Sequence X ∈ ℝ^(B×L×D)"] --&gt; SplitPath{"Dual Execution Split"}
+
+    SplitPath --&gt; PathSSM["SVD-SSM Linear Path"]
+    PathSSM --&gt; FactorA["Online SVD Factorization: A_t ≈ U_{t,r} Σ_{t,r} V_{t,r}ᵀ"]
+    FactorA --&gt; RecurrScan["Associative Low-Rank Scan (SRAM)"]
+    RecurrScan --&gt; Y_ssm["SSM Output: Y_ssm"]
+
+    SplitPath --&gt; PathFlash["High-Entropy Attention Path"]
+    PathFlash --&gt; QuantFP8["FP8 E4M3 Quantization"]
+    QuantFP8 --&gt; Flash3Kernel["Hopper FlashAttention-3 Kernel"]
+    Flash3Kernel --&gt; O_attn["Attention Output: O_attn"]
+
+    InputX --&gt; GateRouter["Gating Router: γ = σ(W_g X)"]
+
+    Y_ssm &amp; O_attn &amp; GateRouter --&gt; BlendedOut["Final Output: Y = γ ⊙ Y_ssm + (1 - γ) ⊙ O_attn"]</code></pre>
+<h3 id="the-problem_4">The Problem</h3>
+<p>Pure State Space Models (Mamba) scale linearly, but they can experience memory dilution on complex "needle-in-a-haystack" associative retrieval tasks that dense Transformers solve effortlessly. Conversely, dense FlashAttention provides perfect retrieval but suffers from <span class="arithmatex">\(\mathcal{O}(L^2)\)</span> scaling. Furthermore, uncompressed SSM transition matrices introduce significant parameter footprint when hidden dimension <span class="arithmatex">\(D\)</span> expands to <span class="arithmatex">\(8192+\)</span>.</p>
+<h3 id="how-it-works-the-intuition_4">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>Bifurcated Execution Pipeline</strong>: The input sequence <span class="arithmatex">\(X \in \mathbb{R}^{B \times L \times D}\)</span> is fed in parallel to an SVD-compressed SSM path and a dense FP8 FlashAttention-3 path.</li>
+<li><strong>SVD-Truncated SSM Recurrence</strong>: The dense transition matrix <span class="arithmatex">\(A_t \in \mathbb{R}^{D \times D}\)</span> is dynamically factorized via online Singular Value Decomposition into rank-<span class="arithmatex">\(r\)</span> components (<span class="arithmatex">\(r \ll D\)</span>):
+   $<span class="arithmatex">\(A_t = U_{t,r} \Sigma_{t,r} V_{t,r}^T\)</span>$
+   State updates compute associative matrix-vector products through the low-rank bottleneck, reducing FLOPs from <span class="arithmatex">\(\mathcal{O}(D^2)\)</span> to <span class="arithmatex">\(\mathcal{O}(D \cdot r)\)</span>.</li>
+<li><strong>FP8 FlashAttention-3 Path</strong>: For high-entropy tokens requiring exact retrieval, queries, keys, and values are quantized to 8-bit floating point (<strong>FP8 E4M3</strong>) and processed using NVIDIA Hopper asynchronous TMA (Tensor Memory Accelerator) clusters.</li>
+<li><strong>Learned Gating Fusion</strong>: A dynamic token-wise sigmoid gate <span class="arithmatex">\(\gamma = \sigma(W_g X)\)</span> arbitrates between the two streams:
+   $<span class="arithmatex">\(Y = \gamma \odot Y_{\text{ssm}} + (1 - \gamma) \odot O_{\text{attn}}\)</span>$</li>
+</ol>
+<h3 id="the-math-light_4">The Math (Light)</h3>
+<div class="arithmatex">\[\text{SVD State Factorization: } A_t = U_{t,r} \Sigma_{t,r} V_{t,r}^T \quad \text{where } U_{t,r} \in \mathbb{R}^{D \times r}, \; V_{t,r} \in \mathbb{R}^{r \times D}\]</div>
+<div class="arithmatex">\[\text{Low-Rank Recurrence: } h_t = U_{t,r} \left( \Sigma_{t,r} \left( V_{t,r}^T h_{t-1} \right) \right) + B_t x_t \in \mathbb{R}^D \implies \mathcal{O}(B \cdot L \cdot D \cdot r)\]</div>
+<div class="arithmatex">\[\text{FP8 Attention: } O_{\text{attn}} = \text{Softmax}\left(\frac{s_q s_k Q_{\text{fp8}} K_{\text{fp8}}^T}{\sqrt{d}}\right) (s_v V_{\text{fp8}})\]</div>
+<div class="arithmatex">\[\text{Gated Fusion: } Y = \sigma(W_g X) \odot (C_t h_t) + (1 - \sigma(W_g X)) \odot O_{\text{attn}}\]</div>
+<h3 id="why-it-matters_4">Why It Matters</h3>
+<ul>
+<li><strong>7.75x Speedup at 8k Context</strong>: Delivers <span class="arithmatex">\(1.65\text{ ms}\)</span> latency vs <span class="arithmatex">\(12.8\text{ ms}\)</span> for dense multi-head attention.</li>
+<li><strong>10x Memory Reduction</strong>: Peak VRAM at <span class="arithmatex">\(L=8192\)</span> is only <strong>320 MB</strong> compared to <strong>3,450 MB</strong> for full MHA.</li>
+<li><strong>Lossless Retrieval</strong>: Achieves <span class="arithmatex">\(100\%\)</span> accuracy on needle-in-a-haystack associative recall while operating at linear SSM scan speeds.</li>
+</ul>
+<h3 id="image-prompt_4">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A dual-engine 3D isometric architectural rendering on dark obsidian background <code>#0B0F19</code>. On the upper deck, a streamlined emerald neon pipeline represents the SVD-SSM path, passing through glowing crystalline prisms labeled "<span class="arithmatex">\(U_r, \Sigma_r, V_r^T\)</span>". On the lower deck, an electric violet <code>#8B5CF6</code> Hopper microchip die executes FP8 FlashAttention-3 matrix tiles. In the center, a luminous holographic combiner gate labeled "<span class="arithmatex">\(\gamma\)</span>-Router" fuses both data streams into an intense radiant output beam. Photorealistic cinematic lighting, 8k resolution.</p>
+</blockquote>
+<hr />
+<h2 id="6-retnet-retention-networks">6. RetNet: Retention Networks</h2>
+<div class="highlight"><pre><span></span><code>RetNet's "Impossible Triangle" Solution:
+                     [ Parallel Training ]
+                          ▲         ▲
+                         /           \
+                        /   RetNet    \
+                       /   Conquers   \
+                      ▼     All 3!     ▼
+     [ O(1) Inference ] ────────────── [ High Performance ]
+
+Three Computation Paradigms:
+1. Parallel:   R = (Q Kᵀ ⊙ D) V            (Training)
+2. Recurrent:  S_n = γ S_{n-1} + K_nᵀ V_n  (Low-Latency Decoding)
+3. Chunkwise:  Intra-Chunk Parallel + Inter-Chunk Recurrent (Long Context)
+</code></pre></div>
+<h3 id="title-subtitle_5">Title &amp; Subtitle</h3>
+<p><strong>RetNet: Conquering the Impossible Triangle with Retentive Networks</strong><br />
+<em>Achieving parallel training, <span class="arithmatex">\(O(1)\)</span> inference cost, and Transformer-level performance through multi-scale decay retention.</em></p>
+<h3 id="the-analogy_5">The Analogy</h3>
+<p>Imagine a massive military communications network. During peacetime strategy sessions (training), all battle commanders analyze past history simultaneously via a satellite data feed (<strong>Parallel Mode</strong>). </p>
+<p>During frontline combat (inference), a radio operator carries a single compact tactical journal, updating it with each incoming transmission in 2 seconds flat (<strong>Recurrent Mode</strong>). </p>
+<p>When coordinating massive regional battalions (long context), each battalion processes its local troops in parallel while passing summary journals between battalions (<strong>Chunkwise Mode</strong>).</p>
+<pre class="mermaid"><code>flowchart TD
+    subgraph RetNetThreeParadigms["RetNet: Triple Execution Paradigms"]
+        direction TB
+
+        subgraph Mode1["1. Parallel Mode (Training)"]
+            Q1["Q"] &amp; K1["K"] --&gt; Mult1["Q @ Kᵀ"]
+            Mult1 &amp; D_mat["Decay Matrix D (γ^(n-m))"] --&gt; MaskedScores["(Q @ Kᵀ) ⊙ D"]
+            MaskedScores &amp; V1["V"] --&gt; OutParallel["R = ((Q @ Kᵀ) ⊙ D) @ V"]
+        end
+
+        subgraph Mode2["2. Recurrent Mode (O(1) Inference)"]
+            Kn["K_n"] &amp; Vn["V_n"] --&gt; OuterP["K_nᵀ @ V_n"]
+            OuterP &amp; PrevS["γ · S_{n-1}"] --&gt; NewS["S_n = γ · S_{n-1} + K_nᵀ V_n"]
+            Qn["Q_n"] &amp; NewS --&gt; OutRecurrent["R_n = Q_n @ S_n"]
+        end
+
+        subgraph Mode3["3. Chunkwise Mode (Long Context)"]
+            ChunkParallel["Intra-Chunk Matrix Multiply (Parallel)"]
+            ChunkRecurrent["Inter-Chunk State Propagation (Recurrent)"]
+            ChunkParallel &amp; ChunkRecurrent --&gt; OutChunk["Fused Chunk Output"]
+        end
+    end</code></pre>
+<h3 id="the-problem_5">The Problem</h3>
+<p>The fundamental trilemma of sequence modeling (the "Impossible Triangle") states that an architecture cannot simultaneously achieve:
+1. <strong>Parallel Training</strong> (like Transformers via matrix multiplication).
+2. <strong><span class="arithmatex">\(O(1)\)</span> Inference Cost</strong> (like RNNs via constant memory state).
+3. <strong>Competitive Performance</strong> (matching standard dense Transformer perplexity).</p>
+<p>Transformers sacrifice (2); RNNs sacrifice (1); simple linear attentions sacrifice (3).</p>
+<h3 id="how-it-works-the-intuition_5">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>The Retention Mechanism</strong>: RetNet replaces Multi-Head Attention with <strong>MultiScale Retention (MSR)</strong>, introducing an explicit scalar exponential decay parameter <span class="arithmatex">\(\gamma \in (0, 1)\)</span>.</li>
+<li><strong>Explicit Complex Positional Encoding</strong>: Incorporates rotation angles <span class="arithmatex">\(\theta\)</span> and decay <span class="arithmatex">\(\gamma\)</span> directly into the key-query formulation:
+   $<span class="arithmatex">\(Q_n = (X_n W_Q) e^{i n \theta}, \quad K_n = (X_n W_K) e^{-i n \theta}\)</span>$</li>
+<li><strong>Triple Representation</strong>:</li>
+<li><strong>Parallel View (Training)</strong>: Evaluates full sequence interactions via masked matrix multiplication <span class="arithmatex">\((Q K^T \odot D) V\)</span>, where decay matrix <span class="arithmatex">\(D_{n,m} = \gamma^{n-m}\)</span> for <span class="arithmatex">\(n \ge m\)</span>.</li>
+<li><strong>Recurrent View (Inference)</strong>: Decodes token-by-token in constant memory by accumulating state <span class="arithmatex">\(S_n = \gamma S_{n-1} + K_n^T V_n \in \mathbb{R}^{d \times d}\)</span>.</li>
+<li><strong>Chunkwise View (Serving)</strong>: Breaks long sequences into chunks of size <span class="arithmatex">\(B\)</span>. Calculates intra-chunk attention with fast Tensor Core GEMMs while propagating recurrent states across chunk boundaries.</li>
+</ol>
+<h3 id="the-math-light_5">The Math (Light)</h3>
+<div class="arithmatex">\[\text{Multi-Scale Decay: } \gamma_k = 1 - 2^{-5 - \text{arange}(0, H)} \quad \text{across heads } k \in [1, H]\]</div>
+<div class="arithmatex">\[\text{Parallel Form: } R = \left( Q K^T \odot D \right) V \quad \text{where } D_{n,m} = \begin{cases} \gamma^{n-m} &amp; n \ge m \\ 0 &amp; n &lt; m \end{cases}\]</div>
+<div class="arithmatex">\[\text{Recurrent Form: } S_n = \gamma S_{n-1} + K_n^T V_n \in \mathbb{R}^{d \times d}, \quad \text{RetNet}(X)_n = Q_n S_n \in \mathbb{R}^d\]</div>
+<div class="arithmatex">\[\text{Chunkwise Form: } R_i = \underbrace{\left( Q_{[i]} K_{[i]}^T \odot D_{\text{intra}} \right) V_{[i]}}_{\text{Intra-Chunk (Parallel)}} + \underbrace{\left( Q_{[i]} S_{i-1} \right) \odot \xi}_{\text{Inter-Chunk (Recurrent)}}\]</div>
+<h3 id="why-it-matters_5">Why It Matters</h3>
+<ul>
+<li><strong>8.4x Higher Inference Throughput</strong>: Slashes decoding memory by <strong>70%</strong> and latency by <strong>8x</strong> compared to Transformers.</li>
+<li><strong>3.4x Faster Training</strong>: Outperforms FlashAttention-2 during training on sequences exceeding 8k tokens.</li>
+<li><strong>Zero Performance Degradation</strong>: Matches LLaMA-style dense Transformer scaling curves across 1.3B, 2.7B, and 6.7B parameters.</li>
+</ul>
+<h3 id="image-prompt_5">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A 3D isometric infographic illustrating the "Impossible Triangle" conquered by RetNet on a dark slate background <code>#0B0F19</code>. A glowing triangular pedestal of polished obsidian has three illuminated vertices labeled "Parallel Training", "O(1) Inference Cost", and "LLaMA-Grade Quality". In the center, a radiant glowing golden core labeled "RetNet MSR" emits three distinct cyan laser pulses connecting all three vertices simultaneously. Floating mathematical matrices with decay gradient waves <span class="arithmatex">\((\gamma^{n-m})\)</span> shimmer in the surrounding space.</p>
+</blockquote>
+<hr />
+<h2 id="7-rwkv-time-mixing">7. RWKV Time-Mixing</h2>
+<div class="highlight"><pre><span></span><code>RWKV 4-Vector Architecture:
+   r_t = σ( W_r · Mix_r(x_t, x_{t-1}) )   ──&gt; Receptance (Dynamic Read Gate)
+   w   = exp( -exp( W_w ) )               ──&gt; Weight Decay (Continuous Time Decay)
+   k_t = W_k · Mix_k(x_t, x_{t-1})        ──&gt; Key (Information Attractor)
+   v_t = W_v · Mix_v(x_t, x_{t-1})        ──&gt; Value (Raw Information Content)
+
+Recurrent WKV Operator:
+   a_t = exp(-w) · a_{t-1} + exp(k_t) · v_t
+   b_t = exp(-w) · b_{t-1} + exp(k_t)
+   wkv_t = (a_{t-1} + exp(u + k_t) · v_t) / (b_{t-1} + exp(u + k_t))
+   y_t   = r_t ⊙ wkv_t
+</code></pre></div>
+<h3 id="title-subtitle_6">Title &amp; Subtitle</h3>
+<p><strong>RWKV: Reinventing RNNs for the Transformer Era</strong><br />
+<em>How Time-Mixing, token shifts, and channel-wise exponential decays deliver 100% Transformer expressiveness in a pure RNN form.</em></p>
+<h3 id="the-analogy_6">The Analogy</h3>
+<p>Imagine a master sound technician operating a professional audio mixing console. </p>
+<p>For each incoming audio channel, <strong>Receptance (<span class="arithmatex">\(R\)</span>)</strong> acts as the volume fader that controls how much sound reaches the master output. <strong>Weight (<span class="arithmatex">\(W\)</span>)</strong> is the reverb decay tail setting how long an echo lingers in memory. <strong>Key (<span class="arithmatex">\(K\)</span>)</strong> sets the frequency filter, and <strong>Value (<span class="arithmatex">\(V\)</span>)</strong> is the pure analog instrument signal. </p>
+<p>Before processing, the technician uses a <strong>Time-Shift</strong> dial to blend 30% of the previous token's acoustic vibration with the current note, ensuring seamless musical harmony across time.</p>
+<pre class="mermaid"><code>flowchart TD
+    CurrentX["Current Token x_t"] &amp; PrevX["Previous Token x_{t-1}"] --&gt; TimeMix["Time-Shift Mixing: μ ⊙ x_t + (1-μ) ⊙ x_{t-1}"]
+
+    TimeMix --&gt; R_Gate["Receptance: r_t = σ(W_r · x')"]
+    TimeMix --&gt; K_Proj["Key: k_t = W_k · x'"]
+    TimeMix --&gt; V_Proj["Value: v_t = W_v · x'"]
+    TimeMix --&gt; W_Decay["Time-Decay: w (channel-wise)"]
+
+    K_Proj &amp; V_Proj &amp; W_Decay --&gt; WKV_Scan["WKV State Scan: a_t = e^(-w)a_{t-1} + e^(k_t)v_t"]
+    PrevState["State: (a_{t-1}, b_{t-1})"] --&gt; WKV_Scan
+
+    WKV_Scan --&gt; WKV_Out["wkv_t Output"]
+    R_Gate &amp; WKV_Out --&gt; MultiplyGate["Elementwise: y_t = r_t ⊙ (W_o · wkv_t)"]</code></pre>
+<h3 id="the-problem_6">The Problem</h3>
+<p>Traditional RNNs (LSTM, GRU) suffer from <strong>Backpropagation Through Time (BPTT)</strong> bottlenecks: training cannot be parallelized across the time dimension because hidden state <span class="arithmatex">\(h_t\)</span> is entangled with non-linear activation functions (<span class="arithmatex">\(\tanh, \sigma\)</span>) inside the recurrent loop. Conversely, Transformers parallelize training perfectly but suffer from massive, growing KV caches during generation.</p>
+<h3 id="how-it-works-the-intuition_6">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>Token Shift (Time-Mix)</strong>: Every linear projection mixes the current token <span class="arithmatex">\(x_t\)</span> with the preceding token <span class="arithmatex">\(x_{t-1}\)</span> using a learned interpolation vector <span class="arithmatex">\(\mu \in [0, 1]^D\)</span>:
+   $<span class="arithmatex">\(x'_t = \mu \odot x_t + (1 - \mu) \odot x_{t-1}\)</span>$</li>
+<li><strong>Channel-Wise Exponential Decay (<span class="arithmatex">\(w\)</span>)</strong>: Each feature channel in the hidden representation decays at an independent, learned exponential rate <span class="arithmatex">\(e^{-w}\)</span>.</li>
+<li><strong>The WKV Attention Mechanism</strong>: Formulates attention as a channel-wise rational function:
+   $<span class="arithmatex">\(wkv_t = \frac{\sum_{i=1}^{t-1} e^{-(t-1-i)w + k_i} v_i + e^{u + k_t} v_t}{\sum_{i=1}^{t-1} e^{-(t-1-i)w + k_i} + e^{u + k_t}}\)</span>$
+   where <span class="arithmatex">\(u\)</span> is a special bonus weight prioritizing the current instant token.</li>
+<li><strong>Receptance Gating</strong>: The output is modulated by an input-dependent sigmoid gate: <span class="arithmatex">\(y_t = \sigma(r_t) \odot (W_o \cdot wkv_t)\)</span>.</li>
+<li><strong>Duality</strong>: Parallel prefix scan during training; constant <span class="arithmatex">\(\mathcal{O}(1)\)</span> memory state <span class="arithmatex">\((a_t, b_t \in \mathbb{R}^D)\)</span> during inference.</li>
+</ol>
+<h3 id="the-math-light_6">The Math (Light)</h3>
+<div class="arithmatex">\[\text{Linear Interpolation: } x'_{r,t} = \mu_r \odot x_t + (1 - \mu_r) \odot x_{t-1}\]</div>
+<div class="arithmatex">\[r_t = W_r x'_{r,t}, \quad k_t = W_k x'_{k,t}, \quad v_t = W_v x'_{v,t}\]</div>
+<div class="arithmatex">\[\text{State Updates: } a_t = e^{-w} \odot a_{t-1} + e^{k_t} \odot v_t \in \mathbb{R}^D, \quad b_t = e^{-w} \odot b_{t-1} + e^{k_t} \in \mathbb{R}^D\]</div>
+<div class="arithmatex">\[\text{Token Output: } wkv_t = \frac{a_{t-1} + e^{u + k_t} \odot v_t}{b_{t-1} + e^{u + k_t}}, \quad y_t = \sigma(r_t) \odot \left( W_o \cdot wkv_t \right)\]</div>
+<h3 id="why-it-matters_6">Why It Matters</h3>
+<ul>
+<li><strong>Zero KV Cache Memory</strong>: Runs multi-billion parameter foundation models on low-power devices, Raspberry Pis, and mobile phones with fixed RAM usage.</li>
+<li><strong>Infinite Generation Length</strong>: Generates millions of continuous tokens with zero slowdown and zero memory footprint growth.</li>
+<li><strong>Battle-Tested Open Source Models</strong>: Production-ready RWKV-v4, v5, v6 (Finch), and v7 architectures matching LLaMA benchmarks across multilingual datasets.</li>
+</ul>
+<h3 id="image-prompt_6">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A 3D isometric representation of the RWKV Time-Mixing neural architecture on dark navy slate <code>#0B0F19</code>. Four glowing fluorescent laser conduits labeled "<span class="arithmatex">\(R\)</span> (Receptance)", "<span class="arithmatex">\(W\)</span> (Decay)", "<span class="arithmatex">\(K\)</span> (Key)", and "<span class="arithmatex">\(V\)</span> (Value)" converge into a high-speed channel-wise accumulator die. A holographic wave visualization illustrates the Time-Shift mechanism blending the current token with a soft glowing ghost of the previous token <span class="arithmatex">\(x_{t-1}\)</span>. Neon amber and cyan lighting, hyper-detailed circuit pathways, 8k ray-tracing.</p>
+</blockquote>
+<hr />
+<h2 id="8-hgrn2-gated-deltanet">8. HGRN2 &amp; Gated DeltaNet</h2>
+<div class="highlight"><pre><span></span><code>Gated DeltaNet Error-Driven Memory Update:
+   Memory Error:   e_t = v_t - H_{t-1} @ k_t         (Difference from expectation!)
+   State Update:   H_t = α_t · H_{t-1} + β_t · (e_t ⊗ k_t)
+                       = α_t · H_{t-1} (I - (β_t/α_t) · k_t k_tᵀ) + β_t · (v_t ⊗ k_t)
+   Query Readout:  y_t = q_t @ H_t
+</code></pre></div>
+<h3 id="title-subtitle_7">Title &amp; Subtitle</h3>
+<p><strong>HGRN2 &amp; Gated DeltaNet: Error-Driven Associative Memory with Hierarchical Gating</strong><br />
+<em>Combining the Delta Rule's selective forgetting with multi-layer hierarchical recurrence for superior associative recall.</em></p>
+<h3 id="the-analogy_7">The Analogy</h3>
+<p>Imagine maintaining a live whiteboard of company employee assignments. </p>
+<p>In simple linear attention, every time someone changes their department, you just write the new department over the board without erasing the old one (additive memory). Over time, the whiteboard becomes an illegible mess of conflicting text (eigenvalue saturation). </p>
+<p>The <strong>Gated DeltaNet</strong> algorithm looks at the whiteboard first, checks what department was previously listed for the employee, calculates the <strong>memory prediction error</strong> (<span class="arithmatex">\(v_t - H_{t-1} k_t\)</span>), cleanly erases the obsolete assignment, and writes <em>only the net correction</em>.</p>
+<pre class="mermaid"><code>flowchart TD
+    QueryK["Current Key k_t"] &amp; PrevMem["Past Memory Matrix H_{t-1}"] --&gt; PredictVal["Memory Prediction: v̂_t = H_{t-1} @ k_t"]
+    PredictVal &amp; TrueVal["Target Value v_t"] --&gt; ComputeErr["Error Vector: e_t = v_t - v̂_t"]
+
+    ComputeErr &amp; QueryK --&gt; OuterCorrection["Error Outer Product: e_t ⊗ k_tᵀ"]
+
+    PrevMem &amp; ForgetGate["Retention Gate: α_t"] --&gt; DecayState["α_t · H_{t-1}"]
+    OuterCorrection &amp; LearnRate["Update Rate: β_t"] --&gt; ScaleCorrection["β_t · (e_t ⊗ k_tᵀ)"]
+
+    DecayState &amp; ScaleCorrection --&gt; NewMem["Updated State: H_t = α_t H_{t-1} + β_t (e_t ⊗ k_tᵀ)"]
+    QueryQ["Query q_t"] &amp; NewMem --&gt; Readout["Readout: y_t = q_t @ H_t"]</code></pre>
+<h3 id="the-problem_7">The Problem</h3>
+<p>Simple linear attention and SSMs use <strong>purely additive memory updates</strong>:
+$<span class="arithmatex">\(H_t = H_{t-1} + k_t v_t^T\)</span>$
+Because matrices add continuously without subtraction, memory states suffer from <strong>eigenvalue explosion</strong> over long sequences. More critically, additive memory cannot perform <em>destructive overwriting</em> (e.g., updating a variable <code>x = 5</code> to <code>x = 10</code> in code), causing linear models to fail on Multi-Query Associative Recall (MQAR) benchmarks.</p>
+<h3 id="how-it-works-the-intuition_7">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>The Delta Rule (Schlag et al.)</strong>: Instead of blindly adding <span class="arithmatex">\(k_t v_t^T\)</span>, DeltaNet tests its existing memory:
+   $<span class="arithmatex">\(\hat{v}_t = H_{t-1} k_t\)</span>$
+   It computes the error vector <span class="arithmatex">\(e_t = v_t - \hat{v}_t\)</span>. If the memory already knows the fact (<span class="arithmatex">\(\hat{v}_t = v_t\)</span>), <span class="arithmatex">\(e_t = 0\)</span> and no memory capacity is wasted!</li>
+<li><strong>Gated DeltaNet</strong>: Augments the Delta update with input-dependent forget gating <span class="arithmatex">\(\alpha_t \in (0, 1)\)</span> and adaptive learning rate <span class="arithmatex">\(\beta_t\)</span>:
+   $<span class="arithmatex">\(H_t = \alpha_t H_{t-1} + \beta_t (v_t - H_{t-1} k_t) k_t^T = H_{t-1} \left( \alpha_t I - \beta_t k_t k_t^T \right) + \beta_t v_t k_t^T\)</span>$
+   The term <span class="arithmatex">\((I - \beta_t k_t k_t^T)\)</span> acts as a <strong>Householder projection</strong> that directly subtracts old associations from memory before adding new ones.</li>
+<li><strong>HGRN-2 (Hierarchical Gated Linear Recurrence)</strong>: Employs 1D element-wise hierarchical gating with explicit state bounding:
+   $<span class="arithmatex">\(h_t = \text{Clamp}\left( f_t \odot h_{t-1} + i_t \odot x_t, -1.0, 1.0 \right)\)</span>$
+   preventing activation explosion and supporting ultra-deep recurrent stacks.</li>
+<li><strong>Hybrid Interleaving</strong>: Stacks <span class="arithmatex">\(R\)</span> linear Gated DeltaNet/HGRN2 layers with 1 dense FlashAttention layer (<span class="arithmatex">\(R:1\)</span> ratio) to guarantee 100% precision on complex multi-hop retrieval.</li>
+</ol>
+<h3 id="the-math-light_7">The Math (Light)</h3>
+<div class="arithmatex">\[\text{Memory Prediction Error: } e_t = v_t - H_{t-1} k_t \in \mathbb{R}^d\]</div>
+<div class="arithmatex">\[\text{Gated Delta Update: } H_t = \alpha_t H_{t-1} + \beta_t e_t k_t^T = H_{t-1} \left( \alpha_t I - \beta_t k_t k_t^T \right) + \beta_t v_t k_t^T \in \mathbb{R}^{d \times d}\]</div>
+<div class="arithmatex">\[\text{HGRN-2 Recurrence: } f_t = \sigma(W_f x_t), \quad i_t = \sigma(W_i x_t), \quad h_t = \text{Clamp}\left( f_t \odot h_{t-1} + i_t \odot x_t, -1, 1 \right)\]</div>
+<div class="arithmatex">\[\text{Query Output: } y_t = q_t H_t \in \mathbb{R}^d \quad \text{or} \quad y_t = W_o (h_t \odot \sigma(W_g x_t))\]</div>
+<h3 id="why-it-matters_7">Why It Matters</h3>
+<ul>
+<li><strong>Flawless Associative Recall</strong>: Solves the MQAR and phone-book lookup tasks where conventional SSMs and linear attentions fall behind.</li>
+<li><strong>Accurate Code &amp; State Tracking</strong>: Dynamically updates and overwrites variable assignments and syntactic scope in long code repositories.</li>
+<li><strong>Chunkwise Parallel Training</strong>: Executes in parallel via custom Triton chunk-scans, matching FlashAttention speeds during training.</li>
+</ul>
+<h3 id="image-prompt_7">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A 3D isometric scientific illustration of the Gated DeltaNet error-correction memory update on dark slate <code>#0B0F19</code>. A central crystalline memory slab labeled "<span class="arithmatex">\(H_t\)</span>" glows with cyan internal matrices. An incoming key-value beam tests the slab, projecting a subtle red warning beam labeled "Prediction Error <span class="arithmatex">\(e_t = v_t - H_{t-1}k_t\)</span>". A sleek emerald laser immediately performs an orthogonal Householder subtraction <span class="arithmatex">\((I - \beta k k^T)\)</span>, erasing the error before inscribing a pristine golden correction into the crystal. High-tech HUD annotations, crisp ambient lighting.</p>
+</blockquote>
+<hr />
+<h2 id="9-griffin-hawk">9. Griffin &amp; Hawk</h2>
+<div class="highlight"><pre><span></span><code>Google DeepMind's State Space Duality (SSD):
+   1D Selective SSM Recurrence  &lt;═══════════════&gt;  2D Matrix-State Linear Attention
+      h_t = α_t · h_{t-1} + B_t · x_t                  H_t = α_t · H_{t-1} + k_t ⊗ v_t
+      y_t = C_t · h_t                                  y_t = q_t @ H_t
+
+Griffin Hybrid Architecture Stack:
+   Layer l:     [ Real-Gated LRU Recurrence ]  ──&gt; O(L) Linear Scan
+   Layer l+1:   [ Real-Gated LRU Recurrence ]  ──&gt; O(L) Linear Scan
+   Layer l+2:   [ Local Multi-Query Attention ] ──&gt; Exact Local Syntax (Window = 1024)
+</code></pre></div>
+<h3 id="title-subtitle_8">Title &amp; Subtitle</h3>
+<p><strong>Griffin, Hawk &amp; State Space Duality: Unifying SSMs and Linear Attention</strong><br />
+<em>Google DeepMind's discovery of the mathematical bridge between 1D state spaces and 2D matrix linear attention.</em></p>
+<h3 id="the-analogy_8">The Analogy</h3>
+<p>Imagine two groups of astronomers studying the same distant galaxy. The radio astronomers (SSM camp) track the continuous radio frequency signal arriving over time (1D state recurrence). The optical astronomers (Attention camp) capture a high-resolution photographic plate showing all spatial stars at once (2D matrix attention). </p>
+<p>DeepMind's <strong>State Space Duality (SSD)</strong> proved that both groups were measuring the exact same physical reality through two different coordinate systems, unifying them into a single telescope!</p>
+<pre class="mermaid"><code>flowchart LR
+    subgraph SSD_Duality["State Space Duality (SSD) Framework"]
+        direction TB
+        SSM_View["SSM 1D Recurrence View:
+        h_t = α_t · h_{t-1} + β_t · x_t
+        y_t = C_t · h_t
+        (O(1) Memory Inference)"]
+
+        Equiv["⟺  MATHEMATICALLY EQUIVALENT  ⟺"]
+
+        Attn_View["Linear Attention 2D State View:
+        H_t = α_t · H_{t-1} + k_t ⊗ v_tᵀ
+        y_t = q_t @ H_t
+        (Parallel Tensor Core Training)"]
+
+        SSM_View --- Equiv --- Attn_View
+    end</code></pre>
+<h3 id="the-problem_8">The Problem</h3>
+<p>For years, AI researchers treated <strong>State Space Models (Mamba, S4)</strong> and <strong>Linear Attention (RetNet, Linear Transformers)</strong> as two completely distinct, competing model families. SSMs operated on 1D vector states with continuous dynamical systems theory, while Linear Attentions operated on 2D outer-product matrix states. This fragmentation prevented researchers from combining the parallel training efficiency of Attention with the linear inference efficiency of SSMs.</p>
+<h3 id="how-it-works-the-intuition_8">How It Works (The Intuition)</h3>
+<ol>
+<li><strong>State Space Duality (SSD)</strong>: Dao &amp; Gu (2024) and De et al. (DeepMind, 2024) proved that structured SSMs with diagonal/scalar transitions are <strong>isomorphic to 1-semiseparable masked Linear Attention</strong>:
+   $<span class="arithmatex">\(Y = \left( (Q K^T) \odot M_{\text{decay}} \right) V \Longleftrightarrow H_t = \alpha_t H_{t-1} + k_t v_t^T, \quad y_t = q_t H_t\)</span>$</li>
+<li><strong>Hawk Architecture</strong>: A pure non-transformer model replacing attention entirely with <strong>Real-Gated Linear Recurrent Units (RG-LRU)</strong>:</li>
+<li>Recurrence: <span class="arithmatex">\(h_t = \alpha_t \odot h_{t-1} + \sqrt{1 - \alpha_t^2} \odot (i_t \odot x_t)\)</span></li>
+<li>Where <span class="arithmatex">\(\alpha_t = \sigma(W_a x_t)^c\)</span> provides stable, bounded memory retention.</li>
+<li><strong>Griffin Architecture</strong>: A hybrid architecture that alternates <strong>two RG-LRU recurrent blocks</strong> with <strong>one Local Multi-Query Attention block</strong> (sliding window of 1024 tokens).</li>
+<li><strong>Chunked 2D Scan Kernel</strong>: Uses SSD to compute intra-chunk token interactions via high-throughput Tensor Core matrix multiplications (GEMM) while propagating scalar decays across chunk states.</li>
+</ol>
+<h3 id="the-math-light_8">The Math (Light)</h3>
+<div class="arithmatex">\[\text{RG-LRU Gate: } a_t = \sigma(W_a x_t), \quad \alpha_t = a_t^c \quad (c \text{ is a constant scalar, e.g. } 8)\]</div>
+<div class="arithmatex">\[\text{Input Modulation: } i_t = \sigma(W_i x_t), \quad \tilde{x}_t = W_x x_t\]</div>
+<div class="arithmatex">\[\text{Recurrent State Update: } h_t = \alpha_t \odot h_{t-1} + \sqrt{1 - \alpha_t^2} \odot \left( i_t \odot \tilde{x}_t \right) \in \mathbb{R}^D\]</div>
+<div class="arithmatex">\[\text{Griffin Hybrid Layout: } X^{(l+1)} = \begin{cases} \text{RG-LRU-Block}\left(X^{(l)}\right) &amp; l \pmod 3 \in \{0, 1\} \\ \text{Local-MQA}\left(X^{(l)}, W=1024\right) &amp; l \pmod 3 = 2 \end{cases}\]</div>
+<h3 id="why-it-matters_8">Why It Matters</h3>
+<ul>
+<li><strong>Outperforms LLaMA-2</strong>: Griffin achieves lower perplexity than LLaMA-2 models with significantly fewer training FLOPs.</li>
+<li><strong>Superior Context Extrapolation</strong>: Trained on 8k contexts, Griffin extrapolates cleanly to <strong>65,000+ tokens</strong> without fine-tuning.</li>
+<li><strong>Unified Theoretical Framework</strong>: Eliminates the division between SSMs and Attention, unlocking hybrid chunked GPU kernels that dominate modern LLM serving.</li>
+</ul>
+<h3 id="image-prompt_8">Image Prompt</h3>
+<blockquote>
+<p>🎨 <strong>Image Prompt:</strong> A majestic 3D isometric scientific rendering of the State Space Duality (SSD) bridge on dark slate <code>#0B0F19</code>. On the left side, a glowing golden helical wave represents continuous 1D SSM dynamical systems. On the right side, a grid of luminous electric blue matrix tiles represents 2D Linear Attention. In the center, an elegant mobius strip labeled "State Space Duality (SSD)" bridges both representations into a single harmonious mathematical loop. Golden light particles transition fluidly between the wave and the matrix. 8k resolution, cinematic atmosphere.</p>
+</blockquote>
+<hr />
+<h2 id="practical-pytorch-implementation-linear-recurrent-attention-engine">💻 Practical PyTorch Implementation: Linear Recurrent Attention Engine</h2>
+<p>Here is a complete, modular, standalone PyTorch implementation demonstrating <strong>Associative Linear Attention</strong> with dual execution modes: <strong>Parallel Training Scan</strong> and <strong><span class="arithmatex">\(O(1)\)</span> Memory Autoregressive Step</strong>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">KernelLinearAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Katharopoulos-style Kernelized Linear Attention with dual execution:</span>
+<span class="sd">    1. Parallel forward pass for training via cumulative associative prefix sum.</span>
+<span class="sd">    2. Recurrent step-by-step forward pass for O(1) memory autoregressive decoding.</span>
+<span class="sd">    """</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_model</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">d_model</span> <span class="o">%</span> <span class="n">num_heads</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"d_model must be divisible by num_heads"</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d_model</span> <span class="o">=</span> <span class="n">d_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span> <span class="o">=</span> <span class="n">num_heads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span> <span class="o">=</span> <span class="n">d_model</span> <span class="o">//</span> <span class="n">num_heads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
+
+        <span class="c1"># Projections for Q, K, V, and Output</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_proj</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_proj</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_proj</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_proj</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">d_model</span><span class="p">,</span> <span class="n">d_model</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">feature_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Non-negative kernel feature map: phi(x) = elu(x) + 1.0"""</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">elu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_parallel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Parallel Training Forward Pass: O(N · d^2) FLOPs, O(N · d) memory.</span>
+<span class="sd">        x: [Batch, SeqLen, Dim]</span>
+<span class="sd">        """</span>
+        <span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">H</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span>
+
+        <span class="c1"># Project and reshape: [B, H, N, d]</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_proj</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k_proj</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">V</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_proj</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># Compute outer product per token: K^T ⊗ V -&gt; [B, H, N, d, d]</span>
+        <span class="n">KV</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bhni,bhnj-&gt;bhnij'</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">V</span><span class="p">)</span>
+
+        <span class="c1"># Causal prefix sum scan along sequence dimension N</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">KV</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># Cumulative memory state [B, H, N, d, d]</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># Cumulative normalizer [B, H, N, d]</span>
+
+        <span class="c1"># Query state contraction: Q @ S -&gt; [B, H, N, d]</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bhni,bhnij-&gt;bhnj'</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">S</span><span class="p">)</span>
+        <span class="n">den</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bhni,bhni-&gt;bhn'</span><span class="p">,</span> <span class="n">Q</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span>
+
+        <span class="n">out</span> <span class="o">=</span> <span class="n">num</span> <span class="o">/</span> <span class="n">den</span> <span class="c1"># [B, H, N, d]</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_proj</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_step</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> 
+        <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> 
+        <span class="n">state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Autoregressive Single Token Step: O(1) Memory Footprint, O(d^2) Compute.</span>
+<span class="sd">        x_t: [Batch, 1, Dim]</span>
+<span class="sd">        state: Tuple of (S_t [B, H, d, d], z_t [B, H, d, 1])</span>
+<span class="sd">        """</span>
+        <span class="n">B</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="n">x_t</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">H</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span>
+
+        <span class="c1"># Project single token</span>
+        <span class="n">q_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_proj</span><span class="p">(</span><span class="n">x_t</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
+        <span class="n">k_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k_proj</span><span class="p">(</span><span class="n">x_t</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">))</span>
+        <span class="n">v_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_proj</span><span class="p">(</span><span class="n">x_t</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+
+        <span class="c1"># Initialize state if first token</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">S_prev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x_t</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x_t</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">z_prev</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x_t</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">x_t</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">S_prev</span><span class="p">,</span> <span class="n">z_prev</span> <span class="o">=</span> <span class="n">state</span>
+
+        <span class="c1"># Recurrent state accumulation: S_t = S_{t-1} + k_t v_t^T</span>
+        <span class="n">S_t</span> <span class="o">=</span> <span class="n">S_prev</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bhi,bhj-&gt;bhij'</span><span class="p">,</span> <span class="n">k_t</span><span class="p">,</span> <span class="n">v_t</span><span class="p">)</span>
+        <span class="n">z_t</span> <span class="o">=</span> <span class="n">z_prev</span> <span class="o">+</span> <span class="n">k_t</span>
+
+        <span class="c1"># Output extraction: y_t = (q_t S_t) / (q_t z_t)</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bhi,bhij-&gt;bhj'</span><span class="p">,</span> <span class="n">q_t</span><span class="p">,</span> <span class="n">S_t</span><span class="p">)</span>
+        <span class="n">den</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bhi,bhi-&gt;bh'</span><span class="p">,</span> <span class="n">q_t</span><span class="p">,</span> <span class="n">z_t</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span>
+
+        <span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="n">num</span> <span class="o">/</span> <span class="n">den</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_proj</span><span class="p">(</span><span class="n">out</span><span class="p">),</span> <span class="p">(</span><span class="n">S_t</span><span class="p">,</span> <span class="n">z_t</span><span class="p">)</span>
+
+<span class="c1"># --- Verification &amp; Equivalence Test ---</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+    <span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">32</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">KernelLinearAttention</span><span class="p">(</span><span class="n">d_model</span><span class="o">=</span><span class="n">D</span><span class="p">,</span> <span class="n">num_heads</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
+
+    <span class="c1"># 1. Parallel Training Pass</span>
+    <span class="n">parallel_out</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">forward_parallel</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="c1"># 2. Sequential Recurrent Step-by-Step Pass</span>
+    <span class="n">recurrent_outs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+        <span class="n">x_t</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">t</span><span class="p">:</span><span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">out_t</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">forward_step</span><span class="p">(</span><span class="n">x_t</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+        <span class="n">recurrent_outs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out_t</span><span class="p">)</span>
+    <span class="n">recurrent_out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">recurrent_outs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># 3. Check Mathematical Equivalence</span>
+    <span class="n">max_diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">parallel_out</span> <span class="o">-</span> <span class="n">recurrent_out</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Parallel vs. Recurrent Max Absolute Difference: </span><span class="si">{</span><span class="n">max_diff</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">max_diff</span> <span class="o">&lt;</span> <span class="mf">1e-5</span><span class="p">,</span> <span class="s2">"Parallel and Recurrent outputs must match!"</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"✅ Mathematical equivalence between parallel scan and recurrent step confirmed!"</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<hr />
+<h2 id="10-empirical-benchmarks-glue-fine-tuning-results">10. Empirical Benchmarks &amp; GLUE Fine-Tuning Results</h2>
+<p>Below are the measured empirical training and evaluation metrics from our multi-worker GPU benchmark grid evaluating linear, kernel, and SSM architectures:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Architecture</th>
+<th style="text-align: center;">Task</th>
+<th style="text-align: center;">Eval Acc (%)</th>
+<th style="text-align: center;">Eval F1 (%)</th>
+<th style="text-align: center;">Eval Loss</th>
+<th style="text-align: center;">Training Time</th>
+<th style="text-align: center;">Memory Complexity</th>
+<th style="text-align: left;">Hardware Characteristic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>FlashAttention-3 (FP8)</strong></td>
+<td style="text-align: center;"><strong>SST-2</strong></td>
+<td style="text-align: center;"><strong>82.91%</strong></td>
+<td style="text-align: center;"><strong>82.90%</strong></td>
+<td style="text-align: center;"><strong>0.4711</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(699.0\text{s}\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N^2)\)</span></td>
+<td style="text-align: left;">Asynchronous TMA Tiling</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Performer (FAVOR+)</strong></td>
+<td style="text-align: center;"><strong>SST-2</strong></td>
+<td style="text-align: center;"><strong>82.91%</strong></td>
+<td style="text-align: center;"><strong>82.90%</strong></td>
+<td style="text-align: center;"><strong>0.4295</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(652.1\text{s}\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N)\)</span></td>
+<td style="text-align: left;">Positive Orthogonal Kernel</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Linformer Attention</strong></td>
+<td style="text-align: center;"><strong>SST-2</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(79.47\%\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(79.46\%\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(0.4709\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(688.4\text{s}\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N)\)</span></td>
+<td style="text-align: left;">Fixed <span class="arithmatex">\(k=64\)</span> Projections</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Mamba SSM Attention</strong></td>
+<td style="text-align: center;"><strong>SST-2</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(50.92\%\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(33.74\%\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(0.6986\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(1075.4\text{s}\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(1)\)</span> State</td>
+<td style="text-align: left;">Input-Dependent Selective Scan</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FlashAttention-3 (FP8)</strong></td>
+<td style="text-align: center;"><strong>QNLI</strong></td>
+<td style="text-align: center;"><strong>59.31%</strong></td>
+<td style="text-align: center;"><strong>58.51%</strong></td>
+<td style="text-align: center;"><strong>0.6632</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(224.0\text{s}\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N^2)\)</span></td>
+<td style="text-align: left;">Hopper WGMMA FP8 GEMMs</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Linformer Attention</strong></td>
+<td style="text-align: center;"><strong>QNLI</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(50.61\%\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(42.31\%\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(0.6915\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(238.9\text{s}\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N)\)</span></td>
+<td style="text-align: left;">Sequence Dimension Bottleneck</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FlashAttention-3 (FP8)</strong></td>
+<td style="text-align: center;"><strong>MRPC</strong></td>
+<td style="text-align: center;"><strong>68.38%</strong></td>
+<td style="text-align: center;"><strong>81.22%</strong></td>
+<td style="text-align: center;"><strong>0.6083</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(59.9\text{s}\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N^2)\)</span></td>
+<td style="text-align: left;">Fastest Epoch Runtime</td>
+</tr>
+</tbody>
+</table>
+<h3 id="architectural-takeaways">Architectural Takeaways:</h3>
+<ol>
+<li><strong>Performer vs FlashAttention-3 Equivalence</strong>: Performer matched FlashAttention-3 accuracy exactly on SST-2 (<span class="arithmatex">\(82.91\%\)</span>) while achieving a slightly lower evaluation loss (<span class="arithmatex">\(0.4295\)</span> vs <span class="arithmatex">\(0.4711\)</span>), demonstrating the high fidelity of FAVOR+ kernel approximations for sequence lengths <span class="arithmatex">\(N \le 512\)</span>.</li>
+<li><strong>SSM Fine-Tuning Dynamics</strong>: Selective SSMs like Mamba require specialized learning rate warmup schedules for the continuous time discretization parameter <span class="arithmatex">\(\Delta_t\)</span>; standard AdamW schedules without spectral initialization result in slower early convergence on small classification heads.</li>
+</ol>
+<hr />
+<h2 id="architectural-master-comparison-table">🏁 Architectural Master Comparison Table</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Architecture</th>
+<th style="text-align: center;">Time Complexity</th>
+<th style="text-align: center;">Memory Complexity</th>
+<th style="text-align: center;">Parallel Training?</th>
+<th style="text-align: center;">Inference State Size</th>
+<th style="text-align: center;">Decay Mechanism</th>
+<th style="text-align: left;">Primary Innovation &amp; Best Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Standard Softmax MHA</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N^2 d)\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N^2)\)</span></td>
+<td style="text-align: center;">✅ Full Matrix</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N \cdot d)\)</span> (Expanding)</td>
+<td style="text-align: center;">None (Dense Softmax)</td>
+<td style="text-align: left;">Exact global attention; short contexts (<span class="arithmatex">\(&lt;4\text{k}\)</span>)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Katharopoulos Linear</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N d^2)\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N d)\)</span></td>
+<td style="text-align: center;">✅ Prefix Scan</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(d^2)\)</span> (Constant)</td>
+<td style="text-align: center;">None (Unweighted Sum)</td>
+<td style="text-align: left;">Kernel feature map associativity; fast generation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Performer (FAVOR+)</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N m d)\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N m)\)</span></td>
+<td style="text-align: center;">✅ Matrix Product</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(m \cdot d)\)</span> (Constant)</td>
+<td style="text-align: center;">None (Softmax Approx)</td>
+<td style="text-align: left;">Positive orthogonal random features; biology &amp; genomics</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Linformer</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N k d)\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N k)\)</span></td>
+<td style="text-align: center;">✅ Matrix Product</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(k \cdot d)\)</span> (Constant)</td>
+<td style="text-align: center;">None (Low-Rank Proj)</td>
+<td style="text-align: left;">Sequence down-projection <span class="arithmatex">\(N \to k\)</span>; BERT &amp; ViT encoders</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Mamba (Selective SSM)</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N \cdot D \cdot N_{\text{state}})\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(1)\)</span></td>
+<td style="text-align: center;">✅ Fused Scan</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(D \cdot N_{\text{state}})\)</span></td>
+<td style="text-align: center;">Input-Dependent <span class="arithmatex">\(\Delta_t\)</span></td>
+<td style="text-align: left;">Selective time-varying ODEs; million-token LLMs</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>MambaSVD-Flash Hybrid</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N D r)\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(1)\)</span></td>
+<td style="text-align: center;">✅ Dual-Engine</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(D \cdot r)\)</span></td>
+<td style="text-align: center;">Truncated SVD <span class="arithmatex">\(\Sigma_r\)</span></td>
+<td style="text-align: left;">SVD SSM scan + FP8 FlashAttention-3; high-entropy LLMs</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>RetNet (Retention)</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N d^2)\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(d^2)\)</span></td>
+<td style="text-align: center;">✅ Triple-Mode</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(d^2)\)</span> (Constant)</td>
+<td style="text-align: center;">Multi-Scale <span class="arithmatex">\(\gamma^{n-m}\)</span></td>
+<td style="text-align: left;">"Impossible Triangle" solver; parallel + chunkwise + <span class="arithmatex">\(O(1)\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>RWKV (v4–v7)</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N d)\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(1)\)</span></td>
+<td style="text-align: center;">✅ WKV Scan</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(d)\)</span> (Constant)</td>
+<td style="text-align: center;">Learned Channel <span class="arithmatex">\(e^{-w}\)</span></td>
+<td style="text-align: left;">Time-Shift token mixing + pure RNN form; Edge AI &amp; Phones</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>HGRN2 &amp; Gated DeltaNet</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N d^2)\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(d^2)\)</span></td>
+<td style="text-align: center;">✅ Chunk Scan</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(d^2)\)</span> (Constant)</td>
+<td style="text-align: center;">Error-Driven Delta Rule</td>
+<td style="text-align: left;">Destructive memory overwriting; code &amp; multi-query recall</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Griffin &amp; Hawk</strong></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(N d)\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(1)\)</span></td>
+<td style="text-align: center;">✅ SSD Scan</td>
+<td style="text-align: center;"><span class="arithmatex">\(\mathcal{O}(d)\)</span> (Constant)</td>
+<td style="text-align: center;">Real-Gated <span class="arithmatex">\(\alpha_t^c\)</span></td>
+<td style="text-align: left;">State Space Duality bridge + Local MQA hybrid; LLaMA alternative</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Authored by the SVD Linear Attention Research Group. Next in the series: <strong>Part 3: Sparse, Chunked, Local &amp; Block-Diagonal Attentions</strong>.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

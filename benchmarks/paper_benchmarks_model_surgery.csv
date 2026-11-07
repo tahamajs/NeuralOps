@@ -1,0 +1,10 @@
+Model,Benchmark_Task,Attention_Mechanism,Primary_Metric,Metric_Unit,Latency_ms,Peak_VRAM_MB,Complexity
+GPT-2 (124M),Wikitext-2 (PPL),baseline,39.33,Perplexity (Lower=Better),48.5,862.27,O(N^2)
+GPT-2 (124M),Wikitext-2 (PPL),svd_linear_attention,3561.18,Perplexity (Lower=Better),53.0,1096.82,O(N)
+GPT-2 (124M),Wikitext-2 (PPL),gla_attention,7716.71,Perplexity (Lower=Better),71.0,1012.03,O(N)
+RoBERTa-base (125M),GLUE-MRPC,baseline,68.5,Accuracy % (Higher=Better),25.36,1063.55,O(N^2)
+RoBERTa-base (125M),GLUE-MRPC,svd_linear_attention,31.5,Accuracy % (Higher=Better),22.8,1063.49,O(N)
+RoBERTa-base (125M),GLUE-SST2,baseline,50.5,Accuracy % (Higher=Better),14.13,1013.84,O(N^2)
+RoBERTa-base (125M),GLUE-SST2,svd_linear_attention,49.5,Accuracy % (Higher=Better),9.93,1062.99,O(N)
+RoBERTa-base (125M),GLUE-COLA,baseline,65.0,Accuracy % (Higher=Better),5.1,1012.09,O(N^2)
+RoBERTa-base (125M),GLUE-COLA,svd_linear_attention,65.0,Accuracy % (Higher=Better),4.06,1061.24,O(N)

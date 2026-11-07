@@ -1,0 +1,36 @@
+{
+  "module_name": "dynamic_rank",
+  "class_name": "DynamicEntropySVDCompressorRegistered",
+  "category": "compression",
+  "family": "Dynamic Rank & Entropy-Guided Budget Allocation",
+  "params": [
+    "in_features",
+    "out_features",
+    "rank",
+    "bias",
+    "dtype",
+    "device",
+    "model",
+    "min_rank",
+    "max_rank",
+    "target_param_ratio",
+    "total_rank_budget",
+    "target_rank",
+    "calibration_loader",
+    "calibration_texts",
+    "target_modules"
+  ],
+  "ops": [
+    "linear"
+  ],
+  "docstring": "Dynamic Entropy Singular Value Decomposition (Dynamic Entropy SVD) Compressor.  Implements singular entropy computation over empirical layer activation covariances: $$H(\\\\Sigma_l) = -\\\\sum_{i=1}^{d} p_i \\\\ln(p_i), \\\\quad p_i = \\\\frac{\\\\sigma_i}{\\\\sum_j \\\\sigma_j}$$ Dynamically budgets layer ranks $r_l \\\\in [r_{\\\\min}, r_{\\\\max}]$ proportional to si",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 8.859162264409004e+37,
+  "paradigm": "dynamic_rank",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

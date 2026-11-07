@@ -1,0 +1,92 @@
+{
+  "module_name": "soka",
+  "category": "attention",
+  "family": "general",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "d14d80e951",
+  "latest_timestamp": "2026-10-18T14:31:44.080764+00:00",
+  "latest_record": {
+    "record_id": "9d2caf9d828daaaf",
+    "module_name": "soka",
+    "category": "attention",
+    "family": "general",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T14:31:44.080764+00:00",
+    "git_commit_sha": "d14d80e951",
+    "generation_method": {
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
+    },
+    "experimental_setup": {
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
+    },
+    "metrics": {
+      "accuracy": 89.91,
+      "roberta_acc": 84.06,
+      "gpt2_acc": 60.78,
+      "latency_ms": 78.9
+    },
+    "notes": "Master Aggregated Results"
+  },
+  "active_records": [
+    {
+      "record_id": "9d2caf9d828daaaf",
+      "module_name": "soka",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T14:31:44.080764+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 89.91,
+        "roberta_acc": 84.06,
+        "gpt2_acc": 60.78,
+        "latency_ms": 78.9
+      },
+      "notes": "Master Aggregated Results"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "9d2caf9d828daaaf",
+      "module_name": "soka",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T14:31:44.080764+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 89.91,
+        "roberta_acc": 84.06,
+        "gpt2_acc": 60.78,
+        "latency_ms": 78.9
+      },
+      "notes": "Master Aggregated Results"
+    }
+  ]
+}

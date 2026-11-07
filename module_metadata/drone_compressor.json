@@ -1,0 +1,25 @@
+{
+  "module_name": "drone_compressor",
+  "class_name": "DroneCompressor",
+  "category": "compression",
+  "family": "Optimal Subspace Projection & Latent Dimensionality Reduction",
+  "paradigm": "subspace",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "DRONE Compressor: Data-aware Low-Rank SVD with Identity Weighting.  Implements truncated SVD directly on target linear weight matrices (identity weighting) and replaces target layers with structural SVDLinear modules. Applies the identical rank allocation and Frobenius reconstruction error fallback threshold as AASVD/FWSVD.",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

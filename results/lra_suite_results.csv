@@ -1,0 +1,6 @@
+task,module,status,best_accuracy,duration_sec,error
+listops,asvd_attention,PASS,14.0,131.4,
+listops,svd_llm_v2_attention,FAIL,0.0,102.7,"5:53,749 [INFO] httpx: HTTP Request: HEAD https://huggingface.co/datasets/listops-1000/resolve/main/README.md ""HTTP/1.1 404 Not Found""
+2026-09-18 16:15:53,981 [INFO] httpx: HTTP Request: HEAD https://"
+listops,adaptive_svd_attention,PASS,10.2,127.5,
+listops,squeezing_heads,PASS,12.2,115.4,

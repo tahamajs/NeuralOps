@@ -1,0 +1,200 @@
+{
+  "module_name": "hybrid_svd_layer",
+  "category": "attention",
+  "family": "general",
+  "total_runs": 3,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "d14d80e951",
+  "latest_timestamp": "2026-10-18T14:31:44.080764+00:00",
+  "latest_record": {
+    "record_id": "9467c3120c7b8794",
+    "module_name": "hybrid_svd_layer",
+    "category": "attention",
+    "family": "general",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T14:31:44.080764+00:00",
+    "git_commit_sha": "d14d80e951",
+    "generation_method": {
+      "algorithm": "Master Aggregated Evaluation Suite",
+      "source_artifact": "results/master_aggregated_results.csv"
+    },
+    "experimental_setup": {
+      "dataset": "SST-2",
+      "backbone": "DistilBERT"
+    },
+    "metrics": {
+      "accuracy": 77.18,
+      "roberta_acc": 50.92,
+      "gpt2_acc": 51.15,
+      "latency_ms": 84.4
+    },
+    "notes": "Master Aggregated Results"
+  },
+  "active_records": [
+    {
+      "record_id": "0015e330707526bb",
+      "module_name": "hybrid_svd_layer",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T13:53:23.695997+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 47.0,
+        "f1": 0.2535,
+        "val_loss": 0.6953,
+        "param_reduction_pct": 51.11,
+        "compression_ratio": 2.0452,
+        "peak_vram_mb": 1261.6,
+        "latency_ms": 5600.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
+      "record_id": "1b3055c21c014e95",
+      "module_name": "hybrid_svd_layer",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T02:46:18.831408+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 42.89,
+        "relative_error": 0.1274
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "9467c3120c7b8794",
+      "module_name": "hybrid_svd_layer",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T14:31:44.080764+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 77.18,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.15,
+        "latency_ms": 84.4
+      },
+      "notes": "Master Aggregated Results"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "0015e330707526bb",
+      "module_name": "hybrid_svd_layer",
+      "category": "compressor",
+      "family": "compression-sweep-roberta",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-14T13:53:23.695997+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "RoBERTa-base 72-Compressor Empirical Benchmark",
+        "source_artifact": "results/v13_deep_empirical_suite/roberta_72_compressors/results.json"
+      },
+      "experimental_setup": {
+        "backbone": "RoBERTa-base",
+        "dataset": "SST-2",
+        "batch_size": 16
+      },
+      "metrics": {
+        "accuracy": 47.0,
+        "f1": 0.2535,
+        "val_loss": 0.6953,
+        "param_reduction_pct": 51.11,
+        "compression_ratio": 2.0452,
+        "peak_vram_mb": 1261.6,
+        "latency_ms": 5600.0
+      },
+      "notes": "RoBERTa 72 Compressors Benchmark. Status: success"
+    },
+    {
+      "record_id": "1b3055c21c014e95",
+      "module_name": "hybrid_svd_layer",
+      "category": "compressor",
+      "family": "matrix-compression",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-17T02:46:18.831408+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Low-Rank SVD / Structured Quantization Factorizer",
+        "source_artifact": "results/triton_all_72_compressors_benchmark.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "dtype": "float16"
+      },
+      "metrics": {
+        "compress_ms": 42.89,
+        "relative_error": 0.1274
+      },
+      "notes": "72 Compressor Matrix Compression Benchmark"
+    },
+    {
+      "record_id": "9467c3120c7b8794",
+      "module_name": "hybrid_svd_layer",
+      "category": "attention",
+      "family": "general",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T14:31:44.080764+00:00",
+      "git_commit_sha": "d14d80e951",
+      "generation_method": {
+        "algorithm": "Master Aggregated Evaluation Suite",
+        "source_artifact": "results/master_aggregated_results.csv"
+      },
+      "experimental_setup": {
+        "dataset": "SST-2",
+        "backbone": "DistilBERT"
+      },
+      "metrics": {
+        "accuracy": 77.18,
+        "roberta_acc": 50.92,
+        "gpt2_acc": 51.15,
+        "latency_ms": 84.4
+      },
+      "notes": "Master Aggregated Results"
+    }
+  ]
+}

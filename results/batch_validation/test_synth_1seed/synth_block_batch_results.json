@@ -1,0 +1,2560 @@
+{
+  "model": "synth_block",
+  "seeds": [
+    0
+  ],
+  "ranks": [
+    8,
+    16,
+    32,
+    64
+  ],
+  "aggregate": {
+    "direct_svd_rank8": {
+      "method": "direct_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.2745741009712219,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.2745741009712219,
+      "rel_err_max": 0.2745741009712219,
+      "top1_mean": 0.638671875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0943
+    },
+    "hnc_svd_rank8": {
+      "method": "hnc_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.18424838781356812,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.18424838781356812,
+      "rel_err_max": 0.18424838781356812,
+      "top1_mean": 0.7373046875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.1569
+    },
+    "erc_svd_rank8": {
+      "method": "erc_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.04905039817094803,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.04905039817094803,
+      "rel_err_max": 0.04905039817094803,
+      "top1_mean": 0.9326171875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0331
+    },
+    "aa_svd_rank8": {
+      "method": "aa_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0085
+    },
+    "whitened_svd_rank8": {
+      "method": "whitened_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19496601819992065,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19496601819992065,
+      "rel_err_max": 0.19496601819992065,
+      "top1_mean": 0.7314453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0581
+    },
+    "fisher_svd_rank8": {
+      "method": "fisher_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03991303592920303,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03991303592920303,
+      "rel_err_max": 0.03991303592920303,
+      "top1_mean": 0.9404296875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.008
+    },
+    "dobi_svd_rank8": {
+      "method": "dobi_svd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03991303592920303,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03991303592920303,
+      "rel_err_max": 0.03991303592920303,
+      "top1_mean": 0.9404296875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "fwsvd_rank8": {
+      "method": "fwsvd",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03991303592920303,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03991303592920303,
+      "rel_err_max": 0.03991303592920303,
+      "top1_mean": 0.9404296875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.008
+    },
+    "asvd_compressor_rank8": {
+      "method": "asvd_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0084
+    },
+    "wanda_real_rank8": {
+      "method": "wanda_real",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.18966585397720337,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.18966585397720337,
+      "rel_err_max": 0.18966585397720337,
+      "top1_mean": 0.720703125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0197
+    },
+    "sparsegpt_rank8": {
+      "method": "sparsegpt",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11843489110469818,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11843489110469818,
+      "rel_err_max": 0.11843489110469818,
+      "top1_mean": 0.8232421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "flap_rank8": {
+      "method": "flap",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11503191292285919,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11503191292285919,
+      "rel_err_max": 0.11503191292285919,
+      "top1_mean": 0.8408203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0079
+    },
+    "slicegpt_rank8": {
+      "method": "slicegpt",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1559145450592041,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1559145450592041,
+      "rel_err_max": 0.1559145450592041,
+      "top1_mean": 0.7724609375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0052
+    },
+    "admm_pruner_rank8": {
+      "method": "admm_pruner",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1168452650308609,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1168452650308609,
+      "rel_err_max": 0.1168452650308609,
+      "top1_mean": 0.8203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0187
+    },
+    "gptq_real_rank8": {
+      "method": "gptq_real",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.020185280591249466,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.020185280591249466,
+      "rel_err_max": 0.020185280591249466,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0712
+    },
+    "smoothquant_real_rank8": {
+      "method": "smoothquant_real",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.864838182926178,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.864838182926178,
+      "rel_err_max": 0.864838182926178,
+      "top1_mean": 0.126953125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0005
+    },
+    "quarot_rank8": {
+      "method": "quarot",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0888
+    },
+    "w4a16_rank8": {
+      "method": "w4a16",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.028111940249800682,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.028111940249800682,
+      "rel_err_max": 0.028111940249800682,
+      "top1_mean": 0.9482421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0031
+    },
+    "int4_lut_quantizer_rank8": {
+      "method": "int4_lut_quantizer",
+      "rank": 8,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "kronecker_compressor_rank8": {
+      "method": "kronecker_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.033564839512109756,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.033564839512109756,
+      "rel_err_max": 0.033564839512109756,
+      "top1_mean": 0.9462890625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "tt_compressor_rank8": {
+      "method": "tt_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19819217920303345,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19819217920303345,
+      "rel_err_max": 0.19819217920303345,
+      "top1_mean": 0.71875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.021
+    },
+    "rpca_compressor_rank8": {
+      "method": "rpca_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19697797298431396,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19697797298431396,
+      "rel_err_max": 0.19697797298431396,
+      "top1_mean": 0.7197265625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.1183
+    },
+    "tucker_compressor_rank8": {
+      "method": "tucker_compressor",
+      "rank": 8,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "adaptive_ranks_rank8": {
+      "method": "adaptive_ranks",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0471
+    },
+    "adasvd_compressor_rank8": {
+      "method": "adasvd_compressor",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0164
+    },
+    "entropy_budget_allocation_rank8": {
+      "method": "entropy_budget_allocation",
+      "rank": 8,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1949394941329956,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1949394941329956,
+      "rel_err_max": 0.1949394941329956,
+      "top1_mean": 0.7138671875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0249
+    },
+    "direct_svd_rank16": {
+      "method": "direct_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.2505607008934021,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.2505607008934021,
+      "rel_err_max": 0.2505607008934021,
+      "top1_mean": 0.6572265625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0206
+    },
+    "hnc_svd_rank16": {
+      "method": "hnc_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.176938995718956,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.176938995718956,
+      "rel_err_max": 0.176938995718956,
+      "top1_mean": 0.7333984375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0762
+    },
+    "erc_svd_rank16": {
+      "method": "erc_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.26335057616233826,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.26335057616233826,
+      "rel_err_max": 0.26335057616233826,
+      "top1_mean": 0.6376953125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.021
+    },
+    "aa_svd_rank16": {
+      "method": "aa_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0071
+    },
+    "whitened_svd_rank16": {
+      "method": "whitened_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1890539973974228,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1890539973974228,
+      "rel_err_max": 0.1890539973974228,
+      "top1_mean": 0.7333984375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.048
+    },
+    "fisher_svd_rank16": {
+      "method": "fisher_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03787059709429741,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03787059709429741,
+      "rel_err_max": 0.03787059709429741,
+      "top1_mean": 0.939453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0066
+    },
+    "dobi_svd_rank16": {
+      "method": "dobi_svd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03787059709429741,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03787059709429741,
+      "rel_err_max": 0.03787059709429741,
+      "top1_mean": 0.939453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "fwsvd_rank16": {
+      "method": "fwsvd",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.03787059709429741,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.03787059709429741,
+      "rel_err_max": 0.03787059709429741,
+      "top1_mean": 0.939453125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0066
+    },
+    "asvd_compressor_rank16": {
+      "method": "asvd_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.007
+    },
+    "wanda_real_rank16": {
+      "method": "wanda_real",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1865239292383194,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1865239292383194,
+      "rel_err_max": 0.1865239292383194,
+      "top1_mean": 0.71484375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0003
+    },
+    "sparsegpt_rank16": {
+      "method": "sparsegpt",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11843489110469818,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11843489110469818,
+      "rel_err_max": 0.11843489110469818,
+      "top1_mean": 0.8232421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "flap_rank16": {
+      "method": "flap",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11503191292285919,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11503191292285919,
+      "rel_err_max": 0.11503191292285919,
+      "top1_mean": 0.8408203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0011
+    },
+    "slicegpt_rank16": {
+      "method": "slicegpt",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.15542496740818024,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.15542496740818024,
+      "rel_err_max": 0.15542496740818024,
+      "top1_mean": 0.7734375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0049
+    },
+    "admm_pruner_rank16": {
+      "method": "admm_pruner",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1168452650308609,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1168452650308609,
+      "rel_err_max": 0.1168452650308609,
+      "top1_mean": 0.8203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0123
+    },
+    "gptq_real_rank16": {
+      "method": "gptq_real",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.020185280591249466,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.020185280591249466,
+      "rel_err_max": 0.020185280591249466,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0622
+    },
+    "smoothquant_real_rank16": {
+      "method": "smoothquant_real",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.864838182926178,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.864838182926178,
+      "rel_err_max": 0.864838182926178,
+      "top1_mean": 0.126953125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0004
+    },
+    "quarot_rank16": {
+      "method": "quarot",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0816
+    },
+    "w4a16_rank16": {
+      "method": "w4a16",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.028111940249800682,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.028111940249800682,
+      "rel_err_max": 0.028111940249800682,
+      "top1_mean": 0.9482421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0023
+    },
+    "int4_lut_quantizer_rank16": {
+      "method": "int4_lut_quantizer",
+      "rank": 16,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "kronecker_compressor_rank16": {
+      "method": "kronecker_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.17084968090057373,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.17084968090057373,
+      "rel_err_max": 0.17084968090057373,
+      "top1_mean": 0.7451171875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "tt_compressor_rank16": {
+      "method": "tt_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19674435257911682,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19674435257911682,
+      "rel_err_max": 0.19674435257911682,
+      "top1_mean": 0.71875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0209
+    },
+    "rpca_compressor_rank16": {
+      "method": "rpca_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19492268562316895,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19492268562316895,
+      "rel_err_max": 0.19492268562316895,
+      "top1_mean": 0.71484375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.1247
+    },
+    "tucker_compressor_rank16": {
+      "method": "tucker_compressor",
+      "rank": 16,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "adaptive_ranks_rank16": {
+      "method": "adaptive_ranks",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0469
+    },
+    "adasvd_compressor_rank16": {
+      "method": "adasvd_compressor",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0131
+    },
+    "entropy_budget_allocation_rank16": {
+      "method": "entropy_budget_allocation",
+      "rank": 16,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1949394941329956,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1949394941329956,
+      "rel_err_max": 0.1949394941329956,
+      "top1_mean": 0.7138671875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0248
+    },
+    "direct_svd_rank32": {
+      "method": "direct_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.23087438941001892,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.23087438941001892,
+      "rel_err_max": 0.23087438941001892,
+      "top1_mean": 0.6533203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0207
+    },
+    "hnc_svd_rank32": {
+      "method": "hnc_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.16380465030670166,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.16380465030670166,
+      "rel_err_max": 0.16380465030670166,
+      "top1_mean": 0.75390625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0785
+    },
+    "erc_svd_rank32": {
+      "method": "erc_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.26335057616233826,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.26335057616233826,
+      "rel_err_max": 0.26335057616233826,
+      "top1_mean": 0.6376953125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0208
+    },
+    "aa_svd_rank32": {
+      "method": "aa_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.007
+    },
+    "whitened_svd_rank32": {
+      "method": "whitened_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.17745329439640045,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.17745329439640045,
+      "rel_err_max": 0.17745329439640045,
+      "top1_mean": 0.748046875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0482
+    },
+    "fisher_svd_rank32": {
+      "method": "fisher_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.033564839512109756,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.033564839512109756,
+      "rel_err_max": 0.033564839512109756,
+      "top1_mean": 0.9462890625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0066
+    },
+    "dobi_svd_rank32": {
+      "method": "dobi_svd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.033564839512109756,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.033564839512109756,
+      "rel_err_max": 0.033564839512109756,
+      "top1_mean": 0.9462890625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "fwsvd_rank32": {
+      "method": "fwsvd",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.033564839512109756,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.033564839512109756,
+      "rel_err_max": 0.033564839512109756,
+      "top1_mean": 0.9462890625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0066
+    },
+    "asvd_compressor_rank32": {
+      "method": "asvd_compressor",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.007
+    },
+    "wanda_real_rank32": {
+      "method": "wanda_real",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.16118060052394867,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.16118060052394867,
+      "rel_err_max": 0.16118060052394867,
+      "top1_mean": 0.7548828125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0003
+    },
+    "sparsegpt_rank32": {
+      "method": "sparsegpt",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11843489110469818,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11843489110469818,
+      "rel_err_max": 0.11843489110469818,
+      "top1_mean": 0.8232421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "flap_rank32": {
+      "method": "flap",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11503191292285919,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11503191292285919,
+      "rel_err_max": 0.11503191292285919,
+      "top1_mean": 0.8408203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0009
+    },
+    "slicegpt_rank32": {
+      "method": "slicegpt",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.15542496740818024,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.15542496740818024,
+      "rel_err_max": 0.15542496740818024,
+      "top1_mean": 0.7734375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0049
+    },
+    "admm_pruner_rank32": {
+      "method": "admm_pruner",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1168452650308609,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1168452650308609,
+      "rel_err_max": 0.1168452650308609,
+      "top1_mean": 0.8203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0124
+    },
+    "gptq_real_rank32": {
+      "method": "gptq_real",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.020185280591249466,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.020185280591249466,
+      "rel_err_max": 0.020185280591249466,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0625
+    },
+    "smoothquant_real_rank32": {
+      "method": "smoothquant_real",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.864838182926178,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.864838182926178,
+      "rel_err_max": 0.864838182926178,
+      "top1_mean": 0.126953125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0003
+    },
+    "quarot_rank32": {
+      "method": "quarot",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0814
+    },
+    "w4a16_rank32": {
+      "method": "w4a16",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.028111940249800682,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.028111940249800682,
+      "rel_err_max": 0.028111940249800682,
+      "top1_mean": 0.9482421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0022
+    },
+    "int4_lut_quantizer_rank32": {
+      "method": "int4_lut_quantizer",
+      "rank": 32,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "kronecker_compressor_rank32": {
+      "method": "kronecker_compressor",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.17084968090057373,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.17084968090057373,
+      "rel_err_max": 0.17084968090057373,
+      "top1_mean": 0.7451171875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "tt_compressor_rank32": {
+      "method": "tt_compressor",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19217096269130707,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19217096269130707,
+      "rel_err_max": 0.19217096269130707,
+      "top1_mean": 0.7255859375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0207
+    },
+    "rpca_compressor_rank32": {
+      "method": "rpca_compressor",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.18858997523784637,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.18858997523784637,
+      "rel_err_max": 0.18858997523784637,
+      "top1_mean": 0.7265625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.1284
+    },
+    "tucker_compressor_rank32": {
+      "method": "tucker_compressor",
+      "rank": 32,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "adaptive_ranks_rank32": {
+      "method": "adaptive_ranks",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.047
+    },
+    "adasvd_compressor_rank32": {
+      "method": "adasvd_compressor",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0131
+    },
+    "entropy_budget_allocation_rank32": {
+      "method": "entropy_budget_allocation",
+      "rank": 32,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.18862594664096832,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.18862594664096832,
+      "rel_err_max": 0.18862594664096832,
+      "top1_mean": 0.724609375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0248
+    },
+    "direct_svd_rank64": {
+      "method": "direct_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.19399839639663696,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.19399839639663696,
+      "rel_err_max": 0.19399839639663696,
+      "top1_mean": 0.6962890625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.021
+    },
+    "hnc_svd_rank64": {
+      "method": "hnc_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.14095905423164368,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.14095905423164368,
+      "rel_err_max": 0.14095905423164368,
+      "top1_mean": 0.7666015625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0784
+    },
+    "erc_svd_rank64": {
+      "method": "erc_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.26335057616233826,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.26335057616233826,
+      "rel_err_max": 0.26335057616233826,
+      "top1_mean": 0.6376953125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0207
+    },
+    "aa_svd_rank64": {
+      "method": "aa_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0072
+    },
+    "whitened_svd_rank64": {
+      "method": "whitened_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1541803777217865,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1541803777217865,
+      "rel_err_max": 0.1541803777217865,
+      "top1_mean": 0.748046875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0481
+    },
+    "fisher_svd_rank64": {
+      "method": "fisher_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.026334203779697418,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.026334203779697418,
+      "rel_err_max": 0.026334203779697418,
+      "top1_mean": 0.943359375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0067
+    },
+    "dobi_svd_rank64": {
+      "method": "dobi_svd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.026334203779697418,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.026334203779697418,
+      "rel_err_max": 0.026334203779697418,
+      "top1_mean": 0.943359375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "fwsvd_rank64": {
+      "method": "fwsvd",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.026334203779697418,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.026334203779697418,
+      "rel_err_max": 0.026334203779697418,
+      "top1_mean": 0.943359375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0066
+    },
+    "asvd_compressor_rank64": {
+      "method": "asvd_compressor",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.019743742421269417,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.019743742421269417,
+      "rel_err_max": 0.019743742421269417,
+      "top1_mean": 0.955078125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0073
+    },
+    "wanda_real_rank64": {
+      "method": "wanda_real",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.09651144593954086,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.09651144593954086,
+      "rel_err_max": 0.09651144593954086,
+      "top1_mean": 0.84765625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0003
+    },
+    "sparsegpt_rank64": {
+      "method": "sparsegpt",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11843489110469818,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11843489110469818,
+      "rel_err_max": 0.11843489110469818,
+      "top1_mean": 0.8232421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "flap_rank64": {
+      "method": "flap",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.11503191292285919,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.11503191292285919,
+      "rel_err_max": 0.11503191292285919,
+      "top1_mean": 0.8408203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.001
+    },
+    "slicegpt_rank64": {
+      "method": "slicegpt",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.15542496740818024,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.15542496740818024,
+      "rel_err_max": 0.15542496740818024,
+      "top1_mean": 0.7734375,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0049
+    },
+    "admm_pruner_rank64": {
+      "method": "admm_pruner",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.1168452650308609,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.1168452650308609,
+      "rel_err_max": 0.1168452650308609,
+      "top1_mean": 0.8203125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0128
+    },
+    "gptq_real_rank64": {
+      "method": "gptq_real",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.001101360423490405,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.001101360423490405,
+      "rel_err_max": 0.001101360423490405,
+      "top1_mean": 0.9951171875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0624
+    },
+    "smoothquant_real_rank64": {
+      "method": "smoothquant_real",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.864838182926178,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.864838182926178,
+      "rel_err_max": 0.864838182926178,
+      "top1_mean": 0.126953125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0003
+    },
+    "quarot_rank64": {
+      "method": "quarot",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0824
+    },
+    "w4a16_rank64": {
+      "method": "w4a16",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.028111940249800682,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.028111940249800682,
+      "rel_err_max": 0.028111940249800682,
+      "top1_mean": 0.9482421875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0023
+    },
+    "int4_lut_quantizer_rank64": {
+      "method": "int4_lut_quantizer",
+      "rank": 64,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "kronecker_compressor_rank64": {
+      "method": "kronecker_compressor",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.16937388479709625,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.16937388479709625,
+      "rel_err_max": 0.16937388479709625,
+      "top1_mean": 0.7431640625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0
+    },
+    "tt_compressor_rank64": {
+      "method": "tt_compressor",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.17673684656620026,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.17673684656620026,
+      "rel_err_max": 0.17673684656620026,
+      "top1_mean": 0.7451171875,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0208
+    },
+    "rpca_compressor_rank64": {
+      "method": "rpca_compressor",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.16959625482559204,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.16959625482559204,
+      "rel_err_max": 0.16959625482559204,
+      "top1_mean": 0.7470703125,
+      "top1_std": 0.0,
+      "time_mean_s": 0.1322
+    },
+    "tucker_compressor_rank64": {
+      "method": "tucker_compressor",
+      "rank": 64,
+      "status": "ALL_FAILED",
+      "n_seeds": 1,
+      "error_reasons": [
+        "Constructor returned None or signature incompatible"
+      ]
+    },
+    "adaptive_ranks_rank64": {
+      "method": "adaptive_ranks",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.047
+    },
+    "adasvd_compressor_rank64": {
+      "method": "adasvd_compressor",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.0,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.0,
+      "rel_err_max": 0.0,
+      "top1_mean": 1.0,
+      "top1_std": 0.0,
+      "time_mean_s": 0.013
+    },
+    "entropy_budget_allocation_rank64": {
+      "method": "entropy_budget_allocation",
+      "rank": 64,
+      "status": "SUCCESS",
+      "n_seeds": 1,
+      "rel_err_mean": 0.16937388479709625,
+      "rel_err_std": 0.0,
+      "rel_err_min": 0.16937388479709625,
+      "rel_err_max": 0.16937388479709625,
+      "top1_mean": 0.7431640625,
+      "top1_std": 0.0,
+      "time_mean_s": 0.0276
+    }
+  },
+  "raw": {
+    "direct_svd_rank8": [
+      {
+        "rel_err": 0.2745741009712219,
+        "top1_match": 0.638671875,
+        "status": "SUCCESS",
+        "time_s": 0.0943,
+        "peak_vram_mb": 24.5,
+        "method": "direct_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "hnc_svd_rank8": [
+      {
+        "rel_err": 0.18424838781356812,
+        "top1_match": 0.7373046875,
+        "status": "SUCCESS",
+        "time_s": 0.1569,
+        "peak_vram_mb": 65.0,
+        "method": "hnc_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "erc_svd_rank8": [
+      {
+        "rel_err": 0.04905039817094803,
+        "top1_match": 0.9326171875,
+        "status": "SUCCESS",
+        "time_s": 0.0331,
+        "peak_vram_mb": 34.4,
+        "method": "erc_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "aa_svd_rank8": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0085,
+        "peak_vram_mb": 34.6,
+        "method": "aa_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "whitened_svd_rank8": [
+      {
+        "rel_err": 0.19496601819992065,
+        "top1_match": 0.7314453125,
+        "status": "SUCCESS",
+        "time_s": 0.0581,
+        "peak_vram_mb": 63.4,
+        "method": "whitened_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "fisher_svd_rank8": [
+      {
+        "rel_err": 0.03991303592920303,
+        "top1_match": 0.9404296875,
+        "status": "SUCCESS",
+        "time_s": 0.008,
+        "peak_vram_mb": 34.4,
+        "method": "fisher_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "dobi_svd_rank8": [
+      {
+        "rel_err": 0.03991303592920303,
+        "top1_match": 0.9404296875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.4,
+        "method": "dobi_svd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "fwsvd_rank8": [
+      {
+        "rel_err": 0.03991303592920303,
+        "top1_match": 0.9404296875,
+        "status": "SUCCESS",
+        "time_s": 0.008,
+        "peak_vram_mb": 34.4,
+        "method": "fwsvd",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "asvd_compressor_rank8": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0084,
+        "peak_vram_mb": 34.6,
+        "method": "asvd_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "wanda_real_rank8": [
+      {
+        "rel_err": 0.18966585397720337,
+        "top1_match": 0.720703125,
+        "status": "SUCCESS",
+        "time_s": 0.0197,
+        "peak_vram_mb": 34.1,
+        "method": "wanda_real",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "sparsegpt_rank8": [
+      {
+        "rel_err": 0.11843489110469818,
+        "top1_match": 0.8232421875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.1,
+        "method": "sparsegpt",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "flap_rank8": [
+      {
+        "rel_err": 0.11503191292285919,
+        "top1_match": 0.8408203125,
+        "status": "SUCCESS",
+        "time_s": 0.0079,
+        "peak_vram_mb": 34.1,
+        "method": "flap",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "slicegpt_rank8": [
+      {
+        "rel_err": 0.1559145450592041,
+        "top1_match": 0.7724609375,
+        "status": "SUCCESS",
+        "time_s": 0.0052,
+        "peak_vram_mb": 35.7,
+        "method": "slicegpt",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "admm_pruner_rank8": [
+      {
+        "rel_err": 0.1168452650308609,
+        "top1_match": 0.8203125,
+        "status": "SUCCESS",
+        "time_s": 0.0187,
+        "peak_vram_mb": 38.9,
+        "method": "admm_pruner",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "gptq_real_rank8": [
+      {
+        "rel_err": 0.020185280591249466,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0712,
+        "peak_vram_mb": 34.1,
+        "method": "gptq_real",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "smoothquant_real_rank8": [
+      {
+        "rel_err": 0.864838182926178,
+        "top1_match": 0.126953125,
+        "status": "SUCCESS",
+        "time_s": 0.0005,
+        "peak_vram_mb": 34.1,
+        "method": "smoothquant_real",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "quarot_rank8": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0888,
+        "peak_vram_mb": 34.1,
+        "method": "quarot",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "w4a16_rank8": [
+      {
+        "rel_err": 0.028111940249800682,
+        "top1_match": 0.9482421875,
+        "status": "SUCCESS",
+        "time_s": 0.0031,
+        "peak_vram_mb": 37.4,
+        "method": "w4a16",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "int4_lut_quantizer_rank8": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "int4_lut_quantizer",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "kronecker_compressor_rank8": [
+      {
+        "rel_err": 0.033564839512109756,
+        "top1_match": 0.9462890625,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.5,
+        "method": "kronecker_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "tt_compressor_rank8": [
+      {
+        "rel_err": 0.19819217920303345,
+        "top1_match": 0.71875,
+        "status": "SUCCESS",
+        "time_s": 0.021,
+        "peak_vram_mb": 33.2,
+        "method": "tt_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "rpca_compressor_rank8": [
+      {
+        "rel_err": 0.19697797298431396,
+        "top1_match": 0.7197265625,
+        "status": "SUCCESS",
+        "time_s": 0.1183,
+        "peak_vram_mb": 34.3,
+        "method": "rpca_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "tucker_compressor_rank8": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "tucker_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "adaptive_ranks_rank8": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0471,
+        "peak_vram_mb": 34.1,
+        "method": "adaptive_ranks",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "adasvd_compressor_rank8": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0164,
+        "peak_vram_mb": 34.1,
+        "method": "adasvd_compressor",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "entropy_budget_allocation_rank8": [
+      {
+        "rel_err": 0.1949394941329956,
+        "top1_match": 0.7138671875,
+        "status": "SUCCESS",
+        "time_s": 0.0249,
+        "peak_vram_mb": 33.5,
+        "method": "entropy_budget_allocation",
+        "rank": 8,
+        "seed": 0
+      }
+    ],
+    "direct_svd_rank16": [
+      {
+        "rel_err": 0.2505607008934021,
+        "top1_match": 0.6572265625,
+        "status": "SUCCESS",
+        "time_s": 0.0206,
+        "peak_vram_mb": 33.5,
+        "method": "direct_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "hnc_svd_rank16": [
+      {
+        "rel_err": 0.176938995718956,
+        "top1_match": 0.7333984375,
+        "status": "SUCCESS",
+        "time_s": 0.0762,
+        "peak_vram_mb": 66.1,
+        "method": "hnc_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "erc_svd_rank16": [
+      {
+        "rel_err": 0.26335057616233826,
+        "top1_match": 0.6376953125,
+        "status": "SUCCESS",
+        "time_s": 0.021,
+        "peak_vram_mb": 33.5,
+        "method": "erc_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "aa_svd_rank16": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0071,
+        "peak_vram_mb": 34.6,
+        "method": "aa_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "whitened_svd_rank16": [
+      {
+        "rel_err": 0.1890539973974228,
+        "top1_match": 0.7333984375,
+        "status": "SUCCESS",
+        "time_s": 0.048,
+        "peak_vram_mb": 63.5,
+        "method": "whitened_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "fisher_svd_rank16": [
+      {
+        "rel_err": 0.03787059709429741,
+        "top1_match": 0.939453125,
+        "status": "SUCCESS",
+        "time_s": 0.0066,
+        "peak_vram_mb": 34.4,
+        "method": "fisher_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "dobi_svd_rank16": [
+      {
+        "rel_err": 0.03787059709429741,
+        "top1_match": 0.939453125,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.4,
+        "method": "dobi_svd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "fwsvd_rank16": [
+      {
+        "rel_err": 0.03787059709429741,
+        "top1_match": 0.939453125,
+        "status": "SUCCESS",
+        "time_s": 0.0066,
+        "peak_vram_mb": 34.4,
+        "method": "fwsvd",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "asvd_compressor_rank16": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.007,
+        "peak_vram_mb": 34.6,
+        "method": "asvd_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "wanda_real_rank16": [
+      {
+        "rel_err": 0.1865239292383194,
+        "top1_match": 0.71484375,
+        "status": "SUCCESS",
+        "time_s": 0.0003,
+        "peak_vram_mb": 34.1,
+        "method": "wanda_real",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "sparsegpt_rank16": [
+      {
+        "rel_err": 0.11843489110469818,
+        "top1_match": 0.8232421875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.1,
+        "method": "sparsegpt",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "flap_rank16": [
+      {
+        "rel_err": 0.11503191292285919,
+        "top1_match": 0.8408203125,
+        "status": "SUCCESS",
+        "time_s": 0.0011,
+        "peak_vram_mb": 34.1,
+        "method": "flap",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "slicegpt_rank16": [
+      {
+        "rel_err": 0.15542496740818024,
+        "top1_match": 0.7734375,
+        "status": "SUCCESS",
+        "time_s": 0.0049,
+        "peak_vram_mb": 35.7,
+        "method": "slicegpt",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "admm_pruner_rank16": [
+      {
+        "rel_err": 0.1168452650308609,
+        "top1_match": 0.8203125,
+        "status": "SUCCESS",
+        "time_s": 0.0123,
+        "peak_vram_mb": 38.9,
+        "method": "admm_pruner",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "gptq_real_rank16": [
+      {
+        "rel_err": 0.020185280591249466,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0622,
+        "peak_vram_mb": 34.1,
+        "method": "gptq_real",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "smoothquant_real_rank16": [
+      {
+        "rel_err": 0.864838182926178,
+        "top1_match": 0.126953125,
+        "status": "SUCCESS",
+        "time_s": 0.0004,
+        "peak_vram_mb": 34.1,
+        "method": "smoothquant_real",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "quarot_rank16": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0816,
+        "peak_vram_mb": 34.1,
+        "method": "quarot",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "w4a16_rank16": [
+      {
+        "rel_err": 0.028111940249800682,
+        "top1_match": 0.9482421875,
+        "status": "SUCCESS",
+        "time_s": 0.0023,
+        "peak_vram_mb": 37.4,
+        "method": "w4a16",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "int4_lut_quantizer_rank16": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "int4_lut_quantizer",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "kronecker_compressor_rank16": [
+      {
+        "rel_err": 0.17084968090057373,
+        "top1_match": 0.7451171875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 35.1,
+        "method": "kronecker_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "tt_compressor_rank16": [
+      {
+        "rel_err": 0.19674435257911682,
+        "top1_match": 0.71875,
+        "status": "SUCCESS",
+        "time_s": 0.0209,
+        "peak_vram_mb": 33.3,
+        "method": "tt_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "rpca_compressor_rank16": [
+      {
+        "rel_err": 0.19492268562316895,
+        "top1_match": 0.71484375,
+        "status": "SUCCESS",
+        "time_s": 0.1247,
+        "peak_vram_mb": 34.4,
+        "method": "rpca_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "tucker_compressor_rank16": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "tucker_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "adaptive_ranks_rank16": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0469,
+        "peak_vram_mb": 34.1,
+        "method": "adaptive_ranks",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "adasvd_compressor_rank16": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0131,
+        "peak_vram_mb": 34.1,
+        "method": "adasvd_compressor",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "entropy_budget_allocation_rank16": [
+      {
+        "rel_err": 0.1949394941329956,
+        "top1_match": 0.7138671875,
+        "status": "SUCCESS",
+        "time_s": 0.0248,
+        "peak_vram_mb": 33.5,
+        "method": "entropy_budget_allocation",
+        "rank": 16,
+        "seed": 0
+      }
+    ],
+    "direct_svd_rank32": [
+      {
+        "rel_err": 0.23087438941001892,
+        "top1_match": 0.6533203125,
+        "status": "SUCCESS",
+        "time_s": 0.0207,
+        "peak_vram_mb": 33.6,
+        "method": "direct_svd",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "hnc_svd_rank32": [
+      {
+        "rel_err": 0.16380465030670166,
+        "top1_match": 0.75390625,
+        "status": "SUCCESS",
+        "time_s": 0.0785,
+        "peak_vram_mb": 66.5,
+        "method": "hnc_svd",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "erc_svd_rank32": [
+      {
+        "rel_err": 0.26335057616233826,
+        "top1_match": 0.6376953125,
+        "status": "SUCCESS",
+        "time_s": 0.0208,
+        "peak_vram_mb": 33.5,
+        "method": "erc_svd",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "aa_svd_rank32": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.007,
+        "peak_vram_mb": 34.6,
+        "method": "aa_svd",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "whitened_svd_rank32": [
+      {
+        "rel_err": 0.17745329439640045,
+        "top1_match": 0.748046875,
+        "status": "SUCCESS",
+        "time_s": 0.0482,
+        "peak_vram_mb": 63.6,
+        "method": "whitened_svd",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "fisher_svd_rank32": [
+      {
+        "rel_err": 0.033564839512109756,
+        "top1_match": 0.9462890625,
+        "status": "SUCCESS",
+        "time_s": 0.0066,
+        "peak_vram_mb": 34.5,
+        "method": "fisher_svd",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "dobi_svd_rank32": [
+      {
+        "rel_err": 0.033564839512109756,
+        "top1_match": 0.9462890625,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.5,
+        "method": "dobi_svd",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "fwsvd_rank32": [
+      {
+        "rel_err": 0.033564839512109756,
+        "top1_match": 0.9462890625,
+        "status": "SUCCESS",
+        "time_s": 0.0066,
+        "peak_vram_mb": 34.5,
+        "method": "fwsvd",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "asvd_compressor_rank32": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.007,
+        "peak_vram_mb": 34.6,
+        "method": "asvd_compressor",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "wanda_real_rank32": [
+      {
+        "rel_err": 0.16118060052394867,
+        "top1_match": 0.7548828125,
+        "status": "SUCCESS",
+        "time_s": 0.0003,
+        "peak_vram_mb": 34.1,
+        "method": "wanda_real",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "sparsegpt_rank32": [
+      {
+        "rel_err": 0.11843489110469818,
+        "top1_match": 0.8232421875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.1,
+        "method": "sparsegpt",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "flap_rank32": [
+      {
+        "rel_err": 0.11503191292285919,
+        "top1_match": 0.8408203125,
+        "status": "SUCCESS",
+        "time_s": 0.0009,
+        "peak_vram_mb": 34.1,
+        "method": "flap",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "slicegpt_rank32": [
+      {
+        "rel_err": 0.15542496740818024,
+        "top1_match": 0.7734375,
+        "status": "SUCCESS",
+        "time_s": 0.0049,
+        "peak_vram_mb": 35.7,
+        "method": "slicegpt",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "admm_pruner_rank32": [
+      {
+        "rel_err": 0.1168452650308609,
+        "top1_match": 0.8203125,
+        "status": "SUCCESS",
+        "time_s": 0.0124,
+        "peak_vram_mb": 38.9,
+        "method": "admm_pruner",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "gptq_real_rank32": [
+      {
+        "rel_err": 0.020185280591249466,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0625,
+        "peak_vram_mb": 34.1,
+        "method": "gptq_real",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "smoothquant_real_rank32": [
+      {
+        "rel_err": 0.864838182926178,
+        "top1_match": 0.126953125,
+        "status": "SUCCESS",
+        "time_s": 0.0003,
+        "peak_vram_mb": 34.1,
+        "method": "smoothquant_real",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "quarot_rank32": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0814,
+        "peak_vram_mb": 34.1,
+        "method": "quarot",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "w4a16_rank32": [
+      {
+        "rel_err": 0.028111940249800682,
+        "top1_match": 0.9482421875,
+        "status": "SUCCESS",
+        "time_s": 0.0022,
+        "peak_vram_mb": 37.4,
+        "method": "w4a16",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "int4_lut_quantizer_rank32": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "int4_lut_quantizer",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "kronecker_compressor_rank32": [
+      {
+        "rel_err": 0.17084968090057373,
+        "top1_match": 0.7451171875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 35.1,
+        "method": "kronecker_compressor",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "tt_compressor_rank32": [
+      {
+        "rel_err": 0.19217096269130707,
+        "top1_match": 0.7255859375,
+        "status": "SUCCESS",
+        "time_s": 0.0207,
+        "peak_vram_mb": 33.4,
+        "method": "tt_compressor",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "rpca_compressor_rank32": [
+      {
+        "rel_err": 0.18858997523784637,
+        "top1_match": 0.7265625,
+        "status": "SUCCESS",
+        "time_s": 0.1284,
+        "peak_vram_mb": 34.7,
+        "method": "rpca_compressor",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "tucker_compressor_rank32": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "tucker_compressor",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "adaptive_ranks_rank32": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.047,
+        "peak_vram_mb": 34.1,
+        "method": "adaptive_ranks",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "adasvd_compressor_rank32": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0131,
+        "peak_vram_mb": 34.1,
+        "method": "adasvd_compressor",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "entropy_budget_allocation_rank32": [
+      {
+        "rel_err": 0.18862594664096832,
+        "top1_match": 0.724609375,
+        "status": "SUCCESS",
+        "time_s": 0.0248,
+        "peak_vram_mb": 33.6,
+        "method": "entropy_budget_allocation",
+        "rank": 32,
+        "seed": 0
+      }
+    ],
+    "direct_svd_rank64": [
+      {
+        "rel_err": 0.19399839639663696,
+        "top1_match": 0.6962890625,
+        "status": "SUCCESS",
+        "time_s": 0.021,
+        "peak_vram_mb": 33.9,
+        "method": "direct_svd",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "hnc_svd_rank64": [
+      {
+        "rel_err": 0.14095905423164368,
+        "top1_match": 0.7666015625,
+        "status": "SUCCESS",
+        "time_s": 0.0784,
+        "peak_vram_mb": 67.3,
+        "method": "hnc_svd",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "erc_svd_rank64": [
+      {
+        "rel_err": 0.26335057616233826,
+        "top1_match": 0.6376953125,
+        "status": "SUCCESS",
+        "time_s": 0.0207,
+        "peak_vram_mb": 33.5,
+        "method": "erc_svd",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "aa_svd_rank64": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0072,
+        "peak_vram_mb": 34.6,
+        "method": "aa_svd",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "whitened_svd_rank64": [
+      {
+        "rel_err": 0.1541803777217865,
+        "top1_match": 0.748046875,
+        "status": "SUCCESS",
+        "time_s": 0.0481,
+        "peak_vram_mb": 63.7,
+        "method": "whitened_svd",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "fisher_svd_rank64": [
+      {
+        "rel_err": 0.026334203779697418,
+        "top1_match": 0.943359375,
+        "status": "SUCCESS",
+        "time_s": 0.0067,
+        "peak_vram_mb": 34.5,
+        "method": "fisher_svd",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "dobi_svd_rank64": [
+      {
+        "rel_err": 0.026334203779697418,
+        "top1_match": 0.943359375,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.5,
+        "method": "dobi_svd",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "fwsvd_rank64": [
+      {
+        "rel_err": 0.026334203779697418,
+        "top1_match": 0.943359375,
+        "status": "SUCCESS",
+        "time_s": 0.0066,
+        "peak_vram_mb": 34.5,
+        "method": "fwsvd",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "asvd_compressor_rank64": [
+      {
+        "rel_err": 0.019743742421269417,
+        "top1_match": 0.955078125,
+        "status": "SUCCESS",
+        "time_s": 0.0073,
+        "peak_vram_mb": 34.6,
+        "method": "asvd_compressor",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "wanda_real_rank64": [
+      {
+        "rel_err": 0.09651144593954086,
+        "top1_match": 0.84765625,
+        "status": "SUCCESS",
+        "time_s": 0.0003,
+        "peak_vram_mb": 34.1,
+        "method": "wanda_real",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "sparsegpt_rank64": [
+      {
+        "rel_err": 0.11843489110469818,
+        "top1_match": 0.8232421875,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 34.1,
+        "method": "sparsegpt",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "flap_rank64": [
+      {
+        "rel_err": 0.11503191292285919,
+        "top1_match": 0.8408203125,
+        "status": "SUCCESS",
+        "time_s": 0.001,
+        "peak_vram_mb": 34.1,
+        "method": "flap",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "slicegpt_rank64": [
+      {
+        "rel_err": 0.15542496740818024,
+        "top1_match": 0.7734375,
+        "status": "SUCCESS",
+        "time_s": 0.0049,
+        "peak_vram_mb": 35.7,
+        "method": "slicegpt",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "admm_pruner_rank64": [
+      {
+        "rel_err": 0.1168452650308609,
+        "top1_match": 0.8203125,
+        "status": "SUCCESS",
+        "time_s": 0.0128,
+        "peak_vram_mb": 38.9,
+        "method": "admm_pruner",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "gptq_real_rank64": [
+      {
+        "rel_err": 0.001101360423490405,
+        "top1_match": 0.9951171875,
+        "status": "SUCCESS",
+        "time_s": 0.0624,
+        "peak_vram_mb": 34.1,
+        "method": "gptq_real",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "smoothquant_real_rank64": [
+      {
+        "rel_err": 0.864838182926178,
+        "top1_match": 0.126953125,
+        "status": "SUCCESS",
+        "time_s": 0.0003,
+        "peak_vram_mb": 34.1,
+        "method": "smoothquant_real",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "quarot_rank64": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.0824,
+        "peak_vram_mb": 34.1,
+        "method": "quarot",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "w4a16_rank64": [
+      {
+        "rel_err": 0.028111940249800682,
+        "top1_match": 0.9482421875,
+        "status": "SUCCESS",
+        "time_s": 0.0023,
+        "peak_vram_mb": 37.4,
+        "method": "w4a16",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "int4_lut_quantizer_rank64": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "int4_lut_quantizer",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "kronecker_compressor_rank64": [
+      {
+        "rel_err": 0.16937388479709625,
+        "top1_match": 0.7431640625,
+        "status": "SUCCESS",
+        "time_s": 0.0,
+        "peak_vram_mb": 35.1,
+        "method": "kronecker_compressor",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "tt_compressor_rank64": [
+      {
+        "rel_err": 0.17673684656620026,
+        "top1_match": 0.7451171875,
+        "status": "SUCCESS",
+        "time_s": 0.0208,
+        "peak_vram_mb": 33.6,
+        "method": "tt_compressor",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "rpca_compressor_rank64": [
+      {
+        "rel_err": 0.16959625482559204,
+        "top1_match": 0.7470703125,
+        "status": "SUCCESS",
+        "time_s": 0.1322,
+        "peak_vram_mb": 35.2,
+        "method": "rpca_compressor",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "tucker_compressor_rank64": [
+      {
+        "status": "FAILED_TO_LOAD",
+        "error": "Constructor returned None or signature incompatible",
+        "method": "tucker_compressor",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "adaptive_ranks_rank64": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.047,
+        "peak_vram_mb": 34.1,
+        "method": "adaptive_ranks",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "adasvd_compressor_rank64": [
+      {
+        "rel_err": 0.0,
+        "top1_match": 1.0,
+        "status": "SUCCESS",
+        "time_s": 0.013,
+        "peak_vram_mb": 34.1,
+        "method": "adasvd_compressor",
+        "rank": 64,
+        "seed": 0
+      }
+    ],
+    "entropy_budget_allocation_rank64": [
+      {
+        "rel_err": 0.16937388479709625,
+        "top1_match": 0.7431640625,
+        "status": "SUCCESS",
+        "time_s": 0.0276,
+        "peak_vram_mb": 33.9,
+        "method": "entropy_budget_allocation",
+        "rank": 64,
+        "seed": 0
+      }
+    ]
+  }
+}

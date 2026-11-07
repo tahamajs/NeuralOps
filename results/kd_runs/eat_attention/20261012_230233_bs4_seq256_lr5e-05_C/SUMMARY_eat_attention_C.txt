@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: eat_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        36.5300
+  Post-KD PPL:       36.5100
+  Stage 1 (KD) PPL:  36.5100
+  Stage 2 (Self) PPL:36.5100
+  KD Gain:           +0.02
+  Self Gain:         +0.00
+  Total Gain:        +0.02
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.0083
+  Recovery:          6.25%
+  Peak VRAM:         3325.47 MB
+  Train time:        11.20 s (Stage 1: 11.2s, Stage 2: 0.0s)
+  s/step:            0.3733
+  Loss (final):      2.3637
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.9286
+  Repetition-3:      0.0208
+  Train PPL:         37.2000
+  Test PPL:          36.5100
+  Overfit Gap:       -0.69
+  Latency (mean):    465.70 ms
+  Latency (std):     1.20 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        ecd28978a596
+
+TRAINING HISTORY (last 10 steps):
+  step    20 | loss=4.6588 | lr=1.00e-05
+  step    21 | loss=5.1285 | lr=1.05e-05
+  step    22 | loss=5.4633 | lr=1.10e-05
+  step    23 | loss=5.6395 | lr=1.15e-05
+  step    24 | loss=5.9651 | lr=1.20e-05
+  step    25 | loss=6.4091 | lr=1.25e-05
+  step    26 | loss=6.8854 | lr=1.30e-05
+  step    27 | loss=7.2358 | lr=1.35e-05
+  step    28 | loss=7.6102 | lr=1.40e-05
+  step    29 | loss=8.3022 | lr=1.45e-05

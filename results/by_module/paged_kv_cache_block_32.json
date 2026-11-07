@@ -1,0 +1,92 @@
+{
+  "module_name": "paged_kv_cache_block_32",
+  "category": "kv_cache",
+  "family": "paged_cache_allocation",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:38:46.653699+00:00",
+  "latest_record": {
+    "record_id": "36c67f9acf862423",
+    "module_name": "paged_kv_cache_block_32",
+    "category": "kv_cache",
+    "family": "paged_cache_allocation",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:38:46.653699+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "Paged vs Contiguous KV Cache Allocation",
+      "source_artifact": "results/benchmarks_serving_ttft_itl_fresh.json"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "block_size": 32
+    },
+    "metrics": {
+      "paged_vram_mb": 274.16,
+      "contiguous_vram_mb": 274.16,
+      "memory_savings_ratio": 1.0,
+      "dynamic_insert_ms": 175.08
+    },
+    "notes": "PagedKVCache block_size=32: 1.00x memory savings over contiguous"
+  },
+  "active_records": [
+    {
+      "record_id": "36c67f9acf862423",
+      "module_name": "paged_kv_cache_block_32",
+      "category": "kv_cache",
+      "family": "paged_cache_allocation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:38:46.653699+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Paged vs Contiguous KV Cache Allocation",
+        "source_artifact": "results/benchmarks_serving_ttft_itl_fresh.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "block_size": 32
+      },
+      "metrics": {
+        "paged_vram_mb": 274.16,
+        "contiguous_vram_mb": 274.16,
+        "memory_savings_ratio": 1.0,
+        "dynamic_insert_ms": 175.08
+      },
+      "notes": "PagedKVCache block_size=32: 1.00x memory savings over contiguous"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "36c67f9acf862423",
+      "module_name": "paged_kv_cache_block_32",
+      "category": "kv_cache",
+      "family": "paged_cache_allocation",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:38:46.653699+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Paged vs Contiguous KV Cache Allocation",
+        "source_artifact": "results/benchmarks_serving_ttft_itl_fresh.json"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "block_size": 32
+      },
+      "metrics": {
+        "paged_vram_mb": 274.16,
+        "contiguous_vram_mb": 274.16,
+        "memory_savings_ratio": 1.0,
+        "dynamic_insert_ms": 175.08
+      },
+      "notes": "PagedKVCache block_size=32: 1.00x memory savings over contiguous"
+    }
+  ]
+}

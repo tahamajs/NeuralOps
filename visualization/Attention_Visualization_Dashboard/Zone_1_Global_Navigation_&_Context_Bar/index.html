@@ -1,0 +1,3811 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/visualization/Attention_Visualization_Dashboard/Zone_1_Global_Navigation_%26_Context_Bar/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>🧭 Zone 1: Global Navigation & Context Bar — Complete Implementation Specification - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#zone-1-global-navigation-context-bar-complete-implementation-specification" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🧭 Zone 1: Global Navigation &amp; Context Bar — Complete Implementation Specification
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-feature-1-persistent-modeltext-context-header" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Feature 1: Persistent Model/Text Context Header
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Feature 1: Persistent Model/Text Context Header">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-purpose-ux-philosophy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Purpose &amp; UX Philosophy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-visual-layout-anatomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 Visual Layout &amp; Anatomy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-individual-chip-behaviors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Individual Chip Behaviors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.3 Individual Chip Behaviors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-chip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model Chip
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attention-type-chip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attention Type Chip
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#text-input-chip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Text Input Chip
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layer-head-chips" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer &amp; Head Chips
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-responsive-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.4 Responsive Behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5 Performance Considerations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#16-accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6 Accessibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-feature-2-quickswitch-model-selector" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Feature 2: Quick‑Switch Model Selector
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Feature 2: Quick‑Switch Model Selector">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-purpose-design-philosophy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Purpose &amp; Design Philosophy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-architecture-component-tree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Architecture &amp; Component Tree
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-the-dropdown-trigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 The Dropdown Trigger
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-dropdown-panel-anatomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Dropdown Panel Anatomy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4 Dropdown Panel Anatomy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tab-bar-your-models-huggingface-hub-upload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tab Bar: "Your Models" | "HuggingFace Hub" | "Upload"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-bar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search Bar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model List
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modelcard-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ModelCard Design
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#selected-model-preview-footer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Selected Model Preview Footer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-attention-type-quickswitch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.5 Attention Type Quick‑Switch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#26-loading-states-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.6 Loading States &amp; Transitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#27-performance-optimizations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.7 Performance Optimizations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#28-accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.8 Accessibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-feature-3-breadcrumb-navigation-with-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Feature 3: Breadcrumb Navigation with History
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Feature 3: Breadcrumb Navigation with History">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-purpose-ux-philosophy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Purpose &amp; UX Philosophy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-breadcrumb-trail-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Breadcrumb Trail Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 Breadcrumb Trail Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#visual-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual Layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#crumb-anatomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crumb Anatomy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#crumb-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Crumb States
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#responsive-truncation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Responsive Truncation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#breadcrumb-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breadcrumb Levels
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33-history-panel-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 History Panel Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3 History Panel Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trigger
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#panel-anatomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Panel Anatomy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#history-entry-anatomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        History Entry Anatomy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#history-persistence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        History Persistence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-backforward-navigation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 Back/Forward Navigation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35-related-explorations-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5 Related Explorations Panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#36-edge-cases-error-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.6 Edge Cases &amp; Error States
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#37-accessibility-for-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.7 Accessibility for History
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-integration-specifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Integration Specifications
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Integration Specifications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-how-zone-1-communicates-with-other-zones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 How Zone 1 Communicates with Other Zones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-state-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 State Contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-performance-budget" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Performance Budget
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-testing-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 Testing Checklist
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="zone-1-global-navigation-context-bar-complete-implementation-specification">🧭 Zone 1: Global Navigation &amp; Context Bar — Complete Implementation Specification</h1>
+<h2 id="overview">Overview</h2>
+<p>Zone 1 is the <strong>persistent header</strong> that spans the full width of the dashboard at the very top of the viewport (typically 56–64px height on desktop, 48–56px on mobile). It serves three critical functions simultaneously: (1) it <strong>informs</strong> the researcher exactly what they are looking at at all times, (2) it enables <strong>rapid switching</strong> between models, attention types, layers, heads, and input texts without losing context, and (3) it provides <strong>spatial orientation</strong> through breadcrumb navigation plus a temporal trail of past explorations. The bar must remain <strong>visible at all times</strong> (position: sticky, top: 0, z-index: 50) regardless of how far the user scrolls into the visualization canvas or analytics panels below.</p>
+<p>The header follows an <strong>inverted‑L navigation pattern</strong> widely used in complex dashboards and research platforms: global navigation links on the left, contextual controls in the center, and user/account actions on the right. This is the same pattern employed by the New York Times, SAP Analytics Cloud, and enterprise observability platforms like Grafana. </p>
+<hr />
+<h2 id="1-feature-1-persistent-modeltext-context-header">1. Feature 1: Persistent Model/Text Context Header</h2>
+<h3 id="11-purpose-ux-philosophy">1.1 Purpose &amp; UX Philosophy</h3>
+<p>When a researcher is deep in layer 7, head 3 of a Galerkin‑attention variant of BERT‑base, analyzing a specific input sentence, they must <strong>never</strong> wonder "Which model am I looking at?" or "What text is this?" This information must be immediately visible, glanceable, and <strong>always accurate</strong>. Research shows that dashboards lacking context "merely present data; they do not provide meaningful insights" — context bars improve "context observability by making the currently active dataset/model state explicit in the UI".</p>
+<h3 id="12-visual-layout-anatomy">1.2 Visual Layout &amp; Anatomy</h3>
+<p>The context header occupies the <strong>center section</strong> of the global navigation bar, between the breadcrumb trail (left) and the user menu (right). It displays as a horizontal chain of <strong>labeled chips/badges</strong> separated by subtle dividers (vertical pipe or chevron). Each chip is independently clickable and hoverable.</p>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────────────────────┐
+│ 🏠 Home  &gt;  Attention Lab  &gt;  BERT-base  │  Attention: Galerkin (r=64) │ │
+│                                         │  Text: "The quick brown..."  │ │
+│                                         │  Layer 5  │  Head 7          │ │
+└─────────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<p><strong>Chip design specifications:</strong>
+- <strong>Background</strong>: <code>bg-white/5</code> (glass effect), with a <code>border border-white/10</code> for definition.
+- <strong>Padding</strong>: <code>px-3 py-1.5</code> for comfortable click targets (minimum 32px height for accessibility).
+- <strong>Typography</strong>: The label portion (e.g., "Model:") uses <code>text-[10px] font-bold text-slate-500 uppercase tracking-widest</code>. The value portion (e.g., "BERT-base-uncased") uses <code>text-sm font-semibold text-white</code>.
+- <strong>Dividers</strong>: A subtle <code>│</code> character or a 1px vertical line in <code>border-white/10</code>.
+- <strong>Hover state</strong>: <code>hover:bg-white/10 transition-colors duration-150</code>.
+- <strong>Active/Click state</strong>: A brief scale animation (<code>active:scale-95</code>) provides tactile feedback.</p>
+<h3 id="13-individual-chip-behaviors">1.3 Individual Chip Behaviors</h3>
+<h4 id="model-chip">Model Chip</h4>
+<ul>
+<li><strong>Display format</strong>: <code>Model: BERT-base-uncased</code> or <code>Model: GPT-2 (fine-tuned)</code>.</li>
+<li><strong>Click behavior</strong>: Opens a <strong>compact dropdown</strong> listing the user's recently used models (last 5), models from their <code>model_versioning</code> registry, and a search input that queries HuggingFace Hub. This is the same model selector described in Feature 2, but embedded inline for quick access.</li>
+<li><strong>Tooltip</strong>: Hovering shows the full model name, parameter count, and last used date.</li>
+<li><strong>Truncation</strong>: If the model name exceeds 25 characters, it is truncated with an ellipsis (…), and the full name appears in the tooltip.</li>
+</ul>
+<h4 id="attention-type-chip">Attention Type Chip</h4>
+<ul>
+<li><strong>Display format</strong>: <code>Attention: Galerkin (rank=64)</code> or <code>Attention: Standard MHA (12 heads)</code>.</li>
+<li><strong>Click behavior</strong>: Opens a dropdown of <strong>all registered attention types</strong> from the <code>ATTENTION_REGISTRY</code> (Galerkin, TLinFormer, PADRe, Spectraformer, RPC, FUSIONATTN, etc.). Each option shows a one‑line description (e.g., "Galerkin: Petrov‑Galerkin projection with random sketching, O(N·r·D)").</li>
+<li><strong>Visual indicator</strong>: The attention type chip has a <strong>colored left border</strong> (3px) that matches the attention type's designated color in the system. For example, Galerkin = blue, TLinFormer = green, PADRe = purple. This color persists throughout the dashboard, creating a consistent visual language.</li>
+</ul>
+<h4 id="text-input-chip">Text Input Chip</h4>
+<ul>
+<li><strong>Display format</strong>: <code>Text: "The quick brown fox jumps over..."</code> (truncated to 30 characters).</li>
+<li><strong>Click behavior</strong>: Expands into an <strong>inline text input</strong> (replacing the chip with an <code>&lt;input&gt;</code> field) where the user can type or paste any text. Pressing Enter triggers re‑analysis. The input supports up to 512 tokens, with a character counter.</li>
+<li><strong>Recent texts</strong>: A small dropdown arrow reveals the last 10 analyzed texts, stored in <code>localStorage</code> per user.</li>
+</ul>
+<h4 id="layer-head-chips">Layer &amp; Head Chips</h4>
+<ul>
+<li><strong>Display format</strong>: <code>Layer 5</code> and <code>Head 7</code> as two separate chips, visually grouped together with a lighter background.</li>
+<li><strong>Interaction</strong>: Each chip is a <strong>stepper control</strong> — clicking reveals tiny <code>‑</code> and <code>+</code> buttons that appear on hover, allowing quick increment/decrement without opening the full control panel. For power users, the arrow keys (← →) change the layer, and (↑ ↓) change the head when the visualization canvas is focused.</li>
+<li><strong>Visual feedback</strong>: When the user changes the layer via the Zone 4 slider, the Layer chip updates <strong>instantly</strong> with a subtle pulse animation (scale 1.05 for 200ms) to draw attention to the change.</li>
+</ul>
+<h3 id="14-responsive-behavior">1.4 Responsive Behavior</h3>
+<table>
+<thead>
+<tr>
+<th>Viewport Width</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>≥ 1280px (Desktop)</td>
+<td>All chips displayed inline with full labels</td>
+</tr>
+<tr>
+<td>1024–1279px (Tablet Landscape)</td>
+<td>Labels shortened: "Model:" → icon only, values preserved</td>
+</tr>
+<tr>
+<td>768–1023px (Tablet Portrait)</td>
+<td>Chips collapse into a single dropdown: "BERT-base · Galerkin · Layer 5 · Head 7" with a dropdown arrow. Click expands all chips vertically.</td>
+</tr>
+<tr>
+<td>&lt; 768px (Mobile)</td>
+<td>Only the most critical info shown: model name + layer/head. Full context accessible via a "Details" button that opens a bottom sheet.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="15-performance-considerations">1.5 Performance Considerations</h3>
+<ul>
+<li><strong>State management</strong>: The context state (model, attention type, text, layer, head) is stored in a <strong>Zustand store</strong> (<code>useAttentionContext</code>). All visualization components subscribe to this store. When any value changes, only the affected components re‑render.</li>
+<li><strong>URL synchronization</strong>: Every context change updates the URL query parameters (<code>?model=bert-base&amp;attn=galerkin&amp;layer=5&amp;head=7&amp;text=...</code>). This makes every exploration <strong>shareable via URL</strong>. On page load, the URL is parsed to restore the previous state.</li>
+<li><strong>Debouncing</strong>: Text input changes are debounced at 500ms to avoid excessive re‑computation while the user is typing.</li>
+</ul>
+<h3 id="16-accessibility">1.6 Accessibility</h3>
+<ul>
+<li>All chips are <code>&lt;button&gt;</code> elements with <code>aria-label</code> attributes (e.g., <code>aria-label="Current model: BERT-base-uncased. Click to change."</code>).</li>
+<li>The context bar is reachable via the <strong>Tab key</strong> as the first focusable element on the page (after a "Skip to content" link).</li>
+<li>Screen readers announce context changes via <code>aria-live="polite"</code> regions.</li>
+</ul>
+<hr />
+<h2 id="2-feature-2-quickswitch-model-selector">2. Feature 2: Quick‑Switch Model Selector</h2>
+<h3 id="21-purpose-design-philosophy">2.1 Purpose &amp; Design Philosophy</h3>
+<p>Researchers need to rapidly compare attention patterns across different models and attention mechanisms. The Quick‑Switch Model Selector enables changing the model <strong>without leaving the dashboard</strong> — the entire visualization updates reactively. This is inspired by Neuronpedia's approach where "you can now host Neuronpedia yourself, with your own model and data" and HuggingFace's model discovery interface, adapted for the specific needs of attention visualization comparison.</p>
+<h3 id="22-architecture-component-tree">2.2 Architecture &amp; Component Tree</h3>
+<div class="highlight"><pre><span></span><code>ModelSelector (parent container)
+├── AttentionTypeSelector (dropdown)
+├── ModelSourceTabs (3 tabs: "Your Models" | "HuggingFace Hub" | "Upload")
+├── SearchInput (text input with autocomplete)
+├── ModelList (scrollable list of model cards)
+│   └── ModelCard (individual model entry)
+│       ├── ModelIcon (architecture indicator)
+│       ├── ModelName + Version
+│       ├── ModelMeta (parameter count, last used, attention types supported)
+│       └── QuickActions (⭐ Favorite, 📊 Compare, ℹ️ Info)
+└── SelectedModelPreview (confirmation footer)
+</code></pre></div>
+<h3 id="23-the-dropdown-trigger">2.3 The Dropdown Trigger</h3>
+<p>The dropdown trigger is integrated into the Model Chip in the context bar (see Feature 1). Additionally, a dedicated <strong>"Change Model"</strong> button sits in Zone 4 (Control Panel). Both open the same dropdown.</p>
+<p><strong>Trigger appearance:</strong>
+- Default state: The model chip (described above).
+- When dropdown is open: The chip gains a <code>ring-2 ring-neon-blue/50</code> border and a subtle chevron rotation animation.</p>
+<h3 id="24-dropdown-panel-anatomy">2.4 Dropdown Panel Anatomy</h3>
+<p>The dropdown is a <strong>floating panel</strong> (not a native <code>&lt;select&gt;</code>) rendered via a portal to avoid z‑index issues. It appears directly below the trigger with a smooth scale+fade animation (200ms, <code>transform-origin: top</code>).</p>
+<p><strong>Dimensions</strong>: 480px wide × 520px max‑height on desktop. On mobile, it becomes a full‑screen bottom sheet.</p>
+<p><strong>Internal structure (top to bottom):</strong></p>
+<h4 id="tab-bar-your-models-huggingface-hub-upload">Tab Bar: "Your Models" | "HuggingFace Hub" | "Upload"</h4>
+<ul>
+<li>Three tabs that filter the model source.</li>
+<li>Active tab has a <code>border-b-2 border-neon-blue</code> indicator.</li>
+<li>"Your Models" shows models from the user's <code>model_versioning</code> registry and recent experiments.</li>
+<li>"HuggingFace Hub" queries the HF Hub API in real time.</li>
+<li>"Upload" opens a file picker for local model weights.</li>
+</ul>
+<h4 id="search-bar">Search Bar</h4>
+<ul>
+<li>A text input with a magnifying glass icon on the left.</li>
+<li>Autocomplete suggestions appear after 3 characters typed.</li>
+<li>Debounced at 300ms for HF Hub queries.</li>
+<li>Supports filtering by: model name, architecture type, parameter count range, task type (classification, generation, etc.).</li>
+</ul>
+<h4 id="model-list">Model List</h4>
+<ul>
+<li>Virtualized list (using <code>react-window</code> or <code>@tanstack/react-virtual</code>) to handle hundreds of models smoothly.</li>
+<li>Each row is a <strong>ModelCard</strong> component (described below).</li>
+<li>Infinite scroll for HuggingFace results (loads 20 at a time).</li>
+<li>Loading state shows skeleton cards (shimmer effect).</li>
+</ul>
+<h4 id="modelcard-design">ModelCard Design</h4>
+<div class="highlight"><pre><span></span><code>┌──────────────────────────────────────────────────────────┐
+│ [🧠]  BERT-base-uncased                   ⭐  📊  ℹ️    │
+│       110M params · Used 3 days ago                      │
+│       Supported: MHA, Galerkin, PADRe, TLinFormer        │
+│       Tasks: Classification, NER, QA                      │
+│       ───────────────────────────────────────────────     │
+│       [Select]  [Compare with current]                   │
+└──────────────────────────────────────────────────────────┘
+</code></pre></div>
+<p><strong>Card anatomy:</strong>
+- <strong>Left icon</strong>: Indicates model architecture (🧠 = Transformer, 👁️ = Vision, etc.).
+- <strong>Model name</strong>: Bold, white text. Truncated with ellipsis if needed.
+- <strong>Meta line</strong>: Gray text showing parameter count, last used date.
+- <strong>Supported attention types</strong>: Small colored badges for each supported attention mechanism.
+- <strong>Tasks</strong>: Small tags for task compatibility.
+- <strong>Action buttons</strong>: "Select" (primary, blue) and "Compare with current" (secondary, outline). The "Compare" option opens a side‑by‑side view with the currently loaded model.</p>
+<h4 id="selected-model-preview-footer">Selected Model Preview Footer</h4>
+<p>When a model is selected but not yet confirmed, a sticky footer appears at the bottom of the dropdown:
+<div class="highlight"><pre><span></span><code>┌──────────────────────────────────────────────────────────┐
+│ Selected: Galerkin (rank=64) · BERT-base-uncased         │
+│ This will re‑compute attention for the current text.     │
+│ [Cancel]                              [Apply &amp; Visualize]│
+└──────────────────────────────────────────────────────────┘
+</code></pre></div></p>
+<h3 id="25-attention-type-quickswitch">2.5 Attention Type Quick‑Switch</h3>
+<p>Next to the model selector, a separate dropdown (or integrated tab) lists all registered attention types. Each option shows:</p>
+<div class="highlight"><pre><span></span><code>┌──────────────────────────────────────────────────────┐
+│ ● Galerkin Attention                                 │
+│   Petrov‑Galerkin projection with random sketching   │
+│   Complexity: O(N·r·D) · Rank: 64                    │
+│   Paper: https://arxiv.org/abs/2105.14906            │
+│   ───────────────────────────────────────────────     │
+│ ● TLinFormer                                         │
+│   Low‑rank projections for K and V                   │
+│   Complexity: O(N·r·D) · Rank: 64                    │
+│   ───────────────────────────────────────────────     │
+│ ● PADRe (Polynomial Attention)                       │
+│   Polynomial kernel: (1 + S/p)^p                     │
+│   Order: 2 · Temperature: 1.0                        │
+│   ───────────────────────────────────────────────     │
+│ ...                                                  │
+└──────────────────────────────────────────────────────┘
+</code></pre></div>
+<p>Each attention type entry includes:
+- A <strong>colored dot</strong> matching the attention type's system color.
+- <strong>Name</strong> (bold).
+- <strong>One‑line description</strong> of the mechanism.
+- <strong>Complexity</strong> notation.
+- <strong>Configurable parameters</strong> (rank, order, temperature) that can be adjusted inline.
+- <strong>Link to paper/arXiv</strong> (external link icon).</p>
+<h3 id="26-loading-states-transitions">2.6 Loading States &amp; Transitions</h3>
+<p>When a new model is selected:
+1. The dropdown closes with a fade animation.
+2. The Model Chip in the context bar shows a <strong>pulsing skeleton</strong> (shimmer effect) for 200–500ms while the model loads.
+3. All visualization panels (Zone 2) show a <strong>loading overlay</strong> with a progress indicator: "Loading BERT‑base weights… (34MB / 440MB)".
+4. If the model is already cached (in IndexedDB or browser cache), loading is near‑instantaneous with a success toast: "Model loaded in 0.3s".
+5. If loading fails, an error toast appears: "Failed to load model. Check your connection or try a different model." with a retry button.</p>
+<h3 id="27-performance-optimizations">2.7 Performance Optimizations</h3>
+<ul>
+<li><strong>Model caching</strong>: Loaded models are cached in IndexedDB (via <code>transformers.js</code> or a custom caching layer). Subsequent loads of the same model are instant.</li>
+<li><strong>Lazy loading</strong>: Attention types are lazy‑loaded. Only the currently selected attention type's computation runs.</li>
+<li><strong>Web Worker</strong>: Heavy attention computation (matrix multiplication, softmax) runs in a Web Worker to avoid blocking the main thread.</li>
+<li><strong>Optimistic UI</strong>: The context bar updates immediately (optimistic), then the visualization catches up. If the computation fails, the context bar reverts.</li>
+</ul>
+<h3 id="28-accessibility">2.8 Accessibility</h3>
+<ul>
+<li>The dropdown is fully keyboard‑navigable: Arrow keys move between options, Enter selects, Escape closes.</li>
+<li><code>aria-expanded</code> on the trigger button, <code>aria-selected</code> on the active option, <code>role="listbox"</code> on the dropdown.</li>
+<li>Focus is trapped within the dropdown while it's open.</li>
+</ul>
+<hr />
+<h2 id="3-feature-3-breadcrumb-navigation-with-history">3. Feature 3: Breadcrumb Navigation with History</h2>
+<h3 id="31-purpose-ux-philosophy">3.1 Purpose &amp; UX Philosophy</h3>
+<p>Researchers exploring attention patterns often follow a non‑linear path: they might start with BERT‑base, switch to a fine‑tuned variant, compare two layers, jump to a different attention type, and then want to return to a previous view. The breadcrumb trail provides <strong>spatial orientation</strong> (where am I in the exploration?), while the history panel provides <strong>temporal navigation</strong> (how did I get here?).</p>
+<p>This dual‑navigation system follows the pattern established by data analysis tools where "each 'crumb' in the breadcrumb path UI control may indicate a summary of a respective data query and/or filter submitted over the course of the current data analysis path" — enabling users to "jump from any first" step to any later step instantly.</p>
+<h3 id="32-breadcrumb-trail-design">3.2 Breadcrumb Trail Design</h3>
+<h4 id="visual-layout">Visual Layout</h4>
+<p>The breadcrumb trail occupies the <strong>leftmost section</strong> of the navigation bar. It displays as a horizontal chain of clickable segments separated by chevron arrows (› or /).</p>
+<div class="highlight"><pre><span></span><code>🏠 Home  ›  Attention Lab  ›  BERT-base  ›  Layer 5  ›  Head 7
+</code></pre></div>
+<h4 id="crumb-anatomy">Crumb Anatomy</h4>
+<p>Each crumb is composed of:
+- An <strong>optional icon</strong> (home icon for the first crumb).
+- A <strong>text label</strong> (truncated to 20 characters max).
+- A <strong>separator</strong> (chevron <code>›</code> or forward slash <code>/</code>).</p>
+<h4 id="crumb-states">Crumb States</h4>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Appearance</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Default</strong></td>
+<td><code>text-slate-400 hover:text-white</code></td>
+<td>Click navigates to that level</td>
+</tr>
+<tr>
+<td><strong>Current (last crumb)</strong></td>
+<td><code>text-white font-semibold</code></td>
+<td>Not clickable (already here)</td>
+</tr>
+<tr>
+<td><strong>Truncated (middle)</strong></td>
+<td><code>text-slate-400</code> with <code>…</code></td>
+<td>Click expands to show hidden crumbs</td>
+</tr>
+<tr>
+<td><strong>Hover</strong></td>
+<td><code>text-neon-blue underline</code></td>
+<td>Shows tooltip with full path</td>
+</tr>
+</tbody>
+</table>
+<h4 id="responsive-truncation">Responsive Truncation</h4>
+<p>When the breadcrumb trail exceeds the available width:
+1. Middle crumbs are replaced with a <code>…</code> button.
+2. Clicking <code>…</code> expands a dropdown showing the hidden crumbs.
+3. On mobile (&lt; 768px), only the current crumb is shown, with a back arrow (←) that navigates up one level.</p>
+<h4 id="breadcrumb-levels">Breadcrumb Levels</h4>
+<p>The breadcrumb hierarchy follows the natural attention exploration path:</p>
+<div class="highlight"><pre><span></span><code>Level 1: Home (dashboard)
+Level 2: Attention Lab (the attention dashboard itself)
+Level 3: Model name (e.g., "BERT-base-uncased")
+Level 4: Layer number (e.g., "Layer 5")
+Level 5: Head number (e.g., "Head 7")
+</code></pre></div>
+<p>Additional optional levels:
+- <strong>Attention Type</strong>: Inserted between Level 2 and Level 3 if the user explicitly selects a non‑default attention type.
+- <strong>Comparison Mode</strong>: A special crumb "Compare: BERT vs GPT‑2" appears when in comparison view.
+- <strong>Text Preview</strong>: The first 15 characters of the input text can appear as a crumb if the text was explicitly set.</p>
+<h3 id="33-history-panel-design">3.3 History Panel Design</h3>
+<h4 id="trigger">Trigger</h4>
+<p>A <strong>clock icon</strong> (🕐) with a badge showing the number of history entries sits at the right edge of the breadcrumb area. Clicking it opens the history panel.</p>
+<h4 id="panel-anatomy">Panel Anatomy</h4>
+<p>The history panel is a <strong>dropdown/floating panel</strong> (320px wide, 480px max‑height) that appears below the breadcrumb.</p>
+<div class="highlight"><pre><span></span><code>┌──────────────────────────────────────────┐
+│ 📜 Exploration History           [Clear] │
+├──────────────────────────────────────────┤
+│ ● BERT-base / Layer 5 / Head 7          │
+│   Galerkin (r=64) · 2 min ago           │
+│   ───────────────────────────────────    │
+│ ○ GPT-2 / Layer 3 / Head 2              │
+│   Standard MHA · 8 min ago              │
+│   ───────────────────────────────────    │
+│ ○ BERT-base / Layer 5 / Head 3          │
+│   PADRe (order=2) · 15 min ago          │
+│   ───────────────────────────────────    │
+│ ○ BERT-base / All Layers (Model View)   │
+│   TLinFormer (r=32) · 22 min ago        │
+│   ───────────────────────────────────    │
+│ ...                                     │
+└──────────────────────────────────────────┘
+</code></pre></div>
+<h4 id="history-entry-anatomy">History Entry Anatomy</h4>
+<p>Each history entry shows:
+- A <strong>colored dot</strong> indicating the attention type.
+- The <strong>model name</strong>, <strong>layer</strong>, and <strong>head</strong> (or view type).
+- The <strong>attention type</strong> and its configuration parameters.
+- A <strong>relative timestamp</strong> ("2 min ago", "1 hour ago").
+- A <strong>preview thumbnail</strong> (tiny heatmap preview, 48×48px) generated at the time of the exploration. This thumbnail is stored in <code>localStorage</code> as a base64 data URL.</p>
+<h4 id="interactions">Interactions</h4>
+<ul>
+<li><strong>Click</strong> an entry: Restores that exact exploration state (model, attention type, layer, head, text, view mode, zoom level). The entire dashboard updates to match.</li>
+<li><strong>Star (⭐)</strong> an entry: Saves it to "Saved Explorations" (persisted to the backend via the <code>notes</code> system). Saved explorations appear at the top of the history panel with a gold border.</li>
+<li><strong>Compare (📊)</strong> : Opens the selected entry in a side‑by‑side comparison view with the current exploration.</li>
+<li><strong>Delete (✕)</strong> : Removes the entry from history.</li>
+<li><strong>Clear All</strong>: Removes all history entries (with confirmation dialog).</li>
+</ul>
+<h4 id="history-persistence">History Persistence</h4>
+<ul>
+<li><strong>localStorage</strong>: The last 50 explorations are stored in <code>localStorage</code> per browser. This survives page refreshes and tab closes.</li>
+<li><strong>Backend (optional)</strong> : If the user is authenticated, history entries are synced to the backend via the <code>activity</code> feed, enabling cross‑device history.</li>
+<li><strong>Export</strong>: Users can export their history as JSON or CSV for external analysis.</li>
+</ul>
+<h3 id="34-backforward-navigation">3.4 Back/Forward Navigation</h3>
+<p>In addition to the breadcrumb and history panel, the browser's native <strong>Back</strong> and <strong>Forward</strong> buttons are fully supported. Each context change pushes a new entry to the browser history stack via <code>history.pushState()</code>. This means:</p>
+<ul>
+<li>Pressing the browser Back button returns to the previous attention exploration.</li>
+<li>Pressing Forward returns to the later exploration.</li>
+<li>The URL is always shareable and bookmarkable.</li>
+</ul>
+<h3 id="35-related-explorations-panel">3.5 Related Explorations Panel</h3>
+<p>At the bottom of the history panel, a <strong>"Related Explorations"</strong> section appears. This uses collaborative filtering to suggest:</p>
+<ul>
+<li><strong>"Other researchers who viewed this pattern also explored…"</strong></li>
+<li><strong>"Similar patterns"</strong> (based on attention pattern similarity metrics).</li>
+<li><strong>"Top‑starred patterns with this model"</strong>.</li>
+</ul>
+<p>Each suggestion is a clickable card that loads that exploration directly.</p>
+<h3 id="36-edge-cases-error-states">3.6 Edge Cases &amp; Error States</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Empty history</strong> (first‑time user)</td>
+<td>Shows a friendly illustration: "Your exploration history will appear here. Start by selecting a model and text!" with a CTA button.</td>
+</tr>
+<tr>
+<td><strong>History entry references a deleted model</strong></td>
+<td>The entry is grayed out with a "Model no longer available" badge. The preview thumbnail remains visible.</td>
+</tr>
+<tr>
+<td><strong>localStorage full</strong></td>
+<td>Oldest entries are automatically evicted. A notification appears: "Your oldest exploration history has been cleared to save space."</td>
+</tr>
+<tr>
+<td><strong>Browser in incognito mode</strong></td>
+<td>History is session‑only. A banner at the top of the panel notes: "History is temporary in this session."</td>
+</tr>
+<tr>
+<td><strong>Corrupted history entry</strong></td>
+<td>Skipped gracefully. The entry shows "⚠️ Could not restore this exploration" and can be deleted.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="37-accessibility-for-history">3.7 Accessibility for History</h3>
+<ul>
+<li>The history panel is opened via a button with <code>aria-label="Exploration history"</code> and <code>aria-expanded</code>.</li>
+<li>Each history entry is a <code>&lt;button&gt;</code> with <code>aria-label="Restore exploration: BERT-base Layer 5 Head 7, Galerkin attention, 2 minutes ago"</code>.</li>
+<li>The clear history button requires confirmation via a modal dialog to prevent accidental data loss.</li>
+</ul>
+<hr />
+<h2 id="4-integration-specifications">4. Integration Specifications</h2>
+<h3 id="41-how-zone-1-communicates-with-other-zones">4.1 How Zone 1 Communicates with Other Zones</h3>
+<p>Zone 1 acts as the <strong>single source of truth</strong> for the current exploration context. All other zones subscribe to this state:</p>
+<div class="highlight"><pre><span></span><code>Zone 1 (Context Bar)
+    │
+    ├── Updates ──→ Zone 2 (Visualization Canvas) — re‑renders attention view
+    │               Zone 3 (Math Panel) — re‑renders equations with new values
+    │               Zone 4 (Control Panel) — syncs sliders and selectors
+    │               Zone 5 (Analytics) — re‑computes statistics
+    │               Zone 6 (Interpretability) — re‑runs ablation analysis
+    │               Zone 7 (Social) — updates share links and metadata
+    │               Zone 8 (Gamification) — triggers XP events
+</code></pre></div>
+<p>The communication is handled through:
+1. <strong>Zustand store</strong> (<code>useAttentionContext</code>) for synchronous state.
+2. <strong>URL query parameters</strong> for shareability and browser history.
+3. <strong>WebSocket</strong> (optional) for collaborative sessions — when one user changes the context, it syncs to others.</p>
+<h3 id="42-state-contract">4.2 State Contract</h3>
+<p>The context state object follows this TypeScript interface:</p>
+<div class="highlight"><pre><span></span><code><span class="kd">interface</span><span class="w"> </span><span class="nx">AttentionContext</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="c1">// Model</span>
+<span class="w">  </span><span class="nx">modelId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w">               </span><span class="c1">// e.g., "bert-base-uncased"</span>
+<span class="w">  </span><span class="nx">modelSource</span><span class="o">:</span><span class="w"> </span><span class="s1">'registry'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'huggingface'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'upload'</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">modelVersion?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w">         </span><span class="c1">// from model_versioning</span>
+
+<span class="w">  </span><span class="c1">// Attention</span>
+<span class="w">  </span><span class="nx">attentionType</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w">         </span><span class="c1">// e.g., "galerkin", "padre"</span>
+<span class="w">  </span><span class="nx">attentionConfig</span><span class="o">:</span><span class="w"> </span><span class="kt">Record</span><span class="o">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="w"> </span><span class="nx">any</span><span class="o">&gt;</span><span class="p">;</span><span class="w">  </span><span class="c1">// e.g., { rank: 64, order: 2 }</span>
+
+<span class="w">  </span><span class="c1">// Text</span>
+<span class="w">  </span><span class="nx">inputText</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">tokens</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">[];</span>
+
+<span class="w">  </span><span class="c1">// Navigation</span>
+<span class="w">  </span><span class="nx">selectedLayer</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">selectedHead</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">activeView</span><span class="o">:</span><span class="w"> </span><span class="s1">'head'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'model'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'heatmap'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'3d'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'sankey'</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="s1">'qk'</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Comparison (optional)</span>
+<span class="w">  </span><span class="nx">compareModelId?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+<span class="w">  </span><span class="nx">compareAttentionType?</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span>
+
+<span class="w">  </span><span class="c1">// Metadata</span>
+<span class="w">  </span><span class="nx">lastModified</span><span class="o">:</span><span class="w"> </span><span class="kt">number</span><span class="p">;</span><span class="w">          </span><span class="c1">// timestamp</span>
+<span class="w">  </span><span class="nx">explorationId</span><span class="o">:</span><span class="w"> </span><span class="kt">string</span><span class="p">;</span><span class="w">         </span><span class="c1">// unique ID for this exploration</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="43-performance-budget">4.3 Performance Budget</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Context bar initial render</td>
+<td>&lt; 16ms (one frame)</td>
+</tr>
+<tr>
+<td>Model switch response time (cached)</td>
+<td>&lt; 100ms to update context bar</td>
+</tr>
+<tr>
+<td>Model switch response time (uncached)</td>
+<td>&lt; 3s with progress indicator</td>
+</tr>
+<tr>
+<td>URL update after context change</td>
+<td>&lt; 50ms</td>
+</tr>
+<tr>
+<td>History panel open</td>
+<td>&lt; 100ms</td>
+</tr>
+<tr>
+<td>Breadcrumb update</td>
+<td>&lt; 16ms</td>
+</tr>
+</tbody>
+</table>
+<h3 id="44-testing-checklist">4.4 Testing Checklist</h3>
+<ul>
+<li>[ ] Context bar remains sticky when scrolling to bottom of analytics panel</li>
+<li>[ ] All chips are keyboard‑accessible (Tab, Enter, Escape)</li>
+<li>[ ] Screen reader announces context changes</li>
+<li>[ ] URL updates correctly on every context change</li>
+<li>[ ] Browser Back/Forward correctly restores previous states</li>
+<li>[ ] Model switching works when offline (cached models)</li>
+<li>[ ] History persists across page refreshes</li>
+<li>[ ] Mobile responsive: chips collapse correctly</li>
+<li>[ ] Color contrast ratios meet WCAG AA standards (4.5:1 for text)</li>
+<li>[ ] No layout shift when chips update (stable dimensions)</li>
+<li>[ ] History panel handles 500+ entries without performance degradation</li>
+<li>[ ] Breadcrumb correctly truncates on narrow viewports</li>
+<li>[ ] Compare mode breadcrumb appears correctly</li>
+<li>[ ] Attention type colors are consistent across all zones</li>
+<li>[ ] "Clear history" confirmation dialog works</li>
+<li>[ ] Starred explorations sync to backend</li>
+<li>[ ] Related explorations load without blocking the UI</li>
+<li>[ ] Error states (model load failure) are handled gracefully</li>
+<li>[ ] First‑time user sees appropriate empty states</li>
+</ul>
+<hr />
+<h2 id="5-summary">5. Summary</h2>
+<p>Zone 1 is the <strong>orchestrator</strong> of the entire attention dashboard. It provides three essential navigation functions:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Core Value</th>
+<th>Key Innovation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Persistent Context Header</strong></td>
+<td>Never lose track of what you're looking at</td>
+<td>Live‑editable chips that serve as both display and control</td>
+</tr>
+<tr>
+<td><strong>Quick‑Switch Model Selector</strong></td>
+<td>Change models without leaving the dashboard</td>
+<td>Integrated attention type selector with complexity annotations and paper links</td>
+</tr>
+<tr>
+<td><strong>Breadcrumb + History</strong></td>
+<td>Navigate spatially and temporally</td>
+<td>Dual navigation with starred explorations, comparison mode, and cross‑device sync</td>
+</tr>
+</tbody>
+</table>
+<p>Together, these three features ensure that researchers can explore attention patterns across dozens of models and attention mechanisms without ever feeling lost — while maintaining the ability to backtrack, compare, and share their discoveries at any moment.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: lsc_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.44 M
+  Trainable params:  28.35 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        72013.2400
+  Post-KD PPL:       72039.8000
+  Stage 1 (KD) PPL:  72039.8000
+  Stage 2 (Self) PPL:72039.8000
+  KD Gain:           -26.56
+  Self Gain:         +0.00
+  Total Gain:        -26.56
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1989.5001
+  Recovery:          -0.04%
+  Peak VRAM:         1354.41 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0408
+  Repetition-3:      0.9531
+  Train PPL:         66750.7200
+  Test PPL:          72039.8000
+  Overfit Gap:       5289.08
+  Latency (mean):    233.26 ms
+  Latency (std):     0.79 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        d7633f0b1bcc
+
+TRAINING HISTORY (last 10 steps):

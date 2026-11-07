@@ -1,0 +1,11 @@
+{
+  "module": "samba_moe",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 737.53,
+  "duration_sec": 385.5,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 05:48:14"
+}

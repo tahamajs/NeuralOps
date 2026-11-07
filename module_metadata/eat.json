@@ -1,0 +1,30 @@
+{
+  "module_name": "eat",
+  "class_name": "EATBlock",
+  "category": "attention",
+  "family": "Kernelized & Feature-Map Linear Attentions",
+  "params": [
+    "d_model",
+    "n_heads",
+    "prune_layer",
+    "config",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "transpose",
+    "softmax",
+    "dropout",
+    "view",
+    "matmul"
+  ],
+  "docstring": "Efficient Attention Transformer (EAT) Attention Module with Progressive Token Pruning.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.5361374945441493e+38,
+  "paradigm": "linear",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

@@ -1,0 +1,34 @@
+{
+  "module_name": "aegis_v3",
+  "class_name": "AegisAttention",
+  "category": "attention",
+  "family": "Hardware-Fused, Low-Precision & Spectral-Transform Attentions",
+  "params": [
+    "pretrained_weight",
+    "pretrained_bias",
+    "energy",
+    "min_rank",
+    "max_rank",
+    "model_config",
+    "aegis_cfg",
+    "pretrained_attn",
+    "bert_mode"
+  ],
+  "ops": [
+    "transpose",
+    "view",
+    "softmax",
+    "cat",
+    "matmul"
+  ],
+  "docstring": "AEGIS-Attention V3 multi-head attention module.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.3981491047181694e+38,
+  "paradigm": "hardware",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "refined_landmark_attention",
+  "name": "Refined Landmark Attention: Memory-Augmented & External Latent Recurrences",
+  "type": "Attention Module",
+  "family": "Memory-Augmented & External Latent Recurrences",
+  "category": "Memory-Augmented & External Latent Recurrences",
+  "paradigm": "memory",
+  "icon": "💾",
+  "file": "neuralops/layers/hybrid/refined_landmark_attention.py",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "description": "Refined Landmark Attention operator from the Memory-Augmented & External Latent Recurrences family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "math": "O = \\operatorname{Attention}(Q, K, V)"
+}

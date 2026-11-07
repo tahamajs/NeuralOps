@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: hashed_net_compressor / C
+================================================================================
+
+MODEL INFO:
+  Total params:      41.87 M
+  Trainable params:  2.36 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        10806.8500
+  Post-KD PPL:       10806.8500
+  Stage 1 (KD) PPL:  10806.8500
+  Stage 2 (Self) PPL:10806.8500
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         298.4493
+  Recovery:          0.00%
+  Peak VRAM:         1508.01 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.8010
+  Repetition-3:      0.0208
+  Train PPL:         16351.4000
+  Test PPL:          10806.8500
+  Overfit Gap:       -5544.55
+  Latency (mean):    290.97 ms
+  Latency (std):     25.90 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        c51c76b1c1e7
+
+TRAINING HISTORY (last 10 steps):

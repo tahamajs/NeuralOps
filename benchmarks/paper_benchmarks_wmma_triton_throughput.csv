@@ -1,0 +1,13 @@
+Kernel,Seq_Len_L,Hidden_Dim,Heads,Triton_WMMA_ms,Naive_Fallback_ms,Speedup,Throughput_TFLOPs,Peak_VRAM_MB,Zero_NaN,Zero_Inf
+triton_svd_linear_attention,512,256,8,1.7144,0.1017,0.06x,0.02,32.22,PASS,PASS
+triton_svd_linear_attention,1024,256,8,1.775,0.2201,0.12x,0.038,46.79,PASS,PASS
+triton_svd_linear_attention,2048,256,8,1.7895,0.5466,0.31x,0.075,75.91,PASS,PASS
+triton_svd_linear_attention,4096,256,8,5.9891,3.4212,0.57x,0.045,134.16,PASS,PASS
+triton_chunk_gla,512,256,8,8.136,0.1607,0.02x,0.004,61.47,PASS,PASS
+triton_chunk_gla,1024,256,8,14.0174,0.3006,0.02x,0.005,83.77,PASS,PASS
+triton_chunk_gla,2048,256,8,26.1503,0.9353,0.04x,0.005,148.82,PASS,PASS
+triton_chunk_gla,4096,256,8,50.838,1.9301,0.04x,0.005,278.92,PASS,PASS
+triton_gdn_scan,512,256,8,1.2662,3.5825,2.83x,0.027,64.75,PASS,PASS
+triton_gdn_scan,1024,256,8,3.8792,9.5307,2.46x,0.017,98.84,PASS,PASS
+triton_gdn_scan,2048,256,8,9.4331,19.1554,2.03x,0.014,170.97,PASS,PASS
+triton_gdn_scan,4096,256,8,19.6696,36.6903,1.87x,0.014,315.22,PASS,PASS

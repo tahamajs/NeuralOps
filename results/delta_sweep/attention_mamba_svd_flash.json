@@ -1,0 +1,11 @@
+{
+  "module": "mamba_svd_flash",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": null,
+  "duration_sec": 12.4,
+  "retries_used": 1,
+  "error": "exit=1",
+  "timestamp": "2026-10-12 03:39:01"
+}

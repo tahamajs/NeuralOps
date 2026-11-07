@@ -1,0 +1,25 @@
+{
+  "module_name": "chela_slay_attention",
+  "class_name": "ChelaSlayAttention",
+  "category": "attention",
+  "family": "Kernelized & Feature-Map Linear Attentions",
+  "paradigm": "linear",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Chela Slay Attention operator from the Kernelized & Feature-Map Linear Attentions family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

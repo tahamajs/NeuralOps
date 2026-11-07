@@ -1,0 +1,31 @@
+{
+  "module_name": "compressed_mha_attention",
+  "class_name": "CompressedDistilBertAttention",
+  "category": "attention",
+  "family": "Multi-Head Latent & Key-Value Compressed Attentions",
+  "params": [
+    "model_config",
+    "rank_qkv",
+    "rank_out",
+    "dropout",
+    "pretrained_attn",
+    "config"
+  ],
+  "ops": [
+    "matmul",
+    "transpose",
+    "softmax",
+    "dropout",
+    "view"
+  ],
+  "docstring": "DistilBERT Attention Module with Joint SVD-Compressed Projections.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 5.837709737114118e+37,
+  "paradigm": "mla",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

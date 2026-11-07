@@ -1,0 +1,29 @@
+{
+  "module_name": "saes_svd_v2",
+  "class_name": "SAESSVDCompressorV2",
+  "category": "compression",
+  "family": "Activation-Aware & Standard Low-Rank SVD Factorization",
+  "params": [
+    "model",
+    "rank",
+    "rank_ratio",
+    "correcting_steps",
+    "target_modules"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Spectrum-Aware Error Suppression SVD (SAES-SVD v2).",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.1274961714324722e+37,
+  "paradigm": "svd",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

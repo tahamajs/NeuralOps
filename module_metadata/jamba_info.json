@@ -1,0 +1,34 @@
+{
+  "module_name": "jamba_info",
+  "class_name": "InfoMambaConceptBottleneck",
+  "category": "attention",
+  "family": "Hybrid Linear-Recurrent & Attention-SSM Architectures",
+  "params": [
+    "dim",
+    "bottleneck_dim",
+    "config",
+    "rank",
+    "mode",
+    "sparsity",
+    "pretrained_attn"
+  ],
+  "ops": [
+    "gelu",
+    "transpose",
+    "softmax",
+    "relu",
+    "dropout",
+    "view",
+    "matmul"
+  ],
+  "docstring": "Minimal-Bandwidth Concept Bottleneck MLP.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 8.100099235998643e+37,
+  "paradigm": "hybrid",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

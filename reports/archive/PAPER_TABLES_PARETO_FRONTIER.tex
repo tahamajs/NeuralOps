@@ -1,0 +1,33 @@
+% Auto-generated: Latency-Throughput-Memory Pareto Frontier Across Budgets
+\begin{table*}[t]
+\centering
+\small
+\caption{\textbf{Pareto Frontier Analysis across Memory Budgets $M \in \{1\text{GB}, 2\text{GB}, 4\text{GB}\}$ on Physical NVIDIA RTX 4070 Laptop GPU (8GB GDDR6).} Comparison of Standard Dense Attention, Paged KV Cache Eviction, Dynamic Block-Sparse Attention, and Selective SSM Scan across varying context horizons $B \times L$. Standard Dense Attention incurs Out-Of-Memory (OOM) at $L=8{,}192$, whereas state compaction and selective linear scans sustain sub-millisecond to low-millisecond latencies within allocated memory budgets.}
+\label{tab:pareto_frontier_benchmarks}
+\begin{tabular}{llcccccc}
+\toprule
+\textbf{Budget ($M$)} & \textbf{Attention / SSM Policy} & \textbf{Batch ($B$)} & \textbf{Seq Len ($L$)} & \textbf{Eff. Cap. (\%)} & \textbf{Latency (ms)} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM (MB)} \\
+\midrule
+1 GB (1024 MB)   & Standard Dense Attention                      & 2 & 4,096 & 100.0\% & 4.31 & 1,900,842 & 89.1 \\
+                 & Paged KV Evict (Retention=50%)                & 2 & 4,096 & 50.0\% & 0.085 & 95,961,617 & 136.6 \\
+                 & Paged KV Evict (Retention=25%)                & 2 & 4,096 & 25.0\% & 0.021 & 392,798,693 & 120.6 \\
+                 & Dynamic Sparse Attention (Block Sparsity=50%) & 2 & 4,096 & 50.0\% & 85.12 & 96,237 & 256.6 \\
+                 & Dynamic Sparse Attention (Block Sparsity=75%) & 2 & 4,096 & 25.0\% & 41.26 & 198,534 & 256.6 \\
+                 & Selective Scan SSM (Linear State-Space)       & 2 & 4,096 & 100.0\% & 4.04 & 2,027,849 & 258.4 \\
+\midrule
+2 GB (2048 MB)   & Standard Dense Attention                      & 4 & 4,096 & 100.0\% & 6.70 & 2,445,462 & 242.2 \\
+                 & Paged KV Evict (Retention=50%)                & 4 & 4,096 & 50.0\% & 0.265 & 61,774,322 & 297.2 \\
+                 & Paged KV Evict (Retention=25%)                & 4 & 4,096 & 25.0\% & 0.101 & 162,266,661 & 265.2 \\
+                 & Dynamic Sparse Attention (Block Sparsity=50%) & 4 & 4,096 & 50.0\% & 152.06 & 107,746 & 537.2 \\
+                 & Dynamic Sparse Attention (Block Sparsity=75%) & 4 & 4,096 & 25.0\% & 80.14 & 204,452 & 537.2 \\
+                 & Selective Scan SSM (Linear State-Space)       & 4 & 4,096 & 100.0\% & 5.59 & 2,929,276 & 508.2 \\
+\midrule
+4 GB (4096 MB)   & Standard Dense Attention                      & 4 & 8,192 & 0.0\% & \textit{OOM} & --- & \textit{Exceeded} \\
+                 & Paged KV Evict (Retention=50%)                & 4 & 8,192 & 50.0\% & 0.526 & 62,353,859 & 457.9 \\
+                 & Paged KV Evict (Retention=25%)                & 4 & 8,192 & 25.0\% & 0.277 & 118,226,596 & 393.8 \\
+                 & Dynamic Sparse Attention (Block Sparsity=50%) & 4 & 8,192 & 50.0\% & 603.83 & 54,267 & 1065.8 \\
+                 & Dynamic Sparse Attention (Block Sparsity=75%) & 4 & 8,192 & 25.0\% & 398.52 & 82,224 & 1065.8 \\
+                 & Selective Scan SSM (Linear State-Space)       & 4 & 8,192 & 100.0\% & 11.16 & 2,934,882 & 1007.3 \\
+\bottomrule
+\end{tabular}
+\end{table*}

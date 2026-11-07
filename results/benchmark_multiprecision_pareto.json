@@ -1,0 +1,202 @@
+[
+  {
+    "kernel": "gla_scan",
+    "precision": "FP32",
+    "latency_ms": 0.311,
+    "tflops": 0.86,
+    "frob_rel_error": 0.0,
+    "zero_nan": true
+  },
+  {
+    "kernel": "gla_scan",
+    "precision": "FP16",
+    "latency_ms": 0.33,
+    "tflops": 0.81,
+    "frob_rel_error": 0.00041837,
+    "zero_nan": true
+  },
+  {
+    "kernel": "gla_scan",
+    "precision": "BF16",
+    "latency_ms": 0.311,
+    "tflops": 0.86,
+    "frob_rel_error": 0.0033188,
+    "zero_nan": true
+  },
+  {
+    "kernel": "gla_scan",
+    "precision": "FP8_E4M3",
+    "latency_ms": 0.311,
+    "tflops": 0.86,
+    "frob_rel_error": 0.045854,
+    "zero_nan": true
+  },
+  {
+    "kernel": "gla_scan",
+    "precision": "FP8_E5M2",
+    "latency_ms": 0.311,
+    "tflops": 0.86,
+    "frob_rel_error": 0.090548,
+    "zero_nan": true
+  },
+  {
+    "kernel": "differential_attention",
+    "precision": "FP32",
+    "latency_ms": 0.167,
+    "tflops": 12.84,
+    "frob_rel_error": 0.0,
+    "zero_nan": true
+  },
+  {
+    "kernel": "differential_attention",
+    "precision": "FP16",
+    "latency_ms": 0.084,
+    "tflops": 25.43,
+    "frob_rel_error": 0.0015886,
+    "zero_nan": true
+  },
+  {
+    "kernel": "differential_attention",
+    "precision": "BF16",
+    "latency_ms": 0.084,
+    "tflops": 25.47,
+    "frob_rel_error": 0.0068909,
+    "zero_nan": true
+  },
+  {
+    "kernel": "differential_attention",
+    "precision": "FP8_E4M3",
+    "latency_ms": 0.167,
+    "tflops": 12.88,
+    "frob_rel_error": 0.026796,
+    "zero_nan": true
+  },
+  {
+    "kernel": "differential_attention",
+    "precision": "FP8_E5M2",
+    "latency_ms": 0.167,
+    "tflops": 12.89,
+    "frob_rel_error": 0.052965,
+    "zero_nan": true
+  },
+  {
+    "kernel": "sparse_attention",
+    "precision": "FP32",
+    "latency_ms": 0.07,
+    "tflops": 0.95,
+    "frob_rel_error": 0.0,
+    "zero_nan": true
+  },
+  {
+    "kernel": "sparse_attention",
+    "precision": "FP16",
+    "latency_ms": 0.1,
+    "tflops": 0.67,
+    "frob_rel_error": 0.00029353,
+    "zero_nan": true
+  },
+  {
+    "kernel": "sparse_attention",
+    "precision": "BF16",
+    "latency_ms": 0.101,
+    "tflops": 0.67,
+    "frob_rel_error": 0.0023488,
+    "zero_nan": true
+  },
+  {
+    "kernel": "sparse_attention",
+    "precision": "FP8_E4M3",
+    "latency_ms": 0.07,
+    "tflops": 0.95,
+    "frob_rel_error": 0.026484,
+    "zero_nan": true
+  },
+  {
+    "kernel": "sparse_attention",
+    "precision": "FP8_E5M2",
+    "latency_ms": 0.07,
+    "tflops": 0.95,
+    "frob_rel_error": 0.052611,
+    "zero_nan": true
+  },
+  {
+    "kernel": "rotational_svd",
+    "precision": "FP32",
+    "latency_ms": 0.028,
+    "tflops": 0.89,
+    "frob_rel_error": 0.0,
+    "zero_nan": true
+  },
+  {
+    "kernel": "rotational_svd",
+    "precision": "FP16",
+    "latency_ms": 0.03,
+    "tflops": 0.84,
+    "frob_rel_error": 0.0004619,
+    "zero_nan": true
+  },
+  {
+    "kernel": "rotational_svd",
+    "precision": "BF16",
+    "latency_ms": 0.03,
+    "tflops": 0.83,
+    "frob_rel_error": 0.0037654,
+    "zero_nan": true
+  },
+  {
+    "kernel": "rotational_svd",
+    "precision": "FP8_E4M3",
+    "latency_ms": 0.028,
+    "tflops": 0.88,
+    "frob_rel_error": 0.046372,
+    "zero_nan": true
+  },
+  {
+    "kernel": "rotational_svd",
+    "precision": "FP8_E5M2",
+    "latency_ms": 0.028,
+    "tflops": 0.89,
+    "frob_rel_error": 0.091484,
+    "zero_nan": true
+  },
+  {
+    "kernel": "fp8_gemm",
+    "precision": "FP32",
+    "latency_ms": 0.034,
+    "tflops": 7.82,
+    "frob_rel_error": 0.0,
+    "zero_nan": true
+  },
+  {
+    "kernel": "fp8_gemm",
+    "precision": "FP16",
+    "latency_ms": 0.01,
+    "tflops": 26.04,
+    "frob_rel_error": 0.0003605,
+    "zero_nan": true
+  },
+  {
+    "kernel": "fp8_gemm",
+    "precision": "BF16",
+    "latency_ms": 0.01,
+    "tflops": 26.3,
+    "frob_rel_error": 0.0028772,
+    "zero_nan": true
+  },
+  {
+    "kernel": "fp8_gemm",
+    "precision": "FP8_E4M3",
+    "latency_ms": 0.045,
+    "tflops": 5.92,
+    "frob_rel_error": 0.059205,
+    "zero_nan": true
+  },
+  {
+    "kernel": "fp8_gemm",
+    "precision": "FP8_E5M2",
+    "latency_ms": 0.045,
+    "tflops": 5.91,
+    "frob_rel_error": 0.059205,
+    "zero_nan": true
+  }
+]

@@ -1,0 +1,3622 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/ACADEMIC_BAD_RESULTS_REPORT_2026-11-01/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Academic & Empirical Bad Results Audit Report - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#academic-empirical-bad-results-audit-report" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Academic &amp; Empirical Bad Results Audit Report
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Executive Summary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Executive Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-audit-findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Audit Findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-comprehensive-bad-results-failures-bottlenecks-ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Comprehensive Bad Results, Failures &amp; Bottlenecks Ledger
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-detailed-cross-reference-with-root-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Detailed Cross-Reference with Root Documentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Detailed Cross-Reference with Root Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-readmemd-sections-16-17-and-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 README.md Sections 16, 17, and 18
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1 README.md Sections 16, 17, and 18">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#section-16-honest-performance-claims-fused-kernel-spectrum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 16: Honest Performance Claims &amp; Fused Kernel Spectrum
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-17-when-not-to-use-neuralops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 17: When NOT to Use NeuralOps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-18-known-limitations-failure-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 18: Known Limitations &amp; Failure Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-changelogmd-version-history-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 CHANGELOG.md Version History Entries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 CHANGELOG.md Version History Entries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#release-v150-entry-changelogmd183-186-docschangelogmd46-49" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release v1.5.0 Entry (CHANGELOG.md:183-186 &amp; docs/changelog.md:46-49)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#release-v181-entry-changelogmd112" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release v1.8.1 Entry (CHANGELOG.md:112)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-architectural-synthesis-methodological-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Architectural Synthesis &amp; Methodological Value
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="academic-empirical-bad-results-audit-report">Academic &amp; Empirical Bad Results Audit Report</h1>
+<p><strong>Date:</strong> 2026-11-01<br />
+<strong>Auditor / Author:</strong> <code>taha &lt;tahamaj4@gmail.com&gt;</code><br />
+<strong>Scope:</strong> Forensic inventory and cross-referencing of negative results, failure modes, timeouts, sub-1.0x kernel latencies, unverified states, and pseudo-Triton functions across <code>academic/</code>, <code>docs/</code>, <code>results/</code>, <code>README.md</code>, and <code>CHANGELOG.md</code>.</p>
+<hr />
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+<p>This report establishes a rigorous, unified audit of all known limitations, sub-optimal results, regressions, and failures within the NeuralOps platform. In strict accordance with the repository's scientific honesty guidelines, every negative result and hardware bottleneck is documented with exact provenance, correlating theoretical and textual claims in academic papers and documentation against raw empirical evidence in benchmark ledger files.</p>
+<h3 id="key-audit-findings">Key Audit Findings</h3>
+<ol>
+<li><strong>The 203-Module Historical Ledger &amp; Release-Gate Discrepancy:</strong></li>
+<li>As documented in <code>CHANGELOG.md</code> (lines 183–186) and <code>docs/changelog.md</code> (lines 46–49) for release v1.5.0, the 203-module unified release gate recorded:
+     $<span class="arithmatex">\(\text{PASS\_FAST}=15, \quad \text{PASS\_SLOW}=115, \quad \text{FAIL\_CORRECTNESS}=71, \quad \text{FAIL}=1, \quad \text{TIMEOUT}=1\)</span>$</li>
+<li>These 71 correctness failures and 1 timeout were explicitly preserved in documentation to prevent misrepresenting unverified modules as accelerated.</li>
+<li><strong>Sub-1.0x Speedup &amp; cuBLAS Superiority:</strong></li>
+<li><code>fused_favor_plus</code>: Triton implementation yields <strong>0.73x</strong> speedup (0.098 ms Triton vs 0.071 ms PyTorch cuBLAS) on RTX 4070 (SM 8.9), documented in <code>README.md</code> Section 16 and verified in <code>results/triton_all_26_kernels_benchmark.json</code> (line 165).</li>
+<li>In <code>results/triton_full_leaderboard_v136.csv</code>, multiple Triton kernels and compression engines achieve <span class="arithmatex">\(&lt;1.0\times\)</span> speedup, including <code>res_svd</code> (0.01x), <code>dynamic_svd</code> (0.21x), <code>dobi_svd</code> (0.24x), <code>a3_compressor</code> (0.31x), <code>linear_attn.py</code> (0.20x), <code>low_rank.py</code> (0.25x), <code>sparse_attn.py</code> (0.26x), <code>state_update.py</code> (0.60x), and <code>fused_ce.py</code> (0.98x).</li>
+<li>In <code>results/master_108_cuda_modules_benchmark.csv</code>, <code>paged_recurrent_step</code> exhibits severe latency regression (CUDA 30.35 ms vs Ref 0.037 ms — 826x slower than PyTorch).</li>
+<li><strong>Four Pseudo-Triton Functions:</strong></li>
+<li>Four low-rank operations in <code>neuralops/ops/triton/low_rank.py</code> previously bore <code>_triton</code> suffixes despite executing PyTorch matrix multiplications and contractions. These were formally deprecated in v1.8.1 (<code>CHANGELOG.md</code> line 112, commit <code>3b00eeb09a</code>):<ol>
+<li><code>fused_nystrom_landmark_pinv_step_triton</code> <span class="arithmatex">\(\rightarrow\)</span> <code>fused_nystrom_landmark_pinv_step_pytorch</code></li>
+<li><code>fused_rpc_sketch_attention_triton</code> <span class="arithmatex">\(\rightarrow\)</span> <code>fused_rpc_sketch_attention_pytorch</code></li>
+<li><code>fused_primal_dual_landmark_triton</code> <span class="arithmatex">\(\rightarrow\)</span> <code>fused_primal_dual_landmark_pytorch</code></li>
+<li><code>fused_svd_mamba_proj_triton</code> <span class="arithmatex">\(\rightarrow\)</span> <code>fused_svd_mamba_proj_pytorch</code></li>
+</ol>
+</li>
+<li><strong>Hardware Wall &amp; Out-of-Memory (OOM) Limits:</strong></li>
+<li>Dense quadratic attention and FlashAttention-2 suffer hard CUDA OOM at sequence length <span class="arithmatex">\(N \ge 8192\)</span> on 12 GB Ada Lovelace hardware (&gt;22.4 GB required), grounding the theoretical necessity for linear attention and SSMs.</li>
+<li><strong>Direct SVD &amp; Naive Cross-Entropy Collapse:</strong></li>
+<li>Direct SVD parameter reduction without activation whitening drops DistilBERT SST-2 accuracy to 34.80% and RoBERTa to 36.20% at <span class="arithmatex">\(r=4\)</span> (worse than random guess, 50%).</li>
+<li>Post-surgery naive cross-entropy training collapses hidden state cosine similarity to <span class="arithmatex">\(&lt;0.25\)</span>, establishing the mandatory requirement for 6-pillar knowledge distillation.</li>
+</ol>
+<hr />
+<h2 id="2-comprehensive-bad-results-failures-bottlenecks-ledger">2. Comprehensive Bad Results, Failures &amp; Bottlenecks Ledger</h2>
+<p>The following table correlates every identified failure, bottleneck, or sub-optimal metric from <code>academic/</code> and <code>docs/</code> with the exact underlying record in <code>results/</code>:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Module / Kernel Name</th>
+<th style="text-align: left;">Subsystem / Category</th>
+<th style="text-align: left;">Claimed Metric (Academic / Docs)</th>
+<th style="text-align: left;">Recorded Metric (Results Data)</th>
+<th style="text-align: left;">Failure Status</th>
+<th style="text-align: left;">Source File &amp; Line Number</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>fused_favor_plus</code></td>
+<td style="text-align: left;">Triton Kernel / Attention</td>
+<td style="text-align: left;">0.73x speedup (cuBLAS preferred for <span class="arithmatex">\(D &lt; 256\)</span>)</td>
+<td style="text-align: left;">Triton: 0.098 ms, PyTorch: 0.071 ms, Speedup: 0.73x, Max diff: 6e-6</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (&lt; 1.0x)</td>
+<td style="text-align: left;"><code>README.md:1654</code>, <code>results/triton_all_26_kernels_benchmark.json:165</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">203-Module Ledger Gate</td>
+<td style="text-align: left;">Unified Benchmark Release Gate</td>
+<td style="text-align: left;">71 correctness failures, 1 timeout, 1 fail out of 203</td>
+<td style="text-align: left;"><span class="arithmatex">\(\text{PASS\_FAST}=15\)</span>, <span class="arithmatex">\(\text{PASS\_SLOW}=115\)</span>, <span class="arithmatex">\(\text{FAIL\_CORRECTNESS}=71\)</span>, <span class="arithmatex">\(\text{FAIL}=1\)</span>, <span class="arithmatex">\(\text{TIMEOUT}=1\)</span></td>
+<td style="text-align: left;"><code>FAIL_CORRECTNESS</code> (71 cases), <code>TIMEOUT</code> (1 case)</td>
+<td style="text-align: left;"><code>CHANGELOG.md:183-186</code>, <code>docs/changelog.md:46-49</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fused_nystrom_landmark_pinv_step_triton</code></td>
+<td style="text-align: left;">Triton Low-Rank Operator</td>
+<td style="text-align: left;">Pseudo-Triton function (called PyTorch matmuls)</td>
+<td style="text-align: left;">Pure PyTorch fallback without native Triton JIT code</td>
+<td style="text-align: left;"><code>DEPRECATED_PSEUDO_TRITON</code></td>
+<td style="text-align: left;"><code>CHANGELOG.md:112</code>, <code>neuralops/ops/triton/low_rank.py:1114</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fused_rpc_sketch_attention_triton</code></td>
+<td style="text-align: left;">Triton Low-Rank Operator</td>
+<td style="text-align: left;">Pseudo-Triton function (called PyTorch einsums)</td>
+<td style="text-align: left;">Pure PyTorch fallback without native Triton JIT code</td>
+<td style="text-align: left;"><code>DEPRECATED_PSEUDO_TRITON</code></td>
+<td style="text-align: left;"><code>CHANGELOG.md:112</code>, <code>neuralops/ops/triton/low_rank.py:1154</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fused_primal_dual_landmark_triton</code></td>
+<td style="text-align: left;">Triton Low-Rank Operator</td>
+<td style="text-align: left;">Pseudo-Triton function (called PyTorch matmuls)</td>
+<td style="text-align: left;">Pure PyTorch fallback without native Triton JIT code</td>
+<td style="text-align: left;"><code>DEPRECATED_PSEUDO_TRITON</code></td>
+<td style="text-align: left;"><code>CHANGELOG.md:112</code>, <code>neuralops/ops/triton/low_rank.py:1181</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fused_svd_mamba_proj_triton</code></td>
+<td style="text-align: left;">Triton Low-Rank Operator</td>
+<td style="text-align: left;">Pseudo-Triton function (called PyTorch matmuls)</td>
+<td style="text-align: left;">Pure PyTorch fallback without native Triton JIT code</td>
+<td style="text-align: left;"><code>DEPRECATED_PSEUDO_TRITON</code></td>
+<td style="text-align: left;"><code>CHANGELOG.md:112</code>, <code>neuralops/ops/triton/low_rank.py:1215</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fused_norm_linear</code></td>
+<td style="text-align: left;">CUDA C++ Native Kernel</td>
+<td style="text-align: left;">225–244x slower than PyTorch (uncoalesced stride, serial loop)</td>
+<td style="text-align: left;">CUDA: 827.59 ms vs PyTorch: 3.39 ms (<span class="arithmatex">\(B=8, S=512, H=4096\)</span>)</td>
+<td style="text-align: left;"><code>FALLBACK_ONLY</code> / <code>SEVERE_SLOWDOWN</code></td>
+<td style="text-align: left;"><code>docs/fallback_list.md:10-21</code>, <code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:98</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fp8_gemm</code></td>
+<td style="text-align: left;">CUDA C++ Native Kernel</td>
+<td style="text-align: left;">0.15x speedup (6.7x slower; lacks Ada Lovelace TMA)</td>
+<td style="text-align: left;">CUDA: 0.507 ms vs PyTorch: 0.078 ms</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.15x)</td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:99</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fused_cross_entropy</code></td>
+<td style="text-align: left;">CUDA C++ Native Kernel</td>
+<td style="text-align: left;">0.31x speedup (3.2x slower; cuBLAS online softmax saturated)</td>
+<td style="text-align: left;">CUDA: 0.037 ms vs PyTorch: 0.012 ms</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.31x)</td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:100</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>w4a16_gemm</code></td>
+<td style="text-align: left;">CUDA C++ Native Kernel</td>
+<td style="text-align: left;">0.39x speedup (2.5x slower; bit-unpacking register pressure)</td>
+<td style="text-align: left;">CUDA: 0.266 ms vs PyTorch: 0.104 ms</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.39x)</td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:101</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fused_lowrank_gated_gemm</code></td>
+<td style="text-align: left;">CUDA C++ Native Kernel</td>
+<td style="text-align: left;">0.65x speedup (memory bandwidth overhead)</td>
+<td style="text-align: left;">CUDA: 0.038 ms vs PyTorch: 0.025 ms</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.65x)</td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:102</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>speculative_verify</code></td>
+<td style="text-align: left;">CUDA C++ Native Kernel</td>
+<td style="text-align: left;">0.71x–0.73x speedup (slower than PyTorch baseline)</td>
+<td style="text-align: left;">CUDA: 0.0518 ms, Ref: 0.0 ms, Speedup: 0.53x</td>
+<td style="text-align: left;"><code>FALLBACK_ONLY</code></td>
+<td style="text-align: left;"><code>docs/fallback_list.md:29-35</code>, <code>results/master_108_cuda_modules_benchmark.csv:98</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>entropy_pruning</code></td>
+<td style="text-align: left;">CUDA Kernel Benchmark</td>
+<td style="text-align: left;">Exceeded 120-second isolated benchmark limit</td>
+<td style="text-align: left;">Execution stopped after timeout</td>
+<td style="text-align: left;"><code>TIMEOUT / FALLBACK_ONLY</code></td>
+<td style="text-align: left;"><code>docs/fallback_list.md:37-40</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>logcumsumexp</code></td>
+<td style="text-align: left;">CUDA Kernel Benchmark</td>
+<td style="text-align: left;">Exceeded 120-second isolated benchmark limit</td>
+<td style="text-align: left;">Execution stopped after timeout</td>
+<td style="text-align: left;"><code>TIMEOUT / FALLBACK_ONLY</code></td>
+<td style="text-align: left;"><code>docs/fallback_list.md:42-45</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>samba_moe</code></td>
+<td style="text-align: left;">CUDA Kernel Benchmark</td>
+<td style="text-align: left;">Exceeded 120-second isolated benchmark limit</td>
+<td style="text-align: left;">Execution stopped after timeout</td>
+<td style="text-align: left;"><code>TIMEOUT / FALLBACK_ONLY</code></td>
+<td style="text-align: left;"><code>docs/fallback_list.md:47-50</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sparse_attention</code></td>
+<td style="text-align: left;">CUDA Kernel Benchmark</td>
+<td style="text-align: left;">Exceeded 120-second isolated benchmark limit</td>
+<td style="text-align: left;">Execution stopped after timeout</td>
+<td style="text-align: left;"><code>TIMEOUT / FALLBACK_ONLY</code></td>
+<td style="text-align: left;"><code>docs/fallback_list.md:52-55</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>rotational_svd</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Benchmark execution timeout</td>
+<td style="text-align: left;">Empty benchmark output after timeout</td>
+<td style="text-align: left;"><code>TIMEOUT</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:81</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>rpca_sparse_svd</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Benchmark execution timeout</td>
+<td style="text-align: left;">Empty benchmark output after timeout</td>
+<td style="text-align: left;"><code>TIMEOUT</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:83</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>tt_contraction</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Benchmark execution timeout</td>
+<td style="text-align: left;">Empty benchmark output after timeout</td>
+<td style="text-align: left;"><code>TIMEOUT</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:105</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>paged_recurrent_step</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Large numerical divergence and high latency</td>
+<td style="text-align: left;">CUDA: 30.35 ms, Ref: 0.037 ms (826x slower), max_diff: 0.2846</td>
+<td style="text-align: left;"><code>FAIL_NUMERICS</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:72</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>phantom</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Numerical difference exceeded threshold</td>
+<td style="text-align: left;">max_diff = 0.15234 (&gt; 0.05 budget)</td>
+<td style="text-align: left;"><code>FAIL_NUMERICS</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:73</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>rfa_attention</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Kernel produces NaN values</td>
+<td style="text-align: left;">max_diff = NaN</td>
+<td style="text-align: left;"><code>FAIL_NAN</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:78</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>selective_ssm</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Kernel produces NaN values</td>
+<td style="text-align: left;">max_diff = NaN</td>
+<td style="text-align: left;"><code>FAIL_NAN</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:88</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>spectra_v2</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Numerical difference exceeded threshold</td>
+<td style="text-align: left;">max_diff = 0.4050 (&gt; 0.05 budget)</td>
+<td style="text-align: left;"><code>FAIL_NUMERICS</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:94</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>state_update</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Numerical difference exceeded threshold</td>
+<td style="text-align: left;">max_diff = 0.15625 (&gt; 0.05 budget)</td>
+<td style="text-align: left;"><code>FAIL_NUMERICS</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:100</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>vspec</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Numerical difference exceeded threshold</td>
+<td style="text-align: left;">max_diff = 0.42786 (&gt; 0.05 budget)</td>
+<td style="text-align: left;"><code>FAIL_NUMERICS</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:109</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>aegis_gate_norm</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Process failure during execution</td>
+<td style="text-align: left;">Null output during benchmark run</td>
+<td style="text-align: left;"><code>CRASH</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:5</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>entropy_gate</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Process failure during execution</td>
+<td style="text-align: left;">Null output during benchmark run</td>
+<td style="text-align: left;"><code>CRASH</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:19</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>favor_plus</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Process failure during execution</td>
+<td style="text-align: left;">Null output during benchmark run</td>
+<td style="text-align: left;"><code>CRASH</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:23</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>gla_unnormalized_scan</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Process failure during execution</td>
+<td style="text-align: left;">Null output during benchmark run</td>
+<td style="text-align: left;"><code>CRASH</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:39</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>unified_rope_offset</code></td>
+<td style="text-align: left;">CUDA C++ Kernel</td>
+<td style="text-align: left;">Process failure during execution</td>
+<td style="text-align: left;">Null output during benchmark run</td>
+<td style="text-align: left;"><code>CRASH</code></td>
+<td style="text-align: left;"><code>results/master_108_cuda_modules_benchmark.csv:106</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>res_svd</code></td>
+<td style="text-align: left;">Compression Engine</td>
+<td style="text-align: left;">Severe Triton latency regression</td>
+<td style="text-align: left;">PyTorch: 0.09 ms, Triton: 10.09 ms, Speedup: 0.01x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.01x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:67</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>dynamic_svd</code></td>
+<td style="text-align: left;">Compression Engine</td>
+<td style="text-align: left;">Sub-1.0x Triton throughput</td>
+<td style="text-align: left;">PyTorch: 0.03 ms, Triton: 0.16 ms, Speedup: 0.21x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.21x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:66</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>dobi_svd</code></td>
+<td style="text-align: left;">Compression Engine</td>
+<td style="text-align: left;">Sub-1.0x Triton throughput</td>
+<td style="text-align: left;">PyTorch: 0.04 ms, Triton: 0.17 ms, Speedup: 0.24x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.24x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:65</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>a3_compressor</code></td>
+<td style="text-align: left;">Compression Engine</td>
+<td style="text-align: left;">Sub-1.0x Triton throughput</td>
+<td style="text-align: left;">PyTorch: 0.05 ms, Triton: 0.16 ms, Speedup: 0.31x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.31x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:64</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>dora_qlora</code></td>
+<td style="text-align: left;">Compression Engine</td>
+<td style="text-align: left;">Sub-1.0x Triton throughput</td>
+<td style="text-align: left;">PyTorch: 0.18 ms, Triton: 0.21 ms, Speedup: 0.84x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.84x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:63</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>kmeans_quantize</code></td>
+<td style="text-align: left;">Compression Engine</td>
+<td style="text-align: left;">Sub-1.0x Triton throughput</td>
+<td style="text-align: left;">PyTorch: 0.24 ms, Triton: 0.27 ms, Speedup: 0.90x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.90x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:62</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>svd_llm</code></td>
+<td style="text-align: left;">Compression Engine</td>
+<td style="text-align: left;">Marginal parity / sub-1.0x</td>
+<td style="text-align: left;">PyTorch: 0.11 ms, Triton: 0.11 ms, Speedup: 0.99x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.99x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:61</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>linear_attn.py</code></td>
+<td style="text-align: left;">Core Triton Kernel</td>
+<td style="text-align: left;">Huge numerical drift on chunk scan</td>
+<td style="text-align: left;">PyTorch: 0.02 ms, Triton: 0.101 ms, Speedup: 0.20x, max_abs_diff: 11488.0</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> / <code>HIGH_DIFF</code></td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:27</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>low_rank.py</code></td>
+<td style="text-align: left;">Core Triton Kernel</td>
+<td style="text-align: left;">Sub-1.0x low-rank SVD forward</td>
+<td style="text-align: left;">PyTorch: 0.02 ms, Triton: 0.079 ms, Speedup: 0.25x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.25x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:26</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sparse_attn.py</code></td>
+<td style="text-align: left;">Core Triton Kernel</td>
+<td style="text-align: left;">Sub-1.0x LSH hashing</td>
+<td style="text-align: left;">PyTorch: 0.102 ms, Triton: 0.395 ms, Speedup: 0.26x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.26x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:25</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>state_update.py</code></td>
+<td style="text-align: left;">Core Triton Kernel</td>
+<td style="text-align: left;">Sub-1.0x recurrent SSM step</td>
+<td style="text-align: left;">PyTorch: 0.039 ms, Triton: 0.064 ms, Speedup: 0.60x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.60x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:24</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fused_ce.py</code></td>
+<td style="text-align: left;">Core Triton Kernel</td>
+<td style="text-align: left;">Marginal sub-1.0x cross-entropy</td>
+<td style="text-align: left;">PyTorch: 2.307 ms, Triton: 2.346 ms, Speedup: 0.98x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.98x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:23</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>minimal_svd</code></td>
+<td style="text-align: left;">Attention Architecture</td>
+<td style="text-align: left;">Sub-1.0x attention latency</td>
+<td style="text-align: left;">PyTorch: 1.10 ms, Triton: 1.42 ms, Speedup: 0.77x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.77x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:53</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>svd_compressed</code></td>
+<td style="text-align: left;">Attention Architecture</td>
+<td style="text-align: left;">Sub-1.0x attention latency</td>
+<td style="text-align: left;">PyTorch: 16.77 ms, Triton: 17.15 ms, Speedup: 0.98x</td>
+<td style="text-align: left;"><code>SUB_OPTIMAL</code> (0.98x)</td>
+<td style="text-align: left;"><code>results/triton_full_leaderboard_v136.csv:52</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>tt_compressor</code></td>
+<td style="text-align: left;">Compressor / Language Modeling</td>
+<td style="text-align: left;">Severe perplexity explosion on WikiText-2</td>
+<td style="text-align: left;">PPL = 2183.78 (<span class="arithmatex">\(r=16\)</span>), PPL = 3036.90 (<span class="arithmatex">\(r=256\)</span>)</td>
+<td style="text-align: left;"><code>FAIL_PPL_DIVERGED</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:145-146</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>aa_svd_factory</code></td>
+<td style="text-align: left;">Compressor / Language Modeling</td>
+<td style="text-align: left;">Perplexity explosion</td>
+<td style="text-align: left;">PPL = 1046.66</td>
+<td style="text-align: left;"><code>FAIL_PPL_DIVERGED</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:147</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>svd_projection</code></td>
+<td style="text-align: left;">Compressor / Language Modeling</td>
+<td style="text-align: left;">Perplexity explosion</td>
+<td style="text-align: left;">PPL = 980.91</td>
+<td style="text-align: left;"><code>FAIL_PPL_DIVERGED</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:148</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>adasvd_compressor</code></td>
+<td style="text-align: left;">Compressor / Language Modeling</td>
+<td style="text-align: left;">Perplexity explosion (<span class="arithmatex">\(r=128\)</span>)</td>
+<td style="text-align: left;">PPL = 864.50</td>
+<td style="text-align: left;"><code>FAIL_PPL_DIVERGED</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:149</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>svd_linear</code></td>
+<td style="text-align: left;">Compressor / Language Modeling</td>
+<td style="text-align: left;">Perplexity explosion</td>
+<td style="text-align: left;">PPL = 738.00</td>
+<td style="text-align: left;"><code>FAIL_PPL_DIVERGED</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:150</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Direct SVD</code> (<span class="arithmatex">\(r=4\)</span>)</td>
+<td style="text-align: left;">Low-Rank Surgery Baseline</td>
+<td style="text-align: left;">Accuracy collapse below random guess (50%)</td>
+<td style="text-align: left;">DistilBERT: 34.80%, RoBERTa: 36.20%</td>
+<td style="text-align: left;"><code>ACCURACY_COLLAPSE</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:54-58</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Naive Cross-Entropy</code></td>
+<td style="text-align: left;">Healing / Fine-Tuning Baseline</td>
+<td style="text-align: left;">Latent cosine similarity collapse (&lt; 0.25)</td>
+<td style="text-align: left;">Cosine sim: 0.1578–0.2286, Mamba zero-shot drops 0.8416 <span class="arithmatex">\(\rightarrow\)</span> 0.2223</td>
+<td style="text-align: left;"><code>MANIFOLD_COLLAPSE</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:183-186</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>FlashAttention-2</code> (<span class="arithmatex">\(N \ge 8192\)</span>)</td>
+<td style="text-align: left;">Scaled Dot-Product Attention</td>
+<td style="text-align: left;">Quadratic VRAM wall, Out-of-Memory on 12 GB GPU</td>
+<td style="text-align: left;">Memory requirement &gt; 22.4 GB <span class="arithmatex">\(\rightarrow\)</span> CUDA OOM</td>
+<td style="text-align: left;"><code>CUDA_OOM</code></td>
+<td style="text-align: left;"><code>academic/thesis/DEFENSE_QA.md:420-466</code>, <code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:210</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>FP8_E5M2</code> Matrix Ops</td>
+<td style="text-align: left;">Quantization Precision Format</td>
+<td style="text-align: left;">High relative Frobenius error (&gt;9%), throughput drop</td>
+<td style="text-align: left;">Rel error: 0.0905–0.0915, Throughput: 5.92 TFLOPS (vs 26.04 FP16)</td>
+<td style="text-align: left;"><code>NUMERICAL_DEGRADATION</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:195-205</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>Chunk GLA</code> (<span class="arithmatex">\(N=4096, B=4\)</span>)</td>
+<td style="text-align: left;">Recurrent Linear Attention</td>
+<td style="text-align: left;">L2 cache thrashing (working set 48 MB &gt; 36 MB L2)</td>
+<td style="text-align: left;">L2 hit rate collapsed from 88.4% to 21.2%</td>
+<td style="text-align: left;"><code>CACHE_THRASHING</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:215-225</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>HLA</code></td>
+<td style="text-align: left;">Hardware Linear Attention Kernel</td>
+<td style="text-align: left;">GPU hardware watchdog timeout and thread deadlock</td>
+<td style="text-align: left;"><code>watchdog timeout / CL_OUT_OF_RESOURCES</code> (<code>__syncthreads</code> in branch)</td>
+<td style="text-align: left;"><code>HARDWARE_DEADLOCK</code></td>
+<td style="text-align: left;"><code>docs/thesis_agents/NEGATIVE_RESULTS_AND_SCIENTIFIC_FRAMING.md:220-230</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>mla_attention</code></td>
+<td style="text-align: left;">RoBERTa Evaluation Sweep</td>
+<td style="text-align: left;">Child process crashed without output</td>
+<td style="text-align: left;">Latency: 18.16 s, Accuracy: 0.0%</td>
+<td style="text-align: left;"><code>CRASH_NO_OUTPUT</code></td>
+<td style="text-align: left;"><code>results/summary.csv:2</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>inject_spectral_mamba</code></td>
+<td style="text-align: left;">BERT Injection Sweep</td>
+<td style="text-align: left;">Shape unpacking exception</td>
+<td style="text-align: left;">Accuracy: 0.0%, "ValueError: not enough values to unpack"</td>
+<td style="text-align: left;"><code>FAIL</code></td>
+<td style="text-align: left;"><code>results/summary.csv:6</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>inject_hymba_transx</code></td>
+<td style="text-align: left;">BERT Surgery Sweep</td>
+<td style="text-align: left;">Parameter explosion violation (+33.9%)</td>
+<td style="text-align: left;">Params: 66.95M <span class="arithmatex">\(\rightarrow\)</span> 89.69M (+22.73M), Accuracy: 47.10%</td>
+<td style="text-align: left;"><code>REJECTED_EXPANSION</code></td>
+<td style="text-align: left;"><code>results/summary.csv:9</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>inject_infini</code></td>
+<td style="text-align: left;">BERT Surgery Sweep</td>
+<td style="text-align: left;">Parameter explosion violation (+1.8%)</td>
+<td style="text-align: left;">Params: 66.95M <span class="arithmatex">\(\rightarrow\)</span> 68.14M (+1.18M), Accuracy: 42.60%</td>
+<td style="text-align: left;"><code>REJECTED_EXPANSION</code></td>
+<td style="text-align: left;"><code>results/summary.csv:10</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>inject_aegis_v2</code></td>
+<td style="text-align: left;">BERT Surgery Sweep</td>
+<td style="text-align: left;">Accuracy below chance threshold (36.90%)</td>
+<td style="text-align: left;">Accuracy: 35.20%</td>
+<td style="text-align: left;"><code>REJECTED_EXPANSION</code> / <code>SUB_CHANCE</code></td>
+<td style="text-align: left;"><code>results/summary.csv:14</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>cosformer</code></td>
+<td style="text-align: left;">BERT Surgery Sweep</td>
+<td style="text-align: left;">Accuracy below chance threshold (36.90%)</td>
+<td style="text-align: left;">Accuracy: 35.60%</td>
+<td style="text-align: left;"><code>PASS_LOW</code></td>
+<td style="text-align: left;"><code>results/summary.csv:20</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>spectraformer</code></td>
+<td style="text-align: left;">BERT Surgery Sweep</td>
+<td style="text-align: left;">Accuracy below chance threshold (36.90%)</td>
+<td style="text-align: left;">Accuracy: 34.90%</td>
+<td style="text-align: left;"><code>PASS_LOW</code></td>
+<td style="text-align: left;"><code>results/summary.csv:21</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>compressed_mha</code></td>
+<td style="text-align: left;">BERT Surgery Sweep</td>
+<td style="text-align: left;">Accuracy below chance threshold (36.90%)</td>
+<td style="text-align: left;">Accuracy: 34.00%</td>
+<td style="text-align: left;"><code>PASS_LOW</code></td>
+<td style="text-align: left;"><code>results/summary.csv:26</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>mamba_svd_flash</code></td>
+<td style="text-align: left;">Cross-Architecture GLUE Sweep</td>
+<td style="text-align: left;">Benchmark execution timed out</td>
+<td style="text-align: left;">Timed out across BERT, RoBERTa, T5 on SST-2 &amp; MRPC</td>
+<td style="text-align: left;"><code>TIMEOUT</code> (6 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:2-7</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>hybrid_svd</code></td>
+<td style="text-align: left;">Compressor Sweep</td>
+<td style="text-align: left;">Execution failed on BERT &amp; RoBERTa</td>
+<td style="text-align: left;">Failure across SST-2 and MRPC benchmarks</td>
+<td style="text-align: left;"><code>FAIL</code> (4 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:8-11</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>vspec</code> / <code>vspec_attention</code></td>
+<td style="text-align: left;">Attention Sweep</td>
+<td style="text-align: left;">Execution failed across BERT, RoBERTa, T5</td>
+<td style="text-align: left;">Failure across SST-2 and MRPC benchmarks</td>
+<td style="text-align: left;"><code>FAIL</code> (12 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:12-23</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>samba_m3</code></td>
+<td style="text-align: left;">Architecture Sweep</td>
+<td style="text-align: left;">Execution failed across BERT, RoBERTa, T5</td>
+<td style="text-align: left;">Failure across SST-2 and MRPC benchmarks</td>
+<td style="text-align: left;"><code>FAIL</code> (6 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:24-29</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>jamba_info</code></td>
+<td style="text-align: left;">Architecture Sweep</td>
+<td style="text-align: left;">Execution failed across BERT, RoBERTa, T5</td>
+<td style="text-align: left;">Failure across SST-2 and MRPC benchmarks</td>
+<td style="text-align: left;"><code>FAIL</code> (6 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:30-35</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>hymba_transx</code></td>
+<td style="text-align: left;">Architecture Sweep</td>
+<td style="text-align: left;">Execution failed across BERT, RoBERTa, T5</td>
+<td style="text-align: left;">Failure across SST-2 and MRPC benchmarks</td>
+<td style="text-align: left;"><code>FAIL</code> (6 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:36-41</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>leka_v2</code> / <code>leka_v3</code></td>
+<td style="text-align: left;">Attention Sweep</td>
+<td style="text-align: left;">Execution failed across BERT, RoBERTa, T5</td>
+<td style="text-align: left;">Failure across SST-2 and MRPC benchmarks</td>
+<td style="text-align: left;"><code>FAIL</code> (12 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:42-53</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>adasplash_attention</code></td>
+<td style="text-align: left;">Attention Sweep</td>
+<td style="text-align: left;">Execution failed across BERT, RoBERTa, T5</td>
+<td style="text-align: left;">Failure across SST-2 and MRPC benchmarks</td>
+<td style="text-align: left;"><code>FAIL</code> (6 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:54-59</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>fused_svd_kernel</code></td>
+<td style="text-align: left;">Kernel Sweep</td>
+<td style="text-align: left;">Execution failed across BERT, RoBERTa, T5</td>
+<td style="text-align: left;">Failure across SST-2 and MRPC benchmarks</td>
+<td style="text-align: left;"><code>FAIL</code> (6 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:60-65</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>kmeans_quantize</code></td>
+<td style="text-align: left;">Compressor Sweep</td>
+<td style="text-align: left;">Execution failed across BERT, RoBERTa, T5</td>
+<td style="text-align: left;">Failure across SST-2 and MRPC benchmarks</td>
+<td style="text-align: left;"><code>FAIL</code> (6 configurations)</td>
+<td style="text-align: left;"><code>results/benchmark_summary_v2.csv:66-71</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>svd_sequence</code></td>
+<td style="text-align: left;">Multi-Model Unified Benchmark</td>
+<td style="text-align: left;">Overall module failure</td>
+<td style="text-align: left;">Accuracy: 0.0% across DistilBERT, GPT-2, RoBERTa</td>
+<td style="text-align: left;"><code>FAIL</code></td>
+<td style="text-align: left;"><code>academic/thesis/master_verified_results.json:13214-13247</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>svd_sequence_attention</code></td>
+<td style="text-align: left;">Multi-Model Unified Benchmark</td>
+<td style="text-align: left;">Overall module failure</td>
+<td style="text-align: left;">Accuracy: 0.0% across DistilBERT, GPT-2, RoBERTa</td>
+<td style="text-align: left;"><code>FAIL</code></td>
+<td style="text-align: left;"><code>academic/thesis/master_verified_results.json:13248-13280</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>tt_linear</code></td>
+<td style="text-align: left;">Multi-Model Unified Benchmark</td>
+<td style="text-align: left;">Failed across multiple architectures</td>
+<td style="text-align: left;">Accuracy: 0.0% across DistilBERT, GPT-2, RoBERTa</td>
+<td style="text-align: left;"><code>FAIL</code></td>
+<td style="text-align: left;"><code>academic/thesis/master_verified_results.json:13460-13490</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>qcqa_attention</code></td>
+<td style="text-align: left;">RoBERTa SST-2 Benchmark</td>
+<td style="text-align: left;">Benchmark failed during evaluation</td>
+<td style="text-align: left;">Status: failed</td>
+<td style="text-align: left;"><code>FAIL</code></td>
+<td style="text-align: left;"><code>results/summaries/failures.md:5</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>selective_ssm</code></td>
+<td style="text-align: left;">RoBERTa SST-2 Convergence Sweep</td>
+<td style="text-align: left;">Extended convergence run failed</td>
+<td style="text-align: left;">Status: failed</td>
+<td style="text-align: left;"><code>FAIL</code></td>
+<td style="text-align: left;"><code>results/roberta_extended_convergence/summaries/failures.md:7</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>gla_attention</code></td>
+<td style="text-align: left;">RoBERTa SST-2 Convergence Sweep</td>
+<td style="text-align: left;">Extended convergence run failed</td>
+<td style="text-align: left;">Status: failed</td>
+<td style="text-align: left;"><code>FAIL</code></td>
+<td style="text-align: left;"><code>results/roberta_extended_convergence/summaries/failures.md:8</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>svd_mamba</code></td>
+<td style="text-align: left;">RoBERTa SST-2 Convergence Sweep</td>
+<td style="text-align: left;">Extended convergence run failed</td>
+<td style="text-align: left;">Status: failed</td>
+<td style="text-align: left;"><code>FAIL</code></td>
+<td style="text-align: left;"><code>results/roberta_extended_convergence/summaries/failures.md:9</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-detailed-cross-reference-with-root-documentation">3. Detailed Cross-Reference with Root Documentation</h2>
+<h3 id="31-readmemd-sections-16-17-and-18">3.1 README.md Sections 16, 17, and 18</h3>
+<h4 id="section-16-honest-performance-claims-fused-kernel-spectrum">Section 16: Honest Performance Claims &amp; Fused Kernel Spectrum</h4>
+<ul>
+<li><strong>Textual Claim (<code>README.md:1637-1655</code>):</strong>
+  Section 16 explicitly documents that not all Triton kernels outperform cuBLAS across every tensor shape. It partitions the 26 Triton kernel modules into:</li>
+<li>High-Speedup Kernels (&gt; 2.0x): 13 modules</li>
+<li>Moderate-Speedup Kernels (1.0x–2.0x): 12 modules</li>
+<li>Sub-Optimal / cuBLAS Preferred (&lt; 1.0x): 1 module (<code>fused_favor_plus</code> at <strong>0.73x</strong>)</li>
+<li><strong>Underlying Micro-Architectural Rationale:</strong>
+  NVIDIA cuBLAS incorporates deeply hand-tuned assembly micro-pipelines. For small dimensions (<span class="arithmatex">\(D &lt; 256\)</span>), Triton JIT compiler launch overhead exceeds the raw arithmetic compute time. The platform implements automatic dispatch routing via <code>check_triton_suitability()</code> to redirect sub-256 shapes to PyTorch cuBLAS.</li>
+<li><strong>Empirical Grounding in <code>results/</code>:</strong>
+  Directly validated in <code>results/triton_all_26_kernels_benchmark.json</code> (line 165), recording 0.098 ms (Triton) vs 0.071 ms (PyTorch cuBLAS), yielding 0.73x speedup on shape <code>(256x64, M=128)</code>.</li>
+</ul>
+<h4 id="section-17-when-not-to-use-neuralops">Section 17: When NOT to Use NeuralOps</h4>
+<ul>
+<li><strong>Textual Claim (<code>README.md:1658-1667</code>):</strong>
+  Identifies five operational scenarios where NeuralOps is suboptimal:</li>
+<li><em>Short Sequences (<span class="arithmatex">\(T &lt; 512\)</span>)</em>: Standard FlashAttention-2 is faster because the linear <span class="arithmatex">\(\mathcal{O}(T)\)</span> constant overhead exceeds <span class="arithmatex">\(512^2\)</span>.</li>
+<li><em>Sub-millisecond batch-1 serving</em>: Specialized static C++ engines (TensorRT-LLM) outperform dynamic Python/Triton runtimes.</li>
+<li><em>Pure weight-only quantization without surgery</em>: Point tools (<code>AutoAWQ</code>, <code>bitsandbytes</code>) have lighter footprints.</li>
+<li><em>Massive datacenter pretraining (&gt;70B)</em>: Megatron-LM/DeepSpeed ZeRO-3 are required.</li>
+<li><em>Legacy hardware (SM &lt; 6.1)</em>: Compute architectures lacking Triton support fall back to unaccelerated reference paths.</li>
+</ul>
+<h4 id="section-18-known-limitations-failure-modes">Section 18: Known Limitations &amp; Failure Modes</h4>
+<ul>
+<li><strong>Textual Claim (<code>README.md:1670-1681</code>):</strong></li>
+<li><em>Unactivated Gaussian Singularity</em>: Raw Gaussian inputs (<span class="arithmatex">\(\mathbb{E}[x] = 0\)</span>) into <code>gla_scan.py</code> cause output explosion if the denominator <span class="arithmatex">\(q_t Z_t + 10^{-4}\)</span> crosses zero. Mitigated in v2.0.1 by forcing <code>ELU(x) + 1.0</code> and hardware denominator clamping (<code>tl.maximum(denom, 1e-4)</code>).</li>
+<li><em>Bidirectional Recurrence in Causal Models</em>: Bidirectional scans (<code>0.5 * (y_fwd + y_bwd)</code>) violate autoregressive causality if applied to GPT-2/LLaMA decoders.</li>
+<li><em>Small Batch GEMM Launch Overhead</em>: High launch latency for <span class="arithmatex">\(B=1, T&lt;128\)</span>.</li>
+</ul>
+<hr />
+<h3 id="32-changelogmd-version-history-entries">3.2 CHANGELOG.md Version History Entries</h3>
+<h4 id="release-v150-entry-changelogmd183-186-docschangelogmd46-49">Release v1.5.0 Entry (<code>CHANGELOG.md:183-186</code> &amp; <code>docs/changelog.md:46-49</code>)</h4>
+<ul>
+<li><strong>Explicit Acknowledgment of Correctness Failures:</strong>
+  <div class="highlight"><pre><span></span><code><span class="gu">### Known Limitations</span>
+<span class="k">-</span><span class="w"> </span>The final 203-module ledger records <span class="sb">`PASS_FAST=15`</span>, <span class="sb">`PASS_SLOW=115`</span>, <span class="sb">`FAIL_CORRECTNESS=71`</span>, <span class="sb">`FAIL=1`</span>, <span class="sb">`PASS_HIGH_DIFF=0`</span>, and <span class="sb">`TIMEOUT=1`</span>.
+<span class="k">-</span><span class="w"> </span>The 71 correctness failures and one timeout remain explicitly documented; they are not treated as successful acceleration.
+</code></pre></div></li>
+<li><strong>Correlation with Benchmark Codebase:</strong>
+  The 71 correctness failure rows originated in <code>neuralops/benchmarks/ops_runner.py</code> (lines 534–541) and <code>neuralops/benchmarks/verify_ops.py</code> (lines 53–85), which assign <code>FAIL_CORRECTNESS</code> whenever <code>config.func is None</code>, <code>config.ref_func is None</code>, output contains non-finite values (NaN/Inf), or numerical difference exceeds the threshold budget (<code>max_diff &gt; atol</code>).</li>
+</ul>
+<h4 id="release-v181-entry-changelogmd112">Release v1.8.1 Entry (<code>CHANGELOG.md:112</code>)</h4>
+<ul>
+<li><strong>Pseudo-Triton Function Deprecation:</strong>
+  <div class="highlight"><pre><span></span><code><span class="gu">### Fixed</span>
+<span class="k">-</span><span class="w"> </span>Renamed four pseudo-Triton functions in <span class="sb">`low_rank.py`</span> to <span class="sb">`*_pytorch`</span>; old names remain as deprecated aliases emitting <span class="sb">`DeprecationWarning`</span>.
+</code></pre></div></li>
+<li>In commit <code>3b00eeb09a</code> (<code>low_rank.py:1114-1230</code>), <code>fused_nystrom_landmark_pinv_step_triton</code>, <code>fused_rpc_sketch_attention_triton</code>, <code>fused_primal_dual_landmark_triton</code>, and <code>fused_svd_mamba_proj_triton</code> were audited as purely PyTorch matrix wrappers. They were safely renamed to <code>*_pytorch</code> and configured with transparent backward-compatibility shims emitting explicit <code>DeprecationWarning</code>s.</li>
+</ul>
+<hr />
+<h2 id="4-architectural-synthesis-methodological-value">4. Architectural Synthesis &amp; Methodological Value</h2>
+<p>Far from undermining the credibility of the NeuralOps framework, these negative results and documented bottlenecks constitute its primary scientific strengths:
+1. <strong>Validation of 3-Level Dispatch:</strong> If custom CUDA/Triton kernels were uniformly faster across all operations, the complex dynamic dispatch hierarchy (<code>CUDA -&gt; Triton -&gt; PyTorch</code>) would represent unnecessary engineering overhead. Slower kernels in memory-bound reduction regimes (<code>fused_cross_entropy</code>, <code>fused_norm_linear</code>) prove why dynamic routing to <code>cuBLAS</code> is essential.
+2. <strong>Justification of HNC-SVD:</strong> The collapse of naive direct SVD (<span class="arithmatex">\(34.80\%\)</span> accuracy) provides the empirical counterproof establishing why Cholesky activation whitening (<span class="arithmatex">\(\boldsymbol{\Sigma}_{XX} = \mathbf{L}\mathbf{L}^\top\)</span>) and Hessian null-space projection are theoretically required.
+3. <strong>Necessity of 6-Pillar Distillation:</strong> The catastrophic loss of manifold structure under hard label cross-entropy (<span class="arithmatex">\(&lt;0.25\)</span> cosine similarity) provides the empirical justification for Stiefel-manifold and Wasserstein geometry preservation during post-surgery recovery.
+4. <strong>Data Integrity Standard:</strong> All 71 correctness failures and empirical timeouts are preserved and cataloged, preventing silent regressions and upholding the zero-fake-artifact standard of the platform.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

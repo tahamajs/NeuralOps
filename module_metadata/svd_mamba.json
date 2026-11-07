@@ -1,0 +1,25 @@
+{
+  "module_name": "svd_mamba",
+  "class_name": "SVDMamba",
+  "category": "attention",
+  "family": "Continuous-Time & Selective State-Space Models (SSMs)",
+  "paradigm": "ssm",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "SVD-Mamba: SVD-factorized Selective State Space Model. Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) - GPT-2 (Causal Decoder with Conv1D) - Qwen / LLaMA (GQA with Rotary Position Embeddings)",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

@@ -1,0 +1,33 @@
+{
+  "module_name": "faq_quantizer",
+  "class_name": "FAQLinear",
+  "category": "compression",
+  "family": "Quantization & Integer Codebooks",
+  "params": [
+    "in_features",
+    "out_features",
+    "bias",
+    "bits",
+    "symmetric",
+    "model",
+    "tokenizer",
+    "calibration_texts",
+    "calibration_data",
+    "alpha",
+    "use_ste"
+  ],
+  "ops": [
+    "linear",
+    "clamp"
+  ],
+  "docstring": "Linear layer using FAQ activation-aware quantization with STE backpropagation.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 3.39196399447024e+38,
+  "paradigm": "quant",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

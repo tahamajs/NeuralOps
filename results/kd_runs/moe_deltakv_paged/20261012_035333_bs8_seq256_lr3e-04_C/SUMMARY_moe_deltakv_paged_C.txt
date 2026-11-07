@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: moe_deltakv_paged / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.67 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        1730.6600
+  Post-KD PPL:       10.7600
+  Stage 1 (KD) PPL:  41.0700
+  Stage 2 (Self) PPL:10.7600
+  KD Gain:           +1689.59
+  Self Gain:         +30.31
+  Total Gain:        +1719.90
+  Aligned w/ Teacher:NO
+  Beat Teacher:      YES
+  PPL Ratio:         0.2972
+  Recovery:          100.00%
+  Peak VRAM:         2841.09 MB
+  Train time:        283.11 s (Stage 1: 196.0s, Stage 2: 87.1s)
+  s/step:            0.5662
+  Loss (final):      24.2941
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.0204
+  Repetition-3:      0.9792
+  Train PPL:         9.1700
+  Test PPL:          10.7600
+  Overfit Gap:       1.59
+  Latency (mean):    369.70 ms
+  Latency (std):     0.98 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        e744a852707b
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=2.6107 | lr=1.74e-04
+  step   420 | loss=2.2996 | lr=1.50e-04
+  step   430 | loss=2.4422 | lr=1.27e-04
+  step   440 | loss=2.1663 | lr=1.04e-04
+  step   450 | loss=2.3549 | lr=8.20e-05
+  step   460 | loss=2.3793 | lr=6.19e-05
+  step   470 | loss=2.3262 | lr=4.40e-05
+  step   480 | loss=2.2692 | lr=2.87e-05
+  step   490 | loss=2.2944 | lr=1.64e-05
+  step   500 | loss=2.1750 | lr=7.44e-06

@@ -1,0 +1,36 @@
+{
+  "module_name": "orion",
+  "class_name": "ORIONAttention",
+  "category": "attention",
+  "family": "Hardware-Fused, Low-Precision & Spectral-Transform Attentions",
+  "params": [
+    "pretrained_weight",
+    "pretrained_bias",
+    "energy",
+    "min_rank",
+    "max_rank",
+    "in_features",
+    "out_features",
+    "config",
+    "rank",
+    "model_config",
+    "orion_cfg",
+    "pretrained_attn",
+    "bert_mode"
+  ],
+  "ops": [
+    "transpose",
+    "view",
+    "cat"
+  ],
+  "docstring": "ORION hybrid multi-head attention module.\n\nArgs:\n    config: Model configuration containing `hidden_size` and `num_attention_heads`.\n    rank: Rank constraint hint.\n    model_config: Backwards-compatible alias for config.\n    orion_cfg: ORIONConfig hyperparameters.\n    pretrained_attn: Pretrained attention module used for SVD weight initialization.\n    bert_mode: Boolean indicating bidirectional context handling.",
+  "rank": 32,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.7555295394236904e+38,
+  "paradigm": "hardware",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

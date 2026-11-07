@@ -1,0 +1,23 @@
+{
+  "module_name": "projection_factorized_attn",
+  "class_name": "ProjectionFactorizedAttention",
+  "category": "attention",
+  "family": "Multi-Head Latent & Key-Value Compressed Attentions",
+  "params": [],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "Projection Factorized SVD Linear Attention.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 1.6458409461778547e+38,
+  "paradigm": "mla",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

@@ -1,0 +1,527 @@
+[
+  {
+    "method": "C",
+    "pre_ppl": 36.56,
+    "post_ppl": 36.52,
+    "ppl_ratio": 1.0086,
+    "recovery_pct": 11.43,
+    "peak_vram_mb": 3325.47,
+    "train_time_s": 16.67,
+    "s_per_step": 0.5557,
+    "loss_final": 2.6836,
+    "cached": true,
+    "post_ppl_stage1": 36.52,
+    "post_ppl_stage2": 36.52,
+    "kd_gain": 0.04,
+    "self_gain": 0.0,
+    "total_gain": 0.04,
+    "aligned_with_teacher": false,
+    "beat_teacher_after_self": false,
+    "stage1_time_s": 16.67,
+    "stage2_time_s": 0.0,
+    "self_train_steps": 0,
+    "teacher_params": 124439808,
+    "student_params": 125619456,
+    "trainable_params": 1179648,
+    "batch_size": 4,
+    "seq_len": 256,
+    "learning_rate": 5e-05,
+    "recovery_steps": 30,
+    "train_scope": "module",
+    "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "eval_protocol": {
+      "max_tokens": 15000,
+      "stride": 128,
+      "seq_len": 256,
+      "precision": "fp32",
+      "dataset": "test"
+    },
+    "loss_history": [
+      [
+        0,
+        1.4501380920410156
+      ],
+      [
+        1,
+        1.5138788223266602
+      ],
+      [
+        2,
+        1.9340901374816895
+      ],
+      [
+        3,
+        1.9745835065841675
+      ],
+      [
+        4,
+        1.6674216985702515
+      ],
+      [
+        5,
+        2.6835849285125732
+      ],
+      [
+        6,
+        1.7817074060440063
+      ],
+      [
+        7,
+        1.9236197471618652
+      ],
+      [
+        8,
+        2.1160967350006104
+      ],
+      [
+        9,
+        2.1956093311309814
+      ],
+      [
+        10,
+        2.596904754638672
+      ],
+      [
+        11,
+        2.631736993789673
+      ],
+      [
+        12,
+        2.7094531059265137
+      ],
+      [
+        13,
+        3.049748659133911
+      ],
+      [
+        14,
+        3.109339952468872
+      ],
+      [
+        15,
+        3.5330886840820312
+      ],
+      [
+        16,
+        3.557562828063965
+      ],
+      [
+        17,
+        3.8431460857391357
+      ],
+      [
+        18,
+        4.138554096221924
+      ],
+      [
+        19,
+        4.361773490905762
+      ],
+      [
+        20,
+        4.629749298095703
+      ],
+      [
+        21,
+        4.99131441116333
+      ],
+      [
+        22,
+        5.501865863800049
+      ],
+      [
+        23,
+        5.671507835388184
+      ],
+      [
+        24,
+        5.969452857971191
+      ],
+      [
+        25,
+        6.618076324462891
+      ],
+      [
+        26,
+        6.912804126739502
+      ],
+      [
+        27,
+        7.308676719665527
+      ],
+      [
+        28,
+        7.619393825531006
+      ],
+      [
+        29,
+        8.25666332244873
+      ]
+    ],
+    "ppl_history": {
+      "10": 36.47,
+      "20": 36.45,
+      "30": 36.52
+    },
+    "lr_history": [
+      [
+        0,
+        0.0
+      ],
+      [
+        1,
+        5.000000000000001e-07
+      ],
+      [
+        2,
+        1.0000000000000002e-06
+      ],
+      [
+        3,
+        1.5e-06
+      ],
+      [
+        4,
+        2.0000000000000003e-06
+      ],
+      [
+        5,
+        2.5e-06
+      ],
+      [
+        6,
+        3e-06
+      ],
+      [
+        7,
+        3.5000000000000004e-06
+      ],
+      [
+        8,
+        4.000000000000001e-06
+      ],
+      [
+        9,
+        4.5e-06
+      ],
+      [
+        10,
+        5e-06
+      ],
+      [
+        11,
+        5.500000000000001e-06
+      ],
+      [
+        12,
+        6e-06
+      ],
+      [
+        13,
+        6.5000000000000004e-06
+      ],
+      [
+        14,
+        7.000000000000001e-06
+      ],
+      [
+        15,
+        7.5e-06
+      ],
+      [
+        16,
+        8.000000000000001e-06
+      ],
+      [
+        17,
+        8.500000000000002e-06
+      ],
+      [
+        18,
+        9e-06
+      ],
+      [
+        19,
+        9.5e-06
+      ],
+      [
+        20,
+        1e-05
+      ],
+      [
+        21,
+        1.05e-05
+      ],
+      [
+        22,
+        1.1000000000000001e-05
+      ],
+      [
+        23,
+        1.1500000000000002e-05
+      ],
+      [
+        24,
+        1.2e-05
+      ],
+      [
+        25,
+        1.25e-05
+      ],
+      [
+        26,
+        1.3000000000000001e-05
+      ],
+      [
+        27,
+        1.3500000000000001e-05
+      ],
+      [
+        28,
+        1.4000000000000001e-05
+      ],
+      [
+        29,
+        1.45e-05
+      ]
+    ],
+    "generation": {
+      "distinct_2": 0.9388,
+      "repetition_3": 0.0208,
+      "samples": [
+        {
+          "prompt": "The quick brown fox",
+          "text": "es you see today are those that are highly territorial and attack in an effort to capture prey, even if the fox only has a small amount of fur. As you can see in the photo below, the foxes are highly territorial and attack a lot",
+          "first_50_tokens": [
+            274,
+            345,
+            766,
+            1909,
+            389,
+            883,
+            326,
+            389,
+            4047,
+            22414,
+            290,
+            1368,
+            287,
+            281,
+            3626,
+            284,
+            8006,
+            15974,
+            11,
+            772,
+            611,
+            262,
+            21831,
+            691,
+            468,
+            257,
+            1402,
+            2033,
+            286,
+            9230,
+            13,
+            1081,
+            345,
+            460,
+            766,
+            287,
+            262,
+            4590,
+            2174,
+            11,
+            262,
+            21831,
+            274,
+            389,
+            4047,
+            22414,
+            290,
+            1368,
+            257,
+            1256
+          ]
+        },
+        {
+          "prompt": "Once upon a time",
+          "text": ", he had had enough of his personal troubles. He had settled in as a man who had lost himself in a life of work. He had built a business from his own personal problems and had taken a break from his job. When he was about",
+          "first_50_tokens": [
+            11,
+            339,
+            550,
+            550,
+            1576,
+            286,
+            465,
+            2614,
+            14979,
+            13,
+            679,
+            550,
+            10282,
+            287,
+            355,
+            257,
+            582,
+            508,
+            550,
+            2626,
+            2241,
+            287,
+            257,
+            1204,
+            286,
+            670,
+            13,
+            679,
+            550,
+            3170,
+            257,
+            1597,
+            422,
+            465,
+            898,
+            2614,
+            2761,
+            290,
+            550,
+            2077,
+            257,
+            2270,
+            422,
+            465,
+            1693,
+            13,
+            1649,
+            339,
+            373,
+            546
+          ]
+        },
+        {
+          "prompt": "In the beginning",
+          "text": ", the government needed to build infrastructure, invest in the roads, and deal with the problems of transportation. But as the 1960s and 1970s progressed, many of the infrastructure projects that were needed were not funded. In the mid-1970s,",
+          "first_50_tokens": [
+            11,
+            262,
+            1230,
+            2622,
+            284,
+            1382,
+            6884,
+            11,
+            1325,
+            287,
+            262,
+            9725,
+            11,
+            290,
+            1730,
+            351,
+            262,
+            2761,
+            286,
+            9358,
+            13,
+            887,
+            355,
+            262,
+            9507,
+            82,
+            290,
+            8069,
+            82,
+            28775,
+            11,
+            867,
+            286,
+            262,
+            6884,
+            4493,
+            326,
+            547,
+            2622,
+            547,
+            407,
+            10588,
+            13,
+            554,
+            262,
+            3095,
+            12,
+            30986,
+            82,
+            11
+          ]
+        },
+        {
+          "prompt": "The future of AI is",
+          "text": " largely unknown. For the past decade, the company has struggled to convince consumers that it is viable for them to become human-like.\n\nIn order to build AI technology, AI companies are required to develop technology to work with humans. Many AI",
+          "first_50_tokens": [
+            5688,
+            6439,
+            13,
+            1114,
+            262,
+            1613,
+            5707,
+            11,
+            262,
+            1664,
+            468,
+            11615,
+            284,
+            11508,
+            7008,
+            326,
+            340,
+            318,
+            13971,
+            329,
+            606,
+            284,
+            1716,
+            1692,
+            12,
+            2339,
+            13,
+            198,
+            198,
+            818,
+            1502,
+            284,
+            1382,
+            9552,
+            3037,
+            11,
+            9552,
+            2706,
+            389,
+            2672,
+            284,
+            1205,
+            3037,
+            284,
+            670,
+            351,
+            5384,
+            13,
+            4650,
+            9552
+          ]
+        }
+      ]
+    },
+    "latency": {
+      "mean_latency_ms": 490.22,
+      "std_latency_ms": 0.53
+    },
+    "train_ppl": 37.06,
+    "test_ppl": 36.52,
+    "overfit_gap": -0.54,
+    "lambada_acc": null
+  }
+]

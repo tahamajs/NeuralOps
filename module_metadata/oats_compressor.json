@@ -1,0 +1,33 @@
+{
+  "module_name": "oats_compressor",
+  "class_name": "OATSCompressor",
+  "category": "compression",
+  "family": "Optimal Subspace Projection & Latent Dimensionality Reduction",
+  "params": [
+    "model",
+    "tokenizer",
+    "sparsity",
+    "rank_ratio",
+    "num_iters",
+    "device",
+    "calibration_loader",
+    "calibration_texts",
+    "structured_24"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "norm",
+    "softmax"
+  ],
+  "docstring": "OATS Compressor: Outlier-aware low-rank + structured sparse matrix decomposition.",
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 4,
+  "hash_val": 2.8983960347375584e+38,
+  "paradigm": "subspace",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results"
+}

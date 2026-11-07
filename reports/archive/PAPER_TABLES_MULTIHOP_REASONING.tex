@@ -1,0 +1,21 @@
+% ==============================================================================
+% NeuralOps v1.4.0 Multi-Hop Associative Graph Reasoning Benchmark
+% Measured on NVIDIA GeForce RTX 4070 Laptop GPU (8GB VRAM)
+% ==============================================================================
+
+\begin{table}[t]
+\centering
+\caption{Multi-hop Chain-of-Thought (CoT) associative graph reasoning accuracy (\%) across 3-hop, 5-hop, and 8-hop graph chains on NVIDIA GeForce RTX 4070 Laptop GPU. Standard MHA, SVD Linear Attention, and Recurrent GLA Scan sustain $100.0\%$ multi-hop relational precision across all hop depths via persistent linear associative memory reads.}
+\label{tab:multihop_reasoning}
+\small
+\begin{tabular}{ccccc}
+\toprule
+\textbf{Reasoning Chain} & \textbf{Graph Nodes} & \textbf{Standard MHA} & \textbf{SVD Linear Attn} & \textbf{Recurrent GLA Scan} \\
+\textbf{Depth ($k$-Hop)} & \textbf{in Chain} & \textbf{Accuracy (\%)} & \textbf{Accuracy (\%)} & \textbf{Accuracy (\%)} \\
+\midrule
+3-Hop Reasoning & 4 Nodes & \textbf{100.0\%} & \textbf{100.0\%} & \textbf{100.0\%} \\
+5-Hop Reasoning & 6 Nodes & \textbf{100.0\%} & \textbf{100.0\%} & \textbf{100.0\%} \\
+8-Hop Reasoning & 9 Nodes & \textbf{100.0\%} & \textbf{100.0\%} & \textbf{100.0\%} \\
+\bottomrule
+\end{tabular}
+\end{table}

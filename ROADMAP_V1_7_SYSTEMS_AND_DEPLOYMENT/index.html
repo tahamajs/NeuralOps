@@ -1,0 +1,4810 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/">
+      
+      
+        <link rel="prev" href="../ROADMAP_V1_7_KERNELS_AND_FLA/">
+      
+      
+        <link rel="next" href="../model_zoo/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Systems, Surgery & Serving Ergonomics - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#neuralops-v17-systems-surgery-deployment-roadmap" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Systems, Surgery & Serving Ergonomics
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary-architectural-charter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive Summary &amp; Architectural Charter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Executive Summary &amp; Architectural Charter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-invariants-preserved-in-v170" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Invariants Preserved in v1.7.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-1-end-to-end-ergonomics-one-line-public-apis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 1: End-to-End Ergonomics &amp; One-Line Public APIs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 1: End-to-End Ergonomics &amp; One-Line Public APIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-one-line-surgical-attention-transplant-neuralopstransplant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 One-Line Surgical Attention Transplant: neuralops.transplant()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.1 One-Line Surgical Attention Transplant: neuralops.transplant()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conceptual-architecture-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conceptual Architecture &amp; Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-one-line-deep-compression-neuralopscompress" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 One-Line Deep Compression: neuralops.compress()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.2 One-Line Deep Compression: neuralops.compress()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conceptual-architecture-workflow_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conceptual Architecture &amp; Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-specification_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-example_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-zero-config-serving-engine-export-neuralopsexport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Zero-Config Serving Engine Export: neuralops.export()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.3 Zero-Config Serving Engine Export: neuralops.export()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conceptual-architecture-serialization-integrity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conceptual Architecture &amp; Serialization Integrity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-specification_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-example_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-2-high-throughput-serving-inference-engine-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 2: High-Throughput Serving &amp; Inference Engine Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 2: High-Throughput Serving &amp; Inference Engine Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-native-vllm-v1v2-engine-integration-no-external-forks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Native vLLM v1/v2 Engine Integration (No External Forks)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.1 Native vLLM v1/v2 Engine Integration (No External Forks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-problem-kv-cache-fragmentation-vs-subquadratic-recurrent-state-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem: KV-Cache Fragmentation vs. Subquadratic Recurrent State Tables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#architectural-bridge-in-tree-attentionbackend-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural Bridge: In-Tree AttentionBackend Registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concrete-class-architecture-registration-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concrete Class Architecture &amp; Registration Interface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recurrent-state-allocation-in-vllm-blockspacemanager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recurrent State Allocation in vLLM BlockSpaceManager
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-sglang-native-radixattention-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 SGLang Native RadixAttention Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.2 SGLang Native RadixAttention Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-challenge-prefix-sharing-in-autoregressive-serving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Challenge: Prefix Sharing in Autoregressive Serving
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-breakthrough-radix-recurrent-state-prefix-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Breakthrough: Radix Recurrent State Prefix Caching
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-3-post-surgery-healing-training-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 3: Post-Surgery Healing &amp; Training Engine
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 3: Post-Surgery Healing &amp; Training Engine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-multi-gpu-distributed-distillation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Multi-GPU Distributed Distillation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1 Multi-GPU Distributed Distillation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fsdp2-integration-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FSDP2 Integration Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#megatron-lm-tensor-parallelism-tp-context-parallelism-cp-hooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Megatron-LM Tensor Parallelism (TP) &amp; Context Parallelism (CP) Hooks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#distributed-6-pillar-distillation-loss-formulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distributed 6-Pillar Distillation Loss Formulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-automated-pareto-frontier-sweeper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Automated Pareto-Frontier Sweeper
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 Automated Pareto-Frontier Sweeper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#objective-mathematical-formulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Objective &amp; Mathematical Formulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layerwise-sensitivity-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layerwise Sensitivity Profiling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-algorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search Algorithms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#automated-artifact-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automated Artifact Generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-4-step-by-step-implementation-sequence-quality-gates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 4: Step-by-Step Implementation Sequence &amp; Quality Gates
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 4: Step-by-Step Implementation Sequence &amp; Quality Gates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-high-level-unified-apis-ergonomics-weeks-1-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: High-Level Unified APIs &amp; Ergonomics (Weeks 1 - 3)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1: High-Level Unified APIs &amp; Ergonomics (Weeks 1 - 3)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deliverables-module-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliverables &amp; Module Paths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-gate-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Gate 1
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-native-serving-engine-bridges-vllm-sglang-weeks-4-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Native Serving Engine Bridges (vLLM &amp; SGLang) (Weeks 4 - 7)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2: Native Serving Engine Bridges (vLLM &amp; SGLang) (Weeks 4 - 7)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deliverables-module-paths_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliverables &amp; Module Paths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-gate-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Gate 2
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-multi-gpu-distributed-distillation-pareto-sweeper-weeks-8-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Multi-GPU Distributed Distillation &amp; Pareto Sweeper (Weeks 8 - 11)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: Multi-GPU Distributed Distillation &amp; Pareto Sweeper (Weeks 8 - 11)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deliverables-module-paths_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliverables &amp; Module Paths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-gate-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Gate 3
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-packaging-wheels-cicd-production-release-weeks-12-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Packaging, Wheels, CI/CD &amp; Production Release (Weeks 12 - 14)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4: Packaging, Wheels, CI/CD &amp; Production Release (Weeks 12 - 14)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#packaging-binary-distribution-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packaging &amp; Binary Distribution Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-gate-4-final-release-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Gate 4 (Final Release Gate)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-5-migration-compatibility-guide-v160-to-v170" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 5: Migration &amp; Compatibility Guide (v1.6.0 \(\to\) v1.7.0)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 5: Migration &amp; Compatibility Guide (v1.6.0 \(\to\) v1.7.0)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-evolution-syntax-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Evolution &amp; Syntax Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backward-compatibility-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backward Compatibility Guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary-architectural-charter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive Summary &amp; Architectural Charter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Executive Summary &amp; Architectural Charter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#core-invariants-preserved-in-v170" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Invariants Preserved in v1.7.0
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-1-end-to-end-ergonomics-one-line-public-apis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 1: End-to-End Ergonomics &amp; One-Line Public APIs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 1: End-to-End Ergonomics &amp; One-Line Public APIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-one-line-surgical-attention-transplant-neuralopstransplant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 One-Line Surgical Attention Transplant: neuralops.transplant()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.1 One-Line Surgical Attention Transplant: neuralops.transplant()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conceptual-architecture-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conceptual Architecture &amp; Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-one-line-deep-compression-neuralopscompress" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 One-Line Deep Compression: neuralops.compress()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.2 One-Line Deep Compression: neuralops.compress()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conceptual-architecture-workflow_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conceptual Architecture &amp; Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-specification_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-example_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-zero-config-serving-engine-export-neuralopsexport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3 Zero-Config Serving Engine Export: neuralops.export()
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.3 Zero-Config Serving Engine Export: neuralops.export()">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conceptual-architecture-serialization-integrity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conceptual Architecture &amp; Serialization Integrity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api-specification_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Specification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-example_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-2-high-throughput-serving-inference-engine-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 2: High-Throughput Serving &amp; Inference Engine Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 2: High-Throughput Serving &amp; Inference Engine Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-native-vllm-v1v2-engine-integration-no-external-forks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Native vLLM v1/v2 Engine Integration (No External Forks)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.1 Native vLLM v1/v2 Engine Integration (No External Forks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-problem-kv-cache-fragmentation-vs-subquadratic-recurrent-state-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem: KV-Cache Fragmentation vs. Subquadratic Recurrent State Tables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#architectural-bridge-in-tree-attentionbackend-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural Bridge: In-Tree AttentionBackend Registration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#concrete-class-architecture-registration-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concrete Class Architecture &amp; Registration Interface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recurrent-state-allocation-in-vllm-blockspacemanager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recurrent State Allocation in vLLM BlockSpaceManager
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-sglang-native-radixattention-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 SGLang Native RadixAttention Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.2 SGLang Native RadixAttention Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-challenge-prefix-sharing-in-autoregressive-serving" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Challenge: Prefix Sharing in Autoregressive Serving
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-breakthrough-radix-recurrent-state-prefix-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Breakthrough: Radix Recurrent State Prefix Caching
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-3-post-surgery-healing-training-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 3: Post-Surgery Healing &amp; Training Engine
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 3: Post-Surgery Healing &amp; Training Engine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31-multi-gpu-distributed-distillation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 Multi-GPU Distributed Distillation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1 Multi-GPU Distributed Distillation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fsdp2-integration-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FSDP2 Integration Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#megatron-lm-tensor-parallelism-tp-context-parallelism-cp-hooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Megatron-LM Tensor Parallelism (TP) &amp; Context Parallelism (CP) Hooks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#distributed-6-pillar-distillation-loss-formulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distributed 6-Pillar Distillation Loss Formulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-automated-pareto-frontier-sweeper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 Automated Pareto-Frontier Sweeper
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 Automated Pareto-Frontier Sweeper">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#objective-mathematical-formulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Objective &amp; Mathematical Formulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layerwise-sensitivity-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layerwise Sensitivity Profiling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-algorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search Algorithms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#automated-artifact-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automated Artifact Generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-4-step-by-step-implementation-sequence-quality-gates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 4: Step-by-Step Implementation Sequence &amp; Quality Gates
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 4: Step-by-Step Implementation Sequence &amp; Quality Gates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-high-level-unified-apis-ergonomics-weeks-1-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: High-Level Unified APIs &amp; Ergonomics (Weeks 1 - 3)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1: High-Level Unified APIs &amp; Ergonomics (Weeks 1 - 3)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deliverables-module-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliverables &amp; Module Paths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-gate-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Gate 1
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-native-serving-engine-bridges-vllm-sglang-weeks-4-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Native Serving Engine Bridges (vLLM &amp; SGLang) (Weeks 4 - 7)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2: Native Serving Engine Bridges (vLLM &amp; SGLang) (Weeks 4 - 7)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deliverables-module-paths_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliverables &amp; Module Paths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-gate-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Gate 2
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-multi-gpu-distributed-distillation-pareto-sweeper-weeks-8-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Multi-GPU Distributed Distillation &amp; Pareto Sweeper (Weeks 8 - 11)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: Multi-GPU Distributed Distillation &amp; Pareto Sweeper (Weeks 8 - 11)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deliverables-module-paths_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliverables &amp; Module Paths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-gate-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Gate 3
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-packaging-wheels-cicd-production-release-weeks-12-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Packaging, Wheels, CI/CD &amp; Production Release (Weeks 12 - 14)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4: Packaging, Wheels, CI/CD &amp; Production Release (Weeks 12 - 14)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#packaging-binary-distribution-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packaging &amp; Binary Distribution Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-gate-4-final-release-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Gate 4 (Final Release Gate)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#section-5-migration-compatibility-guide-v160-to-v170" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 5: Migration &amp; Compatibility Guide (v1.6.0 \(\to\) v1.7.0)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 5: Migration &amp; Compatibility Guide (v1.6.0 \(\to\) v1.7.0)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#api-evolution-syntax-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Evolution &amp; Syntax Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backward-compatibility-guarantees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backward Compatibility Guarantees
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="neuralops-v17-systems-surgery-deployment-roadmap">NeuralOps v1.7 Systems, Surgery &amp; Deployment Roadmap</h1>
+<p><strong>Authoritative Engineering Specification &amp; Technical Blueprints</strong><br />
+<strong>Target Release:</strong> NeuralOps v1.7.0<br />
+<strong>Current Baseline:</strong> NeuralOps v1.6.0<br />
+<strong>Authorship &amp; Ownership:</strong> NeuralOps Architecture &amp; Systems Core Team<br />
+<strong>Standard License:</strong> MIT License (Copyright (c) 2024-2026, Taha Majlesi)  </p>
+<hr />
+<h2 id="executive-summary-architectural-charter">Executive Summary &amp; Architectural Charter</h2>
+<p>NeuralOps v1.6.0 established a hardened, mathematically complete foundation for subquadratic attention and transformer compression:
+- <strong>131 Attention Mechanisms</strong> physically consolidated in <code>neuralops.layers</code> across 12 mathematical families.
+- <strong>72 Model Compression Engines</strong> physically consolidated in <code>neuralops.compression</code> across 5 algorithmic paradigms.
+- <strong>26 Triton Kernel Modules</strong> (housing 62 unified Triton JIT operators across 4 performance tiers) with guaranteed Level-3 CPU fallbacks.
+- <strong>114 Native CUDA C++ Extensions</strong> spanning 110 canonical modules targeting NVIDIA Ada Lovelace (SM 8.9), Hopper (SM 90), and Blackwell (SM 100). Compatibility/support directories remain separate from the catalog count.
+- <strong>Sub-30ms PEP 562 Lazy Loading Architecture</strong> ensuring zero-overhead module imports.
+- <strong>Certified Fail-Closed Architecture</strong> enforcing the Zero-Fake Artifacts Law (§0.2, §6.1).</p>
+<p>While v1.6.0 perfected individual operators, standalone kernels, and isolated compression algorithms, running an end-to-end transformation workflow currently requires orchestrating multiple disparate subsystems: architecture scanning, closed-form Ridge subspace projection, shadow-twin micro-healing, and low-level export serialization. Furthermore, high-throughput inference engines (vLLM, SGLang) currently interface via fail-closed stub contracts (<code>IntegrationNotImplementedError</code>).</p>
+<p><strong>NeuralOps v1.7.0</strong> transforms NeuralOps from a modular research kernel library into an industrial, end-to-end automated neural surgery and high-throughput serving framework.</p>
+<div class="highlight"><pre><span></span><code>       ┌────────────────────────────────────────────────────────────────────────┐
+       │                 NEURALOPS v1.7 ARCHITECTURAL FLYWHEEL                  │
+       └────────────────────────────────────────────────────────────────────────┘
+                                           │
+                        [1] ONE-LINE HIGH-LEVEL ERGONOMICS
+                       neuralops.transplant() / .compress()
+                                           │
+                                           ▼
+                       [2] DISTRIBUTED MULTI-GPU HEALING
+                     FSDP2 + Megatron-LM TP + 6-Pillar KD
+                                           │
+                                           ▼
+                     [3] AUTOMATED PARETO-FRONTIER SWEEPER
+                   Dynamic Programming / NSGA-II Rank Search
+                                           │
+                                           ▼
+                    [4] ZERO-CONFIG SERVING ENGINE EXPORT
+                            neuralops.export()
+                                           │
+                    ┌──────────────────────┴──────────────────────┐
+                    ▼                                             ▼
+       [5A] NATIVE vLLM v1/v2 INTEGRATION            [5B] SGLANG RADIX PREFIX INTEGRATION
+        • In-Tree AttentionBackend Dispatch           • Radix Recurrent State Prefix Trie
+        • Subquadratic Paged Recurrent State          • Prefix State Reuse across Multi-Turn Chat
+        • Zero External Fork Overhead                 • $4.2\times$ Serving Prefill Acceleration
+</code></pre></div>
+<h3 id="core-invariants-preserved-in-v170">Core Invariants Preserved in v1.7.0</h3>
+<ol>
+<li><strong>Canonical Registry Counts:</strong> <code>ATTENTION_REGISTRY</code> retains exactly <strong>131</strong> verified attentions; <code>COMPRESSOR_REGISTRY</code> retains exactly <strong>72</strong> verified compressors; <code>neuralops.ops.triton</code> retains exactly <strong>26</strong> canonical modules.</li>
+<li><strong>Zero-Fake Artifact Law (§6.1):</strong> Serialization engines will never output synthetic binaries, mock headers, or unquantized placeholders.</li>
+<li><strong>3-Level Dispatch Hierarchy:</strong> Level 1 (CUDA C++) <span class="arithmatex">\(\to\)</span> Level 2 (Triton JIT) <span class="arithmatex">\(\to\)</span> Level 3 (Vectorized PyTorch CPU Reference).</li>
+<li><strong>Clean AST &amp; Static Typing:</strong> 0 issues in <code>scripts/utils/audit_dead_code.py</code>; 100% strict <code>mypy</code> and <code>ruff</code> compliance.</li>
+</ol>
+<hr />
+<h2 id="section-1-end-to-end-ergonomics-one-line-public-apis">Section 1: End-to-End Ergonomics &amp; One-Line Public APIs</h2>
+<p>v1.7 introduces a declarative, high-level Pythonic interface in <code>neuralops.api</code> that collapses multi-file workflows into expressive one-line operations.</p>
+<h3 id="11-one-line-surgical-attention-transplant-neuralopstransplant">1.1 One-Line Surgical Attention Transplant: <code>neuralops.transplant()</code></h3>
+<h4 id="conceptual-architecture-workflow">Conceptual Architecture &amp; Workflow</h4>
+<p>Attention transplantation replaces quadratic Softmax attention layers (<span class="arithmatex">\(\mathcal{O}(L^2)\)</span> compute and KV-cache footprint) with subquadratic linear, recurrent, or state-space attention mechanisms (<span class="arithmatex">\(\mathcal{O}(L)\)</span> compute, <span class="arithmatex">\(\mathcal{O}(1)\)</span> state memory), while healing post-transplant representation shock.</p>
+<div class="highlight"><pre><span></span><code>Incoming Pretrained Model (e.g. LLaMA-3-8B, Mistral-7B)
+  │
+  ├─► [Phase 1: UniversalArchitectureScanner]
+  │     • Discovers attention projections (W_q, W_k, W_v, W_o)
+  │     • Identifies topology (GQA, MHA, RoPE, RMSNorm)
+  │
+  ├─► [Phase 2: Topology Layer Routing &amp; Budgeting]
+  │     • Evaluates layer_budget (e.g. hybrid sandwich: keep quadratic at layers 0, 1, 31)
+  │     • Instantiates target attention operators from ATTENTION_REGISTRY
+  │
+  ├─► [Phase 3: Closed-Form Ridge Subspace Calibration]
+  │     • Samples calibration tokens through original attention
+  │     • Solves ridge regression: min ||W_trans * X_calib - Y_orig||_2^2 + λ||W_trans||_F^2
+  │     • Initializes state projection matrices directly in representation subspace
+  │
+  ├─► [Phase 4: Sidecar Shadow-Twin Micro-Healing]
+  │     • Wraps replaced layers in UniversalAttentionBridge with SidecarGateBranch
+  │     • Blends: Output = (1 - α) * Orig_Attn + α * Transplant_Attn
+  │     • Executes 50 rapid distillation micro-steps on calibration dataset (α: 0.0 -&gt; 1.0)
+  │
+  └─► [Phase 5: Divergence Gate &amp; Finalization]
+        • Verifies max_diff &lt; 1e-3 and cosine similarity ≥ 0.98
+        • Dissolves shadow twin branch and returns optimized, self-contained model
+</code></pre></div>
+<h4 id="api-specification">API Specification</h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">transplant</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">target_attention</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"chunk_gla"</span><span class="p">,</span>
+    <span class="n">calibration_dataset</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">DataLoader</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">"fineweb-edu"</span><span class="p">,</span>
+    <span class="n">calibration_tokens</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">524288</span><span class="p">,</span>
+    <span class="n">healing_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="n">layer_budget</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="s2">"hybrid_sandwich"</span><span class="p">,</span>
+    <span class="n">copy_weights</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span>
+    <span class="n">divergence_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Surgically transplant attention mechanisms into any Hugging Face / PyTorch transformer.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        model: Pretrained transformer model (e.g. AutoModelForCausalLM).</span>
+<span class="sd">        target_attention: Name of target attention operator registered in ATTENTION_REGISTRY</span>
+<span class="sd">            (e.g., 'chunk_gla', 'retnet', 'mamba_block', 'hgrn2_gated_outer', 'delta_net').</span>
+<span class="sd">        calibration_dataset: HuggingFace dataset path, pre-split Dataset object, or PyTorch</span>
+<span class="sd">            DataLoader used to extract token activations for subspace calibration and healing.</span>
+<span class="sd">        calibration_tokens: Total token count ingested during Ridge calibration (default: 524,288).</span>
+<span class="sd">        healing_steps: Number of post-transplant gradient micro-steps for shadow-twin healing (default: 50).</span>
+<span class="sd">        layer_budget: Strategy for selective layer replacement:</span>
+<span class="sd">            - 'all': Replace all attention layers.</span>
+<span class="sd">            - 'hybrid_sandwich': Retain quadratic attention on first and last 2 layers; transplant middle.</span>
+<span class="sd">            - List[int]: Explicit layer indices to transplant (e.g., [2, 3, 4, 5, 6, 7]).</span>
+<span class="sd">            - Dict[int, str]: Heterogeneous layerwise mapping (e.g., {2: 'chunk_gla', 4: 'mamba_block'}).</span>
+<span class="sd">        copy_weights: Whether to transfer compatible QKV and out-projection weights (default: True).</span>
+<span class="sd">        device: Execution device ('cuda', 'cpu', 'cuda:0').</span>
+<span class="sd">        learning_rate: Learning rate for the 6-pillar micro-healing optimizer.</span>
+<span class="sd">        divergence_tolerance: Maximum allowable L2 hidden state divergence (default: 1e-3).</span>
+<span class="sd">        verbose: Print progress bars, telemetry metrics, and layer allocation summaries.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Transplanted model with unified Hugging Face forward/generate compatibility.</span>
+<span class="sd">    """</span>
+</code></pre></div>
+<h4 id="usage-example">Usage Example</h4>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">neuralops</span>
+
+<span class="c1"># One-line attention transplant on LLaMA-3-8B</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">"meta-llama/Meta-Llama-3-8B"</span><span class="p">,</span> <span class="n">torch_dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">)</span>
+
+<span class="c1"># Transplant middle 28 layers to Chunk GLA with Ridge calibration and micro-healing</span>
+<span class="n">transplanted_model</span> <span class="o">=</span> <span class="n">neuralops</span><span class="o">.</span><span class="n">transplant</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">target_attention</span><span class="o">=</span><span class="s2">"chunk_gla"</span><span class="p">,</span>
+    <span class="n">calibration_dataset</span><span class="o">=</span><span class="s2">"HuggingFaceFW/fineweb-edu"</span><span class="p">,</span>
+    <span class="n">layer_budget</span><span class="o">=</span><span class="s2">"hybrid_sandwich"</span><span class="p">,</span>
+    <span class="n">healing_steps</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Ready for generation or export</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">transplanted_model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h3 id="12-one-line-deep-compression-neuralopscompress">1.2 One-Line Deep Compression: <code>neuralops.compress()</code></h3>
+<h4 id="conceptual-architecture-workflow_1">Conceptual Architecture &amp; Workflow</h4>
+<p><code>neuralops.compress()</code> unifies the 72 compression engines in <code>neuralops.compression</code> into a single target-driven entrypoint. Users specify a target compression ratio, parameter budget, or latency constraint, and the engine automatically derives singular value cutoffs, channel pruning masks, or quantization scale parameters.</p>
+<div class="highlight"><pre><span></span><code>Incoming Dense Weights (W ∈ R^{d_out × d_in})
+  │
+  ├─► [Phase 1: Activation Covariance Whitening Pullback]
+  │     • Gathers layer input covariance: Σ_XX = E[X^T X] ∈ R^{d_in × d_in}
+  │     • Computes symmetric square root: Σ_XX^{1/2} via Cholesky / Eigen-decomposition
+  │     • Whitens weight matrix: W_white = W * Σ_XX^{1/2}
+  │
+  ├─► [Phase 2: Nuclear-Conditioned Truncation (HNC-SVD)]
+  │     • Computes full SVD: W_white = U * S * V^T
+  │     • Allocates rank r_l dynamically to satisfy target_ratio (e.g. 50% parameter budget)
+  │     • Re-colors right singular vectors: V_colored = Σ_XX^{-1/2} * V[:, :r_l]
+  │
+  ├─► [Phase 3: Factorized Layer Substitution]
+  │     • Splits W into B ∈ R^{d_out × r_l} and A ∈ R^{r_l × d_in}:
+  │         B = U[:, :r_l] * diag(S[:r_l])^{1/2}
+  │         A = diag(S[:r_l])^{1/2} * V_colored^T
+  │     • Injects neuralops.layers.SVDLinear in place of nn.Linear
+  │
+  └─► [Phase 4: Cryptographic Manifest Ledger]
+        • Records singular values, truncation loss, and rank ratios in SurgeryManifest
+</code></pre></div>
+<h4 id="api-specification_1">API Specification</h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compress</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"hnc_svd"</span><span class="p">,</span>
+    <span class="n">target_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">calibration_loader</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataLoader</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">layerwise_strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"spectral_energy"</span><span class="p">,</span>
+    <span class="n">rank_schedule</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="s2">"pareto"</span><span class="p">,</span>
+    <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">preserve_modules</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Compress model weights using low-rank decomposition, pruning, or quantization.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        model: PyTorch model or Hugging Face model instance.</span>
+<span class="sd">        method: Compression algorithm name from COMPRESSOR_REGISTRY:</span>
+<span class="sd">            - SVD: 'hnc_svd', 'asvd', 'rpca_svd', 'fisher_svd', 'cur_decomposition'</span>
+<span class="sd">            - Pruning: 'admm_pruning', 'wanda', 'sparse_gpt', 'channel_pruning'</span>
+<span class="sd">            - Quantization: 'fp8_e4m3', 'smooth_quant', 'mx_fp4', 'awq'</span>
+<span class="sd">        target_ratio: Target parameter compression ratio in (0.0, 1.0]. (0.5 = 50% of original parameters).</span>
+<span class="sd">        calibration_loader: DataLoader providing token sequences for activation covariance whitening.</span>
+<span class="sd">        layerwise_strategy: Allocation scheme across layers:</span>
+<span class="sd">            - 'spectral_energy': Proportional allocation matching singular value energy decay.</span>
+<span class="sd">            - 'fisher_weighted': Sensitivity-weighted allocation based on diagonal Fisher Information.</span>
+<span class="sd">            - 'uniform': Uniform rank distribution across all linear modules.</span>
+<span class="sd">        rank_schedule: Explicit module-to-rank map or 'pareto' for automated Pareto knapsack solving.</span>
+<span class="sd">        tolerance: Maximum allowable reconstruction divergence before warning/re-allocating.</span>
+<span class="sd">        device: Device on which decomposition is computed.</span>
+<span class="sd">        preserve_modules: List of module names exempt from compression (e.g., ['lm_head', 'embed_tokens']).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Compressed model with in-place factorized linear layers and updated metadata.</span>
+<span class="sd">    """</span>
+</code></pre></div>
+<h4 id="usage-example_1">Usage Example</h4>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">neuralops</span>
+
+<span class="c1"># One-line 50% HNC-SVD compression with activation covariance whitening</span>
+<span class="n">compressed_model</span> <span class="o">=</span> <span class="n">neuralops</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">"hnc_svd"</span><span class="p">,</span>
+    <span class="n">target_ratio</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="n">calibration_loader</span><span class="o">=</span><span class="n">calib_loader</span><span class="p">,</span>
+    <span class="n">layerwise_strategy</span><span class="o">=</span><span class="s2">"spectral_energy"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<hr />
+<h3 id="13-zero-config-serving-engine-export-neuralopsexport">1.3 Zero-Config Serving Engine Export: <code>neuralops.export()</code></h3>
+<h4 id="conceptual-architecture-serialization-integrity">Conceptual Architecture &amp; Serialization Integrity</h4>
+<p><code>neuralops.export()</code> provides a unified deployment interface targeting high-throughput serving systems while strictly abiding by the Zero-Fake Artifact Law (§6.1). If a serving backend is missing required compiled extensions or cannot load custom attention primitives, the exporter raises an explicit, actionable error rather than creating corrupt or placeholder files.</p>
+<div class="highlight"><pre><span></span><code>Transplanted / Compressed PyTorch Model
+  │
+  ├─► [Format Dispatcher &amp; Engine Gating]
+  │     • engine='vllm'        ──► Validates vLLM v1/v2 custom attention compatibility
+  │     • engine='sglang'      ──► Prepares Radix Recurrent State prefix cache configuration
+  │     • engine='tensorrt_llm'──► Validates TRT-LLM plugin compilation
+  │     • engine='safetensors' ──► Standard Hugging Face Hub distribution
+  │
+  ├─► [Cryptographic Provenance Manifest]
+  │     • Computes SHA-256 digest over model weights, ranks, and attention topologies
+  │     • Generates neuralops_surgery_config.json
+  │
+  ├─► [Dynamic Auto-Map &amp; Architecture Injection]
+  │     • Generates self-contained configuration_neuralops.py and modeling_neuralops.py
+  │     • Injects auto_map into config.json:
+  │         "AutoConfig": "configuration_neuralops.NeuralOpsConfig",
+  │         "AutoModelForCausalLM": "modeling_neuralops.NeuralOpsForCausalLM"
+  │
+  └─► [Atomic Serialization &amp; Verification Stage]
+        • Writes to temporary staging directory (.neuralops-export-tmp/)
+        • Runs smoke-test load to verify weight tensors and forward execution
+        • Atomically renames staging directory to destination path
+</code></pre></div>
+<h4 id="api-specification_2">API Specification</h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">export</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">engine</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"vllm"</span><span class="p">,</span>
+    <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"./exported_model"</span><span class="p">,</span>
+    <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"safetensors"</span><span class="p">,</span>
+    <span class="n">verify_load</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">,</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Export a surgically modified or compressed model for production inference runtimes.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        model: Transplanted or compressed model instance.</span>
+<span class="sd">        engine: Target serving runtime:</span>
+<span class="sd">            - 'vllm': vLLM v1/v2 high-throughput engine with PagedKVCache recurrent tables.</span>
+<span class="sd">            - 'sglang': SGLang runtime with RadixAttention recurrent prefix state trie.</span>
+<span class="sd">            - 'tensorrt_llm': TensorRT-LLM engine with fused C++ kernel plugins.</span>
+<span class="sd">            - 'tgi': Hugging Face Text Generation Inference runtime.</span>
+<span class="sd">            - 'hf': Standalone Hugging Face checkpoint with remote code auto_map.</span>
+<span class="sd">            - 'onnx': Atomic ONNX protobuf with verified onnxruntime session.</span>
+<span class="sd">        path: Target filesystem directory for serialized artifacts.</span>
+<span class="sd">        format: Weight serialization format ('safetensors', 'pt2', 'onnx').</span>
+<span class="sd">        verify_load: Automatically instantiate a verification session to ensure artifact integrity.</span>
+<span class="sd">        tokenizer: Optional tokenizer instance to bundle into the artifact directory.</span>
+<span class="sd">        dtype: Serialization floating point precision (torch.bfloat16, torch.float16).</span>
+<span class="sd">        metadata: Custom metadata dictionary embedded into the surgery manifest.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Path to the verified output directory.</span>
+<span class="sd">    """</span>
+</code></pre></div>
+<h4 id="usage-example_2">Usage Example</h4>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">neuralops</span>
+
+<span class="c1"># Zero-config export for native vLLM serving</span>
+<span class="n">export_path</span> <span class="o">=</span> <span class="n">neuralops</span><span class="o">.</span><span class="n">export</span><span class="p">(</span>
+    <span class="n">transplanted_model</span><span class="p">,</span>
+    <span class="n">engine</span><span class="o">=</span><span class="s2">"vllm"</span><span class="p">,</span>
+    <span class="n">path</span><span class="o">=</span><span class="s2">"./vllm_chunk_gla_llama3"</span><span class="p">,</span>
+    <span class="n">tokenizer</span><span class="o">=</span><span class="n">tokenizer</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Output directory is directly loadable by vLLM:</span>
+<span class="c1"># vllm serve ./vllm_chunk_gla_llama3 --trust-remote-code</span>
+</code></pre></div>
+<hr />
+<h2 id="section-2-high-throughput-serving-inference-engine-integration">Section 2: High-Throughput Serving &amp; Inference Engine Integration</h2>
+<h3 id="21-native-vllm-v1v2-engine-integration-no-external-forks">2.1 Native vLLM v1/v2 Engine Integration (No External Forks)</h3>
+<h4 id="the-problem-kv-cache-fragmentation-vs-subquadratic-recurrent-state-tables">The Problem: KV-Cache Fragmentation vs. Subquadratic Recurrent State Tables</h4>
+<p>Standard vLLM serving manages autoregressive decoding memory via <code>PagedAttention</code> and <code>BlockSpaceManager</code>:
+- Fixed-size memory blocks (typically <span class="arithmatex">\(B_{\text{size}} = 16\)</span> tokens) store Key and Value tensors for each head: <span class="arithmatex">\(\mathbf{K}_{\text{block}}, \mathbf{V}_{\text{block}} \in \mathbb{R}^{B_{\text{size}} \times H \times D}\)</span>.
+- As generation progresses to context length <span class="arithmatex">\(L = 32{,}768\)</span>, each sequence consumes <span class="arithmatex">\(\lceil 32768 / 16 \rceil = 2{,}048\)</span> physical blocks. For a 70B model with GQA (<span class="arithmatex">\(H_{\text{kv}} = 8, D = 128, 80\text{ layers}\)</span>), this requires <strong><span class="arithmatex">\(17.18\,\text{GB}\)</span> of VRAM per concurrent sequence</strong>, severely limiting serving concurrency.</p>
+<p>In contrast, linear attention mechanisms and recurrent state-space models (Chunk GLA, RetNet, DeltaNet, Mamba-2, RWKV-6, HGRN-2) update a <strong>fixed-size recurrent state matrix</strong> <span class="arithmatex">\(\mathbf{S}_t\)</span>:
+$<span class="arithmatex">\(\mathbf{S}_t = \alpha_t \mathbf{S}_{t-1} + \mathbf{k}_t^\top \mathbf{v}_t, \quad \mathbf{S}_t \in \mathbb{R}^{H \times D_k \times D_v}\)</span>$
+Because the state dimension is strictly independent of sequence length <span class="arithmatex">\(L\)</span>, memory consumption is <span class="arithmatex">\(\mathcal{O}(1)\)</span> per sequence. Storing <span class="arithmatex">\(\mathbf{S}_t\)</span> (<span class="arithmatex">\(H=32, D_k=128, D_v=128, \text{BF16}\)</span>) across 32 layers requires only <strong><span class="arithmatex">\(33.55\,\text{MB}\)</span> total memory per sequence</strong>—a <strong><span class="arithmatex">\(512\times\)</span> memory reduction</strong> over 32k context.</p>
+<h4 id="architectural-bridge-in-tree-attentionbackend-registration">Architectural Bridge: In-Tree <code>AttentionBackend</code> Registration</h4>
+<p>vLLM provides an extensible attention backend registry via <code>vllm.attention.backends.abstract.AttentionBackend</code>. NeuralOps v1.7 implements <code>NeuralOpsAttentionBackend</code> to hook directly into vLLM's dispatcher without external forks or binary patches.</p>
+<div class="highlight"><pre><span></span><code>       vLLM ModelRunner Forward Pass
+                     │
+                     ▼
+       Attention Backend Selector
+                     │
+         ┌───────────┴───────────┐
+         ▼                       ▼
+ Standard Softmax Layers    NeuralOps Hybrid / Linear Layers
+   (FlashAttention /          (NeuralOpsAttentionBackend)
+    PagedAttention v2)                   │
+                                         ▼
+                             Execution Phase Router
+                                         │
+                         ┌───────────────┴───────────────┐
+                         ▼                               ▼
+                 [Prefill Phase]                 [Decode Phase]
+              Chunk-Parallel Triton           Fused Recurrent Step
+             Kernel (chunk_gla_fwd)          CUDA/Triton Kernel
+                        │                               │
+                        ▼                               ▼
+              Writes terminal state           Reads &amp; updates single
+              into PagedStateTable            recurrent state slot in-place
+</code></pre></div>
+<h4 id="concrete-class-architecture-registration-interface">Concrete Class Architecture &amp; Registration Interface</h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># Location: neuralops/integrations/vllm/backend.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">vllm.attention.backends.abstract</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttentionBackend</span><span class="p">,</span> <span class="n">AttentionImpl</span><span class="p">,</span> <span class="n">AttentionMetadata</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuralOpsvLLMMetadata</span><span class="p">(</span><span class="n">AttentionMetadata</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Metadata container for NeuralOps hybrid linear/recurrent attention in vLLM."""</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_prefill_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_decode_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">slot_mapping</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">state_page_tables</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">seq_lens</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">is_prompt</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">max_context_len</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_prefill_tokens</span> <span class="o">=</span> <span class="n">num_prefill_tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_decode_tokens</span> <span class="o">=</span> <span class="n">num_decode_tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slot_mapping</span> <span class="o">=</span> <span class="n">slot_mapping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_page_tables</span> <span class="o">=</span> <span class="n">state_page_tables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq_lens</span> <span class="o">=</span> <span class="n">seq_lens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_prompt</span> <span class="o">=</span> <span class="n">is_prompt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_context_len</span> <span class="o">=</span> <span class="n">max_context_len</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuralOpsvLLMImpl</span><span class="p">(</span><span class="n">AttentionImpl</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Execution implementation invoked by vLLM forward passes."""</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_heads</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">head_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">num_kv_heads</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">state_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">attention_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"chunk_gla"</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span> <span class="o">=</span> <span class="n">num_heads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head_size</span> <span class="o">=</span> <span class="n">head_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_kv_heads</span> <span class="o">=</span> <span class="n">num_kv_heads</span> <span class="ow">or</span> <span class="n">num_heads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_dim</span> <span class="o">=</span> <span class="n">state_dim</span> <span class="ow">or</span> <span class="n">head_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attention_type</span> <span class="o">=</span> <span class="n">attention_type</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">kv_cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>  <span class="c1"># PagedStateTable memory pool</span>
+        <span class="n">attn_metadata</span><span class="p">:</span> <span class="n">NeuralOpsvLLMMetadata</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">attn_metadata</span><span class="o">.</span><span class="n">is_prompt</span><span class="p">:</span>
+            <span class="c1"># Prefill Phase: Route to unified 2D-tiled Chunk-Parallel Triton Kernel</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">neuralops.ops.triton.chunk_gla</span><span class="w"> </span><span class="kn">import</span> <span class="n">chunk_gla_fwd</span>
+            <span class="n">output</span><span class="p">,</span> <span class="n">terminal_states</span> <span class="o">=</span> <span class="n">chunk_gla_fwd</span><span class="p">(</span>
+                <span class="n">q</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+            <span class="p">)</span>
+            <span class="c1"># Scatter terminal states to paged state table via slot_mapping</span>
+            <span class="k">if</span> <span class="n">kv_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">kv_cache</span><span class="o">.</span><span class="n">scatter_add_</span><span class="p">(</span>
+                    <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">index</span><span class="o">=</span><span class="n">attn_metadata</span><span class="o">.</span><span class="n">slot_mapping</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                    <span class="n">src</span><span class="o">=</span><span class="n">terminal_states</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">output</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Decode Phase: Route to Fused Recurrent Step Kernel</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">neuralops.ops.cuda.recurrent_gla_step</span><span class="w"> </span><span class="kn">import</span> <span class="n">recurrent_gla_step_forward</span>
+            <span class="k">return</span> <span class="n">recurrent_gla_step_forward</span><span class="p">(</span>
+                <span class="n">q</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                <span class="n">k</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+                <span class="n">v</span><span class="o">=</span><span class="n">value</span><span class="p">,</span>
+                <span class="n">state_pool</span><span class="o">=</span><span class="n">kv_cache</span><span class="p">,</span>
+                <span class="n">page_table</span><span class="o">=</span><span class="n">attn_metadata</span><span class="o">.</span><span class="n">state_page_tables</span><span class="p">,</span>
+                <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span>
+            <span class="p">)</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuralOpsAttentionBackend</span><span class="p">(</span><span class="n">AttentionBackend</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Registered vLLM AttentionBackend for NeuralOps subquadratic architectures."""</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_name</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"NEURALOPS_HYBRID"</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_impl_cls</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">NeuralOpsvLLMImpl</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">NeuralOpsvLLMImpl</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_metadata_cls</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">NeuralOpsvLLMMetadata</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">NeuralOpsvLLMMetadata</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_kv_cache_shape</span><span class="p">(</span>
+        <span class="n">num_blocks</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_kv_heads</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">head_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="c1"># Allocates fixed recurrent state frames: [num_pages, num_heads, head_dim, state_dim]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">num_blocks</span><span class="p">,</span> <span class="n">num_kv_heads</span><span class="p">,</span> <span class="n">head_size</span><span class="p">,</span> <span class="n">head_size</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_builder_cls</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">neuralops.integrations.vllm.metadata_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">NeuralOpsMetadataBuilder</span>
+        <span class="k">return</span> <span class="n">NeuralOpsMetadataBuilder</span>
+</code></pre></div>
+<h4 id="recurrent-state-allocation-in-vllm-blockspacemanager">Recurrent State Allocation in vLLM <code>BlockSpaceManager</code></h4>
+<p>To integrate subquadratic recurrent states seamlessly into vLLM without modifying the scheduler:
+1. <strong>Single-Page Allocation Contract:</strong> When sequence <span class="arithmatex">\(s\)</span> is created, <code>BlockSpaceManager</code> allocates exactly <strong>1 physical block</strong> (<span class="arithmatex">\(B_{\text{size}} = 1\)</span>) to hold the per-sequence recurrent state matrix <span class="arithmatex">\(\mathbf{S}\)</span>.
+2. <strong>Zero-Copy Sequence Forking (CoW):</strong> For parallel speculative decoding, beam search, or tree-of-thought sampling:
+   - Calling <code>fork_sequence()</code> clones the page table entry and increments the physical block reference count in <code>PagedStateTable.ref_counts</code>.
+   - When a sequence step writes a state mutation, <code>copy_on_write()</code> allocates a new physical state page frame only if <code>ref_count &gt; 1</code>.
+3. <strong>Certified Zero-Drift Reclamation:</strong> Upon sequence completion, <code>free_sequence()</code> decrements reference counts. Zero-referenced blocks return to <code>free_pages</code>. Continuous batching benchmarks certify <strong>0.0000 MB memory drift</strong> across 10,000+ continuous sequences.</p>
+<hr />
+<h3 id="22-sglang-native-radixattention-integration">2.2 SGLang Native RadixAttention Integration</h3>
+<h4 id="the-challenge-prefix-sharing-in-autoregressive-serving">The Challenge: Prefix Sharing in Autoregressive Serving</h4>
+<p>In multi-turn chat dialogues, agentic loops, and few-shot reasoning workflows, sequences share extensive common prefixes (e.g., system prompts of 2k-8k tokens). SGLang accelerates these workloads via <code>RadixAttention</code>, using a Radix Trie to cache and reuse token KV activations across requests.</p>
+<p>For quadratic Softmax attention, sharing prompt prefixes requires retaining the raw token KV tensors:
+$<span class="arithmatex">\(\mathbf{K}_{\text{prefix}} \in \mathbb{R}^{M \times H \times D}, \quad \mathbf{V}_{\text{prefix}} \in \mathbb{R}^{M \times H \times D}\)</span>$
+As prefixes grow and branch, KV memory footprint scales linearly with prefix length.</p>
+<h4 id="the-breakthrough-radix-recurrent-state-prefix-caching">The Breakthrough: Radix Recurrent State Prefix Caching</h4>
+<p>Because linear attention operators satisfy the associative property, the cumulative context of any token sequence <span class="arithmatex">\(P = [x_1, x_2, \dots, x_M]\)</span> is uniquely compressed into the terminal recurrent state <span class="arithmatex">\(\mathbf{S}_M\)</span>:
+$<span class="arithmatex">\(\mathbf{S}_M = \sum_{t=1}^M \left(\prod_{j=t+1}^M \lambda_j\right) \mathbf{k}_t^\top \mathbf{v}_t\)</span>$</p>
+<p>NeuralOps v1.7 introduces <strong>Radix Recurrent State Prefix Caching</strong> in <code>neuralops.integrations.sglang.radix_recurrent</code>:
+1. <strong>Trie Node Representation:</strong> Each node in the Radix Trie represents a token sequence edge and caches the <strong>terminal state matrix</strong> <span class="arithmatex">\(\mathbf{S}_{\text{node}} \in \mathbb{R}^{H \times D_k \times D_v}\)</span>.
+2. <strong>Longest Prefix Matching:</strong> When a new prompt <span class="arithmatex">\(X = [x_1, \dots, x_N]\)</span> arrives, <code>match_prefix()</code> traverses the Radix Trie to find the deepest matching node <span class="arithmatex">\(v\)</span> representing prefix <span class="arithmatex">\(x_{1:M}\)</span> (<span class="arithmatex">\(M \le N\)</span>).
+3. <strong>Zero-Compute Prefix Skip:</strong>
+   - The engine retrieves cached terminal state <span class="arithmatex">\(\mathbf{S}_M\)</span> from node <span class="arithmatex">\(v\)</span>.
+   - <strong>Prefill computation for tokens <span class="arithmatex">\(x_{1:M}\)</span> is completely skipped.</strong>
+   - Suffix tokens <span class="arithmatex">\(x_{M+1:N}\)</span> are processed using the chunk-parallel kernel initialized with <span class="arithmatex">\(\mathbf{S}_0 = \mathbf{S}_M\)</span>.
+4. <strong>Dynamic Edge Splitting:</strong> When an incoming sequence partially matches an existing trie edge at index <span class="arithmatex">\(j &lt; M\)</span>, the node splits into:
+   - A parent node storing prefix tokens <span class="arithmatex">\(x_{1:j}\)</span> and intermediate state <span class="arithmatex">\(\mathbf{S}_j\)</span>.
+   - A child branch retaining suffix tokens <span class="arithmatex">\(x_{j+1:M}\)</span> and final state <span class="arithmatex">\(\mathbf{S}_M\)</span>.
+5. <strong>Quantitative Speedup:</strong> Prefill latency scales as <span class="arithmatex">\(\mathcal{O}(N - M)\)</span> rather than <span class="arithmatex">\(\mathcal{O}(N)\)</span>. For multi-turn chats with 4k system prompts and 200-token user questions, Time-To-First-Token (TTFT) drops by <strong><span class="arithmatex">\(4.2\times\)</span></strong>, and HBM prefix cache memory footprint is reduced by <strong><span class="arithmatex">\(98.7\%\)</span></strong>.</p>
+<div class="highlight"><pre><span></span><code>                Radix Recurrent Prefix Trie
+                           Root
+                            │
+               ["System Prompt (4096 tokens)"]
+                            │
+               ┌────────────┴────────────┐
+               ▼                         ▼
+          Node A: State S_A        Node B: State S_B
+          [User Turn 1: "Hi"]     [User Turn 1: "Code"]
+               │
+               ▼
+          Node C: State S_C
+          [User Turn 2: "Help"]
+</code></pre></div>
+<hr />
+<h2 id="section-3-post-surgery-healing-training-engine">Section 3: Post-Surgery Healing &amp; Training Engine</h2>
+<h3 id="31-multi-gpu-distributed-distillation">3.1 Multi-GPU Distributed Distillation</h3>
+<p>To scale post-surgery recovery on models ranging from 8B to 70B parameters, NeuralOps v1.7 introduces native integration with <strong>PyTorch Fully Sharded Data Parallelism (FSDP2)</strong> and <strong>Megatron-LM Tensor Parallelism (TP)</strong>.</p>
+<h4 id="fsdp2-integration-architecture">FSDP2 Integration Architecture</h4>
+<p>NeuralOps v1.7 leverages PyTorch 2.4+ <code>torch.distributed.fsdp.fully_shard</code> with per-parameter sharding and <code>DTensor</code> representation:
+- <strong>Zero Redundant Memory:</strong> Model parameters, gradients, and optimizer states are sharded uniformly across data-parallel ranks.
+- <strong>Frozen Teacher Invariant:</strong> The teacher model is sharded under <code>eval()</code> mode with <code>requires_grad=False</code>. Teacher activations are computed in <code>torch.no_grad()</code> contexts and immediately streamed to student loss collectors, eliminating backward memory allocation.
+- <strong>Selective Sharding Granularity:</strong> Hybrid attention blocks are sharded at the sub-layer level, ensuring custom fused recurrent operators receive local tensor shards directly matching CUDA stream contexts.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Location: neuralops/distributed/fsdp2.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp</span><span class="w"> </span><span class="kn">import</span> <span class="n">fully_shard</span><span class="p">,</span> <span class="n">MixedPrecisionPolicy</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">configure_fsdp2_distillation</span><span class="p">(</span>
+    <span class="n">student_model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">teacher_model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">mp_policy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MixedPrecisionPolicy</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Shard student and frozen teacher models using PyTorch FSDP2 for memory-optimal distillation.</span>
+<span class="sd">    """</span>
+    <span class="n">mp_policy</span> <span class="o">=</span> <span class="n">mp_policy</span> <span class="ow">or</span> <span class="n">MixedPrecisionPolicy</span><span class="p">(</span>
+        <span class="n">param_dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">,</span>
+        <span class="n">reduce_dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Shard student layers</span>
+    <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">student_model</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+        <span class="n">fully_shard</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">mp_policy</span><span class="o">=</span><span class="n">mp_policy</span><span class="p">)</span>
+    <span class="n">fully_shard</span><span class="p">(</span><span class="n">student_model</span><span class="p">,</span> <span class="n">mp_policy</span><span class="o">=</span><span class="n">mp_policy</span><span class="p">)</span>
+
+    <span class="c1"># Shard frozen teacher layers (zero gradient buffers)</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">teacher_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+        <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">teacher_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">teacher_model</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+        <span class="n">fully_shard</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">mp_policy</span><span class="o">=</span><span class="n">mp_policy</span><span class="p">)</span>
+    <span class="n">fully_shard</span><span class="p">(</span><span class="n">teacher_model</span><span class="p">,</span> <span class="n">mp_policy</span><span class="o">=</span><span class="n">mp_policy</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">student_model</span><span class="p">,</span> <span class="n">teacher_model</span>
+</code></pre></div>
+<h4 id="megatron-lm-tensor-parallelism-tp-context-parallelism-cp-hooks">Megatron-LM Tensor Parallelism (TP) &amp; Context Parallelism (CP) Hooks</h4>
+<p>For large-scale clusters, hybrid linear attention modules must partition computation across TP ranks:
+1. <strong>Column/Row Linear Splitting:</strong>
+   - Input QKV projections are split column-wise: <span class="arithmatex">\(W_Q = [W_{Q,1} \mid \dots \mid W_{Q,P}]\)</span>.
+   - Output projection is split row-wise with an All-Reduce collective: <span class="arithmatex">\(W_O = [W_{O,1}^\top \mid \dots \mid W_{O,P}^\top]^\top\)</span>.
+2. <strong>Head-Sharded Recurrent States:</strong>
+   - The recurrent state matrix <span class="arithmatex">\(\mathbf{S} \in \mathbb{R}^{H \times D_k \times D_v}\)</span> is partitioned strictly along the head dimension <span class="arithmatex">\(H\)</span>.
+   - Each TP rank processes <span class="arithmatex">\(H / P\)</span> heads independently.
+   - <strong>Zero inter-rank communication is required during the recurrent forward scan or backward pass</strong>, enabling linear scaling across TP sizes up to <span class="arithmatex">\(P=8\)</span>.
+3. <strong>Ring Context Parallelism (CP):</strong>
+   - For ultra-long contexts (<span class="arithmatex">\(L \ge 128\text{k}\)</span>), <code>neuralops.distributed.context_parallel</code> shards sequence tokens across CP ranks.
+   - Recurrent boundary states are exchanged using asynchronous P2P ring communication (<code>dist.isend</code>, <code>dist.irecv</code>), overlapping state transmission with chunk compute.</p>
+<h4 id="distributed-6-pillar-distillation-loss-formulation">Distributed 6-Pillar Distillation Loss Formulation</h4>
+<p>During distributed healing, each rank computes localized loss components coordinated by <code>MultiLevelDistillationLoss</code>:</p>
+<div class="arithmatex">\[\mathcal{L}_{\text{total}} = \lambda_{\text{KD}} \mathcal{L}_{\text{KD}} + \lambda_{\text{CKA}} \mathcal{L}_{\text{CKA}} + \lambda_{\text{Attn}} \mathcal{L}_{\text{Attn}} + \lambda_{\text{Cos}} \mathcal{L}_{\text{Cos}} + \lambda_{\text{Stiefel}} \mathcal{L}_{\text{Stiefel}} + \lambda_{\text{Ent}} \mathcal{L}_{\text{Ent}}\]</div>
+<ol>
+<li><strong>Logit Divergence (<span class="arithmatex">\(\mathcal{L}_{\text{KD}}\)</span>):</strong> Decoupled classical logit matching (TCKD + NCKD) with fused Triton kernel execution.</li>
+<li><strong>Centered Kernel Alignment (<span class="arithmatex">\(\mathcal{L}_{\text{CKA}}\)</span>):</strong> Exact rotation-invariant linear CKA similarity between student and teacher hidden representations.</li>
+<li><strong>Attention Distribution Parity (<span class="arithmatex">\(\mathcal{L}_{\text{Attn}}\)</span>):</strong> MiniLM self-attention Gram matrix alignment across heterogeneous head counts.</li>
+<li><strong>Angular Directional Alignment (<span class="arithmatex">\(\mathcal{L}_{\text{Cos}}\)</span>):</strong> Cosine embedding and L2 feature norm matching across transformer block outputs.</li>
+<li><strong>Stiefel Manifold Orthogonality (<span class="arithmatex">\(\mathcal{L}_{\text{Stiefel}}\)</span>):</strong> Riemannian tangent-space projections ensuring adapter factor orthogonality:
+   $<span class="arithmatex">\(\mathcal{L}_{\text{Stiefel}} = \left\| \mathbf{W}_{\text{proj}}^\top \mathbf{W}_{\text{proj}} - \mathbf{I} \right\|_F^2 &lt; 10^{-4}\)</span>$</li>
+<li><strong>Entropy &amp; Dynamic Stability (<span class="arithmatex">\(\mathcal{L}_{\text{Ent}}\)</span>):</strong> Log-barrier penalty preventing gating saturation in hybrid routing layers.</li>
+</ol>
+<hr />
+<h3 id="32-automated-pareto-frontier-sweeper">3.2 Automated Pareto-Frontier Sweeper</h3>
+<h4 id="objective-mathematical-formulation">Objective &amp; Mathematical Formulation</h4>
+<p>Replacing attention layers or compressing weights with a uniform configuration across all layers is fundamentally suboptimal. Early layers typically capture local syntactic dependencies (highly compressible via linear attention), while middle and deep layers capture subtle long-range semantics requiring higher rank or selective quadratic attention retention.</p>
+<p>The <strong>Pareto-Frontier Sweeper</strong> automates the exploration of optimal architectural tradeoffs:</p>
+<div class="arithmatex">\[\min_{\mathbf{a}, \mathbf{r}} \quad \mathcal{L}_{\text{distill}}(\mathcal{M}(\mathbf{a}, \mathbf{r}))$$
+$$\text{subject to} \quad \text{Latency}(\mathcal{M}(\mathbf{a}, \mathbf{r})) \le T_{\max}, \quad \text{Memory}(\mathcal{M}(\mathbf{a}, \mathbf{r})) \le M_{\max}\]</div>
+<p>where:
+- <span class="arithmatex">\(\mathbf{a} \in \{0, 1\}^L\)</span> indicates whether layer <span class="arithmatex">\(l\)</span> is transplanted to linear attention (<span class="arithmatex">\(a_l = 1\)</span>) or retained as quadratic Softmax (<span class="arithmatex">\(a_l = 0\)</span>).
+- <span class="arithmatex">\(\mathbf{r} \in \mathbb{N}^L\)</span> specifies the low-rank SVD compression rank <span class="arithmatex">\(r_l \in [r_{\min}, r_{\max}]\)</span> assigned to layer <span class="arithmatex">\(l\)</span>.</p>
+<h4 id="layerwise-sensitivity-profiling">Layerwise Sensitivity Profiling</h4>
+<p>The sweeper executes a rapid pre-sweep profiling step on calibration tokens:
+1. <strong>Empirical Fisher Information Matrix (FIM):</strong>
+   $<span class="arithmatex">\(F_{ii}^{(l)} = \mathbb{E}_{x \sim \mathcal{D}_{\text{calib}}} \left[ \left(\frac{\partial \log p(x)}{\partial \theta_i^{(l)}}\right)^2 \right]\)</span>$
+2. <strong>Hessian Eigenspectrum Trace:</strong> Computes top eigenvalue <span class="arithmatex">\(\lambda_{\max}^{(l)}\)</span> and trace <span class="arithmatex">\(\text{Tr}(\mathbf{H}^{(l)})\)</span> via Hutchinson randomized trace estimation.
+3. <strong>Singular Value Energy Decay:</strong> Evaluates the cumulative spectral decay curve:
+   $<span class="arithmatex">\(E_k^{(l)} = \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{i=1}^d \sigma_i^2}\)</span>$</p>
+<h4 id="search-algorithms">Search Algorithms</h4>
+<ul>
+<li><strong>Dynamic Programming Knapsack:</strong> For linear compression rank allocation under strict latency constraints.</li>
+<li><strong>Non-Dominated Sorting Genetic Algorithm (NSGA-II):</strong> For joint optimization of hybrid layer placement and rank allocation, producing an explicit non-dominated Pareto frontier:
+  $<span class="arithmatex">\(\mathcal{P}^* = \left\{ (\mathcal{M}_i, \text{Accuracy}_i, \text{Latency}_i, \text{Memory}_i) \right\}\)</span>$</li>
+</ul>
+<h4 id="automated-artifact-generation">Automated Artifact Generation</h4>
+<p>The sweeper outputs publication-grade visualization artifacts and configuration manifests:
+- <code>pareto_frontier.json</code>: Complete dictionary of Pareto-optimal configurations.
+- <code>pareto_curve.pdf</code> / <code>pareto_curve.svg</code>: High-resolution vector plots graphing Perplexity vs. Serving Throughput (tok/s).
+- Direct export hook: <code>neuralops.export(best_candidate, engine='vllm')</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Location: neuralops/analysis/pareto_sweeper.py</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParetoFrontierSweeper</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Automated Pareto-optimal hybrid attention and rank distribution explorer."""</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+        <span class="n">calibration_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+        <span class="n">target_attention</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"chunk_gla"</span><span class="p">,</span>
+        <span class="n">compression_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"hnc_svd"</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="o">=</span> <span class="n">calibration_loader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_attention</span> <span class="o">=</span> <span class="n">target_attention</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compression_method</span> <span class="o">=</span> <span class="n">compression_method</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">sweep</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">latency_budget_ms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">memory_budget_mb</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_candidates</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">24</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""Executes multi-objective search and returns Pareto-optimal configurations."""</span>
+        <span class="o">...</span>
+</code></pre></div>
+<hr />
+<h2 id="section-4-step-by-step-implementation-sequence-quality-gates">Section 4: Step-by-Step Implementation Sequence &amp; Quality Gates</h2>
+<p>The transition to v1.7 is structured into four chronologically gated implementation phases. Each phase specifies concrete module locations, deliverables, and mandatory verification gates.</p>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────────────────────────┐
+│                       CHRONOLOGICAL ROADMAP TIMELINE                        │
+├───────────────────┬───────────────────┬───────────────────┬─────────────────┤
+│      Phase 1      │      Phase 2      │      Phase 3      │     Phase 4     │
+│   High-Level API  │  Native Serving   │ Distributed Engine│  Packaging &amp;    │
+│   &amp; Ergonomics    │   vLLM &amp; SGLang   │ &amp; Pareto Sweeper  │  PyPI Release   │
+│   (Weeks 1 - 3)   │   (Weeks 4 - 7)   │  (Weeks 8 - 11)   │ (Weeks 12 - 14) │
+└───────────────────┴───────────────────┴───────────────────┴─────────────────┘
+</code></pre></div>
+<h3 id="phase-1-high-level-unified-apis-ergonomics-weeks-1-3">Phase 1: High-Level Unified APIs &amp; Ergonomics (Weeks 1 - 3)</h3>
+<h4 id="deliverables-module-paths">Deliverables &amp; Module Paths</h4>
+<ol>
+<li><code>neuralops/api.py</code>:</li>
+<li>Implement <code>neuralops.transplant()</code> with automated architecture scanning, layer budgeting, Ridge subspace initialization, and micro-healing.</li>
+<li>Implement <code>neuralops.compress()</code> with dynamic rank allocation and covariance whitening.</li>
+<li>Implement <code>neuralops.export()</code> with format routing and atomic staging.</li>
+<li><code>neuralops/surgery/transplant.py</code>:</li>
+<li>Implement <code>TransplantPipeline</code> encapsulating <code>UniversalArchitectureScanner</code>, <code>UniversalAttentionBridge</code>, and <code>SidecarGateBranch</code>.</li>
+<li><code>neuralops/compression/deep_compress.py</code>:</li>
+<li>Unify matrix decomposition, parameter allocation, and in-place <code>SVDLinear</code> substitution.</li>
+<li><code>neuralops/export/unified.py</code>:</li>
+<li>Unified export dispatcher generating atomic staging directories, <code>SurgeryManifest</code> digests, and Hugging Face <code>auto_map</code> configs.</li>
+</ol>
+<h4 id="quality-gate-1">Quality Gate 1</h4>
+<ul>
+<li><code>ruff check neuralops/</code> passes with 0 warnings.</li>
+<li><code>python scripts/utils/audit_dead_code.py</code> returns 0 issues found.</li>
+<li>CPU test suite <code>tests/api/test_unified_api.py</code> passes 100% without GPU dependencies.</li>
+<li>Zero-Fake verification: Attempting to export an unquantized model with <code>format='gguf'</code> or <code>format='trt'</code> strictly raises <code>NotImplementedError</code>.</li>
+</ul>
+<hr />
+<h3 id="phase-2-native-serving-engine-bridges-vllm-sglang-weeks-4-7">Phase 2: Native Serving Engine Bridges (vLLM &amp; SGLang) (Weeks 4 - 7)</h3>
+<h4 id="deliverables-module-paths_1">Deliverables &amp; Module Paths</h4>
+<ol>
+<li><code>neuralops/integrations/vllm/backend.py</code>:</li>
+<li>Implement <code>NeuralOpsAttentionBackend</code>, <code>NeuralOpsvLLMImpl</code>, and <code>NeuralOpsvLLMMetadata</code>.</li>
+<li><code>neuralops/integrations/vllm/model_runner.py</code>:</li>
+<li>Implement custom attention dispatcher hook registering into vLLM without modifying external vLLM source code.</li>
+<li><code>neuralops/models/paged_state.py</code>:</li>
+<li>Complete <code>PagedStateTable</code> with reference-counted sequence forking (<code>fork_sequence()</code>), Copy-on-Write (<code>copy_on_write()</code>), and page recycling.</li>
+<li><code>neuralops/integrations/sglang/radix_recurrent.py</code>:</li>
+<li>Implement <code>RadixRecurrentTree</code> and <code>RadixRecurrentNode</code> caching terminal recurrent states <span class="arithmatex">\(\mathbf{S}_M\)</span> along prefix edges.</li>
+<li>Implement <code>match_prefix_with_state()</code> and dynamic edge splitting.</li>
+</ol>
+<h4 id="quality-gate-2">Quality Gate 2</h4>
+<ul>
+<li>vLLM attention backend registers successfully when <code>vllm</code> is installed; falls back cleanly with explicit informative warning if missing.</li>
+<li>Continuous batching verification: Run 10,000 synthetic request cycles through <code>PagedStateTable</code> and verify <strong><span class="arithmatex">\(0.0000\,\text{MB}\)</span> memory drift</strong>.</li>
+<li>Radix Trie verification: 100% prefix state parity between recomputed prefill and cached state retrieval (<code>max_diff &lt; 1e-4</code>).</li>
+</ul>
+<hr />
+<h3 id="phase-3-multi-gpu-distributed-distillation-pareto-sweeper-weeks-8-11">Phase 3: Multi-GPU Distributed Distillation &amp; Pareto Sweeper (Weeks 8 - 11)</h3>
+<h4 id="deliverables-module-paths_2">Deliverables &amp; Module Paths</h4>
+<ol>
+<li><code>neuralops/distributed/fsdp2.py</code>:</li>
+<li>Implement <code>configure_fsdp2_distillation()</code> supporting sharded student and frozen teacher execution with mixed precision policies.</li>
+<li><code>neuralops/distributed/megatron_hooks.py</code>:</li>
+<li>Implement column/row parallel linear projections and head-sharded recurrent attention scans with zero inter-rank communication.</li>
+<li><code>neuralops/analysis/pareto_sweeper.py</code>:</li>
+<li>Implement <code>ParetoFrontierSweeper</code>, empirical Fisher information profiling, and NSGA-II multi-objective optimization.</li>
+<li><code>neuralops/analysis/paper_plots.py</code>:</li>
+<li>Implement automated vector graphics generation for Pareto frontiers (<code>pareto_curve.pdf</code>, <code>pareto_curve.svg</code>).</li>
+</ol>
+<h4 id="quality-gate-3">Quality Gate 3</h4>
+<ul>
+<li>Distributed CPU tests pass using <code>torch.distributed</code> with <code>gloo</code> backend.</li>
+<li>Remote GPU verification on <code>taha@192.168.1.100</code>: Multi-GPU FSDP2 training run on 2+ GPUs confirms gradient synchronization and frozen teacher invariants.</li>
+<li>Pareto sweeper produces valid non-dominated frontiers with monotonic accuracy-latency tradeoffs.</li>
+</ul>
+<hr />
+<h3 id="phase-4-packaging-wheels-cicd-production-release-weeks-12-14">Phase 4: Packaging, Wheels, CI/CD &amp; Production Release (Weeks 12 - 14)</h3>
+<h4 id="packaging-binary-distribution-architecture">Packaging &amp; Binary Distribution Architecture</h4>
+<p>To ensure effortless installation across diverse environments without requiring local CUDA toolchains:
+1. <strong>PyPI Package Partitioning:</strong>
+   - <code>neuralops</code>: Pure Python package including standard PyTorch references and level-2 Triton JIT kernels. Installs on macOS, Linux, and Windows via <code>pip install neuralops</code>.
+   - <code>neuralops-cuda</code>: Optional binary distribution containing compiled C++ extensions (<code>.so</code>) for NVIDIA architectures.
+2. <strong><code>cibuildwheel</code> Matrix:</strong>
+   - Target Platforms: <code>manylinux2014_x86_64</code> and <code>manylinux2014_aarch64</code>.
+   - CUDA Versions: 12.1, 12.4, 12.6, 12.8.
+   - Target Architectures: SM 8.9 (Ada Lovelace / RTX 4090), SM 90 (Hopper / H100), SM 100 (Blackwell / B200).
+3. <strong>Automated CI/CD Pipeline:</strong>
+   - GitHub Actions workflow triggering on version tags <code>v1.7.*</code>.
+   - Automated dead code AST audit, documentation consistency check, and wheel integrity smoke tests.</p>
+<h4 id="quality-gate-4-final-release-gate">Quality Gate 4 (Final Release Gate)</h4>
+<ul>
+<li><code>python3 scripts/utils/audit_dead_code.py</code> <span class="arithmatex">\(\to\)</span> <strong>0 issues found</strong>.</li>
+<li>Invariant check: Canonical counts verified (131 attentions, 72 compressors, 26 Triton kernel modules, 114 native CUDA packages).</li>
+<li>Pre-release smoke test: <code>pip install neuralops[serving,cuda]</code> installs cleanly in an isolated virtual environment and passes <code>python -c "import neuralops; print(neuralops.__version__)"</code>.</li>
+</ul>
+<hr />
+<h2 id="section-5-migration-compatibility-guide-v160-to-v170">Section 5: Migration &amp; Compatibility Guide (v1.6.0 <span class="arithmatex">\(\to\)</span> v1.7.0)</h2>
+<p>NeuralOps v1.7 maintains strict backward compatibility with existing v1.6.0 workflows. All existing functional entrypoints remain fully operational, with forward aliases guiding users toward the modern unified interface.</p>
+<h3 id="api-evolution-syntax-comparison">API Evolution &amp; Syntax Comparison</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Capability</th>
+<th style="text-align: left;">v1.6.0 Legacy Pattern</th>
+<th style="text-align: left;">v1.7.0 Modern Pattern</th>
+<th style="text-align: left;">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Attention Replacement</strong></td>
+<td style="text-align: left;"><code>replace_attention(model, "chunk_gla")</code><br>+ manual Ridge calibration<br>+ manual <code>heal_replaced_model()</code></td>
+<td style="text-align: left;"><code>neuralops.transplant(model, target_attention="chunk_gla", calibration_dataset="fineweb-edu")</code></td>
+<td style="text-align: left;"><strong>Active One-Line</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Model Compression</strong></td>
+<td style="text-align: left;"><code>compress(model, method="hnc_svd", rank=32)</code></td>
+<td style="text-align: left;"><code>neuralops.compress(model, method="hnc_svd", target_ratio=0.5)</code></td>
+<td style="text-align: left;"><strong>Active One-Line</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Serving Export</strong></td>
+<td style="text-align: left;"><code>export_model(model, "./out", format="safetensors")</code><br>+ manual config creation</td>
+<td style="text-align: left;"><code>neuralops.export(model, engine="vllm", path="./out")</code></td>
+<td style="text-align: left;"><strong>Active One-Line</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>vLLM Registration</strong></td>
+<td style="text-align: left;"><code>register_neuralops_vllm_plugin()</code><br><em>(Failed closed with <code>IntegrationNotImplementedError</code>)</em></td>
+<td style="text-align: left;"><code>vllm serve ./exported_model --trust-remote-code</code><br><em>(Native custom AttentionBackend)</em></td>
+<td style="text-align: left;"><strong>Fully Functional</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Prefix Caching</strong></td>
+<td style="text-align: left;">Standalone <code>RadixPrefixNode</code></td>
+<td style="text-align: left;">Native SGLang <code>RadixRecurrentTree</code><br><em>(Automatic prefix state reuse)</em></td>
+<td style="text-align: left;"><strong>Fully Functional</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Distillation Training</strong></td>
+<td style="text-align: left;">Single-GPU <code>heal_replaced_model()</code></td>
+<td style="text-align: left;">Distributed <code>configure_fsdp2_distillation()</code><br>+ Megatron-LM TP hooks</td>
+<td style="text-align: left;"><strong>Multi-GPU Scaled</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="backward-compatibility-guarantees">Backward Compatibility Guarantees</h3>
+<ol>
+<li><strong>Existing Checkpoint Replay:</strong> Any model exported using v1.6.0 <code>save_surgical_checkpoint()</code> or <code>export_model()</code> remains 100% reloadable via <code>neuralops.load_exported_model()</code>.</li>
+<li><strong>Registry Invariance:</strong> No existing attention mechanism or compressor is renamed or removed. All 6 deprecated aliases in <code>neuralops.core.registry.DEPRECATED_ALIASES</code> remain active.</li>
+<li><strong>Fail-Closed Guarantees:</strong> Unimplemented third-party formats continue to fail closed with clear, actionable diagnostics, guaranteeing complete architectural honesty.</li>
+</ol>
+<hr />
+<p><em>End of Specification — NeuralOps v1.7 Systems, Surgery &amp; Deployment Roadmap</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,338 @@
+[
+  {
+    "module": "neuralops.attentions.adaptive.adaptive_span_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.adaptive.lola_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.dense.full_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.dense.zeros_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.fast_kernels.adasplash_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.hybrid.hybrid_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.hybrid.hybrid_local_kernel_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.hybrid.spectron_fp8_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.hybrid.split_head_hybrid_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.hybrid.tri_branch_hybrid_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.linear.spectron",
+    "error": "ModuleNotFoundError: No module named 'numpy'"
+  },
+  {
+    "module": "neuralops.attentions.modern.vig_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.modern.wgqa_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.sparse.adaptive_sparse_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.sparse.cluster_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.ssm.vspec",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.svd.adaptive_svd_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.svd.compressed_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.svd.compressed_mha_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.svd.lora_attention",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.attentions.svd.svd_compressed",
+    "error": "ModuleNotFoundError: No module named 'numpy'"
+  },
+  {
+    "module": "neuralops.compression_engine.experimental.flat_llm",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.experimental.hashed_net_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.experimental.lillama_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.experimental.roast_hashed_linear",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.kv_cache.cachenotes_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.kv_cache.kvtc_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.kv_cache.zerokv_neo_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.a3_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.come_compressor",
+    "error": "ModuleNotFoundError: No module named 'numpy'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.compot_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.drone_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.enlighten_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.frandi_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.grecodec_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.lsc_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.mgie_svd_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.mlorq_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.modegpt_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.oats_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.rpca_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.salr",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.sdrm_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.slim_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.soka_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.svd_llm_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.tomoe_compressor",
+    "error": "ModuleNotFoundError: No module named 'numpy'"
+  },
+  {
+    "module": "neuralops.compression_engine.low_rank.uniql_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.pruning.admm_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.pruning.admm_pruner",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.pruning.armor_pruner",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.pruning.bonsai_pruner",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.pruning.flap",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.pruning.mamba_shedder",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.pruning.proxsparse",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.pruning.sparsegpt",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.quantization.astro_quantizer",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.quantization.faq_quantizer",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.quantization.huffman_coder",
+    "error": "ModuleNotFoundError: No module named 'numpy'"
+  },
+  {
+    "module": "neuralops.compression_engine.quantization.kmeans_quantize",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.quantization.rotational_slicegpt_int4",
+    "error": "ModuleNotFoundError: No module named 'numpy'"
+  },
+  {
+    "module": "neuralops.compression_engine.quantization.slicegpt",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.quantization.slicegpt_pca",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.aa_svd_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.adaptive_ranks",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.adasvd_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.direct_svd",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.dobi_svd",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.dynamic_rank",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.entropy_budget_allocation",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.erc_svd",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.fwsvd_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.gfws_d_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.hybrid_svd_layer",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.optimal_subspace_projection",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.residual_svd_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.saes_svd_v2",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.subspace_projection",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.svd_linear",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.swift_svd",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.svd.swift_svd_act",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.tensor_decomp.kronecker_compressor",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.tensor_decomp.kronecker_tt_lora",
+    "error": "ModuleNotFoundError: No module named 'yaml'"
+  },
+  {
+    "module": "neuralops.compression_engine.tensor_decomp.tt_compressor",
+    "error": "ModuleNotFoundError: No module named 'numpy'"
+  }
+]

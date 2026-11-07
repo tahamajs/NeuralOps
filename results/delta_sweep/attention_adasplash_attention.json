@@ -1,0 +1,11 @@
+{
+  "module": "adasplash_attention",
+  "type": "attention",
+  "status": "ERROR",
+  "delta": null,
+  "student_ppl": null,
+  "duration_sec": 91.4,
+  "retries_used": 1,
+  "error": "exit=-15",
+  "timestamp": "2026-10-12 19:28:46"
+}

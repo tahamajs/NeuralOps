@@ -1,0 +1,107 @@
+{
+  "module_name": "rms_variance_match_bw",
+  "category": "triton_kernel",
+  "family": "memory_bandwidth",
+  "total_runs": 1,
+  "latest_version": "v1.3.7",
+  "latest_revision": 1,
+  "latest_git_sha": "2b6291376e",
+  "latest_timestamp": "2026-10-18T17:32:51.964826+00:00",
+  "latest_record": {
+    "record_id": "bf536df6205c347c",
+    "module_name": "rms_variance_match_bw",
+    "category": "triton_kernel",
+    "family": "memory_bandwidth",
+    "version_tag": "v1.3.7",
+    "revision": 1,
+    "status": "active",
+    "timestamp_utc": "2026-10-18T17:32:51.964826+00:00",
+    "git_commit_sha": "2b6291376e",
+    "generation_method": {
+      "algorithm": "Ada Lovelace L2/DRAM Bandwidth Benchmark",
+      "source_artifact": "results/benchmarks_llm_bandwidth_ada.json",
+      "regime": "DRAM-bound"
+    },
+    "experimental_setup": {
+      "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+      "config": "B=4, S=1024, H=4096",
+      "peak_bw_gbps": 256.0,
+      "l2_cache_mb": 32.0,
+      "dtype": "float16"
+    },
+    "metrics": {
+      "latency_triton_ms": 0.4345856030782064,
+      "latency_pytorch_ms": 2.866302998860677,
+      "speedup_x": 6.595485397027448,
+      "bandwidth_gbps": 231.63053558837063,
+      "saturation_pct": 90.48067796420727
+    },
+    "notes": "LLM Bandwidth Benchmark for rms_variance_match under B=4, S=1024, H=4096 (DRAM-bound)"
+  },
+  "active_records": [
+    {
+      "record_id": "bf536df6205c347c",
+      "module_name": "rms_variance_match_bw",
+      "category": "triton_kernel",
+      "family": "memory_bandwidth",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:32:51.964826+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Ada Lovelace L2/DRAM Bandwidth Benchmark",
+        "source_artifact": "results/benchmarks_llm_bandwidth_ada.json",
+        "regime": "DRAM-bound"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "config": "B=4, S=1024, H=4096",
+        "peak_bw_gbps": 256.0,
+        "l2_cache_mb": 32.0,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.4345856030782064,
+        "latency_pytorch_ms": 2.866302998860677,
+        "speedup_x": 6.595485397027448,
+        "bandwidth_gbps": 231.63053558837063,
+        "saturation_pct": 90.48067796420727
+      },
+      "notes": "LLM Bandwidth Benchmark for rms_variance_match under B=4, S=1024, H=4096 (DRAM-bound)"
+    }
+  ],
+  "history": [
+    {
+      "record_id": "bf536df6205c347c",
+      "module_name": "rms_variance_match_bw",
+      "category": "triton_kernel",
+      "family": "memory_bandwidth",
+      "version_tag": "v1.3.7",
+      "revision": 1,
+      "status": "active",
+      "timestamp_utc": "2026-10-18T17:32:51.964826+00:00",
+      "git_commit_sha": "2b6291376e",
+      "generation_method": {
+        "algorithm": "Ada Lovelace L2/DRAM Bandwidth Benchmark",
+        "source_artifact": "results/benchmarks_llm_bandwidth_ada.json",
+        "regime": "DRAM-bound"
+      },
+      "experimental_setup": {
+        "hardware": "NVIDIA GeForce RTX 4070 Laptop GPU (SM 8.9)",
+        "config": "B=4, S=1024, H=4096",
+        "peak_bw_gbps": 256.0,
+        "l2_cache_mb": 32.0,
+        "dtype": "float16"
+      },
+      "metrics": {
+        "latency_triton_ms": 0.4345856030782064,
+        "latency_pytorch_ms": 2.866302998860677,
+        "speedup_x": 6.595485397027448,
+        "bandwidth_gbps": 231.63053558837063,
+        "saturation_pct": 90.48067796420727
+      },
+      "notes": "LLM Bandwidth Benchmark for rms_variance_match under B=4, S=1024, H=4096 (DRAM-bound)"
+    }
+  ]
+}

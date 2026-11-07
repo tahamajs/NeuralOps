@@ -1,0 +1,51 @@
+================================================================================
+RUN SUMMARY: hybrid_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      131.63 M
+  Trainable params:  35.54 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        59875.9500
+  Post-KD PPL:       59875.9500
+  Stage 1 (KD) PPL:  59875.9500
+  Stage 2 (Self) PPL:59875.9500
+  KD Gain:           +0.00
+  Self Gain:         +0.00
+  Total Gain:        +0.00
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1653.1184
+  Recovery:          0.00%
+  Peak VRAM:         1189.35 MB
+  Train time:        0.00 s (Stage 1: 0.0s, Stage 2: 0.0s)
+  s/step:            0.0000
+  Loss (final):      0.0000
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.5153
+  Repetition-3:      0.4219
+  Train PPL:         20670.0400
+  Test PPL:          59875.9500
+  Overfit Gap:       39205.91
+  Latency (mean):    4950.09 ms
+  Latency (std):     9.36 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        347695032364
+
+TRAINING HISTORY (last 10 steps):

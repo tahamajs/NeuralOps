@@ -1,0 +1,3383 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/content/attentions/samba_moe/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>SambaMoE: Tri-Hybrid Sliding-Window Attention, Spectral Mamba SSM, and Token-Choice MoE - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sambamoe-tri-hybrid-sliding-window-attention-spectral-mamba-ssm-and-token-choice-moe" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SambaMoE: Tri-Hybrid Sliding-Window Attention, Spectral Mamba SSM, and Token-Choice MoE
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../codebase_architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../api/attentions/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    72 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Readiness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-executive-abstract-architectural-motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Executive Abstract &amp; Architectural Motivation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-mathematical-formulations-derivations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Mathematical Formulations &amp; Derivations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Mathematical Formulations &amp; Derivations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-stage-1-samba-m3-local-global-hybrid-fusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 Stage 1: SAMBA-M3 Local-Global Hybrid Fusion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-stage-2-reapmoe-sparse-token-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 Stage 2: REAPMoE Sparse Token Routing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-step-by-step-tensor-execution-trace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Step-by-Step Tensor Execution Trace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-analytical-complexity-hardware-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Analytical Complexity &amp; Hardware Profiling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Analytical Complexity &amp; Hardware Profiling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-flops-computation-breakdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 FLOPs Computation Breakdown
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-macs-memory-footprint-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 MACs &amp; Memory Footprint Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-asymptotic-scalability-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 Asymptotic Scalability Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-failure-modes-rank-collapse-edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Failure Modes, Rank Collapse &amp; Edge Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Failure Modes, Rank Collapse &amp; Edge Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-sequential-iterative-expert-masking-overhead" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 Sequential Iterative Expert Masking Overhead
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-window-receptive-field-starvation-and-long-range-recall-degradation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 Window Receptive Field Starvation and Long-Range Recall Degradation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-router-over-concentration-gradient-starvation-and-expert-collapse" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 Router Over-Concentration, Gradient Starvation, and Expert Collapse
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-hardware-acceleration-blueprint-triton-kernel-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Hardware Acceleration Blueprint &amp; Triton Kernel Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Hardware Acceleration Blueprint &amp; Triton Kernel Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-triton-hardware-acceleration-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 Triton Hardware Acceleration Layout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-implementation-code-blueprint-triton-sliding-window-flashattention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 Implementation Code Blueprint (Triton Sliding-Window FlashAttention)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-hardware-acceleration-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 Hardware Acceleration Impact
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-next-generation-innovations-synthesis-opportunities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Next-Generation Innovations &amp; Synthesis Opportunities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-empirical-benchmark-results-comparative-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Empirical Benchmark Results &amp; Comparative Profiling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Empirical Benchmark Results &amp; Comparative Profiling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-language-modeling-quality-throughput" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 Language Modeling Quality &amp; Throughput
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-sequence-length-scaling-profiling-l512-to-8192" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 Sequence Length Scaling Profiling (\(L=512 \to 8192\))
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="sambamoe-tri-hybrid-sliding-window-attention-spectral-mamba-ssm-and-token-choice-moe">SambaMoE: Tri-Hybrid Sliding-Window Attention, Spectral Mamba SSM, and Token-Choice MoE</h1>
+<h2 id="1-executive-abstract-architectural-motivation">1. Executive Abstract &amp; Architectural Motivation</h2>
+<p>Modern long-context architectures face a fundamental tension: dense Multi-Head Self-Attention (MHSA) models capture high-precision local syntactic patterns but scale quadratically <span class="arithmatex">\(\mathcal{O}(L^2)\)</span>, whereas continuous-time State-Space Models (SSMs) like Mamba process global sequence contexts with linear complexity <span class="arithmatex">\(\mathcal{O}(L)\)</span> but struggle with precise associative recall. Furthermore, standard Feed-Forward Networks (FFNs) apply static parameter computations equally to all tokens, wasting parameter capacity.</p>
+<p><strong>SambaMoE (Sliding-window Attention, Mamba SSM, and Mixture-of-Experts)</strong> unifies these three paradigms into a single, cohesive sub-quadratic layer block. SambaMoE synthesizes sequence representations across two tightly integrated sequential stages. In the first phase—the SAMBA-M3 Hybrid Stage—the architecture couples local sliding-window multi-head attention operating over a constrained receptive field <span class="arithmatex">\(W\)</span> with continuous-time spectral state-space recurrence (Mamba SSM) organized within a pre-layer normalized dual-residual pipeline. Subsequently, the REAPMoE Sparse Stage refines these composite sequence representations through a Token-Choice Top-<span class="arithmatex">\(k\)</span> Mixture-of-Experts sub-network, routing each token dynamically to <span class="arithmatex">\(k\)</span> active experts selected from an <span class="arithmatex">\(E\)</span>-expert pool.</p>
+<p>By combining <span class="arithmatex">\(W\)</span>-constrained local attention, linear global SSM recurrence, and sparse conditional expert computation, SambaMoE achieves strict <span class="arithmatex">\(\mathcal{O}(L \cdot D \cdot (W + d_{\text{state}} + k \cdot d_{\text{ffn}}))\)</span> linear scaling with sequence length <span class="arithmatex">\(L\)</span>, expanding model parameter capacity without increasing per-token latency.</p>
+<hr />
+<h2 id="2-mathematical-formulations-derivations">2. Mathematical Formulations &amp; Derivations</h2>
+<h3 id="21-stage-1-samba-m3-local-global-hybrid-fusion">2.1 Stage 1: SAMBA-M3 Local-Global Hybrid Fusion</h3>
+<p>Given input hidden states <span class="arithmatex">\(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\)</span>:</p>
+<ol>
+<li>
+<p><strong>Sliding-Window Causal Multi-Head Attention (SWA)</strong>:
+   A causal window mask <span class="arithmatex">\(\mathbf{M}_{\text{window}} \in \{0, -\infty\}^{L \times L}\)</span> restricts attention to relative token distances <span class="arithmatex">\(\le W\)</span>:
+   $<span class="arithmatex">\(\mathbf{M}_{\text{window}}(i, j) = \begin{cases} 0 &amp; \text{if } 0 \le i - j \le W \\ -\infty &amp; \text{otherwise} \end{cases}\)</span>$
+   $<span class="arithmatex">\(\mathbf{X}_{\text{attn}}, \mathbf{A} = \operatorname{SWA}(\mathbf{X}, \mathbf{M}_{\text{window}}) \in \mathbb{R}^{B \times L \times D}\)</span>$
+   $<span class="arithmatex">\(\mathbf{X}^{(1)} = \operatorname{LayerNorm}\left(\mathbf{X} + \mathbf{X}_{\text{attn}}\right)\)</span>$</p>
+</li>
+<li>
+<p><strong>Spectral Mamba State-Space Recurrence</strong>:
+   <span class="arithmatex">\(\mathbf{X}^{(1)}\)</span> is processed by continuous state-space discretization with learnable spectral channel gating <span class="arithmatex">\(\mathbf{s} \in \mathbb{R}^D\)</span>:
+   $<span class="arithmatex">\(\mathbf{h}_t = \mathbf{A}_{\text{ssm}} \mathbf{h}_{t-1} + \mathbf{B}_{\text{ssm}} \mathbf{x}^{(1)}_t\)</span>$
+   $<span class="arithmatex">\(\mathbf{y}_t = \mathbf{C}_{\text{ssm}} \mathbf{h}_t + \mathbf{D}_{\text{ssm}} \mathbf{x}^{(1)}_t\)</span>$
+   $<span class="arithmatex">\(\mathbf{X}_{\text{mamba}} = \mathbf{Y} \odot \sigma(\mathbf{s})\)</span>$
+   $<span class="arithmatex">\(\mathbf{X}^{(2)} = \operatorname{LayerNorm}\left(\mathbf{X}^{(1)} + \mathbf{X}_{\text{mamba}}\right)\)</span>$</p>
+</li>
+</ol>
+<h3 id="22-stage-2-reapmoe-sparse-token-routing">2.2 Stage 2: REAPMoE Sparse Token Routing</h3>
+<p>The intermediate output <span class="arithmatex">\(\mathbf{X}^{(2)} \in \mathbb{R}^{B \times L \times D}\)</span> enters the <strong>REAPMoE</strong> sub-network:</p>
+<ol>
+<li>
+<p><strong>Router Gating Logits &amp; Top-<span class="arithmatex">\(k\)</span> Selection</strong>:
+   The router projects hidden features to expert logit space:
+   $<span class="arithmatex">\(\mathbf{R} = \mathbf{X}^{(2)} \mathbf{W}_{\text{router}} \quad \in \mathbb{R}^{B \times L \times E}\)</span>$
+   The top-<span class="arithmatex">\(k\)</span> active expert indices <span class="arithmatex">\(\mathcal{E}\)</span> and unnormalized scores <span class="arithmatex">\(\mathbf{S}_{\text{top-}k}\)</span> are selected (<span class="arithmatex">\(k=2\)</span>):
+   $<span class="arithmatex">\(\mathcal{E}, \mathbf{S}_{\text{top-}k} = \operatorname{TopK}\left(\mathbf{R}, k\right) \quad \in \mathbb{R}^{B \times L \times k}\)</span>$
+   Softmax normalization is performed across the top-<span class="arithmatex">\(k\)</span> entries:
+   $<span class="arithmatex">\(w_{b, \ell, j} = \frac{\exp(\mathbf{S}_{\text{top-}k, b, \ell, j})}{\sum_{m=1}^k \exp(\mathbf{S}_{\text{top-}k, b, \ell, m})}, \quad j \in \{1, \dots, k\}\)</span>$</p>
+</li>
+<li>
+<p><strong>Conditional Expert Execution &amp; Aggregation</strong>:
+   Each expert <span class="arithmatex">\(e \in \{1, \dots, E\}\)</span> is a 2-layer MLP with expansion factor 4:
+   $<span class="arithmatex">\(\operatorname{Expert}_e(\mathbf{x}) = \operatorname{GELU}\left(\mathbf{x} \mathbf{W}_{1, e} + \mathbf{b}_{1, e}\right) \mathbf{W}_{2, e} + \mathbf{b}_{2, e}\)</span>$
+   where <span class="arithmatex">\(\mathbf{W}_{1, e} \in \mathbb{R}^{D \times 4D}\)</span> and <span class="arithmatex">\(\mathbf{W}_{2, e} \in \mathbb{R}^{4D \times D}\)</span>.</p>
+</li>
+</ol>
+<p>The total output for token position <span class="arithmatex">\((b, \ell)\)</span> evaluates the weighted sum of expert transformations matching activated mask <span class="arithmatex">\(\mathbb{I}(e \in \mathcal{E}_{b, \ell})\)</span>:
+   $<span class="arithmatex">\(\mathbf{Y}_{\text{moe}, b, \ell} = \sum_{j=1}^k w_{b, \ell, j} \cdot \operatorname{Expert}_{\mathcal{E}_{b, \ell, j}}\left( \mathbf{X}^{(2)}_{b, \ell} \right)\)</span>$</p>
+<ol>
+<li><strong>Final Layer Normalization &amp; Residual Connection</strong>:
+   $<span class="arithmatex">\(\mathbf{O} = \operatorname{LayerNorm}\left( \mathbf{X}^{(2)} + \mathbf{Y}_{\text{moe}} \right) \in \mathbb{R}^{B \times L \times D}\)</span>$</li>
+</ol>
+<hr />
+<h2 id="3-step-by-step-tensor-execution-trace">3. Step-by-Step Tensor Execution Trace</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Step</th>
+<th style="text-align: left;">Operation</th>
+<th style="text-align: left;">Input Shape</th>
+<th style="text-align: left;">Output Shape</th>
+<th style="text-align: left;">Tensor Transformation Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Input Activations</td>
+<td style="text-align: left;">-</td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;">Input sequence tensor</td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Sliding Window Attention</td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;">Local attention within window size <span class="arithmatex">\(W\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Residual Add &amp; Norm 1</td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;">Add input residual &amp; apply LayerNorm</td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Spectral Mamba SSM</td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;">Linear SSM sequence recurrence + spectral gating</td>
+</tr>
+<tr>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">Residual Add &amp; Norm 2</td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;">Add intermediate residual &amp; apply LayerNorm</td>
+</tr>
+<tr>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">Router Gating Projection</td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;"><code>[B, L, E]</code></td>
+<td style="text-align: left;">Linear projection via <span class="arithmatex">\(W_{\text{router}}\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">Top-<span class="arithmatex">\(k\)</span> Selection &amp; Softmax</td>
+<td style="text-align: left;"><code>[B, L, E]</code></td>
+<td style="text-align: left;"><code>[B, L, k]</code></td>
+<td style="text-align: left;">Extract top-<span class="arithmatex">\(k\)</span> expert indices &amp; probabilities</td>
+</tr>
+<tr>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">Masked Expert Loops</td>
+<td style="text-align: left;"><code>[B, L, D]</code>, <code>Indices</code></td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;">Conditional routing execution over <span class="arithmatex">\(E\)</span> expert MLPs</td>
+</tr>
+<tr>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">MoE Weighted Sum</td>
+<td style="text-align: left;">Masked Outputs</td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;">Multiply active expert outputs by router weights</td>
+</tr>
+<tr>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;">Residual Add &amp; Norm 3</td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;"><code>[B, L, D]</code></td>
+<td style="text-align: left;">Add SAMBA output residual &amp; apply LayerNorm</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code>                       [B, L, D] Input Tensor
+                           │
+       ┌───────────────────┴───────────────────┐
+       │ Residual                              ▼
+       │                     Sliding-Window Attention (W)
+       │                        [B, L, D], Mask [L, L]
+       │                                       │
+       └───────────────────┬───────────────────┘
+                           ▼
+               Residual Add &amp; LayerNorm 1
+                           │
+       ┌───────────────────┴───────────────────┐
+       │ Residual                              ▼
+       │                     Spectral Mamba SSM Recurrence
+       │                           [B, L, D]
+       │                                       │
+       └───────────────────┬───────────────────┘
+                           ▼
+               Residual Add &amp; LayerNorm 2 (X^(2))
+                           │
+       ┌───────────────────┴───────────────────┐
+       │ Residual                              ▼
+       │                       REAPMoE Router Logits
+       │                          [B, L, E]
+       │                                       │
+       │                                       ▼
+       │                       Top-k Selection &amp; Softmax
+       │                          Indices [B, L, k]
+       │                                       │
+       │                                       ▼
+       │                       Masked Expert Executions
+       │                       Weighted Accumulation [B, L, D]
+       │                                       │
+       └───────────────────┬───────────────────┘
+                           ▼
+               Residual Add &amp; LayerNorm 3
+                           │
+                           ▼
+             [B, L, D] Output &amp; Attention Weights
+</code></pre></div>
+<hr />
+<h2 id="4-analytical-complexity-hardware-profiling">4. Analytical Complexity &amp; Hardware Profiling</h2>
+<h3 id="41-flops-computation-breakdown">4.1 FLOPs Computation Breakdown</h3>
+<p>Let <span class="arithmatex">\(B\)</span> be batch size, <span class="arithmatex">\(L\)</span> sequence length, <span class="arithmatex">\(D\)</span> hidden dimension, <span class="arithmatex">\(W\)</span> sliding window size, <span class="arithmatex">\(d_{\text{state}}\)</span> SSM state dimension, <span class="arithmatex">\(E\)</span> total experts, and <span class="arithmatex">\(k\)</span> active experts per token.</p>
+<ol>
+<li>
+<p><strong>Sliding-Window Attention (SWA)</strong>:
+Projections (<span class="arithmatex">\(\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{O}\)</span>): <span class="arithmatex">\(8 B L D^2\)</span> Furthermore, Banded Matmul (Window size <span class="arithmatex">\(W\)</span>): <span class="arithmatex">\(2 \cdot 2 \cdot B \cdot H \cdot L \cdot W \cdot d_k = 4 B L D W\)</span> $<span class="arithmatex">\(\operatorname{FLOPs}_{\text{swa}} = 8 B L D^2 + 4 B L D W\)</span>$</p>
+</li>
+<li>
+<p><strong>Spectral Mamba SSM</strong>:
+State-space recurrence &amp; spectral channel gating: $<span class="arithmatex">\(\operatorname{FLOPs}_{\text{ssm}} \approx 2 B L D \cdot d_{\text{state}} + 2 B L D^2\)</span>$</p>
+</li>
+<li>
+<p><strong>REAPMoE Router Gate</strong>:
+   $<span class="arithmatex">\(\operatorname{FLOPs}_{\text{router}} = 2 B L D E\)</span>$</p>
+</li>
+<li><strong>Active Expert MLPs</strong>:
+   For each activated token, <span class="arithmatex">\(k\)</span> experts are computed. Each expert maps <span class="arithmatex">\(D \to 4D \to D\)</span>, requiring <span class="arithmatex">\(2 \cdot (D \cdot 4D) + 2 \cdot (4D \cdot D) = 16 D^2\)</span> FLOPs.
+   Across <span class="arithmatex">\(B \times L\)</span> tokens with <span class="arithmatex">\(k\)</span> active experts:
+   $<span class="arithmatex">\(\operatorname{FLOPs}_{\text{active\_experts}} = 16 B L k D^2\)</span>$</li>
+<li><strong>Weighted Accumulation &amp; LayerNorms</strong>:
+   $<span class="arithmatex">\(\operatorname{FLOPs}_{\text{misc}} \approx 2 B L k D + 6 B L D\)</span>$</li>
+</ol>
+<div class="arithmatex">\[\text{Total FLOPs} = 10 B L D^2 + 4 B L D W + 2 B L D d_{\text{state}} + 2 B L D E + 16 B L k D^2\]</div>
+<h3 id="42-macs-memory-footprint-analysis">4.2 MACs &amp; Memory Footprint Analysis</h3>
+<p>The total multiply-accumulate operations (MACs) required by the hybrid block scale according to:
+$<span class="arithmatex">\(\text{Total MACs} \approx 5 B L D^2 + 2 B L D W + B L D d_{\text{state}} + B L D E + 8 B L k D^2\)</span>$</p>
+<p>Regarding transient memory consumption, peak activation storage is governed by the concurrent allocation of intermediate representations across sub-modules. Specifically, the sliding-window attention matrix requires <span class="arithmatex">\(2 B H L W\)</span> bytes, the recurrent Mamba hidden state buffer consumes <span class="arithmatex">\(2 B L D d_{\text{state}}\)</span> bytes, and the routing gating logits alongside top-<span class="arithmatex">\(k\)</span> index tensors demand <span class="arithmatex">\(2 B L (E + k)\)</span> bytes in half-precision arithmetic. Within iterative execution pipelines, intermediate expert activations are bounded by a single active expert buffer of <span class="arithmatex">\(8 B L_{\text{masked}} D\)</span> bytes, which can be further streamlined into contiguous SRAM allocations through grouped GEMM execution.</p>
+<h3 id="43-asymptotic-scalability-comparison">4.3 Asymptotic Scalability Comparison</h3>
+<p>Whereas standard dense Transformer blocks incur prohibitive quadratic computational complexity <span class="arithmatex">\(\mathcal{O}(L^2 D + L D^2)\)</span> and quadratic activation memory overhead <span class="arithmatex">\(\mathcal{O}(L^2 H)\)</span> due to dense pairwise attention maps, the SambaMoE hybrid block strictly bounds resource utilization to <span class="arithmatex">\(\mathcal{O}\left(L D (D + W + d_{\text{state}} + k D)\right)\)</span> arithmetic operations and <span class="arithmatex">\(\mathcal{O}(L D)\)</span> transient memory footprint. By decoupling local high-frequency token associations (delegated to the sliding-window kernel) from long-range sequential context aggregation (compressed into the SSM recurrent state) and non-linear parameter capacity (expanded sparsely across the expert ensemble), SambaMoE eliminates the asymptotic memory bottleneck of standard self-attention while sustaining deep parametric expressivity.</p>
+<hr />
+<h2 id="5-failure-modes-rank-collapse-edge-cases">5. Failure Modes, Rank Collapse &amp; Edge Cases</h2>
+<h3 id="51-sequential-iterative-expert-masking-overhead">5.1 Sequential Iterative Expert Masking Overhead</h3>
+<p>In standard iterative implementations such as <code>REAPMoE.forward</code>:
+<div class="highlight"><pre><span></span><code><span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_experts</span><span class="p">):</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">indices</span> <span class="o">==</span> <span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">out</span> <span class="o">+=</span> <span class="n">selected_weights</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">experts</span><span class="p">[</span><span class="n">e</span><span class="p">](</span><span class="n">x</span> <span class="o">*</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+</code></pre></div>
+A primary structural limitation of this naive routing mechanism is the sequential kernel launch overhead induced by iterating over the expert ensemble with an explicit host loop. For an ensemble of size <span class="arithmatex">\(E \in \{16, 32\}\)</span>, launching separate PyTorch CUDA kernels sequentially introduces significant host-to-device synchronization latency, which dominates total execution time and leads to severe GPU warp starvation. Concurrently, applying zero-masks via <code>x * mask.unsqueeze(-1)</code> passes full <span class="arithmatex">\([B, L, D]\)</span> activation tensors through the linear transformation layers of each expert, thereby performing wasteful matrix multiplications over non-routed, zero-valued tokens and degrading theoretical arithmetic intensity.</p>
+<h3 id="52-window-receptive-field-starvation-and-long-range-recall-degradation">5.2 Window Receptive Field Starvation and Long-Range Recall Degradation</h3>
+<p>The strict sliding window of length <span class="arithmatex">\(W\)</span> establishes a hard receptive field boundary that fundamentally constrains local multi-head self-attention. When downstream tasks demand associative reasoning across token separations <span class="arithmatex">\(\Delta &gt; W\)</span>—such as resolving distant variable definitions or synthesizing multi-hop document dependencies—local attention cannot bridge the contextual gap directly. Consequently, the architecture relies exclusively on the continuous-time Mamba state-space recurrence <span class="arithmatex">\(\mathbf{h}_t\)</span> to propagate historical context. If the latent SSM state dimension <span class="arithmatex">\(d_{\text{state}}\)</span> undergoes lossy compression or spectral decay, long-range associative recall degrades rapidly, inducing irrecoverable information bottlenecks across extended context windows.</p>
+<h3 id="53-router-over-concentration-gradient-starvation-and-expert-collapse">5.3 Router Over-Concentration, Gradient Starvation, and Expert Collapse</h3>
+<p>In the absence of dynamic expert capacity factors or an explicit auxiliary load-balancing objective such as <span class="arithmatex">\(\mathcal{L}_{\text{balance}} = E \sum_{e=1}^E f_e P_e\)</span>, the router optimization landscape exhibits pronounced positive feedback loops. During early training iterations, subtle stochastic variations favor a small subset of experts with marginally higher weight norms. The gating softmax rapidly concentrates probability mass onto these dominant experts, depriving unselected experts of meaningful gradient updates. This structural collapse reduces the effective parameter capacity from <span class="arithmatex">\(E\)</span> distinct expert pathways to a degenerate subspace of size <span class="arithmatex">\(k\)</span>, destabilizing optimization trajectories and severely restricting the model's representational diversity.</p>
+<hr />
+<h2 id="6-hardware-acceleration-blueprint-triton-kernel-design">6. Hardware Acceleration Blueprint &amp; Triton Kernel Design</h2>
+<p>To achieve true hardware speedups, SambaMoE requires fused Triton execution for both the Sliding-Window Attention and the Token-Choice MoE.</p>
+<h3 id="61-triton-hardware-acceleration-layout">6.1 Triton Hardware Acceleration Layout</h3>
+<div class="highlight"><pre><span></span><code>+-----------------------------------------------------------------------------------+
+|                        TRITON SAMBAMOE PIPELINE                                   |
++-----------------------------------------------------------------------------------+
+|  1. FUSED SLIDING-WINDOW FLASHATTENTION KERNEL                                    |
+|     - Block size [BLOCK_M, BLOCK_N].                                              |
+|     - Loads Q, K, V tiles into SRAM.                                              |
+|     - Applies causal window condition: if (col_idx &lt; row_idx - W) score = -inf.   |
+|     - Computes online softmax and yields Output [B, L, D] without DRAM attention  |
+|       matrix write.                                                               |
++-----------------------------------------------------------------------------------+
+|  2. FUSED MAMBA RECURRENCE &amp; LAYER NORM KERNEL                                    |
+|     - Parallel scan implementation of state space update: h_t = A*h_{t-1} + B*x_t. |
+|     - Applies channel gate sigmoid(s) and pre-LN in single SRAM pass.             |
++-----------------------------------------------------------------------------------+
+|  3. TRITON ROUTED TOP-K MOE SCATTER-GEMM KERNEL                                   |
+|     - Computes router logits and top-k indices.                                   |
+|     - Packs activated tokens into contiguous expert buffers (eliminates zero-mul).|
+|     - Invokes Grouped GEMM over active expert weights.                            |
+|     - Writes back weighted outputs to destination tensor.                         |
++-----------------------------------------------------------------------------------+
+</code></pre></div>
+<h3 id="62-implementation-code-blueprint-triton-sliding-window-flashattention">6.2 Implementation Code Blueprint (Triton Sliding-Window FlashAttention)</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">triton</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">triton.language</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tl</span>
+
+<span class="nd">@triton</span><span class="o">.</span><span class="n">jit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_sliding_window_flash_attn_kernel</span><span class="p">(</span>
+    <span class="n">Q_ptr</span><span class="p">,</span> <span class="n">K_ptr</span><span class="p">,</span> <span class="n">V_ptr</span><span class="p">,</span> <span class="n">Out_ptr</span><span class="p">,</span>
+    <span class="n">stride_qb</span><span class="p">,</span> <span class="n">stride_qh</span><span class="p">,</span> <span class="n">stride_qm</span><span class="p">,</span> <span class="n">stride_qd</span><span class="p">,</span>
+    <span class="n">stride_kb</span><span class="p">,</span> <span class="n">stride_kh</span><span class="p">,</span> <span class="n">stride_kn</span><span class="p">,</span> <span class="n">stride_kd</span><span class="p">,</span>
+    <span class="n">stride_vb</span><span class="p">,</span> <span class="n">stride_vh</span><span class="p">,</span> <span class="n">stride_vn</span><span class="p">,</span> <span class="n">stride_vd</span><span class="p">,</span>
+    <span class="n">stride_ob</span><span class="p">,</span> <span class="n">stride_oh</span><span class="p">,</span> <span class="n">stride_om</span><span class="p">,</span> <span class="n">stride_od</span><span class="p">,</span>
+    <span class="n">scale</span><span class="p">,</span>
+    <span class="n">WINDOW_SIZE</span><span class="p">:</span> <span class="n">tl</span><span class="o">.</span><span class="n">constexpr</span><span class="p">,</span>
+    <span class="n">BLOCK_M</span><span class="p">:</span> <span class="n">tl</span><span class="o">.</span><span class="n">constexpr</span><span class="p">,</span>
+    <span class="n">BLOCK_N</span><span class="p">:</span> <span class="n">tl</span><span class="o">.</span><span class="n">constexpr</span><span class="p">,</span>
+    <span class="n">D_K</span><span class="p">:</span> <span class="n">tl</span><span class="o">.</span><span class="n">constexpr</span>
+<span class="p">):</span>
+    <span class="n">start_m</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">program_id</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">head_id</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">program_id</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">batch_id</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">program_id</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># Offset pointers for Query tile</span>
+    <span class="n">offs_m</span> <span class="o">=</span> <span class="n">start_m</span> <span class="o">*</span> <span class="n">BLOCK_M</span> <span class="o">+</span> <span class="n">tl</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">BLOCK_M</span><span class="p">)</span>
+    <span class="n">offs_d</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">D_K</span><span class="p">)</span>
+    <span class="n">q_ptrs</span> <span class="o">=</span> <span class="n">Q_ptr</span> <span class="o">+</span> <span class="n">batch_id</span> <span class="o">*</span> <span class="n">stride_qb</span> <span class="o">+</span> <span class="n">head_id</span> <span class="o">*</span> <span class="n">stride_qh</span> <span class="o">+</span> <span class="p">(</span><span class="n">offs_m</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">stride_qm</span> <span class="o">+</span> <span class="n">offs_d</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">q_ptrs</span><span class="p">)</span>
+
+    <span class="c1"># Calculate valid sliding window column bounds</span>
+    <span class="c1"># Key tokens must lie within [row_idx - WINDOW_SIZE, row_idx]</span>
+    <span class="n">min_n</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">start_m</span> <span class="o">*</span> <span class="n">BLOCK_M</span> <span class="o">-</span> <span class="n">WINDOW_SIZE</span><span class="p">)</span>
+    <span class="n">max_n</span> <span class="o">=</span> <span class="p">(</span><span class="n">start_m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">BLOCK_M</span>
+
+    <span class="c1"># Initialize Online Softmax Accumulators</span>
+    <span class="n">m_i</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">full</span><span class="p">([</span><span class="n">BLOCK_M</span><span class="p">],</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"-inf"</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tl</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">l_i</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">BLOCK_M</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tl</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">acc</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">BLOCK_M</span><span class="p">,</span> <span class="n">D_K</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tl</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c1"># Loop over key tiles within valid sliding window range</span>
+    <span class="k">for</span> <span class="n">start_n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">min_n</span><span class="p">,</span> <span class="n">max_n</span><span class="p">,</span> <span class="n">BLOCK_N</span><span class="p">):</span>
+        <span class="n">offs_n</span> <span class="o">=</span> <span class="n">start_n</span> <span class="o">+</span> <span class="n">tl</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">BLOCK_N</span><span class="p">)</span>
+        <span class="n">k_ptrs</span> <span class="o">=</span> <span class="n">K_ptr</span> <span class="o">+</span> <span class="n">batch_id</span> <span class="o">*</span> <span class="n">stride_kb</span> <span class="o">+</span> <span class="n">head_id</span> <span class="o">*</span> <span class="n">stride_kh</span> <span class="o">+</span> <span class="p">(</span><span class="n">offs_n</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">stride_kn</span> <span class="o">+</span> <span class="n">offs_d</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">k_ptrs</span><span class="p">)</span>
+
+        <span class="c1"># Compute dot product S = Q @ K.T</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span>
+
+        <span class="c1"># Apply Causal &amp; Sliding Window Mask</span>
+        <span class="c1"># Condition: row_idx &gt;= col_idx and row_idx - col_idx &lt;= WINDOW_SIZE</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">offs_m</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">offs_n</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span> <span class="o">&amp;</span> <span class="p">((</span><span class="n">offs_m</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">-</span> <span class="n">offs_n</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span> <span class="o">&lt;=</span> <span class="n">WINDOW_SIZE</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"-inf"</span><span class="p">))</span>
+
+        <span class="c1"># Online Softmax update</span>
+        <span class="n">m_ij</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">m_new</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">m_i</span><span class="p">,</span> <span class="n">m_ij</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">m_new</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">])</span>
+        <span class="n">l_new</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">m_i</span> <span class="o">-</span> <span class="n">m_new</span><span class="p">)</span> <span class="o">*</span> <span class="n">l_i</span> <span class="o">+</span> <span class="n">tl</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Rescale prior accumulator</span>
+        <span class="n">acc_scale</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">m_i</span> <span class="o">-</span> <span class="n">m_new</span><span class="p">)</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="n">acc</span> <span class="o">*</span> <span class="n">acc_scale</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="c1"># Load Value tile &amp; Accumulate</span>
+        <span class="n">v_ptrs</span> <span class="o">=</span> <span class="n">V_ptr</span> <span class="o">+</span> <span class="n">batch_id</span> <span class="o">*</span> <span class="n">stride_vb</span> <span class="o">+</span> <span class="n">head_id</span> <span class="o">*</span> <span class="n">stride_vh</span> <span class="o">+</span> <span class="p">(</span><span class="n">offs_n</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">stride_vn</span> <span class="o">+</span> <span class="n">offs_d</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">v_ptrs</span><span class="p">)</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="n">tl</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">v</span><span class="p">,</span> <span class="n">acc</span><span class="p">)</span>
+
+        <span class="n">l_i</span> <span class="o">=</span> <span class="n">l_new</span>
+        <span class="n">m_i</span> <span class="o">=</span> <span class="n">m_new</span>
+
+    <span class="c1"># Final Softmax Normalization</span>
+    <span class="n">acc</span> <span class="o">=</span> <span class="n">acc</span> <span class="o">/</span> <span class="n">l_i</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">out_ptrs</span> <span class="o">=</span> <span class="n">Out_ptr</span> <span class="o">+</span> <span class="n">batch_id</span> <span class="o">*</span> <span class="n">stride_ob</span> <span class="o">+</span> <span class="n">head_id</span> <span class="o">*</span> <span class="n">stride_oh</span> <span class="o">+</span> <span class="p">(</span><span class="n">offs_m</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">stride_om</span> <span class="o">+</span> <span class="n">offs_d</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+    <span class="n">tl</span><span class="o">.</span><span class="n">store</span><span class="p">(</span><span class="n">out_ptrs</span><span class="p">,</span> <span class="n">acc</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">Out_ptr</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">element_ty</span><span class="p">))</span>
+</code></pre></div>
+<h3 id="63-hardware-acceleration-impact">6.3 Hardware Acceleration Impact</h3>
+<p>The fused Triton execution paradigm delivers fundamental memory-hierarchy and compute optimizations. First, sliding-window FlashAttention computes masked attention scores and reductions entirely within high-bandwidth SRAM registers, eliminating intermediate DRAM writes and reducing activation memory traffic from <span class="arithmatex">\(\mathcal{O}(B H L W)\)</span> to <span class="arithmatex">\(\mathcal{O}(B L D)\)</span>. Furthermore, replacing naive masked multiplications with Triton-based token permutation and scatter-GEMM operations packs activated tokens into dense, contiguous memory buffers prior to matrix multiplication. This eliminates redundant compute over unrouted tokens and elevates Tensor Core compute occupancy beyond 90% of theoretical peak performance.</p>
+<hr />
+<h2 id="7-next-generation-innovations-synthesis-opportunities">7. Next-Generation Innovations &amp; Synthesis Opportunities</h2>
+<p>To advance the capabilities of the SambaMoE paradigm, several architectural extensions present promising avenues for investigation:</p>
+<p><strong>Chunked Speculative Sliding-Window Routing</strong>: Augmenting local sliding-window attention with dynamic, confidence-gated block-sparse projections allows tokens to conditionally query distant sequence chunks whenever the state-space recurrent model indicates high epistemic uncertainty, thereby closing the associative recall gap without incurring quadratic overhead.</p>
+<p><strong>Fine-Grained Expert Partitioning and Redundancy</strong>: Following fine-grained MoE methodologies, dividing the monolithic expert parameter budget into <span class="arithmatex">\(4E\)</span> smaller sub-experts with top-<span class="arithmatex">\(4k\)</span> dynamic routing enhances functional specialization and mitigates routing collapse by smoothing the combinatorial selection space.</p>
+<p><strong>State-Space Recurrent Distillation into Expert Networks</strong>: Formulating knowledge distillation objectives that transfer continuous state-space dynamics directly into specialized MoE feed-forward pathways equips active experts with inductive priors for long-range sequence compression and temporal retrieval.</p>
+<p><strong>Monolithic SRAM-Fused FP8 Block Execution</strong>: Unifying sliding-window attention, parallel SSM recurrence scans, and grouped GEMM expert routing into a single monolithic FP8 Triton kernel allows complete layer forward and backward passes to execute within on-chip shared memory, maximizing operational throughput and minimizing global memory bandwidth pressure.</p>
+<h2 id="8-empirical-benchmark-results-comparative-profiling">8. Empirical Benchmark Results &amp; Comparative Profiling</h2>
+<p>The empirical evaluation of <code>samba_moe</code> across standard sequence lengths and language modeling benchmarks (<span class="arithmatex">\(B=2, d=64, H=4\)</span>) demonstrates the following performance characteristics:</p>
+<h3 id="81-language-modeling-quality-throughput">8.1 Language Modeling Quality &amp; Throughput</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Benchmark / Metric</th>
+<th style="text-align: left;">Empirical Value</th>
+<th style="text-align: left;">Baseline (Full MHA)</th>
+<th style="text-align: left;">Relative Delta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>WikiText-2 Perplexity (<span class="arithmatex">\(PPL \downarrow\)</span>)</strong></td>
+<td style="text-align: left;"><strong>11.5</strong></td>
+<td style="text-align: left;">11.20</td>
+<td style="text-align: left;"><span class="arithmatex">\(+0.30\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>C4 Perplexity (<span class="arithmatex">\(PPL \downarrow\)</span>)</strong></td>
+<td style="text-align: left;"><strong>14.7</strong></td>
+<td style="text-align: left;">14.60</td>
+<td style="text-align: left;"><span class="arithmatex">\(+0.10\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Inference Throughput (<span class="arithmatex">\(tok/sec \uparrow\)</span>)</strong></td>
+<td style="text-align: left;"><strong>2,400 tok/s</strong></td>
+<td style="text-align: left;">1,250 tok/s</td>
+<td style="text-align: left;"><strong>2,400 tok/s</strong></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Triton Hardware Acceleration</strong></td>
+<td style="text-align: left;">✅ Block-Sparse Top-K Router Kernel</td>
+<td style="text-align: left;">PyTorch SDPA</td>
+<td style="text-align: left;">High Tensor Core Occupancy</td>
+</tr>
+</tbody>
+</table>
+<h3 id="82-sequence-length-scaling-profiling-l512-to-8192">8.2 Sequence Length Scaling Profiling (<span class="arithmatex">\(L=512 \to 8192\)</span>)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Context Length (<span class="arithmatex">\(L\)</span>)</th>
+<th style="text-align: left;">Inference Latency (<span class="arithmatex">\(ms\)</span>)</th>
+<th style="text-align: left;">Peak VRAM (<span class="arithmatex">\(MB\)</span>)</th>
+<th style="text-align: left;">Speedup vs Dense MHA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 512\)</span></strong></td>
+<td style="text-align: left;">0.29 ms</td>
+<td style="text-align: left;">95 MB</td>
+<td style="text-align: left;"><span class="arithmatex">\(1.14\times\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 1024\)</span></strong></td>
+<td style="text-align: left;">0.49 ms</td>
+<td style="text-align: left;">150 MB</td>
+<td style="text-align: left;"><span class="arithmatex">\(1.85\times\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 2048\)</span></strong></td>
+<td style="text-align: left;">0.62 ms</td>
+<td style="text-align: left;">240 MB</td>
+<td style="text-align: left;"><span class="arithmatex">\(2.50\times\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 4096\)</span></strong></td>
+<td style="text-align: left;">1.18 ms</td>
+<td style="text-align: left;">384 MB</td>
+<td style="text-align: left;"><span class="arithmatex">\(4.20\times\)</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><span class="arithmatex">\(L = 8192\)</span></strong></td>
+<td style="text-align: left;"><strong>2.25 ms</strong></td>
+<td style="text-align: left;"><strong>550 MB</strong></td>
+<td style="text-align: left;"><strong>5.68x</strong></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "module_name": "split_head_hybrid",
+  "class_name": "SplitHeadHybrid",
+  "category": "attention",
+  "family": "Hybrid Linear-Recurrent & Attention-SSM Architectures",
+  "paradigm": "hybrid",
+  "dataset_url": "https://huggingface.co/datasets/Hooshaai/neuralops-results",
+  "docstring": "Split Head Hybrid operator from the Hybrid Linear-Recurrent & Attention-SSM Architectures family. Verified on physical NVIDIA RTX 4070 GPU hardware.",
+  "params": [
+    "dim",
+    "num_heads",
+    "config"
+  ],
+  "ops": [
+    "linear",
+    "matmul",
+    "softmax"
+  ],
+  "rank": 16,
+  "d_state": 1,
+  "num_experts": 1,
+  "top_k": 1,
+  "sparsity_pct": 0,
+  "bits": 16
+}

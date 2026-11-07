@@ -1,0 +1,12 @@
+{
+  "module": "alibi",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 16557.45,
+  "student_ppl": 39.93,
+  "pre_ppl": 16593.66,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.290513"
+}

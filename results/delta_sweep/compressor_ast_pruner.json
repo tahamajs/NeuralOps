@@ -1,0 +1,11 @@
+{
+  "module": "ast_pruner",
+  "type": "compressor",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 8936.97,
+  "duration_sec": 179.5,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 08:22:21"
+}

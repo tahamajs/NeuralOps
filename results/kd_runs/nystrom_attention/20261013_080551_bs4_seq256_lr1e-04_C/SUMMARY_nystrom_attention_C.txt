@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: nystrom_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      127.09 M
+  Trainable params:  31.0 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           256
+  Total tokens:      105472
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        36.5400
+  Post-KD PPL:       33.8800
+  Stage 1 (KD) PPL:  35.1400
+  Stage 2 (Self) PPL:33.8800
+  KD Gain:           +1.40
+  Self Gain:         +1.26
+  Total Gain:        +2.66
+  Aligned w/ Teacher:YES
+  Beat Teacher:      YES
+  PPL Ratio:         0.9357
+  Recovery:          100.00%
+  Peak VRAM:         3022.07 MB
+  Train time:        551.39 s (Stage 1: 405.3s, Stage 2: 146.1s)
+  s/step:            0.1838
+  Loss (final):      25.0444
+  Cached:            True
+
+QUALITY EVALUATION:
+  Distinct-2:        0.9267
+  Repetition-3:      0.0160
+  Train PPL:         15.0700
+  Test PPL:          33.8800
+  Overfit Gap:       18.81
+  Latency (mean):    468.37 ms
+  Latency (std):     0.65 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.14.7
+  Torch:             2.11.0+cu128
+  CUDA:              12.8
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        6c7a3c0c9784
+
+TRAINING HISTORY (last 10 steps):
+  step  2910 | loss=2.8425 | lr=2.31e-06
+  step  2920 | loss=2.8134 | lr=2.08e-06
+  step  2930 | loss=2.6471 | lr=1.88e-06
+  step  2940 | loss=2.9756 | lr=1.69e-06
+  step  2950 | loss=2.8105 | lr=1.53e-06
+  step  2960 | loss=2.4223 | lr=1.39e-06
+  step  2970 | loss=2.7344 | lr=1.27e-06
+  step  2980 | loss=2.5189 | lr=1.17e-06
+  step  2990 | loss=2.8384 | lr=1.10e-06
+  step  3000 | loss=2.4620 | lr=1.04e-06

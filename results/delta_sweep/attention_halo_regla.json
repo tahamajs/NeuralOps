@@ -1,0 +1,12 @@
+{
+  "module": "halo_regla",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 33.14,
+  "student_ppl": 69.35,
+  "pre_ppl": 69.35,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.309601"
+}

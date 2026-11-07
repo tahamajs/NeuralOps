@@ -1,0 +1,11 @@
+{
+  "module": "moe_deltakv_paged",
+  "type": "attention",
+  "status": "UNKNOWN",
+  "delta": null,
+  "student_ppl": 1730.66,
+  "duration_sec": 311.5,
+  "retries_used": 1,
+  "error": "no delta parsed",
+  "timestamp": "2026-10-12 03:53:28"
+}

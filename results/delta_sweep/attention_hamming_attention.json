@@ -1,0 +1,12 @@
+{
+  "module": "hamming_attention",
+  "type": "attention",
+  "status": "PASS",
+  "delta": 5823.18,
+  "student_ppl": 5859.39,
+  "pre_ppl": 5859.39,
+  "duration_sec": 0.0,
+  "retries_used": 0,
+  "error": "",
+  "timestamp": "2026-10-12T03:20:19.310119"
+}

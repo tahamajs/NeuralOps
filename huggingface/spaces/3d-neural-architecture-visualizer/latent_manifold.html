@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralOps · 3D Latent Manifold & SVD Spectral Visualizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg: #090d16;
+            --surface: rgba(18, 24, 38, 0.85);
+            --border: rgba(255, 255, 255, 0.08);
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.25);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        #webgl-fallback {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #ef4444;
+            color: #fff;
+            text-align: center;
+            padding: 12px;
+            font-weight: 600;
+            z-index: 9999;
+        }
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        .hud-overlay {
+            position: absolute;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 10;
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            width: 380px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.5rem;
+        }
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+        p.subtitle {
+            font-size: 0.825rem;
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+            line-height: 1.4;
+        }
+        .control-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+        label span.val {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+        select, input[type=range] {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 0.4rem;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .hud-stats {
+            position: absolute;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 10;
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            gap: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .stat-item {
+            text-align: right;
+        }
+        .stat-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .nav-links {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 10;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        .back-link {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-link:hover {
+            background: var(--accent);
+            color: #000;
+        }
+        .back-link.highlight {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fde047;
+            border-color: rgba(251, 191, 36, 0.4);
+        }
+        .back-link.highlight:hover {
+            background: #fde047;
+            color: #000;
+        }
+        .dataset-callout {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px dashed rgba(56, 189, 248, 0.3);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        .dataset-callout a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .dataset-callout a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="webgl-fallback">
+        ⚠️ WebGL Context Initialization Failed. Please ensure hardware acceleration is enabled in Chrome / Firefox / Safari.
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div class="hud-overlay">
+        <div class="badge">NeuralOps WebGL Manifold Engine</div>
+        <h1>SVD Latent Manifold</h1>
+        <p class="subtitle">Interactive 3D representation of Attention Latent Space &amp; Low-Rank Singular Decay across 203 unified modules.</p>
+
+        <div class="control-group">
+            <label><span>Target Architecture / Layer</span></label>
+            <select id="layer-select">
+                <option value="svd_linear" selected>Layer 11 · SVD-Linear Attention (Rank 16)</option>
+                <option value="hgrn2">Layer 08 · HGRN2 Gated DeltaNet (Rank 32)</option>
+                <option value="mamba_ssm">Layer 06 · Mamba Selective Scan State (Rank 16)</option>
+                <option value="mla_latent">Layer 14 · DeepSeek MLA Latent KV-Cache (Rank 8)</option>
+                <option value="dense_target">Layer 12 · Dense Softmax Reference (Rank 64)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label><span>Truncation Rank (r)</span> <span class="val" id="val-rank">16</span></label>
+            <input type="range" id="rank-slider" min="2" max="64" step="2" value="16">
+        </div>
+
+        <div class="control-group">
+            <label><span>Spectral Decay Curvature (α)</span> <span class="val" id="val-alpha">1.45</span></label>
+            <input type="range" id="alpha-slider" min="0.1" max="3.0" step="0.05" value="1.45">
+        </div>
+
+        <div class="control-group">
+            <label><span>Wireframe Mesh / Shading</span></label>
+            <select id="shading-select">
+                <option value="smooth" selected>Quantum Iridescent Shading</option>
+                <option value="wireframe">Pure Topological Wireframe</option>
+                <option value="points">Sparse Latent Point Cloud</option>
+            </select>
+        </div>
+
+        <div class="dataset-callout">
+            <strong>Published Benchmark Dataset:</strong><br>
+            Empirical measurements from 131 attentions &amp; 72 compressors hosted at
+            <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener noreferrer">🤗 Hooshaai/neuralops-results</a>.
+        </div>
+    </div>
+
+    <div class="hud-stats">
+        <div class="stat-item">
+            <div class="stat-num" id="stat-ratio">4.00x</div>
+            <div class="stat-label">Theoretical Compression</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" id="stat-err">0.024</div>
+            <div class="stat-label">Frobenius Norm Error</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" id="stat-fps">60 FPS</div>
+            <div class="stat-label">WebGL Hardware Accel</div>
+        </div>
+    </div>
+
+    <nav class="nav-links">
+        <a href="index.html" class="back-link">🏛️ 3D Atlas (203 Modules)</a>
+        <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener noreferrer" class="back-link highlight">🤗 HF Dataset</a>
+        <a href="../dashboard.html" class="back-link">← Dashboard</a>
+    </nav>
+
+    <script>
+        // WebGL Context Check
+        (function checkWebGL() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (!gl) throw new Error('No WebGL');
+            } catch (e) {
+                const banner = document.getElementById('webgl-fallback');
+                if (banner) banner.style.display = 'block';
+            }
+        })();
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x090d16, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 35, 60);
+
+        let renderer;
+        try {
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+        } catch (e) {
+            document.getElementById('webgl-fallback').style.display = 'block';
+        }
+
+        const controls = new THREE.OrbitControls(camera, renderer ? renderer.domElement : container);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1;
+
+        // Ambient and directional lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x38bdf8, 2.2, 120);
+        pointLight1.position.set(20, 30, 20);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0x818cf8, 2.0, 120);
+        pointLight2.position.set(-20, -10, -20);
+        scene.add(pointLight2);
+
+        // Ground reference grid
+        const gridHelper = new THREE.GridHelper(80, 40, 0x1e293b, 0x0f172a);
+        gridHelper.position.y = -10;
+        scene.add(gridHelper);
+
+        // Generate parametric manifold surface
+        const size = 50;
+        const segments = 80;
+        const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+        geometry.rotateX(-Math.PI / 2);
+
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x38bdf8,
+            roughness: 0.2,
+            metalness: 0.8,
+            wireframe: false,
+            side: THREE.DoubleSide
+        });
+
+        const manifoldMesh = new THREE.Mesh(geometry, material);
+        scene.add(manifoldMesh);
+
+        // Points Representation
+        const pointsMaterial = new THREE.PointsMaterial({
+            color: 0x38bdf8,
+            size: 0.35,
+            transparent: true,
+            opacity: 0.85
+        });
+        const pointsMesh = new THREE.Points(geometry, pointsMaterial);
+        pointsMesh.visible = false;
+        scene.add(pointsMesh);
+
+        // Architecture configurations
+        const ARCH_CONFIGS = {
+            svd_linear: { rank: 16, alpha: 1.45, color: 0x38bdf8, lightColor: 0x38bdf8 },
+            hgrn2: { rank: 32, alpha: 2.10, color: 0x34d399, lightColor: 0x34d399 },
+            mamba_ssm: { rank: 16, alpha: 0.85, color: 0xfbbf24, lightColor: 0xf59e0b },
+            mla_latent: { rank: 8, alpha: 1.95, color: 0xc084fc, lightColor: 0xa855f7 },
+            dense_target: { rank: 64, alpha: 0.20, color: 0xec4899, lightColor: 0xf43f5e }
+        };
+
+        function updateManifold(rank, alpha) {
+            const pos = geometry.attributes.position;
+            const time = performance.now() * 0.001;
+
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const z = pos.getZ(i);
+                const dist = Math.sqrt(x * x + z * z);
+
+                // Low-rank SVD singular value decay mathematical equation
+                const decay = Math.exp(-alpha * (dist / 15.0));
+                const harmonic = Math.sin(x * 0.3 + time) * Math.cos(z * 0.3 + time) * (rank / 10.0);
+                const y = Math.sin(dist * 0.4 - time * 1.5) * decay * 6.0 + harmonic * 0.4;
+
+                pos.setY(i, y);
+            }
+            pos.needsUpdate = true;
+            geometry.computeVertexNormals();
+
+            // Update stats
+            const ratioEl = document.getElementById('stat-ratio');
+            const errEl = document.getElementById('stat-err');
+            if (ratioEl) ratioEl.innerText = (64 / Math.max(1, rank)).toFixed(2) + 'x';
+            if (errEl) errEl.innerText = (0.015 + (1.0 / Math.max(1, rank)) * 0.15 * alpha).toFixed(4);
+        }
+
+        // DOM Event Listeners
+        const rankSlider = document.getElementById('rank-slider');
+        const alphaSlider = document.getElementById('alpha-slider');
+        const rankVal = document.getElementById('val-rank');
+        const alphaVal = document.getElementById('val-alpha');
+        const shadingSelect = document.getElementById('shading-select');
+        const layerSelect = document.getElementById('layer-select');
+
+        if (rankSlider && rankVal) {
+            rankSlider.addEventListener('input', (e) => {
+                rankVal.innerText = e.target.value;
+                updateManifold(parseFloat(e.target.value), parseFloat(alphaSlider.value));
+            });
+        }
+
+        if (alphaSlider && alphaVal) {
+            alphaSlider.addEventListener('input', (e) => {
+                alphaVal.innerText = e.target.value;
+                updateManifold(parseFloat(rankSlider.value), parseFloat(e.target.value));
+            });
+        }
+
+        if (shadingSelect) {
+            shadingSelect.addEventListener('change', (e) => {
+                const val = e.target.value;
+                if (val === 'points') {
+                    manifoldMesh.visible = false;
+                    pointsMesh.visible = true;
+                } else if (val === 'wireframe') {
+                    pointsMesh.visible = false;
+                    manifoldMesh.visible = true;
+                    material.wireframe = true;
+                } else {
+                    pointsMesh.visible = false;
+                    manifoldMesh.visible = true;
+                    material.wireframe = false;
+                }
+            });
+        }
+
+        if (layerSelect) {
+            layerSelect.addEventListener('change', (e) => {
+                const cfg = ARCH_CONFIGS[e.target.value] || ARCH_CONFIGS.svd_linear;
+                if (rankSlider) {
+                    rankSlider.value = cfg.rank;
+                    if (rankVal) rankVal.innerText = cfg.rank;
+                }
+                if (alphaSlider) {
+                    alphaSlider.value = cfg.alpha;
+                    if (alphaVal) alphaVal.innerText = cfg.alpha;
+                }
+                material.color.setHex(cfg.color);
+                pointsMaterial.color.setHex(cfg.color);
+                pointLight1.color.setHex(cfg.lightColor);
+                updateManifold(cfg.rank, cfg.alpha);
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            if (!renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Frame rendering loop with FPS calculation
+        let lastTime = performance.now();
+        let frameCount = 0;
+        const fpsEl = document.getElementById('stat-fps');
+
+        function animate(now) {
+            requestAnimationFrame(animate);
+            frameCount++;
+            if (now - lastTime >= 1000) {
+                if (fpsEl) fpsEl.innerText = `${frameCount} FPS`;
+                frameCount = 0;
+                lastTime = now;
+            }
+            controls.update();
+            updateManifold(parseFloat(rankSlider.value), parseFloat(alphaSlider.value));
+            if (renderer) renderer.render(scene, camera);
+        }
+        animate(performance.now());
+    </script>
+</body>
+</html>
