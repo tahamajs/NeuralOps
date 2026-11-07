@@ -111,20 +111,23 @@ print(f"Original: {orig_params:.1f}M params -> Compressed: {comp_params:.1f}M pa
 Recover full task accuracy through NeuralOps' 6-pillar knowledge distillation pipeline:
 
 ```python
-from neuralops.trainer import NeuralOpsTrainer, TrainerConfig
+from transformers import TrainingArguments
+from neuralops.trainer import NeuralOpsTrainer
 
-config = TrainerConfig(
+training_args = TrainingArguments(
     output_dir="./healed_checkpoint",
     learning_rate=5e-5,
     max_steps=500,
-    wsd_decay=True,          # Warmup-Stable-Decay scheduling
-    kd_pillars=["logits_kl", "feature_mse", "attention_map"],
+    per_device_train_batch_size=8,
 )
 
 trainer = NeuralOpsTrainer(
     model=compressed_model,
     teacher_model=model,
-    args=config,
+    kd_loss=True,
+    kd_temperature=2.0,
+    kd_weight=0.5,
+    args=training_args,
 )
 trainer.train()
 ```
@@ -137,20 +140,23 @@ NeuralOps automatically routes kernel operations through the optimal execution p
 
 ```python
 import torch
-from neuralops.core.dispatch import get_optimal_backend, force_kernel_backend
+from neuralops import force_kernel_backend
+from neuralops.core.backend.dispatch import available_backends, get_backend
 
 # Check active dispatch backend
-backend = get_optimal_backend("gdn_scan")
-print(f"Optimal backend selected: {backend}")  # e.g., 'cuda' -> 'triton' -> 'pytorch'
+backends = available_backends()
+backend = get_backend()
+print(f"Optimal backend selected: {backend}")  # e.g., 'triton' -> 'cuda' -> 'cpu'
 
 # Force specific backend for verification or ablation
 with force_kernel_backend("triton"):
-    from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton
+    from neuralops.ops.triton.gdn_scan import gdn_scan_triton
     q = torch.randn(2, 8, 512, 64, device="cuda", dtype=torch.float16)
     k = torch.randn(2, 8, 512, 64, device="cuda", dtype=torch.float16)
     v = torch.randn(2, 8, 512, 64, device="cuda", dtype=torch.float16)
     beta = torch.sigmoid(torch.randn(2, 8, 512, device="cuda", dtype=torch.float16))
-    out = gdn_scan_triton(q, k, v, beta)
+    alpha = torch.sigmoid(torch.randn(2, 8, 512, device="cuda", dtype=torch.float16))
+    out = gdn_scan_triton(q, k, v, beta, alpha)
 ```
 
 ---
@@ -169,14 +175,10 @@ serving_engine = TGIServingAdapter(
     max_batch_size=16,
 )
 
-# Stream generation tokens concurrently
-prompts = [
-    "Explain associative memory:",
-    "How does low-rank matrix decomposition work?",
-]
-
-for stream_token in serving_engine.continuous_batching_generate(prompts, max_new_tokens=30):
-    print(f"Seq {stream_token.seq_id}: {stream_token.text}", end="", flush=True)
+# Stream generation tokens incrementally
+prompt = "Explain associative memory:"
+for token_id, token_text in serving_engine.streaming_generate(prompt, max_new_tokens=30):
+    print(f"Token {token_id}: {token_text}", end="", flush=True)
 print()
 ```
 

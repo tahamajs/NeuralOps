@@ -114,27 +114,23 @@ selective_model = neuralops.replace_attention(
 To heal accuracy drops immediately after surgery, use NeuralOps' 6-pillar knowledge distillation framework:
 
 ```python
-from neuralops.trainer import NeuralOpsTrainer, TrainerConfig
+from transformers import TrainingArguments
+from neuralops.trainer import NeuralOpsTrainer
 
-config = TrainerConfig(
+training_args = TrainingArguments(
     output_dir="./healed_model",
     learning_rate=5e-5,
     max_steps=500,
-    wsd_decay=True,  # Warmup-Stable-Decay scheduling
-    kd_pillars=[
-        "logits_kl",      # KL divergence over output distribution
-        "feature_mse",    # Hidden state MSE alignment
-        "attention_map",  # Query-Key interaction alignment
-        "hidden_cosine",  # Representation direction alignment
-        "layer_norm",     # Activation variance normalization
-        "gram_matrix",    # Cross-head feature correlation
-    ],
+    per_device_train_batch_size=8,
 )
 
 trainer = NeuralOpsTrainer(
     model=student_model,
     teacher_model=model,
-    args=config,
+    kd_loss=True,
+    kd_temperature=2.0,
+    kd_weight=0.5,
+    args=training_args,
 )
 trainer.train()
 ```

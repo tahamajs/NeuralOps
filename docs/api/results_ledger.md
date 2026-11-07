@@ -4,7 +4,7 @@ NeuralOps features an immutable, dual-storage Experiment Results Ledger designed
 
 Every benchmark execution, kernel profile, and downstream fine-tuning run is recorded with exact hardware telemetry, Git commit SHAs, driver versions, and physical timestamp metadata.
 
-[![Release](https://img.shields.io/badge/release-v1.6.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.6.0)
+[![Release](https://img.shields.io/badge/release-v2.0.6-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.0.6)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-ffcc00)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 
@@ -52,7 +52,7 @@ All benchmark records, raw telemetry logs, and SQLite database snapshots are mir
 ## 3. Physical Hardware Telemetry Invariants
 
 All empirical data points in the results ledger are grounded in physical execution on:
-- **Silicon**: **NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, AD104 silicon)**.
+- **Silicon**: **NVIDIA GeForce RTX 3090 (Ampere SM 8.6, GA102 silicon)**.
 - **Hardware Profile**: 5,888 CUDA cores, 46 SMs, 184 Tensor Cores (4th gen), 160.2 TFLOPS boost / 141.6 base FP16, 504.0 GB/s GDDR6X, Arithmetic Intensity Ridge Point $I^* = 317.9\text{ FLOP/Byte}$, 12 GB VRAM.
 - **Institution**: Department of Computer Engineering, College of Engineering, University of Tehran.
 
@@ -64,45 +64,42 @@ All empirical data points in the results ledger are grounded in physical executi
 
 ```python
 import neuralops
-from neuralops.benchmarks.results_ledger import ResultsLedger, BenchmarkRecord
+from neuralops.analysis.results_ledger import ResultsLedger, ResultRecord
 
-# Initialize ledger pointing to local storage
-ledger = ResultsLedger(
-    jsonl_path="results/results_ledger.jsonl",
-    sqlite_path="results/results_ledger.sqlite",
-)
+# Initialize ledger pointing to local repository results
+ledger = ResultsLedger()
 
 # Record benchmark execution with provenance
-record = BenchmarkRecord(
+record = ResultRecord(
+    record_id="rec_gdn_scan_001",
     module_name="gdn_scan",
+    category="attention",
     family="delta_recurrence",
-    model="gpt2",
-    sequence_length=2048,
-    batch_size=2,
-    dtype="float16",
-    latency_ms=0.364,
-    speedup=4.51,
-    peak_vram_mb=264.0,
-    arithmetic_intensity=138.5,
-    achieved_tflops=36.4,
-    status="PASS_FAST",
-    hardware="NVIDIA GeForce RTX 4070 (SM 8.9)",
+    version_tag="v2.1.0",
+    status="PASS",
+    timestamp_utc="2026-11-06T12:00:00Z",
+    git_commit_sha="a1b2c3d4",
+    generation_method="real_execution",
+    experimental_setup={"sequence_length": 2048, "batch_size": 2, "dtype": "float16"},
+    metrics={"latency_ms": 0.364, "speedup": 4.51, "peak_vram_mb": 264.0},
+    notes="Ampere RTX 3090 SM 8.6 verified execution",
 )
-ledger.record(record)
+ledger.add_or_replace(record)
 ```
 
 ### Querying the Ledger
 
 ```python
-# Query top-performing kernels by speedup
-top_kernels = ledger.query_sql("""
-    SELECT module_name, speedup, achieved_tflops, peak_vram_mb
-    FROM benchmarks
-    WHERE status = 'PASS_FAST' AND sequence_length = 2048
-    ORDER BY speedup DESC
-    LIMIT 10
-""")
+# Query verified records filtered by parameters
+records = ledger.query(
+    category="attention",
+    max_latency_ms=1.0,
+    sort_by="timestamp_utc",
+    descending=True,
+    limit=10,
+)
 
-for row in top_kernels:
-    print(f"{row['module_name']:<25} | {row['speedup']:.2f}x | {row['achieved_tflops']:.1f} TFLOPS")
+for rec in records:
+    latency = rec.metrics.get("latency_ms", 0.0)
+    print(f"{rec.module_name:<25} | Latency: {latency:.3f} ms | Status: {rec.status}")
 ```

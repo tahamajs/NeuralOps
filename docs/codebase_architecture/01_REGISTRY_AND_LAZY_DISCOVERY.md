@@ -187,7 +187,7 @@ class DirectSVDCompressor(BaseCompressor):
 ## 6. Audit & Verification Evidence
 
 Local static verification conducted under AGENTS.md §3.1 protocols:
-1. `ruff check neuralops/core/registry.py neuralops/__init__.py neuralops/attentions/__init__.py neuralops/compression/__init__.py`:
+1. `ruff check neuralops/core/registry.py neuralops/__init__.py neuralops/layers/__init__.py neuralops/compression/__init__.py`:
    $\rightarrow$ **All checks passed!**
 2. `python3 scripts/utils/audit_dead_code.py`:
    $\rightarrow$ **Audited 1377 Python source files. Issues found: 0**

@@ -4,7 +4,7 @@ NeuralOps registers **exactly 131 canonical subquadratic, linear, recurrent, and
 
 Every attention mechanism implements the standard interface `neuralops.core.base.BaseAttention` and can be instantiated directly via factory constructors (`neuralops.create_attention`) or injected in-place into pre-trained transformer architectures via universal AST and topological surgery (`neuralops.replace_attention`).
 
-[![Release](https://img.shields.io/badge/release-v1.6.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.6.0)
+[![Release](https://img.shields.io/badge/release-v2.0.6-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.0.6)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-ffcc00)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 
@@ -183,6 +183,6 @@ Drop-in replace attention layers in any PyTorch or Hugging Face model (`GPT-2`, 
 ## 4. Grounded Hardware Verification & Telemetry
 
 All 131 attention mechanisms have been verified on:
-- **Primary Physical Testbed**: **NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, AD104 silicon)**.
+- **Primary Physical Testbed**: **NVIDIA GeForce RTX 3090 (Ampere SM 8.6, GA102 silicon)**.
 - **Hardware Telemetry**: 5,888 CUDA cores, 46 SMs, 184 Tensor Cores (4th gen), 160.2 TFLOPS boost / 141.6 base FP16, 504.0 GB/s GDDR6X, Arithmetic Intensity Ridge Point $I^* = 317.9\text{ FLOP/Byte}$, 12 GB VRAM.
 - **Master Benchmark Dataset**: [https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results).

@@ -12,21 +12,27 @@ pip install -e .
 
 ## Core Workflows
 
-1. **Inspect Model Architecture**:
+1. **Inspect Model Architecture & Attention Topology**:
    ```python
-   from neuralops import inspect_architecture
-   inspect_architecture(model)
+   from neuralops.surgery.scanner import UniversalArchitectureScanner
+
+   # Automatically scan model modules across 5 topological patterns
+   targets = UniversalArchitectureScanner.scan(model)
+   print(f"Discovered {len(targets)} attention targets in model.")
    ```
 
-2. **Attention Surgery**:
+2. **In-Place Attention Surgery**:
    ```python
-   from neuralops import replace_attention
-   replace_attention(model, attention_type="cosformer", calibrate=True)
+   import neuralops
+
+   # Transplant quadratic attention with linear subquadratic attention
+   model = neuralops.replace_attention(model, attention="cosformer", copy_weights=True)
    ```
 
-3. **Model Compression**:
+3. **Low-Rank Model Compression**:
    ```python
-   from neuralops import compress
-   engine = compress("hnc_svd", rank_ratio=0.5)
-   compressed_model = engine.compress(model)
+   import neuralops
+
+   # Compress linear projection layers using Adaptive SVD (ASVD)
+   compressed_model = neuralops.compress(model, method="asvd", rank=32)
    ```

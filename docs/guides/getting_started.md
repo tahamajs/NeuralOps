@@ -57,12 +57,14 @@ pip install -e ".[dev]"
 
 ### Option C: Compiling Native CUDA C++ Extensions (Level 1 Dispatch)
 
-To unlock Level 1 peak throughput on NVIDIA GPUs:
+To unlock Level 1 peak throughput on NVIDIA GPUs, install with native CUDA extensions enabled from the repository root:
 
 ```bash
-cd neuralops/csrc
-python setup.py build_ext --inplace
-cd ../..
+# Build extensions in-place from repository root (sources in neuralops/core/cuda_kernels/ and neuralops/ops/cuda/)
+pip install -e .
+
+# Or install standalone binary distribution
+pip install neuralops-cuda
 ```
 
 ---
@@ -135,12 +137,15 @@ print(f"Parameters: {orig_params:.1f}M -> {comp_params:.1f}M ({orig_params / com
 Execute optimized Triton or CUDA kernels with automatic PyTorch CPU fallback:
 
 ```python
-from neuralops.core.dispatch import get_optimal_backend, force_kernel_backend
-from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton
+import torch
+from neuralops import force_kernel_backend
+from neuralops.core.backend.dispatch import available_backends, get_backend
+from neuralops.ops.triton.gdn_scan import gdn_scan_triton
 
 # Determine available execution tier
-backend = get_optimal_backend("gdn_scan")
-print(f"Selected backend: {backend}")
+backends = available_backends()
+backend = get_backend()
+print(f"Available backends: {backends}, Selected: {backend}")
 
 # Explicitly test Triton backend
 with force_kernel_backend("triton"):
@@ -148,7 +153,8 @@ with force_kernel_backend("triton"):
     k = torch.randn(2, 8, 512, 64, device="cuda" if torch.cuda.is_available() else "cpu")
     v = torch.randn(2, 8, 512, 64, device="cuda" if torch.cuda.is_available() else "cpu")
     beta = torch.sigmoid(torch.randn(2, 8, 512, device="cuda" if torch.cuda.is_available() else "cpu"))
-    out = gdn_scan_triton(q, k, v, beta)
+    alpha = torch.sigmoid(torch.randn(2, 8, 512, device="cuda" if torch.cuda.is_available() else "cpu"))
+    out = gdn_scan_triton(q, k, v, beta, alpha)
     print("Kernel output shape:", out.shape)
 ```
 

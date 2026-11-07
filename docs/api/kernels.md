@@ -2,7 +2,7 @@
 
 NeuralOps implements **26 canonical Triton JIT kernel modules (housing 62 unified JIT operators across 4 architectural tiers)** and **112 Native CUDA C++ Packages (housing 114 native implementations)** delivering fused subquadratic sequence modeling, paged state management, and fused training objectives.
 
-[![Release](https://img.shields.io/badge/release-v1.6.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.6.0)
+[![Release](https://img.shields.io/badge/release-v2.0.6-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.0.6)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-ffcc00)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 [![Interactive Roofline](https://img.shields.io/badge/%E2%9A%A1%20Interactive%20Roofline-RTX%204070-blue)](../roofline_interactive.html)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
@@ -32,7 +32,7 @@ Every compute operator in NeuralOps conforms to the strict 3-level fallback exec
 └────────────────────────────────────────────────────────┘
 ```
 
-Backend selection uses zero-allocation dispatch tables cached via `@lru_cache`. Backend forcing is accessible via `neuralops.core.dispatch.force_kernel_backend`.
+Backend selection uses zero-allocation dispatch tables cached via `@lru_cache`. Backend forcing is accessible via `from neuralops import force_kernel_backend`.
 
 ---
 
@@ -69,10 +69,10 @@ Backend selection uses zero-allocation dispatch tables cached via `@lru_cache`. 
 
 ---
 
-## 3. Native CUDA C++ Kernel Suite (112 Packages, 114 Implementations)
+## 3. Native CUDA C++ Kernel Suite (141 Packages)
 
-The native CUDA C++ kernel suite is implemented in `neuralops/core/cuda_kernels/` and `neuralops/csrc/`. Key highlights:
-- **112 Modular Kernel Packages**: Including `moe_routing`, `hgrn2_fused_bwd_scan`, `linear_attention`, `selective_scan`, `chunked_delta_gate_scan`, `paged_attention`, `sliding_window_attn`, `lut_codebook_dequant_gemm`, `flash_gqa`, `cosformer_linear_attention`, and `fused_rotary_emb`.
+The native CUDA C++ kernel suite is implemented in `neuralops/core/cuda_kernels/` and `neuralops/ops/cuda/`. Key highlights:
+- **141 Modular Kernel Packages**: Including `moe_routing`, `hgrn2_fused_bwd_scan`, `linear_attention`, `selective_scan`, `chunked_delta_gate_scan`, `paged_attention`, `sliding_window_attn`, `lut_codebook_dequant_gemm`, `flash_gqa`, `cosformer_linear_attention`, and `fused_rotary_emb`.
 - **Warp-Level Shuffles**: `__shfl_xor_sync` and `__shfl_down_sync` eliminate shared memory roundtrips during reduction trees.
 - **128-bit Vectorized Memory Loads**: `float4` and `int4` memory transactions maximizing DRAM bus utilization.
 - **Shared Memory Padding**: Resolves bank conflicts across parallel warp access patterns.
@@ -82,6 +82,6 @@ The native CUDA C++ kernel suite is implemented in `neuralops/core/cuda_kernels/
 ## 4. Hardware Telemetry & Empirical Grounding
 
 All kernels are empirically benchmarked on physical hardware:
-- **Primary Physical Testbed**: **NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, AD104 silicon)**.
+- **Primary Physical Testbed**: **NVIDIA GeForce RTX 3090 (Ampere SM 8.6, GA102 silicon)**.
 - **Physical Specifications**: 5,888 CUDA cores, 46 SMs, 184 Tensor Cores (4th gen), 160.2 TFLOPS boost / 141.6 base FP16, 504.0 GB/s GDDR6X, Arithmetic Intensity Ridge Point $I^* = 317.9\text{ FLOP/Byte}$, 12 GB VRAM.
 - **Master Benchmark Dataset**: [https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results).

@@ -42,11 +42,11 @@ In compliance with repo invariants:
 
 NeuralOps houses two complementary kernel suites:
 
-1. **26 Canonical Triton Kernel Modules (62 Unified Operators)**:
-   - Reside in `neuralops/core/triton_kernels/`.
+1. **26 Canonical Triton Kernel Modules (58 files)**:
+   - Reside in `neuralops/ops/triton/`.
    - Autotuned across 4 architectural tiers: associative scans (`gdn_scan`, `gla_scan`, `hgrn2_scan`), state-space recurrences (`selective_scan`, `fms_scan`), virtualized attention (`paged_attention`, `flash_decoding`), and fused training objectives (`fused_kd`, `fused_ce`).
-2. **112 Native CUDA C++ Packages (114 Native Implementations)**:
-   - Reside in `neuralops/core/cuda_kernels/` and `neuralops/csrc/`.
+2. **141 Native CUDA C++ Packages**:
+   - Reside in `neuralops/core/cuda_kernels/` and `neuralops/ops/cuda/`.
    - Leverage warp-synchronous shuffle intrinsics (`__shfl_xor_sync`), tensor core MMA operations, and bank conflict-free shared memory padding.
 
 ---
@@ -56,10 +56,11 @@ NeuralOps houses two complementary kernel suites:
 ### Inspecting Optimal Backend
 
 ```python
-from neuralops.core.dispatch import get_optimal_backend
+from neuralops.core.backend.dispatch import available_backends, get_backend
 
-backend = get_optimal_backend("gdn_scan")
-print(f"Active backend for gdn_scan: {backend}")  # 'cuda', 'triton', or 'pytorch'
+backends = available_backends()
+backend = get_backend()
+print(f"Available backends: {backends}, Selected: {backend}")  # 'cuda', 'triton', or 'cpu'
 ```
 
 ### Forcing a Specific Backend
@@ -68,8 +69,8 @@ For ablation studies, debugging, or CPU unit testing, use the context manager:
 
 ```python
 import torch
-from neuralops.core.dispatch import force_kernel_backend
-from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton
+from neuralops import force_kernel_backend
+from neuralops.ops.triton.gdn_scan import gdn_scan_triton
 
 # Force Triton execution
 with force_kernel_backend("triton"):
@@ -77,11 +78,12 @@ with force_kernel_backend("triton"):
     k = torch.randn(2, 8, 512, 64, device="cuda", dtype=torch.float16)
     v = torch.randn(2, 8, 512, 64, device="cuda", dtype=torch.float16)
     beta = torch.sigmoid(torch.randn(2, 8, 512, device="cuda", dtype=torch.float16))
-    out = gdn_scan_triton(q, k, v, beta)
+    alpha = torch.sigmoid(torch.randn(2, 8, 512, device="cuda", dtype=torch.float16))
+    out = gdn_scan_triton(q, k, v, beta, alpha)
 
 # Force pure PyTorch reference execution (works on CPU or Apple Silicon)
 with force_kernel_backend("pytorch"):
-    out_cpu = gdn_scan_triton(q.cpu(), k.cpu(), v.cpu(), beta.cpu())
+    out_cpu = gdn_scan_triton(q.cpu(), k.cpu(), v.cpu(), beta.cpu(), alpha.cpu())
 ```
 
 ---

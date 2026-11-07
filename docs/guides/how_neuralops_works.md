@@ -15,7 +15,7 @@ NeuralOps addresses these challenges through a tightly integrated three-layer ar
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        User & Python Client Layer                      │
-│   from neuralops import attention, replace_attention, compress        │
+│        from neuralops import replace_attention, compress               │
 └──────────────────────────────────┬─────────────────────────────────────┘
                                    │
 ┌──────────────────────────────────▼─────────────────────────────────────┐
@@ -42,30 +42,36 @@ Every kernel operation in NeuralOps implements a formal 3-level fallback contrac
 ### Level 1: Native CUDA C++ / HIP Extension
 - **Target**: Maximum theoretical memory bandwidth and compute throughput on NVIDIA Ada Lovelace (SM 8.9), Hopper (SM 9.0), and Blackwell (SM 10.0).
 - **Techniques**: Warp-shuffle intrinsics (`__shfl_xor_sync`), 128-bit vectorized global memory transactions (`float4`), register-resident matrix tiles, and bank-conflict-free shared memory padding.
-- **Packages**: 130 native CUDA C++ kernel packages.
+- **Packages**: 141 native CUDA C++ kernel packages.
 
 ### Level 2: Autotuned Triton JIT Kernels
 - **Target**: High-productivity hardware compilation without manual C++ toolchain compilation.
 - **Techniques**: 2D-tiled block iterators, chunk-parallel associative Blelloch scans in SRAM, automatic grid heuristic autotuning across tile sizes `[BLOCK_M, BLOCK_N]`.
 - **Invariants**: Strict ban on `tl.make_block_ptr` / `tl.advance` (to ensure universal compatibility across standard Triton versions; Huawei Ascend NPU exempt).
-- **Modules**: 26 canonical modules housing 62 unified operators across 4 tiers.
+- **Modules**: 26 canonical modules housing 58 files across 4 tiers.
 
 ### Level 3: Vectorized PyTorch Reference
 - **Target**: Universal verification, unit testing, CPU execution, and Apple Silicon MPS support.
 - **Semantics**: Pure PyTorch tensor operations preserving exact mathematical parity within `atol=1e-3, eps=1e-5`.
 
 ```python
-# Forcing backends explicitly for benchmarking
+# Forcing backends explicitly for benchmarking or ablation
+import torch
 from neuralops import force_kernel_backend
+from neuralops.ops.triton.gdn_scan import gdn_scan_triton
 
 # Force pure Triton JIT execution
-force_kernel_backend("triton")
+with force_kernel_backend("triton"):
+    q = torch.randn(2, 8, 512, 64, device="cuda", dtype=torch.float16)
+    k = torch.randn(2, 8, 512, 64, device="cuda", dtype=torch.float16)
+    v = torch.randn(2, 8, 512, 64, device="cuda", dtype=torch.float16)
+    beta = torch.sigmoid(torch.randn(2, 8, 512, device="cuda", dtype=torch.float16))
+    alpha = torch.sigmoid(torch.randn(2, 8, 512, device="cuda", dtype=torch.float16))
+    out = gdn_scan_triton(q, k, v, beta, alpha)
 
-# Force native CUDA C++ execution
-force_kernel_backend("cuda")
-
-# Reset to automatic hierarchical dispatch
-force_kernel_backend(None)
+# Force pure PyTorch reference execution
+with force_kernel_backend("pytorch"):
+    out_ref = gdn_scan_triton(q.cpu(), k.cpu(), v.cpu(), beta.cpu(), alpha.cpu())
 ```
 
 ---
@@ -76,19 +82,19 @@ The Attention Surgery engine allows researchers and practitioners to replace the
 
 ```python
 from transformers import AutoModelForCausalLM
-from neuralops import replace_attention, inspect_architecture
+import neuralops
+from neuralops.surgery.scanner import UniversalArchitectureScanner
 
 model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B")
 
 # 1. Inspect layer shapes and identify candidate modules
-spec = inspect_architecture(model)
+targets = UniversalArchitectureScanner.scan(model)
 
 # 2. Perform surgical transplant
-replace_attention(
+neuralops.replace_attention(
     model=model,
-    attention_type="cosformer",  # Any of 131 registered mechanisms
-    calibrate=True,              # Automatic activation covariance calibration
-    target_layers=None           # None = replace all attention layers
+    attention="cosformer",  # Any of 131 registered mechanisms
+    copy_weights=True,
 )
 ```
 
@@ -102,15 +108,17 @@ replace_attention(
 
 ## 4. The 72-Engine Compression Pipeline
 
-NeuralOps houses 72 compression algorithms categorized into five distinct paradigms:
+NeuralOps houses 72 compression algorithms categorized into seven distinct paradigms:
 
 | Paradigm | Engines | Key Representative | Typical Ratio | Perplexity Retention |
 |---|---|---|---|---|
-| **SVD & Low-Rank** | 24 | HNC-SVD, FWSVD, SVD-LLM | 2.0x – 4.0x | 97% – 99.5% |
-| **Structured Pruning** | 16 | ProxSparse, ADMM Channel, 2:4 Sparsity | 1.5x – 2.5x | 94% – 98% |
-| **Quantization** | 14 | Spectron-FP8, MX-FP4, SmoothQuant | 2.0x – 4.0x | 98% – 99.8% |
-| **KV-Cache Pruning** | 10 | AATC-XKV, StreamingLLM Sinks, H2O | 3.0x – 8.0x | 95% – 99% |
-| **Rotational & Manifold** | 8 | SliceGPT-PCA, Stiefel Riemannian SVD | 1.3x – 2.0x | 96% – 98.5% |
+| **Low-Rank** | 24 | LowRankDecomposition, LoRACoeff, FWSVD | 2.0x – 4.0x | 97% – 99.5% |
+| **SVD Factorization** | 21 | HNC-SVD, DirectSVD, ASVD, SVD-LLM | 2.0x – 4.0x | 97% – 99.5% |
+| **Quantization** | 13 | Spectron-FP8, MX-FP4, SmoothQuant | 2.0x – 4.0x | 98% – 99.8% |
+| **Structured Pruning** | 10 | ProxSparse, ADMM Channel, 2:4 Sparsity | 1.5x – 2.5x | 94% – 98% |
+| **KV-Cache Compression** | 6 | AATC-XKV, StreamingLLM Sinks, H2O | 3.0x – 8.0x | 95% – 99% |
+| **Experimental** | 5 | Riemannian Manifold SVD, SliceGPT-PCA | 1.3x – 2.0x | 96% – 98.5% |
+| **Tensor Decomposition**| 3 | Tensor-Train, Tucker, CP Decomposition | 2.5x – 5.0x | 95% – 98% |
 
 ### Activation Covariance Whitening (HNC-SVD):
 Rather than truncating weights via naive Frobenius norm minimisation $\|W - M\|_F$, NeuralOps whitens weights using the empirical activation covariance matrix $\mathbf{\Sigma}_X = \mathbb{E}[X^T X]$:
@@ -148,4 +156,4 @@ Optimized models can be exported to all major production runtimes:
 
 ---
 
-*NeuralOps Architectural Specification · [Back to Hub](../../index.html)*
+*NeuralOps Architectural Specification · [Back to Hub](../index.md)*

@@ -2,7 +2,7 @@
 
 NeuralOps provides production serving adapters for high-throughput concurrent inference across **Hugging Face Transformers**, **vLLM**, **Text Generation Inference (TGI)**, **SGLang**, and **TensorRT-LLM**.
 
-[![Release](https://img.shields.io/badge/release-v1.6.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.6.0)
+[![Release](https://img.shields.io/badge/release-v2.0.6-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.0.6)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-ffcc00)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 
@@ -114,6 +114,6 @@ Automated C++ CUDA kernel generator and serialization manager for TensorRT-LLM:
 ## 4. Hardware Verification & Telemetry
 
 All serving adapters are benchmarked on:
-- **Physical Testbed**: **NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, AD104 silicon)**.
+- **Physical Testbed**: **NVIDIA GeForce RTX 3090 (Ampere SM 8.6, GA102 silicon)**.
 - **Hardware Telemetry**: 5,888 CUDA cores, 46 SMs, 184 Tensor Cores (4th gen), 160.2 TFLOPS boost FP16, 504.0 GB/s GDDR6X, 12 GB VRAM.
 - **Master Dataset**: [https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results).

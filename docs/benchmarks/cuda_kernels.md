@@ -62,11 +62,14 @@ Latency scaling across sequence lengths $L$ ($B=2, H=8, d=64$):
 
 ## 5. Compiling Native CUDA Extensions
 
-To build and install the C++ CUDA kernel packages locally:
+To build and install the C++ CUDA kernel packages locally from the repository root:
 
 ```bash
-cd neuralops/csrc
-python setup.py build_ext --inplace
+# Build extensions in-place from repository root (sources in neuralops/core/cuda_kernels/ and neuralops/ops/cuda/)
+pip install -e .
+
+# Or install pre-built CUDA extensions
+pip install neuralops-cuda
 ```
 
-The compiled extensions expose direct bindings through `neuralops.core.dispatch` and `torch.ops.neuralops`.
+The compiled extensions expose direct bindings through `torch.ops.neuralops` and the 3-level dispatch hierarchy.
