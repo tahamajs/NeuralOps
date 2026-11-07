@@ -40,6 +40,13 @@ from neuralops.core.exceptions import RegistryError
 
 logger = logging.getLogger(__name__)
 
+LOAD_ERRORS: list[tuple[str, str]] = []
+
+
+def load_errors() -> list[tuple[str, str]]:
+    """Return a copy of all errors encountered during registry loading."""
+    return list(LOAD_ERRORS)
+
 DEPRECATED_ALIASES: dict[str, str] = {
     "aegis_v6": "gated_hybrid_kernel_attention",
     "chela_slay_attention": "chela_slay",
@@ -583,6 +590,10 @@ class Registry:
             return _make_universal_attention_class(obj)
         return obj
 
+    def load_errors(self) -> builtins.list[tuple[str, str]]:
+        """Return a copy of all errors encountered during registry loading."""
+        return list(LOAD_ERRORS)
+
     def _load_all(self) -> None:
         """Attempt to load all modules in the associated package."""
         if self._loaded:
@@ -596,14 +607,16 @@ class Registry:
                         try:
                             importlib.import_module(mod_path)
                         except Exception as e:
-                            logger.warning("Failed to eagerly load compressor module %s: %s", mod_path, e)
+                            logger.error("Failed to eagerly load compressor module %s: %s", mod_path, e)
+                            LOAD_ERRORS.append((mod_path, str(e)))
                 self._loaded = True
             except Exception as e:
+                logger.error("Error loading compression: %s", e)
+                LOAD_ERRORS.append(("neuralops.compression", str(e)))
                 import os
 
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
-                logger.warning("Error loading compression: %s", e)
         elif self.name == "attentions":
             try:
                 package = importlib.import_module("neuralops.layers")
@@ -613,18 +626,21 @@ class Registry:
                         try:
                             importlib.import_module(mod_path)
                         except Exception as e:
-                            logger.warning("Failed to eagerly load attention module %s: %s", mod_path, e)
+                            logger.error("Failed to eagerly load attention module %s: %s", mod_path, e)
+                            LOAD_ERRORS.append((mod_path, str(e)))
                 try:
                     import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
                 except Exception as e:
-                    logger.warning("Failed to eagerly import ttt_linear_attention: %s", e)
+                    logger.error("Failed to eagerly import ttt_linear_attention: %s", e)
+                    LOAD_ERRORS.append(("neuralops.trainer.ttt.test_time_trainer", str(e)))
                 self._loaded = True
             except Exception as e:
+                logger.error("Error loading layers: %s", e)
+                LOAD_ERRORS.append(("neuralops.layers", str(e)))
                 import os
 
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
-                logger.warning("Error loading layers: %s", e)
 
     def canonical_keys(self) -> builtins.list[str]:
         """Return a list of all registered keys (canonical only)."""

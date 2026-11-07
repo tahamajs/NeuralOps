@@ -14,13 +14,16 @@ Houses all subquadratic attention families (linear, svd, ssm, gated, hybrid, spa
 from __future__ import annotations
 
 import importlib
+import logging
 from typing import Any
 
 from neuralops._optional import _require_torch
 
 _require_torch("neuralops.layers")
 
-from neuralops.core.registry import ATTENTION_REGISTRY, get_attention, list_attentions
+from neuralops.core.registry import ATTENTION_REGISTRY, LOAD_ERRORS, get_attention, list_attentions
+
+logger = logging.getLogger(__name__)
 
 ATTENTION_REGISTRY = ATTENTION_REGISTRY
 get_attention = get_attention
@@ -66,9 +69,9 @@ def __dir__() -> list[str]:
         try:
             mod = importlib.import_module(f".{subpackage}", __package__)
             names.update(getattr(mod, "__all__", []))
-        except Exception:
-            # allowed-swallow: best-effort-telemetry
-            pass
+        except Exception as exc:
+            logger.error("Failed to load symbols from subpackage %s: %s", subpackage, exc)
+            LOAD_ERRORS.append((f"neuralops.layers.{subpackage}", str(exc)))
     return sorted(names)
 
 

@@ -135,3 +135,42 @@ def test_registry_names_match_expected() -> None:
     if hasattr(COMPRESSOR_REGISTRY, "load_errors"):
         assert len(COMPRESSOR_REGISTRY.load_errors()) == 0, f"Compressor load errors: {COMPRESSOR_REGISTRY.load_errors()}"
 
+
+def test_all_registered_attentions_subclass_base_attention_or_exempt() -> None:
+    """Verify that every registered attention class subclasses BaseAttention, or has a documented exemption."""
+    from neuralops.core.base import BaseAttention
+    from neuralops.core.registry import ATTENTION_REGISTRY
+
+    ATTENTION_REGISTRY._load_all()
+
+    exempt_attentions = {
+        "moe_deltakv_paged": "Hybrid MoE + Paged DeltaKV composite block (combines router with paged cache)",
+        "samba_m3": "Hybrid composite block combining sliding-window attention with spectral Mamba SSM",
+    }
+
+    violating_attentions = {}
+    for key in ATTENTION_REGISTRY.keys():
+        raw_cls = ATTENTION_REGISTRY._dict.get(key)
+        if isinstance(raw_cls, type):
+            if not issubclass(raw_cls, BaseAttention) and key not in exempt_attentions:
+                violating_attentions[key] = f"{raw_cls.__module__}.{raw_cls.__name__}"
+
+    assert not violating_attentions, (
+        f"Registered attention classes not subclassing BaseAttention (and not exempt): {violating_attentions}"
+    )
+
+
+def test_registry_load_has_no_errors() -> None:
+    """Verify that eagerly loading registries produces zero import/runtime errors."""
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
+    ATTENTION_REGISTRY._load_all()
+    COMPRESSOR_REGISTRY._load_all()
+
+    attn_errors = ATTENTION_REGISTRY.load_errors()
+    comp_errors = COMPRESSOR_REGISTRY.load_errors()
+
+    assert attn_errors == [], f"Attention registry load encountered errors: {attn_errors}"
+    assert comp_errors == [], f"Compressor registry load encountered errors: {comp_errors}"
+
+

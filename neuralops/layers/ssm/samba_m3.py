@@ -23,6 +23,7 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.gqa import repeat_kv
@@ -99,7 +100,7 @@ class SpectralMamba(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("samba_m3", supports_causal=True, supports_gqa=True)
-class SAMBAM3Block(nn.Module):
+class SAMBAM3Block(BaseAttention):
     r"""SAMBA-M3: Local Sliding-Window Attention + Spectral Mamba."""
 
     supports_gqa: bool = True
@@ -118,7 +119,7 @@ class SAMBAM3Block(nn.Module):
         is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
+        super().__init__(config=config, **kwargs)
         if isinstance(config, int):
             d_model = config
             config = None

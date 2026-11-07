@@ -22,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.gqa import repeat_kv
 
@@ -122,7 +123,7 @@ def simulate_paged_delta_kv(
 
 
 @ATTENTION_REGISTRY.register("moe_deltakv_paged", supports_causal=True, supports_gqa=True)
-class MoEDeltaKVPagedAttention(nn.Module):
+class MoEDeltaKVPagedAttention(BaseAttention):
     """
     MoE-DeltaKV-Paged Hybrid Attention.
 
@@ -148,7 +149,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
+        super().__init__(config=config, **kwargs)
 
         if config is None:
 

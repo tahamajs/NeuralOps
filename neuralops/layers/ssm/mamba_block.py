@@ -21,6 +21,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.base import BaseAttention
 from neuralops.core.common import _detect_return_format, _infer_d_model
 from neuralops.core.registry import ATTENTION_REGISTRY
 
@@ -49,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register("mamba_block")
-class MambaBlock(nn.Module):
+class MambaBlock(BaseAttention):
     """Faithful S6 / Mamba block, production-hardened."""
 
     is_custom_attention: bool = True
@@ -76,7 +77,7 @@ class MambaBlock(nn.Module):
             d_model = int(config)
             config = None
 
-        super().__init__()
+        super().__init__(config=config, **kwargs)
         self.config = config
 
         if d_model is None:
