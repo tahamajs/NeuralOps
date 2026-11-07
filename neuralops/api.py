@@ -868,32 +868,17 @@ def list_families() -> Dict[str, List[str]]:
     return families
 
 
-def create_attention(
-    name: str,
-    config: Any = None,
-    dim: int | None = None,
-    num_heads: int | None = None,
-    embed_dim: int | None = None,
-    rank: int | None = None,
-    **kwargs: Any,
-) -> Any:
-    """Universal attention factory instantiating any of the 131 registered attention mechanisms."""
-    import neuralops
-    return neuralops.create_attention(
-        name=name,
-        config=config,
-        dim=dim,
-        num_heads=num_heads,
-        embed_dim=embed_dim,
-        rank=rank,
-        **kwargs,
-    )
+# Canonical universal factories (F-80 single implementation in core.registry)
+from neuralops.core.registry import (
+    create_attention,
+    create_compressor,
+)
 
+# Canonical attention lookup triple: get_attention is canonical; get_attention_class and get_attention_module are aliases
+get_attention = get_attention_class
 
-def create_compressor(name: str, model: Any = None, rank: int | None = None, **kwargs: Any) -> Any:
-    """Universal compressor factory instantiating any of the 72 registered compression engines."""
-    import neuralops
-    return neuralops.create_compressor(name=name, model=model, rank=rank, **kwargs)
+# Canonical compression pipeline triple: compress is canonical top-level API; compress_model is alias
+compress_model = compress
 
 
 def register_custom_attention(*args: Any, **kwargs: Any) -> Any:
@@ -1671,3 +1656,6 @@ from neuralops.transformers import (
     patch_transformers,
 )
 from neuralops.export.surgery_manifest import merge_for_inference
+
+# Canonical Public API symbol mapping (F-79 single source of truth)
+_PUBLIC_API: Dict[str, str] = {name: "neuralops.api" for name in __all__}
