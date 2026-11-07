@@ -33,8 +33,6 @@ def _get_module():
         with open(curr_dir / "cosformer_binding.cpp", "r", encoding="utf-8") as f:
             cpp_src = f.read()
         cu_file = curr_dir / "cosformer.cu"
-        if not cu_file.exists():
-            cu_file = curr_dir / "cosformer_attn.cu"
         with open(cu_file, "r", encoding="utf-8") as f:
             cuda_src = f.read()
 

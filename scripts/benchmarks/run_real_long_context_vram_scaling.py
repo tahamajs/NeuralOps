@@ -67,7 +67,7 @@ def run_benchmark(output_file: Path, device_str: str = "cuda:0") -> None:
     total_mem_gb = torch.cuda.get_device_properties(device).total_memory / (1024**3)
     logger.info("Starting Long-Context VRAM & Latency Benchmark on %s (%.1f GB)", gpu_name, total_mem_gb)
 
-    seq_lengths = [512, 1024, 2048, 4096, 8192, 16384]
+    seq_lengths = [512, 1024, 2048, 4096, 8192, 16384, 32768]
     dim = 64
     heads = 4
     batch_size = 1
@@ -89,8 +89,8 @@ def run_benchmark(output_file: Path, device_str: str = "cuda:0") -> None:
             "is_linear": True,
         },
         {
-            "key": "gated_linear_attention",
-            "actual_key": "gated_linear_attention",
+            "key": "gla_attention",
+            "actual_key": "gla_attention",
             "display_name": "Gated Linear Attention (GLA) (O(N))",
             "is_linear": True,
         },

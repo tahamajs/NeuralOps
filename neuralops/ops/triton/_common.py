@@ -41,11 +41,42 @@ from __future__ import annotations
 import logging
 import math
 import os
+import shutil
 from typing import Any
 
-# Configure TRITON_PTXAS_PATH if local CUDA toolkit provides compatible ptxas
-if "TRITON_PTXAS_PATH" not in os.environ and os.path.exists("/usr/local/cuda-11.3/bin/ptxas"):
-    os.environ["TRITON_PTXAS_PATH"] = "/usr/local/cuda-11.3/bin/ptxas"
+
+def resolve_ptxas_path() -> str | None:
+    """Resolve ptxas binary path following environment -> PATH -> CUDA_HOME -> fallback hierarchy (F-42)."""
+    # 1. TRITON_PTXAS_PATH environment variable if explicitly configured
+    env_path = os.environ.get("TRITON_PTXAS_PATH")
+    if env_path and os.path.exists(env_path):
+        return env_path
+
+    # 2. PATH resolution via shutil.which
+    which_path = shutil.which("ptxas")
+    if which_path and os.path.exists(which_path):
+        return which_path
+
+    # 3. $CUDA_HOME/bin/ptxas if CUDA_HOME is set and points to an existing binary
+    cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
+    if cuda_home:
+        candidate = os.path.join(cuda_home, "bin", "ptxas")
+        if os.path.exists(candidate):
+            return candidate
+
+    # 4. LAST RESORT ONLY: legacy /usr/local/cuda-11.3/bin/ptxas for historical 11.3 setups
+    # Note: See Open Question 4 (CUDA support policy) in Roadmap Appendix 4 §8.
+    legacy_113 = "/usr/local/cuda-11.3/bin/ptxas"
+    if os.path.exists(legacy_113):
+        return legacy_113
+
+    return None
+
+
+# Configure TRITON_PTXAS_PATH if toolkit provides compatible ptxas
+_ptxas_resolved = resolve_ptxas_path()
+if _ptxas_resolved and "TRITON_PTXAS_PATH" not in os.environ:
+    os.environ["TRITON_PTXAS_PATH"] = _ptxas_resolved
 
 import torch
 import torch.nn.functional as F

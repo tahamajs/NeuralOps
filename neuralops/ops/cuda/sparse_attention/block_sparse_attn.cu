@@ -5,4 +5,6 @@
 // For a list of all contributors, visit:
 //   https://github.com/tahamajs/NeuralOps/graphs/contributors
 
+// Backward-compatibility include-shim for sparse_attention.cu.
+// Canonical CUDA implementation lives in sparse_attention.cu.
 #include "sparse_attention.cu"
