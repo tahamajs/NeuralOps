@@ -6,7 +6,11 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Evidence Markdown Report Generator.
+Evidence Markdown Report Generator (F-59).
+
+Renders human-readable markdown reports from evidence records.
+Persistence ownership belongs exclusively to `neuralops.results_saver`.
+This module produces formatted reports from ledger data and does not write to databases.
 """
 
 from __future__ import annotations

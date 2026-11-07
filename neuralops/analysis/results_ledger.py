@@ -6,9 +6,12 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Experiment Results Ledger
+Experiment Results Ledger Analysis (F-59).
 
-Versioned results ledger supporting dual storage across Git-friendly JSONL and SQLite databases.
+Read-only analytical querying and aggregation interface over benchmark results.
+Single persistence ownership of the SQLite master ledger belongs exclusively to
+`neuralops.results_saver` (saver.py and storage/sqlite_backend.py). This module
+serves as an analytical reader and query engine.
 """
 
 from __future__ import annotations

@@ -6,9 +6,12 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Evidence Record and Lineage Provenance Artifact.
+Evidence Record and Lineage Provenance Artifact (F-59).
 
 Specification Section 9: Execution Evidence.
+Persistence ownership belongs exclusively to `neuralops.results_saver`.
+This module produces in-memory evidence artifacts and JSON serializations,
+reading from benchmark runs and never writing directly to SQLite ledgers.
 """
 
 from __future__ import annotations

@@ -1675,6 +1675,13 @@ def handle_monitor(args: argparse.Namespace) -> int:
     else:
         print(f"[*] Starting NeuralOps Studio & Telemetry Monitor at http://{host}:{port}/")
     try:
+        from neuralops.ui.server import create_app
+        import uvicorn
+
+        app = create_app()
+        uvicorn.run(app, host=host, port=port)
+        return 0
+    except ImportError:
         from neuralops.runners.run_monitor_server import run_server
 
         run_server(port)

@@ -5,9 +5,20 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Tensor Parallelism Module
+Tensor Parallelism Module (F-62).
 
 Implements tensor-parallel linear projections, column/row splitting, and all-reduce primitives.
+
+Automatic model sharding is intentionally unsupported; callers must explicitly construct
+`ColumnParallelLinear` and `RowParallelLinear` layers for tensor parallelism:
+
+Example:
+    >>> import torch
+    >>> from neuralops.distributed.tensor_parallel import ColumnParallelLinear, RowParallelLinear
+    >>> # Column-parallel projection (splits output dimension across TP ranks)
+    >>> col_linear = ColumnParallelLinear(in_features=512, out_features=1024, tp_size=2, tp_rank=0)
+    >>> # Row-parallel projection (splits input dimension, reduces with AllReduce)
+    >>> row_linear = RowParallelLinear(in_features=1024, out_features=512, tp_size=2, tp_rank=0)
 """
 
 from __future__ import annotations
@@ -501,19 +512,22 @@ class TensorParallelRecurrentAttention(nn.Module):
         return out_reduced, state
 
 
-def shard_model_tensor_parallel(
+def _shard_model_tensor_parallel(
     model: nn.Module,
     tp_size: int = 2,
     tp_rank: int = 0,
     process_group: Any = None,
 ) -> nn.Module:
-    """Placeholder retained for API compatibility; automatic module sharding is unsupported."""
+    """Private placeholder; automatic module sharding is intentionally unsupported (F-62)."""
     _validate_tp_dimensions(tp_size, tp_rank)
     raise NotImplementedError(
         "Automatic model sharding is not implemented. Replace projections with "
         "ColumnParallelLinear/RowParallelLinear explicitly and load rank-local weights."
     )
 
+
+# Retained internally for test backwards compatibility; excluded from public __all__
+shard_model_tensor_parallel = _shard_model_tensor_parallel
 
 __all__ = [
     "SimulatedTPGroup",
@@ -523,7 +537,6 @@ __all__ = [
     "RowParallelSVDLinear",
     "ColumnParallelSVDLinear",
     "TensorParallelRecurrentAttention",
-    "shard_model_tensor_parallel",
     "copy_to_model_parallel_region",
     "reduce_from_model_parallel_region",
 ]

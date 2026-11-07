@@ -82,8 +82,25 @@ def create_app(
     project_dir: Optional[str] = None,
     docs_dir: Optional[str] = None,
     harvested_json: Optional[str] = None,
+    auth_credentials: Optional[tuple[str, str]] = None,
 ) -> FastAPI:
-    """Construct and configure the production FastAPI application."""
+    """Construct and configure the production FastAPI application.
+
+    Unification Note (F-59):
+        Delegates directly to canonical `neuralops.ui.server.create_app`
+        to prevent server drift between runner monitor and Web UI.
+    """
+    from neuralops.ui.server import create_app as canonical_create_app
+
+    return canonical_create_app(auth_credentials=auth_credentials)
+
+
+def _legacy_create_app(
+    project_dir: Optional[str] = None,
+    docs_dir: Optional[str] = None,
+    harvested_json: Optional[str] = None,
+) -> FastAPI:
+    """Construct and configure the legacy FastAPI application."""
     if project_dir is None:
         project_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
     if docs_dir is None:
