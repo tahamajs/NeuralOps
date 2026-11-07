@@ -225,6 +225,7 @@ class ClassificationAdapter:
                 mixed_precision=self.extra_kwargs.get("mixed_precision", "no"),
                 tracker=self.extra_kwargs.get("tracker_instance"),
                 log_interval=self.extra_kwargs.get("log_interval", 10),
+                seed=self.seed,
             )
             train_duration_s = round(time.perf_counter() - train_t_start, 2)
             if teacher_model is not None:

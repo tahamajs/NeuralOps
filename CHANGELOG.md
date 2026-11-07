@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Breaking Change (Deterministic Seeding & Strict Benchmark Config Validation, F-94, F-95):**
+  - Consolidated random seed helpers into a single canonical function in `neuralops.core.utils.general.set_seed(seed=42, *, deterministic=True)`. All other seed helpers (`neuralops.utils.seed.set_all_seeds`, `neuralops.utils.helpers.set_seed`) now re-export this canonical helper. CUDA manual seeding is safely guarded by `torch.cuda.is_available()`.
+  - Added `seed: Optional[int] = 42` parameter to public API endpoints in `neuralops.api`: `train`, `distill`, `evaluate`, and `benchmark`. Seeds are deterministically initialized and threaded down to underlying training routines without being dropped.
+  - Threaded `seed` into `neuralops.benchmarks.core.training.finetune_classification(seed=42)` and `neuralops.benchmarks.adapters.classification.ClassificationAdapter`.
+  - Replaced weak SDPA synthetic probe in `neuralops.benchmarks.reproducibility` with an end-to-end forward reproducibility gate that runs on CPU and fails loudly on numerical mismatch.
+  - Eliminated the silent attribute-trap in `neuralops.core.config.DummyConfig` and `Config` where `__getattr__` returned `None` for missing attributes; missing attributes now raise `AttributeError`.
+  - Enhanced `BenchmarkConfig` validation in `__post_init__` to validate `epochs` (>0), `lr` (>0.0), `rank` (>0 if provided), `timeout_s` (>0), and execution target `device` matching `^(cuda(:\d+)?|cpu|mps)$`.
+  - Stricter `BenchmarkConfig.from_dict`: unknown configuration keys now raise `ValueError` rather than being silently buried in `extra`.
 - **Breaking Change (Canonical Serving Implementation & Kwarg Validation, F-93):**
   - Declared `neuralops.integrations.serving.create_openai_serving_app` the single canonical serving implementation.
   - Re-pointed `neuralops.serving.__init__.py` to re-export `create_openai_serving_app` directly (`neuralops.serving.create_openai_serving_app is neuralops.integrations.serving.create_openai_serving_app`).

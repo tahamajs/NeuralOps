@@ -1137,6 +1137,7 @@ def train(
     lr: float = 2e-5,
     eval_dataset: Optional[Any] = None,
     device: Optional[Union[str, torch.device]] = None,
+    seed: Optional[int] = 42,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Train or fine-tune a model on a dataset.
@@ -1148,13 +1149,18 @@ def train(
         lr: Learning rate (default: 2e-5).
         eval_dataset: Optional evaluation dataset or DataLoader.
         device: Target execution device.
+        seed: Random seed for reproducible training (default: 42).
         **kwargs: Additional training arguments.
 
     Returns:
         Dictionary containing training telemetry and metrics.
     """
+    from neuralops.core.utils.general import set_seed
     from neuralops.benchmarks.core.training import finetune_classification
     from torch.utils.data import DataLoader
+
+    resolved_seed = 42 if seed is None else seed
+    set_seed(resolved_seed)
 
     train_loader = dataset if isinstance(dataset, DataLoader) else DataLoader(dataset, batch_size=kwargs.pop("batch_size", 32), shuffle=True)
     eval_loader = eval_dataset if (eval_dataset is None or isinstance(eval_dataset, DataLoader)) else DataLoader(eval_dataset, batch_size=kwargs.pop("eval_batch_size", 32))
@@ -1167,6 +1173,7 @@ def train(
         epochs=epochs,
         lr=lr,
         device=dev,
+        seed=resolved_seed,
         **kwargs,
     )
 
@@ -1180,6 +1187,7 @@ def distill(
     device: Optional[Union[str, torch.device]] = None,
     temperature: float = 2.0,
     alpha: float = 0.5,
+    seed: Optional[int] = 42,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Execute knowledge distillation from teacher to student.
@@ -1193,13 +1201,18 @@ def distill(
         device: Target device.
         temperature: Softmax temperature for KD loss (default: 2.0).
         alpha: Weight for KD loss vs task loss (default: 0.5).
+        seed: Random seed for reproducible distillation (default: 42).
         **kwargs: Additional training arguments.
 
     Returns:
         Dictionary containing distillation metrics.
     """
+    from neuralops.core.utils.general import set_seed
     from neuralops.trainer.distillation.multi_level_kd import distill as _canonical_distill
     from torch.utils.data import DataLoader
+
+    resolved_seed = 42 if seed is None else seed
+    set_seed(resolved_seed)
 
     train_loader = dataset if isinstance(dataset, DataLoader) else DataLoader(dataset, batch_size=kwargs.pop("batch_size", 32), shuffle=True)
 
@@ -1213,6 +1226,7 @@ def distill(
         device=dev,
         temperature=temperature,
         alpha=alpha,
+        seed=resolved_seed,
         **kwargs,
     )
 
@@ -1224,6 +1238,7 @@ def evaluate(
     batch_size: int = 16,
     seq_len: int = 128,
     metric_fn: Optional[Any] = None,
+    seed: Optional[int] = 42,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Evaluate a named benchmark dataset or an arbitrary PyTorch loader.
@@ -1241,6 +1256,9 @@ def evaluate(
         Dictionary containing evaluation metrics (accuracy, latency, memory, etc.).
     """
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    from neuralops.core.utils.general import set_seed
+    resolved_seed = 42 if seed is None else seed
+    set_seed(resolved_seed)
     if not isinstance(dataset, str):
         from torch.utils.data import DataLoader
 
@@ -1385,6 +1403,7 @@ def benchmark(
     seq_len: int = 128,
     eval_only: bool = False,
     timeout_s: int = 1800,
+    seed: Optional[int] = 42,
     **kwargs: Any,
 ) -> Any:
     """Run an isolated single benchmark execution.
@@ -1401,11 +1420,15 @@ def benchmark(
         seq_len: Sequence length.
         eval_only: Skip fine-tuning and measure evaluation metrics only.
         timeout_s: Timeout in seconds.
+        seed: Random seed for reproducible benchmarking (default: 42).
         **kwargs: Additional benchmark options.
 
     Returns:
         BenchmarkResult object.
     """
+    from neuralops.core.utils.general import set_seed
+    resolved_seed = 42 if seed is None else seed
+    set_seed(resolved_seed)
     from neuralops.benchmarks.api import benchmark as _bm
     return _bm(
         module=module,
@@ -1419,6 +1442,7 @@ def benchmark(
         seq_len=seq_len,
         eval_only=eval_only,
         timeout_s=timeout_s,
+        seed=resolved_seed,
         **kwargs,
     )
 

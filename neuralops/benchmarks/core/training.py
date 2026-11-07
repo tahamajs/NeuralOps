@@ -35,12 +35,16 @@ def finetune_classification(
     tracker: Any = None,
     log_interval: int = 10,
     optimizer_name: str = "adamw",
+    seed: int | None = 42,
 ) -> dict[str, Any]:
     """
     Fine-tune classification model across training epochs with mixed-precision,
     manifold/orthogonal optimizers (Muon, Stiefel, Riemannian), early NaN stopping,
     and real-time MLOps step-level telemetry.
     """
+    from neuralops.core.utils.general import set_seed
+
+    set_seed(42 if seed is None else seed)
     model.train()
     opt_lower = (optimizer_name or "adamw").lower()
     if opt_lower == "muon":
@@ -195,6 +199,7 @@ def train_kd(
     mixed_precision: str = "no",
     tracker: Any = None,
     log_interval: int = 10,
+    seed: int | None = 42,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Execute Knowledge Distillation training loop (thin wrapper delegating to canonical trainer.distillation:distill)."""
@@ -213,6 +218,7 @@ def train_kd(
         mixed_precision=mixed_precision,
         tracker=tracker,
         log_interval=log_interval,
+        seed=seed,
         **kwargs,
     )
 
@@ -226,6 +232,7 @@ def recovery_finetune(
     mixed_precision: str = "no",
     tracker: Any = None,
     log_interval: int = 10,
+    seed: int | None = 42,
 ) -> dict[str, Any]:
     """Execute fixed number of recovery fine-tuning steps after compression."""
     return finetune_classification(
@@ -238,6 +245,7 @@ def recovery_finetune(
         mixed_precision=mixed_precision,
         tracker=tracker,
         log_interval=log_interval,
+        seed=seed,
     )
 
 
@@ -255,6 +263,7 @@ def train_with_training_type(
     mixed_precision: str = "no",
     tracker: Any = None,
     log_interval: int = 10,
+    seed: int | None = 42,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Execute training according to configured training_type ('none', 'finetune', 'kd', 'recovery', 'lora')."""
@@ -277,6 +286,7 @@ def train_with_training_type(
                 distributed_backend=kwargs.get("distributed_backend", "none"),
                 tracker=tracker,
                 log_interval=log_interval,
+                seed=seed,
             )
         return train_kd(
             student=model,
@@ -291,6 +301,7 @@ def train_with_training_type(
             mixed_precision=mixed_precision,
             tracker=tracker,
             log_interval=log_interval,
+            seed=seed,
         )
 
     elif t_type in ("recovery", "fast_recovery"):
@@ -304,6 +315,7 @@ def train_with_training_type(
             mixed_precision=mixed_precision,
             tracker=tracker,
             log_interval=log_interval,
+            seed=seed,
         )
 
     else:
@@ -318,6 +330,7 @@ def train_with_training_type(
             distributed_backend=kwargs.get("distributed_backend", "none"),
             tracker=tracker,
             log_interval=log_interval,
+            seed=seed,
         )
 
 

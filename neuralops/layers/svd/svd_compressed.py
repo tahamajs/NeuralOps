@@ -63,13 +63,7 @@ except Exception:
     Trainer = object
     TrainingArguments = object
 
-    def set_seed(s: int) -> None:
-        import random
-        random.seed(s)
-        np.random.seed(s)
-        torch.manual_seed(s)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed_all(s)
+    from neuralops.core.utils.general import set_seed
 
 
 warnings.filterwarnings("ignore", category=UserWarning)

@@ -20,13 +20,7 @@ import torch
 
 from .seed import set_all_seeds
 
-
-def set_seed(seed: int, deterministic: bool = False) -> None:
-    """Set the seed."""
-    set_all_seeds(seed)
-    if deterministic and torch.cuda.is_available():
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
+set_seed = set_all_seeds
 
 
 def format_time(seconds: float) -> str:

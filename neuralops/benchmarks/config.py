@@ -209,13 +209,16 @@ class BenchmarkConfig:
         if "output_dir" in d and isinstance(d["output_dir"], (str, Path)):
             d["output_dir"] = Path(d["output_dir"])
         valid_fields = set(cls.__dataclass_fields__)
+        unknown_keys = sorted(set(d.keys()) - valid_fields - {"extra"})
+        if unknown_keys:
+            raise ValueError(
+                f"Unknown configuration key(s) for {cls.__name__}: {', '.join(unknown_keys)}"
+            )
         extra = dict(d.get("extra", {}))
         filtered: dict[str, Any] = {}
         for k, v in d.items():
             if k in valid_fields:
                 filtered[k] = v
-            else:
-                extra[k] = v
         filtered["extra"] = extra
         return cls(**filtered)
 

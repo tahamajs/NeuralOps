@@ -20,35 +20,38 @@ from neuralops.benchmarks.results import BenchmarkResult, save_all_formats
 
 
 def _run_once(seed: int, device: torch.device) -> torch.Tensor:
-    torch.manual_seed(seed)
-    if device.type == "cuda":
-        torch.cuda.manual_seed_all(seed)
-    q = torch.randn(1, 2, 32, 64, device=device)
-    k = torch.randn_like(q)
-    v = torch.randn_like(q)
-    if hasattr(F, "scaled_dot_product_attention"):
-        return F.scaled_dot_product_attention(q, k, v)
-    scale = q.shape[-1] ** -0.5
-    weights = torch.softmax(torch.matmul(q, k.transpose(-2, -1)) * scale, dim=-1)
-    return weights @ v
+    from neuralops.core.utils.general import set_seed
+    from examples._shared.mock_models import TinyClassifier
+
+    set_seed(seed, deterministic=True)
+    model = TinyClassifier(dim=32, num_labels=2, seed=seed).to(device)
+    model.eval()
+    input_ids = torch.randint(0, 128, (4, 16), device=device)
+    with torch.no_grad():
+        out = model(input_ids)
+        if hasattr(out, "logits"):
+            out = out.logits
+        elif isinstance(out, (tuple, list)):
+            out = out[0]
+    return out
 
 
 def run_reproducibility(config: BenchmarkConfig) -> BenchmarkResult:
     """Run identical seeded workloads twice and record exact reproducibility."""
-    if config.device == "cuda" and not torch.cuda.is_available():
+    if config.device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested for reproducibility, but CUDA is unavailable.")
-    device = torch.device("cuda" if config.device == "cuda" else config.device)
+    device = torch.device(config.device)
     first = _run_once(config.seed, device)
     second = _run_once(config.seed, device)
     max_diff = float((first - second).abs().max().item())
     exact = bool(torch.equal(first, second))
     status = "success" if exact else "FAIL_REPRODUCIBILITY"
     result = BenchmarkResult(
-        module={"name": "seeded_attention_probe", "type": "reproducibility", "family": "attention"},
-        model={"name": "synthetic_attention_probe"},
+        module={"name": "seeded_reproducibility_gate", "type": "reproducibility", "family": "core"},
+        model={"name": "tiny_classifier_probe"},
         dataset={"name": "synthetic", "task": "reproducibility"},
         config={"device": str(device), "seed": config.seed},
-        metrics={"max_diff": max_diff, "exact_match": exact},
+        metrics={"max_diff": max_diff, "exact_match": exact, "reproducible": exact},
         status=status,
         error=None if exact else f"same seed produced max_diff={max_diff}",
     )

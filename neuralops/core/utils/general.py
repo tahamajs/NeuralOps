@@ -55,7 +55,7 @@ def get_device(device_str: str = "auto") -> torch.device:
     return device
 
 
-def set_seed(seed: int = 42, *, deterministic: bool = True) -> None:
+def set_seed(seed: int = 42, deterministic: bool = True) -> None:
     """Set random seeds across Python random, NumPy, PyTorch CPU and CUDA.
 
     Guarantees deterministic execution by default.
@@ -65,16 +65,13 @@ def set_seed(seed: int = 42, *, deterministic: bool = True) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+    if hasattr(torch.backends, "cudnn"):
         if deterministic:
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
         else:
             torch.backends.cudnn.deterministic = False
             torch.backends.cudnn.benchmark = True
-    elif hasattr(torch.backends, "cudnn"):
-        if deterministic:
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.benchmark = False
 
 
 def get_model_device(model: torch.nn.Module) -> torch.device:

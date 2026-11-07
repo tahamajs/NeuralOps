@@ -94,12 +94,7 @@ def _build_compressed_model(name: str, base_model: nn.Module, **override_kwargs)
     return model, stats
 
 
-def set_all_seeds(seed: int):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+from neuralops.core.utils.general import set_seed as set_all_seeds
 
 
 def run_stress_test(

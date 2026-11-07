@@ -135,6 +135,9 @@ def _select_adapter(
         )
 
 
+route_task_adapter = _select_adapter
+
+
 def execute_single(
     module: str,
     model: str = "distilbert-base-uncased",
