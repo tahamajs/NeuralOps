@@ -61,6 +61,12 @@ def build_serve_parser(subparser: Optional[argparse.ArgumentParser] = None) -> a
         default=None,
         help="API key for client authentication. Can also be set via NEURALOPS_API_KEY env var.",
     )
+    parser.add_argument(
+        "--kv-cache-budget-gb",
+        type=float,
+        default=4.0,
+        help="KV-cache virtual memory budget in gigabytes (default: 4.0)",
+    )
     return parser
 
 
@@ -89,6 +95,7 @@ def cmd_serve(args: Any) -> int:
     port = getattr(args_ns, "port", 8000)
     engine_type = getattr(args_ns, "engine", "fastapi")
     api_key = getattr(args_ns, "api_key", None) or os.environ.get("NEURALOPS_API_KEY")
+    kv_cache_budget_gb = getattr(args_ns, "kv_cache_budget_gb", 4.0)
 
     if not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535:
         raise ValueError("--port must be an integer between 1 and 65535")
@@ -96,6 +103,8 @@ def cmd_serve(args: Any) -> int:
         raise ValueError("--host must be a non-empty network interface name or address")
     if engine_type != "fastapi":
         raise ValueError("Only the FastAPI serving engine is implemented by this command.")
+    if kv_cache_budget_gb <= 0:
+        raise ValueError("--kv-cache-budget-gb must be a positive float")
 
     if host not in ("127.0.0.1", "localhost") and not api_key:
         raise ValueError(
@@ -125,12 +134,15 @@ def cmd_serve(args: Any) -> int:
         table.add_row("Serving Engine", "FastAPI / Hugging Face generate")
         table.add_row("Listening Host / Port", f"{host}:{port}")
         table.add_row("Execution Hardware", device.upper())
+        table.add_row("KV Cache Budget", f"{kv_cache_budget_gb:.1f} GB")
+        table.add_row("Telemetry Endpoints", "/health, /metrics, /v1/telemetry")
         console.print(table)
     else:
         print("=================================================================")
         print(f"NeuralOps OpenAI-Compatible Server: {model_id}")
         print(f"Engine: FastAPI / Hugging Face generate | Device: {device}")
-        print(f"Host: {host}:{port}")
+        print(f"Host: {host}:{port} | KV Cache Budget: {kv_cache_budget_gb:.1f} GB")
+        print("Telemetry Endpoints: /health, /metrics, /v1/telemetry")
         print("=================================================================")
 
     # Load the model and tokenizer before binding the listening socket.
@@ -139,7 +151,13 @@ def cmd_serve(args: Any) -> int:
     primary_model.eval()
     tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-    app = create_openai_serving_app(primary_model, tokenizer, model_name=model_id, api_key=api_key)
+    app = create_openai_serving_app(
+        primary_model,
+        tokenizer,
+        model_name=model_id,
+        api_key=api_key,
+        kv_cache_budget_gb=kv_cache_budget_gb,
+    )
     print(f"[*] Starting HTTP listener at http://{host}:{port} (Ctrl+C to stop).")
     uvicorn.run(app, host=host, port=port)
     return 0

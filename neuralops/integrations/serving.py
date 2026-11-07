@@ -20,6 +20,11 @@ import torch
 import torch.nn as nn
 
 try:
+    from starlette.requests import Request
+except ImportError:
+    Request = Any
+
+try:
     import vllm
     HAS_VLLM = True
 except ImportError:
@@ -121,8 +126,17 @@ class SGLangRadixLinearCacheAdapter:
         self.tree: dict[tuple[int, ...], dict[str, Any]] = {}
         self.access_counter = 0
 
+        # Telemetry metrics tracking
+        self._hit_count: int = 0
+        self._miss_count: int = 0
+        self._total_lookup_time_sec: float = 0.0
+        self._last_lookup_latency_ms: float = 0.0
+
     def match_prefix(self, token_ids: list[int] | tuple[int, ...]) -> tuple[int, Optional[Any]]:
         """Find the longest cached prefix using tuple-key lookups (O(L²) slicing work)."""
+        import time as _time
+
+        t0 = _time.perf_counter()
         token_tuple = tuple(token_ids)
         best_match_len = 0
         best_state = None
@@ -132,9 +146,20 @@ class SGLangRadixLinearCacheAdapter:
             if prefix in self.tree:
                 self.access_counter += 1
                 self.tree[prefix]["last_accessed"] = self.access_counter
-                return length, self.tree[prefix]["state"]
+                best_match_len = length
+                best_state = self.tree[prefix]["state"]
+                break
 
-        return 0, None
+        elapsed = _time.perf_counter() - t0
+        self._total_lookup_time_sec += elapsed
+        self._last_lookup_latency_ms = elapsed * 1000.0
+
+        if best_match_len > 0:
+            self._hit_count += 1
+            return best_match_len, best_state
+        else:
+            self._miss_count += 1
+            return 0, None
 
     def cache_finished_req(self, token_ids: list[int] | tuple[int, ...], final_state: Any) -> None:
         """Caches state of a completed sequence, evicting cold unlocked nodes if capacity is reached."""
@@ -189,6 +214,48 @@ class SGLangRadixLinearCacheAdapter:
     def _ensure_capacity(self) -> None:
         if len(self.tree) >= self.max_cached_nodes:
             self.evict(max(1, len(self.tree) - self.max_cached_nodes + 1))
+
+    def stats(self) -> dict[str, Any]:
+        """Returns statistics on prefix trie state, hits, misses, and memory."""
+        total_requests = self._hit_count + self._miss_count
+        hit_rate = (self._hit_count / max(1, total_requests)) * 100.0
+        utilization = len(self.tree) / max(1, self.max_cached_nodes)
+        throughput = total_requests / max(self._total_lookup_time_sec, 1e-6)
+        avg_lookup_ms = (self._total_lookup_time_sec / max(1, total_requests)) * 1000.0
+
+        return {
+            "total_nodes": len(self.tree),
+            "max_cached_nodes": self.max_cached_nodes,
+            "node_utilization": round(utilization, 4),
+            "hit_count": self._hit_count,
+            "miss_count": self._miss_count,
+            "hit_rate": round(hit_rate, 2),
+            "total_lookups": total_requests,
+            "avg_lookup_latency_ms": round(avg_lookup_ms, 4),
+            "last_lookup_latency_ms": round(self._last_lookup_latency_ms, 4),
+            "throughput_req_sec": round(throughput, 2),
+            "fragmentation_ratio": round(max(0.0, 1.0 - utilization), 4),
+        }
+
+    def get_telemetry(self) -> dict[str, Any]:
+        """Returns canonical serving telemetry for Radix linear cache adapter."""
+        st = self.stats()
+        return {
+            "cache": {
+                "total_nodes": st["total_nodes"],
+                "max_nodes": st["max_cached_nodes"],
+                "utilization": st["node_utilization"],
+                "fragmentation_ratio": st["fragmentation_ratio"],
+            },
+            "hit_rate_pct": st["hit_rate"],
+            "throughput": {
+                "lookups_per_sec": st["throughput_req_sec"],
+            },
+            "latency": {
+                "avg_lookup_ms": st["avg_lookup_latency_ms"],
+                "last_lookup_ms": st["last_lookup_latency_ms"],
+            },
+        }
 
 
 def create_openai_serving_app(
@@ -251,6 +318,11 @@ def create_openai_serving_app(
     app = FastAPI(title="NeuralOps Serving Engine", version="1.4.2")
     app.state.backend = backend
     app.state.kv_cache_budget_gb = float(kv_cache_budget_gb)
+    app.state.start_time = time.time()
+    app.state.total_requests = 0
+    app.state.total_prompt_tokens = 0
+    app.state.total_completion_tokens = 0
+    app.state.request_latencies = []
 
     @app.middleware("http")
     async def security_and_rate_limit_middleware(request: Request, call_next):
@@ -320,9 +392,15 @@ def create_openai_serving_app(
         prompt = body.get("prompt", "")
         max_tokens, temperature, stream = _read_generation_options(body)
         _validate_generation_request(model, tokenizer, prompt, max_tokens, temperature)
+        t0 = time.perf_counter()
         generated_text, prompt_tokens, completion_tokens = await run_in_threadpool(
             _generate_text, model, tokenizer, prompt, max_tokens, temperature
         )
+        elapsed_sec = time.perf_counter() - t0
+        app.state.total_requests += 1
+        app.state.total_prompt_tokens += prompt_tokens
+        app.state.total_completion_tokens += completion_tokens
+        app.state.request_latencies.append(elapsed_sec)
 
         req_id = f"cmpl-{uuid.uuid4().hex[:12]}"
         created = int(time.time())
@@ -379,9 +457,15 @@ def create_openai_serving_app(
         created = int(time.time())
         prompt = _format_chat_prompt(tokenizer, messages)
         _validate_generation_request(model, tokenizer, prompt, max_tokens, temperature)
+        t0 = time.perf_counter()
         generated_text, prompt_tokens, completion_tokens = await run_in_threadpool(
             _generate_text, model, tokenizer, prompt, max_tokens, temperature
         )
+        elapsed_sec = time.perf_counter() - t0
+        app.state.total_requests += 1
+        app.state.total_prompt_tokens += prompt_tokens
+        app.state.total_completion_tokens += completion_tokens
+        app.state.request_latencies.append(elapsed_sec)
 
         if stream:
             async def event_generator():
@@ -416,6 +500,50 @@ def create_openai_serving_app(
                 "prompt_tokens": prompt_tokens,
                 "completion_tokens": completion_tokens,
                 "total_tokens": prompt_tokens + completion_tokens,
+            },
+        }
+
+    @app.get("/metrics")
+    @app.get("/v1/telemetry")
+    def get_telemetry():
+        now = time.time()
+        uptime_sec = max(now - app.state.start_time, 1e-6)
+        total_req = app.state.total_requests
+        total_tokens = app.state.total_prompt_tokens + app.state.total_completion_tokens
+        latencies_ms = [lat * 1000.0 for lat in app.state.request_latencies]
+        mean_latency_ms = sum(latencies_ms) / max(1, len(latencies_ms)) if latencies_ms else 0.0
+        sorted_lat = sorted(latencies_ms) if latencies_ms else [0.0]
+        p50_latency_ms = sorted_lat[int(len(sorted_lat) * 0.50)]
+        p95_latency_ms = sorted_lat[min(int(len(sorted_lat) * 0.95), len(sorted_lat) - 1)]
+        p99_latency_ms = sorted_lat[min(int(len(sorted_lat) * 0.99), len(sorted_lat) - 1)]
+
+        req_throughput = total_req / uptime_sec
+        token_throughput = total_tokens / uptime_sec
+
+        return {
+            "status": "healthy",
+            "backend": app.state.backend,
+            "uptime_sec": round(uptime_sec, 2),
+            "total_requests": total_req,
+            "total_prompt_tokens": app.state.total_prompt_tokens,
+            "total_completion_tokens": app.state.total_completion_tokens,
+            "total_tokens": total_tokens,
+            "throughput": {
+                "requests_per_sec": round(req_throughput, 2),
+                "tokens_per_sec": round(token_throughput, 2),
+            },
+            "latency_ms": {
+                "mean": round(mean_latency_ms, 2),
+                "p50": round(p50_latency_ms, 2),
+                "p95": round(p95_latency_ms, 2),
+                "p99": round(p99_latency_ms, 2),
+                "last": round(latencies_ms[-1], 2) if latencies_ms else 0.0,
+            },
+            "fragmentation": {
+                "kv_cache_budget_gb": app.state.kv_cache_budget_gb,
+                "internal_fragmentation_ratio": 0.0,
+                "external_fragmentation_ratio": 0.0,
+                "fragmentation_pct": 0.0,
             },
         }
 

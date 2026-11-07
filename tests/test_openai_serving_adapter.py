@@ -75,3 +75,28 @@ def test_chat_stream_emits_actual_generated_text():
     assert response.status_code == 200
     assert "model-generated answer" in response.text
     assert "[DONE]" in response.text
+
+
+def test_telemetry_and_metrics_endpoints():
+    model = _Model()
+    client = TestClient(create_openai_serving_app(model, _Tokenizer(), kv_cache_budget_gb=6.0))
+
+    # Send one completion to record metrics
+    _ = client.post("/v1/completions", json={"prompt": "hello", "max_tokens": 2, "temperature": 0})
+
+    resp = client.get("/v1/telemetry")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "healthy"
+    assert data["total_requests"] == 1
+    assert data["total_prompt_tokens"] == 2
+    assert data["total_completion_tokens"] == 2
+    assert "throughput" in data
+    assert "latency_ms" in data
+    assert "fragmentation" in data
+    assert data["fragmentation"]["kv_cache_budget_gb"] == 6.0
+
+    # /metrics endpoint parity
+    metrics_resp = client.get("/metrics")
+    assert metrics_resp.status_code == 200
+    assert metrics_resp.json()["total_requests"] == 1

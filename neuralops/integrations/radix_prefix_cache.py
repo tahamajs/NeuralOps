@@ -85,6 +85,12 @@ class SGLangRadixAdapter:
         self._eviction_count = 0
         self._total_nodes = 1
 
+        # Telemetry metrics tracking
+        self._total_lookup_time_sec: float = 0.0
+        self._last_lookup_latency_ms: float = 0.0
+        self._total_insert_time_sec: float = 0.0
+        self._total_inserts: int = 0
+
     def match_prefix_state(
         self,
         token_ids: Union[List[int], torch.Tensor],
@@ -127,68 +133,73 @@ class SGLangRadixAdapter:
         if not tokens:
             return self.root
 
-        with self._lock:
-            while self._total_nodes >= self.max_cached_prefixes:
-                freed = self.evict_lru()
-                if freed == 0:
-                    break
+        t0 = time.perf_counter()
+        try:
+            with self._lock:
+                while self._total_nodes >= self.max_cached_prefixes:
+                    freed = self.evict_lru()
+                    if freed == 0:
+                        break
 
-            curr = self.root
-            idx = 0
+                curr = self.root
+                idx = 0
 
-            while idx < len(tokens):
-                curr.ref_count += 1
-                curr.last_accessed = time.time()
-                first_tok = tokens[idx]
+                while idx < len(tokens):
+                    curr.ref_count += 1
+                    curr.last_accessed = time.time()
+                    first_tok = tokens[idx]
 
-                if first_tok not in curr.children:
-                    new_node = RadixPrefixNode(tokens[idx:], kv_cache=kv_cache)
-                    new_node.parent = curr
-                    new_node.ref_count = 1
-                    curr.children[first_tok] = new_node
-                    self._total_nodes += 1
-                    return new_node
-
-                child = curr.children[first_tok]
-                chunk = child.token_chunk
-                common_len = 0
-                while (
-                    common_len < len(chunk)
-                    and idx + common_len < len(tokens)
-                    and chunk[common_len] == tokens[idx + common_len]
-                ):
-                    common_len += 1
-
-                if common_len == len(chunk):
-                    idx += common_len
-                    curr = child
-                else:
-                    split_node = RadixPrefixNode(chunk[:common_len], kv_cache=None)
-                    split_node.parent = curr
-                    split_node.ref_count = child.ref_count + 1
-                    split_node.last_accessed = time.time()
-                    curr.children[first_tok] = split_node
-                    self._total_nodes += 1
-
-                    child.token_chunk = chunk[common_len:]
-                    child.parent = split_node
-                    split_node.children[child.token_chunk[0]] = child
-
-                    idx += common_len
-                    if idx < len(tokens):
-                        new_leaf = RadixPrefixNode(tokens[idx:], kv_cache=kv_cache)
-                        new_leaf.parent = split_node
-                        new_leaf.ref_count = 1
-                        split_node.children[tokens[idx]] = new_leaf
+                    if first_tok not in curr.children:
+                        new_node = RadixPrefixNode(tokens[idx:], kv_cache=kv_cache)
+                        new_node.parent = curr
+                        new_node.ref_count = 1
+                        curr.children[first_tok] = new_node
                         self._total_nodes += 1
-                        return new_leaf
-                    else:
-                        split_node.kv_cache = kv_cache
-                        return split_node
+                        return new_node
 
-            curr.ref_count += 1
-            curr.kv_cache = kv_cache
-            return curr
+                    child = curr.children[first_tok]
+                    chunk = child.token_chunk
+                    common_len = 0
+                    while (
+                        common_len < len(chunk)
+                        and idx + common_len < len(tokens)
+                        and chunk[common_len] == tokens[idx + common_len]
+                    ):
+                        common_len += 1
+
+                    if common_len == len(chunk):
+                        idx += common_len
+                        curr = child
+                    else:
+                        split_node = RadixPrefixNode(chunk[:common_len], kv_cache=None)
+                        split_node.parent = curr
+                        split_node.ref_count = child.ref_count + 1
+                        split_node.last_accessed = time.time()
+                        curr.children[first_tok] = split_node
+                        self._total_nodes += 1
+
+                        child.token_chunk = chunk[common_len:]
+                        child.parent = split_node
+                        split_node.children[child.token_chunk[0]] = child
+
+                        idx += common_len
+                        if idx < len(tokens):
+                            new_leaf = RadixPrefixNode(tokens[idx:], kv_cache=kv_cache)
+                            new_leaf.parent = split_node
+                            new_leaf.ref_count = 1
+                            split_node.children[tokens[idx]] = new_leaf
+                            self._total_nodes += 1
+                            return new_leaf
+                        else:
+                            split_node.kv_cache = kv_cache
+                            return split_node
+
+                curr.ref_count += 1
+                curr.kv_cache = kv_cache
+                return curr
+        finally:
+            self._total_inserts += 1
+            self._total_insert_time_sec += time.perf_counter() - t0
 
     def match_prefix(self, token_ids: Union[List[int], torch.Tensor]) -> Tuple[int, Optional[Any]]:
         """
@@ -201,43 +212,49 @@ class SGLangRadixAdapter:
         if not tokens:
             return 0, None
 
-        with self._lock:
-            curr = self.root
-            idx = 0
-            best_matched_len = 0
-            best_kv = None
+        t0 = time.perf_counter()
+        try:
+            with self._lock:
+                curr = self.root
+                idx = 0
+                best_matched_len = 0
+                best_kv = None
 
-            while idx < len(tokens):
-                first_tok = tokens[idx]
-                if first_tok not in curr.children:
-                    break
+                while idx < len(tokens):
+                    first_tok = tokens[idx]
+                    if first_tok not in curr.children:
+                        break
 
-                child = curr.children[first_tok]
-                chunk = child.token_chunk
-                match_count = 0
-                while (
-                    match_count < len(chunk)
-                    and idx + match_count < len(tokens)
-                    and chunk[match_count] == tokens[idx + match_count]
-                ):
-                    match_count += 1
+                    child = curr.children[first_tok]
+                    chunk = child.token_chunk
+                    match_count = 0
+                    while (
+                        match_count < len(chunk)
+                        and idx + match_count < len(tokens)
+                        and chunk[match_count] == tokens[idx + match_count]
+                    ):
+                        match_count += 1
 
-                if match_count == len(chunk):
-                    idx += match_count
-                    curr = child
-                    curr.last_accessed = time.time()
-                    if curr.kv_cache is not None:
-                        best_matched_len = idx
-                        best_kv = curr.kv_cache
+                    if match_count == len(chunk):
+                        idx += match_count
+                        curr = child
+                        curr.last_accessed = time.time()
+                        if curr.kv_cache is not None:
+                            best_matched_len = idx
+                            best_kv = curr.kv_cache
+                    else:
+                        break
+
+                if best_matched_len > 0:
+                    self._hit_count += 1
+                    return best_matched_len, best_kv
                 else:
-                    break
-
-            if best_matched_len > 0:
-                self._hit_count += 1
-                return best_matched_len, best_kv
-            else:
-                self._miss_count += 1
-                return 0, None
+                    self._miss_count += 1
+                    return 0, None
+        finally:
+            elapsed = time.perf_counter() - t0
+            self._total_lookup_time_sec += elapsed
+            self._last_lookup_latency_ms = elapsed * 1000.0
 
     def prefill_with_reuse(self, input_ids: torch.Tensor) -> Tuple[Any, torch.Tensor]:
         """
@@ -347,6 +364,13 @@ class SGLangRadixAdapter:
 
             _count_tokens(self.root)
 
+            total_lookups = total_requests
+            avg_lookup_ms = (self._total_lookup_time_sec / max(1, total_lookups)) * 1000.0
+            throughput = total_lookups / max(self._total_lookup_time_sec, 1e-6)
+            avg_insert_ms = (self._total_insert_time_sec / max(1, self._total_inserts)) * 1000.0
+            utilization = self._total_nodes / max(1, self.max_cached_prefixes)
+            frag_ratio = max(0.0, 1.0 - (total_tokens / max(1, self._total_nodes * self.max_depth)))
+
             return {
                 "total_nodes": self._total_nodes,
                 "cached_tokens": total_tokens,
@@ -356,7 +380,36 @@ class SGLangRadixAdapter:
                 "eviction_count": self._eviction_count,
                 "hit_rate": round(hit_rate, 2),
                 "cache_hit_rate": round(hit_rate, 2),
+                "total_lookups": total_lookups,
+                "avg_lookup_latency_ms": round(avg_lookup_ms, 4),
+                "last_lookup_latency_ms": round(self._last_lookup_latency_ms, 4),
+                "lookup_throughput_req_sec": round(throughput, 2),
+                "total_inserts": self._total_inserts,
+                "avg_insert_latency_ms": round(avg_insert_ms, 4),
+                "capacity_utilization": round(utilization, 4),
+                "memory_fragmentation_ratio": round(frag_ratio, 4),
             }
+
+    def get_telemetry(self) -> Dict[str, Any]:
+        """Returns canonical serving telemetry for Radix Trie prefix caching."""
+        st = self.stats()
+        return {
+            "cache": {
+                "total_nodes": st["total_nodes"],
+                "cached_tokens": st["cached_tokens"],
+                "capacity_utilization": st["capacity_utilization"],
+                "fragmentation_ratio": st["memory_fragmentation_ratio"],
+            },
+            "hit_rate_pct": st["hit_rate"],
+            "throughput": {
+                "lookups_per_sec": st["lookup_throughput_req_sec"],
+            },
+            "latency": {
+                "avg_lookup_ms": st["avg_lookup_latency_ms"],
+                "last_lookup_ms": st["last_lookup_latency_ms"],
+                "avg_insert_ms": st["avg_insert_latency_ms"],
+            },
+        }
 
     def visualize(self) -> str:
         """Renders an ASCII tree representation of cached token prefixes."""
