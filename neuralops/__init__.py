@@ -639,60 +639,17 @@ def compress(*args: Any, **kwargs: Any) -> Any:
     return _impl(*args, **kwargs)
 
 
-_API_EXPORTS = {
-    "load_model": "neuralops.api",
-    "transplant_attention": "neuralops.api",
-    "transplant": "neuralops.api",
-    "serve": "neuralops.api",
-    "export_model": "neuralops.api",
-    "export": "neuralops.api",
-    "pipeline": "neuralops.api",
-    "compile_to_so": "neuralops.api",
-    "push_to_hub": "neuralops.api",
-    "load_exported_model": "neuralops.api",
-    "compare_attentions_ablation": "neuralops.api",
-    "surgical_transplant_and_heal_pipeline": "neuralops.api",
+from neuralops.api import _PUBLIC_API
 
-    "collect_surgery_distillation_loss": "neuralops.api",
-    "set_surgery_alpha": "neuralops.api",
-    "set_surgery_stage": "neuralops.api",
-    "finalize_surgery": "neuralops.api",
-    "list_attentions": "neuralops.api",
-    "list_compressors": "neuralops.api",
+_API_EXPORTS = {
+    **_PUBLIC_API,
+    "compile_to_so": "neuralops.api",
     "list_fla_attentions": "neuralops.integrations.fla",
     "list_surgeries": "neuralops.surgery",
     "SurgeryRecipe": "neuralops.surgery.pipeline",
     "force_kernel_backend": "neuralops.ops.cuda._fallback",
     "list_triton_kernels": "neuralops.kernels",
     "list_cuda_kernels": "neuralops.kernels",
-    "get_attention_class": "neuralops.api",
-    "get_attention_module": "neuralops.api",
-    "get_compressor_class": "neuralops.api",
-    "quick_benchmark": "neuralops.api",
-    "create_attention": "neuralops.api",
-    "create_compressor": "neuralops.api",
-    "list_families": "neuralops.api",
-    "train": "neuralops.api",
-    "distill": "neuralops.api",
-    "evaluate": "neuralops.api",
-    "load_and_prepare_dataset": "neuralops.api",
-    "train_grpo": "neuralops.api",
-    "benchmark": "neuralops.api",
-    "benchmark_all": "neuralops.api",
-    "info": "neuralops.api",
-    "available_backends": "neuralops.api",
-    "has_triton": "neuralops.api",
-    "validate": "neuralops.api",
-    "get_version": "neuralops.api",
-    "oneshot": "neuralops.api",
-    "recommend": "neuralops.api",
-    "summary": "neuralops.api",
-    "compare": "neuralops.api",
-    "patch_transformers": "neuralops.api",
-    "AutoNeuralOpsModel": "neuralops.api",
-    "AutoNeuralOpsForCausalLM": "neuralops.api",
-    "AutoNeuralOpsForSequenceClassification": "neuralops.api",
-    "merge_for_inference": "neuralops.api",
     "GLAttention": "neuralops.attentions.linear.gla_attention",
     "CosformerAttention": "neuralops.attentions.linear.cosformer",
     "SVDLinearAttention": "neuralops.attentions.svd.svd_linear_attention",
@@ -701,7 +658,6 @@ _API_EXPORTS = {
     "StiefelOptimizer": "neuralops.trainer.optimizers",
     "RiemannianAdam": "neuralops.trainer.optimizers",
     "HybridAttentionSpec": "neuralops.models.hybrid_spec",
-    "probe_optimal_batch_size": "neuralops.api",
     "NeuralOpsError": "neuralops.core.exceptions",
     "ConfigError": "neuralops.core.exceptions",
     "WeightCopyError": "neuralops.core.exceptions",
@@ -743,203 +699,67 @@ def inject_gla(model, **kwargs):
     from neuralops.core._attention_surgery import replace_attention_in_model
     return replace_attention_in_model(model, _GLA, **kwargs)
 
-def create_attention(
-    name: str,
-    config: Any = None,
-    dim: int | None = None,
-    num_heads: int | None = None,
-    embed_dim: int | None = None,
-    rank: int | None = None,
-    **kwargs: Any,
-) -> Any:
-    """Universal attention factory instantiating any of the 131 registered attention mechanisms.
-
-    Normalizes architectural hyperparameter aliases (embed_dim, dim, d_model, hidden_size,
-    num_heads, n_heads, heads, rank, r) and builds standard compliant configs automatically.
-    """
-    from neuralops.core.registry import ATTENTION_REGISTRY
-    cls = ATTENTION_REGISTRY.get(name)
-    if cls is None:
-        raise ValueError(f"Unknown attention type '{name}'. Registered: {list(ATTENTION_REGISTRY.keys())}")
-
-    resolved_dim = (
-        embed_dim
-        or dim
-        or kwargs.pop("d_model", None)
-        or kwargs.pop("hidden_size", None)
-        or getattr(config, "hidden_size", None)
-        or getattr(config, "n_embd", None)
-        or getattr(config, "d_model", None)
-    )
-    resolved_heads = (
-        num_heads
-        or kwargs.pop("n_heads", None)
-        or kwargs.pop("heads", None)
-        or kwargs.pop("num_attention_heads", None)
-        or getattr(config, "num_attention_heads", None)
-        or getattr(config, "num_heads", None)
-        or getattr(config, "n_head", None)
-    )
-    resolved_rank = rank or kwargs.pop("r", None)
-
-    call_kwargs = dict(kwargs)
-    if resolved_dim is not None:
-        call_kwargs["dim"] = resolved_dim
-        call_kwargs["embed_dim"] = resolved_dim
-        call_kwargs["hidden_size"] = resolved_dim
-        call_kwargs["d_model"] = resolved_dim
-    if resolved_heads is not None:
-        call_kwargs["num_heads"] = resolved_heads
-        call_kwargs["n_heads"] = resolved_heads
-        call_kwargs["num_attention_heads"] = resolved_heads
-    if resolved_rank is not None:
-        call_kwargs["rank"] = resolved_rank
-        call_kwargs["r"] = resolved_rank
-
-    if config is None and resolved_dim is not None:
-        from transformers import BertConfig
-        h = resolved_heads or max(1, resolved_dim // 64)
-        is_dec = kwargs.get("is_decoder", kwargs.get("is_causal", True))
-        config = BertConfig(hidden_size=resolved_dim, num_attention_heads=h, is_decoder=is_dec)
-        config.is_causal = is_dec
-        config._is_synthetic = True
-        call_kwargs["config"] = config
-
-    init_attempts = []
-    if config is not None:
-        init_attempts.append(lambda: cls(config=config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
-        init_attempts.append(lambda: cls(config, **{k: v for k, v in call_kwargs.items() if k != "config"}))
-    if resolved_dim is not None and resolved_heads is not None:
-        init_attempts.append(lambda: cls(embed_dim=resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "num_heads")}))
-        init_attempts.append(lambda: cls(dim=resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("dim", "num_heads")}))
-        init_attempts.append(lambda: cls(resolved_dim, num_heads=resolved_heads, **{k: v for k, v in call_kwargs.items() if k not in ("embed_dim", "dim", "num_heads")}))
-    init_attempts.append(lambda: cls(**call_kwargs))
-    init_attempts.append(lambda: cls())
-
-    last_err = None
-    for attempt in init_attempts:
-        try:
-            return attempt()
-        except TypeError as e:
-            last_err = e
-            continue
-    if last_err is not None:
-        raise last_err
-    return cls(**call_kwargs)
+# Universal factories (F-80 single implementation in core.registry)
+from neuralops.core.registry import (
+    create_attention,
+    create_compressor,
+    list_attentions,
+    list_compressors,
+)
 
 
-def create_compressor(name: str, model: Any = None, rank: int | None = None, **kwargs: Any) -> Any:
-    """Universal compressor factory instantiating any of the 72 registered compression engines.
-
-    Normalizes hyperparameter aliases (rank, r, method, model) and handles optional dummy hosts.
-    """
-    from neuralops.core.registry import COMPRESSOR_REGISTRY
-    cls = COMPRESSOR_REGISTRY.get(name)
-    if cls is None:
-        raise KeyError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
-
-    call_kwargs = dict(kwargs)
-    resolved_rank = rank or call_kwargs.pop("r", None)
-    if resolved_rank is not None:
-        call_kwargs["rank"] = resolved_rank
-
-    if model is not None:
-        call_kwargs["model"] = model
-
-    attempts = [
-        lambda: cls(**call_kwargs),
+__all__ = sorted(list(set(
+    [
+        "__version__",
+        "create_attention",
+        "create_compressor",
+        "list_attentions",
+        "list_compressors",
+        "inject_gla",
+        "ComposableAttention",
+        "compose_attention",
+        "compile_to_so",
+        "list_surgeries",
+        "SurgeryRecipe",
+        "surgery",
+        "force_kernel_backend",
+        "list_triton_kernels",
+        "list_cuda_kernels",
+        "list_fla_attentions",
+        "GLAttention",
+        "CosformerAttention",
+        "SVDLinearAttention",
+        "DecayLinearAttention",
+        "Muon",
+        "StiefelOptimizer",
+        "RiemannianAdam",
+        "HybridAttentionSpec",
+        "NeuralOpsError",
+        "ConfigError",
+        "WeightCopyError",
+        "BackendError",
+        "NumericalError",
+        "BitPackedW4A16Linear",
+        "BitPackedLowRankSVDLinear",
+        "pack_int4_weights",
+        "unpack_int4_weights",
+        "fused_w4a16_gemm_triton",
+        "fast_hadamard_transform",
+        "HadamardIncoherentSVDCompressor",
+        "SelfSpeculativeDecoder",
+        "SpeculativeDecodeStats",
+        "PagedKVCache",
+        "PagedStateTable",
+        "ATTENTION_REGISTRY",
+        "COMPRESSOR_REGISTRY",
+        "NeedleInAHaystackEvaluator",
+        "plot_niah_heatmap",
+        "NeuralOpsLMEvalAdapter",
+        "evaluate_zero_shot_tasks",
     ]
-    if model is not None:
-        attempts.append(lambda: cls(model, **{k: v for k, v in call_kwargs.items() if k != "model"}))
-    else:
-        import torch.nn as nn
-        dummy_host = nn.Sequential(nn.Linear(64, 64))
-        attempts.append(lambda: cls(model=dummy_host, **call_kwargs))
-        attempts.append(lambda: cls(dummy_host, **call_kwargs))
-
-    last_err = None
-    for attempt in attempts:
-        try:
-            return attempt()
-        except TypeError as e:
-            last_err = e
-            continue
-    if last_err is not None:
-        raise last_err
-    return cls(**call_kwargs)
-
-
-__all__ = [
-    "__version__",
-    "load_model",
-    "replace_attention",
-    "transplant_attention",
-    "transplant",
-    "serve",
-    "compress",
-    "create_compressor",
-    "get_attention_module",
-    "quick_benchmark",
-    "export_model",
-    "export",
-    "pipeline",
-    "compile_to_so",
-    "push_to_hub",
-    "load_exported_model",
-
-    "collect_surgery_distillation_loss",
-    "set_surgery_alpha",
-    "set_surgery_stage",
-    "finalize_surgery",
-    "list_attentions",
-    "list_compressors",
-    "list_fla_attentions",
-    "list_surgeries",
-    "SurgeryRecipe",
-    "surgery",
-    "force_kernel_backend",
-    "get_attention_class",
-    "get_compressor_class",
-    "list_families",
-    "train",
-    "distill",
-    "evaluate",
-    "benchmark",
-    "benchmark_all",
-    "info",
-    "available_backends",
-    "has_triton",
-    "validate",
-    "get_version",
-    "GLAttention",
-    "CosformerAttention",
-    "SVDLinearAttention",
-    "DecayLinearAttention",
-    "inject_gla",
-    "create_attention",
-    "ATTENTION_REGISTRY",
-    "NeuralOpsError",
-    "ConfigError",
-    "WeightCopyError",
-    "BackendError",
-    "NumericalError",
-    "Muon",
-    "StiefelOptimizer",
-    "RiemannianAdam",
-    "HybridAttentionSpec",
-    "probe_optimal_batch_size",
-    "oneshot",
-    "recommend",
-    "summary",
-    "compare",
-    "patch_transformers",
-    "AutoNeuralOpsModel",
-    "AutoNeuralOpsForCausalLM",
-    "AutoNeuralOpsForSequenceClassification",
-    "merge_for_inference",
-    "ComposableAttention",
-    "compose_attention",
-] + sorted(list(_LAZY_EXPORTS.keys()))
+    + list(_PUBLIC_API.keys())
+    + list(_LAZY_EXPORTS.keys())
+)))
 
 
 def __getattr__(name: str) -> Any:
