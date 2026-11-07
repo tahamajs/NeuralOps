@@ -36,13 +36,14 @@ logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register(
-    "full",
+    "full_attention",
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,
 )
 @ATTENTION_REGISTRY.register(
-    "full_attention",
+    "full",
+    is_alias=True,
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,

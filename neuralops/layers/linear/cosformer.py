@@ -51,7 +51,7 @@ def _neg_inf(dtype: torch.dtype) -> float:
 
 
 @ATTENTION_REGISTRY.register("cosformer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("cosformer_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("cosformer_attention", is_alias=True, supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class CosformerAttention(BaseAttention):
     """CosformerAttention neural operator.
 

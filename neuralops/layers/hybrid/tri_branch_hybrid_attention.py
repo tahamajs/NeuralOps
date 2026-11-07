@@ -298,6 +298,9 @@ def _causal_linear_attention(
 @ATTENTION_REGISTRY.register(
     "tri_branch_hybrid", supports_causal=True, supports_gqa=True, supports_rope=True
 )
+@ATTENTION_REGISTRY.register(
+    "aegis_hybrid", is_alias=True, supports_causal=True, supports_gqa=True, supports_rope=True
+)
 class TriBranchHybridAttention(BaseAttention):
     """TriBranchHybridAttention neural operator.
 

@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
     "eat", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
 @ATTENTION_REGISTRY.register(
-    "eat_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+    "eat_attention", is_alias=True, supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
 class EATBlock(BaseAttention):
     """EATBlock neural operator.

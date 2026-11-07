@@ -328,13 +328,11 @@ def _global_linear_attention_v2(
 
 
 @ATTENTION_REGISTRY.register("hybrid_local_kernel", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v1", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v2", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v3", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v4", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v5", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_hybrid", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v1", is_alias=True, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v2", is_alias=True, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v3", is_alias=True, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v4", is_alias=True, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v5", is_alias=True, supports_causal=True, supports_gqa=True)
 class HybridLocalKernelAttention(BaseAttention):
     """HybridLocalKernelAttention neural operator.
 

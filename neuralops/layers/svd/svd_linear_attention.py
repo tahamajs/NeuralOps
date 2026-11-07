@@ -77,25 +77,28 @@ from neuralops.core.low_rank.svd_linear import SVDLinear
 
 
 @ATTENTION_REGISTRY.register(
+    "svd_linear_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
     "svd_linear",
+    is_alias=True,
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,
 )
 @ATTENTION_REGISTRY.register(
     "svd_linear_attn",
+    is_alias=True,
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,
 )
 @ATTENTION_REGISTRY.register(
     "svd_linear_inject",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-@ATTENTION_REGISTRY.register(
-    "svd_linear_attention",
+    is_alias=True,
     supports_causal=True,
     supports_bidirectional=True,
     supports_gqa=True,

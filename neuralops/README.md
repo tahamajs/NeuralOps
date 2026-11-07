@@ -4,7 +4,7 @@
 
 ---
 
-## 🏛️ Comprehensive Architecture & Subsystem Map (v1.6.0 Tier Structure)
+## 🏛️ Comprehensive Architecture & Subsystem Map (v2.0.6 Tier Structure)
 
 ```
 neuralops/

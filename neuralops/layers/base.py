@@ -9,15 +9,10 @@
 NeuralOps Modular Attention Framework & Developer Extension Base
 
 Provides clean, standardized abstractions for implementing and extending
-subquadratic and canonical attention mechanisms across the 12 mathematical families:
-1. Linear Kernel Attention
-2. Gated DeltaNet & Recurrent Attention
-3. SVD Low-Rank & Singular Value Bottlenecks
-4. State-Space Models & Selective Scans (SSM/Mamba)
-5. Hybrid Multi-Branch & Sparse MoE
-6. Sliding-Window & Dynamic Sparse Attention
-7. Modern Rotary Position & Grouped-Query Attention (GQA)
-8. Dense Multi-Head Attention Baselines
+subquadratic and canonical attention mechanisms. Each implementation defines
+its architectural taxonomy via the `FAMILY` class attribute (e.g., "linear",
+"gated", "svd", "ssm", "hybrid", "sparse", "modern", "dense", "adaptive",
+"fast_kernels", "experimental").
 
 Developers extending NeuralOps can inherit from `ModularAttention`, which handles
 all QKV projection scaffolding, GQA head broadcasting, causal masking, and shape
@@ -48,7 +43,8 @@ class ModularAttention(BaseAttention):
     To implement a new attention mechanism:
         1. Subclass `ModularAttention`.
         2. Decorate with `@register_attention("my_attention_name")`.
-        3. Implement `compute_attention(self, q, k, v, mask=None, **kwargs)`.
+        3. Define `FAMILY: str = "..."` (defaulting to subpackage name).
+        4. Implement `compute_attention(self, q, k, v, mask=None, **kwargs)`.
 
     Example:
         >>> from neuralops.layers.base import ModularAttention
@@ -65,6 +61,7 @@ class ModularAttention(BaseAttention):
         ...         return torch.einsum("bhsn,bhnd->bhsd", phi_q, kv)
     """
 
+    FAMILY: str = "uncategorized"
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True

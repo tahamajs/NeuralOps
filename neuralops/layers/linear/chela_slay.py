@@ -425,7 +425,7 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
     "chela_slay", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
 @ATTENTION_REGISTRY.register(
-    "chela_slay_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+    "chela_slay_attention", is_alias=True, supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
 class ChelaSlayAttention(BaseAttention):
     r"""

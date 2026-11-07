@@ -26,6 +26,19 @@ logger = logging.getLogger(__name__)
 class BaseAttention(nn.Module):
     """Every custom attention module must inherit from this."""
 
+    FAMILY: str = "uncategorized"
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        if "FAMILY" not in cls.__dict__:
+            parts = cls.__module__.split(".")
+            if len(parts) >= 3 and parts[0] == "neuralops" and parts[1] == "layers":
+                cls.FAMILY = parts[2]
+            elif "ttt" in cls.__module__:
+                cls.FAMILY = "linear"
+            else:
+                cls.FAMILY = "uncategorized"
+
     def __init__(self, config: Any | None = None, rank: int | None = None, **kwargs: Any) -> None:
         super().__init__()
         self.config = config
@@ -226,7 +239,17 @@ class BaseAttention(nn.Module):
 class BaseCompressor:
     """Base class for all compressors. Not a nn.Module to avoid parameter storage."""
 
+    FAMILY: str = "uncategorized"
     hardware_accelerated: bool = True
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        if "FAMILY" not in cls.__dict__:
+            parts = cls.__module__.split(".")
+            if len(parts) >= 3 and parts[0] == "neuralops" and parts[1] == "compression":
+                cls.FAMILY = parts[2]
+            else:
+                cls.FAMILY = "uncategorized"
 
     def __init__(self, model: nn.Module, name: str = "base", **kwargs) -> None:
         self.model = model

@@ -8,21 +8,19 @@
 """
 Central Component Registry & Parameter Synchronization Engine
 
-Architectural Role (NeuralOps v1.6.0):
+Architectural Role (NeuralOps):
 This module implements the unified registry and dynamic discovery system underpinning
-the 7 attention families and 5 compression families in NeuralOps:
+the attention and compression families in NeuralOps. Components define their
+taxonomy via their `FAMILY` attribute (defaulting to their subpackage name).
 
 1. Dynamic Component Registries:
-   - ATTENTION_REGISTRY: Exactly 131 registered attention operators across 7 canonical
-     families (Linear/Kernel, SSM/Mamba, Low-Rank/SVD, Sparse/Block, MoE, Hybrid, Fused).
-   - COMPRESSOR_REGISTRY: Exactly 72 registered model compression engines across 5 families
-     (Quantization, Pruning, SVD/Low-Rank, KV-Cache Eviction, Tensor Decomposition).
+   - ATTENTION_REGISTRY: Registered attention operators grouped by `FAMILY`.
+   - COMPRESSOR_REGISTRY: Registered model compression engines grouped by `FAMILY`.
 
 2. PEP 562 Lazy Loading Architecture:
-   Eager loading of all 203 operator classes at import time would inflate startup latency
-   to 3420 ms. The registry decouples registration metadata from concrete class imports:
-   operator modules are loaded on demand via PEP 562 and meta-path hooks, collapsing
-   package initialization latency to ~22 ms (a 155x acceleration).
+   Eager loading of operator classes at import time would inflate startup latency.
+   The registry decouples registration metadata from concrete class imports:
+   operator modules are loaded on demand via PEP 562 and meta-path hooks.
 
 3. Universal Parameter Synchronization Factory:
    create_attention() and create_compressor() provide unified instantiation contracts,
@@ -37,6 +35,8 @@ import importlib
 import logging
 from collections.abc import Callable
 from typing import Any
+
+from neuralops.core.exceptions import RegistryError
 
 logger = logging.getLogger(__name__)
 
@@ -262,18 +262,36 @@ class Registry:
             final_key = key if key is not None else obj.__name__
             k = final_key.lower()
             if is_alias:
+                if k in self._dict:
+                    raise RegistryError(
+                        f"Alias '{k}' collides with canonical key in registry '{self.name}'."
+                    )
                 self._aliases[k] = obj
             else:
-                if k in self._dict and isinstance(self._dict[k], type) and not isinstance(obj, type):
-                    logger.debug(
-                        "Registry '%s': Skipping overwrite of class %s by function %s for key '%s'",
-                        self.name,
-                        self._dict[k].__name__,
-                        obj.__name__,
-                        k,
+                if k in self._dict and self._dict[k] is not obj:
+                    raise RegistryError(
+                        f"Canonical key '{k}' already registered to {self._dict[k]} in registry '{self.name}'."
                     )
-                    return obj
+                if k in self._aliases:
+                    raise RegistryError(
+                        f"Canonical key '{k}' collides with an existing alias in registry '{self.name}'."
+                    )
                 self._dict[k] = obj
+
+            # Ensure FAMILY attribute is set on registered component
+            if getattr(obj, "FAMILY", None) in (None, "uncategorized"):
+                mod = getattr(obj, "__module__", "")
+                parts = mod.split(".")
+                if len(parts) >= 3 and parts[0] == "neuralops" and parts[1] in ("layers", "compression"):
+                    try:
+                        obj.FAMILY = parts[2]
+                    except (AttributeError, TypeError):
+                        pass
+                elif "ttt" in mod:
+                    try:
+                        obj.FAMILY = "linear"
+                    except (AttributeError, TypeError):
+                        pass
 
             caps = {
                 "supports_causal": getattr(
@@ -534,10 +552,26 @@ class Registry:
                     raise
                 logger.warning("Error loading layers: %s", e)
 
-    def keys(self) -> builtins.list[str]:
+    def canonical_keys(self) -> builtins.list[str]:
         """Return a list of all registered keys (canonical only)."""
         self._load_all()
         return [k for k in self._dict.keys() if k not in DEPRECATED_ALIASES]
+
+    def distinct_classes(self) -> builtins.list[type]:
+        """Return a list of unique classes registered under canonical keys."""
+        self._load_all()
+        classes = []
+        seen = set()
+        for k in self.canonical_keys():
+            v = self._dict[k]
+            if isinstance(v, type) and v not in seen:
+                seen.add(v)
+                classes.append(v)
+        return classes
+
+    def keys(self) -> builtins.list[str]:
+        """Return a list of all registered keys (canonical only)."""
+        return self.canonical_keys()
 
     def list_available(self) -> builtins.list[str]:
         """Return a list of all registered keys."""
