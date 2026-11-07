@@ -157,3 +157,62 @@ def test_mypy_target_within_supported_range() -> None:
     assert (
         mypy_version in valid_versions
     ), f"mypy python_version '{mypy_version}' is outside supported range {valid_versions}"
+
+
+def test_gitignore_does_not_ignore_tracked_docs() -> None:
+    """Verify that .gitignore does not ignore docs/ or audit/ and dead whitelists are absent."""
+    import subprocess
+    import pytest
+
+    if not (ROOT_DIR / ".git").exists():
+        pytest.skip("Test requires a git checkout")
+
+    gitignore_path = ROOT_DIR / ".gitignore"
+    assert gitignore_path.exists(), ".gitignore not found"
+
+    lines = [line.strip() for line in gitignore_path.read_text(encoding="utf-8").splitlines()]
+
+    # docs/ and audit/ must NOT be ignored
+    assert "docs/" not in lines, "docs/ should not be ignored in .gitignore"
+    assert "docs/**" not in lines, "docs/** should not be ignored in .gitignore"
+    assert "audit/" not in lines, "audit/ should not be ignored in .gitignore"
+    assert "audit/**" not in lines, "audit/** should not be ignored in .gitignore"
+
+    # Dead whitelists must be gone
+    assert "!ROADMAP.md" not in lines, "Dead whitelist !ROADMAP.md found in .gitignore"
+    assert "!setup.py" not in lines, "Dead whitelist !setup.py found in .gitignore"
+
+    # Verify git check-ignore returns non-zero for docs/API_REFERENCE.md
+    res = subprocess.run(
+        ["git", "check-ignore", "docs/API_REFERENCE.md"],
+        cwd=ROOT_DIR,
+        capture_output=True,
+    )
+    assert res.returncode != 0, "docs/API_REFERENCE.md is incorrectly ignored by git"
+
+
+
+def test_gitignore_does_not_ignore_tracked_docs() -> None:
+    """Verify that .gitignore does not ignore docs/ or audit/, and dead whitelists are deleted."""
+    import subprocess
+
+    gitignore_path = ROOT_DIR / ".gitignore"
+    assert gitignore_path.exists(), ".gitignore not found"
+
+    lines = gitignore_path.read_text(encoding="utf-8").splitlines()
+    assert "docs/" not in lines, "docs/ still explicitly ignored in .gitignore"
+    assert "docs/**" not in lines, "docs/** still explicitly ignored in .gitignore"
+    assert "audit/" not in lines, "audit/ still explicitly ignored in .gitignore"
+    assert "audit/**" not in lines, "audit/** still explicitly ignored in .gitignore"
+    assert "!ROADMAP.md" not in lines, "Dead whitelist !ROADMAP.md still in .gitignore"
+    assert "!setup.py" not in lines, "Dead whitelist !setup.py still in .gitignore"
+
+    git_dir = ROOT_DIR / ".git"
+    if git_dir.exists():
+        res = subprocess.run(
+            ["git", "check-ignore", "docs/QUICKSTART.md"],
+            cwd=str(ROOT_DIR),
+            capture_output=True,
+            check=False,
+        )
+        assert res.returncode != 0, "docs/QUICKSTART.md should not be ignored by git"

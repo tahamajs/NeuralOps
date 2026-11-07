@@ -1,18 +1,28 @@
 # ============================================================
 # Non-Code & Research Artifact Directories (Strictly Ignored)
 # ============================================================
-docs/
-docs/**
-audit/
-audit/**
 paper/
 paper/**
 thesis_final/
 thesis_final/**
 academic/
 academic/**
-/results/
-/results/**
+# Generated benchmark execution artifacts (narrowed from blanket /results/)
+results/*.log
+results/*.sqlite
+results/*.sqlite-journal
+results/*.jsonl
+results/*.arrow
+results/*.parquet
+results/plots/*.pdf
+results/plots/*.png
+results/run_*
+results/eval_*
+results/latest/
+results/temp/
+results/tmp/
+!results/*.csv
+!results/README.md
 logs/
 logs/**
 site/
@@ -180,11 +190,8 @@ test_results/
 !CONTRIBUTING.md
 !SECURITY.md
 !CODE_OF_CONDUCT.md
-!ROADMAP.md
 !AGENTS.md
 !pyproject.toml
-!pytest.ini
-!setup.py
 !LICENSE
 !CITATION.cff
 

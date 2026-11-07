@@ -1,14 +1,15 @@
 [build-system]
-requires = ["setuptools>=65.0.0", "wheel", "torch"]
+requires = ["setuptools>=65.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "neuralops-cuda"
 version = "2.0.6"
 description = "Pre-compiled CUDA and Triton extensions for NeuralOps high-performance attention surgery"
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 authors = [{ name = "Taha Majlesi", email = "tahamaj4@gmail.com" }]
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
     "torch>=2.2.0",

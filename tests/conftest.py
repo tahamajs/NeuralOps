@@ -6,6 +6,7 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Shared pytest fixtures for neuralops unified test suite."""
+
 from __future__ import annotations
 
 import os
@@ -29,6 +30,7 @@ import torch
 
 try:
     import triton
+
     _TRITON_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     _TRITON_AVAILABLE = False
@@ -43,6 +45,7 @@ def _reset_torch_seed():
         torch.cuda.manual_seed_all(42)
     try:
         import numpy as np
+
         np.random.seed(42)
     except ImportError:
         pass
@@ -78,6 +81,7 @@ def dtype(request):
 @pytest.fixture
 def dummy_config():
     """Minimal config for testing attention modules."""
+
     class DummyConfig:
         hidden_size = 64
         num_attention_heads = 4
@@ -86,6 +90,7 @@ def dummy_config():
         dropout = 0.0
         is_decoder = False
         model_type = "bert"
+
     return DummyConfig()
 
 
@@ -111,6 +116,7 @@ def tiny_gpt2():
     """Lightweight real GPT2 model for testing, requiring transformers."""
     pytest.importorskip("transformers", reason="transformers package required for tiny_gpt2 fixture")
     from transformers import GPT2Config, GPT2LMHeadModel
+
     config = GPT2Config(
         n_layer=2,
         n_head=2,
@@ -124,24 +130,29 @@ def tiny_gpt2():
 @pytest.fixture
 def tiny_gpt2_dummy():
     """Explicit hand-made mock GPT2 model for lightweight testing without transformers."""
+
     class TinyGPT2Dummy(torch.nn.Module):
         def __init__(self):
             super().__init__()
-            self.config = type("Config", (), {
-                "hidden_size": 64,
-                "num_attention_heads": 2,
-                "num_hidden_layers": 2,
-                "vocab_size": 256,
-                "n_positions": 512,
-                "model_type": "gpt2",
-            })()
-            self.transformer = torch.nn.ModuleDict({
-                "wte": torch.nn.Embedding(256, 64),
-                "wpe": torch.nn.Embedding(512, 64),
-                "h": torch.nn.ModuleList([
-                    torch.nn.Linear(64, 64) for _ in range(2)
-                ]),
-            })
+            self.config = type(
+                "Config",
+                (),
+                {
+                    "hidden_size": 64,
+                    "num_attention_heads": 2,
+                    "num_hidden_layers": 2,
+                    "vocab_size": 256,
+                    "n_positions": 512,
+                    "model_type": "gpt2",
+                },
+            )()
+            self.transformer = torch.nn.ModuleDict(
+                {
+                    "wte": torch.nn.Embedding(256, 64),
+                    "wpe": torch.nn.Embedding(512, 64),
+                    "h": torch.nn.ModuleList([torch.nn.Linear(64, 64) for _ in range(2)]),
+                }
+            )
             self.lm_head = torch.nn.Linear(64, 256, bias=False)
 
         def forward(self, input_ids, **kwargs):
@@ -170,15 +181,17 @@ def tmp_results_dir(tmp_path):
 
 @pytest.fixture(scope="session")
 def attention_registry():
-    from neuralops.core.registry import ATTENTION_REGISTRY
     import neuralops.attentions  # noqa: F401
+    from neuralops.core.registry import ATTENTION_REGISTRY
+
     return ATTENTION_REGISTRY
 
 
 @pytest.fixture(scope="session")
 def compressor_registry():
-    from neuralops.core.registry import COMPRESSOR_REGISTRY
     import neuralops.compression_engine  # noqa: F401
+    from neuralops.core.registry import COMPRESSOR_REGISTRY
+
     return COMPRESSOR_REGISTRY
 
 
@@ -214,13 +227,18 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         item_path = str(item.fspath).lower()
         item_name = item.name.lower()
-        if "cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name:
+        # Don't classify static config/metadata verification tests as GPU tests
+        is_static_config_test = any(
+            cfg_mod in item_path
+            for cfg_mod in ("test_version_sync", "test_repo_config", "test_dependency")
+        )
+        if ("cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name) and not is_static_config_test:
             item.add_marker(pytest.mark.gpu)
         if "triton" in item_path or "triton" in item.keywords or "triton" in item_name:
             item.add_marker(pytest.mark.triton)
             item.add_marker(pytest.mark.gpu)
 
-        if not cuda_available:
+        if not cuda_available and not is_static_config_test:
             if "gpu" in item.keywords or any(item.iter_markers("gpu")):
                 item.add_marker(skip_cuda)
             if "requires_cuda" in item.keywords or any(item.iter_markers("requires_cuda")):

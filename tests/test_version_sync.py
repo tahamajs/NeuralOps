@@ -9,10 +9,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -32,15 +32,16 @@ def test_all_version_sources_agree() -> None:
     m_cuda = re.search(r'^version\s*=\s*["\']([^"\']+)["\']', cuda_text, re.M)
     assert m_cuda is not None, "Version not found in pyproject.cuda.toml"
     assert m_cuda.group(1) == canonical_version, f"pyproject.cuda.toml version {m_cuda.group(1)} != {canonical_version}"
-    assert f"neuralops>={canonical_version}" in cuda_text, (
-        f"pyproject.cuda.toml does not require neuralops>={canonical_version}"
-    )
+    assert (
+        f"neuralops>={canonical_version}" in cuda_text
+    ), f"pyproject.cuda.toml does not require neuralops>={canonical_version}"
 
     # 3. neuralops.__version__
     import neuralops
-    assert neuralops.__version__ == canonical_version, (
-        f"neuralops.__version__ is {neuralops.__version__}, expected {canonical_version}"
-    )
+
+    assert (
+        neuralops.__version__ == canonical_version
+    ), f"neuralops.__version__ is {neuralops.__version__}, expected {canonical_version}"
 
     # 4. CITATION.cff
     citation_text = (ROOT_DIR / "CITATION.cff").read_text(encoding="utf-8")
@@ -53,9 +54,9 @@ def test_all_version_sources_agree() -> None:
 
     # 5. SECURITY.md
     security_text = (ROOT_DIR / "SECURITY.md").read_text(encoding="utf-8")
-    assert re.search(r"\|\s*\*\*2\.0\.x\*\*\s*\|\s*:white_check_mark:\s*Active\s*\|", security_text) is not None, (
-        "SECURITY.md does not mark 2.0.x as Active"
-    )
+    assert (
+        re.search(r"\|\s*\*\*2\.0\.x\*\*\s*\|\s*:white_check_mark:\s*Active\s*\|", security_text) is not None
+    ), "SECURITY.md does not mark 2.0.x as Active"
 
     # 6. README.md
     readme_text = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
@@ -83,14 +84,40 @@ def test_sync_version_check_passes() -> None:
 def test_security_md_supports_current_major() -> None:
     """Verify SECURITY.md support table has 2.0.x active and links to NeuralOps repo."""
     security_text = (ROOT_DIR / "SECURITY.md").read_text(encoding="utf-8")
-    assert "| **2.0.x** | :white_check_mark: Active |" in security_text, (
-        "2.0.x not marked as active in SECURITY.md"
-    )
-    assert "SVD_linear_Attention" not in security_text, (
-        "Stale SVD_linear_Attention link remains in SECURITY.md"
-    )
-    assert "github.com/tahamajs/NeuralOps/security/advisories/new" in security_text, (
-        "Canonical NeuralOps security advisories URL not found in SECURITY.md"
-    )
+    assert "| **2.0.x** | :white_check_mark: Active |" in security_text, "2.0.x not marked as active in SECURITY.md"
+    assert "SVD_linear_Attention" not in security_text, "Stale SVD_linear_Attention link remains in SECURITY.md"
+    assert (
+        "github.com/tahamajs/NeuralOps/security/advisories/new" in security_text
+    ), "Canonical NeuralOps security advisories URL not found in SECURITY.md"
     # Ensure no duplicate 1.7.x row
     assert security_text.count("1.7.x") <= 1, "Duplicate 1.7.x row remains in SECURITY.md"
+
+
+def test_cuda_pyproject_forms_match_main() -> None:
+    """Verify pyproject.cuda.toml matches pyproject.toml forms and has no build-time torch."""
+    import tomllib
+
+    with open(ROOT_DIR / "pyproject.toml", "rb") as f:
+        main_data = tomllib.load(f)
+    with open(ROOT_DIR / "pyproject.cuda.toml", "rb") as f:
+        cuda_data = tomllib.load(f)
+
+    # Verify build-system requires does not contain torch
+    cuda_build_requires = cuda_data.get("build-system", {}).get("requires", [])
+    assert not any("torch" in req for req in cuda_build_requires), (
+        f"pyproject.cuda.toml build-system.requires should not contain torch: {cuda_build_requires}"
+    )
+
+    # Verify readme form
+    assert cuda_data.get("project", {}).get("readme") == main_data.get("project", {}).get("readme"), (
+        "pyproject.cuda.toml readme form does not match pyproject.toml"
+    )
+
+    # Verify license form
+    assert cuda_data.get("project", {}).get("license") == main_data.get("project", {}).get("license"), (
+        "pyproject.cuda.toml license form does not match pyproject.toml"
+    )
+    assert cuda_data.get("project", {}).get("license-files") == main_data.get("project", {}).get("license-files"), (
+        "pyproject.cuda.toml license-files form does not match pyproject.toml"
+    )
+
