@@ -1065,7 +1065,11 @@ def heal_replaced_model(
             parameter.requires_grad_(was_trainable)
 
 
+from neuralops.api import replace_attention, replace_attention as replace_attention_in_model
+
 __all__ = [
+    "replace_attention",
+    "replace_attention_in_model",
     "PROJ_REGEX_PATTERNS",
     "FUSED_QKV_REGEX",
     "_find_submodule_by_regex",

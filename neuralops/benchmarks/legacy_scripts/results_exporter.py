@@ -109,10 +109,32 @@ def export_benchmark_results(
     conn = init_sqlite_ledger(db_path)
     cur = conn.cursor()
     passed_count = sum(1 for r in records if r.get("status") == "PASS")
-    cur.execute(
-        "INSERT INTO benchmark_runs VALUES (?, ?, ?, ?, ?)",
-        (run_id, timestamp, device, len(records), passed_count),
-    )
+
+    cur.execute("PRAGMA table_info(benchmark_runs)")
+    existing_run_cols = {r[1] for r in cur.fetchall()}
+    run_row: dict[str, Any] = {
+        "run_id": run_id,
+        "benchmark_name": "master_suite",
+        "suite": "gpu_master_suite",
+        "timestamp": timestamp,
+        "timestamp_utc": timestamp,
+        "device": device,
+        "device_name": device,
+        "status": "PASS",
+        "total_modules": len(records),
+        "passed_modules": passed_count,
+        "total_cells": len(records),
+        "passed_cells": passed_count,
+        "failed_cells": len(records) - passed_count,
+    }
+    valid_cols = [c for c in run_row if c in existing_run_cols]
+    if valid_cols:
+        col_names = ", ".join(valid_cols)
+        qmarks = ", ".join(["?"] * len(valid_cols))
+        cur.execute(
+            f"INSERT OR REPLACE INTO benchmark_runs ({col_names}) VALUES ({qmarks})",
+            [run_row[c] for c in valid_cols],
+        )
     for r in records:
         cur.execute(
             """

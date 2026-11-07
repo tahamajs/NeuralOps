@@ -40,22 +40,8 @@ from neuralops.core.utils.rope import _rotate_half, apply_rope_after_up_projecti
 
 logger = logging.getLogger(__name__)
 
-
-def inject_attention(
-    model: nn.Module,
-    attention_type: str,
-    rank: int | None = None,
-    copy_weights: bool = True,
-    **kwargs: Any,
-) -> nn.Module:
-    """Universal attention layer replacement engine for HuggingFace Transformers."""
-    return _inject_attention_loop(
-        model=model,
-        attention_type=attention_type,
-        rank=rank,
-        copy_weights=copy_weights,
-        **kwargs,
-    )
+from neuralops.api import replace_attention
+inject_attention = replace_attention
 
 
 def available_attention_types() -> list[str]:
@@ -256,6 +242,7 @@ from neuralops.core.peft.lora import LoRALinear
 
 
 __all__ = [
+    "replace_attention",
     "inject_attention",
     "available_attention_types",
     "compute_reconstruction_error",

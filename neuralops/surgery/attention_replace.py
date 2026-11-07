@@ -42,17 +42,7 @@ from neuralops.surgery.layer_replacement import replace_attention_recursive
 logger = logging.getLogger("neuralops.surgery.attention_replace")
 
 
-def replace_attention(
-    model: nn.Module,
-    target_attention: str = "cosformer",
-    **kwargs: Any,
-) -> nn.Module:
-    """
-    Backwards-compatible attention replacement forwarding to UniversalSurgeryDirector.
-    """
-    logger.debug("Forwarding legacy replace_attention call to UniversalSurgeryDirector.")
-    director = UniversalSurgeryDirector(model)
-    return director.execute_surgery(target_attention=target_attention, **kwargs)
+from neuralops.api import replace_attention
 
 
 __all__ = [
