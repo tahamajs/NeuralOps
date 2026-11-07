@@ -35,7 +35,10 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
-@ATTENTION_REGISTRY.register("svd_seq", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("svd_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "svd_seq", is_alias=True, supports_causal=True, supports_gqa=True
+)
 class SVDLinearAttention(BaseAttention):
     r"""Low-Rank SVD-Compressed Sequence Attention Mechanism.
     Hardened for production use across diverse transformer architectures.

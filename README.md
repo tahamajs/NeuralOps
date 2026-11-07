@@ -281,11 +281,11 @@ All comprehensive scientific monographs, formal mathematical derivations, and ph
 
 | Document / Monograph | Focus & Scope | Format & Size | Direct Release Download |
 | :--- | :--- | :---: | :---: |
-| **Master's Thesis Monograph** | Complete 317-page university monograph detailing subquadratic operator design, in-place neural attention surgery, 6-pillar knowledge distillation, and SM 8.9 microarchitectures. | PDF (205.37 MB) | [📥 Download Thesis PDF](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Master_Thesis_810101504.pdf) |
+| **Master's Thesis Monograph** | Complete university monograph detailing subquadratic operator design, in-place neural attention surgery, 6-pillar knowledge distillation, and SM 8.9 microarchitectures. | PDF (205.37 MB) | [📥 Download Thesis PDF](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Master_Thesis_810101504.pdf) |
 | **Oral Defense Slide Deck** | 50 presentation slides with high-resolution vector diagrams, hardware roofline trajectories, and SVD eigenspectrum decay plots. | PDF (172.13 MB) | [📥 Download Defense Slides](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Thesis_Defense_Slides_810101504.pdf) |
-| **NeurIPS 2026 Paper** | Subquadratic Attention Surgery via Closed-Form Ridge Subspace Realignment. | PDF (64.31 MB) | [📥 Download NeurIPS Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_NeurIPS2026_Paper.pdf) |
-| **ICLR 2027 Paper** | NeuralOps: A Unified Framework for In-Place Attention Surgery, Riemannian SVD Compression, and Representation Stability | PDF (64.31 MB) | [📥 Download ICLR Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_ICLR2027_Paper.pdf) |
-| **MLSys 2027 Paper** | Zero-Overhead Kernel Dispatch & Hardware Roofline Analysis on Modern Silicon. | PDF (68.29 MB) | [📥 Download MLSys Paper](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_MLSys2027_Paper.pdf) |
+| **NeurIPS 2026 Manuscript (Draft)** | Subquadratic Attention Surgery via Closed-Form Ridge Subspace Realignment. *Status: Draft (deadline missed; unsubmitted).* | PDF (64.31 MB) | [📥 Download NeurIPS Draft](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_NeurIPS2026_Paper.pdf) |
+| **ICLR 2027 Manuscript (Draft)** | NeuralOps: A Unified Framework for In-Place Attention Surgery, Riemannian SVD Compression, and Representation Stability. *Status: Draft (deadline missed; unsubmitted).* | PDF (64.31 MB) | [📥 Download ICLR Draft](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_ICLR2027_Paper.pdf) |
+| **MLSys 2027 Manuscript (Draft)** | Zero-Overhead Kernel Dispatch & Hardware Roofline Analysis on Modern Silicon. *Status: Draft (CFP status unverified; unsubmitted).* | PDF (68.29 MB) | [📥 Download MLSys Draft](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_MLSys2027_Paper.pdf) |
 
 ---
 

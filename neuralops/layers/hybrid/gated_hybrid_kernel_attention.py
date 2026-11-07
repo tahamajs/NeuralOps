@@ -376,7 +376,12 @@ class ContextFusionGate(nn.Module):
             self.lora_proj(torch.cat([h_per_head, local_out, global_out], dim=-1))
         )
 
-@ATTENTION_REGISTRY.register("aegis_v6", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "gated_hybrid_kernel_attention", supports_causal=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "aegis_v6", is_alias=True, supports_causal=True, supports_gqa=True
+)
 class GatedHybridKernelAttention(BaseAttention):
     """Hybrid attention: local sliding window + global FAVOR+ linear."""
 

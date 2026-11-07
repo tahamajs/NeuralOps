@@ -38,7 +38,10 @@ logger = logging.getLogger(__name__)
 _DENOM_EPS = 1e-5
 
 
-@ATTENTION_REGISTRY.register("native_hybrid_attention")
+@ATTENTION_REGISTRY.register("nha_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "native_hybrid_attention", is_alias=True, supports_causal=True, supports_gqa=True
+)
 class NativeHybridAttention(BaseAttention):
     """NativeHybridAttention neural operator.
 
