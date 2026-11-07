@@ -13,11 +13,6 @@ Dynamically selects top-k token connections and applies adaptive thresholds to s
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -26,13 +21,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+
 logger = logging.getLogger(__name__)
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 
@@ -51,6 +48,7 @@ class AdaptiveSparseAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     supports_causal = True
     supports_bidirectional = True
@@ -74,9 +72,7 @@ class AdaptiveSparseAttention(BaseAttention):
         super().__init__(config, rank)
 
         hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
-        num_heads = (
-            kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
-        )
+        num_heads = kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
         num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
 
         head_dim = 0
@@ -97,11 +93,7 @@ class AdaptiveSparseAttention(BaseAttention):
                     getattr(source_attn, "all_head_size", None),
                 ),
             )
-            if (
-                cand is None
-                and hasattr(source_attn, "q_proj")
-                and hasattr(source_attn.q_proj, "in_features")
-            ):
+            if cand is None and hasattr(source_attn, "q_proj") and hasattr(source_attn.q_proj, "in_features"):
                 cand = source_attn.q_proj.in_features
             hidden_size = cand
 
@@ -147,10 +139,7 @@ class AdaptiveSparseAttention(BaseAttention):
         if (
             any(_mt.startswith(p) for p in _decoder_prefixes)
             or hasattr(config, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -160,8 +149,7 @@ class AdaptiveSparseAttention(BaseAttention):
 
         source_cls = source_attn.__class__.__name__ if source_attn is not None else ""
         is_nested = source_cls in ("BertSelfAttention", "RobertaSelfAttention") or (
-            source_cls.endswith(("SelfAttention", "SelfAttn"))
-            and "distil" not in source_cls.lower()
+            source_cls.endswith(("SelfAttention", "SelfAttn")) and "distil" not in source_cls.lower()
         )
         has_out = (
             any(
@@ -180,9 +168,7 @@ class AdaptiveSparseAttention(BaseAttention):
             if source_attn is not None
             else False
         )
-        self.is_nested_encoder: bool = bool(
-            kwargs.get("is_nested_encoder", (is_nested and not has_out))
-        )
+        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", (is_nested and not has_out)))
 
         if source_attn is not None and getattr(source_attn, "head_dim", 0):
             head_dim = source_attn.head_dim
@@ -276,12 +262,9 @@ class AdaptiveSparseAttention(BaseAttention):
         self.out_lin = self.out_proj
 
         init_logit = math.log(
-            max(1e-4, min(0.9999, effective_sparsity))
-            / (1.0 - max(1e-4, min(0.9999, effective_sparsity)))
+            max(1e-4, min(0.9999, effective_sparsity)) / (1.0 - max(1e-4, min(0.9999, effective_sparsity)))
         )
-        self.sparsity_logits = nn.Parameter(
-            torch.full((self.num_heads,), fill_value=init_logit), requires_grad=True
-        )
+        self.sparsity_logits = nn.Parameter(torch.full((self.num_heads,), fill_value=init_logit), requires_grad=True)
         self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = (
@@ -299,19 +282,13 @@ class AdaptiveSparseAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
         self.source_attn = None
-        self.rotary_emb: Any = (
-            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
-        )
+        self.rotary_emb: Any = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: Any = None
         if config is not None:
-            self.relative_attention_num_buckets: int = getattr(
-                config, "relative_attention_num_buckets", 32
-            )
-            self.relative_attention_max_distance: int = getattr(
-                config, "relative_attention_max_distance", 128
-            )
+            self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
+            self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
         else:
             self.relative_attention_num_buckets = 32
             self.relative_attention_max_distance = 128
@@ -373,9 +350,7 @@ class AdaptiveSparseAttention(BaseAttention):
         relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
         return relative_buckets
 
-    def compute_bias(
-        self, query_length: int, key_length: int, device: torch.device | None = None
-    ) -> torch.Tensor:
+    def compute_bias(self, query_length: int, key_length: int, device: torch.device | None = None) -> torch.Tensor:
         if self.relative_attention_bias is not None:
             context_position = torch.arange(query_length, dtype=torch.long, device=device)[:, None]
             memory_position = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
@@ -411,9 +386,7 @@ class AdaptiveSparseAttention(BaseAttention):
         if (
             hasattr(src, "c_attn")
             and src.c_attn is not None
-            and (
-                extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
-            )
+            and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None)
         ):
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -522,9 +495,7 @@ class AdaptiveSparseAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(
-                f"AdaptiveSparseAttention missing required weights for projections: {missing}"
-            )
+            raise RuntimeError(f"AdaptiveSparseAttention missing required weights for projections: {missing}")
 
         for proj_key, target_mod in [
             ("q", self.q_proj),
@@ -625,11 +596,7 @@ class AdaptiveSparseAttention(BaseAttention):
         K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        pos_emb = (
-            position_embeddings
-            if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
@@ -647,6 +614,7 @@ class AdaptiveSparseAttention(BaseAttention):
                         break
                 except (RuntimeError, TypeError, ValueError) as e:
                     from neuralops.utils.logging_config import warn_once
+
                     warn_once("rope_probe_pos", "RoPE embedding failed on (probe_t, pos_ids): %s", e)
                 try:
                     res = rotary_mod(probe_t, seq_len=N_k)
@@ -655,6 +623,7 @@ class AdaptiveSparseAttention(BaseAttention):
                         break
                 except (RuntimeError, TypeError, ValueError) as e:
                     from neuralops.utils.logging_config import warn_once
+
                     warn_once("rope_probe_seq", "RoPE embedding failed on (probe_t, seq_len): %s", e)
                 try:
                     res = rotary_mod(probe_t)
@@ -663,6 +632,7 @@ class AdaptiveSparseAttention(BaseAttention):
                         break
                 except (RuntimeError, TypeError, ValueError) as e:
                     from neuralops.utils.logging_config import warn_once
+
                     warn_once("rope_probe", "RoPE embedding failed on (probe_t): %s", e)
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
@@ -683,8 +653,7 @@ class AdaptiveSparseAttention(BaseAttention):
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "")
-            in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
         sparsity_per_head = torch.sigmoid(self.sparsity_logits).clamp(0.75, 0.95)
@@ -701,15 +670,27 @@ class AdaptiveSparseAttention(BaseAttention):
             if valid_m is None:
                 valid_m = torch.ones(B, N_k, device=device, dtype=torch.bool)
 
-        if Q.is_cuda and not output_attentions and mask is None and head_mask is None and position_bias is None and N_q >= 64 and N_q % 64 == 0 and N_k % 64 == 0:
+        if (
+            Q.is_cuda
+            and not output_attentions
+            and mask is None
+            and head_mask is None
+            and position_bias is None
+            and N_q >= 64
+            and N_q % 64 == 0
+            and N_k % 64 == 0
+        ):
             try:
                 from neuralops.ops.triton import triton_dispatch
+
                 n_blocks_q = N_q // 64
                 n_blocks_k = N_k // 64
                 block_mask = torch.ones((n_blocks_q, n_blocks_k), device=device, dtype=torch.int32)
                 if is_decoder:
                     block_mask = torch.tril(block_mask)
-                context_triton = triton_dispatch("sparse_attn", Q, K, V, block_mask=block_mask, block_size=64, is_causal=bool(is_decoder))
+                context_triton = triton_dispatch(
+                    "sparse_attn", Q, K, V, block_mask=block_mask, block_size=64, is_causal=bool(is_decoder)
+                )
                 if not self.is_nested_encoder:
                     out = self.out_proj(context_triton.transpose(1, 2).contiguous().view(B, N_q, -1))
                 else:
@@ -726,9 +707,7 @@ class AdaptiveSparseAttention(BaseAttention):
             q_chunk = Q[:, :, q_start:q_end, :]
             C_q = q_end - q_start
 
-            scores_chunk = (
-                torch.matmul(q_chunk, K.transpose(-2, -1).contiguous()) * scale
-            )
+            scores_chunk = torch.matmul(q_chunk, K.transpose(-2, -1).contiguous()) * scale
 
             if position_bias is not None:
                 pb_chunk = position_bias[:, :, q_start:q_end, :]
@@ -737,13 +716,9 @@ class AdaptiveSparseAttention(BaseAttention):
                 scores_chunk = scores_chunk + pb_chunk.to(scores_chunk.dtype)
             elif mask is not None:
                 if mask.dim() == 4:
-                    scores_chunk = scores_chunk + mask[:, :, q_start:q_end, :].to(
-                        scores_chunk.dtype
-                    )
+                    scores_chunk = scores_chunk + mask[:, :, q_start:q_end, :].to(scores_chunk.dtype)
                 elif valid_m is not None:
-                    scores_chunk = scores_chunk.masked_fill(
-                        (~valid_m).unsqueeze(1).unsqueeze(2), -10000.0
-                    )
+                    scores_chunk = scores_chunk.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
             if is_decoder:
                 q_idx = torch.arange(q_start, q_end, device=device).view(1, 1, C_q, 1)
@@ -772,9 +747,7 @@ class AdaptiveSparseAttention(BaseAttention):
 
                 scores_chunk = scores_chunk.masked_fill(scores_chunk < topk_thresh, -10000.0)
 
-            attn_chunk = torch.nan_to_num(F.softmax(scores_chunk.float(), dim=-1), nan=0.0).to(
-                dtype
-            )
+            attn_chunk = torch.nan_to_num(F.softmax(scores_chunk.float(), dim=-1), nan=0.0).to(dtype)
             attn_chunk = self.dropout(attn_chunk)
 
             if head_mask is not None:
@@ -927,9 +900,7 @@ def inject_adaptive_sparse(
         if hasattr(target, "attention"):
             if hasattr(target.attention, "self"):
                 target.attention.self = new_block
-                if hasattr(target.attention, "output") and hasattr(
-                    target.attention.output, "dense"
-                ):
+                if hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"):
                     outer_dense = target.attention.output.dense
                     if not isinstance(outer_dense, LoRALinear):
                         wrapped_dense = LoRALinear(

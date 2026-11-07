@@ -18,8 +18,8 @@ from typing import Any
 
 import torch.nn as nn
 
-from neuralops.layers.svd.minimal_svd import MinimalSVDAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.layers.svd.minimal_svd import MinimalSVDAttention
 
 logger = logging.getLogger(__name__)
 
@@ -77,11 +77,7 @@ def inject_naive_svd(
         energy=1.0,
         dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
     )
-    src_attn = (
-        old_attn
-        if old_attn is not None
-        else getattr(layer, "attention", getattr(layer, "self", None))
-    )
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)

@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -21,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -38,22 +41,28 @@ def _get_module():
         )
     return _MODULE
 
+
 def flash_decode_stage2_pytorch_ref(mid_out, mid_lse):
     glse = torch.logsumexp(mid_lse, dim=-1, keepdim=True)
     alpha = torch.exp(mid_lse - glse).unsqueeze(-1)
     return (alpha * mid_out).sum(dim=2, keepdim=True).to(mid_out.dtype)
+
+
 def flash_decode_stage2_triton_ref(mid_out, mid_lse):
     return flash_decode_stage2_pytorch_ref(mid_out, mid_lse)
+
 
 def flash_decode_stage2(mid_out: torch.Tensor, mid_lse: torch.Tensor) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = mod.flash_decode_stage2_fwd
         return fn(*args, **kwargs)
+
     return dispatch(
         cuda_fn,
         flash_decode_stage2_triton_ref,
         flash_decode_stage2_pytorch_ref,
-        mid_out, mid_lse,
+        mid_out,
+        mid_lse,
         kernel_name="flash_decode_stage2",
     )

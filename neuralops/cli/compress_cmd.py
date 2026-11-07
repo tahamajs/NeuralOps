@@ -173,7 +173,10 @@ def cmd_compress(args: Any) -> int:
         raise ValueError("--target-ratio must be in the interval (0, 1]")
     COMPRESSOR_REGISTRY.resolve(compressor_name)
     if target_ratio is not None and compressor_name.lower() not in {
-        "direct_svd", "svd", "hnc_svd", "hnc_svd_compressor"
+        "direct_svd",
+        "svd",
+        "hnc_svd",
+        "hnc_svd_compressor",
     }:
         raise ValueError(
             f"--target-ratio is only supported by direct_svd-family compressors; "
@@ -187,15 +190,17 @@ def cmd_compress(args: Any) -> int:
 
     if not output_json:
         if HAS_RICH and console is not None:
-            console.print(Panel(
-                f"[bold magenta]NeuralOps Model Compression Engine[/bold magenta]\n"
-                f"[bold white]Target Model:[/]  [yellow]{model_id}[/]\n"
-                f"[bold white]Compressor:[/]    [green]{compressor_name}[/]\n"
-                f"[bold white]Target Rank:[/]   {rank}  [bold white]| Rank Fraction:[/] {target_ratio or 'auto'}\n"
-                f"[bold white]Device:[/]        [cyan]{device.upper()}[/]  [bold white]| Save Dir:[/] [blue]{output_dir}[/]",
-                title="[bold magenta]NeuralOps Compression Suite[/bold magenta]",
-                border_style="magenta",
-            ))
+            console.print(
+                Panel(
+                    f"[bold magenta]NeuralOps Model Compression Engine[/bold magenta]\n"
+                    f"[bold white]Target Model:[/]  [yellow]{model_id}[/]\n"
+                    f"[bold white]Compressor:[/]    [green]{compressor_name}[/]\n"
+                    f"[bold white]Target Rank:[/]   {rank}  [bold white]| Rank Fraction:[/] {target_ratio or 'auto'}\n"
+                    f"[bold white]Device:[/]        [cyan]{device.upper()}[/]  [bold white]| Save Dir:[/] [blue]{output_dir}[/]",
+                    title="[bold magenta]NeuralOps Compression Suite[/bold magenta]",
+                    border_style="magenta",
+                )
+            )
         else:
             print("=================================================================")
             print(f"NeuralOps Model Compression: {model_id} via {compressor_name}")
@@ -243,7 +248,7 @@ def cmd_compress(args: Any) -> int:
     comp_params = sum(p.numel() for p in compressed_model.parameters())
     comp_bytes = sum(p.numel() * p.element_size() for p in compressed_model.parameters())
 
-    param_ratio = (orig_params / max(1, comp_params))
+    param_ratio = orig_params / max(1, comp_params)
     param_savings_pct = max(0.0, (1.0 - (comp_params / max(1, orig_params))) * 100.0)
 
     # Singular value truncation error / spectral norm residual

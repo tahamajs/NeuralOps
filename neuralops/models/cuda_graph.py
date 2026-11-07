@@ -14,7 +14,8 @@ CUDA Graph capture and replay engine for ultra-low latency autoregressive sequen
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, Tuple, Dict, List, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 
@@ -68,9 +69,7 @@ class CUDAGraphDecodeRunner:
 
         self.model.eval()
 
-        self.static_input_ids = torch.zeros(
-            (self.batch_size, 1), dtype=torch.long, device=self.device
-        )
+        self.static_input_ids = torch.zeros((self.batch_size, 1), dtype=torch.long, device=self.device)
 
         if sample_cache is not None:
             self.static_cache = sample_cache

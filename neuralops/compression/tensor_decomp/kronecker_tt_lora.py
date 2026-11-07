@@ -11,8 +11,6 @@ Kronecker-TT-LoRA: Hybrid Tensor Decomposition Engine
 Combines Kronecker products, Tensor-Train factorizations, and low-rank LoRA adapters for multi-scale model compression.
 """
 
-from neuralops.core.common import _cfg_get
-
 import logging
 import math
 from typing import Any
@@ -22,6 +20,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -106,13 +105,9 @@ class KroneckerTTLoRALayer(nn.Module):
         self.padded_out_features = m1 * m2
         self.padded_in_features = n1 * n2
         if self.padded_out_features < self.out_features:
-            raise ValueError(
-                f"m1*m2 ({self.padded_out_features}) must be >= out_features ({self.out_features})"
-            )
+            raise ValueError(f"m1*m2 ({self.padded_out_features}) must be >= out_features ({self.out_features})")
         if self.padded_in_features < self.in_features:
-            raise ValueError(
-                f"n1*n2 ({self.padded_in_features}) must be >= in_features ({self.in_features})"
-            )
+            raise ValueError(f"n1*n2 ({self.padded_in_features}) must be >= in_features ({self.in_features})")
 
         tt_prod = tt_shapes[0] * tt_shapes[1] * tt_shapes[2]
         expected_prod = self.padded_out_features * self.padded_in_features
@@ -148,17 +143,11 @@ class KroneckerTTLoRALayer(nn.Module):
         d1, d2, d3 = self.tt_shapes
 
         self.G1 = nn.Parameter(_init_orthogonal_spectral((1, d1, r1), (d1, r1), device, dtype))
-        self.G2 = nn.Parameter(
-            _init_orthogonal_spectral((r1, d2, r2), (r1 * d2, r2), device, dtype)
-        )
+        self.G2 = nn.Parameter(_init_orthogonal_spectral((r1, d2, r2), (r1 * d2, r2), device, dtype))
         self.G3 = nn.Parameter(_init_orthogonal_spectral((r2, d3, 1), (r2, d3), device, dtype))
 
-        self.lora_A = nn.Parameter(
-            torch.zeros((self.lora_r, self.in_features), dtype=dtype, device=device)
-        )
-        self.lora_B = nn.Parameter(
-            torch.zeros((self.out_features, self.lora_r), dtype=dtype, device=device)
-        )
+        self.lora_A = nn.Parameter(torch.zeros((self.lora_r, self.in_features), dtype=dtype, device=device))
+        self.lora_B = nn.Parameter(torch.zeros((self.out_features, self.lora_r), dtype=dtype, device=device))
         nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         nn.init.normal_(self.lora_B, mean=0.0, std=1e-3)
 
@@ -329,6 +318,7 @@ class KroneckerTTLoRALayer(nn.Module):
         kron_tt_out = F.linear(x, delta_w)
         try:
             from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
             lora_bypass = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t()) * self.lora_scaling
         except Exception:
             lora_bypass = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
@@ -372,15 +362,9 @@ class KroneckerTTLoRALayer(nn.Module):
         old_r1, old_r2 = self.tt_ranks[1], self.tt_ranks[2]
         d1, d2, d3 = self.tt_shapes
 
-        new_G1 = _init_orthogonal_spectral(
-            (1, d1, new_r1), (d1, new_r1), self.G1.device, self.G1.dtype
-        )
-        new_G2 = _init_orthogonal_spectral(
-            (new_r1, d2, new_r2), (new_r1 * d2, new_r2), self.G2.device, self.G2.dtype
-        )
-        new_G3 = _init_orthogonal_spectral(
-            (new_r2, d3, 1), (new_r2, d3), self.G3.device, self.G3.dtype
-        )
+        new_G1 = _init_orthogonal_spectral((1, d1, new_r1), (d1, new_r1), self.G1.device, self.G1.dtype)
+        new_G2 = _init_orthogonal_spectral((new_r1, d2, new_r2), (new_r1 * d2, new_r2), self.G2.device, self.G2.dtype)
+        new_G3 = _init_orthogonal_spectral((new_r2, d3, 1), (new_r2, d3), self.G3.device, self.G3.dtype)
 
         min_r1 = min(old_r1, new_r1)
         min_r2 = min(old_r2, new_r2)
@@ -408,6 +392,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -531,9 +516,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
 
         target_mod = getattr(module, "base_layer", module)
         cls_lower = target_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(target_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(target_mod, "nf")
-        )
+        is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(target_mod, "nf")
         if not is_linear_like:
             if _debug:
                 logger.info(f"  [skip] {name}: not linear-like")
@@ -604,9 +587,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         total_comp_params = 0
 
         target_list = [
-            (name, module)
-            for name, module in self.model.named_modules()
-            if self._is_target_module(name, module)
+            (name, module) for name, module in self.model.named_modules() if self._is_target_module(name, module)
         ]
         if not target_list:
             logger.warning("KroneckerTTLoRA: no target layers found. Diagnostic...")
@@ -734,14 +715,8 @@ class KroneckerTTLoRACompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        param_ratio = (
-            total_comp_params / max(total_orig_params, 1) if total_orig_params > 0 else 1.0
-        )
-        avg_err = (
-            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
-        )
+        param_ratio = total_comp_params / max(total_orig_params, 1) if total_orig_params > 0 else 1.0
+        avg_err = sum(self.layer_errors.values()) / max(1, len(self.layer_errors)) if self.layer_errors else 0.0
 
         try:
             stats = self.get_compression_stats()
@@ -794,8 +769,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
 
         self.model._kronecker_tt_lora_compressed = True
         logger.info(
-            "KroneckerTTLoRA: %d compressed, %d fallback. avg_adapter_delta=%.4f, "
-            "param_ratio=%.4f.",
+            "KroneckerTTLoRA: %d compressed, %d fallback. avg_adapter_delta=%.4f, " "param_ratio=%.4f.",
             len(self.compressed_layers),
             len(self.fallback_layers),
             avg_err,

@@ -50,6 +50,7 @@ def tt_contraction_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.low_rank import triton_strided_tt_contraction_pytorch_ref
+
     return triton_strided_tt_contraction_pytorch_ref(core0, core1, p_dims, q_dims)
 
 
@@ -72,6 +73,7 @@ def tt_linear_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.low_rank import triton_strided_tt_contraction
+
         return triton_strided_tt_contraction
     except ImportError:
         return None
@@ -80,6 +82,7 @@ def _get_triton_impl():
 def _get_triton_linear_impl():
     try:
         from neuralops.ops.triton.low_rank import triton_strided_tt_linear
+
         return triton_strided_tt_linear
     except ImportError:
         return None
@@ -92,6 +95,7 @@ def tt_contraction(
     q_dims: Tuple[int, int],
 ) -> torch.Tensor:
     """3-Level Dispatched TT Contraction."""
+
     def cuda_fn(c0, c1, p_d, q_d, **kwargs):
         mod = _get_module()
         return mod.tt_contraction_fwd(c0.contiguous(), c1.contiguous(), p_d[0], p_d[1], q_d[0], q_d[1])
@@ -119,6 +123,7 @@ def tt_linear(
     bias: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """3-Level Dispatched TT Linear."""
+
     def cuda_fn(x, c0, c1, p_d, q_d, bias=None, **kwargs):
         mod = _get_module()
         return mod.tt_linear_fwd(

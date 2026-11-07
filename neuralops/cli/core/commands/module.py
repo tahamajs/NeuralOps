@@ -19,6 +19,7 @@ from neuralops.cli.core.output import CliReporter
 def handle_list(args: argparse.Namespace) -> int:
     """Lists registered attention mechanisms and compression engines."""
     from neuralops.cli.list_cmd import cmd_list
+
     ret = cmd_list(args)
     return int(ret) if ret is not None else int(ExitCode.SUCCESS)
 
@@ -26,6 +27,7 @@ def handle_list(args: argparse.Namespace) -> int:
 def handle_inspect(args: argparse.Namespace) -> int:
     """Inspect mathematical specification, shapes, and quickstart code for a module."""
     from neuralops.core.inspector import inspect_architecture, render_architecture_card
+
     reporter = CliReporter(
         quiet=getattr(args, "quiet", False),
         verbose=getattr(args, "verbose", False),
@@ -44,6 +46,7 @@ def handle_inspect(args: argparse.Namespace) -> int:
         print(render_architecture_card(spec))
         if getattr(args, "roofline", False):
             from neuralops.core.roofline import profile_roofline, render_roofline_terminal
+
             print("\n" + "=" * 74)
             print(f"  🔬 LIVE HARDWARE ROOFLINE ANALYSIS: {spec.name.upper()}")
             print("=" * 74)
@@ -58,6 +61,7 @@ def handle_inspect(args: argparse.Namespace) -> int:
 def handle_validate(args: argparse.Namespace) -> int:
     """Validate a module against correctness, numerical stability, and causal masking gates."""
     from neuralops.core.extensibility import validate_module
+
     reporter = CliReporter(
         quiet=getattr(args, "quiet", False),
         verbose=getattr(args, "verbose", False),
@@ -78,18 +82,23 @@ def handle_validate(args: argparse.Namespace) -> int:
         reporter.print_json(res)
     else:
         status_str = "PASS" if res.get("all_passed") else "FAIL"
-        reporter.log(f"[{status_str}] Module validation completed: {res.get('checks_passed')}/{res.get('total_checks')} checks satisfied.")
+        reporter.log(
+            f"[{status_str}] Module validation completed: {res.get('checks_passed')}/{res.get('total_checks')} checks satisfied."
+        )
         for check, outcome in res.get("details", {}).items():
             reporter.log(f"  - {check}: {outcome}")
 
     if not res.get("all_passed", False):
-        raise NumericalGateError(f"Validation failed for module '{args.name}'", exit_code=ExitCode.GATE_VERIFICATION_FAILED)
+        raise NumericalGateError(
+            f"Validation failed for module '{args.name}'", exit_code=ExitCode.GATE_VERIFICATION_FAILED
+        )
     return int(ExitCode.SUCCESS)
 
 
 def handle_scaffold(args: argparse.Namespace) -> int:
     """Scaffold boilerplate code for a new attention or compressor module."""
     from neuralops.core.extensibility import scaffold_module
+
     reporter = CliReporter(
         quiet=getattr(args, "quiet", False),
         verbose=getattr(args, "verbose", False),

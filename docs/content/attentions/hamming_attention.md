@@ -156,12 +156,12 @@ def _hamming_fused_popcount_kernel(
     # Load packed 1-bit integer query block [BLOCK_N, d_packed]
     q_packed = tl.load(Q_bit_ptr + offsets_q)
     k_packed = tl.load(K_bit_ptr + offsets_k)
-    
+
     # Compute Hamming distance via hardware Bitwise XNOR & POPCOUNT in SRAM
     xor_val = q_packed ^ k_packed
     hamming_dist = tl.popc(xor_val)
     scores = -hamming_dist * scale
-    
+
     # Keep top-K elements in register min-heap without full DRAM sort
     topk_scores, topk_idx = tl.topk(scores, K=TOP_K)
     p = tl.softmax(topk_scores)
@@ -190,4 +190,3 @@ The empirical evaluation of `hamming_attention` across standard sequence lengths
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

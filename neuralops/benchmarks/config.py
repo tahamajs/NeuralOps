@@ -13,14 +13,12 @@ Implements config functionality for NeuralOps.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
 import json
-from pathlib import Path
-import re
-from typing import Any, Optional
-
-
 import logging
+import re
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Optional
 
 LOG = logging.getLogger(__name__)
 
@@ -211,9 +209,7 @@ class BenchmarkConfig:
         valid_fields = set(cls.__dataclass_fields__)
         unknown_keys = sorted(set(d.keys()) - valid_fields - {"extra"})
         if unknown_keys:
-            raise ValueError(
-                f"Unknown configuration key(s) for {cls.__name__}: {', '.join(unknown_keys)}"
-            )
+            raise ValueError(f"Unknown configuration key(s) for {cls.__name__}: {', '.join(unknown_keys)}")
         extra = dict(d.get("extra", {}))
         filtered: dict[str, Any] = {}
         for k, v in d.items():

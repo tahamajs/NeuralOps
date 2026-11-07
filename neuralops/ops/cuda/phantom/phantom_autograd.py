@@ -70,7 +70,7 @@ class _PhantomFunction(torch.autograd.Function):
         threshold = ctx.threshold
 
         g = torch.sigmoid(gate.float())
-        active = (g >= threshold)
+        active = g >= threshold
         mask = torch.where(active, g, torch.zeros_like(g)).to(x.dtype)
 
         dx = None
@@ -87,12 +87,12 @@ class _PhantomFunction(torch.autograd.Function):
 
 def phantom(x: torch.Tensor, gate: torch.Tensor, threshold: float = 0.5) -> torch.Tensor:
     """3-Level Dispatched Phantom Gated Sparsity with full autograd support."""
-    needs_grad = torch.is_grad_enabled() and any(
-        t.requires_grad for t in (x, gate) if isinstance(t, torch.Tensor)
-    )
+    needs_grad = torch.is_grad_enabled() and any(t.requires_grad for t in (x, gate) if isinstance(t, torch.Tensor))
 
     if needs_grad:
         return _PhantomFunction.apply(x, gate, threshold)
 
     return _fwd_dispatch(x, gate, threshold=threshold)
+
+
 phantom_pytorch_ref = phantom_ref

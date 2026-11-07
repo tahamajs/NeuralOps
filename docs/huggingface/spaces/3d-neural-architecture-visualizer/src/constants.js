@@ -57,7 +57,7 @@ export const VISUAL_CONFIG = {
         mainLight: 0xfff7ed,
         cyanRim: 0x53ecd9,
         purpleRim: 0xc895ea,
-        
+
         // Tensor categories
         denseBase: 0x2e4659,
         svdCompressed: 0x3acbb8,
@@ -93,46 +93,46 @@ export const VISUAL_CONFIG = {
  * Defines dimensions, layer depths, head allocations, and baseline parameter baselines.
  */
 export const MODEL_SPECS = {
-    distilbert: { 
-        name: 'DistilBERT-Base', 
-        family: 'Encoder', 
-        num_layers: 6, 
-        hidden_size: 768, 
-        intermediate_size: 3072, 
-        base_layer_params: 7077888, 
+    distilbert: {
+        name: 'DistilBERT-Base',
+        family: 'Encoder',
+        num_layers: 6,
+        hidden_size: 768,
+        intermediate_size: 3072,
+        base_layer_params: 7077888,
         base_total: 66301440,
         descr: '6 Layers · 768d · 12 Heads · Distilled Encoder',
         vocab_size: 30522,
     },
-    roberta: { 
-        name: 'RoBERTa-Base', 
-        family: 'Encoder', 
-        num_layers: 12, 
-        hidden_size: 768, 
-        intermediate_size: 3072, 
-        base_layer_params: 7077888, 
+    roberta: {
+        name: 'RoBERTa-Base',
+        family: 'Encoder',
+        num_layers: 12,
+        hidden_size: 768,
+        intermediate_size: 3072,
+        base_layer_params: 7077888,
         base_total: 123933696,
         descr: '12 Layers · 768d · 12 Heads · Bidirectional Encoder',
         vocab_size: 50265,
     },
-    gpt2: { 
-        name: 'GPT-2-Small', 
-        family: 'Causal Decoder', 
-        num_layers: 12, 
-        hidden_size: 768, 
-        intermediate_size: 3072, 
-        base_layer_params: 7077888, 
+    gpt2: {
+        name: 'GPT-2-Small',
+        family: 'Causal Decoder',
+        num_layers: 12,
+        hidden_size: 768,
+        intermediate_size: 3072,
+        base_layer_params: 7077888,
         base_total: 124318464,
         descr: '12 Layers · 768d · Fused c_attn Conv1D · Causal LM',
         vocab_size: 50257,
     },
-    qwen: { 
-        name: 'Qwen2.5-0.5B', 
-        family: 'GQA Decoder (SLM)', 
-        num_layers: 24, 
-        hidden_size: 896, 
-        intermediate_size: 4864, 
-        base_layer_params: 14909440, 
+    qwen: {
+        name: 'Qwen2.5-0.5B',
+        family: 'GQA Decoder (SLM)',
+        num_layers: 24,
+        hidden_size: 896,
+        intermediate_size: 4864,
+        base_layer_params: 14909440,
         base_total: 494008320,
         descr: '24 Layers · 896d · GQA (14Q:2KV) · SwiGLU MLP',
         vocab_size: 151936,

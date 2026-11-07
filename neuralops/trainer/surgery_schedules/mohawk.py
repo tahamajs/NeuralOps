@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 from typing import Any, Callable, Dict, List, Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -135,14 +136,14 @@ class MOHAWKTrainer:
     ) -> float:
         """Stage 2: Parallel block cloning minimizing MSE + Cosine + CKA."""
         optimizer.zero_grad()
-        loss = self.block_loss_fn(student_hidden, teacher_hidden) + 0.1 * self.cka_loss_fn(student_hidden, teacher_hidden)
+        loss = self.block_loss_fn(student_hidden, teacher_hidden) + 0.1 * self.cka_loss_fn(
+            student_hidden, teacher_hidden
+        )
         loss.backward()
         optimizer.step()
         return float(loss.item())
 
-    def step_stage3_end_to_end(
-        self, batch: Any, optimizer: torch.optim.Optimizer, alpha: float = 1.0
-    ) -> float:
+    def step_stage3_end_to_end(self, batch: Any, optimizer: torch.optim.Optimizer, alpha: float = 1.0) -> float:
         """Stage 3: End-to-end full KD fine-tuning."""
         optimizer.zero_grad()
         x = batch["input_ids"] if isinstance(batch, dict) else batch
@@ -210,7 +211,9 @@ class HNCContinuationTrainer:
         results = {}
         for name, module in self.student.named_modules():
             if hasattr(module, "hnc_spectral_compress_and_align"):
-                res = module.hnc_spectral_compress_and_align(probe_inputs=x, num_steps=num_steps, target_rank=target_rank)
+                res = module.hnc_spectral_compress_and_align(
+                    probe_inputs=x, num_steps=num_steps, target_rank=target_rank
+                )
                 results[name] = res
         return results
 

@@ -2,7 +2,7 @@
  * app.js
  * ======
  * 3D Neural Architecture Visualizer Engine — Modular Bootstrap.
- * 
+ *
  * Delegates execution to the refactored ES modular architecture in ./src/index.js
  * providing:
  * - Clean separation of concerns (Core, Builders, Physics, UI, Educational)

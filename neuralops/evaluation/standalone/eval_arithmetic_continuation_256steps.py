@@ -5,30 +5,29 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Synthetic arithmetic continuation stress test; not a GSM8K evaluation.
-"""
+"""Synthetic arithmetic continuation stress test; not a GSM8K evaluation."""
 
 
 def main() -> None:
     """Run this standalone evaluation experiment."""
 
     import gc
+    import json
     import os
     import re
     import time
-    import json
+
     import torch
-    from transformers import GPT2LMHeadModel, AutoTokenizer
+    from transformers import AutoTokenizer, GPT2LMHeadModel
+
     from neuralops.utils.replace_attention import replace_attention
 
     if not torch.cuda.is_available():
         raise RuntimeError("This arithmetic continuation stress experiment requires CUDA.")
 
-
     def print_log(msg):
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
-
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Synthetic arithmetic continuation stress on: {torch.cuda.get_device_name(0)}")
@@ -179,14 +178,11 @@ def main() -> None:
             torch.cuda.empty_cache()
             gc.collect()
 
-    out_file = os.path.join(
-        os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "arithmetic_continuation_256step_results.json"
-    )
+    out_file = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "arithmetic_continuation_256step_results.json")
     with open(out_file, "w") as f:
         json.dump(evaluation_matrix, f, indent=2)
 
     print_log(f"Synthetic arithmetic continuation run completed. Results written to {out_file}")
-
 
 
 if __name__ == "__main__":

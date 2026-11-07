@@ -12,15 +12,16 @@ Linear-time attention incorporating cosine reweighting to enforce locality and s
 """
 
 from __future__ import annotations
-from neuralops.core.utils.config import _cfg_get
-from neuralops.core.utils.lora import LoRALinear
-from neuralops.core.utils.rope import apply_rotary_pos_emb, rotate_half, _rotate_half
-from neuralops.core.utils.gqa import repeat_kv
 
 import logging
 import math
 import threading
 from typing import Any
+
+from neuralops.core.utils.config import _cfg_get
+from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.utils.lora import LoRALinear
+from neuralops.core.utils.rope import _rotate_half, apply_rotary_pos_emb, rotate_half
 
 logger = logging.getLogger(__name__)
 
@@ -40,18 +41,24 @@ except Exception:
 _inject_state = threading.local()
 _MAX_DEPTH = 4
 
+
 def _get_inject_depth() -> int:
     return getattr(_inject_state, "depth", 0)
 
+
 def _set_inject_depth(depth: int) -> None:
     _inject_state.depth = depth
+
+
 def _neg_inf(dtype: torch.dtype) -> float:
     """Return the smallest finite value representable in `dtype`."""
     return torch.finfo(dtype).min
 
 
 @ATTENTION_REGISTRY.register("cosformer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("cosformer_attention", is_alias=True, supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "cosformer_attention", is_alias=True, supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
 class CosformerAttention(BaseAttention):
     """CosformerAttention neural operator.
 
@@ -61,42 +68,59 @@ class CosformerAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
     triton_kernel = "linear_attn"
 
-    def __init__(self, config=None, rank=None, max_seq_len=512, act_fun="relu",
-                 eps=1e-6, pretrained_attn=None, old_attn=None, comp_config=None,
-                 layer_id=None, layer_idx=None, window_size=256, **kwargs):
+    def __init__(
+        self,
+        config=None,
+        rank=None,
+        max_seq_len=512,
+        act_fun="relu",
+        eps=1e-6,
+        pretrained_attn=None,
+        old_attn=None,
+        comp_config=None,
+        layer_id=None,
+        layer_idx=None,
+        window_size=256,
+        **kwargs,
+    ):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        hidden_size = (
-            kwargs.get("hidden_size")
-            or kwargs.get("embed_dim")
-            or kwargs.get("d_model")
-            or kwargs.get("dim")
-        )
+        hidden_size = kwargs.get("hidden_size") or kwargs.get("embed_dim") or kwargs.get("d_model") or kwargs.get("dim")
         num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
 
         if hidden_size is None:
-            hidden_size = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "n_embd", _cfg_get(config, "d_model", None))))
+            hidden_size = _cfg_get(
+                config,
+                "hidden_size",
+                _cfg_get(config, "dim", _cfg_get(config, "n_embd", _cfg_get(config, "d_model", None))),
+            )
             if hidden_size is None and source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin",
-                                    getattr(source_attn, "dense",
-                                            getattr(source_attn, "c_proj",
-                                                    getattr(source_attn, "o_proj", None))))
+                out_layer = getattr(
+                    source_attn,
+                    "out_lin",
+                    getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))),
+                )
                 hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
             elif hidden_size is None:
                 hidden_size = 768
 
         if num_heads is None:
-            num_heads = _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_head", None)))
+            num_heads = _cfg_get(
+                config, "num_attention_heads", _cfg_get(config, "num_heads", _cfg_get(config, "n_head", None))
+            )
             if num_heads is None and source_attn is not None:
-                num_heads = getattr(source_attn, "n_heads",
-                                    getattr(source_attn, "num_attention_heads",
-                                            getattr(source_attn, "num_heads", 12)))
+                num_heads = getattr(
+                    source_attn,
+                    "n_heads",
+                    getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", 12)),
+                )
             elif num_heads is None:
                 num_heads = 12
 
@@ -114,11 +138,17 @@ class CosformerAttention(BaseAttention):
 
         kv_heads = _cfg_get(config, "num_key_value_heads", None)
         if kv_heads is None and source_attn is not None:
-            kv_heads = getattr(source_attn, "num_key_value_heads",
-                               getattr(source_attn, "num_kv_heads",
-                                       getattr(source_attn, "n_kv_heads", None)))
-            if kv_heads is None and hasattr(source_attn, "k_proj") \
-                    and hasattr(source_attn.k_proj, "out_features") and self.head_dim > 0:
+            kv_heads = getattr(
+                source_attn,
+                "num_key_value_heads",
+                getattr(source_attn, "num_kv_heads", getattr(source_attn, "n_kv_heads", None)),
+            )
+            if (
+                kv_heads is None
+                and hasattr(source_attn, "k_proj")
+                and hasattr(source_attn.k_proj, "out_features")
+                and self.head_dim > 0
+            ):
                 kv_heads = source_attn.k_proj.out_features // self.head_dim
         self.num_kv_heads = int(kv_heads if kv_heads is not None else self.num_heads)
 
@@ -141,10 +171,10 @@ class CosformerAttention(BaseAttention):
         is_dec = _cfg_get(config, "is_decoder", _cfg_get(config, "is_causal", kwargs.get("is_causal", False)))
         _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "phi", "gemma", "opt", "bloom", "falcon")
 
-        if (any(model_type.startswith(p) for p in _decoder_prefixes)
-            or (hasattr(config, "architectures") and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])))):
+        if any(model_type.startswith(p) for p in _decoder_prefixes) or (
+            hasattr(config, "architectures")
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -158,18 +188,48 @@ class CosformerAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = bool(kwargs.get("is_nested_encoder", False))
 
-        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
-        self.v_proj_attn = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                                       lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.v_proj_attn = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
-                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         self.fusion_scale = nn.Parameter(torch.zeros(1))
 
@@ -186,24 +246,31 @@ class CosformerAttention(BaseAttention):
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
@@ -215,15 +282,31 @@ class CosformerAttention(BaseAttention):
         if hasattr(src, "rotary_emb"):
             self.rotary_emb = src.rotary_emb
 
-        extracted = {"q": (None, None), "k": (None, None),
-                     "v": (None, None), "o": (None, None)}
+        extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
 
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out_lin = any(hasattr(src, a) for a in ("out_lin", "c_proj", "o_proj", "out_proj", "dense"))
         is_nested = False
-        if ((hasattr(src, "self") and hasattr(src.self, "query") and hasattr(src, "output") and hasattr(src.output, "dense")) or
-            (cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention") or
-             (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) and not has_out_lin):
+        if (
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -234,8 +317,8 @@ class CosformerAttention(BaseAttention):
             sz = c_w.size(0) // 3
             c_b = src.c_attn.bias.data.clone() if src.c_attn.bias is not None else None
             extracted["q"] = (c_w[:sz, :], c_b[:sz] if c_b is not None else None)
-            extracted["k"] = (c_w[sz:2*sz, :], c_b[sz:2*sz] if c_b is not None else None)
-            extracted["v"] = (c_w[2*sz:, :], c_b[2*sz:] if c_b is not None else None)
+            extracted["k"] = (c_w[sz : 2 * sz, :], c_b[sz : 2 * sz] if c_b is not None else None)
+            extracted["v"] = (c_w[2 * sz :, :], c_b[2 * sz :] if c_b is not None else None)
             if hasattr(src, "c_proj"):
                 o_w = src.c_proj.weight.data.clone()
                 if hasattr(src.c_proj, "nf") or o_w.shape[0] < o_w.shape[1]:
@@ -272,8 +355,7 @@ class CosformerAttention(BaseAttention):
         if missing:
             raise RuntimeError(f"CosformerAttention.copy_weights: missing {missing} from {src.__class__.__name__}")
 
-        target_map = {"q": self.q_proj, "k": self.k_proj,
-                      "v": [self.v_proj, self.v_proj_attn], "o": self.out_proj}
+        target_map = {"q": self.q_proj, "k": self.k_proj, "v": [self.v_proj, self.v_proj_attn], "o": self.out_proj}
 
         with torch.no_grad():
             for proj_key, targets in target_map.items():
@@ -291,10 +373,7 @@ class CosformerAttention(BaseAttention):
                         if tw.shape == w_to_use.t().contiguous().shape:
                             w_to_use = w_to_use.t().contiguous()
                         else:
-                            can_slice = (
-                                w_to_use.size(0) >= tw.size(0)
-                                or w_to_use.size(1) >= tw.size(1)
-                            )
+                            can_slice = w_to_use.size(0) >= tw.size(0) or w_to_use.size(1) >= tw.size(1)
                             if not can_slice:
                                 raise ValueError(
                                     f"[CosformerAttention.copy_weights] Cannot reconcile shapes: "
@@ -303,7 +382,8 @@ class CosformerAttention(BaseAttention):
                                 )
                             logger.warning(
                                 "copy_weights: shape mismatch %s vs %s — slicing.",
-                                tuple(w_to_use.shape), tuple(tw.shape),
+                                tuple(w_to_use.shape),
+                                tuple(tw.shape),
                             )
                     out_d = min(tw.size(0), w_to_use.size(0))
                     in_d = min(tw.size(1), w_to_use.size(1))
@@ -371,11 +451,15 @@ class CosformerAttention(BaseAttention):
             causal_bool = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
             window_bool = window_bool & causal_bool
 
-        window_additive = torch.where(
-            window_bool,
-            torch.zeros((), device=device, dtype=dtype),
-            torch.full((), neg_inf, device=device, dtype=dtype),
-        ).unsqueeze(0).unsqueeze(0)
+        window_additive = (
+            torch.where(
+                window_bool,
+                torch.zeros((), device=device, dtype=dtype),
+                torch.full((), neg_inf, device=device, dtype=dtype),
+            )
+            .unsqueeze(0)
+            .unsqueeze(0)
+        )
 
         additive_mask = window_additive
         if padding_mask is not None:
@@ -383,7 +467,12 @@ class CosformerAttention(BaseAttention):
 
         if hasattr(F, "scaled_dot_product_attention"):
             return F.scaled_dot_product_attention(
-                Q, K, V_local, attn_mask=additive_mask, dropout_p=0.0, is_causal=False,
+                Q,
+                K,
+                V_local,
+                attn_mask=additive_mask,
+                dropout_p=0.0,
+                is_causal=False,
             )
 
         scale = 1.0 / math.sqrt(d)
@@ -425,12 +514,14 @@ class CosformerAttention(BaseAttention):
                 num = torch.matmul(Q_cos, S_cos) + torch.matmul(Q_sin, S_sin)
                 denom = (Q_cos * Z_cos).sum(dim=-1, keepdim=True) + (Q_sin * Z_sin).sum(dim=-1, keepdim=True)
                 from neuralops.utils.amp_safety import safe_linear_attn_denominator
+
                 denom_safe = safe_linear_attn_denominator(denom, eps=1e-5, floor_val=1e-4)
                 res = num / denom_safe
                 return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
 
             try:
                 from neuralops.ops.cuda.cosformer.cosformer_autograd import cosformer_linear_attention
+
                 out = cosformer_linear_attention(
                     Q_cos,
                     K_cos,
@@ -485,11 +576,20 @@ class CosformerAttention(BaseAttention):
 
             return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                encoder_hidden_states=None, encoder_attention_mask=None,
-                position_ids=None, position_embeddings=None, *args, **kwargs):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        encoder_hidden_states=None,
+        encoder_attention_mask=None,
+        position_ids=None,
+        position_embeddings=None,
+        *args,
+        **kwargs,
+    ):
+        from neuralops.core.mask_utils import mask_kv_states, prepare_mask_and_positions
 
-        from neuralops.core.mask_utils import prepare_mask_and_positions, mask_kv_states
         valid_mask, derived_pos_ids, clean_hidden = prepare_mask_and_positions(
             hidden_states, attention_mask=attention_mask, position_ids=position_ids
         )
@@ -530,12 +630,25 @@ class CosformerAttention(BaseAttention):
         K_sin = K_k * sin_w
 
         padding_mask = self._build_padding_mask(
-            attention_mask, N, device, dtype=torch.float32,
+            attention_mask,
+            N,
+            device,
+            dtype=torch.float32,
         )
 
         global_out = self._forward_causal(
-            Q_cos, Q_sin, K_cos, K_sin, V_global.float(),
-            padding_mask, B, H, d, N, device, torch.float32,
+            Q_cos,
+            Q_sin,
+            K_cos,
+            K_sin,
+            V_global.float(),
+            padding_mask,
+            B,
+            H,
+            d,
+            N,
+            device,
+            torch.float32,
         )
 
         if N <= 1024:
@@ -543,7 +656,10 @@ class CosformerAttention(BaseAttention):
                 torch.clamp(Q_raw.float(), min=-1e4, max=1e4),
                 torch.clamp(K_raw.float(), min=-1e4, max=1e4),
                 torch.clamp(V_local.float(), min=-1e4, max=1e4),
-                padding_mask, N, device, torch.float32,
+                padding_mask,
+                N,
+                device,
+                torch.float32,
             )
             local_out = torch.nan_to_num(local_out, nan=0.0, posinf=1e4, neginf=-1e4)
             context = local_out + self.fusion_scale.to(torch.float32) * global_out
@@ -569,7 +685,7 @@ class CosformerAttention(BaseAttention):
         from neuralops.ops.triton.state_update import fused_recurrent_linear_step
         from neuralops.utils.amp_safety import safe_linear_attn_denominator
 
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -624,9 +740,7 @@ class CosformerAttention(BaseAttention):
         kv_state = state["kv_state"]
         z_state = state["z_state"]
 
-        out_token, kv_state, z_state = fused_recurrent_linear_step(
-            q_aug, k_aug, v_in, kv_state, z_state, eps=1e-5
-        )
+        out_token, kv_state, z_state = fused_recurrent_linear_step(q_aug, k_aug, v_in, kv_state, z_state, eps=1e-5)
         state["kv_state"] = kv_state
         state["z_state"] = z_state
 
@@ -638,8 +752,8 @@ class CosformerAttention(BaseAttention):
                 state["local_k"] = torch.cat([state["local_k"], k_raw], dim=2)
                 state["local_v"] = torch.cat([state["local_v"], v_local], dim=2)
                 if state["local_k"].shape[2] > self.window_size + 1:
-                    state["local_k"] = state["local_k"][:, :, -(self.window_size + 1):, :]
-                    state["local_v"] = state["local_v"][:, :, -(self.window_size + 1):, :]
+                    state["local_k"] = state["local_k"][:, :, -(self.window_size + 1) :, :]
+                    state["local_v"] = state["local_v"][:, :, -(self.window_size + 1) :, :]
 
             q_clamped = torch.clamp(q_raw, min=-1e4, max=1e4)
             k_win = torch.clamp(state["local_k"], min=-1e4, max=1e4)
@@ -662,8 +776,9 @@ class CosformerAttention(BaseAttention):
         return out, state
 
 
-def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None,
-                     layer_idx=0, total_layers=12, old_attn=None, **kwargs):
+def inject_cosformer(
+    layer=None, model=None, model_config=None, comp_config=None, layer_idx=0, total_layers=12, old_attn=None, **kwargs
+):
     depth = _get_inject_depth()
     if depth >= _MAX_DEPTH:
         return None
@@ -701,15 +816,16 @@ def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None
             num_injected = 0
             for idx, lyr in enumerate(layer_list):
                 res = inject_cosformer(
-                    layer=lyr, model_config=model_config,
-                    comp_config=comp_config, layer_idx=idx, **kwargs,
+                    layer=lyr,
+                    model_config=model_config,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    **kwargs,
                 )
                 if res is not None:
                     num_injected += 1
             if num_injected == 0:
-                logger.warning(
-                    "inject_cosformer: found block list but injected 0 layers."
-                )
+                logger.warning("inject_cosformer: found block list but injected 0 layers.")
                 return None
             return target
 
@@ -739,8 +855,11 @@ def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None
             return None
 
         new_attn = CosformerAttention(
-            config=model_config, comp_config=comp_config,
-            layer_idx=layer_idx, old_attn=src_attn, **kwargs,
+            config=model_config,
+            comp_config=comp_config,
+            layer_idx=layer_idx,
+            old_attn=src_attn,
+            **kwargs,
         )
 
         if inner:
@@ -751,5 +870,6 @@ def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None
 
     finally:
         _set_inject_depth(depth)
+
 
 __all__ = ["CosformerAttention", "inject_cosformer", "apply_rotary_pos_emb", "LoRALinear"]

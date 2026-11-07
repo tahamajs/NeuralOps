@@ -133,10 +133,10 @@ Average bucket size $N_{\text{bucket}} = N / 2^{B_s}$ Furthermore, Score evaluat
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 M B N D B_s + 4 M B N D \cdot \frac{N}{2^{B_s}}$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} = 8 B N D r + 2 M B N D B_s + 2 M B N D \cdot \frac{N}{2^{B_s}}$$
-Specifically, regarding \textbf{Parameter Footprint}, 
+Specifically, regarding \textbf{Parameter Footprint},
 
   $$\Theta = 4 \times \left( d_{\text{in}} r + r d_{\text{out}} \right) = 8 D r$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Hash codes tensor: $\mathcal{O}(M B H N)$ Concurrently, Bucket index mapping buffers: $\mathcal{O}(M B H N)$ In this setting, Intra-bucket score tensors: $\mathcal{O}\left(M B H N \cdot \frac{N}{2^{B_s}}\right)$ Additionally, Total Memory: $\mathcal{O}\left(B N D + M B H N + M B H \frac{N^2}{2^{B_s}}\right)$
@@ -238,4 +238,3 @@ The empirical evaluation of `phantom` across standard sequence lengths and langu
 | **$L = 2048$** | 0.55 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.04 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.05 ms** | **440 MB** | **6.24x** |
-

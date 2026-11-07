@@ -12,7 +12,6 @@ Replaces dense linear layers with factorized low-rank matrix pairs with support 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -22,6 +21,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.common import _cfg_get
 
 try:
     from neuralops.layers.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
@@ -113,9 +113,7 @@ class SVDLinearLayer(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, self.in_features), dtype=torch.float32, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, self.in_features), dtype=torch.float32, device=device))
             self.lora_B = nn.Parameter(
                 torch.zeros((self.out_features, self.lora_r), dtype=torch.float32, device=device)
             )
@@ -158,9 +156,11 @@ class SVDLinearLayer(nn.Module):
         if x.is_cuda and (self.lora_r <= 0 or self.lora_A is None) and not self.use_rms_norm:
             try:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
                 suitable, _ = check_triton_suitability(x, "low_rank")
                 if not FORCE_PYTORCH_FALLBACK and suitable:
                     from neuralops.ops.triton.low_rank import _TritonLowRankAutogradFunction
+
                     return _TritonLowRankAutogradFunction.apply(x, self.U, self.V, self.bias, None)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
@@ -168,7 +168,11 @@ class SVDLinearLayer(nn.Module):
 
         if x.is_cuda and not self.training:
             try:
-                from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton, fused_svd_lora_sparse_attn_triton
+                from neuralops.ops.triton.low_rank import (
+                    fused_down_up_gemm_bias_triton,
+                    fused_svd_lora_sparse_attn_triton,
+                )
+
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
                     return fused_svd_lora_sparse_attn_triton(
                         x,
@@ -192,9 +196,7 @@ class SVDLinearLayer(nn.Module):
             orig_shape = x.shape
             x_flat = x.reshape(-1, self.in_features)
             lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
-            out = out + (self.scaling * lora_out).reshape(*orig_shape[:-1], self.out_features).to(
-                out.dtype
-            )
+            out = out + (self.scaling * lora_out).reshape(*orig_shape[:-1], self.out_features).to(out.dtype)
 
         return out
 
@@ -315,9 +317,7 @@ class SVDLinearCompressor(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
         if isinstance(base_mod, SVDLinearLayer):
@@ -340,9 +340,7 @@ class SVDLinearCompressor(BaseCompressor):
         seen_weights: set[int] = set()
 
         target_layers = [
-            (name, mod)
-            for name, mod in list(self.model.named_modules())
-            if self._is_target_module(name, mod)
+            (name, mod) for name, mod in list(self.model.named_modules()) if self._is_target_module(name, mod)
         ]
 
         if not target_layers:
@@ -408,8 +406,7 @@ class SVDLinearCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -442,22 +439,12 @@ def svd_linear_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     rank = kwargs.pop("rank", _cfg_get(comp_config, "svd_rank", _cfg_get(comp_config, "rank", 192)))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
-    )
-    lora_r = kwargs.pop(
-        "lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0))
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False))
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0)))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    skip_attention_qkv = kwargs.pop(
-        "skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False)
-    )
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
-    protect_critical = kwargs.pop(
-        "protect_critical", _cfg_get(comp_config, "protect_critical", True)
-    )
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+    protect_critical = kwargs.pop("protect_critical", _cfg_get(comp_config, "protect_critical", True))
 
     compressor = SVDLinearCompressor(
         model,

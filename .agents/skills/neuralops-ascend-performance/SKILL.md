@@ -173,7 +173,7 @@ def plan_kda_ub_tiles(
     usable_ub_bytes = total_ub_bytes * 0.80           # 80% usable budget after safety margin
 
     best_bt, best_bk, best_bv = 32, 64, 64
-    
+
     # Sweep candidate tile sizes
     for bt_candidate in [128, 64, 32, 16]:
         for bv_candidate in [128, 64, 32]:

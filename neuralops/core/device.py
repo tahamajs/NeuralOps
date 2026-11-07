@@ -21,12 +21,7 @@ from typing import Any, Callable, Generator, Optional, Sequence, TypeVar, Union
 import torch
 import torch.nn as nn
 
-from neuralops.core.hardware import (
-    HardwareBackend,
-    HardwareTopology,
-    HardwareVendor,
-    probe_hardware,
-)
+from neuralops.core.hardware import HardwareBackend, HardwareTopology, HardwareVendor, probe_hardware
 
 logger = logging.getLogger("neuralops.core.device")
 
@@ -206,7 +201,11 @@ class UniversalDispatcher:
                     first_tensor = v
                     break
 
-        exec_device = torch.device(device) if device else (first_tensor.device if first_tensor is not None else get_current_device())
+        exec_device = (
+            torch.device(device)
+            if device
+            else (first_tensor.device if first_tensor is not None else get_current_device())
+        )
         topo = probe_hardware(exec_device)
 
         if topo.is_cuda_or_rocm and native_fn is not None:
@@ -218,9 +217,12 @@ class UniversalDispatcher:
         if topo.supports_triton_jit and triton_fn is not None:
             try:
                 import triton  # noqa: F401
+
                 return triton_fn(*args, **kwargs)
             except Exception as e:
-                logger.warning("Tier 2 Triton JIT for '%s' failed (%s), falling back to Tier 3 Universal PyTorch...", op_name, e)
+                logger.warning(
+                    "Tier 2 Triton JIT for '%s' failed (%s), falling back to Tier 3 Universal PyTorch...", op_name, e
+                )
 
         if pytorch_fallback_fn is not None:
             return pytorch_fallback_fn(*args, **kwargs)

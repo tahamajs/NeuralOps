@@ -76,7 +76,9 @@ class AttentionPatternsGate(Gate):
                 duration_seconds=time.perf_counter() - t0,
             )
 
-        threshold = float(context.get("min_attention_similarity", self.min_similarity)) if context else self.min_similarity
+        threshold = (
+            float(context.get("min_attention_similarity", self.min_similarity)) if context else self.min_similarity
+        )
 
         active_model.eval()
         base_model.eval()

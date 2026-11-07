@@ -9,10 +9,7 @@
 Variable-Length FlashAttention Hardware Operators.
 """
 
-from neuralops.ops.cuda.varlen_attention.varlen_autograd import (
-    varlen_attention,
-    varlen_attention_pytorch_ref,
-)
+from neuralops.ops.cuda.varlen_attention.varlen_autograd import varlen_attention, varlen_attention_pytorch_ref
 
 __all__ = [
     "varlen_attention",

@@ -12,12 +12,6 @@ Fuses factorized low-rank projections with localized kernel attention via learne
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-
-from neuralops.core.attention_utils import (
-    safe_mask_value as _safe_mask_value,
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -29,9 +23,12 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import apply_rotary_pos_emb
+from neuralops.core.attention_utils import safe_mask_value as _safe_mask_value
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _read_past_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -106,9 +103,7 @@ class FactorisedLinear(nn.Module):
         self.lora_rank: int = int(lora_rank)
         self.lora_alpha: float = float(lora_alpha)
 
-        self.lora_scaling: float = (
-            (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
-        )
+        self.lora_scaling: float = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
 
         self.energy: float = float(energy)
         self.min_rank: int = int(min_rank)
@@ -140,12 +135,8 @@ class FactorisedLinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.in_features, **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.randn(self.out_features, self.lora_rank, **factory_kwargs) * 1e-4
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.randn(self.out_features, self.lora_rank, **factory_kwargs) * 1e-4)
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
         else:
@@ -195,21 +186,13 @@ class FactorisedLinear(nn.Module):
             self.V.data.zero_()
             self.S.data.zero_()
 
-            self.U.data[:, :r].copy_(
-                U[:, :r].to(device=self.U.device, dtype=self.U.dtype)
-            )
-            self.S.data[:r].copy_(
-                S[:r].to(device=self.S.device, dtype=self.S.dtype)
-            )
-            self.V.data[:, :r].copy_(
-                Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype)
-            )
+            self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
+            self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
+            self.V.data[:, :r].copy_(Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype))
 
             if bias is not None:
                 n = min(self.bias.numel(), bias.numel())
-                self.bias.data[:n].copy_(
-                    bias[:n].to(device=self.bias.device, dtype=self.bias.dtype)
-                )
+                self.bias.data[:n].copy_(bias[:n].to(device=self.bias.device, dtype=self.bias.dtype))
 
     def freeze_base_weights(self) -> None:
         """Freeze SVD base weights. Only LoRA tensors remain trainable."""
@@ -233,23 +216,13 @@ class FactorisedLinear(nn.Module):
     @property
     def base_weight(self) -> torch.Tensor:
         """Reconstruct the SVD-only weight: U · diag(S) · Vᵀ."""
-        return (
-            (self.U.float() * self.S.float().unsqueeze(0))
-            @ self.V.float().t().contiguous()
-        ).to(self.U.dtype)
+        return ((self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()).to(self.U.dtype)
 
     @property
     def weight(self) -> torch.Tensor:
         """Full effective weight: base + LoRA."""
-        svd_w = (
-            (self.U.float() * self.S.float().unsqueeze(0))
-            @ self.V.float().t().contiguous()
-        )
-        if (
-            self.lora_rank > 0
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        svd_w = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_w = self.lora_B.float() @ self.lora_A.float()
             return (svd_w + lora_w * self.lora_scaling).to(self.U.dtype)
         return svd_w.to(self.U.dtype)
@@ -272,11 +245,7 @@ class FactorisedLinear(nn.Module):
         if self.bias is not None:
             out = out + self.bias.float()
 
-        if (
-            self.lora_rank > 0
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             xa = torch.matmul(x_f, self.lora_A.float().t().contiguous())
             lora_out = torch.matmul(xa, self.lora_B.float().t().contiguous())
             out = out + lora_out * self.lora_scaling
@@ -292,6 +261,8 @@ class FactorisedLinear(nn.Module):
             f"lora_alpha={self.lora_alpha}, "
             f"lora_scaling={self.lora_scaling:.4f}"
         )
+
+
 class StableKernelFeatureMap(nn.Module):
     """FAVOR+ orthogonal random features with FP16-safe scaling."""
 
@@ -323,7 +294,7 @@ class StableKernelFeatureMap(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         with torch.autocast(device_type=x.device.type, enabled=False):
-            x_scaled = x.float() * (self.head_dim ** -0.25)
+            x_scaled = x.float() * (self.head_dim**-0.25)
             proj = self.proj.float() / math.sqrt(self.head_dim)
             phi = torch.matmul(x_scaled, proj)
             norm_sq = (x_scaled * x_scaled).sum(dim=-1, keepdim=True) * 0.5
@@ -354,12 +325,12 @@ class GatingModule(nn.Module):
             in_gate = torch.sigmoid(self.lora_input_gate(hidden_states)).permute(0, 2, 1).unsqueeze(-1)
         return q_gate, in_gate
 
+
 class ContextFusionGate(nn.Module):
     def __init__(self, hidden_size, num_heads, head_dim, init_bias=3.0):
         super().__init__()
         self.hidden_proj = (
-            nn.Linear(hidden_size, num_heads * head_dim, bias=False)
-            if hidden_size != num_heads * head_dim else None
+            nn.Linear(hidden_size, num_heads * head_dim, bias=False) if hidden_size != num_heads * head_dim else None
         )
         if self.hidden_proj is not None:
             nn.init.zeros_(self.hidden_proj.weight)
@@ -372,16 +343,11 @@ class ContextFusionGate(nn.Module):
         B, h, N, d = local_out.shape
         h_exp = self.hidden_proj(hidden_states) if self.hidden_proj is not None else hidden_states
         h_per_head = h_exp.view(B, N, h, d).permute(0, 2, 1, 3)
-        return torch.sigmoid(
-            self.lora_proj(torch.cat([h_per_head, local_out, global_out], dim=-1))
-        )
+        return torch.sigmoid(self.lora_proj(torch.cat([h_per_head, local_out, global_out], dim=-1)))
 
-@ATTENTION_REGISTRY.register(
-    "gated_hybrid_kernel_attention", supports_causal=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
-    "aegis_v6", is_alias=True, supports_causal=True, supports_gqa=True
-)
+
+@ATTENTION_REGISTRY.register("gated_hybrid_kernel_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_v6", is_alias=True, supports_causal=True, supports_gqa=True)
 class GatedHybridKernelAttention(BaseAttention):
     """Hybrid attention: local sliding window + global FAVOR+ linear."""
 
@@ -400,9 +366,9 @@ class GatedHybridKernelAttention(BaseAttention):
     ):
         if not isinstance(config, GatedHybridKernelConfig):
             h_size = getattr(
-                config, "hidden_size",
-                getattr(config, "d_model",
-                        getattr(config, "n_embd", getattr(config, "dim", None))),
+                config,
+                "hidden_size",
+                getattr(config, "d_model", getattr(config, "n_embd", getattr(config, "dim", None))),
             )
             if h_size is None and pretrained_attn is not None:
                 for obj in [pretrained_attn, getattr(pretrained_attn, "self", None)]:
@@ -411,20 +377,16 @@ class GatedHybridKernelAttention(BaseAttention):
                         break
             if h_size is None:
                 h_size = kwargs.get("hidden_size", 768)
-            n_heads = (
-                getattr(
-                    config, "num_attention_heads",
-                    getattr(config, "num_heads",
-                            getattr(config, "n_heads", getattr(config, "n_head", None))),
-                ) or kwargs.get("num_heads", 12)
+            n_heads = getattr(
+                config,
+                "num_attention_heads",
+                getattr(config, "num_heads", getattr(config, "n_heads", getattr(config, "n_head", None))),
+            ) or kwargs.get("num_heads", 12)
+            h_dim = getattr(config, "head_dim", getattr(config, "d_kv", None)) or kwargs.get(
+                "head_dim", h_size // max(1, n_heads)
             )
-            h_dim = (
-                getattr(config, "head_dim", getattr(config, "d_kv", None))
-                or kwargs.get("head_dim", h_size // max(1, n_heads))
-            )
-            n_kv_heads = (
-                getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
-                or kwargs.get("num_key_value_heads", n_heads)
+            n_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None)) or kwargs.get(
+                "num_key_value_heads", n_heads
             )
             dec = self._detect_decoder(config, is_decoder, pretrained_attn)
             config = GatedHybridKernelConfig(
@@ -447,9 +409,7 @@ class GatedHybridKernelAttention(BaseAttention):
         self.num_heads = config.num_heads
         self.num_kv_heads = getattr(config, "num_key_value_heads", self.h) or self.h
         if self.h % self.num_kv_heads != 0:
-            raise ValueError(
-                f"num_heads {self.h} not divisible by num_kv_heads {self.num_kv_heads}"
-            )
+            raise ValueError(f"num_heads {self.h} not divisible by num_kv_heads {self.num_kv_heads}")
         self.kv_repeat = max(1, self.h // max(1, self.num_kv_heads))
         self.d = config.head_dim
         self.head_dim = self.d
@@ -460,32 +420,49 @@ class GatedHybridKernelAttention(BaseAttention):
         self.layer_idx = int(layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0))
 
         self.is_decoder = (
-            bool(is_decoder) if is_decoder is not None
+            bool(is_decoder)
+            if is_decoder is not None
             else bool(
                 getattr(config, "is_decoder", False)
-                or str(getattr(config, "model_type", "")).lower() in (
-                    "gpt2", "qwen", "llama", "mistral", "gemma",
-                    "phi", "opt", "bloom", "falcon",
+                or str(getattr(config, "model_type", "")).lower()
+                in (
+                    "gpt2",
+                    "qwen",
+                    "llama",
+                    "mistral",
+                    "gemma",
+                    "phi",
+                    "opt",
+                    "bloom",
+                    "falcon",
                 )
             )
         )
         self.is_nested_encoder = False
 
         self.q_proj = FactorisedLinear(
-            self.hidden_size, self.all_head_size,
-            config.svd_rank, config.low_rank_update,
+            self.hidden_size,
+            self.all_head_size,
+            config.svd_rank,
+            config.low_rank_update,
         )
         self.k_proj = FactorisedLinear(
-            self.hidden_size, self.all_kv_head_size,
-            config.svd_rank, config.low_rank_update,
+            self.hidden_size,
+            self.all_kv_head_size,
+            config.svd_rank,
+            config.low_rank_update,
         )
         self.v_proj = FactorisedLinear(
-            self.hidden_size, self.all_kv_head_size,
-            config.svd_rank, config.low_rank_update,
+            self.hidden_size,
+            self.all_kv_head_size,
+            config.svd_rank,
+            config.low_rank_update,
         )
         self.out_proj = FactorisedLinear(
-            self.all_head_size, self.hidden_size,
-            config.svd_rank, config.low_rank_update,
+            self.all_head_size,
+            self.hidden_size,
+            config.svd_rank,
+            config.low_rank_update,
         )
 
         self.pre_norm = config.use_pre_norm
@@ -501,12 +478,13 @@ class GatedHybridKernelAttention(BaseAttention):
         )
 
         self.gates = GatingModule(
-            config.hidden_size, self.h, self.d,
-            config.use_query_gate, config.use_input_gate,
+            config.hidden_size,
+            self.h,
+            self.d,
+            config.use_query_gate,
+            config.use_input_gate,
         )
-        self.fusion = ContextFusionGate(
-            config.hidden_size, self.h, self.d, config.fusion_gate_bias
-        )
+        self.fusion = ContextFusionGate(config.hidden_size, self.h, self.d, config.fusion_gate_bias)
         self.dropout = nn.Dropout(config.dropout)
 
         if pretrained_attn is not None:
@@ -520,10 +498,22 @@ class GatedHybridKernelAttention(BaseAttention):
             if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
                 return True
             mt = str(getattr(config, "model_type", "")).lower()
-            if mt.startswith((
-                "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
-            )):
+            if mt.startswith(
+                (
+                    "gpt",
+                    "qwen",
+                    "llama",
+                    "mistral",
+                    "gemma",
+                    "phi",
+                    "opt",
+                    "bloom",
+                    "falcon",
+                    "olmo",
+                    "mpt",
+                    "stablelm",
+                )
+            ):
                 return True
         if old_attn is not None:
             if getattr(old_attn, "is_decoder", False):
@@ -537,30 +527,39 @@ class GatedHybridKernelAttention(BaseAttention):
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
@@ -570,14 +569,10 @@ class GatedHybridKernelAttention(BaseAttention):
         if mask is None:
             return torch.ones(B, 1, 1, N_kv, device=device, dtype=torch.bool)
         if mask.dim() == 2:
-            v = mask.bool() if mask.dtype == torch.bool else (
-                mask > -1e4 if mask.dtype.is_floating_point else mask > 0
-            )
+            v = mask.bool() if mask.dtype == torch.bool else (mask > -1e4 if mask.dtype.is_floating_point else mask > 0)
             return v[:, None, None, :].to(torch.bool)
         if mask.dim() == 4:
-            v = mask.bool() if mask.dtype == torch.bool else (
-                mask > -1e4 if mask.dtype.is_floating_point else mask > 0
-            )
+            v = mask.bool() if mask.dtype == torch.bool else (mask > -1e4 if mask.dtype.is_floating_point else mask > 0)
             return v.to(torch.bool)
         raise ValueError(f"Unsupported attention_mask dim: {mask.dim()}")
 
@@ -616,7 +611,14 @@ class GatedHybridKernelAttention(BaseAttention):
         return (k, v)
 
     def _sliding_window_attention(
-        self, Q, K, V, valid, is_cross, past_len, return_attn=False,
+        self,
+        Q,
+        K,
+        V,
+        valid,
+        is_cross,
+        past_len,
+        return_attn=False,
     ):
         """Sliding-window + causal attention with SDPA fast path."""
         B, h, N, d = Q.shape
@@ -637,20 +639,19 @@ class GatedHybridKernelAttention(BaseAttention):
         valid_b = valid.to(device=Q.device, dtype=torch.bool)
         combined = band & valid_b
 
-        use_sdpa = (
-            not return_attn
-            and bool(valid_b.all())
-        )
+        use_sdpa = not return_attn and bool(valid_b.all())
 
         if use_sdpa:
-            attn_bias = torch.zeros(
-                (1, 1, N, N_k), device=Q.device, dtype=Q.dtype
-            ).masked_fill(~band, _safe_mask_value(Q.dtype))
+            attn_bias = torch.zeros((1, 1, N, N_k), device=Q.device, dtype=Q.dtype).masked_fill(
+                ~band, _safe_mask_value(Q.dtype)
+            )
             q_sdp = maybe_half(Q)
             k_sdp = maybe_half(K)
             v_sdp = maybe_half(V)
             out = F.scaled_dot_product_attention(
-                q_sdp, k_sdp, v_sdp,
+                q_sdp,
+                k_sdp,
+                v_sdp,
                 attn_mask=attn_bias.to(q_sdp.dtype),
                 dropout_p=self.cfg.dropout if self.training else 0.0,
                 is_causal=False,
@@ -670,7 +671,14 @@ class GatedHybridKernelAttention(BaseAttention):
         return out, (attn if return_attn else None)
 
     def _causal_linear_attention(
-        self, Q_feat, K_feat, V, valid, q_gate, in_gate, past_len=0,
+        self,
+        Q_feat,
+        K_feat,
+        V,
+        valid,
+        q_gate,
+        in_gate,
+        past_len=0,
     ):
         B, H, N, F_dim = Q_feat.shape
         N_kv = K_feat.shape[2]
@@ -693,6 +701,7 @@ class GatedHybridKernelAttention(BaseAttention):
             V_f = V_f * valid_k
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
         if (
             HAS_TRITON
             and not FORCE_PYTORCH_FALLBACK
@@ -703,7 +712,10 @@ class GatedHybridKernelAttention(BaseAttention):
         ):
             try:
                 from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
-                return fused_svd_linear_chunk_scan_triton(Q_feat.to(dtype), K_feat.to(dtype), V_f.to(dtype), chunk_size=64, eps=1e-4)
+
+                return fused_svd_linear_chunk_scan_triton(
+                    Q_feat.to(dtype), K_feat.to(dtype), V_f.to(dtype), chunk_size=64, eps=1e-4
+                )
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
@@ -777,14 +789,11 @@ class GatedHybridKernelAttention(BaseAttention):
 
         past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
 
-        pos_emb = (
-            position_embeddings if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and not is_cross:
             cos, sin = pos_emb
-            cos = cos[..., past_len:past_len + N, :]
-            sin = sin[..., past_len:past_len + N, :]
+            cos = cos[..., past_len : past_len + N, :]
+            sin = sin[..., past_len : past_len + N, :]
             Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin)
 
         if past_k is not None and not is_cross:
@@ -795,9 +804,7 @@ class GatedHybridKernelAttention(BaseAttention):
             V_cat = V_new
 
         present_kv = past_key_value
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         if use_cache and not is_cross:
             present_kv = self._write_past_kv(K_new, V_new, past_key_value, self.layer_idx)
 
@@ -812,8 +819,13 @@ class GatedHybridKernelAttention(BaseAttention):
         q_gate, in_gate = self.gates(hidden_states, Q)
 
         local_out, local_attn = self._sliding_window_attention(
-            Q, K_full, V_full, valid, is_cross,
-            past_len=past_len, return_attn=bool(output_attentions),
+            Q,
+            K_full,
+            V_full,
+            valid,
+            is_cross,
+            past_len=past_len,
+            return_attn=bool(output_attentions),
         )
 
         Q_feat = self.kernel_map(Q)
@@ -821,13 +833,23 @@ class GatedHybridKernelAttention(BaseAttention):
 
         if self.is_decoder and not is_cross:
             global_out = self._causal_linear_attention(
-                Q_feat, K_feat, V_full, valid, q_gate, in_gate,
+                Q_feat,
+                K_feat,
+                V_full,
+                valid,
+                q_gate,
+                in_gate,
                 past_len=N_kv - N,
             )
         else:
             valid_kv_only = valid.any(dim=-2, keepdim=True)
             global_out = self._noncausal_linear_attention(
-                Q, K_full, V_full, valid_kv_only, q_gate, in_gate,
+                Q,
+                K_full,
+                V_full,
+                valid_kv_only,
+                q_gate,
+                in_gate,
             )
 
         fuse_gate = self.fusion(hidden_states, local_out, global_out)
@@ -867,26 +889,30 @@ class GatedHybridKernelAttention(BaseAttention):
     def copy_weights(self, old_attn):
         cls_name = old_attn.__class__.__name__
         has_out_proj_attr = any(
-            hasattr(old_attn, a)
-            for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
+            hasattr(old_attn, a) for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
         )
-        if (hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj")
-                or hasattr(old_attn, "o_proj")):
+        if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
             self.is_nested_encoder = False
         elif (
-            (hasattr(old_attn, "self") and hasattr(old_attn.self, "query")
-             and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"))
-            or (cls_name in (
-                "BertSelfAttention", "RobertaSelfAttention",
-                "XLMRobertaSelfAttention", "ElectraSelfAttention",
-            ) or (cls_name.endswith("SelfAttention") and not has_out_proj_attr))
+            hasattr(old_attn, "self")
+            and hasattr(old_attn.self, "query")
+            and hasattr(old_attn, "output")
+            and hasattr(old_attn.output, "dense")
+        ) or (
+            cls_name
+            in (
+                "BertSelfAttention",
+                "RobertaSelfAttention",
+                "XLMRobertaSelfAttention",
+                "ElectraSelfAttention",
+            )
+            or (cls_name.endswith("SelfAttention") and not has_out_proj_attr)
         ):
             self.is_nested_encoder = True
         else:
             self.is_nested_encoder = False
 
-        extracted = {"q": (None, None), "k": (None, None),
-                     "v": (None, None), "o": (None, None)}
+        extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
 
         for proj in ["q", "k", "v", "o"]:
             try:
@@ -905,7 +931,8 @@ class GatedHybridKernelAttention(BaseAttention):
                 is_conv1d = (
                     c.__class__.__name__ == "Conv1D"
                     or base_c.__class__.__name__ == "Conv1D"
-                    or hasattr(c, "nf") or hasattr(base_c, "nf")
+                    or hasattr(c, "nf")
+                    or hasattr(base_c, "nf")
                 )
                 if is_conv1d or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
                     weight = weight.t().contiguous()
@@ -913,8 +940,8 @@ class GatedHybridKernelAttention(BaseAttention):
                 bd = bias.data if bias is not None else None
                 split = weight.shape[0] // 3
                 extracted["q"] = (weight[:split, :], bd[:split] if bd is not None else None)
-                extracted["k"] = (weight[split:2*split, :], bd[split:2*split] if bd is not None else None)
-                extracted["v"] = (weight[2*split:, :], bd[2*split:] if bd is not None else None)
+                extracted["k"] = (weight[split : 2 * split, :], bd[split : 2 * split] if bd is not None else None)
+                extracted["v"] = (weight[2 * split :, :], bd[2 * split :] if bd is not None else None)
 
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
             p = old_attn.c_proj
@@ -925,11 +952,12 @@ class GatedHybridKernelAttention(BaseAttention):
                 is_conv1d = (
                     p.__class__.__name__ == "Conv1D"
                     or base_p.__class__.__name__ == "Conv1D"
-                    or hasattr(p, "nf") or hasattr(base_p, "nf")
+                    or hasattr(p, "nf")
+                    or hasattr(base_p, "nf")
                 )
-                if is_conv1d or (w_o.dim() == 2
-                                 and w_o.shape[0] != self.hidden_size
-                                 and w_o.shape[1] == self.hidden_size):
+                if is_conv1d or (
+                    w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size
+                ):
                     w_o = w_o.t().contiguous()
                 b_o = getattr(base_p, "bias", getattr(p, "bias", None))
                 extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -945,8 +973,7 @@ class GatedHybridKernelAttention(BaseAttention):
 
         if self.is_nested_encoder:
             extracted["o"] = (None, None)
-        elif (hasattr(old_attn, "output") and hasattr(old_attn.output, "dense")
-              and extracted["o"][0] is None):
+        elif hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") and extracted["o"][0] is None:
             d = old_attn.output.dense
             extracted["o"] = (d.weight.data, getattr(d, "bias", None))
 
@@ -969,10 +996,7 @@ class GatedHybridKernelAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(
-                f"GatedHybridKernelAttention.copy_weights: missing {missing} "
-                f"from {cls_name}."
-            )
+            raise RuntimeError(f"GatedHybridKernelAttention.copy_weights: missing {missing} " f"from {cls_name}.")
 
         def _orient(w, in_dim):
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -981,8 +1005,10 @@ class GatedHybridKernelAttention(BaseAttention):
 
         with torch.no_grad():
             for proj_key, target in (
-                ("q", self.q_proj), ("k", self.k_proj),
-                ("v", self.v_proj), ("o", self.out_proj),
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
             ):
                 w, b = extracted[proj_key]
                 if w is not None:
@@ -1067,6 +1093,7 @@ def inject_gated_hybrid_kernel(
 
     layer = target
     try:
+
         def _already_injected(m):
             if m is None:
                 return False
@@ -1098,27 +1125,33 @@ def inject_gated_hybrid_kernel(
 
         h_size = (
             getattr(
-                model_config, "hidden_size",
-                getattr(model_config, "d_model",
-                        getattr(model_config, "n_embd", getattr(model_config, "dim", 768))),
-            ) if model_config is not None else 768
+                model_config,
+                "hidden_size",
+                getattr(model_config, "d_model", getattr(model_config, "n_embd", getattr(model_config, "dim", 768))),
+            )
+            if model_config is not None
+            else 768
         )
         n_heads = (
             getattr(
-                model_config, "num_attention_heads",
-                getattr(model_config, "num_heads",
-                        getattr(model_config, "n_heads", getattr(model_config, "n_head", 12))),
-            ) if model_config is not None else 12
+                model_config,
+                "num_attention_heads",
+                getattr(
+                    model_config, "num_heads", getattr(model_config, "n_heads", getattr(model_config, "n_head", 12))
+                ),
+            )
+            if model_config is not None
+            else 12
         )
         h_dim = (
-            getattr(model_config, "head_dim",
-                    getattr(model_config, "d_kv", h_size // max(1, n_heads)))
-            if model_config is not None else h_size // max(1, n_heads)
+            getattr(model_config, "head_dim", getattr(model_config, "d_kv", h_size // max(1, n_heads)))
+            if model_config is not None
+            else h_size // max(1, n_heads)
         )
         n_kv_heads = (
-            getattr(model_config, "num_key_value_heads",
-                    getattr(model_config, "num_kv_heads", n_heads))
-            if model_config is not None else n_heads
+            getattr(model_config, "num_key_value_heads", getattr(model_config, "num_kv_heads", n_heads))
+            if model_config is not None
+            else n_heads
         )
 
         is_dec = GatedHybridKernelAttention._detect_decoder(model_config, None, src)

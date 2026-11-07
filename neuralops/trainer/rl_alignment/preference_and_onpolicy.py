@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -52,7 +53,9 @@ class SimPOLoss(nn.Module):
 class ORPOLoss(nn.Module):
     """Odds-Ratio Preference Optimization (ORPO) without reference model."""
 
-    def __init__(self, lambda_orpo: float = 0.1, sft_weight: float = 1.0, odds_ratio_weight: Optional[float] = None) -> None:
+    def __init__(
+        self, lambda_orpo: float = 0.1, sft_weight: float = 1.0, odds_ratio_weight: Optional[float] = None
+    ) -> None:
         super().__init__()
         if odds_ratio_weight is not None:
             lambda_orpo = odds_ratio_weight
@@ -115,7 +118,7 @@ class DynamicRoutingAndRankRL(nn.Module):
         """Quadratic penalty if active block ratio exceeds target budget ratio."""
         active_ratio = decisions.float().mean()
         violation = F.relu(active_ratio - self.target_ratio)
-        return self.dual_lambda * (violation ** 2)
+        return self.dual_lambda * (violation**2)
 
 
 __all__ = [

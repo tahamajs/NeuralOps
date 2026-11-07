@@ -16,20 +16,13 @@ model topologies.
 from __future__ import annotations
 
 from typing import Any, List, Optional
+
 import torch.nn as nn
 
-from neuralops.api import (
-    replace_attention,
-    transplant_attention,
-)
-from neuralops.surgery.scanner import (
-    AttentionTargetSpec,
-    UniversalArchitectureScanner,
-)
-from neuralops.surgery.endoskeletal_shell import (
-    UniversalAttentionBridge,
-    transfer_pretrained_qkv_weights,
-)
+from neuralops.api import replace_attention, transplant_attention
+from neuralops.core._attention_surgery import calibrate_attention_subspace, heal_replaced_model
+from neuralops.surgery.endoskeletal_shell import UniversalAttentionBridge, transfer_pretrained_qkv_weights
+from neuralops.surgery.scanner import AttentionTargetSpec, UniversalArchitectureScanner
 from neuralops.surgery.shadow_twin import (
     check_surgery_divergence,
     collect_surgery_distillation_loss,
@@ -41,10 +34,6 @@ from neuralops.surgery.universal_calibrator import (
     UniversalActivationCalibrator,
     compress_model_universal,
     transplant_and_compress,
-)
-from neuralops.core._attention_surgery import (
-    calibrate_attention_subspace,
-    heal_replaced_model,
 )
 
 __all__ = [

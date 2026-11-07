@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Optional
+
 from transformers import TrainerCallback, TrainerControl, TrainerState, TrainingArguments
 
 logger = logging.getLogger("NeuralOps.Callback")
@@ -72,6 +73,7 @@ class NeuralOpsSurgeryCallback(TrainerCallback):
     ) -> None:
         if model is not None:
             from neuralops.api import finalize_surgery
+
             logger.info("NeuralOpsSurgeryCallback: Finalizing surgery on train end.")
             finalize_surgery(model)
 

@@ -50,6 +50,7 @@ def fast_gelu_pytorch_ref(x: torch.Tensor) -> torch.Tensor:
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.elementwise import fast_gelu_triton
+
         return fast_gelu_triton
     except (ImportError, AttributeError):
         return None
@@ -57,6 +58,7 @@ def _get_triton_impl():
 
 def fast_gelu(x: torch.Tensor) -> torch.Tensor:
     """3-Level Dispatched Fast-GELU."""
+
     def cuda_fn(x, **kwargs):
         mod = _get_module()
         return mod.fast_gelu_fwd(x.contiguous())

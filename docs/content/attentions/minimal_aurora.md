@@ -84,7 +84,7 @@ Query-Key score product ($Q K^T$): $2 B H N^2 d_h = 2 B N^2 D$ Furthermore, Soft
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B N^2 D$$
 
 ### 4.2 Memory Footprint & Bandwidth
-Specifically, regarding \textbf{Parameter Footprint}, 
+Specifically, regarding \textbf{Parameter Footprint},
 
   $$\Theta = 4 \times (D \cdot r + r \cdot D) = 8 D r \ll 4 D^2$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Intermediate rank-$r$ bottleneck activations: $\mathcal{O}(B N r)$ Concurrently, Full attention score tensor: $\mathcal{O}(B H N^2)$ In this setting, Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
@@ -155,4 +155,3 @@ The empirical evaluation of `minimal_aurora` across standard sequence lengths an
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

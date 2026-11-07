@@ -16,15 +16,10 @@ from __future__ import annotations
 import gc
 import logging
 from typing import Any
+
 import torch
 import torch.nn as nn
-from transformers import (
-    AutoConfig,
-    AutoModel,
-    AutoModelForCausalLM,
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-)
+from transformers import AutoConfig, AutoModel, AutoModelForCausalLM, AutoModelForSequenceClassification, AutoTokenizer
 
 from neuralops.benchmarks.result import ModelMetadata
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
@@ -93,7 +88,9 @@ def load_model_and_tokenizer(
             if model_name == base_m and ds_key in target_ds:
                 LOG.info(
                     "Resolving downstream classification checkpoint for %s on %s -> %s",
-                    model_name, dataset, tuned_m,
+                    model_name,
+                    dataset,
+                    tuned_m,
                 )
                 model_name = tuned_m
                 break
@@ -207,6 +204,7 @@ def apply_attention_module(
 
     LOG.info("Injecting attention replacement: '%s' (rank=%d)...", module_name, rank)
     from neuralops.core.attention_utils import inject_attention
+
     return inject_attention(
         model,
         attention_type=module_name,

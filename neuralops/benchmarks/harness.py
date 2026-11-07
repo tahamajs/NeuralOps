@@ -13,11 +13,11 @@ Implements harness functionality for NeuralOps.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
 import gc
 import json
-from pathlib import Path
 import time
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Union
 
 import numpy as np
@@ -27,6 +27,7 @@ import torch
 @dataclass
 class HardwareProfile:
     """Hardware specification constants for RTX 4070 Laptop / Ampere / Ada Lovelace."""
+
     name: str = "NVIDIA GeForce RTX 4070 Laptop GPU"
     peak_bandwidth_gb_s: float = 264.0
     peak_fp16_tflops: float = 79.0
@@ -38,6 +39,7 @@ class HardwareProfile:
 @dataclass
 class BenchmarkMetric:
     """Detailed statistical measurements of a benchmark run."""
+
     latency_ms_mean: float = 0.0
     latency_ms_median: float = 0.0
     latency_ms_std: float = 0.0
@@ -167,7 +169,9 @@ class BenchmarkRunner:
             latency_s = trimmed_lat / 1000.0
             tflops_s = (total_flops / (latency_s * 1e12)) if (total_flops > 0 and latency_s > 0) else 0.0
             bandwidth_gb_s = (total_bytes / (latency_s * 1e9)) if (total_bytes > 0 and latency_s > 0) else 0.0
-            bandwidth_pct = (bandwidth_gb_s / self.hw.peak_bandwidth_gb_s * 100.0) if self.hw.peak_bandwidth_gb_s > 0 else 0.0
+            bandwidth_pct = (
+                (bandwidth_gb_s / self.hw.peak_bandwidth_gb_s * 100.0) if self.hw.peak_bandwidth_gb_s > 0 else 0.0
+            )
             arithmetic_intensity = (total_flops / total_bytes) if total_bytes > 0 else 0.0
 
             return BenchmarkMetric(

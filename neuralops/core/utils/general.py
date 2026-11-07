@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import random
 from typing import Any
+
 import numpy as np
 import torch
 
@@ -42,16 +43,12 @@ def get_device(device_str: str = "auto") -> torch.device:
     device = torch.device(device_str)
     if device.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested, but no CUDA device is available")
-    if device.type == "mps" and (
-        not hasattr(torch.backends, "mps") or not torch.backends.mps.is_available()
-    ):
+    if device.type == "mps" and (not hasattr(torch.backends, "mps") or not torch.backends.mps.is_available()):
         raise RuntimeError("MPS was requested, but MPS is not available")
     if device.type == "cuda" and device.index is not None:
         count = torch.cuda.device_count()
         if device.index >= count:
-            raise RuntimeError(
-                f"CUDA device index {device.index} is unavailable; {count} device(s) detected"
-            )
+            raise RuntimeError(f"CUDA device index {device.index} is unavailable; {count} device(s) detected")
     return device
 
 

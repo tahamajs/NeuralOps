@@ -36,11 +36,11 @@ Standard Quadratic Attention:        Linear Kernelized Attention:
 ```
 
 ### Title & Subtitle
-**Katharopoulos Linear Attention: Flipping the Matrix Multiplication Order with Kernel Associativity**  
+**Katharopoulos Linear Attention: Flipping the Matrix Multiplication Order with Kernel Associativity**
 *How swapping $(Q K^T) V$ to $Q (K^T V)$ via positive feature maps unlocks linear time training and constant-memory recurrent inference.*
 
 ### The Analogy
-Imagine an auditorium filled with 10,000 historians. In standard attention, every single historian must walk across the room and conduct a private one-on-one conversation with all other 9,999 historians ($10,000 \times 10,000 = 100,000,000$ pairwise interactions). 
+Imagine an auditorium filled with 10,000 historians. In standard attention, every single historian must walk across the room and conduct a private one-on-one conversation with all other 9,999 historians ($10,000 \times 10,000 = 100,000,000$ pairwise interactions).
 
 In Katharopoulos Linear Attention, nobody talks to each other directly. Instead, there is a single shared **blackboard** ($d \times d$) at the front of the stage. As each historian walks past, they write their key insight onto the blackboard ($S_t = S_{t-1} + k_t v_t^T$). Any historian can read the blackboard in one instant glance ($\phi(q_t) S_t$) without needing to interview the 9,999 people one by one!
 
@@ -52,7 +52,7 @@ flowchart LR
         AttnMat --> Out1["AttnMat @ V : [N×d]"]
         V1["V (N×d)"] --> Out1
     end
-    
+
     subgraph LinearAssociative["Linear Kernel Attention: O(Nd²)"]
         K2["ϕ(K) (N×d)"] --> State["(ϕ(K)ᵀ @ V) : [d×d] Global State S"]
         V2["V (N×d)"] --> State
@@ -101,17 +101,17 @@ $$\text{Token Output: } y_t = \frac{\phi(q_t)^T S_t}{\phi(q_t)^T z_t} \in \mathb
 ```
 FAVOR+ Positive Orthogonal Random Features:
    x (d-dim) ──> [ W_orth (m × d) ] ──> Positive Exponential Kernel Map ──> ϕ(x) (m-dim)
-   
+
 Exact Softmax Kernel Approximation:
    E[ ϕ(q)ᵀ ϕ(k) ] = exp( qᵀk / √d )   without any N×N matrix!
 ```
 
 ### Title & Subtitle
-**Performer Attention: Approximating the True Softmax Kernel with FAVOR+**  
+**Performer Attention: Approximating the True Softmax Kernel with FAVOR+**
 *Unbiased, positive orthogonal random feature maps that emulate exact Softmax attention with provable linear complexity.*
 
 ### The Analogy
-Imagine conducting a national census across 300 million citizens. Interviewing every single pair of citizens to measure cultural affinity would require $9 \times 10^{16}$ interviews. 
+Imagine conducting a national census across 300 million citizens. Interviewing every single pair of citizens to measure cultural affinity would require $9 \times 10^{16}$ interviews.
 
 Instead, a world-class statistician selects 128 perfectly calibrated, mutually orthogonal demographic questions ($m$ orthogonal random feature probes). By projecting every citizen onto this standardized 128-dimensional questionnaire, the statistician calculates the exact nationwide cultural affinity matrix with provable mathematical accuracy and zero demographic bias.
 
@@ -120,16 +120,16 @@ flowchart TD
     InputQ["Query Vector q ∈ ℝᵈ"] --> ProjQ["Orthogonal Random Projection: W_orth @ q"]
     ProjQ --> KernelMapQ["Positive Exponential Map: h(q) · exp(...)"]
     KernelMapQ --> PhiQ["ϕ(q) ∈ ℝᵐ (m « N)"]
-    
+
     InputK["Key Vector k ∈ ℝᵈ"] --> ProjK["Orthogonal Random Projection: W_orth @ k"]
     ProjK --> KernelMapK["Positive Exponential Map: h(k) · exp(...)"]
     KernelMapK --> PhiK["ϕ(k) ∈ ℝᵐ (m « N)"]
-    
+
     PhiQ & PhiK --> InnerProd["Inner Product: ⟨ϕ(q), ϕ(k)⟩ ≈ exp(qᵀk / √d)"]
 ```
 
 ### The Problem
-While Katharopoulos linear attention used $\text{elu}(x)+1$, it approximated an *arbitrary* polynomial kernel rather than the true **exponential Softmax kernel** ($\exp(q^T k / \sqrt{d})$). This kernel mismatch caused attention weights to "dilute" over long sequences, degrading perplexity on language tasks and preventing zero-shot replacement of attention in pretrained Transformers. 
+While Katharopoulos linear attention used $\text{elu}(x)+1$, it approximated an *arbitrary* polynomial kernel rather than the true **exponential Softmax kernel** ($\exp(q^T k / \sqrt{d})$). This kernel mismatch caused attention weights to "dilute" over long sequences, degrading perplexity on language tasks and preventing zero-shot replacement of attention in pretrained Transformers.
 
 Standard Random Fourier Features (RFF) could approximate exponential kernels, but trigonometric basis functions produce negative values ($\sin, \cos < 0$). In attention, negative kernel values cause catastrophic denominator cancellation ($z_t \to 0$), producing numerical infinities and model collapse.
 
@@ -168,17 +168,17 @@ Linformer Sequence Length Down-Projection:
    Q: [N × d]
    K: [N × d] ──[ Project E (k × N) ]──>  K_proj: [k × d]
    V: [N × d] ──[ Project F (k × N) ]──>  V_proj: [k × d]
-   
+
    Attn Map = Softmax( Q @ K_proj.T / √d )  ──>  Shape: [N × k]  (k « N)
    Output   = Attn Map @ V_proj             ──>  Shape: [N × d]
 ```
 
 ### Title & Subtitle
-**Linformer: Compressing Sequence Length via Low-Rank Space Projections**  
+**Linformer: Compressing Sequence Length via Low-Rank Space Projections**
 *Proving that attention matrices are intrinsically low-rank and down-projecting $N \times d$ keys and values to $k \times d$ landmarks.*
 
 ### The Analogy
-Imagine writing a comprehensive index for a 10,000-page encyclopedia. Instead of cross-referencing every single word against all 10,000 pages, the editor creates a distilled table of **256 master topic landmarks** ($k=256$). 
+Imagine writing a comprehensive index for a 10,000-page encyclopedia. Instead of cross-referencing every single word against all 10,000 pages, the editor creates a distilled table of **256 master topic landmarks** ($k=256$).
 
 Every page in the book ($N$) only needs to calculate its relevance to these 256 landmarks. The readers can quickly navigate anywhere in the entire 10,000-page encyclopedia by routing through this compact 256-landmark index.
 
@@ -190,7 +190,7 @@ flowchart LR
         Scores1 --> Out_full["Scores @ V : [N × d]"]
         V_full["V: [N × d]"] --> Out_full
     end
-    
+
     subgraph LinformerAttention["Linformer: N × k"]
         K_in["K: [N × d]"] --> ProjE["Linear Proj E : [k × N]"] --> K_comp["K_proj: [k × d]"]
         V_in["V: [N × d]"] --> ProjF["Linear Proj F : [k × N]"] --> V_comp["V_proj: [k × d]"]
@@ -242,11 +242,11 @@ Continuous Dynamical System:          Discretized Selective Scan (ZOH):
 ```
 
 ### Title & Subtitle
-**Mamba & Selective SSMs: Continuous Dynamical Systems with Input-Dependent Memory Gates**  
+**Mamba & Selective SSMs: Continuous Dynamical Systems with Input-Dependent Memory Gates**
 *How selective parameterization, hardware-aware parallel scans, and continuous state spaces dethroned Transformers on long-context modeling.*
 
 ### The Analogy
-Imagine a courtroom stenographer. A standard Linear Time-Invariant (LTI) recorder writes down every background cough, door creak, and whispered comment at the exact same constant recording speed—quickly running out of paper. 
+Imagine a courtroom stenographer. A standard Linear Time-Invariant (LTI) recorder writes down every background cough, door creak, and whispered comment at the exact same constant recording speed—quickly running out of paper.
 
 Mamba is an **intelligent selective stenographer**: when someone coughs or rambles about the weather, Mamba sets step-size $\Delta_t \approx 0$ (instantly ignoring the noise). But the moment the witness gives a critical testimony, Mamba cranks up $\Delta_t$, expands its selective memory $B_t$, and engraves the exact quote into the internal state matrix.
 
@@ -255,11 +255,11 @@ flowchart LR
     TokenInput["Input Token x_t"] --> GateDelta["Linear -> Softplus: Δ_t"]
     TokenInput --> GateB["Linear: B_t"]
     TokenInput --> GateC["Linear: C_t"]
-    
+
     A_Matrix["Structured Matrix A (Diagonal/HiPPO)"] --> Discretize["Discretization: Ā_t = exp(Δ_t · A)"]
     GateDelta --> Discretize
     GateDelta & GateB --> DiscretizeB["B̄_t = Δ_t · B_t"]
-    
+
     Discretize & DiscretizeB --> Recurrence["h_t = Ā_t · h_{t-1} + B̄_t · x_t"]
     PrevState["h_{t-1}"] --> Recurrence
     Recurrence --> Output["y_t = C_t · h_t"]
@@ -309,30 +309,30 @@ Input Tensor X ───────┤                                         
 ```
 
 ### Title & Subtitle
-**MambaSVD-Flash Hybrid: Fusing Selective State-Space Recurrence with Low-Rank Tensor Core Attention**  
+**MambaSVD-Flash Hybrid: Fusing Selective State-Space Recurrence with Low-Rank Tensor Core Attention**
 *The dual-engine architecture combining the linear throughput of SVD-truncated SSM scans with the razor-sharp associative recall of FP8 FlashAttention-3.*
 
 ### The Analogy
-Think of a high-performance Le Mans hybrid race car. On long, straight highway stretches, an ultra-efficient electric motor (the SVD-SSM path) delivers continuous linear torque with minimal fuel consumption. 
+Think of a high-performance Le Mans hybrid race car. On long, straight highway stretches, an ultra-efficient electric motor (the SVD-SSM path) delivers continuous linear torque with minimal fuel consumption.
 
 When entering tight, complex chicane curves requiring instantaneous explosive torque (complex multi-token syntactic lookups), the turbocharged combustion engine (FP8 FlashAttention-3) fires on all cylinders. A smart electronic ECU (learned gate $\gamma$) automatically distributes power between both engines in microseconds.
 
 ```mermaid
 flowchart TD
     InputX["Input Sequence X ∈ ℝ^(B×L×D)"] --> SplitPath{"Dual Execution Split"}
-    
+
     SplitPath --> PathSSM["SVD-SSM Linear Path"]
     PathSSM --> FactorA["Online SVD Factorization: A_t ≈ U_{t,r} Σ_{t,r} V_{t,r}ᵀ"]
     FactorA --> RecurrScan["Associative Low-Rank Scan (SRAM)"]
     RecurrScan --> Y_ssm["SSM Output: Y_ssm"]
-    
+
     SplitPath --> PathFlash["High-Entropy Attention Path"]
     PathFlash --> QuantFP8["FP8 E4M3 Quantization"]
     QuantFP8 --> Flash3Kernel["Hopper FlashAttention-3 Kernel"]
     Flash3Kernel --> O_attn["Attention Output: O_attn"]
-    
+
     InputX --> GateRouter["Gating Router: γ = σ(W_g X)"]
-    
+
     Y_ssm & O_attn & GateRouter --> BlendedOut["Final Output: Y = γ ⊙ Y_ssm + (1 - γ) ⊙ O_attn"]
 ```
 
@@ -386,13 +386,13 @@ Three Computation Paradigms:
 ```
 
 ### Title & Subtitle
-**RetNet: Conquering the Impossible Triangle with Retentive Networks**  
+**RetNet: Conquering the Impossible Triangle with Retentive Networks**
 *Achieving parallel training, $O(1)$ inference cost, and Transformer-level performance through multi-scale decay retention.*
 
 ### The Analogy
-Imagine a massive military communications network. During peacetime strategy sessions (training), all battle commanders analyze past history simultaneously via a satellite data feed (**Parallel Mode**). 
+Imagine a massive military communications network. During peacetime strategy sessions (training), all battle commanders analyze past history simultaneously via a satellite data feed (**Parallel Mode**).
 
-During frontline combat (inference), a radio operator carries a single compact tactical journal, updating it with each incoming transmission in 2 seconds flat (**Recurrent Mode**). 
+During frontline combat (inference), a radio operator carries a single compact tactical journal, updating it with each incoming transmission in 2 seconds flat (**Recurrent Mode**).
 
 When coordinating massive regional battalions (long context), each battalion processes its local troops in parallel while passing summary journals between battalions (**Chunkwise Mode**).
 
@@ -400,19 +400,19 @@ When coordinating massive regional battalions (long context), each battalion pro
 flowchart TD
     subgraph RetNetThreeParadigms["RetNet: Triple Execution Paradigms"]
         direction TB
-        
+
         subgraph Mode1["1. Parallel Mode (Training)"]
             Q1["Q"] & K1["K"] --> Mult1["Q @ Kᵀ"]
             Mult1 & D_mat["Decay Matrix D (γ^(n-m))"] --> MaskedScores["(Q @ Kᵀ) ⊙ D"]
             MaskedScores & V1["V"] --> OutParallel["R = ((Q @ Kᵀ) ⊙ D) @ V"]
         end
-        
+
         subgraph Mode2["2. Recurrent Mode (O(1) Inference)"]
             Kn["K_n"] & Vn["V_n"] --> OuterP["K_nᵀ @ V_n"]
             OuterP & PrevS["γ · S_{n-1}"] --> NewS["S_n = γ · S_{n-1} + K_nᵀ V_n"]
             Qn["Q_n"] & NewS --> OutRecurrent["R_n = Q_n @ S_n"]
         end
-        
+
         subgraph Mode3["3. Chunkwise Mode (Long Context)"]
             ChunkParallel["Intra-Chunk Matrix Multiply (Parallel)"]
             ChunkRecurrent["Inter-Chunk State Propagation (Recurrent)"]
@@ -474,28 +474,28 @@ Recurrent WKV Operator:
 ```
 
 ### Title & Subtitle
-**RWKV: Reinventing RNNs for the Transformer Era**  
+**RWKV: Reinventing RNNs for the Transformer Era**
 *How Time-Mixing, token shifts, and channel-wise exponential decays deliver 100% Transformer expressiveness in a pure RNN form.*
 
 ### The Analogy
-Imagine a master sound technician operating a professional audio mixing console. 
+Imagine a master sound technician operating a professional audio mixing console.
 
-For each incoming audio channel, **Receptance ($R$)** acts as the volume fader that controls how much sound reaches the master output. **Weight ($W$)** is the reverb decay tail setting how long an echo lingers in memory. **Key ($K$)** sets the frequency filter, and **Value ($V$)** is the pure analog instrument signal. 
+For each incoming audio channel, **Receptance ($R$)** acts as the volume fader that controls how much sound reaches the master output. **Weight ($W$)** is the reverb decay tail setting how long an echo lingers in memory. **Key ($K$)** sets the frequency filter, and **Value ($V$)** is the pure analog instrument signal.
 
 Before processing, the technician uses a **Time-Shift** dial to blend 30% of the previous token's acoustic vibration with the current note, ensuring seamless musical harmony across time.
 
 ```mermaid
 flowchart TD
     CurrentX["Current Token x_t"] & PrevX["Previous Token x_{t-1}"] --> TimeMix["Time-Shift Mixing: μ ⊙ x_t + (1-μ) ⊙ x_{t-1}"]
-    
+
     TimeMix --> R_Gate["Receptance: r_t = σ(W_r · x')"]
     TimeMix --> K_Proj["Key: k_t = W_k · x'"]
     TimeMix --> V_Proj["Value: v_t = W_v · x'"]
     TimeMix --> W_Decay["Time-Decay: w (channel-wise)"]
-    
+
     K_Proj & V_Proj & W_Decay --> WKV_Scan["WKV State Scan: a_t = e^(-w)a_{t-1} + e^(k_t)v_t"]
     PrevState["State: (a_{t-1}, b_{t-1})"] --> WKV_Scan
-    
+
     WKV_Scan --> WKV_Out["wkv_t Output"]
     R_Gate & WKV_Out --> MultiplyGate["Elementwise: y_t = r_t ⊙ (W_o · wkv_t)"]
 ```
@@ -543,13 +543,13 @@ Gated DeltaNet Error-Driven Memory Update:
 ```
 
 ### Title & Subtitle
-**HGRN2 & Gated DeltaNet: Error-Driven Associative Memory with Hierarchical Gating**  
+**HGRN2 & Gated DeltaNet: Error-Driven Associative Memory with Hierarchical Gating**
 *Combining the Delta Rule's selective forgetting with multi-layer hierarchical recurrence for superior associative recall.*
 
 ### The Analogy
-Imagine maintaining a live whiteboard of company employee assignments. 
+Imagine maintaining a live whiteboard of company employee assignments.
 
-In simple linear attention, every time someone changes their department, you just write the new department over the board without erasing the old one (additive memory). Over time, the whiteboard becomes an illegible mess of conflicting text (eigenvalue saturation). 
+In simple linear attention, every time someone changes their department, you just write the new department over the board without erasing the old one (additive memory). Over time, the whiteboard becomes an illegible mess of conflicting text (eigenvalue saturation).
 
 The **Gated DeltaNet** algorithm looks at the whiteboard first, checks what department was previously listed for the employee, calculates the **memory prediction error** ($v_t - H_{t-1} k_t$), cleanly erases the obsolete assignment, and writes *only the net correction*.
 
@@ -557,12 +557,12 @@ The **Gated DeltaNet** algorithm looks at the whiteboard first, checks what depa
 flowchart TD
     QueryK["Current Key k_t"] & PrevMem["Past Memory Matrix H_{t-1}"] --> PredictVal["Memory Prediction: v̂_t = H_{t-1} @ k_t"]
     PredictVal & TrueVal["Target Value v_t"] --> ComputeErr["Error Vector: e_t = v_t - v̂_t"]
-    
+
     ComputeErr & QueryK --> OuterCorrection["Error Outer Product: e_t ⊗ k_tᵀ"]
-    
+
     PrevMem & ForgetGate["Retention Gate: α_t"] --> DecayState["α_t · H_{t-1}"]
     OuterCorrection & LearnRate["Update Rate: β_t"] --> ScaleCorrection["β_t · (e_t ⊗ k_tᵀ)"]
-    
+
     DecayState & ScaleCorrection --> NewMem["Updated State: H_t = α_t H_{t-1} + β_t (e_t ⊗ k_tᵀ)"]
     QueryQ["Query q_t"] & NewMem --> Readout["Readout: y_t = q_t @ H_t"]
 ```
@@ -610,7 +610,7 @@ Google DeepMind's State Space Duality (SSD):
    1D Selective SSM Recurrence  <═══════════════>  2D Matrix-State Linear Attention
       h_t = α_t · h_{t-1} + B_t · x_t                  H_t = α_t · H_{t-1} + k_t ⊗ v_t
       y_t = C_t · h_t                                  y_t = q_t @ H_t
-   
+
 Griffin Hybrid Architecture Stack:
    Layer l:     [ Real-Gated LRU Recurrence ]  ──> O(L) Linear Scan
    Layer l+1:   [ Real-Gated LRU Recurrence ]  ──> O(L) Linear Scan
@@ -618,11 +618,11 @@ Griffin Hybrid Architecture Stack:
 ```
 
 ### Title & Subtitle
-**Griffin, Hawk & State Space Duality: Unifying SSMs and Linear Attention**  
+**Griffin, Hawk & State Space Duality: Unifying SSMs and Linear Attention**
 *Google DeepMind's discovery of the mathematical bridge between 1D state spaces and 2D matrix linear attention.*
 
 ### The Analogy
-Imagine two groups of astronomers studying the same distant galaxy. The radio astronomers (SSM camp) track the continuous radio frequency signal arriving over time (1D state recurrence). The optical astronomers (Attention camp) capture a high-resolution photographic plate showing all spatial stars at once (2D matrix attention). 
+Imagine two groups of astronomers studying the same distant galaxy. The radio astronomers (SSM camp) track the continuous radio frequency signal arriving over time (1D state recurrence). The optical astronomers (Attention camp) capture a high-resolution photographic plate showing all spatial stars at once (2D matrix attention).
 
 DeepMind's **State Space Duality (SSD)** proved that both groups were measuring the exact same physical reality through two different coordinate systems, unifying them into a single telescope!
 
@@ -634,14 +634,14 @@ flowchart LR
         h_t = α_t · h_{t-1} + β_t · x_t
         y_t = C_t · h_t
         (O(1) Memory Inference)"]
-        
+
         Equiv["⟺  MATHEMATICALLY EQUIVALENT  ⟺"]
-        
+
         Attn_View["Linear Attention 2D State View:
         H_t = α_t · H_{t-1} + k_t ⊗ v_tᵀ
         y_t = q_t @ H_t
         (Parallel Tensor Core Training)"]
-        
+
         SSM_View --- Equiv --- Attn_View
     end
 ```
@@ -726,7 +726,7 @@ class KernelLinearAttention(nn.Module):
 
         # Compute outer product per token: K^T ⊗ V -> [B, H, N, d, d]
         KV = torch.einsum('bhni,bhnj->bhnij', K, V)
-        
+
         # Causal prefix sum scan along sequence dimension N
         S = torch.cumsum(KV, dim=2) # Cumulative memory state [B, H, N, d, d]
         Z = torch.cumsum(K, dim=2)  # Cumulative normalizer [B, H, N, d]
@@ -740,8 +740,8 @@ class KernelLinearAttention(nn.Module):
         return self.out_proj(out)
 
     def forward_step(
-        self, 
-        x_t: torch.Tensor, 
+        self,
+        x_t: torch.Tensor,
         state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """

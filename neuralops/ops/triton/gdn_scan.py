@@ -13,10 +13,10 @@ Evaluates Gated DeltaNet state updates using chunked associative scans and matri
 
 from __future__ import annotations
 
+from typing import Any
+
 import torch
 import torch.nn.functional as F
-
-from typing import Any
 
 from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
@@ -122,12 +122,8 @@ def _gdn_fwd_kernel(
             other=0.0,
         ).to(tl.float32)
 
-        beta_t = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl).to(
-            tl.float32
-        )
-        alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(
-            tl.float32
-        )
+        beta_t = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl).to(tl.float32)
+        alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(tl.float32)
 
         valid = 1.0
         if HAS_MASK:
@@ -293,12 +289,8 @@ def _gdn_bwd_kernel(
             other=0.0,
         ).to(tl.float32)
 
-        beta_t = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl).to(
-            tl.float32
-        )
-        alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(
-            tl.float32
-        )
+        beta_t = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl).to(tl.float32)
+        alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(tl.float32)
 
         valid = 1.0
         if HAS_MASK:
@@ -474,7 +466,11 @@ def _gdn_fwd_inference(
         y.stride(1),
         y.stride(2),
         y.stride(3),
-        0, 0, 0, 0, 0,
+        0,
+        0,
+        0,
+        0,
+        0,
         init_state.stride(0) if has_init else 0,
         init_state.stride(1) if has_init else 0,
         init_state.stride(2) if has_init else 0,
@@ -794,6 +790,7 @@ def gdn_scan_pytorch(
         return out, S.to(dtype)
     return out
 
+
 def _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64):
     """
     Chunk-level gradient checkpointing for Gated DeltaNet scan.
@@ -844,9 +841,7 @@ def _gdn_chunked_checkpoint_scan(q, k, v, beta, alpha, chunk_size=64):
         bc = beta_p[:, :, st:en]
         ac = alpha_p[:, :, st:en]
 
-        yc, curr = torch.utils.checkpoint.checkpoint(
-            _run_gdn_chunk, curr, qc, kc, vc, bc, ac, use_reentrant=False
-        )
+        yc, curr = torch.utils.checkpoint.checkpoint(_run_gdn_chunk, curr, qc, kc, vc, bc, ac, use_reentrant=False)
         outs.append(yc)
 
     y_all = torch.cat(outs, dim=2)
@@ -915,9 +910,7 @@ def gdn_scan_triton(
             return out, S_final
         return out
 
-    return _GatedDeltaNetScanFn.apply(
-        q, k, v, beta, alpha, initial_state, mask, return_final_state, normalize_qk
-    )
+    return _GatedDeltaNetScanFn.apply(q, k, v, beta, alpha, initial_state, mask, return_final_state, normalize_qk)
 
 
 fused_gdn_chunk_scan_triton = gdn_scan_triton
@@ -966,9 +959,15 @@ def _gdn_step_kernel(
     offs_d = tl.arange(0, BLOCK_D)
     mask_d = offs_d < D_size
 
-    q_t = tl.load(q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
-    k_t = tl.load(k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_d * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
-    v_t = tl.load(v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
+    q_t = tl.load(q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd, mask=mask_d, other=0.0).to(
+        tl.float32
+    )
+    k_t = tl.load(k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_d * stride_kd, mask=mask_d, other=0.0).to(
+        tl.float32
+    )
+    v_t = tl.load(v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_d * stride_vd, mask=mask_d, other=0.0).to(
+        tl.float32
+    )
 
     beta_t = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh).to(tl.float32)
     alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah).to(tl.float32)
@@ -989,7 +988,9 @@ def _gdn_step_kernel(
     tl.store(s_ptrs, S_new.to(s_ptr.dtype.element_ty), mask=mask_2d)
 
     y_t = tl.sum(q_t[:, None] * S_new, axis=0)
-    tl.store(y_ptr + pid_b * stride_yb + pid_h * stride_yh + offs_d * stride_yd, y_t.to(y_ptr.dtype.element_ty), mask=mask_d)
+    tl.store(
+        y_ptr + pid_b * stride_yb + pid_h * stride_yh + offs_d * stride_yd, y_t.to(y_ptr.dtype.element_ty), mask=mask_d
+    )
 
 
 def gdn_recurrent_step_triton(
@@ -1021,23 +1022,43 @@ def gdn_recurrent_step_triton(
 
     B, H, D = q_t.shape
     out = torch.empty((B, H, D), device=q_t.device, dtype=q_t.dtype)
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q_t.is_cuda and D <= MAX_REGISTER_DIM:
         try:
             BLOCK_D = triton.next_power_of_2(D)
             grid = (B, H)
             _gdn_step_kernel[grid](
-                q_t.contiguous(), k_t.contiguous(), v_t.contiguous(),
-                beta_t.contiguous(), alpha_t.contiguous(), state, out,
-                q_t.stride(0), q_t.stride(1), q_t.stride(2),
-                k_t.stride(0), k_t.stride(1), k_t.stride(2),
-                v_t.stride(0), v_t.stride(1), v_t.stride(2),
-                beta_t.stride(0), beta_t.stride(1),
-                alpha_t.stride(0), alpha_t.stride(1),
-                state.stride(0), state.stride(1), state.stride(2), state.stride(3),
-                out.stride(0), out.stride(1), out.stride(2),
-                B, H, D,
+                q_t.contiguous(),
+                k_t.contiguous(),
+                v_t.contiguous(),
+                beta_t.contiguous(),
+                alpha_t.contiguous(),
+                state,
+                out,
+                q_t.stride(0),
+                q_t.stride(1),
+                q_t.stride(2),
+                k_t.stride(0),
+                k_t.stride(1),
+                k_t.stride(2),
+                v_t.stride(0),
+                v_t.stride(1),
+                v_t.stride(2),
+                beta_t.stride(0),
+                beta_t.stride(1),
+                alpha_t.stride(0),
+                alpha_t.stride(1),
+                state.stride(0),
+                state.stride(1),
+                state.stride(2),
+                state.stride(3),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
+                B,
+                H,
+                D,
                 BLOCK_D=BLOCK_D,
             )
             return (out.unsqueeze(2) if has_l_dim else out), state
@@ -1058,6 +1079,7 @@ def gdn_recurrent_step_triton(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _chunked_delta_scan_kernel(
         q_ptr,
@@ -1165,7 +1187,7 @@ def triton_chunked_delta_gate_scan(
     B, H, L, D_K = q.shape
     D_V = v.shape[-1]
 
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if not HAS_TRITON or FORCE_PYTORCH_FALLBACK or not q.is_cuda or D_K > 64 or D_V > 64:
         return triton_chunked_delta_gate_scan_pytorch_ref(q, k, v, alpha, beta)
@@ -1219,11 +1241,11 @@ def triton_chunked_delta_gate_scan(
 
 
 __all__ = [
-    'gdn_scan_triton',
-    'fused_gdn_chunk_scan_triton',
-    'gdn_scan_pytorch',
-    'gdn_scan',
-    'gdn_recurrent_step_triton',
-    'triton_chunked_delta_gate_scan',
-    'triton_chunked_delta_gate_scan_pytorch_ref',
+    "gdn_scan_triton",
+    "fused_gdn_chunk_scan_triton",
+    "gdn_scan_pytorch",
+    "gdn_scan",
+    "gdn_recurrent_step_triton",
+    "triton_chunked_delta_gate_scan",
+    "triton_chunked_delta_gate_scan_pytorch_ref",
 ]

@@ -1,12 +1,12 @@
 # 🌟 Deep Dive: Hybridkv Compressor (`HybridKVCompressor`)
 
-> **Category**: Dynamic Differential Cache Compression & Memory Eviction  
-> **Target Workload**: Ultra-low VRAM edge inference, consumer GPU deployment, and cost-effective datacenter LLM serving.  
+> **Category**: Dynamic Differential Cache Compression & Memory Eviction
+> **Target Workload**: Ultra-low VRAM edge inference, consumer GPU deployment, and cost-effective datacenter LLM serving.
 > **Key Innovation**: Compressing autoregressive Key-Value memory caches via differential delta encoding and hierarchical note centroids.
 
 ---
 
-> [!NOTE] **Empirical Methodology & Theoretical Projection Notice**  
+> [!NOTE] **Empirical Methodology & Theoretical Projection Notice**
 > Benchmark metrics and trade-off tables presented in this architectural monograph reflect theoretical asymptotic scaling, design projections, or illustrative simulations from reference literature. For physical hardware benchmarks executed on dedicated silicon (NVIDIA RTX 4070 SM 8.9 / RTX 3090 SM 8.6) with cryptographic execution provenance, consult the authoritative [Master Results Matrix](https://huggingface.co/datasets/Hooshaai/neuralops-results) and [Results Ledger](../../api/results_ledger.md).
 
 ---
@@ -161,13 +161,13 @@ class HybridKVCompressorLinear(nn.Module):
         self.out_features = out_features
         self.group_size = group_size
         self.bits = bits
-        
+
         num_groups = in_features // group_size
         self.register_buffer("scales", torch.ones(out_features, num_groups, dtype=torch.float16))
         self.register_buffer("zeros", torch.zeros(out_features, num_groups, dtype=torch.float16))
         self.register_buffer("qweight", torch.zeros((out_features, in_features // 2), dtype=torch.uint8))
         self.register_buffer("act_scale", torch.ones(in_features, dtype=torch.float16))
-        
+
         if bias:
             self.bias = nn.Parameter(torch.zeros(out_features, dtype=torch.float16))
         else:
@@ -181,29 +181,29 @@ class HybridKVCompressorLinear(nn.Module):
         # 1. Compute activation outlier scales
         act_max = activation_samples.abs().amax(dim=0).clamp(min=1e-5)
         self.act_scale.copy_(act_max.pow(0.5))
-        
+
         # 2. Smooth weight matrix
         smoothed_w = weight * self.act_scale.unsqueeze(0)
-        
+
         # 3. Group-wise quantization
         reshaped_w = smoothed_w.view(self.out_features, -1, self.group_size)
         w_min = reshaped_w.amin(dim=-1, keepdim=True)
         w_max = reshaped_w.amax(dim=-1, keepdim=True)
-        
+
         scale = (w_max - w_min) / ((1 << self.bits) - 1)
         zero = -torch.round(w_min / scale.clamp(min=1e-5))
-        
+
         self.scales.copy_(scale.squeeze(-1))
         self.zeros.copy_(zero.squeeze(-1))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Scale activations
         x_scaled = x / self.act_scale
-        
+
         # Dequantize weights on-the-fly (in production, replaced with fused CUDA/Triton INT4 kernel)
         w_dequant = (self.qweight.to(torch.float16) - self.zeros.unsqueeze(-1)) * self.scales.unsqueeze(-1)
         w_dequant = w_dequant.view(self.out_features, self.in_features)
-        
+
         out = torch.matmul(x_scaled, w_dequant.t())
         if self.bias is not None:
             out += self.bias
@@ -262,5 +262,5 @@ class HybridKVCompressorLinear(nn.Module):
 
 ## 11. AI Architectural Infographic Generation Prompt
 
-> 🎨 **Midjourney v6 / DALL-E 3 Prompt:**  
+> 🎨 **Midjourney v6 / DALL-E 3 Prompt:**
 > A high-tech, futuristic 3D isometric scientific infographic on a dark cybernetic slate background `#0B0F19`. Visualizing the `Hybridkv Compressor` neural compression engine. A massive translucent floating glowing matrix decomposes through a glowing crystalline compression lens into compact, sleek mathematical tensors illuminated in luminous cyan `#00F0FF` and emerald `#10B981`. Radiant data conduits demonstrate frictionless tensor throughput and eliminated memory bandwidth latency. Minimalist HUD metrics highlight 4x VRAM reduction. Volumetric studio lighting, ray-traced reflections, 8k resolution, cinematic scientific visualization.

@@ -177,9 +177,7 @@ def update_documentation_table(
         base_str = f"{baseline_acc:.2f}%" if baseline_acc is not None else "N/A"
         delta_str = f"{(acc - baseline_acc):+.2f}%" if baseline_acc is not None else "N/A"
         f1_str = f"{float(f1):.4f}" if f1 not in (None, "N/A", "") else "N/A"
-        comp_rate_str = (
-            f"{float(comp_rate):.2f}x" if comp_rate not in (None, "N/A", "") else "1.00x"
-        )
+        comp_rate_str = f"{float(comp_rate):.2f}x" if comp_rate not in (None, "N/A", "") else "1.00x"
         hf_link = f"[{hf_repo_url.split('/')[-1]}]({hf_repo_url})" if hf_repo_url else "N/A"
 
         row = f"| **{model_name}** | {dataset_name} | `{status}` | {base_str} | **{acc:.2f}%** | {delta_str} | {f1_str} | {comp_rate_str} | {num_compressed} | {hf_link} | {date_str} |\n"
@@ -351,9 +349,7 @@ def commit_and_push_git(
         )
         if not diff.stdout.strip():
             LOG.info("No changes to commit to Git.")
-            rev = subprocess.run(
-                ["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True
-            )
+            rev = subprocess.run(["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True)
             return rev.stdout.strip()[:8]
 
         curr_branch = subprocess.run(

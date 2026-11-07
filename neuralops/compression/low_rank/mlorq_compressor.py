@@ -12,7 +12,6 @@ Jointly optimizes per-layer rank allocations and integer bit-widths under a glob
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -66,9 +66,7 @@ def _quantize_packed(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Te
     n = q_unsigned.numel()
     pad = (-n) % per_byte
     if pad > 0:
-        q_unsigned = torch.cat(
-            [q_unsigned, torch.zeros(pad, dtype=torch.int32, device=q_unsigned.device)]
-        )
+        q_unsigned = torch.cat([q_unsigned, torch.zeros(pad, dtype=torch.int32, device=q_unsigned.device)])
     q_unsigned = q_unsigned.view(-1, per_byte)
 
     packed = torch.zeros(q_unsigned.shape[0], dtype=torch.int8, device=q_unsigned.device)
@@ -150,17 +148,11 @@ class MLoRQLoRALinear(nn.Module):
         target_dtype = dtype if dtype is not None else torch.float32
 
         self.register_buffer("U_packed", U_packed.to(target_device), persistent=True)
-        self.register_buffer(
-            "U_scale", U_scale.to(target_device, dtype=torch.float32), persistent=True
-        )
+        self.register_buffer("U_scale", U_scale.to(target_device, dtype=torch.float32), persistent=True)
         self.register_buffer("S_packed", S_packed.to(target_device), persistent=True)
-        self.register_buffer(
-            "S_scale", S_scale.to(target_device, dtype=torch.float32), persistent=True
-        )
+        self.register_buffer("S_scale", S_scale.to(target_device, dtype=torch.float32), persistent=True)
         self.register_buffer("Vt_packed", Vt_packed.to(target_device), persistent=True)
-        self.register_buffer(
-            "Vt_scale", Vt_scale.to(target_device, dtype=torch.float32), persistent=True
-        )
+        self.register_buffer("Vt_scale", Vt_scale.to(target_device, dtype=torch.float32), persistent=True)
 
         self.U_shape = tuple(U_shape)
         self.S_shape = tuple(S_shape)
@@ -198,9 +190,7 @@ class MLoRQLoRALinear(nn.Module):
     def _dequantize(self, dtype: torch.dtype, device: torch.device):
         U = _dequantize_packed(self.U_packed, self.bits, self.U_scale, self.U_shape, device, dtype)
         S = _dequantize_packed(self.S_packed, self.bits, self.S_scale, self.S_shape, device, dtype)
-        Vt = _dequantize_packed(
-            self.Vt_packed, self.bits, self.Vt_scale, self.Vt_shape, device, dtype
-        )
+        Vt = _dequantize_packed(self.Vt_packed, self.bits, self.Vt_scale, self.Vt_shape, device, dtype)
         return U, S, Vt
 
     @property
@@ -220,6 +210,7 @@ class MLoRQLoRALinear(nn.Module):
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 lora_out = fused_down_up_gemm_bias_triton(x.float(), self.lora_A.t(), self.lora_B.t())
             except Exception:
                 lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B)
@@ -292,16 +283,8 @@ class MLoRQLoRALinear(nn.Module):
             and layer.lora_B is not None
         ):
             with torch.no_grad():
-                src_A = (
-                    linear.lora_A.weight.data
-                    if hasattr(linear.lora_A, "weight")
-                    else linear.lora_A.data
-                )
-                src_B = (
-                    linear.lora_B.weight.data
-                    if hasattr(linear.lora_B, "weight")
-                    else linear.lora_B.data
-                )
+                src_A = linear.lora_A.weight.data if hasattr(linear.lora_A, "weight") else linear.lora_A.data
+                src_B = linear.lora_B.weight.data if hasattr(linear.lora_B, "weight") else linear.lora_B.data
                 if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
                     layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
                     layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
@@ -733,14 +716,8 @@ class MLoRQCompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        avg_err = (
-            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
-        )
-        storage_ratio = (
-            total_orig_bits / 8 / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
-        )
+        avg_err = sum(self.layer_errors.values()) / max(1, len(self.layer_errors)) if self.layer_errors else 0.0
+        storage_ratio = total_orig_bits / 8 / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
         stats = self.get_compression_stats()
         stats.update(
             {
@@ -758,15 +735,11 @@ class MLoRQCompressor(BaseCompressor):
                 "fallback_to_original": self.fallback_to_original,
                 "total_budget_bits": self.total_budget_bits,
                 "total_used_bits": total_cost,
-                "budget_utilization_pct": round(
-                    100.0 * total_cost / max(1, self.total_budget_bits), 2
-                ),
+                "budget_utilization_pct": round(100.0 * total_cost / max(1, self.total_budget_bits), 2),
                 "orig_storage_bytes": total_orig_bits // 8,
                 "comp_storage_bytes": total_comp_bytes,
                 "storage_compression_ratio": round(storage_ratio, 3),
-                "storage_reduction_pct": round(
-                    100.0 * (1.0 - total_comp_bytes / max(1, total_orig_bits // 8)), 2
-                ),
+                "storage_reduction_pct": round(100.0 * (1.0 - total_comp_bytes / max(1, total_orig_bits // 8)), 2),
                 "forward_check_success": forward_check_success,
                 "method": "mlorq",
             }

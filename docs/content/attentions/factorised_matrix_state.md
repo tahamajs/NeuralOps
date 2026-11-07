@@ -42,24 +42,24 @@ Specifically, regarding \textbf{FLOPs Computation},  Furthermore, Outer Product 
 
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-Specifically, regarding \textbf{Sequential Recurrent Execution Bottleneck}, 
+Specifically, regarding \textbf{Sequential Recurrent Execution Bottleneck},
 
   Iterating over sequence length $N$ in a Python `for t in range(N):` loop launches $N$ sequential GPU kernels, introducing massive PyTorch driver overhead and GPU underutilization.
-Specifically, regarding \textbf{Unbounded Recurrent State Accumulation}, 
+Specifically, regarding \textbf{Unbounded Recurrent State Accumulation},
 
   State matrix $S_t = \sum_{\tau=1}^t x_\tau x_\tau^\top$ accumulates unnormalized outer products. For long sequence lengths ($N \gg 1000$), entries in $S_t$ grow monotonically, causing floating-point overflow or gradient explosion in FP16 training.
-Specifically, regarding \textbf{Identity Kernel Feature Map Bottleneck}, 
+Specifically, regarding \textbf{Identity Kernel Feature Map Bottleneck},
 
   Using identity mapping $\phi(x) = x$ without non-linear feature maps (like ELU or Softmax) limits associative capacity to degree-2 polynomial feature interactions.
 
 ## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
-Specifically, regarding \textbf{Fused Chunk-Wise Parallel Recurrence Triton Kernel}, 
+Specifically, regarding \textbf{Fused Chunk-Wise Parallel Recurrence Triton Kernel},
 
   Rewrite sequential recurrence into a parallel chunk-wise scan Triton kernel. Compute intra-chunk associative states in SRAM and combine inter-chunk states via parallel prefix-sum scans.
-Specifically, regarding \textbf{Decayed Matrix Memory State Update}, 
+Specifically, regarding \textbf{Decayed Matrix Memory State Update},
 
   Introduce a learnable decay parameter $\gamma \in (0, 1)$ to bound memory state accumulation: $S_t = \gamma S_{t-1} + x_t x_t^\top$. This prevents state norm explosion for infinite sequence lengths.
-Specifically, regarding \textbf{Symmetric Factor Initialization}, 
+Specifically, regarding \textbf{Symmetric Factor Initialization},
 
   Initialize factors $L, R$ symmetrically from thin SVD of pretrained projection weights: $L \leftarrow \bar{U}_{:, :r} \Sigma_{:r}^{1/2}$, $R \leftarrow \bar{V}_{:r, :}^\top \Sigma_{:r}^{1/2}$, enabling zero-shot initialization from standard MHA layers.
 
@@ -83,4 +83,3 @@ The empirical evaluation of `factorised_matrix_state` across standard sequence l
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

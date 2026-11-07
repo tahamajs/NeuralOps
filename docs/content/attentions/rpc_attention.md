@@ -121,15 +121,15 @@ def _rpc_fused_kernel(
 ):
     pid_m = tl.program_id(0)
     pid_bh = tl.program_id(1)
-    
+
     offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
     offs_d = tl.arange(0, d)
     offs_dp = tl.arange(0, d_p)
-    
+
     # Load Q tile [BLOCK_M, d] and P [d, d_p]
     q = tl.load(Q_ptr + pid_bh * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :])
     p = tl.load(P_ptr + (pid_bh % stride_qh) * d * d_p + offs_d[:, None] * d_p + offs_dp[None, :])
-    
+
     # Fused random projection q_sketched = q @ p
     q_sketched = tl.dot(q, p) / tl.sqrt(d_p.to(tl.float32))
 ```
@@ -162,4 +162,3 @@ The empirical evaluation of `rpc_attention` across standard sequence lengths and
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

@@ -16,7 +16,8 @@ from __future__ import annotations
 from typing import Optional
 
 import torch
-from neuralops.ops.triton._base import triton, tl, HAS_TRITON
+
+from neuralops.ops.triton._base import HAS_TRITON, tl, triton
 
 __all__ = ["triton_fused_lowrank_gated_gemm", "fused_lowrank_gemm"]
 

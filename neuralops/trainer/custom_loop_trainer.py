@@ -59,18 +59,12 @@ class CustomLoopTrainer(BaseTrainer):
             torch.device(
                 "cuda"
                 if torch.cuda.is_available()
-                else (
-                    "mps"
-                    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-                    else "cpu"
-                )
+                else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu")
             )
         )
         self.num_labels = num_labels
         self.is_multichoice = is_multichoice
-        self.compute_metrics_fn = compute_metrics_fn or get_task_metrics(
-            self.config.get("task_name", "mrpc")
-        )
+        self.compute_metrics_fn = compute_metrics_fn or get_task_metrics(self.config.get("task_name", "mrpc"))
         self.kwargs = kwargs
 
     def _make_loader(self, dataset: Any, shuffle: bool = False) -> DataLoader:
@@ -116,11 +110,7 @@ class CustomLoopTrainer(BaseTrainer):
 
             sync_context = (
                 contextlib.nullcontext()
-                if (
-                    is_sync_step
-                    or not hasattr(self.model, "no_sync")
-                    or not callable(self.model.no_sync)
-                )
+                if (is_sync_step or not hasattr(self.model, "no_sync") or not callable(self.model.no_sync))
                 else self.model.no_sync()
             )
 
@@ -185,8 +175,7 @@ class CustomLoopTrainer(BaseTrainer):
                 optimizer.zero_grad(set_to_none=True)
 
             if pbar is not None and (
-                (step + 1) % max(1, int(self.config.get("logging_steps", 10))) == 0
-                or step == num_batches - 1
+                (step + 1) % max(1, int(self.config.get("logging_steps", 10))) == 0 or step == num_batches - 1
             ):
                 pbar.set_postfix({"loss": f"{curr_loss:.4f}"})
 

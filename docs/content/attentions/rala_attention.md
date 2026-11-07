@@ -121,9 +121,9 @@ Y = \text{Concat}(O_{\text{fused}, 1}, \dots, O_{\text{fused}, H}) W_O + b_O \in
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### Computational Workload & Scaling Dynamics
-Let $B$ represent the batch size, $N$ sequence length, $D$ model dimension, $H$ the number of attention heads, $d_k = D/H$ the head dimension, and $r$ the rank of the parametric augmentation subspace where $r \ll d_k$. 
+Let $B$ represent the batch size, $N$ sequence length, $D$ model dimension, $H$ the number of attention heads, $d_k = D/H$ the head dimension, and $r$ the rank of the parametric augmentation subspace where $r \ll d_k$.
 
-The arithmetic operational profile of Rank-Augmented Linear Attention demonstrates strict $\mathcal{O}(N)$ computational scalability across all sequence lengths. The initial input projection stage spanning transformations $W_Q, W_K, W_V,$ and $W_O$ requires $8 B N D^2$ floating-point operations ($4 B N D^2$ multiply-accumulate operations). Subsequently, associative state construction proceeds by contracting positive feature mappings into the Key-Value memory tensor $S_{\text{KV}}$, which consumes $2 B H N d_k^2 = 2 B N D d_k$ FLOPs alongside $2 B N D$ FLOPs dedicated to computing the normalization denominator sum. 
+The arithmetic operational profile of Rank-Augmented Linear Attention demonstrates strict $\mathcal{O}(N)$ computational scalability across all sequence lengths. The initial input projection stage spanning transformations $W_Q, W_K, W_V,$ and $W_O$ requires $8 B N D^2$ floating-point operations ($4 B N D^2$ multiply-accumulate operations). Subsequently, associative state construction proceeds by contracting positive feature mappings into the Key-Value memory tensor $S_{\text{KV}}$, which consumes $2 B H N d_k^2 = 2 B N D d_k$ FLOPs alongside $2 B N D$ FLOPs dedicated to computing the normalization denominator sum.
 
 Evaluation of the dual-path context representation executes with minimal asymptotic overhead. The primary kernel linear attention path $O_{\text{lin}}$ requires $2 B H N d_k^2 = 2 B N D d_k$ FLOPs to query the aggregated associative memory. In parallel, the parametric low-rank interaction matrix $M_{\text{rank}} = U V^\top$ is pre-computed once per head requiring $2 H d_k^2 r$ FLOPs, after which the query projections compute $O_{\text{aug}}$ in $2 B H N d_k^2 = 2 B N D d_k$ FLOPs. Aggregating these operations yields a cumulative workload of $4 B N D^2 + 3 B N D d_k + H d_k^2 r$ MACs (or $8 B N D^2 + 6 B N D d_k + 2 H d_k^2 r + 2 B N D$ FLOPs). Crucially, because no intermediate $N \times N$ token affinity matrices are materialized in memory, memory consumption and arithmetic complexity remain strictly linear with respect to sequence length.
 
@@ -200,4 +200,3 @@ The empirical evaluation of `rala_attention` across standard sequence lengths an
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

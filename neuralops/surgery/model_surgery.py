@@ -267,9 +267,7 @@ class ModelSurgery:
                 is_causal=config.get("is_causal", True),
                 leaf_modules=config.get("leaf_modules", None),
             )
-            rewritten = rewriter.rewrite(
-                self.model, concrete_args=config.get("concrete_args", None)
-            )
+            rewritten = rewriter.rewrite(self.model, concrete_args=config.get("concrete_args", None))
             manifest = {
                 "operation": "attention.fx",
                 "method": method,
@@ -340,9 +338,7 @@ class ModelSurgery:
         """Compiles the surgical model with TorchDynamo and custom compiler backend hook."""
         from neuralops.surgery.fx_surgery import compile_linear_surgery
 
-        self.model = compile_linear_surgery(
-            self.model, backend=backend, options=options, **kwargs
-        )
+        self.model = compile_linear_surgery(self.model, backend=backend, options=options, **kwargs)
         return self.model
 
     def replace_attention(

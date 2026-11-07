@@ -14,6 +14,7 @@ Computes temperature-scaled Kullback-Leibler divergence between student and teac
 from __future__ import annotations
 
 import logging
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -78,16 +79,22 @@ def _fused_kd_fwd_kernel(
         col_offsets = col_start + tl.arange(0, BLOCK_SIZE)
         mask = col_offsets < V
 
-        s_val = tl.load(
-            student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
-        t_val = tl.load(
-            teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
+        s_val = (
+            tl.load(
+                student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
+        t_val = (
+            tl.load(
+                teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
 
         max_s = tl.maximum(max_s, tl.max(s_val, axis=0))
         max_t = tl.maximum(max_t, tl.max(t_val, axis=0))
@@ -99,16 +106,22 @@ def _fused_kd_fwd_kernel(
         col_offsets = col_start + tl.arange(0, BLOCK_SIZE)
         mask = col_offsets < V
 
-        s_val = tl.load(
-            student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
-        t_val = tl.load(
-            teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
+        s_val = (
+            tl.load(
+                student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
+        t_val = (
+            tl.load(
+                teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
 
         sum_exp_s += tl.sum(tl.where(mask, tl.math.exp2(1.44269504 * (s_val - max_s)), 0.0), axis=0)
         sum_exp_t += tl.sum(tl.where(mask, tl.math.exp2(1.44269504 * (t_val - max_t)), 0.0), axis=0)
@@ -121,16 +134,22 @@ def _fused_kd_fwd_kernel(
         col_offsets = col_start + tl.arange(0, BLOCK_SIZE)
         mask = col_offsets < V
 
-        s_val = tl.load(
-            student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
-        t_val = tl.load(
-            teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
+        s_val = (
+            tl.load(
+                student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
+        t_val = (
+            tl.load(
+                teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
 
         log_p_s = s_val - lse_s
         log_p_t = t_val - lse_t
@@ -171,16 +190,22 @@ def _fused_kd_bwd_kernel(
     for col_start in range(0, V, BLOCK_SIZE):
         col_offsets = col_start + tl.arange(0, BLOCK_SIZE)
         mask = col_offsets < V
-        s_val = tl.load(
-            student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
-        t_val = tl.load(
-            teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
+        s_val = (
+            tl.load(
+                student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
+        t_val = (
+            tl.load(
+                teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
         max_s = tl.maximum(max_s, tl.max(s_val, axis=0))
         max_t = tl.maximum(max_t, tl.max(t_val, axis=0))
 
@@ -189,16 +214,22 @@ def _fused_kd_bwd_kernel(
     for col_start in range(0, V, BLOCK_SIZE):
         col_offsets = col_start + tl.arange(0, BLOCK_SIZE)
         mask = col_offsets < V
-        s_val = tl.load(
-            student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
-        t_val = tl.load(
-            teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
+        s_val = (
+            tl.load(
+                student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
+        t_val = (
+            tl.load(
+                teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
         sum_exp_s += tl.sum(tl.where(mask, tl.math.exp2(1.44269504 * (s_val - max_s)), 0.0), axis=0)
         sum_exp_t += tl.sum(tl.where(mask, tl.math.exp2(1.44269504 * (t_val - max_t)), 0.0), axis=0)
 
@@ -209,16 +240,22 @@ def _fused_kd_bwd_kernel(
     for col_start in range(0, V, BLOCK_SIZE):
         col_offsets = col_start + tl.arange(0, BLOCK_SIZE)
         mask = col_offsets < V
-        s_val = tl.load(
-            student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
-        t_val = tl.load(
-            teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
-            mask=mask,
-            other=-float("inf"),
-        ) * INV_T
+        s_val = (
+            tl.load(
+                student_ptr + row_idx * stride_s_row + col_offsets * stride_s_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
+        t_val = (
+            tl.load(
+                teacher_ptr + row_idx * stride_t_row + col_offsets * stride_t_col,
+                mask=mask,
+                other=-float("inf"),
+            )
+            * INV_T
+        )
 
         p_s = tl.math.exp2(1.44269504 * (s_val - lse_s))
         p_t = tl.math.exp2(1.44269504 * (t_val - lse_t))
@@ -244,6 +281,7 @@ class _FusedKDFunction(torch.autograd.Function):
         use_triton = False
         if TRITON_AVAILABLE and student_logits.is_cuda:
             from neuralops.ops.triton._types import check_triton_suitability
+
             suitable, reason = check_triton_suitability(student_logits, "fused_kd", allow_fp32=True)
             if suitable:
                 try:
@@ -312,6 +350,7 @@ class _FusedKDFunction(torch.autograd.Function):
         use_triton_bwd = False
         if TRITON_AVAILABLE and s_flat.is_cuda:
             from neuralops.ops.triton._types import check_triton_suitability
+
             suitable, reason = check_triton_suitability(s_flat, "fused_kd", allow_fp32=True)
             if suitable:
                 try:
@@ -450,12 +489,16 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
             scale_norm = 1.0 / (orig_shape[0] if orig_shape[0] > 0 else 1)
 
         compute_grads = (
-            student_hidden.requires_grad or student_weight.requires_grad or (student_bias is not None and student_bias.requires_grad)
+            student_hidden.requires_grad
+            or student_weight.requires_grad
+            or (student_bias is not None and student_bias.requires_grad)
         )
 
         grad_s_hidden = torch.empty_like(s_h_flat) if compute_grads and student_hidden.requires_grad else None
         grad_s_weight = torch.zeros_like(student_weight) if compute_grads and student_weight.requires_grad else None
-        grad_s_bias = torch.zeros_like(student_bias) if compute_grads and ctx.has_s_bias and student_bias.requires_grad else None
+        grad_s_bias = (
+            torch.zeros_like(student_bias) if compute_grads and ctx.has_s_bias and student_bias.requires_grad else None
+        )
 
         total_loss = torch.zeros((), device=student_hidden.device, dtype=torch.float32)
         chunk_size = max(1, min(chunk_size, N_tokens))
@@ -509,7 +552,9 @@ class FusedLinearKLDivergenceFunction(torch.autograd.Function):
         grad_s_hidden, grad_s_weight, grad_s_bias = ctx.saved_tensors
         g_val = grad_output.to(torch.float32)
 
-        out_grad_h = (grad_s_hidden.view(ctx.orig_shape) * g_val).to(grad_s_hidden.dtype) if grad_s_hidden is not None else None
+        out_grad_h = (
+            (grad_s_hidden.view(ctx.orig_shape) * g_val).to(grad_s_hidden.dtype) if grad_s_hidden is not None else None
+        )
         out_grad_w = (grad_s_weight * g_val).to(grad_s_weight.dtype) if grad_s_weight is not None else None
         out_grad_b = (grad_s_bias * g_val).to(grad_s_bias.dtype) if grad_s_bias is not None else None
 

@@ -175,17 +175,11 @@ class AutoMaxGPUTrainer(BaseTrainer):
         raw_dev = device or (
             "cuda"
             if torch.cuda.is_available()
-            else (
-                "mps"
-                if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-                else "cpu"
-            )
+            else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu")
         )
         self.device = torch.device(raw_dev) if isinstance(raw_dev, str) else raw_dev
 
-        self.compute_metrics_fn = compute_metrics_fn or get_task_metrics(
-            self.config.get("task_name", "mrpc")
-        )
+        self.compute_metrics_fn = compute_metrics_fn or get_task_metrics(self.config.get("task_name", "mrpc"))
 
         self.target_vram_ratio = float(self.config.get("target_vram_ratio", 0.90))
         self.max_epochs = int(self.config.get("epochs", kwargs.get("epochs", 3)))
@@ -202,7 +196,9 @@ class AutoMaxGPUTrainer(BaseTrainer):
         # Target global batch size
         self.target_global_batch_size = int(self.config.get("global_batch_size", kwargs.get("global_batch_size", 128)))
         self.micro_batch_size = int(self.config.get("micro_batch_size", kwargs.get("initial_micro_batch_size", 0)))
-        self.max_micro_batch_size = int(self.config.get("max_micro_batch_size", kwargs.get("max_micro_batch_size", 512)))
+        self.max_micro_batch_size = int(
+            self.config.get("max_micro_batch_size", kwargs.get("max_micro_batch_size", 512))
+        )
         self.logging_steps = int(self.config.get("logging_steps", kwargs.get("logging_steps", 10)))
 
         if self.micro_batch_size <= 0:
@@ -301,10 +297,7 @@ class AutoMaxGPUTrainer(BaseTrainer):
                     collate_fn=getattr(self.train_dataset, "collate_fn", None),
                 )
                 batch = next(iter(test_loader))
-                batch_gpu = {
-                    k: v.to(self.device) if isinstance(v, torch.Tensor) else v
-                    for k, v in batch.items()
-                }
+                batch_gpu = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
 
                 self.model.eval()
                 with torch.autocast(device_type="cuda", dtype=self.amp_dtype, enabled=self.use_amp):
@@ -337,7 +330,9 @@ class AutoMaxGPUTrainer(BaseTrainer):
 
     def _make_loader(self, dataset: Any, batch_size: int, shuffle: bool = True) -> DataLoader:
         pin = self.device.type == "cuda"
-        default_workers = 0 if (hasattr(dataset, "__len__") and len(dataset) < 500) else (4 if self.device.type == "cuda" else 0)
+        default_workers = (
+            0 if (hasattr(dataset, "__len__") and len(dataset) < 500) else (4 if self.device.type == "cuda" else 0)
+        )
         num_workers = int(self.config.get("num_workers", default_workers))
         loader_kwargs = {
             "batch_size": batch_size,
@@ -364,7 +359,7 @@ class AutoMaxGPUTrainer(BaseTrainer):
         self.optimizer.zero_grad(set_to_none=True)
 
         for step, batch in enumerate(prefetcher):
-            is_sync_step = ((step + 1) % self.grad_accum_steps == 0)
+            is_sync_step = (step + 1) % self.grad_accum_steps == 0
 
             retry_count = 0
             while retry_count < 3:
@@ -375,8 +370,10 @@ class AutoMaxGPUTrainer(BaseTrainer):
                         enabled=(self.use_amp and self.device.type in ("cuda", "mps")),
                     ):
                         out = self.model(**batch) if isinstance(batch, dict) else self.model(batch)
-                        loss = out.loss if hasattr(out, "loss") and out.loss is not None else (
-                            out[0] if isinstance(out, tuple) else out
+                        loss = (
+                            out.loss
+                            if hasattr(out, "loss") and out.loss is not None
+                            else (out[0] if isinstance(out, tuple) else out)
                         )
                         if hasattr(loss, "mean"):
                             loss = loss.mean()
@@ -406,7 +403,10 @@ class AutoMaxGPUTrainer(BaseTrainer):
                         self.micro_batch_size = max(1, self.micro_batch_size // 2)
                         self.grad_accum_steps = max(1, self.grad_accum_steps * 2)
                         if isinstance(batch, dict):
-                            batch = {k: v[: max(1, len(v) // 2)] if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
+                            batch = {
+                                k: v[: max(1, len(v) // 2)] if isinstance(v, torch.Tensor) else v
+                                for k, v in batch.items()
+                            }
                     else:
                         raise e
 
@@ -448,11 +448,13 @@ class AutoMaxGPUTrainer(BaseTrainer):
                 eval_metrics = self.evaluate()
                 logger.info("Epoch %d/%d - Eval Metrics: %s", epoch, self.max_epochs, eval_metrics)
 
-            history.append({
-                "epoch": epoch,
-                "train_loss": epoch_loss,
-                **eval_metrics,
-            })
+            history.append(
+                {
+                    "epoch": epoch,
+                    "train_loss": epoch_loss,
+                    **eval_metrics,
+                }
+            )
 
         total_time = time.monotonic() - t0
         mem_info = GPUMemoryManager.get_device_info(self.device)
@@ -484,10 +486,11 @@ class AutoMaxGPUTrainer(BaseTrainer):
 
         with torch.no_grad():
             for batch in eval_loader:
-                batch_gpu = {
-                    k: v.to(self.device) if isinstance(v, torch.Tensor) else v
-                    for k, v in batch.items()
-                } if isinstance(batch, dict) else batch.to(self.device)
+                batch_gpu = (
+                    {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
+                    if isinstance(batch, dict)
+                    else batch.to(self.device)
+                )
 
                 with torch.autocast(
                     device_type=self.device.type,
@@ -495,8 +498,10 @@ class AutoMaxGPUTrainer(BaseTrainer):
                     enabled=(self.use_amp and self.device.type in ("cuda", "mps")),
                 ):
                     out = self.model(**batch_gpu) if isinstance(batch_gpu, dict) else self.model(batch_gpu)
-                    loss = out.loss if hasattr(out, "loss") and out.loss is not None else (
-                        out[0] if isinstance(out, tuple) else out
+                    loss = (
+                        out.loss
+                        if hasattr(out, "loss") and out.loss is not None
+                        else (out[0] if isinstance(out, tuple) else out)
                     )
                     if hasattr(loss, "mean"):
                         loss = loss.mean()

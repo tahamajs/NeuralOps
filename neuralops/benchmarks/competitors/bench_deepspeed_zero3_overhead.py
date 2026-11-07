@@ -21,6 +21,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.benchmarks.registry import register_benchmark
 
 logger = logging.getLogger(__name__)
@@ -41,9 +42,7 @@ def benchmark_pcie_offload_bandwidth(
     """
     dev = torch.device(device)
     if dev.type != "cuda" or not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device required for physical PCIe streaming bandwidth benchmark."
-        )
+        raise RuntimeError("CUDA device required for physical PCIe streaming bandwidth benchmark.")
 
     # Allocate page-locked (pinned) CPU memory for maximum DMA throughput
     numel = (tensor_size_mb * 1024 * 1024) // 4  # 4 bytes per float32
@@ -90,9 +89,7 @@ def benchmark_deepspeed_zero3_overhead(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for benchmark_deepspeed_zero3_overhead, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for benchmark_deepspeed_zero3_overhead, but CUDA is not available.")
 
     elements_per_shard = (shard_size_mb * 1024 * 1024) // 4
     total_elements = elements_per_shard * num_shards
@@ -100,8 +97,7 @@ def benchmark_deepspeed_zero3_overhead(
 
     # Simulate partitioned parameter shards
     shards: list[torch.Tensor] = [
-        torch.randn(elements_per_shard, dtype=torch.float32, device=dev)
-        for _ in range(num_shards)
+        torch.randn(elements_per_shard, dtype=torch.float32, device=dev) for _ in range(num_shards)
     ]
 
     # Warmup
@@ -139,9 +135,7 @@ def benchmark_deepspeed_zero3_overhead(
     pcie_stats: dict[str, float] = {}
     if dev.type == "cuda":
         try:
-            pcie_stats = benchmark_pcie_offload_bandwidth(
-                tensor_size_mb=min(shard_size_mb, 256), device=dev
-            )
+            pcie_stats = benchmark_pcie_offload_bandwidth(tensor_size_mb=min(shard_size_mb, 256), device=dev)
         except Exception as e:
             logger.warning("Could not run physical PCIe H2D benchmark: %s", e)
 
@@ -166,4 +160,3 @@ def run_benchmark(**kwargs: Any) -> dict[str, Any]:
 # Canonical Aliases for Multi-Agent Implementation Plan contract compliance
 run_deepspeed_zero3_benchmark = benchmark_deepspeed_zero3_overhead
 CoreModule = benchmark_deepspeed_zero3_overhead
-

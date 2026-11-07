@@ -22,6 +22,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
+
 from neuralops.benchmarks.registry import register_benchmark
 
 logger = logging.getLogger(__name__)
@@ -90,9 +91,7 @@ def benchmark_medusa_speculative_tree(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for benchmark_medusa_speculative_tree, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for benchmark_medusa_speculative_tree, but CUDA is not available.")
 
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
@@ -151,4 +150,3 @@ def run_benchmark(**kwargs: Any) -> dict[str, Any]:
 # Canonical Aliases for Multi-Agent Implementation Plan contract compliance
 run_medusa_speculative_benchmark = benchmark_medusa_speculative_tree
 CoreModule = benchmark_medusa_speculative_tree
-

@@ -148,21 +148,21 @@ def _nystrom_fused_landmark_kernel(
 ):
     pid_m = tl.program_id(0)
     pid_bh = tl.program_id(1)
-    
+
     offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
     offs_d = tl.arange(0, d_k)
     offs_n = tl.arange(0, BLOCK_N)
-    
+
     # Load Query tile [BLOCK_M, d_k]
     q = tl.load(Q_ptr + pid_bh * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :])
-    
+
     # Compute dot product against all m Landmark Keys
     f1_tile = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
     for n_idx in range(0, m, BLOCK_N):
         k_land = tl.load(K_landmarks_ptr + pid_bh * m * d_k + (n_idx + offs_n)[None, :] * d_k + offs_d[:, None])
         scores = tl.dot(q, k_land) / tl.sqrt(d_k.to(tl.float32))
         f1_tile += tl.exp(scores)
-        
+
     # Store normalized softmax F1 tile
     tl.store(F1_ptr + pid_bh * L * m + offs_m[:, None] * m + offs_n[None, :], f1_tile)
 ```
@@ -195,4 +195,3 @@ The empirical evaluation of `nystrom_attention` across standard sequence lengths
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

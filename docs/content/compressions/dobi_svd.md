@@ -248,4 +248,3 @@ The empirical evaluation of `dobi_svd` across standard sequence lengths and lang
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

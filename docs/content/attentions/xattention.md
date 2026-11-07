@@ -3,9 +3,9 @@
 ## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) requires computing dense token-to-token similarity matrices of size $L \times L$, scaling quadratically $\mathcal{O}(L^2 d)$ in compute and memory. Conventional block-sparse attention models often fail to maintain mathematical equivalence with full attention because they compute separate, un-unified local softmax normalizations per block before summing output vectors.
 
-**XAttention (`XAttention`)** overcomes this limitation via a two-stage hierarchical coarse-to-fine block routing mechanism paired with **Unified Probability Normalization**. The sequence is partitioned into $M = \lceil L / B_s \rceil$ contiguous blocks of size $B_s$. 
+**XAttention (`XAttention`)** overcomes this limitation via a two-stage hierarchical coarse-to-fine block routing mechanism paired with **Unified Probability Normalization**. The sequence is partitioned into $M = \lceil L / B_s \rceil$ contiguous blocks of size $B_s$.
 1. **Coarse-Grained Block Routing**: Abstract query and key representations are derived via masked centroid pooling. Inner products between block centroids generate a coarse inter-block affinity matrix of size $M \times M$.
-2. **Unified Candidate Block Attention**: For each query block, the top-$k$ key-value blocks with highest coarse affinity are selected ($k = \lfloor (1-s) M \rfloor$, where $s$ is the sparsity factor). The selected $k \cdot B_s$ key tokens are concatenated into a unified candidate pool. 
+2. **Unified Candidate Block Attention**: For each query block, the top-$k$ key-value blocks with highest coarse affinity are selected ($k = \lfloor (1-s) M \rfloor$, where $s$ is the sparsity factor). The selected $k \cdot B_s$ key tokens are concatenated into a unified candidate pool.
 
 Rather than normalizing attention weights per block, XAttention evaluates a single, unified Softmax normalization over the entire $(k \cdot B_s)$ candidate token dimension, preserving numerical fidelity while achieving sub-quadratic computational scaling.
 
@@ -143,7 +143,7 @@ Attention score matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B H L (k B_s) d_h 
 $$\text{Total FLOPs} = 8 B L D^2 + \frac{2 B D L^2}{B_s^2} + 4 B D L^2 (1-s) + 2 B L D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx 4 B L D^2 + \frac{B D L^2}{B_s^2} + 2 B D L^2 (1-s)$$
 Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Block Centroid Matrices: $2 \times B \cdot H \cdot M \cdot d_k \times 2 \text{ bytes}$ Concurrently, Coarse Block Affinity Matrix: $B \cdot H \cdot M \cdot M \times 2 \text{ bytes}$ In this setting, Candidate Keys/Values Buffer per query block: $2 \times B \cdot H \cdot (k B_s) \cdot d_k \times 2 \text{ bytes}$ Additionally, Per-Block Attention Matrix: $B \cdot H \cdot B_s \cdot (k B_s) \times 2 \text{ bytes}$.
@@ -322,4 +322,3 @@ The empirical evaluation of `xattention` across standard sequence lengths and la
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

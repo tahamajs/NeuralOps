@@ -16,6 +16,7 @@ from typing import Any
 
 import torch
 import torch.nn.functional as F
+
 from neuralops.ops.cuda.routing_attention.autograd import RoutingAttentionFunction
 from neuralops.ops.triton.routing_attention_triton import _kmeans_assign, _routing_attention_pytorch
 

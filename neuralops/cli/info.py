@@ -22,6 +22,7 @@ import sys
 from typing import Any, Dict, Optional
 
 import torch
+
 import neuralops
 
 try:
@@ -84,13 +85,15 @@ def cmd_info(args: Any = None) -> int:
     }
 
     if HAS_RICH and console is not None:
-        console.print(Panel(
-            f"[bold cyan]NeuralOps Deep Learning & High-Throughput Attention Suite[/bold cyan]\n"
-            f"[bold white]Framework Version:[/] [bold green]{ver}[/]\n"
-            f"[dim]Universal Sub-Quadratic Attention, Continuous Batching, and SVD Compression[/dim]",
-            title="[bold cyan]NeuralOps System Overview[/bold cyan]",
-            border_style="cyan",
-        ))
+        console.print(
+            Panel(
+                f"[bold cyan]NeuralOps Deep Learning & High-Throughput Attention Suite[/bold cyan]\n"
+                f"[bold white]Framework Version:[/] [bold green]{ver}[/]\n"
+                f"[dim]Universal Sub-Quadratic Attention, Continuous Batching, and SVD Compression[/dim]",
+                title="[bold cyan]NeuralOps System Overview[/bold cyan]",
+                border_style="cyan",
+            )
+        )
 
         # Hardware & Framework Table
         env_table = Table(title="Hardware & Runtime Environment", header_style="bold yellow")
@@ -99,7 +102,9 @@ def cmd_info(args: Any = None) -> int:
         env_table.add_row("Python Version", sys.version.split()[0])
         env_table.add_row("PyTorch Version", torch.__version__)
         env_table.add_row("Triton JIT Version", str(triton_ver))
-        env_table.add_row("CUDA Acceleration", "[bold green]Available[/]" if cuda_avail else "[dim]Disabled (CPU only)[/]")
+        env_table.add_row(
+            "CUDA Acceleration", "[bold green]Available[/]" if cuda_avail else "[dim]Disabled (CPU only)[/]"
+        )
         if cuda_avail:
             env_table.add_row("Active GPU", f"{device_name} (CC {capability[0]}.{capability[1]}, {device_count} GPUs)")
         env_table.add_row("Host OS / Platform", f"{platform.system()} {platform.release()} ({platform.machine()})")
@@ -111,10 +116,20 @@ def cmd_info(args: Any = None) -> int:
         cat_table.add_column("Canonical Count", style="bold yellow", justify="center", width=18)
         cat_table.add_column("Mathematical Architecture / Scope", style="dim white", min_width=35)
 
-        cat_table.add_row("Attention Mechanisms", "131 modules", "11 mathematical families (Dense, Linear, GQA, SSM, TTT, SVD)")
-        cat_table.add_row("Compression Engines", "72 engines", "7 algorithmic families (SVD, Quantization, Pruning, KV-Cache)")
-        cat_table.add_row("Triton Kernel Modules", "26 modules (62 unified operators)", "Specialized JIT fusions (128 JIT kernels across 4 tiers)")
-        cat_table.add_row("CUDA Kernel Implementations", "114 operators", "Accelerated C++/CUDA kernels for extreme throughput")
+        cat_table.add_row(
+            "Attention Mechanisms", "131 modules", "11 mathematical families (Dense, Linear, GQA, SSM, TTT, SVD)"
+        )
+        cat_table.add_row(
+            "Compression Engines", "72 engines", "7 algorithmic families (SVD, Quantization, Pruning, KV-Cache)"
+        )
+        cat_table.add_row(
+            "Triton Kernel Modules",
+            "26 modules (62 unified operators)",
+            "Specialized JIT fusions (128 JIT kernels across 4 tiers)",
+        )
+        cat_table.add_row(
+            "CUDA Kernel Implementations", "114 operators", "Accelerated C++/CUDA kernels for extreme throughput"
+        )
         console.print(cat_table)
 
         console.print(

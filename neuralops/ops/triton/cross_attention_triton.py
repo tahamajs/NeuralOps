@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 _INTERPRET_MODE = os.environ.get("TRITON_INTERPRET") == "1"
 
 if HAS_TRITON and triton is not None and tl is not None:
+
     @triton.jit
     def _cross_attn_kernel(
         Q_ptr,
@@ -194,7 +195,10 @@ def cross_attention_forward(
     if not _INTERPRET_MODE:
         is_suitable, reason = check_triton_suitability(q, "cross_attention", allow_fp32=True)
         if not is_suitable or mask is not None or is_causal:
-            logger.warning("cross_attention Triton fallback: %s. Using PyTorch reference.", reason if not is_suitable else "mask present")
+            logger.warning(
+                "cross_attention Triton fallback: %s. Using PyTorch reference.",
+                reason if not is_suitable else "mask present",
+            )
             return _cross_attention_pytorch(q, k, v, mask=mask, is_causal=is_causal, scale=scale, **kwargs)
 
     B, H, L_q, D = q.shape

@@ -12,7 +12,6 @@ Models layer-wise bit allocation as a cooperative game, maximizing overall model
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import recalibrate_layernorms
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -54,9 +54,7 @@ class CoopQSTEFakeQuantize(torch.autograd.Function):
         return dq
 
     @staticmethod
-    def backward(
-        ctx: Any, grad_output: torch.Tensor
-    ) -> tuple[torch.Tensor, None, None, None, None]:
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor, None, None, None, None]:
         grad_x = grad_output.clone()
         return grad_x, None, None, None, None
 
@@ -204,7 +202,7 @@ class CoopQLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if x.is_cuda and not self.training:
             try:
-                from neuralops.ops.triton.low_rank import fused_int4_lut_dequant_matmul_triton, dynamic_fp8_quant_triton
+                from neuralops.ops.triton.low_rank import dynamic_fp8_quant_triton, fused_int4_lut_dequant_matmul_triton
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
@@ -277,13 +275,9 @@ class CoopQQuantizer(BaseCompressor):
         c_min_bits = _cfg_get(cfg, "coopq_min_bits", _cfg_get(cfg, "min_bits", min_bits))
         c_max_bits = _cfg_get(cfg, "coopq_max_bits", _cfg_get(cfg, "max_bits", max_bits))
         c_symmetric = _cfg_get(cfg, "coopq_symmetric", _cfg_get(cfg, "symmetric", symmetric))
-        c_per_channel = _cfg_get(
-            cfg, "coopq_per_channel", _cfg_get(cfg, "per_channel", per_channel)
-        )
+        c_per_channel = _cfg_get(cfg, "coopq_per_channel", _cfg_get(cfg, "per_channel", per_channel))
         c_use_ste = _cfg_get(cfg, "coopq_use_ste", _cfg_get(cfg, "use_ste", use_ste))
-        c_recalibrate_ln = _cfg_get(
-            cfg, "coopq_recalibrate_ln", _cfg_get(cfg, "recalibrate_ln", recalibrate_ln)
-        )
+        c_recalibrate_ln = _cfg_get(cfg, "coopq_recalibrate_ln", _cfg_get(cfg, "recalibrate_ln", recalibrate_ln))
         c_target_attn = _cfg_get(
             cfg,
             "coopq_target_attention_only",
@@ -303,9 +297,7 @@ class CoopQQuantizer(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else (next(model.parameters(), torch.tensor(0.0)).device)
+            torch.device(device) if device is not None else (next(model.parameters(), torch.tensor(0.0)).device)
         )
         self.stats: dict[str, Any] = {}
 
@@ -318,17 +310,13 @@ class CoopQQuantizer(BaseCompressor):
         is_linear = isinstance(module, nn.Linear) or "linear" in cls_name
         is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
         is_lora = has_base and (
-            isinstance(module.base_layer, nn.Linear)
-            or "conv1d" in base_cls
-            or hasattr(module.base_layer, "nf")
+            isinstance(module.base_layer, nn.Linear) or "conv1d" in base_cls or hasattr(module.base_layer, "nf")
         )
 
         if not (is_linear or is_conv1d or is_lora):
             return False
 
-        if isinstance(module, CoopQLinear) or (
-            has_base and isinstance(module.base_layer, CoopQLinear)
-        ):
+        if isinstance(module, CoopQLinear) or (has_base and isinstance(module.base_layer, CoopQLinear)):
             return False
 
         name_lower = name.lower()
@@ -395,9 +383,7 @@ class CoopQQuantizer(BaseCompressor):
                 target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
                 raw_w = target_mod.weight.data
                 cls_name = module.__class__.__name__.lower()
-                is_conv1d = (
-                    "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
-                )
+                is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
                 W = raw_w.t().float() if is_conv1d else raw_w.float()
                 frob_norm = torch.norm(W, p="fro").item() / (W.numel() ** 0.5 + 1e-8)
                 std_val = torch.std(W).item() if W.numel() > 1 else 0.0
@@ -485,9 +471,7 @@ class CoopQQuantizer(BaseCompressor):
             target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
             cls_name = module.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
-                module, "base_layer"
-            )
+            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
             layer_bits = bit_allocations[name]
             num_params = target_mod.weight.numel()
@@ -555,13 +539,9 @@ class CoopQQuantizer(BaseCompressor):
                     use_ste=False,
                 )
                 if is_conv1d:
-                    target_mod.weight.data.copy_(
-                        W_quant.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device)
-                    )
+                    target_mod.weight.data.copy_(W_quant.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
                 else:
-                    target_mod.weight.data.copy_(
-                        W_quant.contiguous().to(dtype=raw_w.dtype, device=raw_w.device)
-                    )
+                    target_mod.weight.data.copy_(W_quant.contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
 
                 if target_mod.bias is not None:
                     b_quant = quantize_dequantize_coopq(
@@ -571,9 +551,7 @@ class CoopQQuantizer(BaseCompressor):
                         per_channel=False,
                         use_ste=False,
                     )
-                    target_mod.bias.data.copy_(
-                        b_quant.to(dtype=target_mod.bias.dtype, device=target_mod.bias.device)
-                    )
+                    target_mod.bias.data.copy_(b_quant.to(dtype=target_mod.bias.dtype, device=target_mod.bias.device))
 
             if has_lora:
                 for p_name, p in module.named_parameters():
@@ -591,11 +569,7 @@ class CoopQQuantizer(BaseCompressor):
                 device=self.target_device,
             )
 
-        avg_bits = (
-            total_bits_weighted / total_params_linear
-            if total_params_linear > 0
-            else float(self.bits)
-        )
+        avg_bits = total_bits_weighted / total_params_linear if total_params_linear > 0 else float(self.bits)
         effective_compression_rate = 16.0 / max(avg_bits, 1e-3)
         stats = self.get_compression_stats()
         stats.update(
@@ -647,9 +621,7 @@ def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         "use_ste",
         _cfg_get(comp_config, "coopq_use_ste", _cfg_get(comp_config, "use_ste", True)),
     )
-    recalibrate_ln = kwargs.pop(
-        "recalibrate_ln", _cfg_get(comp_config, "coopq_recalibrate_ln", True)
-    )
+    recalibrate_ln = kwargs.pop("recalibrate_ln", _cfg_get(comp_config, "coopq_recalibrate_ln", True))
     target_attention_only = kwargs.pop(
         "target_attention_only",
         _cfg_get(

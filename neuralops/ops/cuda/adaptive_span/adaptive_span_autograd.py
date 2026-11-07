@@ -12,13 +12,16 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
+
 import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -36,12 +39,16 @@ def _get_module():
         )
     return _MODULE
 
+
 from neuralops.ops.triton.elementwise import fused_adaptive_span_penalty_pytorch, fused_adaptive_span_penalty_triton
 
 adaptive_span_pytorch_ref = fused_adaptive_span_penalty_pytorch
 adaptive_span_ref = fused_adaptive_span_penalty_pytorch
 
-def adaptive_span(spans: torch.Tensor, q_pos: torch.Tensor, k_pos: torch.Tensor, ramp_size: float, is_causal: bool = True) -> torch.Tensor:
+
+def adaptive_span(
+    spans: torch.Tensor, q_pos: torch.Tensor, k_pos: torch.Tensor, ramp_size: float, is_causal: bool = True
+) -> torch.Tensor:
     def cuda_fn(spans, q_pos, k_pos, ramp_size, is_causal=True, **kwargs):
         mod = _get_module()
         return mod.adaptive_span_penalty_fwd(
@@ -51,10 +58,15 @@ def adaptive_span(spans: torch.Tensor, q_pos: torch.Tensor, k_pos: torch.Tensor,
             float(ramp_size),
             bool(is_causal),
         )
+
     return dispatch(
         cuda_fn,
         fused_adaptive_span_penalty_triton,
         fused_adaptive_span_penalty_pytorch,
-        spans, q_pos, k_pos, ramp_size, is_causal=is_causal,
+        spans,
+        q_pos,
+        k_pos,
+        ramp_size,
+        is_causal=is_causal,
         kernel_name="adaptive_span",
     )

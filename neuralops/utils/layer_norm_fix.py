@@ -14,6 +14,7 @@ Ensures numerical stability and parameter alignment in layer normalization modul
 from __future__ import annotations
 
 import logging
+
 import torch
 import torch.nn as nn
 
@@ -49,9 +50,7 @@ class RMSNorm(nn.Module):
         self.elementwise_affine: bool = elementwise_affine
 
         if elementwise_affine:
-            self.weight = nn.Parameter(
-                torch.ones(self.normalized_shape, device=device, dtype=dtype)
-            )
+            self.weight = nn.Parameter(torch.ones(self.normalized_shape, device=device, dtype=dtype))
         else:
             self.register_parameter("weight", None)
 
@@ -68,9 +67,15 @@ class RMSNorm(nn.Module):
         input_dtype = x.dtype
         reduction_dims = tuple(range(-len(self.normalized_shape), 0))
 
-        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16) and self.weight is not None and len(self.normalized_shape) == 1:
+        if (
+            x.is_cuda
+            and x.dtype in (torch.float16, torch.bfloat16)
+            and self.weight is not None
+            and len(self.normalized_shape) == 1
+        ):
             try:
                 from neuralops.core.triton_kernels.elementwise import rmsnorm_triton
+
                 return rmsnorm_triton(x, self.weight, self.eps)
             except (RuntimeError, ImportError) as e:
                 logger.debug("rmsnorm_triton failed: %s, falling back to PyTorch FP32 accumulator", e)
@@ -82,9 +87,7 @@ class RMSNorm(nn.Module):
         return x_normed.to(input_dtype)
 
     def extra_repr(self) -> str:
-        return (
-            f"{self.normalized_shape}, eps={self.eps}, elementwise_affine={self.elementwise_affine}"
-        )
+        return f"{self.normalized_shape}, eps={self.eps}, elementwise_affine={self.elementwise_affine}"
 
 
 class LayerNorm(nn.Module):
@@ -114,13 +117,9 @@ class LayerNorm(nn.Module):
         self.elementwise_affine: bool = elementwise_affine
 
         if elementwise_affine:
-            self.weight = nn.Parameter(
-                torch.ones(self.normalized_shape, device=device, dtype=dtype)
-            )
+            self.weight = nn.Parameter(torch.ones(self.normalized_shape, device=device, dtype=dtype))
             if bias:
-                self.bias = nn.Parameter(
-                    torch.zeros(self.normalized_shape, device=device, dtype=dtype)
-                )
+                self.bias = nn.Parameter(torch.zeros(self.normalized_shape, device=device, dtype=dtype))
             else:
                 self.register_parameter("bias", None)
         else:
@@ -152,9 +151,7 @@ class LayerNorm(nn.Module):
         return x_normed.to(input_dtype)
 
     def extra_repr(self) -> str:
-        return (
-            f"{self.normalized_shape}, eps={self.eps}, elementwise_affine={self.elementwise_affine}"
-        )
+        return f"{self.normalized_shape}, eps={self.eps}, elementwise_affine={self.elementwise_affine}"
 
 
 SafeRMSNorm = RMSNorm

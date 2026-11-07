@@ -9,10 +9,7 @@
 Lightning Attention Native CUDA Extension.
 """
 
-from neuralops.ops.cuda.lightning_attention.autograd import (
-    lightning_attention,
-    lightning_attention_pytorch_ref,
-)
+from neuralops.ops.cuda.lightning_attention.autograd import lightning_attention, lightning_attention_pytorch_ref
 
 __all__ = [
     "lightning_attention",

@@ -1,6 +1,6 @@
 # Swift‑SVD: Closed‑Form SVD Compression with Rank Ratio
 
-**Registered as `swift_svd`**  
+**Registered as `swift_svd`**
 *A lightweight, zero‑shot compressor that replaces each linear layer’s weight matrix with its optimal low‑rank approximation via truncated SVD, using a fixed fraction of the full rank.*
 
 ---
@@ -173,4 +173,3 @@ The empirical evaluation of `swift_svd` across standard sequence lengths and lan
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

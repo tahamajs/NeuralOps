@@ -12,7 +12,9 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from typing import Any
+
 """
 Recurrent Linear Step (State Update) Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -70,6 +72,7 @@ def recurrent_linear_step_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.state_update import fused_recurrent_linear_step
+
         return fused_recurrent_linear_step
     except (ImportError, AttributeError):
         return None
@@ -84,13 +87,12 @@ def _recurrent_linear_step_fwd_dispatch(
     eps: float = 1e-6,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """3-Level Dispatched Recurrent Linear Step Forward."""
+
     def cuda_fn(q, k, v, kv, z, **kwargs):
         mod = _get_module()
         kv_copy = kv.float().clone()
         z_copy = z.float().clone()
-        res = mod.recurrent_linear_step_fwd(
-            q.contiguous(), k.contiguous(), v.contiguous(), kv_copy, z_copy, eps
-        )
+        res = mod.recurrent_linear_step_fwd(q.contiguous(), k.contiguous(), v.contiguous(), kv_copy, z_copy, eps)
         return res[0], res[1].to(kv.dtype), res[2].to(z.dtype)
 
     triton_fn = _get_triton_impl()
@@ -153,7 +155,14 @@ class _RecurrentLinearStepFunction(torch.autograd.Function):
             allow_unused=True,
         )
         grad_map = dict(zip(diff_inputs, grads))
-        return grad_map.get(q_p, None), grad_map.get(k_p, None), grad_map.get(v_p, None), grad_map.get(kv_p, None), grad_map.get(z_p, None), None
+        return (
+            grad_map.get(q_p, None),
+            grad_map.get(k_p, None),
+            grad_map.get(v_p, None),
+            grad_map.get(kv_p, None),
+            grad_map.get(z_p, None),
+            None,
+        )
 
 
 def recurrent_linear_step(

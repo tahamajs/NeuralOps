@@ -97,9 +97,7 @@ class UniversalAttentionWrapper(nn.Module):
                 attention_mask = qwen_attention_mask(
                     attention_mask,
                     causal=True,
-                    expects_bidirectional=bool(
-                        getattr(self._wrapped_attention, "expects_bidirectional", False)
-                    ),
+                    expects_bidirectional=bool(getattr(self._wrapped_attention, "expects_bidirectional", False)),
                 )
 
         key_value_states = kwargs.pop("key_value_states", None)
@@ -164,7 +162,8 @@ class UniversalAttentionWrapper(nn.Module):
                     filtered = {
                         k: v
                         for k, v in kwargs.items()
-                        if k in (
+                        if k
+                        in (
                             "position_embeddings",
                             "past_key_value",
                             "past_key_values",
@@ -241,9 +240,7 @@ class UniversalAttentionWrapper(nn.Module):
         if out is None:
             if last_err is not None:
                 raise last_err
-            raise RuntimeError(
-                f"Failed to execute forward pass on {type(self._wrapped_attention).__name__}"
-            )
+            raise RuntimeError(f"Failed to execute forward pass on {type(self._wrapped_attention).__name__}")
 
         from neuralops.utils.compat import is_decoder_family
         from neuralops.utils.model_family import detect_family
@@ -277,11 +274,13 @@ class UniversalAttentionWrapper(nn.Module):
 
         if fam in ("llama", "mistral", "qwen", "qwen3_5", "qwen2", "qwen2_5", "gemma", "gemma2") or (
             hasattr(cfg, "model_type")
-            and getattr(cfg, "model_type", "").lower() in ("llama", "mistral", "qwen2", "qwen2_5", "qwen", "gemma", "gemma2")
+            and getattr(cfg, "model_type", "").lower()
+            in ("llama", "mistral", "qwen2", "qwen2_5", "qwen", "gemma", "gemma2")
         ):
             try:
                 import transformers
                 from packaging import version
+
                 is_legacy_hf_decoder = version.parse(transformers.__version__) < version.parse("4.49.0")
             except (ImportError, AttributeError, ValueError):
                 is_legacy_hf_decoder = False
@@ -290,6 +289,7 @@ class UniversalAttentionWrapper(nn.Module):
                 if present is None:
                     try:
                         from transformers.cache_utils import DynamicCache
+
                         present = DynamicCache()
                     except (ImportError, AttributeError, TypeError):
                         present = ()
@@ -301,6 +301,7 @@ class UniversalAttentionWrapper(nn.Module):
         if output_attentions:
             return (hidden, present, attn_weights)
         return (hidden, present)
+
     def _forward_t5(
         self,
         hidden_states: torch.Tensor,
@@ -310,9 +311,7 @@ class UniversalAttentionWrapper(nn.Module):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """T5 forward pass executing relative position bias and cross/self attention correctly."""
-        if hasattr(self._wrapped_attention, "forward_t5") and callable(
-            self._wrapped_attention.forward_t5
-        ):
+        if hasattr(self._wrapped_attention, "forward_t5") and callable(self._wrapped_attention.forward_t5):
             res = self._wrapped_attention.forward_t5(
                 hidden_states,
                 attention_mask=attention_mask,
@@ -531,9 +530,7 @@ def _try_instantiate(
         ),
         lambda: attn_fn(config, layer_idx=layer_idx, total_layers=total_layers),
         lambda: attn_fn(config, comp_config=None, old_attn=old_attn),
-        lambda: attn_fn(
-            config, pretrained_attn=old_attn, ranks=_default_ranks, layer_idx=layer_idx
-        ),
+        lambda: attn_fn(config, pretrained_attn=old_attn, ranks=_default_ranks, layer_idx=layer_idx),
         lambda: attn_fn(config, pretrained_attn=old_attn, ranks=_default_ranks),
         lambda: attn_fn(config, pretrained_attn=old_attn, layer_idx=layer_idx),
         lambda: attn_fn(config, pretrained_attn=old_attn),
@@ -569,7 +566,6 @@ def _try_instantiate(
     )
 
 
-
 def _unused_replace_attention(model, attention_key=None, layer_indices=None, new_attention_cls=None, **kwargs) -> Any:
     """
     Replace attention modules in a model with a registered attention block or class.
@@ -581,6 +577,7 @@ def _unused_replace_attention(model, attention_key=None, layer_indices=None, new
             attn_fn = attention_key
         else:
             from neuralops.core.registry import ATTENTION_REGISTRY
+
             attn_fn = ATTENTION_REGISTRY.get(attention_key)
             if attn_fn is None:
                 raise ValueError(
@@ -647,7 +644,12 @@ def _unused_replace_attention(model, attention_key=None, layer_indices=None, new
 
         if not copied_custom:
             try:
-                from neuralops.core._attention_surgery import PROJ_REGEX_PATTERNS, _find_submodule_by_regex, _copy_projection_weights
+                from neuralops.core._attention_surgery import (
+                    PROJ_REGEX_PATTERNS,
+                    _copy_projection_weights,
+                    _find_submodule_by_regex,
+                )
+
                 old_q = _find_submodule_by_regex(old_module, PROJ_REGEX_PATTERNS["q"])
                 old_k = _find_submodule_by_regex(old_module, PROJ_REGEX_PATTERNS["k"])
                 old_v = _find_submodule_by_regex(old_module, PROJ_REGEX_PATTERNS["v"])
@@ -711,13 +713,23 @@ def _unused_replace_attention(model, attention_key=None, layer_indices=None, new
                         else:
                             h_in = None
                         if h_in is not None:
-                            o_mod = getattr(new_attn, "o_proj", getattr(new_attn, "c_proj", getattr(new_attn, "out_proj", None)))
-                            if o_mod is not None and hasattr(o_mod, "weight") and isinstance(o_mod.weight, nn.Parameter):
+                            o_mod = getattr(
+                                new_attn, "o_proj", getattr(new_attn, "c_proj", getattr(new_attn, "out_proj", None))
+                            )
+                            if (
+                                o_mod is not None
+                                and hasattr(o_mod, "weight")
+                                and isinstance(o_mod.weight, nn.Parameter)
+                            ):
                                 old_out = old_module(h_in)
                                 old_y = old_out[0] if isinstance(old_out, tuple) else old_out
                                 new_out = new_attn(h_in)
                                 new_y = new_out[0] if isinstance(new_out, tuple) else new_out
-                                if isinstance(old_y, torch.Tensor) and isinstance(new_y, torch.Tensor) and old_y.shape == new_y.shape:
+                                if (
+                                    isinstance(old_y, torch.Tensor)
+                                    and isinstance(new_y, torch.Tensor)
+                                    and old_y.shape == new_y.shape
+                                ):
                                     Y_s = new_y.reshape(-1, new_y.shape[-1]).float()
                                     Y_t = old_y.reshape(-1, old_y.shape[-1]).float()
                                     M = torch.matmul(Y_s.t(), Y_t)
@@ -785,5 +797,6 @@ def _unused_replace_attention(model, attention_key=None, layer_indices=None, new
 def __getattr__(name: str) -> Any:
     if name in ("replace_attention", "replace_attention_in_model"):
         from neuralops.api import replace_attention
+
         return replace_attention
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

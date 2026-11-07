@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 03
 # Native CUDA C++ Kernel Architecture: 112 Packages & 114 Operators
 
-**Assigned Subagent**: `Agent 03: CUDA C++ HPC Kernel Engineer`  
+**Assigned Subagent**: `Agent 03: CUDA C++ HPC Kernel Engineer`
 **Target Codebase Paths**:
 - `neuralops/ops/cuda/` (Canonical implementation: 112 packages, 114 native implementations)
 - `neuralops/core/cuda_kernels/` (Backward-compatibility shim redirecting to `ops/cuda/`)

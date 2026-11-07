@@ -57,11 +57,11 @@ def measure_benchmark(
     if device.type == "cuda":
         torch.cuda.set_device(device.index if device.index is not None else 0)
 
-    from neuralops.core.triton_kernels.gla_scan import gla_scan
-    from neuralops.core.triton_kernels.differential_attention import triton_differential_attention
-    from neuralops.core.cuda_kernels.sparse_attention import block_sparse_attn
-    from neuralops.core.cuda_kernels.rotational_svd.rotational_svd_autograd import rotational_svd
     from neuralops.core.cuda_kernels.fp8_gemm.fp8_autograd import _get_module as get_fp8_gemm_module
+    from neuralops.core.cuda_kernels.rotational_svd.rotational_svd_autograd import rotational_svd
+    from neuralops.core.cuda_kernels.sparse_attention import block_sparse_attn
+    from neuralops.core.triton_kernels.differential_attention import triton_differential_attention
+    from neuralops.core.triton_kernels.gla_scan import gla_scan
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
     print(f"Executing Multi-Precision Cross-Validation Benchmark on {device} ({gpu_name})")
@@ -77,27 +77,27 @@ def measure_benchmark(
 
     results_table = []
 
-    gla_q_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
-    gla_k_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
+    gla_q_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D**0.5)
+    gla_k_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D**0.5)
     gla_v_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) * 0.1
     gla_l_ref = -torch.rand(B, H, N, device=device, dtype=torch.float32) * 0.5
 
-    diff_q1_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
-    diff_k1_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
-    diff_q2_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
-    diff_k2_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
+    diff_q1_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D**0.5)
+    diff_k1_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D**0.5)
+    diff_q2_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D**0.5)
+    diff_k2_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D**0.5)
     diff_v_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) * 0.1
 
-    sparse_q_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
-    sparse_k_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D ** 0.5)
+    sparse_q_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D**0.5)
+    sparse_k_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) / (D**0.5)
     sparse_v_ref = torch.randn(B, H, N, D, device=device, dtype=torch.float32) * 0.1
     num_blocks = N // 16
     sparse_mask = torch.eye(num_blocks, device=device, dtype=torch.int32)
 
     rot_x_ref = torch.randn(B, N, D, device=device, dtype=torch.float32) * 0.1
     rot_rin_ref = torch.eye(D, device=device, dtype=torch.float32)
-    rot_vr_ref = torch.randn(D, r_dim, device=device, dtype=torch.float32) / (r_dim ** 0.5)
-    rot_ur_ref = torch.randn(r_dim, D, device=device, dtype=torch.float32) / (r_dim ** 0.5)
+    rot_vr_ref = torch.randn(D, r_dim, device=device, dtype=torch.float32) / (r_dim**0.5)
+    rot_ur_ref = torch.randn(r_dim, D, device=device, dtype=torch.float32) / (r_dim**0.5)
 
     gemm_mod = get_fp8_gemm_module()
     gemm_a_ref = torch.randn(M_gemm, K_gemm, device=device, dtype=torch.float32)
@@ -242,24 +242,30 @@ def measure_benchmark(
                     "zero_nan": zero_nan,
                 }
                 results_table.append(row)
-                print(f"  {prec_name:<10} | Latency: {latency_ms:6.3f} ms | Throughput: {tflops:6.2f} TFLOPS | Rel Error: {rel_error:10.4e} | Zero-NaN: {zero_nan}")
+                print(
+                    f"  {prec_name:<10} | Latency: {latency_ms:6.3f} ms | Throughput: {tflops:6.2f} TFLOPS | Rel Error: {rel_error:10.4e} | Zero-NaN: {zero_nan}"
+                )
 
             except Exception as exc:
                 print(f"  {prec_name:<10} | EXCEPTION: {exc}")
-                results_table.append({
-                    "kernel": k_name,
-                    "precision": prec_name,
-                    "latency_ms": 0.0,
-                    "tflops": 0.0,
-                    "frob_rel_error": float("nan"),
-                    "zero_nan": False,
-                })
+                results_table.append(
+                    {
+                        "kernel": k_name,
+                        "precision": prec_name,
+                        "latency_ms": 0.0,
+                        "tflops": 0.0,
+                        "frob_rel_error": float("nan"),
+                        "zero_nan": False,
+                    }
+                )
 
     if output_csv:
         csv_path = Path(output_csv)
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["kernel", "precision", "latency_ms", "tflops", "frob_rel_error", "zero_nan"])
+            writer = csv.DictWriter(
+                f, fieldnames=["kernel", "precision", "latency_ms", "tflops", "frob_rel_error", "zero_nan"]
+            )
             writer.writeheader()
             for r in results_table:
                 writer.writerow(r)
@@ -281,7 +287,9 @@ def measure_benchmark(
             r"\begin{table*}[t]",
             r"\centering",
             r"\small",
-            r"\caption{Multi-Precision Numerical Cross-Validation and Throughput Comparison on " + gpu_name + r". Relative error is Frobenius norm relative to FP32 baseline.}",
+            r"\caption{Multi-Precision Numerical Cross-Validation and Throughput Comparison on "
+            + gpu_name
+            + r". Relative error is Frobenius norm relative to FP32 baseline.}",
             r"\label{tab:multiprecision_crossval}",
             r"\begin{tabular}{llcccc}",
             r"\toprule",
@@ -291,7 +299,7 @@ def measure_benchmark(
 
         curr_kernel = None
         for r in results_table:
-            k_disp = r['kernel'].replace('_', r'\_')
+            k_disp = r["kernel"].replace("_", r"\_")
             if k_disp != curr_kernel:
                 if curr_kernel is not None:
                     tex_content.append(r"\midrule")
@@ -300,19 +308,21 @@ def measure_benchmark(
             else:
                 k_col = ""
 
-            prec_disp = r['precision'].replace('_', r'\_')
+            prec_disp = r["precision"].replace("_", r"\_")
             lat = f"{r['latency_ms']:.3f}"
             tflops = f"{r['tflops']:.2f}"
-            err_str = "Baseline ($0.0$)" if r['precision'] == "FP32" else f"{r['frob_rel_error']:.2e}"
-            status_str = r"\checkmark" if r['zero_nan'] else r"\times"
+            err_str = "Baseline ($0.0$)" if r["precision"] == "FP32" else f"{r['frob_rel_error']:.2e}"
+            status_str = r"\checkmark" if r["zero_nan"] else r"\times"
 
             tex_content.append(f"{k_col} & {prec_disp} & {lat} & {tflops} & {err_str} & {status_str} \\\\")
 
-        tex_content.extend([
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table*}",
-        ])
+        tex_content.extend(
+            [
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table*}",
+            ]
+        )
         with open(tex_path, mode="w", encoding="utf-8") as f:
             f.write("\n".join(tex_content) + "\n")
         print(f"Saved LaTeX Table to: {tex_path}")
@@ -322,14 +332,36 @@ def measure_benchmark(
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-Precision Cross-Validation Benchmark")
-    parser.add_argument("--output", type=str, default="docs/benchmarks/paper_benchmarks_multiprecision_crossval.csv", help="Path to save CSV output")
-    parser.add_argument("--output-json", type=str, default="results/paper_benchmarks_multiprecision_crossval.json", help="Path to save JSON output")
-    parser.add_argument("--tex-output", type=str, default="docs/reports/PAPER_TABLES_MULTIPRECISION.tex", help="Path to save LaTeX table")
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="docs/benchmarks/paper_benchmarks_multiprecision_crossval.csv",
+        help="Path to save CSV output",
+    )
+    parser.add_argument(
+        "--output-json",
+        type=str,
+        default="results/paper_benchmarks_multiprecision_crossval.json",
+        help="Path to save JSON output",
+    )
+    parser.add_argument(
+        "--tex-output",
+        type=str,
+        default="docs/reports/PAPER_TABLES_MULTIPRECISION.tex",
+        help="Path to save LaTeX table",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        help="Device to execute benchmark",
+    )
     parser.add_argument("--warmup", type=int, default=5, help="Warmup iterations")
     parser.add_argument("--repeat", type=int, default=20, help="Repeat iterations")
     parser.add_argument("--quick", action="store_true", help="Quick mode (FP32 & FP16 only, warmup=1, repeat=3)")
-    parser.add_argument("--precisions", type=str, default=None, help="Comma-separated precisions: FP32,FP16,BF16,FP8_E4M3,FP8_E5M2")
+    parser.add_argument(
+        "--precisions", type=str, default=None, help="Comma-separated precisions: FP32,FP16,BF16,FP8_E4M3,FP8_E5M2"
+    )
     parser.add_argument("--kernels", type=str, default=None, help="Comma-separated kernel names to test")
     args = parser.parse_args()
 

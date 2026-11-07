@@ -73,4 +73,3 @@ torch::Tensor spectral_entropy_svd_gate_fwd(
     final_shape.push_back(N);
     return y.view(final_shape);
 }
-

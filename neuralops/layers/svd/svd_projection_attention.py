@@ -11,12 +11,6 @@ SVD Projection Attention
 Factorizes query, key, value, and output projections into low-rank matrices for compact memory footprints.
 """
 
-from neuralops.core.common import _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -27,10 +21,11 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.ops.triton import triton_dispatch
 
 logger = logging.getLogger(__name__)
@@ -218,8 +213,18 @@ class SVDProjectionAttention(BaseAttention):
         else:
             _mt = str(_cfg_get(config, "model_type", "") or "").lower()
             _dec_pfx = (
-                "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
             )
             self.is_decoder = (
                 bool(_cfg_get(config, "is_decoder", False))
@@ -245,28 +250,42 @@ class SVDProjectionAttention(BaseAttention):
             "lora_rank",
             _cfg_get(comp_config, "lora_rank", lora_rank if lora_rank is not None else 16),
         )
-        self.lora_alpha = _cfg_get(
-            config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha)
-        )
+        self.lora_alpha = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha))
 
         self.q_proj = SVDProjectionLinear(
-            self.hidden_size, self.q_head_size, self.rank,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.hidden_size,
+            self.q_head_size,
+            self.rank,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
         self.k_proj = SVDProjectionLinear(
-            self.hidden_size, self.kv_head_size, self.rank,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.hidden_size,
+            self.kv_head_size,
+            self.rank,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
         self.v_proj = SVDProjectionLinear(
-            self.hidden_size, self.kv_head_size, self.rank,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.hidden_size,
+            self.kv_head_size,
+            self.rank,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
         self.out_proj = SVDProjectionLinear(
-            self.q_head_size, self.hidden_size, self.rank,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.q_head_size,
+            self.hidden_size,
+            self.rank,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
 
@@ -292,30 +311,39 @@ class SVDProjectionAttention(BaseAttention):
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
@@ -338,16 +366,10 @@ class SVDProjectionAttention(BaseAttention):
             sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             target.U.data.zero_()
             target.V.data.zero_()
-            target.U.data[:, :r] = (U[:, :r] * sqrt_s.unsqueeze(0)).to(
-                device=target.U.device, dtype=target.U.dtype
-            )
-            target.V.data[:r, :] = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(
-                device=target.V.device, dtype=target.V.dtype
-            )
+            target.U.data[:, :r] = (U[:, :r] * sqrt_s.unsqueeze(0)).to(device=target.U.device, dtype=target.U.dtype)
+            target.V.data[:r, :] = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(device=target.V.device, dtype=target.V.dtype)
             if target.bias is not None and bias is not None:
-                target.bias.data.copy_(
-                    bias.to(device=target.bias.device, dtype=target.bias.dtype)
-                )
+                target.bias.data.copy_(bias.to(device=target.bias.device, dtype=target.bias.dtype))
 
     def copy_weights(self, old_attn: nn.Module) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -359,9 +381,7 @@ class SVDProjectionAttention(BaseAttention):
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                hasattr(old_attn, "query") and not hasattr(old_attn, "dense") and not hasattr(old_attn, "out_proj")
             ):
                 self.is_nested_encoder = True
 
@@ -455,23 +475,16 @@ class SVDProjectionAttention(BaseAttention):
                     return w, b
                 elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
                     rep = w.shape[0] // self.kv_head_size
-                    w_pooled = (
-                        w.view(self.num_kv_heads, rep, self.head_dim, -1)
-                        .mean(dim=1)
-                        .view(self.kv_head_size, -1)
-                    )
+                    w_pooled = w.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
                     b_pooled = (
-                        b.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
-                        if b is not None else None
+                        b.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1) if b is not None else None
                     )
                     return w_pooled, b_pooled
                 elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
                     rep = self.kv_head_size // w.shape[0]
                     return w.repeat(rep, 1), (b.repeat(rep) if b is not None else None)
                 else:
-                    new_w = torch.zeros(
-                        self.kv_head_size, w.shape[1], device=w.device, dtype=w.dtype
-                    )
+                    new_w = torch.zeros(self.kv_head_size, w.shape[1], device=w.device, dtype=w.dtype)
                     new_w[
                         : min(self.kv_head_size, w.shape[0]),
                         : min(self.hidden_size, w.shape[1]),
@@ -484,9 +497,7 @@ class SVDProjectionAttention(BaseAttention):
                     new_b = None
                     if b is not None:
                         new_b = torch.zeros(self.kv_head_size, device=b.device, dtype=b.dtype)
-                        new_b[: min(self.kv_head_size, b.shape[0])].copy_(
-                            b[: min(self.kv_head_size, b.shape[0])]
-                        )
+                        new_b[: min(self.kv_head_size, b.shape[0])].copy_(b[: min(self.kv_head_size, b.shape[0])])
                     return new_w, new_b
 
             w_k_aligned, b_k_aligned = _align_kv(w_k, b_k)
@@ -521,24 +532,9 @@ class SVDProjectionAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
-        Q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        K = (
-            self.k_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.v_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -559,27 +555,19 @@ class SVDProjectionAttention(BaseAttention):
                         sdpa_attn_mask = eff_mask.bool()
 
                 _sdpa_out = F.scaled_dot_product_attention(
-                    Q, K, V,
+                    Q,
+                    K,
+                    V,
                     attn_mask=sdpa_attn_mask,
                     is_causal=is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
 
-                _sdpa_out = (
-                    _sdpa_out.transpose(1, 2)
-                    .contiguous()
-                    .view(B, N, self.all_head_size)
-                )
+                _sdpa_out = _sdpa_out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
-                _sdpa_out = torch.nan_to_num(
-                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
-                )
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-                output = (
-                    self.out_proj(_sdpa_out)
-                    if not self.is_nested_encoder
-                    else _sdpa_out
-                )
+                output = self.out_proj(_sdpa_out) if not self.is_nested_encoder else _sdpa_out
                 return output, None
             except Exception as e:
                 logger.debug("SDPA fast path failed (%s); falling back to manual.", e)
@@ -592,13 +580,19 @@ class SVDProjectionAttention(BaseAttention):
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
-            causal_mask = torch.triu(
-                torch.full(
-                    (N, kv_len), float("-inf"),
-                    device=scores.device, dtype=torch.float32,
-                ),
-                diagonal=1,
-            ).unsqueeze(0).unsqueeze(0)
+            causal_mask = (
+                torch.triu(
+                    torch.full(
+                        (N, kv_len),
+                        float("-inf"),
+                        device=scores.device,
+                        dtype=torch.float32,
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal_mask
 
         if eff_mask is not None:

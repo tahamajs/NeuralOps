@@ -5,30 +5,29 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Eval reasoning long context module.
-"""
+"""Eval reasoning long context module."""
 
 
 def main() -> None:
     """Run this standalone evaluation experiment."""
 
     import gc
+    import json
+    import math
     import os
     import time
-    import math
-    import json
+
     import torch
     from transformers import AutoTokenizer, GPT2LMHeadModel
+
     from neuralops.utils.replace_attention import replace_attention
 
     if not torch.cuda.is_available():
         raise RuntimeError("This long-context experiment requires a CUDA-capable device.")
 
-
     def print_log(msg):
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
-
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Running on device: {torch.cuda.get_device_name(0)}")
@@ -36,7 +35,6 @@ def main() -> None:
     model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     tokenizer.pad_token = tokenizer.eos_token
-
 
     def get_adapted_model(attention_type=None):
         """Execute get adapted model routine."""
@@ -73,7 +71,6 @@ def main() -> None:
         model = model.to(device).eval()
         return model
 
-
     eval_text = (
         "Artificial intelligence and deep learning models have achieved remarkable success in natural language processing. "
         "The multi-head attention mechanism enables pairwise token interactions across the entire sequence context. "
@@ -96,7 +93,6 @@ def main() -> None:
     )
     reasoning_tokens = tokenizer(reasoning_prompt, return_tensors="pt").input_ids.to(device)
 
-
     def eval_perplexity(model):
         """Execute eval perplexity routine."""
         with torch.no_grad():
@@ -104,7 +100,6 @@ def main() -> None:
             loss = out.loss.item()
             ppl = math.exp(loss) if loss < 20 else float("inf")
         return float(round(loss, 4)), float(round(ppl, 2))
-
 
     def eval_long_context_scaling(attention_key=None, seq_lens=None):
         """Execute eval long context scaling routine."""
@@ -149,7 +144,6 @@ def main() -> None:
 
         return scaling_stats
 
-
     def eval_generation_memory_growth(attention_key=None, steps=32):
         """Measure allocated memory while recomputing the full prefix per step."""
         torch.cuda.empty_cache()
@@ -181,7 +175,6 @@ def main() -> None:
             "generated_cot": gen_text.strip(),
         }
 
-
     models_to_test = [
         ("GPT-2 Baseline (MHA)", None),
         ("GPT-2 + SVD Linear Attention", "svd_linear_attention"),
@@ -212,14 +205,13 @@ def main() -> None:
         generation["decode_mode"] = "full_prefix_no_kv_cache"
         final_report_data[name] = {"loss": loss, "perplexity": ppl, "scaling": scaling, "generation": generation}
 
-    result_path = os.path.join(os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "reasoning_long_context_benchmark_results.json")
+    result_path = os.path.join(
+        os.environ.get("NEURALOPS_OUTPUT_DIR", "."), "reasoning_long_context_benchmark_results.json"
+    )
     with open(result_path, "w") as f:
         json.dump(final_report_data, f, indent=2)
 
-    print_log(
-        f"All benchmarks successfully completed! Output saved to {result_path}"
-    )
-
+    print_log(f"All benchmarks successfully completed! Output saved to {result_path}")
 
 
 if __name__ == "__main__":

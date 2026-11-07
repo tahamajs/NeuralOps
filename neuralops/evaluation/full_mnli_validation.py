@@ -31,13 +31,9 @@ from pathlib import Path
 
 import torch
 from datasets import load_dataset, load_from_disk
-from neuralops.trainer.metrics import (
-    f1_score,
-    precision_recall_fscore_support,
-    precision_score,
-    recall_score,
-)
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+from neuralops.trainer.metrics import f1_score, precision_recall_fscore_support, precision_score, recall_score
 
 
 def wilson_ci(n_correct: int, n_total: int, z: float = 1.96):
@@ -179,9 +175,7 @@ def main():
     se = math.sqrt(majority * (1 - majority) / N)
     threshold_full = round((majority + 3 * se) * 100, 4)
     majority_pct = round(majority * 100, 4)
-    print(
-        f"Full MNLI: majority={majority_pct:.2f}%, SE={se * 100:.3f}%, 3σ threshold={threshold_full:.2f}%"
-    )
+    print(f"Full MNLI: majority={majority_pct:.2f}%, SE={se * 100:.3f}%, 3σ threshold={threshold_full:.2f}%")
     print(f"Label distribution: {dict(label_counts)}")
 
     sweep_rows = []
@@ -192,9 +186,7 @@ def main():
             if acc >= args.min_acc_filter and "PASS" in status:
                 sweep_rows.append(r)
     sweep_rows.sort(key=lambda r: -float(r.get("accuracy_pct", 0)))
-    print(
-        f"Modules to re-evaluate: {len(sweep_rows)} (acc >= {args.min_acc_filter}% and PASS status)"
-    )
+    print(f"Modules to re-evaluate: {len(sweep_rows)} (acc >= {args.min_acc_filter}% and PASS status)")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token_id is None:
@@ -232,9 +224,7 @@ def main():
             )
             continue
 
-        checkpoint_path = (
-            Path(args.sweep_csv).parent / f"distilbert_mnli_full_{mod}_full_metrics.json"
-        )
+        checkpoint_path = Path(args.sweep_csv).parent / f"distilbert_mnli_full_{mod}_full_metrics.json"
         if checkpoint_path.exists():
             try:
                 with open(checkpoint_path) as jf:
@@ -248,9 +238,7 @@ def main():
             model = model.half()
 
         try:
-            metrics = eval_on_dataset(
-                model, tokenizer, val_full, args.seq_len, args.batch_size, device
-            )
+            metrics = eval_on_dataset(model, tokenizer, val_full, args.seq_len, args.batch_size, device)
         except Exception as e:
             print(f"  ERROR during eval: {e}")
             results.append(

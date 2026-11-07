@@ -12,7 +12,6 @@ Provides unified weight-based singular value decomposition with modular layer re
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -25,6 +24,7 @@ import torch.nn.functional as F
 
 from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -77,14 +77,8 @@ class SVDSingleHead(nn.Module):
         self.svd_rank = int(svd_rank)
         self._pos_encoding: torch.Tensor | None = None
 
-    def _get_pos_encoding(
-        self, seq_len: int, device: torch.device, dtype: torch.dtype
-    ) -> torch.Tensor:
-        if (
-            self._pos_encoding is None
-            or self._pos_encoding.shape[1] != seq_len
-            or self._pos_encoding.device != device
-        ):
+    def _get_pos_encoding(self, seq_len: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
+        if self._pos_encoding is None or self._pos_encoding.shape[1] != seq_len or self._pos_encoding.device != device:
             pe = torch.zeros(seq_len, self.hidden_size, device=device)
             position = torch.arange(0, seq_len, dtype=torch.float, device=device).unsqueeze(1)
             div_term = torch.exp(
@@ -131,13 +125,9 @@ class DirectSVDEncoderLayer(nn.Module):
         self.config = config
         self.hidden_size = int(hidden_size or getattr(config, "hidden_size", 768))
         self.intermediate_size = int(
-            intermediate_size
-            or getattr(config, "intermediate_size", None)
-            or (4 * self.hidden_size)
+            intermediate_size or getattr(config, "intermediate_size", None) or (4 * self.hidden_size)
         )
-        self.num_attention_heads = int(
-            num_attention_heads or getattr(config, "num_attention_heads", 12)
-        )
+        self.num_attention_heads = int(num_attention_heads or getattr(config, "num_attention_heads", 12))
         self.svd_rank = int(getattr(config, "svd_rank", None) or svd_rank)
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
@@ -206,14 +196,10 @@ class HybridSVDCompressor(BaseCompressor):
                 _cfg_get(cfg, "svd_rank", _cfg_get(cfg, "rank", svd_rank)),
             )
         )
-        self.use_full_layer_replacement = bool(
-            _cfg_get(cfg, "use_full_layer_replacement", use_full_layer_replacement)
-        )
+        self.use_full_layer_replacement = bool(_cfg_get(cfg, "use_full_layer_replacement", use_full_layer_replacement))
         self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
         self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
-        self.max_error = float(
-            _cfg_get(cfg, "hybrid_svd_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        self.max_error = float(_cfg_get(cfg, "hybrid_svd_max_error", _cfg_get(cfg, "max_error", max_error)))
         self.target_attention_only = bool(
             _cfg_get(
                 cfg,
@@ -332,17 +318,11 @@ class HybridSVDCompressor(BaseCompressor):
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                 for escalation_step in range(4):
                     sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
-                        dtype=raw_w.dtype, device=raw_w.device
-                    )
-                    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
-                        dtype=raw_w.dtype, device=raw_w.device
-                    )
+                    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=raw_w.dtype, device=raw_w.device)
+                    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=raw_w.dtype, device=raw_w.device)
 
                     W_recon = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
-                    err = (
-                        torch.norm(W - W_recon, p="fro") / torch.norm(W, p="fro").clamp_min(1e-8)
-                    ).item()
+                    err = (torch.norm(W - W_recon, p="fro") / torch.norm(W, p="fro").clamp_min(1e-8)).item()
                     self.layer_errors[name] = float(err)
 
                     if err > self.max_error and r < min(bound_r, max_rank):
@@ -477,11 +457,7 @@ class HybridSVDCompressor(BaseCompressor):
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         stats = self.get_compression_stats()
-        avg_err = (
-            (sum(self.layer_errors.values()) / max(1, len(self.layer_errors)))
-            if self.layer_errors
-            else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / max(1, len(self.layer_errors))) if self.layer_errors else 0.0
         stats.update(
             {
                 "replaced_layers_count": replaced_count,

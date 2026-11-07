@@ -56,7 +56,7 @@ def speculative_verify_pytorch_ref(
     target_tokens: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Pure PyTorch reference implementation."""
-    match = (draft_tokens == target_tokens)
+    match = draft_tokens == target_tokens
     accept_mask = match.cumprod(dim=-1).bool()
     accept_count = accept_mask.sum(dim=-1).to(torch.int32)
     return accept_mask, accept_count
@@ -65,6 +65,7 @@ def speculative_verify_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.elementwise import speculative_verify_triton
+
         return speculative_verify_triton
     except (ImportError, AttributeError):
         return None
@@ -82,6 +83,7 @@ def speculative_verify(
             "speculative_verify is 1.9x slower (0.53x speedup) than PyTorch reference at the tested shape. "
             "Setting backend='auto' will use PyTorch. To force the custom kernel, use backend='cuda'."
         )
+
     def cuda_fn(draft, target, **kwargs):
         mod = _get_module()
         res = mod.speculative_verify_fwd(draft.contiguous(), target.contiguous())

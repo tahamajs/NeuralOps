@@ -1,6 +1,6 @@
 # GFWSVD: Fisher‑Weighted SVD Compression
 
-**Registered as `gfws`**  
+**Registered as `gfws`**
 *Uses gradient information to construct a Fisher‑weighted low‑rank approximation, prioritizing parameter directions that matter most for the loss.*
 
 ---
@@ -135,7 +135,7 @@ GFWSVD requires that gradients are available in the model before compression. Th
 
 ```python
 # 1. Set up model and calibration data
-model = ... 
+model = ...
 tokenizer = ...
 inputs = tokenizer(["some calibration text"], return_tensors="pt")
 # 2. Forward and backward to compute gradients
@@ -209,4 +209,3 @@ The empirical evaluation of `gfws_d_compressor` across standard sequence lengths
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

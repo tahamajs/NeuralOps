@@ -76,6 +76,3 @@ void moe_gather_bwd_cuda(
     int top_k,
     int total_assignments
 );
-
-
-

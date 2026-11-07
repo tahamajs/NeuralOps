@@ -12,11 +12,6 @@ Combines local sliding-window self-attention with state space duality linear rec
 """
 
 from __future__ import annotations
-from neuralops.core.common import _env_flag, _env_float, _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -26,11 +21,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.layers.gated.gated_delta_net import LoRALinear
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _env_flag, _env_float, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
+from neuralops.layers.gated.gated_delta_net import LoRALinear
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +83,10 @@ class GriffinSSDBlock(BaseAttention):
 
         if num_heads is None:
             num_heads = (
-                _get("num_attention_heads", None) or _get("num_heads", None)
-                or _get("n_heads", None) or _get("n_head", None)
+                _get("num_attention_heads", None)
+                or _get("num_heads", None)
+                or _get("n_heads", None)
+                or _get("n_head", None)
             )
         if num_heads is None and old_attn is not None:
             num_heads = getattr(old_attn, "num_heads", getattr(old_attn, "num_attention_heads", None))
@@ -113,11 +112,16 @@ class GriffinSSDBlock(BaseAttention):
         kv_heads = _get("num_key_value_heads", None)
         if kv_heads is None and old_attn is not None:
             kv_heads = getattr(
-                old_attn, "num_key_value_heads",
+                old_attn,
+                "num_key_value_heads",
                 getattr(old_attn, "num_kv_heads", getattr(old_attn, "n_kv_heads", None)),
             )
-            if (kv_heads is None and hasattr(old_attn, "k_proj")
-                    and hasattr(old_attn.k_proj, "out_features") and self.head_dim > 0):
+            if (
+                kv_heads is None
+                and hasattr(old_attn, "k_proj")
+                and hasattr(old_attn.k_proj, "out_features")
+                and self.head_dim > 0
+            ):
                 kv_heads = old_attn.k_proj.out_features // self.head_dim
         self.num_kv_heads = int(kv_heads if kv_heads is not None else self.num_heads)
 
@@ -127,13 +131,13 @@ class GriffinSSDBlock(BaseAttention):
 
         model_type = str(_get("model_type", "")).lower()
         is_dec = _get("is_decoder", _get("is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
-        if (any(model_type.startswith(pfx) for pfx in (
-                "gpt", "qwen", "llama", "mistral", "bloom", "opt", "falcon", "codegen"
-            ))
-            or (hasattr(config, "architectures") and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            ))):
+        if any(
+            model_type.startswith(pfx)
+            for pfx in ("gpt", "qwen", "llama", "mistral", "bloom", "opt", "falcon", "codegen")
+        ) or (
+            hasattr(config, "architectures")
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
+        ):
             is_dec = True
         if old_attn is not None and hasattr(old_attn, "c_attn"):
             is_dec = True
@@ -143,12 +147,18 @@ class GriffinSSDBlock(BaseAttention):
         is_nested = False
         if old_attn is not None:
             src_cls = old_attn.__class__.__name__
-            if (src_cls in (
-                    "BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention",
-                    "ElectraSelfAttention", "DebertaSelfAttention",
+            if (
+                src_cls
+                in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
                 )
                 or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
-                or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))):
+                or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))
+            ):
                 is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -156,21 +166,46 @@ class GriffinSSDBlock(BaseAttention):
         self.lora_alpha = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base = self.lora_rank > 0
 
-        self.W_q = LoRALinear(self.dim, self.all_head_size, bias=False,
-                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                              freeze_base=self.freeze_base)
-        self.W_k = LoRALinear(self.dim, self.all_kv_head_size, bias=False,
-                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                              freeze_base=self.freeze_base)
-        self.W_v = LoRALinear(self.dim, self.all_kv_head_size, bias=False,
-                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                              freeze_base=self.freeze_base)
-        self.ssd_proj = LoRALinear(self.dim, self.all_head_size, bias=False,
-                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                   freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
-                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                   freeze_base=self.freeze_base)
+        self.W_q = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.W_k = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.W_v = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.ssd_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         _decay_init = _env_float("GRIFFIN_DECAY_INIT", 2.0)
         self.decay_param = nn.Parameter(torch.full((self.num_heads, 1, 1), _decay_init))
@@ -207,8 +242,11 @@ class GriffinSSDBlock(BaseAttention):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size:2*split_size, :], c_b[split_size:2*split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2*split_size:, :], c_b[2*split_size:] if c_b is not None else None)
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
             if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
                 o_w, o_b = _unpack_weight_bias(old_attn.c_proj)
                 if o_w is not None:
@@ -248,8 +286,7 @@ class GriffinSSDBlock(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif (w.shape[0] < target_mod.weight.shape[0]
-                      and target_mod.weight.shape[0] % w.shape[0] == 0):
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -261,8 +298,7 @@ class GriffinSSDBlock(BaseAttention):
                 if b is not None and getattr(target_mod, "bias", None) is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (b.shape[0] < target_mod.bias.shape[0]
-                          and target_mod.bias.shape[0] % b.shape[0] == 0):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
 
@@ -371,6 +407,7 @@ class GriffinSSDBlock(BaseAttention):
             y = y * m
 
         return torch.nan_to_num(y, nan=0.0, posinf=0.0, neginf=0.0).to(target_dtype)
+
     def _ssd_symmetric(self, q, k, v, decay, mask=None):
         """Bidirectional symmetric SSD for encoders."""
         B, H, L, d = q.shape
@@ -432,12 +469,9 @@ class GriffinSSDBlock(BaseAttention):
         H, d = self.num_heads, self.head_dim
 
         q = self.W_q(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous().to(target_dtype)
-        k = (self.W_k(hidden_states).view(B, L, self.num_kv_heads, d)
-             .transpose(1, 2).contiguous().to(target_dtype))
-        v = (self.W_v(hidden_states).view(B, L, self.num_kv_heads, d)
-             .transpose(1, 2).contiguous().to(target_dtype))
-        q_ssd = (self.ssd_proj(hidden_states).view(B, L, H, d)
-                 .transpose(1, 2).contiguous().to(target_dtype))
+        k = self.W_k(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous().to(target_dtype)
+        v = self.W_v(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous().to(target_dtype)
+        q_ssd = self.ssd_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous().to(target_dtype)
 
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         pos_ids = kwargs.get("position_ids")
@@ -522,6 +556,7 @@ class GriffinSSDBlock(BaseAttention):
                 v_ssd = repeat_kv(v_ssd, repeats)
             if self.is_decoder:
                 from neuralops.ops.triton.selective_scan import fused_rglru_ssd_scan_triton
+
                 global_out = fused_rglru_ssd_scan_triton(q_ssd, k_ssd, v_ssd, decay, chunk_size=32)
             else:
                 global_out = self._ssd_symmetric(q_ssd, k_ssd, v_ssd, decay, mask_bool)
@@ -565,8 +600,10 @@ def inject_griffin_ssd(
     cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
     if target is not None and (
-        hasattr(target, "transformer") or hasattr(target, "distilbert")
-        or hasattr(target, "roberta") or hasattr(target, "bert")
+        hasattr(target, "transformer")
+        or hasattr(target, "distilbert")
+        or hasattr(target, "roberta")
+        or hasattr(target, "bert")
         or (hasattr(target, "model") and not hasattr(target, "forward"))
     ):
         layer_list = None
@@ -588,8 +625,13 @@ def inject_griffin_ssd(
             tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
                 res = inject_griffin_ssd(
-                    layer=lyr, model_config=cfg, comp_config=comp_config,
-                    layer_idx=idx, total_layers=tot, lora_rank=lora_rank, **kwargs,
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    lora_rank=lora_rank,
+                    **kwargs,
                 )
                 if res is not None:
                     num_injected += 1

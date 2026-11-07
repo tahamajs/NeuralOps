@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any
+
 import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
@@ -109,13 +110,12 @@ def hla_attention(
     eps: float = 1e-5,
 ) -> torch.Tensor:
     """Dispatches HLA attention across CUDA C++, Triton JIT, and PyTorch fallback."""
+
     def cuda_fn(q, k, v, decay, eps=1e-5):
         if q.shape[-1] > 64:
             raise NotImplementedError("CUDA HLA currently supports head_dim <= 64")
         mod = _get_module()
-        return mod.hla_attention_fwd(
-            q.contiguous(), k.contiguous(), v.contiguous(), decay.contiguous(), float(eps)
-        )
+        return mod.hla_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous(), decay.contiguous(), float(eps))
 
     triton_fn = _get_triton_impl()
 

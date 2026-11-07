@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 from neuralops.core.peft.lora import LoRALinear
 
-
 DEFAULT_TARGET_MODULES = (
     "q_proj",
     "k_proj",
@@ -70,9 +69,11 @@ def find_all_linear_submodule_names(model: nn.Module) -> set[str]:
     """Dynamically extract all Linear/Conv1D layer leaf names from model, excluding task heads."""
     names = set()
     for name, module in model.named_modules():
-        is_linear_like = isinstance(
-            module, (nn.Linear, nn.Conv1d)
-        ) or module.__class__.__name__ in ("Conv1D", "Linear", "LoRALinear")
+        is_linear_like = isinstance(module, (nn.Linear, nn.Conv1d)) or module.__class__.__name__ in (
+            "Conv1D",
+            "Linear",
+            "LoRALinear",
+        )
         if is_linear_like:
             if not any(head in name.lower() for head in ("score", "classifier", "lm_head")):
                 leaf_name = name.split(".")[-1]
@@ -115,9 +116,7 @@ def apply_lora(
         nonlocal adapted_count
         for name, child in list(module.named_children()):
             full_name = f"{prefix}.{name}" if prefix else name
-            is_target = any(target in name for target in targets) or any(
-                target == name for target in targets
-            )
+            is_target = any(target in name for target in targets) or any(target == name for target in targets)
             is_linear_like = isinstance(child, nn.Linear) or child.__class__.__name__ == "Conv1D"
 
             if is_linear_like and is_target:
@@ -140,11 +139,7 @@ def get_lora_trainable_parameters(model: nn.Module) -> list[nn.Parameter]:
 
 def save_lora_weights(model: nn.Module, save_path: str, metadata: dict | None = None) -> None:
     """Save only trainable parameters (LoRA weights + task head) to disk."""
-    trainable_state = {
-        name: param.detach().cpu()
-        for name, param in model.named_parameters()
-        if param.requires_grad
-    }
+    trainable_state = {name: param.detach().cpu() for name, param in model.named_parameters() if param.requires_grad}
     payload = {
         "state_dict": trainable_state,
         "metadata": metadata or {},
@@ -164,6 +159,7 @@ def load_lora_weights(model: nn.Module, load_path: str, strict: bool = False) ->
         "unexpected_keys": unexpected,
         "metadata": payload.get("metadata", {}) if isinstance(payload, dict) else {},
     }
+
 
 def make_lora_linear(
     in_features: int,

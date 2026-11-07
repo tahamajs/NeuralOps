@@ -1,9 +1,9 @@
 # AGT-04 Verification & Implementation Report: Serving Security Defaults & HF Token Secret Protection
 
-**Task ID:** AGT-04 (P0, Findings F-88 and F-89)  
-**Package:** `neuralops` (`v2.0.6`)  
-**Environment:** Existing project venv `/Users/tahamajs/dev/Project/.venv/bin/python` (Python 3.14.3)  
-**Date:** 2026-11-07  
+**Task ID:** AGT-04 (P0, Findings F-88 and F-89)
+**Package:** `neuralops` (`v2.0.6`)
+**Environment:** Existing project venv `/Users/tahamajs/dev/Project/.venv/bin/python` (Python 3.14.3)
+**Date:** 2026-11-07
 
 ---
 

@@ -156,9 +156,7 @@ def fused_svd_projection_triton(
             fused_svd_projection_pytorch_ref,
         )
 
-        return fused_svd_projection_pytorch_ref(
-            x, U, S=S, V_T=V_T, X_res=X_res, bias=bias, alpha=alpha, beta=beta
-        )
+        return fused_svd_projection_pytorch_ref(x, U, S=S, V_T=V_T, X_res=X_res, bias=bias, alpha=alpha, beta=beta)
 
     orig_shape = x.shape
     x_2d = x.reshape(-1, x.shape[-1]).contiguous()

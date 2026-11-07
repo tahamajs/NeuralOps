@@ -133,7 +133,7 @@ Specifically, regarding \textbf{Intra-Block Causal Attention}, across $M$ blocks
 $$\text{Average Per-Layer FLOPs} = 8 B L D^2 + 4 B D L B_{\text{size}} + 2 B D L k_{\text{inter}} + \left(2 + \frac{2}{T_{\text{rect}}}\right) B D L^2$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Average MACs} \approx 4 B L D^2 + 2 B D L B_{\text{size}} + B D L k_{\text{inter}} + \left(1 + \frac{1}{T_{\text{rect}}}\right) B D L^2$$
 Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Sparse Layer Attention Score Tensors: $M \times B \cdot H \cdot B_{\text{size}} \cdot (L - B_{\text{size}}) \times 2 \text{ bytes}$ Concurrently, Dense Rectification Layer Score Tensor: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$ In this setting, Peak Memory: Bounded by global dense rectification layer $\mathcal{O}(B H L^2)$.
@@ -314,4 +314,3 @@ The empirical evaluation of `block_transformer_hiba` across standard sequence le
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

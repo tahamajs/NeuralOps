@@ -9,10 +9,7 @@
 Gated DeltaNet Native CUDA Extension.
 """
 
-from neuralops.ops.cuda.gated_deltanet.autograd import (
-    gated_deltanet,
-    gated_deltanet_pytorch_ref,
-)
+from neuralops.ops.cuda.gated_deltanet.autograd import gated_deltanet, gated_deltanet_pytorch_ref
 
 __all__ = [
     "gated_deltanet",

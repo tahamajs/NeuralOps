@@ -178,7 +178,12 @@ def shrink_mlp(
                 _shrink_swiglu_mlp(module, ratio)
                 shrunk_count += 1
             # Check for GELU / 2-layer
-            elif hasattr(module, "c_fc") or hasattr(module, "fc1") or hasattr(module, "linear1") or hasattr(module, "lin1"):
+            elif (
+                hasattr(module, "c_fc")
+                or hasattr(module, "fc1")
+                or hasattr(module, "linear1")
+                or hasattr(module, "lin1")
+            ):
                 _shrink_gelu_mlp(module, ratio)
                 shrunk_count += 1
 

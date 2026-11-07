@@ -29,9 +29,7 @@ def parse_args() -> BenchmarkConfig:
     BenchmarkConfig
         Resolved benchmark configuration dataclass.
     """
-    parser = argparse.ArgumentParser(
-        description="Run Knowledge Distillation (KD) benchmark across attention modules."
-    )
+    parser = argparse.ArgumentParser(description="Run Knowledge Distillation (KD) benchmark across attention modules.")
     parser.add_argument(
         "--task",
         type=str,
@@ -147,6 +145,7 @@ def parse_args() -> BenchmarkConfig:
 def main() -> None:
     """CLI execution entrypoint."""
     from neuralops.utils.logging_config import configure_logging
+
     configure_logging(level="INFO", dedup=True)
     config = parse_args()
     runner = KDRunner(config)

@@ -152,12 +152,12 @@ def _goldfinch_fused_window_kernel(
 ):
     # Load Query block [BLOCK_N, D]
     q = tl.load(Q_ptr + offsets_q)
-    
+
     # Loop over key blocks within window range: max(0, i - W_SIZE) to i
     for j in range(start_j, end_j, BLOCK_N):
         k = tl.load(K_ptr + offsets_k)
         scores = tl.dot(q, tl.trans(k)) * scale
-        
+
         # Apply causal & window bounds in SRAM registers
         scores = tl.where(causal_window_mask, scores, -1e9)
         p = tl.softmax(scores)
@@ -186,4 +186,3 @@ The empirical evaluation of `goldfinch_ahn` across standard sequence lengths and
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

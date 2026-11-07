@@ -18,7 +18,8 @@ from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
-from neuralops.ops.triton._base import triton, tl, HAS_TRITON
+
+from neuralops.ops.triton._base import HAS_TRITON, tl, triton
 
 
 @triton.autotune(
@@ -70,11 +71,7 @@ def _latent_kv_cache_attn_kernel(
     mask_m = offs_m < L_Q
 
     q_ptrs = (
-        q_latent_ptr
-        + pid_b * stride_qb
-        + pid_h * stride_qh
-        + offs_m[:, None] * stride_ql
-        + offs_r[None, :] * stride_qr
+        q_latent_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_m[:, None] * stride_ql + offs_r[None, :] * stride_qr
     )
     q_latent_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0).to(tl.float32)
 
@@ -108,15 +105,11 @@ def _latent_kv_cache_attn_kernel(
     u_ptrs = u_v_ptr + offs_r[:, None] * stride_ur + offs_dv[None, :] * stride_ud
     u_v_tile = tl.load(u_ptrs).to(tl.float32)
 
-    o_tile = tl.dot(acc_latent_norm.to(q_latent_ptr.dtype.element_ty), u_v_tile.to(q_latent_ptr.dtype.element_ty), allow_tf32=True)
-
-    o_ptrs = (
-        o_ptr
-        + pid_b * stride_ob
-        + pid_h * stride_oh
-        + offs_m[:, None] * stride_ol
-        + offs_dv[None, :] * stride_od
+    o_tile = tl.dot(
+        acc_latent_norm.to(q_latent_ptr.dtype.element_ty), u_v_tile.to(q_latent_ptr.dtype.element_ty), allow_tf32=True
     )
+
+    o_ptrs = o_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_m[:, None] * stride_ol + offs_dv[None, :] * stride_od
     tl.store(o_ptrs, o_tile.to(q_latent_ptr.dtype.element_ty), mask=mask_m[:, None])
 
 

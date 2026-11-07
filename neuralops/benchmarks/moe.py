@@ -43,4 +43,14 @@ def run_benchmark(device: str = "cuda", tokens: int = 256, experts: int = 8, top
     started = time.perf_counter()
     output = grouped()
     elapsed = (time.perf_counter() - started) * 1000.0
-    return {"module": "moe_routing", "category": "moe", "device": str(target), "latency_ms": elapsed, "tokens_per_second": tokens / (elapsed / 1000.0) if elapsed else 0.0, "load_variance": float(counts.var(unbiased=False)), "experts": experts, "top_k": top_k, "status": "PASS" if torch.isfinite(output).all() else "FAIL"}
+    return {
+        "module": "moe_routing",
+        "category": "moe",
+        "device": str(target),
+        "latency_ms": elapsed,
+        "tokens_per_second": tokens / (elapsed / 1000.0) if elapsed else 0.0,
+        "load_variance": float(counts.var(unbiased=False)),
+        "experts": experts,
+        "top_k": top_k,
+        "status": "PASS" if torch.isfinite(output).all() else "FAIL",
+    }

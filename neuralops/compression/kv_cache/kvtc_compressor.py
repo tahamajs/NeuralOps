@@ -12,7 +12,6 @@ Applies principal component analysis (PCA) decorrelation and uniform integer qua
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -94,20 +94,14 @@ class KVTCStore:
         k_flat = k.detach().float().reshape(-1, k.shape[-1])
         v_flat = v.detach().float().reshape(-1, v.shape[-1])
 
-        _, _, Vt_k = torch.linalg.svd(
-            k_flat - k_flat.mean(dim=0, keepdim=True), full_matrices=False
-        )
-        _, _, Vt_v = torch.linalg.svd(
-            v_flat - v_flat.mean(dim=0, keepdim=True), full_matrices=False
-        )
+        _, _, Vt_k = torch.linalg.svd(k_flat - k_flat.mean(dim=0, keepdim=True), full_matrices=False)
+        _, _, Vt_v = torch.linalg.svd(v_flat - v_flat.mean(dim=0, keepdim=True), full_matrices=False)
 
         self.pca_basis_k = Vt_k.t().contiguous().to(device=k.device, dtype=k.dtype)
         self.pca_basis_v = Vt_v.t().contiguous().to(device=v.device, dtype=v.dtype)
 
     @torch.no_grad()
-    def compress_kv_cache(
-        self, k: torch.Tensor, v: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, dict[str, Any]]:
+    def compress_kv_cache(self, k: torch.Tensor, v: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, dict[str, Any]]:
         """
         Transform and quantize dynamic KV cache tensors.
         Returns reconstructed (k_hat, v_hat) and coding statistics.
@@ -229,11 +223,7 @@ class KVTCQuantizedLoRALinear(nn.Module):
         compute_dtype: torch.dtype | None = None,
     ) -> KVTCQuantizedLoRALinear:
         target_mod = getattr(linear, "base_layer", linear)
-        bias = (
-            target_mod.bias.detach()
-            if hasattr(target_mod, "bias") and target_mod.bias is not None
-            else None
-        )
+        bias = target_mod.bias.detach() if hasattr(target_mod, "bias") and target_mod.bias is not None else None
         in_features = getattr(target_mod, "in_features", int_weight.shape[1])
         out_features = getattr(target_mod, "out_features", int_weight.shape[0])
 
@@ -277,12 +267,8 @@ class KVTCQuantizedLoRALinear(nn.Module):
                 and new_layer.lora_A is not None
                 and new_layer.lora_B is not None
             ):
-                new_layer.lora_A.data.copy_(
-                    w_A.data.to(dtype=new_layer.lora_A.dtype, device=new_layer.lora_A.device)
-                )
-                new_layer.lora_B.data.copy_(
-                    w_B.data.to(dtype=new_layer.lora_B.dtype, device=new_layer.lora_B.device)
-                )
+                new_layer.lora_A.data.copy_(w_A.data.to(dtype=new_layer.lora_A.dtype, device=new_layer.lora_A.device))
+                new_layer.lora_B.data.copy_(w_B.data.to(dtype=new_layer.lora_B.dtype, device=new_layer.lora_B.device))
                 new_layer.lora_A.requires_grad = True
                 new_layer.lora_B.requires_grad = True
 
@@ -295,15 +281,11 @@ class KVTCQuantizedLoRALinear(nn.Module):
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
-        w_eff = self.int_weight.to(dtype=x.dtype) * self.scale.to(
-            dtype=x.dtype
-        ) + self.zero_point.to(dtype=x.dtype)
+        w_eff = self.int_weight.to(dtype=x.dtype) * self.scale.to(dtype=x.dtype) + self.zero_point.to(dtype=x.dtype)
         bias = self.bias.to(dtype=x.dtype) if self.bias is not None else None
         out = F.linear(x, w_eff, bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(
-                F.linear(x.to(dtype=self.lora_A.dtype), self.lora_A), self.lora_B
-            ).to(dtype=out.dtype)
+            lora_out = F.linear(F.linear(x.to(dtype=self.lora_A.dtype), self.lora_A), self.lora_B).to(dtype=out.dtype)
             out = out + self.scaling * lora_out
         return out
 
@@ -336,12 +318,8 @@ class KVTCCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
         self.cfg = cfg
         self.bits = int(_cfg_get(cfg, "kvtc_bits", _cfg_get(cfg, "bits", bits)))
-        self.pca_energy = float(
-            _cfg_get(cfg, "kvtc_pca_energy", _cfg_get(cfg, "pca_energy", pca_energy))
-        )
-        self.max_error = float(
-            _cfg_get(cfg, "kvtc_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        self.pca_energy = float(_cfg_get(cfg, "kvtc_pca_energy", _cfg_get(cfg, "pca_energy", pca_energy)))
+        self.max_error = float(_cfg_get(cfg, "kvtc_max_error", _cfg_get(cfg, "max_error", max_error)))
         self.fallback_to_original = bool(
             _cfg_get(
                 cfg,
@@ -377,9 +355,7 @@ class KVTCCompressor(BaseCompressor):
         q_high = torch.quantile(W.float(), high)
         return torch.clamp(W, min=q_low, max=q_high)
 
-    def _quantize_to_int(
-        self, W: torch.Tensor, bits: int
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def _quantize_to_int(self, W: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Quantize continuous tensor to true integer format (torch.int8 or torch.int16).
         Uses signed symmetric quantization around 0:
@@ -407,9 +383,7 @@ class KVTCCompressor(BaseCompressor):
 
         return int_w, scale_t, zp_t
 
-    def _dequantize_from_int(
-        self, int_w: torch.Tensor, scale: torch.Tensor, zero_point: torch.Tensor
-    ) -> torch.Tensor:
+    def _dequantize_from_int(self, int_w: torch.Tensor, scale: torch.Tensor, zero_point: torch.Tensor) -> torch.Tensor:
         """Dequantize integer weight back to floating point."""
         return int_w.to(dtype=scale.dtype) * scale + zero_point
 
@@ -486,9 +460,7 @@ class KVTCCompressor(BaseCompressor):
 
         target_mod = getattr(module, "base_layer", module)
         cls_name = target_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
-        )
+        is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
         if not is_linear_like:
             return False
         if isinstance(target_mod, KVTCQuantizedLoRALinear):
@@ -678,24 +650,17 @@ class KVTCCompressor(BaseCompressor):
             forward_check_error = str(e)
             logger.error("KVTC post-compression forward pass failed: %s", e)
             if not kwargs.get("ignore_forward_check", False):
-                raise RuntimeError(
-                    f"KVTC produced a model that fails the forward pass sanity check: {e}"
-                ) from e
+                raise RuntimeError(f"KVTC produced a model that fails the forward pass sanity check: {e}") from e
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_entropy = total_entropy / max(len(self.compressed_layers), 1)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
-        param_ratio = (
-            round(total_comp_params / max(total_orig_params, 1), 4)
-            if total_orig_params > 0
-            else 1.0
-        )
+        param_ratio = round(total_comp_params / max(total_orig_params, 1), 4) if total_orig_params > 0 else 1.0
 
         bytes_reduction_pct = (
             (initial_actual_bytes - final_actual_bytes) / float(initial_actual_bytes) * 100.0
@@ -748,9 +713,7 @@ def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> An
         "pca_energy",
         _cfg_get(cfg, "kvtc_pca_energy", _cfg_get(cfg, "pca_energy", 0.95)),
     )
-    max_error = kwargs.pop(
-        "max_error", _cfg_get(cfg, "kvtc_max_error", _cfg_get(cfg, "max_error", 0.50))
-    )
+    max_error = kwargs.pop("max_error", _cfg_get(cfg, "kvtc_max_error", _cfg_get(cfg, "max_error", 0.50)))
     fallback_to_original = kwargs.pop(
         "fallback_to_original",
         _cfg_get(

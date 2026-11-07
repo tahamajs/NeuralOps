@@ -56,4 +56,3 @@ export function smoothZoomBy(camera, controls, factor = 0.8) {
     const newDist = Math.max(3.5, Math.min(65.0, currentDist * factor));
     smoothFlyCamera(camera, controls, controls.target.y, newDist, controls.target.x);
 }
-

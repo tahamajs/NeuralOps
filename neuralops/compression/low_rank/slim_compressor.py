@@ -12,7 +12,6 @@ Fuses uniform integer quantization, 2:4 structured sparsity, and SVD residual er
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import apply_24_structured_mask
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -39,6 +39,7 @@ class SLiMCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     SLiM Compressor: One-shot joint b-bit quantization, 2:4 structured sparsity, and low-rank residual recovery.
@@ -67,9 +68,7 @@ class SLiMCompressor(BaseCompressor):
             bits = _cfg_get(cfg, "slim_bits", _cfg_get(cfg, "bits", bits))
             sparsity = _cfg_get(cfg, "slim_sparsity", _cfg_get(cfg, "sparsity", sparsity))
             rank = _cfg_get(cfg, "slim_rank", _cfg_get(cfg, "rank", rank))
-            structured_24 = _cfg_get(
-                cfg, "slim_structured_24", _cfg_get(cfg, "structured_24", structured_24)
-            )
+            structured_24 = _cfg_get(cfg, "slim_structured_24", _cfg_get(cfg, "structured_24", structured_24))
             max_error = _cfg_get(cfg, "max_error", max_error)
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
@@ -113,9 +112,7 @@ class SLiMCompressor(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
@@ -215,16 +212,10 @@ class SLiMCompressor(BaseCompressor):
                     src_lA = getattr(module.lora_A, "weight", module.lora_A)
                     src_lB = getattr(module.lora_B, "weight", module.lora_B)
                     if hasattr(compressed_layer, "lora_A") and compressed_layer.lora_A is not None:
-                        if (
-                            hasattr(src_lA, "data")
-                            and src_lA.shape == compressed_layer.lora_A.shape
-                        ):
+                        if hasattr(src_lA, "data") and src_lA.shape == compressed_layer.lora_A.shape:
                             compressed_layer.lora_A.data.copy_(src_lA.data)
                     if hasattr(compressed_layer, "lora_B") and compressed_layer.lora_B is not None:
-                        if (
-                            hasattr(src_lB, "data")
-                            and src_lB.shape == compressed_layer.lora_B.shape
-                        ):
+                        if hasattr(src_lB, "data") and src_lB.shape == compressed_layer.lora_B.shape:
                             compressed_layer.lora_B.data.copy_(src_lB.data)
 
                 is_wrapped = hasattr(module, "base_layer")
@@ -280,12 +271,8 @@ def slim_factory(
         ),
     )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    )
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
 
     compressor = SLiMCompressor(
         model,

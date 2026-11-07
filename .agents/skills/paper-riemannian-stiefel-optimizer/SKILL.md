@@ -570,7 +570,7 @@ from torch.optim.optimizer import Optimizer
 
 def project_stiefel_gradient(W: torch.Tensor, G: torch.Tensor) -> torch.Tensor:
     """Project Euclidean gradient G onto the tangent space T_W St(p, n).
-    
+
     Handles both column-stiefel (n >= p) and row-stiefel (n < p) matrices,
     as well as batched tensors (dim > 2).
     """
@@ -609,7 +609,7 @@ def project_stiefel_gradient(W: torch.Tensor, G: torch.Tensor) -> torch.Tensor:
 def stiefel_qr_retraction(W: torch.Tensor, grad_R: torch.Tensor, lr: float) -> torch.Tensor:
     """Apply thin QR retraction: R_W(xi) = qf(W - lr * grad_R)."""
     w_step = W - lr * grad_R
-    
+
     if W.dim() == 2:
         n, p = W.shape
         if n >= p:
@@ -650,7 +650,7 @@ def stiefel_cayley_retraction_woodbury(
     lr: float,
 ) -> torch.Tensor:
     """Apply Cayley transform retraction with Sherman-Morrison-Woodbury inversion.
-    
+
     W_new = (I - 0.5 * lr * A)^{-1} (I + 0.5 * lr * A) W
     where A = grad_R W^T - W grad_R^T is skew-symmetric with rank 2p.
     """
@@ -658,22 +658,22 @@ def stiefel_cayley_retraction_woodbury(
     if n < p:
         # Dual formulation for row-stiefel
         return stiefel_cayley_retraction_woodbury(W.t(), grad_R.t(), lr).t()
-    
+
     # Low-rank factorization: A = U V^T where U = [grad_R, -W], V = [W, grad_R]
     U_mat = torch.cat([grad_R, -W], dim=-1)  # (n, 2p)
     V_mat = torch.cat([W, grad_R], dim=-1)  # (n, 2p)
-    
+
     # Woodbury identity:
     # (I_n - 0.5 * lr * U V^T)^{-1} = I_n + 0.5 * lr * U (I_{2p} - 0.5 * lr * V^T U)^{-1} V^T
     tau = 0.5 * lr
     VT_U = torch.matmul(V_mat.t(), U_mat)  # (2p, 2p)
     core = torch.eye(2 * p, device=W.device, dtype=W.dtype) - tau * VT_U
     core_inv = torch.linalg.inv(core)
-    
+
     # Compute numerator: (I_n + tau * U V^T) W = W + tau * U (V^T W)
     vt_w = torch.matmul(V_mat.t(), W)
     num = W + tau * torch.matmul(U_mat, vt_w)
-    
+
     # Apply Woodbury inverse to numerator:
     vt_num = torch.matmul(V_mat.t(), num)
     sol = num + tau * torch.matmul(U_mat, torch.matmul(core_inv, vt_num))
@@ -682,7 +682,7 @@ def stiefel_cayley_retraction_woodbury(
 
 class RiemannianStiefelAdamW(Optimizer):
     """Production Hybrid Riemannian-Stiefel + Euclidean AdamW Optimizer.
-    
+
     Automatically routes parameters with Stiefel orthogonal constraints through
     tangent space projection, vector transport, and retraction, while optimizing
     remaining parameters under decoupled weight decay AdamW.

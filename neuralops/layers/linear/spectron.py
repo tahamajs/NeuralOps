@@ -12,11 +12,6 @@ Allocates low-rank and sparse attention capacities dynamically according to acti
 """
 
 from __future__ import annotations
-from neuralops.core.common import _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -29,10 +24,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 warnings.filterwarnings("ignore", category=UserWarning)
 log = logging.getLogger(__name__)
@@ -158,6 +154,7 @@ class LowRankSparseLinear(nn.Module):
         if x.is_cuda and down_w.shape[0] <= 128:
             try:
                 from neuralops.ops.triton.low_rank import fwd as fused_low_rank_fwd
+
                 x_lr = fused_low_rank_fwd(x, up_w, down_w, bias=up_b)
             except Exception:
                 x_lr = F.linear(F.linear(x, down_w), up_w, up_b)
@@ -212,6 +209,7 @@ class SpectronAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -237,9 +235,7 @@ class SpectronAttention(BaseAttention):
 
         torch.manual_seed(seed)
 
-        self.hidden_size = int(
-            _cfg_get(model_config, "hidden_size", kwargs.get("hidden_size", 768))
-        )
+        self.hidden_size = int(_cfg_get(model_config, "hidden_size", kwargs.get("hidden_size", 768)))
         self.num_heads = int(
             _cfg_get(
                 model_config,
@@ -585,15 +581,9 @@ class SpectronAttention(BaseAttention):
                 )
             else:
                 rep = max(1, w_k.shape[0] // self.kv_head_size)
-                w_k_pooled = (
-                    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
-                    .mean(dim=1)
-                    .view(self.kv_head_size, -1)
-                )
+                w_k_pooled = w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
                 b_k_pooled = (
-                    b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
-                    if b_k is not None
-                    else None
+                    b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1) if b_k is not None else None
                 )
                 self._factorise_and_set(
                     w_k_pooled,
@@ -616,15 +606,9 @@ class SpectronAttention(BaseAttention):
                 )
             else:
                 rep = max(1, w_v.shape[0] // self.kv_head_size)
-                w_v_pooled = (
-                    w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
-                    .mean(dim=1)
-                    .view(self.kv_head_size, -1)
-                )
+                w_v_pooled = w_v.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
                 b_v_pooled = (
-                    b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
-                    if b_v is not None
-                    else None
+                    b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1) if b_v is not None else None
                 )
                 self._factorise_and_set(
                     w_v_pooled,
@@ -658,6 +642,7 @@ class SpectronAttention(BaseAttention):
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+
                 base = fused_lowrank_gated_gemm(x, down.weight, up.weight, bias=up.bias)
                 if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
                     base = base + F.linear(F.linear(x, lora_A.to(x.dtype)), lora_B.to(x.dtype)) * self.scaling
@@ -667,8 +652,10 @@ class SpectronAttention(BaseAttention):
             except Exception:
                 try:
                     from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
+
                     if not FORCE_PYTORCH_FALLBACK:
                         from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                         base = fused_down_up_gemm_bias_triton(
                             x, down.weight.t().contiguous(), up.weight.t().contiguous(), up.bias
                         )
@@ -814,12 +801,7 @@ class SpectronAttention(BaseAttention):
                     hm = hm.unsqueeze(1)
                 attn_weights = attn_weights * hm
 
-            context = (
-                torch.matmul(attn_weights, V)
-                .transpose(1, 2)
-                .contiguous()
-                .view(B, N, self.all_head_size)
-            )
+            context = torch.matmul(attn_weights, V).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:

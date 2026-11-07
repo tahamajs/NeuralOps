@@ -17,6 +17,7 @@ import logging
 import math
 import time
 from typing import Any
+
 import torch
 import torch.nn as nn
 
@@ -42,18 +43,24 @@ def evaluate_classification(
     all_labels = []
 
     import sys
+
     try:
         from tqdm import tqdm
+
         has_tqdm = True
     except ImportError:
         has_tqdm = False
 
-    pbar = tqdm(
-        eval_loader,
-        desc="Evaluating",
-        file=sys.stderr,
-        leave=False,
-    ) if has_tqdm else eval_loader
+    pbar = (
+        tqdm(
+            eval_loader,
+            desc="Evaluating",
+            file=sys.stderr,
+            leave=False,
+        )
+        if has_tqdm
+        else eval_loader
+    )
 
     with torch.no_grad():
         for b_idx, batch in enumerate(pbar):

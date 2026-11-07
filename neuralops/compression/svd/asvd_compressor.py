@@ -20,6 +20,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression.svd.aa_svd_compressor import AASVDCompressor, SVDLinear
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -104,16 +105,21 @@ class ASVDCompressor(AASVDCompressor):
 
         try:
             from safetensors.torch import save_file
+
             save_file(tensors, os.path.join(path, "model.safetensors"))
         except ImportError:
             torch.save(tensors, os.path.join(path, "model.pt"))
 
         with open(os.path.join(path, "quantization_config.json"), "w", encoding="utf-8") as f:
-            json.dump({
-                "quant_method": "compressed-tensors",
-                "format": "svd_low_rank",
-                "compression_type": "asvd",
-            }, f, indent=2)
+            json.dump(
+                {
+                    "quant_method": "compressed-tensors",
+                    "format": "svd_low_rank",
+                    "compression_type": "asvd",
+                },
+                f,
+                indent=2,
+            )
 
     @staticmethod
     def load_compressed(path: str, model: Optional[nn.Module] = None) -> nn.Module:
@@ -123,6 +129,7 @@ class ASVDCompressor(AASVDCompressor):
 
         if os.path.exists(safetensor_path):
             from safetensors.torch import load_file
+
             state_dict = load_file(safetensor_path)
         elif os.path.exists(pt_path):
             state_dict = torch.load(pt_path, map_location="cpu", weights_only=True)

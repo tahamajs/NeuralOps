@@ -164,18 +164,18 @@ def _primal_fused_kernel(
 ):
     pid_m = tl.program_id(0)
     pid_bh = tl.program_id(1)
-    
+
     offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
     offs_d = tl.arange(0, d)
     offs_r = tl.arange(0, BLOCK_R)
-    
+
     q = tl.load(Q_ptr + pid_bh * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :])
-    
+
     f1_tile = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
     for r_idx in range(0, r, BLOCK_R):
         k_land = tl.load(K_landmarks_ptr + pid_bh * r * d + (r_idx + offs_r)[None, :] * d + offs_d[:, None])
         f1_tile += tl.dot(q, k_land) / tl.sqrt(d.to(tl.float32))
-        
+
     tl.store(Out_ptr + pid_bh * L * r + offs_m[:, None] * r + offs_r[None, :], f1_tile)
 ```
 
@@ -212,4 +212,3 @@ The empirical evaluation of `primal_attention` across standard sequence lengths 
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

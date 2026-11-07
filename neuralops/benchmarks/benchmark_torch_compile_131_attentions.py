@@ -11,17 +11,18 @@ Torch Compile Benchmark for Attention Modules
 Empirically benchmarks compilation speed, memory, and runtime throughput across all attention modules.
 """
 
+import argparse
+import csv
+import json
 import os
 import sys
 import time
-import json
-import csv
-import argparse
 import warnings
 from typing import Any
+
 import torch
-import torch.nn as nn
 import torch._dynamo as dynamo
+import torch.nn as nn
 
 dynamo.config.capture_scalar_outputs = True
 dynamo.config.allow_unspec_int_on_nn_module = True
@@ -38,12 +39,34 @@ BIDIRECTIONAL_MODELS = {"DistilBERT", "BERT", "RoBERTa", "Albert", "DeBERTa"}
 
 
 TRITON_KERNELS_REQUIRE_HALF = {
-    "sparse_attn", "low_rank", "linear_attn", "gqa", "flash_decode", "flash_decoding",
-    "fused_rope", "fused_ce", "fused_kd", "fused_norm_linear",
-    "gla_scan", "gdn_scan", "hgrn2_scan", "selective_scan", "fms_scan",
-    "state_update", "cosformer_triton_kernel", "block_sparse",
-    "varlen_attention", "softplus", "elementwise",
-    "sparse", "gla", "gdn", "hgrn2", "cosformer", "sliding_window", "paged",
+    "sparse_attn",
+    "low_rank",
+    "linear_attn",
+    "gqa",
+    "flash_decode",
+    "flash_decoding",
+    "fused_rope",
+    "fused_ce",
+    "fused_kd",
+    "fused_norm_linear",
+    "gla_scan",
+    "gdn_scan",
+    "hgrn2_scan",
+    "selective_scan",
+    "fms_scan",
+    "state_update",
+    "cosformer_triton_kernel",
+    "block_sparse",
+    "varlen_attention",
+    "softplus",
+    "elementwise",
+    "sparse",
+    "gla",
+    "gdn",
+    "hgrn2",
+    "cosformer",
+    "sliding_window",
+    "paged",
 }
 
 
@@ -82,7 +105,9 @@ def benchmark_torch_compile(
         seq_lens = SEQ_LENS
 
     gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() and device.startswith("cuda") else "CPU"
-    print(f"Executing Inductor torch.compile(mode='reduce-overhead', dynamic=True) on {device} ({gpu_name})", flush=True)
+    print(
+        f"Executing Inductor torch.compile(mode='reduce-overhead', dynamic=True) on {device} ({gpu_name})", flush=True
+    )
 
     raw_keys = sorted(ATTENTION_REGISTRY.keys())
     attn_keys = [k for k in raw_keys if k not in DEPRECATED_ALIASES]
@@ -92,7 +117,10 @@ def benchmark_torch_compile(
         attn_keys = attn_keys[:limit]
 
     print(f"Auditing {len(attn_keys)} Canonical Attention Mechanisms", flush=True)
-    print(f"Sequence lengths: {seq_lens} | Batch: {BATCH_SIZE} | Dim: {DIM} | Heads: {NUM_HEADS} | Repeat: {repeat}", flush=True)
+    print(
+        f"Sequence lengths: {seq_lens} | Batch: {BATCH_SIZE} | Dim: {DIM} | Heads: {NUM_HEADS} | Repeat: {repeat}",
+        flush=True,
+    )
 
     modules_dict: dict[str, Any] = {}
     summary_dict: dict[str, Any] = {}
@@ -115,8 +143,30 @@ def benchmark_torch_compile(
     records_for_csv: list[dict[str, Any]] = []
 
     print("\n" + "=" * 135, flush=True)
-    print(f"| {'Module':<32} | {'Status':<16} | {'Reliability':<14} | {'CUDA (ms)':<10} | {'PyTorch (ms)':<12} | {'Speedup':<9} | {'Recompiles':<10} | {'Zero-NaN':<8} |", flush=True)
-    print("|" + "-" * 34 + "|" + "-" * 18 + "|" + "-" * 16 + "|" + "-" * 12 + "|" + "-" * 14 + "|" + "-" * 11 + "|" + "-" * 12 + "|" + "-" * 10 + "|", flush=True)
+    print(
+        f"| {'Module':<32} | {'Status':<16} | {'Reliability':<14} | {'CUDA (ms)':<10} | {'PyTorch (ms)':<12} | {'Speedup':<9} | {'Recompiles':<10} | {'Zero-NaN':<8} |",
+        flush=True,
+    )
+    print(
+        "|"
+        + "-" * 34
+        + "|"
+        + "-" * 18
+        + "|"
+        + "-" * 16
+        + "|"
+        + "-" * 12
+        + "|"
+        + "-" * 14
+        + "|"
+        + "-" * 11
+        + "|"
+        + "-" * 12
+        + "|"
+        + "-" * 10
+        + "|",
+        flush=True,
+    )
 
     for idx, attn_name in enumerate(attn_keys, 1):
         cls = ATTENTION_REGISTRY.get(attn_name)
@@ -192,7 +242,7 @@ def benchmark_torch_compile(
                 "recompilations": 0,
                 "has_nan": torch.isnan(out128_compiled).any().item(),
                 "has_inf": torch.isinf(out128_compiled).any().item(),
-                "discrepancy": round(disc128, 8)
+                "discrepancy": round(disc128, 8),
             }
 
             x256 = torch.randn(BATCH_SIZE, 256, DIM, device=device, dtype=dtype)
@@ -212,7 +262,7 @@ def benchmark_torch_compile(
                 "graphs": graphs_256,
                 "recompilations": recomp_256,
                 "has_nan": torch.isnan(out256_compiled).any().item(),
-                "has_inf": torch.isinf(out256_compiled).any().item()
+                "has_inf": torch.isinf(out256_compiled).any().item(),
             }
 
             x512 = torch.randn(BATCH_SIZE, 512, DIM, device=device, dtype=dtype)
@@ -232,7 +282,7 @@ def benchmark_torch_compile(
                 "graphs": graphs_512,
                 "recompilations": recomp_512,
                 "has_nan": torch.isnan(out512_compiled).any().item(),
-                "has_inf": torch.isinf(out512_compiled).any().item()
+                "has_inf": torch.isinf(out512_compiled).any().item(),
             }
 
             total_mod_recomp = recomp_256 + recomp_512
@@ -280,8 +330,16 @@ def benchmark_torch_compile(
             t_compiled = (time.perf_counter() - t0) / 10 * 1000
 
             speedup = max(1.0, round(t_eager / max(t_compiled, 1e-5), 2))
-            has_nan = bool(per_seq_len.get("128", {}).get("has_nan", False) or per_seq_len.get("256", {}).get("has_nan", False) or per_seq_len.get("512", {}).get("has_nan", False))
-            has_inf = bool(per_seq_len.get("128", {}).get("has_inf", False) or per_seq_len.get("256", {}).get("has_inf", False) or per_seq_len.get("512", {}).get("has_inf", False))
+            has_nan = bool(
+                per_seq_len.get("128", {}).get("has_nan", False)
+                or per_seq_len.get("256", {}).get("has_nan", False)
+                or per_seq_len.get("512", {}).get("has_nan", False)
+            )
+            has_inf = bool(
+                per_seq_len.get("128", {}).get("has_inf", False)
+                or per_seq_len.get("256", {}).get("has_inf", False)
+                or per_seq_len.get("512", {}).get("has_inf", False)
+            )
 
             mod_rec["eager_latency_ms"] = round(t_eager, 3)
             mod_rec["compiled_latency_ms"] = round(t_compiled, 3)
@@ -290,7 +348,9 @@ def benchmark_torch_compile(
             mod_rec["zero_inf"] = not has_inf
             mod_rec["max_discrepancy"] = round(disc128, 8)
 
-            if strict_compile_check and (total_mod_recomp > 0 or has_nan or has_inf or mod_rec["compile_status"] == "RECOMPILE_LIMIT"):
+            if strict_compile_check and (
+                total_mod_recomp > 0 or has_nan or has_inf or mod_rec["compile_status"] == "RECOMPILE_LIMIT"
+            ):
                 mod_rec["status"] = "FAIL"
                 all_passed = False
 
@@ -310,36 +370,56 @@ def benchmark_torch_compile(
         recomp = str(mod_rec["recompilations"])
         nan_flag = "PASS" if mod_rec["zero_nan"] else "FAIL"
 
-        print(f"| {attn_name:<32} | {stat:<16} | {rel:<14} | {c_ms:>10} | {p_ms:>12} | {spd:>9} | {recomp:>10} | {nan_flag:>8} |", flush=True)
+        print(
+            f"| {attn_name:<32} | {stat:<16} | {rel:<14} | {c_ms:>10} | {p_ms:>12} | {spd:>9} | {recomp:>10} | {nan_flag:>8} |",
+            flush=True,
+        )
 
-        records_for_csv.append({
-            "Module": attn_name,
-            "Status": stat,
-            "Reliability": rel,
-            "CUDA (ms)": f"{mod_rec['compiled_latency_ms']:.4f}",
-            "PyTorch (ms)": f"{mod_rec['eager_latency_ms']:.4f}",
-            "Speedup": f"{mod_rec['speedup']:.2f}x",
-            "Recompiles": mod_rec["recompilations"],
-            "Zero_NaN": mod_rec["zero_nan"],
-            "Zero_Inf": mod_rec["zero_inf"],
-        })
+        records_for_csv.append(
+            {
+                "Module": attn_name,
+                "Status": stat,
+                "Reliability": rel,
+                "CUDA (ms)": f"{mod_rec['compiled_latency_ms']:.4f}",
+                "PyTorch (ms)": f"{mod_rec['eager_latency_ms']:.4f}",
+                "Speedup": f"{mod_rec['speedup']:.2f}x",
+                "Recompiles": mod_rec["recompilations"],
+                "Zero_NaN": mod_rec["zero_nan"],
+                "Zero_Inf": mod_rec["zero_inf"],
+            }
+        )
 
     print("=" * 135)
 
-    summary_dict.update({
-        "all_passed": all_passed,
-        "total_canonical_modules": len(attn_keys),
-        "total_recompilations": total_recompilations,
-        "zero_recompilations_guaranteed": (total_recompilations == 0),
-        "zero_nan_guaranteed": all(m["zero_nan"] for m in modules_dict.values()),
-        "zero_inf_guaranteed": all(m["zero_inf"] for m in modules_dict.values()),
-        "average_speedup": round(sum(m["speedup"] for m in modules_dict.values()) / max(len(attn_keys), 1), 2)
-    })
+    summary_dict.update(
+        {
+            "all_passed": all_passed,
+            "total_canonical_modules": len(attn_keys),
+            "total_recompilations": total_recompilations,
+            "zero_recompilations_guaranteed": (total_recompilations == 0),
+            "zero_nan_guaranteed": all(m["zero_nan"] for m in modules_dict.values()),
+            "zero_inf_guaranteed": all(m["zero_inf"] for m in modules_dict.values()),
+            "average_speedup": round(sum(m["speedup"] for m in modules_dict.values()) / max(len(attn_keys), 1), 2),
+        }
+    )
     results["summary"] = summary_dict
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["Module", "Status", "Reliability", "CUDA (ms)", "PyTorch (ms)", "Speedup", "Recompiles", "Zero_NaN", "Zero_Inf"])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "Module",
+                "Status",
+                "Reliability",
+                "CUDA (ms)",
+                "PyTorch (ms)",
+                "Speedup",
+                "Recompiles",
+                "Zero_NaN",
+                "Zero_Inf",
+            ],
+        )
         writer.writeheader()
         writer.writerows(records_for_csv)
 
@@ -359,8 +439,12 @@ def benchmark_torch_compile(
 
 def main():
     parser = argparse.ArgumentParser(description="Strict torch.compile Inductor Benchmark for Attention Mechanisms")
-    parser.add_argument("--strict-compile-check", action="store_true", default=True, help="Enforce strict compile validation")
-    parser.add_argument("--output", type=str, default="results/benchmark_torch_compile_131_corrected.csv", help="Output CSV path")
+    parser.add_argument(
+        "--strict-compile-check", action="store_true", default=True, help="Enforce strict compile validation"
+    )
+    parser.add_argument(
+        "--output", type=str, default="results/benchmark_torch_compile_131_corrected.csv", help="Output CSV path"
+    )
     parser.add_argument("--output-json", type=str, default=None, help="Output JSON path")
     parser.add_argument("--device", type=str, default=None, help="Device to execute benchmark")
     parser.add_argument("--seq-lens", type=str, default="128,256,512", help="Comma-separated sequence lengths")

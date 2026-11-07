@@ -32,10 +32,7 @@ def rdrop_loss(logits1, logits2, labels, is_regression, alpha) -> Any:
         loss2 = loss_fn(logits2.view(-1), labels.view(-1))
         p = torch.distributions.Normal(logits1, torch.ones_like(logits1))
         q = torch.distributions.Normal(logits2, torch.ones_like(logits2))
-        kl = (
-            torch.distributions.kl_divergence(p, q).mean()
-            + torch.distributions.kl_divergence(q, p).mean()
-        ) / 2.0
+        kl = (torch.distributions.kl_divergence(p, q).mean() + torch.distributions.kl_divergence(q, p).mean()) / 2.0
         loss = (loss1 + loss2) / 2.0 + alpha * kl
     else:
         ce = nn.CrossEntropyLoss()
@@ -52,9 +49,7 @@ def rdrop_loss(logits1, logits2, labels, is_regression, alpha) -> Any:
     return loss
 
 
-def r3f_forward(
-    model, input_ids, attention_mask, token_type_ids, labels, epsilon, is_regression
-) -> Any:
+def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilon, is_regression) -> Any:
     """R3f forward."""
     base_kwargs = {
         "input_ids": input_ids,

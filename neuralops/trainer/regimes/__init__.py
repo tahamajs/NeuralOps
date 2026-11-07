@@ -17,21 +17,10 @@ Houses the 4 novel post-surgery micro-training paradigms:
 
 from __future__ import annotations
 
-from neuralops.trainer.regimes.fisher_micro import (
-    FisherMicroHealer,
-    FMicroOptimizer,
-    compute_empirical_diagonal_fisher,
-)
-from neuralops.trainer.regimes.dora_healing import (
-    DoRAHealingHealer,
-    DoRAProjectionWrapper,
-)
-from neuralops.trainer.regimes.ttt_online import (
-    TTTOnlineAdapter,
-)
-from neuralops.trainer.regimes.spectral_annealing import (
-    SpectralAnnealer,
-)
+from neuralops.trainer.regimes.dora_healing import DoRAHealingHealer, DoRAProjectionWrapper
+from neuralops.trainer.regimes.fisher_micro import FisherMicroHealer, FMicroOptimizer, compute_empirical_diagonal_fisher
+from neuralops.trainer.regimes.spectral_annealing import SpectralAnnealer
+from neuralops.trainer.regimes.ttt_online import TTTOnlineAdapter
 
 __all__ = [
     "FMicroOptimizer",

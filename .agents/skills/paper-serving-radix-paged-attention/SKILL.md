@@ -93,7 +93,7 @@ The radix invariants enforce:
 
 ### 2.3 Token Eviction Importance Budget
 Under an overall cache budget $C_{\text{budget}} = S + H_{\text{heavy}} + W$, the retention indicator for token index $\tau$ at current step $t$ is:
-$$\mathbb{I}(\tau) = \begin{cases} 
+$$\mathbb{I}(\tau) = \begin{cases}
 1 & \text{if } \tau < S \quad \text{(Attention Sinks)} \\
 1 & \text{if } \tau \ge t - W \quad \text{(Local Window)} \\
 1 & \text{if } \tau \in \text{TopK}\left(\left\{\sum_{j=\tau+1}^t A_{j, \tau}\right\}, H_{\text{heavy}}\right) \quad \text{(Heavy Hitters)} \\
@@ -319,9 +319,9 @@ Use these LaTeX paragraphs when authoring methodology and results sections. They
 ### 5.1 Systems Methodology: Paged KV-Cache & Radix Prefix Attention
 ```latex
 \subsection{High-Throughput Serving Engine & Memory Subsystem}
-To enable production deployment of surgically modified transformer architectures, \textsc{NeuralOps} integrates a dual-tier memory virtualization subsystem combining non-contiguous paged allocation with dynamic radix prefix caching. Standard continuous-batching runtimes preallocate contiguous Key-Value buffers sized to the theoretical maximum context window $L_{\max}$, precipitating between $60\%$ and $80\%$ external memory fragmentation in long-context serving. 
+To enable production deployment of surgically modified transformer architectures, \textsc{NeuralOps} integrates a dual-tier memory virtualization subsystem combining non-contiguous paged allocation with dynamic radix prefix caching. Standard continuous-batching runtimes preallocate contiguous Key-Value buffers sized to the theoretical maximum context window $L_{\max}$, precipitating between $60\%$ and $80\%$ external memory fragmentation in long-context serving.
 
-To overcome this bottleneck, our \texttt{PagedKVCache} partitions token key and value projections into discrete physical pages of fixed size $B_{\text{size}} \in \{16, 32\}$ tokens across head dimension $D$. Each active inference sequence $s$ maintains an indirection table $\mathcal{M}_s$ mapping logical token coordinates to non-contiguous page frames allocated from a dynamic pool. During sequence branching (e.g., beam search and parallel sampling), our system executes zero-copy forking: the child stream inherits the parent's page table via reference count increments, deferring physical page duplication until token emission mutates a shared page boundary via Copy-on-Write (\lr{CoW}). 
+To overcome this bottleneck, our \texttt{PagedKVCache} partitions token key and value projections into discrete physical pages of fixed size $B_{\text{size}} \in \{16, 32\}$ tokens across head dimension $D$. Each active inference sequence $s$ maintains an indirection table $\mathcal{M}_s$ mapping logical token coordinates to non-contiguous page frames allocated from a dynamic pool. During sequence branching (e.g., beam search and parallel sampling), our system executes zero-copy forking: the child stream inherits the parent's page table via reference count increments, deferring physical page duplication until token emission mutates a shared page boundary via Copy-on-Write (\lr{CoW}).
 
 Complementing paged allocation, the \texttt{SGLangRadixAdapter} organizes cached prompt tokens into a radix trie where tree edges represent shared lexical chunks and nodes retain computed KV activation states. Incoming prompts are evaluated via longest-prefix matching against the trie; matching prefixes are reused directly, restricting prefill computation exclusively to newly introduced prompt suffixes. When total cached token capacity reaches threshold $\Omega_{\text{max}}$, least-recently-accessed unpinned leaf nodes are evicted via atomic LRU traversal, safeguarding active inference streams from cache invalidation.
 ```

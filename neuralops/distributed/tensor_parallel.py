@@ -15,8 +15,8 @@ from __future__ import annotations
 from typing import Any, Optional
 
 import torch
-import torch.nn as nn
 import torch.distributed as dist
+import torch.nn as nn
 
 
 class SimulatedTPGroup:
@@ -55,14 +55,10 @@ def _require_tp_group(tp_size: int, process_group: Any, tp_rank: Optional[int] =
         )
     actual_size = dist.get_world_size(group=process_group)
     if actual_size != tp_size:
-        raise ValueError(
-            f"tp_size={tp_size} does not match process-group world size {actual_size}"
-        )
+        raise ValueError(f"tp_size={tp_size} does not match process-group world size {actual_size}")
     actual_rank = dist.get_rank(group=process_group)
     if tp_rank is not None and actual_rank != tp_rank:
-        raise ValueError(
-            f"tp_rank={tp_rank} does not match process-group rank {actual_rank}"
-        )
+        raise ValueError(f"tp_rank={tp_rank} does not match process-group rank {actual_rank}")
 
 
 class _CopyToModelParallelRegion(torch.autograd.Function):
@@ -83,10 +79,7 @@ class _CopyToModelParallelRegion(torch.autograd.Function):
     def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor, None, None]:
         if ctx.enabled:
             if not dist.is_initialized():
-                raise RuntimeError(
-                    "Tensor-parallel input-gradient reduction requires initialized "
-                    "torch.distributed"
-                )
+                raise RuntimeError("Tensor-parallel input-gradient reduction requires initialized " "torch.distributed")
             grad_output = grad_output.contiguous().clone()
             dist.all_reduce(grad_output, group=ctx.group)
         return grad_output, None, None
@@ -106,9 +99,7 @@ class _ReduceFromModelParallelRegion(torch.autograd.Function):
         ctx.enabled = enabled
         if enabled:
             if not dist.is_initialized():
-                raise RuntimeError(
-                    "Tensor-parallel all-reduce requires initialized torch.distributed"
-                )
+                raise RuntimeError("Tensor-parallel all-reduce requires initialized torch.distributed")
             output = input.clone()
             dist.all_reduce(output, group=group)
             return output
@@ -186,9 +177,7 @@ class RankParallelSVDLinear(nn.Module):
         h = self.v_proj(x)
         out_local = self.u_proj(h)
 
-        out = reduce_from_model_parallel_region(
-            out_local, self.process_group, enabled=self.tp_size > 1
-        )
+        out = reduce_from_model_parallel_region(out_local, self.process_group, enabled=self.tp_size > 1)
 
         if self.bias is not None:
             out = out + self.bias
@@ -237,15 +226,10 @@ class RowParallelSVDLinear(nn.Module):
     def forward(self, x_local: torch.Tensor) -> torch.Tensor:
         _require_tp_group(self.tp_size, self.process_group, self.tp_rank)
         if x_local.shape[-1] != self.local_in_features:
-            raise ValueError(
-                f"expected local input width {self.local_in_features}, "
-                f"got {x_local.shape[-1]}"
-            )
+            raise ValueError(f"expected local input width {self.local_in_features}, " f"got {x_local.shape[-1]}")
         bottleneck_local = self.v_proj(x_local)
 
-        bottleneck = reduce_from_model_parallel_region(
-            bottleneck_local, self.process_group, enabled=self.tp_size > 1
-        )
+        bottleneck = reduce_from_model_parallel_region(bottleneck_local, self.process_group, enabled=self.tp_size > 1)
 
         out = self.u_proj(bottleneck)
         if self.bias is not None:
@@ -359,9 +343,7 @@ class ColumnParallelLinear(nn.Module):
         if self.gather_output and self.tp_size > 1:
             from torch.distributed.nn.functional import all_gather
 
-            output_parallel = torch.cat(
-                all_gather(output_parallel, group=self.process_group), dim=-1
-            )
+            output_parallel = torch.cat(all_gather(output_parallel, group=self.process_group), dim=-1)
         return output_parallel
 
 
@@ -408,10 +390,7 @@ class RowParallelLinear(nn.Module):
         _require_tp_group(self.tp_size, self.process_group, self.tp_rank)
         if self.input_is_parallel:
             if x.shape[-1] != self.local_in_features:
-                raise ValueError(
-                    f"expected local input width {self.local_in_features}, "
-                    f"got {x.shape[-1]}"
-                )
+                raise ValueError(f"expected local input width {self.local_in_features}, " f"got {x.shape[-1]}")
         elif x.shape[-1] != self.in_features:
             raise ValueError(f"expected full input width {self.in_features}, got {x.shape[-1]}")
         if not self.input_is_parallel and self.tp_size > 1:
@@ -422,9 +401,7 @@ class RowParallelLinear(nn.Module):
             x_local = x
 
         output_parallel = torch.matmul(x_local, self.weight.t())
-        output_ = reduce_from_model_parallel_region(
-            output_parallel, self.process_group, enabled=self.tp_size > 1
-        )
+        output_ = reduce_from_model_parallel_region(output_parallel, self.process_group, enabled=self.tp_size > 1)
         if self.bias is not None:
             output_ = output_ + self.bias
         return output_
@@ -484,45 +461,31 @@ class TensorParallelRecurrentAttention(nn.Module):
         if hidden_states.ndim != 3 or hidden_states.shape[-1] != self.embed_dim:
             raise ValueError(f"hidden_states must have shape [B, T, {self.embed_dim}]")
         B, T, _ = hidden_states.shape
-        x_in = copy_to_model_parallel_region(
-            hidden_states, self.process_group, enabled=self.tp_size > 1
-        )
+        x_in = copy_to_model_parallel_region(hidden_states, self.process_group, enabled=self.tp_size > 1)
 
         q = self.q_proj(x_in).view(B, T, self.local_heads, self.head_dim).transpose(1, 2)
         k = self.k_proj(x_in).view(B, T, self.local_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(x_in).view(B, T, self.local_heads, self.head_dim).transpose(1, 2)
-        g = (
-            torch.sigmoid(self.g_proj(x_in))
-            .view(B, T, self.local_heads, self.head_dim)
-            .transpose(1, 2)
-        )
+        g = torch.sigmoid(self.g_proj(x_in)).view(B, T, self.local_heads, self.head_dim).transpose(1, 2)
 
         scale = 1.0 / (self.head_dim**0.5)
-        accumulator_dtype = (
-            torch.float32 if k.dtype in (torch.float16, torch.bfloat16) else k.dtype
-        )
+        accumulator_dtype = torch.float32 if k.dtype in (torch.float16, torch.bfloat16) else k.dtype
         q_acc = q.to(accumulator_dtype)
         k_acc = k.to(accumulator_dtype)
         v_acc = v.to(accumulator_dtype)
         g_acc = g.to(accumulator_dtype)
         expected_state_shape = (B, self.local_heads, self.head_dim, self.head_dim)
         if state is None:
-            state = torch.zeros(
-                expected_state_shape, dtype=accumulator_dtype, device=k.device
-            )
+            state = torch.zeros(expected_state_shape, dtype=accumulator_dtype, device=k.device)
         elif tuple(state.shape) != expected_state_shape:
-            raise ValueError(
-                f"state must have shape {expected_state_shape}, got {tuple(state.shape)}"
-            )
+            raise ValueError(f"state must have shape {expected_state_shape}, got {tuple(state.shape)}")
         else:
             state = state.to(accumulator_dtype)
 
         outputs = []
         for token_index in range(T):
             key_t = k_acc[:, :, token_index, :].unsqueeze(-1)
-            value_t = (
-                v_acc[:, :, token_index, :] * g_acc[:, :, token_index, :]
-            ).unsqueeze(-2)
+            value_t = (v_acc[:, :, token_index, :] * g_acc[:, :, token_index, :]).unsqueeze(-2)
             state = state + torch.matmul(key_t, value_t)
             query_t = q_acc[:, :, token_index, :].unsqueeze(-2) * scale
             outputs.append(torch.matmul(query_t, state))
@@ -530,12 +493,7 @@ class TensorParallelRecurrentAttention(nn.Module):
             out_local = torch.cat(outputs, dim=-2)
         else:
             out_local = q.new_empty((B, self.local_heads, 0, self.head_dim))
-        out_local = (
-            out_local.transpose(1, 2)
-            .contiguous()
-            .view(B, T, self.local_dim)
-            .to(self.out_proj.weight.dtype)
-        )
+        out_local = out_local.transpose(1, 2).contiguous().view(B, T, self.local_dim).to(self.out_proj.weight.dtype)
 
         out_reduced = reduce_from_model_parallel_region(
             self.out_proj(out_local), self.process_group, enabled=self.tp_size > 1

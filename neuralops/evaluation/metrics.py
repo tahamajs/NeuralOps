@@ -211,9 +211,9 @@ def compute_linear_cka(
             XtX = torch.matmul(X.t(), X)
             YtY = torch.matmul(Y.t(), Y)
             XtY = torch.matmul(X.t(), Y)
-            hsic_xy = (XtY ** 2).sum()
-            hsic_xx = (XtX ** 2).sum()
-            hsic_yy = (YtY ** 2).sum()
+            hsic_xy = (XtY**2).sum()
+            hsic_xx = (XtX**2).sum()
+            hsic_yy = (YtY**2).sum()
 
         denom = torch.sqrt(hsic_xx * hsic_yy).clamp(min=eps)
         cka = float((hsic_xy / denom).item())

@@ -30,6 +30,7 @@ from torch.utils.data import DataLoader, Dataset
 
 class TaskType(str, Enum):
     """Task type classification enumeration."""
+
     SINGLE_CLASSIFICATION = "single_classification"
     REGRESSION = "regression"
     PAIR_CLASSIFICATION = "pair_classification"
@@ -39,6 +40,7 @@ class TaskType(str, Enum):
 @dataclass
 class DataConfig:
     """Configuration class for dataset loading and preprocessing."""
+
     task_type: TaskType = TaskType.SINGLE_CLASSIFICATION
     max_length: int = 128
     batch_size: int = 16

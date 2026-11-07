@@ -29,6 +29,7 @@ import torch
 try:
     import triton
     import triton.testing
+
     _TRITON_AVAILABLE = True
 except ImportError:
     triton = None  # type: ignore
@@ -43,12 +44,14 @@ def register_op(name: str):
     def decorator(fn):
         OP_REGISTRY[name] = fn
         return fn
+
     return decorator
 
 
 @register_op("chunk_gla")
 def get_chunk_gla_op(B: int, T: int, H: int, D: int, dtype: torch.dtype, device: torch.device):
     from neuralops.kernels import gla_scan
+
     q = torch.randn(B, H, T, D, dtype=dtype, device=device, requires_grad=True)
     k = torch.randn(B, H, T, D, dtype=dtype, device=device, requires_grad=True)
     v = torch.randn(B, H, T, D, dtype=dtype, device=device, requires_grad=True)
@@ -69,6 +72,7 @@ def get_chunk_gla_op(B: int, T: int, H: int, D: int, dtype: torch.dtype, device:
 @register_op("gdn_scan")
 def get_gdn_scan_op(B: int, T: int, H: int, D: int, dtype: torch.dtype, device: torch.device):
     from neuralops.kernels import gdn_scan
+
     q = torch.randn(B, H, T, D, dtype=dtype, device=device, requires_grad=True)
     k = torch.randn(B, H, T, D, dtype=dtype, device=device, requires_grad=True)
     v = torch.randn(B, H, T, D, dtype=dtype, device=device, requires_grad=True)
@@ -90,6 +94,7 @@ def get_gdn_scan_op(B: int, T: int, H: int, D: int, dtype: torch.dtype, device: 
 @register_op("svd_linear_attention")
 def get_svd_linear_attention_op(B: int, T: int, H: int, D: int, dtype: torch.dtype, device: torch.device):
     from neuralops.attentions.svd_linear_attention import SVDLinearAttention
+
     module = SVDLinearAttention(embed_dim=H * D, num_heads=H).to(device=device, dtype=dtype)
     x = torch.randn(B, T, H * D, dtype=dtype, device=device, requires_grad=True)
 
@@ -109,6 +114,7 @@ def get_svd_linear_attention_op(B: int, T: int, H: int, D: int, dtype: torch.dty
 @register_op("fused_ce")
 def get_fused_ce_op(B: int, T: int, H: int, D: int, dtype: torch.dtype, device: torch.device):
     from neuralops.kernels import fused_ce
+
     V = H * D * 4
     logits = torch.randn(B * T, V, dtype=dtype, device=device, requires_grad=True)
     targets = torch.randint(0, V, (B * T,), dtype=torch.long, device=device)
@@ -148,6 +154,7 @@ def get_fused_rmsnorm_op(B: int, T: int, H: int, D: int, dtype: torch.dtype, dev
 @register_op("selective_scan")
 def get_selective_scan_op(B: int, T: int, H: int, D: int, dtype: torch.dtype, device: torch.device):
     from neuralops.kernels import selective_scan
+
     u = torch.randn(B, H * D, T, dtype=dtype, device=device, requires_grad=True)
     delta = torch.randn(B, H * D, T, dtype=dtype, device=device, requires_grad=True).sigmoid()
     A = -torch.rand(H * D, 16, dtype=dtype, device=device, requires_grad=True)
@@ -334,7 +341,9 @@ def main() -> None:
     args = parser.parse_args()
 
     results: List[Dict[str, Any]] = []
-    print(f"\nRunning benchmark suite across {len(args.ops)} operators (mode={args.mode}, B={args.batch_size}, T={args.seq_len})...")
+    print(
+        f"\nRunning benchmark suite across {len(args.ops)} operators (mode={args.mode}, B={args.batch_size}, T={args.seq_len})..."
+    )
 
     for op in args.ops:
         print(f" -> Benchmarking: {op}...")
@@ -405,11 +414,19 @@ def run_op_as_eval_result(
 
 
 def run_registered_ops(
-    *, category: str = "all", modules: str | list[str] | None = None,
-    output: str | Path = "results/benchmark_ops.json", verify_only: bool = False,
-    verbose: bool = False, dynamic: bool = False, timeout_s: float = 180.0,
-    device: str | None = None, parallel_workers: int = 6,
-    seed: int = 42, dtype: str = "fp32", tolerance: float | None = None,
+    *,
+    category: str = "all",
+    modules: str | list[str] | None = None,
+    output: str | Path = "results/benchmark_ops.json",
+    verify_only: bool = False,
+    verbose: bool = False,
+    dynamic: bool = False,
+    timeout_s: float = 180.0,
+    device: str | None = None,
+    parallel_workers: int = 6,
+    seed: int = 42,
+    dtype: str = "fp32",
+    tolerance: float | None = None,
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
     """Run registered operations in killable subprocesses with checkpointing.
@@ -423,6 +440,7 @@ def run_registered_ops(
     """
     import os
     import tempfile
+
     from neuralops.benchmarks.ops_registry import list_ops
 
     names = [m.strip() for m in modules.split(",") if m.strip()] if isinstance(modules, str) else modules
@@ -469,6 +487,7 @@ def run_registered_ops(
     def resource_state() -> tuple[int, float]:
         try:
             import psutil
+
             ram = float(psutil.virtual_memory().available)
         except ImportError:
             ram = float("inf")
@@ -476,7 +495,9 @@ def run_registered_ops(
         try:
             query = subprocess.run(
                 ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"],
-                capture_output=True, text=True, check=True,
+                capture_output=True,
+                text=True,
+                check=True,
             )
             vram = float(query.stdout.strip().splitlines()[0]) * 1024**2
         except (OSError, subprocess.SubprocessError, ValueError, IndexError):
@@ -485,9 +506,15 @@ def run_registered_ops(
 
     def failure_row(name: str, status: str, reason: str) -> dict[str, Any]:
         return {
-            "module": name, "category": "unknown", "cuda_latency_ms": 0.0,
-            "pytorch_latency_ms": 0.0, "speedup": 0.0, "peak_vram_mb": 0.0,
-            "max_diff": float("inf"), "status": status, "error_reason": reason,
+            "module": name,
+            "category": "unknown",
+            "cuda_latency_ms": 0.0,
+            "pytorch_latency_ms": 0.0,
+            "speedup": 0.0,
+            "peak_vram_mb": 0.0,
+            "max_diff": float("inf"),
+            "status": status,
+            "error_reason": reason,
         }
 
     def collect(item: dict[str, Any], timed_out: bool = False) -> None:
@@ -535,18 +562,25 @@ def run_registered_ops(
                     )
                 break
             name = queue.pop(0)
-            worker_fd, worker_name = tempfile.mkstemp(
-                prefix="neuralops_bench_", suffix=".json", dir=target.parent
-            )
+            worker_fd, worker_name = tempfile.mkstemp(prefix="neuralops_bench_", suffix=".json", dir=target.parent)
             os.close(worker_fd)
             worker_path = Path(worker_name)
             proc = subprocess.Popen(
                 [
-                    sys.executable, "-c", worker_code,
-                    name, str(verify_only), str(worker_path), device or "",
-                    str(seed), str(dtype), str(tolerance if tolerance is not None else ""),
+                    sys.executable,
+                    "-c",
+                    worker_code,
+                    name,
+                    str(verify_only),
+                    str(worker_path),
+                    device or "",
+                    str(seed),
+                    str(dtype),
+                    str(tolerance if tolerance is not None else ""),
                 ],
-                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
             )
             active.append({"name": name, "proc": proc, "path": worker_path, "started": time.monotonic()})
             if verbose:
@@ -569,6 +603,7 @@ def _run_registered_op_worker(
 ) -> None:
     """Execute one registered operation and write a JSON row for the parent."""
     import torch
+
     from neuralops.benchmarks.ops_registry import get_op
     from neuralops.benchmarks.verify_ops import _make_inputs, _tensor_output, verify_op
 
@@ -604,9 +639,7 @@ def _run_registered_op_worker(
     if config.tensor_specs.get("fallback_only") and config.func is None:
         row.update(
             status="PASS_REFERENCE_FALLBACK",
-            error_reason=config.tensor_specs.get(
-                "fallback_reason", config.unavailable_reason
-            ),
+            error_reason=config.tensor_specs.get("fallback_reason", config.unavailable_reason),
         )
         Path(output_path).write_text(json.dumps(row), encoding="utf-8")
         return
@@ -648,14 +681,17 @@ def _run_registered_op_worker(
                 pytorch_latency_ms=ref_ms,
                 speedup=ratio,
                 peak_vram_mb=(
-                    float(torch.cuda.max_memory_allocated() / (1024**2))
-                    if torch.cuda.is_available() else 0.0
+                    float(torch.cuda.max_memory_allocated() / (1024**2)) if torch.cuda.is_available() else 0.0
                 ),
                 max_diff=diff,
                 status=(
-                    "PASS_REFERENCE_FALLBACK" if fallback_only
-                    else "PASS_HIGH_DIFF" if config.category == "attention" and 1e-2 < diff < 0.25
-                    else "PASS_FAST" if ratio >= 1.05 else "PASS_SLOW"
+                    "PASS_REFERENCE_FALLBACK"
+                    if fallback_only
+                    else (
+                        "PASS_HIGH_DIFF"
+                        if config.category == "attention" and 1e-2 < diff < 0.25
+                        else "PASS_FAST" if ratio >= 1.05 else "PASS_SLOW"
+                    )
                 ),
                 error_reason=(config.tensor_specs.get("fallback_reason") if fallback_only else None),
             )

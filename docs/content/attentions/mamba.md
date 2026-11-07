@@ -145,28 +145,28 @@ def _mamba_selective_scan_kernel(
 ):
     pid_b = tl.program_id(0)
     pid_d = tl.program_id(1)
-    
+
     offs_d = pid_d * BLOCK_D + tl.arange(0, BLOCK_D)
     offs_n = tl.arange(0, d_state)
-    
+
     # Initialize persistent state memory in SRAM [BLOCK_D, d_state]
     h_state = tl.zeros((BLOCK_D, d_state), dtype=tl.float32)
     a_diag = tl.load(A_ptr + offs_d[:, None] * d_state + offs_n[None, :])
-    
+
     for t in range(L):
         x_t = tl.load(X_ptr + pid_b * stride_xb + t * stride_xl + offs_d)
         dt_t = tl.load(Delta_ptr + pid_b * stride_xb + t * stride_xl + offs_d)
         b_t = tl.load(B_ptr + pid_b * L * d_state + t * d_state + offs_n)
         c_t = tl.load(C_ptr + pid_b * L * d_state + t * d_state + offs_n)
-        
+
         # Discretize in SRAM
         a_bar = tl.exp(dt_t[:, None] * a_diag)
         b_bar = dt_t[:, None] * b_t[None, :]
-        
+
         # Associative state recurrence
         h_state = a_bar * h_state + b_bar * x_t[:, None]
         out_t = tl.sum(h_state * c_t[None, :], axis=1)
-        
+
         tl.store(Out_ptr + pid_b * stride_xb + t * stride_xl + offs_d, out_t)
 ```
 
@@ -198,4 +198,3 @@ The empirical evaluation of `mamba` across standard sequence lengths and languag
 | **$L = 2048$** | 0.45 ms | 180 MB | $2.50\times$ |
 | **$L = 4096$** | 0.85 ms | 288 MB | $4.20\times$ |
 | **$L = 8192$** | **1.65 ms** | **320 MB** | **7.75x** |
-

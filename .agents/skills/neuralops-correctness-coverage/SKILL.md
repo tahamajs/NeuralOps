@@ -391,4 +391,3 @@ When training or fine-tuning models using NeuralOps data and scheduling pipeline
 - **Phase 3: Decay** ($t \ge T_{\text{decay}}$): Cosine or linear decay down to $\eta_{\min}$:
   $$\eta(t) = \eta_{\min} + \frac{1}{2}(\eta_{\max} - \eta_{\min})\left(1 + \cos\left(\pi \frac{t - T_{\text{decay}}}{T_{\text{total}} - T_{\text{decay}}}\right)\right)$$
 - Validate that step transitions are strictly monotonic and numerically continuous ($\lim_{t \to T^-} \eta(t) = \lim_{t \to T^+} \eta(t)$).
-

@@ -67,9 +67,7 @@ class ReplaceAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        self.hidden_size = int(
-            hidden_size or _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", 768))
-        )
+        self.hidden_size = int(hidden_size or _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", 768)))
         n_heads_candidate = (
             num_heads
             or num_attention_heads
@@ -102,9 +100,7 @@ class ReplaceAttention(BaseAttention):
         self.rank = int(rank) if rank and rank > 0 else 0
 
         if self.rank > 0:
-            self.q_proj = _FactorizedLinear(
-                self.hidden_size, self.num_heads * self.head_dim, self.rank, bias=True
-            )
+            self.q_proj = _FactorizedLinear(self.hidden_size, self.num_heads * self.head_dim, self.rank, bias=True)
             self.k_proj = _FactorizedLinear(
                 self.hidden_size,
                 self.num_kv_heads * self.head_dim,
@@ -117,9 +113,7 @@ class ReplaceAttention(BaseAttention):
                 self.rank,
                 bias=True,
             )
-            self.out_proj = _FactorizedLinear(
-                self.all_head_size, self.hidden_size, self.rank, bias=True
-            )
+            self.out_proj = _FactorizedLinear(self.all_head_size, self.hidden_size, self.rank, bias=True)
         else:
             self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim)
             self.k_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim)
@@ -237,8 +231,7 @@ class ReplaceAttention(BaseAttention):
                     W = w.detach().float()
                     if W.shape[0] != target_out or W.shape[1] != target_in:
                         logger.warning(
-                            "Shape mismatch in copy_into: source %s, target (%d, %d). "
-                            "Using SVD rank-reduction.",
+                            "Shape mismatch in copy_into: source %s, target (%d, %d). " "Using SVD rank-reduction.",
                             tuple(W.shape),
                             target_out,
                             target_in,
@@ -250,9 +243,7 @@ class ReplaceAttention(BaseAttention):
                     rank = min(target_proj.rank, U.size(1), Vh.size(0))
                     target_proj.down.weight.data.zero_()
                     target_proj.up.weight.data.zero_()
-                    target_proj.down.weight.data[:rank, :].copy_(
-                        Vh[:rank, :].to(target_proj.down.weight.dtype)
-                    )
+                    target_proj.down.weight.data[:rank, :].copy_(Vh[:rank, :].to(target_proj.down.weight.dtype))
                     US = U[:, :rank] @ torch.diag(S[:rank])
                     target_proj.up.weight.data[:, :rank].copy_(US.to(target_proj.up.weight.dtype))
                     if b is not None and target_proj.up.bias is not None:
@@ -271,8 +262,7 @@ class ReplaceAttention(BaseAttention):
                 if b is not None and target_proj.bias is not None:
                     if b.shape != target_proj.bias.shape:
                         raise ValueError(
-                            f"Bias shape mismatch: {tuple(b.shape)} != "
-                            f"{tuple(target_proj.bias.shape)}"
+                            f"Bias shape mismatch: {tuple(b.shape)} != " f"{tuple(target_proj.bias.shape)}"
                         )
                     target_proj.bias.data.copy_(b.to(target_proj.bias.dtype))
 
@@ -356,9 +346,7 @@ class ReplaceAttention(BaseAttention):
             b_v = src.v_proj.bias.data if getattr(src.v_proj, "bias", None) is not None else None
             if hasattr(src, "o_proj"):
                 w_o = src.o_proj.weight.data
-                b_o = (
-                    src.o_proj.bias.data if getattr(src.o_proj, "bias", None) is not None else None
-                )
+                b_o = src.o_proj.bias.data if getattr(src.o_proj, "bias", None) is not None else None
 
         if w_q is None or w_k is None or w_v is None:
             try:
@@ -419,24 +407,9 @@ class ReplaceAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        K = (
-            self.k_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.v_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             if (
@@ -465,9 +438,7 @@ class ReplaceAttention(BaseAttention):
         attn_mask_sdpa = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                attn_mask_sdpa = (
-                    (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                ).to(Q.dtype)
+                attn_mask_sdpa = ((attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(Q.dtype)
             elif attention_mask.dim() == 4:
                 attn_mask_sdpa = attention_mask.to(Q.dtype)
 

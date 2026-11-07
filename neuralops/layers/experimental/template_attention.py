@@ -11,10 +11,6 @@ Template Attention Mechanism
 Modular template providing the standardized interface for custom attention mechanism authoring.
 """
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 import logging
 import math
 from typing import Any
@@ -25,10 +21,11 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -211,9 +208,7 @@ class YourCustomAttention(BaseAttention):
 
         dropout_p = 0.1
         if config is not None and not isinstance(config, int):
-            dropout_p = _cfg_get(
-                config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
-            )
+            dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -254,9 +249,7 @@ class YourCustomAttention(BaseAttention):
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                hasattr(old_attn, "query") and not hasattr(old_attn, "dense") and not hasattr(old_attn, "out_proj")
             ):
                 self.is_nested_encoder = True
 
@@ -265,11 +258,7 @@ class YourCustomAttention(BaseAttention):
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight.detach()
-                    b_o = (
-                        old_attn.output.dense.bias.detach()
-                        if old_attn.output.dense.bias is not None
-                        else None
-                    )
+                    b_o = old_attn.output.dense.bias.detach() if old_attn.output.dense.bias is not None else None
             else:
                 src = old_attn
 
@@ -366,16 +355,12 @@ class YourCustomAttention(BaseAttention):
                     if w.shape == target_layer.weight.shape:
                         target_layer.weight.data.copy_(w.to(target_layer.weight.dtype))
                     elif w.t().contiguous().shape == target_layer.weight.shape:
-                        target_layer.weight.data.copy_(
-                            w.t().contiguous().to(target_layer.weight.dtype)
-                        )
+                        target_layer.weight.data.copy_(w.t().contiguous().to(target_layer.weight.dtype))
                     else:
                         min_0 = min(target_layer.weight.shape[0], w.shape[0])
                         min_1 = min(target_layer.weight.shape[1], w.shape[1])
                         target_layer.weight.data.zero_()
-                        target_layer.weight.data[:min_0, :min_1].copy_(
-                            w[:min_0, :min_1].to(target_layer.weight.dtype)
-                        )
+                        target_layer.weight.data[:min_0, :min_1].copy_(w[:min_0, :min_1].to(target_layer.weight.dtype))
 
                 if b is not None and target_layer.bias is not None:
                     if b.shape == target_layer.bias.shape:
@@ -430,24 +415,9 @@ class YourCustomAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        q = (
-            self.query(hidden_states)
-            .view(B, L, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.key(hidden_states)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.value(hidden_states)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.query(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.key(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.value(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -503,9 +473,7 @@ class YourCustomAttention(BaseAttention):
                 attn_bias = None
                 if eff_mask is not None:
                     if eff_mask.dim() == 2:
-                        attn_bias = (
-                            (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                        ).to(q_sdpa.dtype)
+                        attn_bias = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(q_sdpa.dtype)
                     elif eff_mask.dim() == 4:
                         attn_bias = eff_mask.to(q_sdpa.dtype)
 
@@ -574,6 +542,7 @@ class YourCustomAttention(BaseAttention):
             if context.is_cuda and hasattr(self.out_proj, "weight"):
                 try:
                     from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                     output = self.out_proj(context)
                 except Exception as e:
                     logger.warning("Optional fused output projection failed: %s", e)
@@ -582,9 +551,7 @@ class YourCustomAttention(BaseAttention):
                 output = self.out_proj(context)
 
         if output.shape[-1] != self.hidden_size:
-            raise RuntimeError(
-                f"YourCustomAttention: output dim {output.shape[-1]} != hidden_size {self.hidden_size}"
-            )
+            raise RuntimeError(f"YourCustomAttention: output dim {output.shape[-1]} != hidden_size {self.hidden_size}")
 
         return output, (attn if output_attentions else None)
 
@@ -625,11 +592,7 @@ def inject_custom_attn(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -651,9 +614,12 @@ def inject_custom_attn(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    if old_attn is None and isinstance(target, nn.Module) and not any(
-        hasattr(target, a) for a in ("attention", "self_attn", "attn", "self")
-    ) and len(list(target.children())) == 0:
+    if (
+        old_attn is None
+        and isinstance(target, nn.Module)
+        and not any(hasattr(target, a) for a in ("attention", "self_attn", "attn", "self"))
+        and len(list(target.children())) == 0
+    ):
         return None
 
     try:

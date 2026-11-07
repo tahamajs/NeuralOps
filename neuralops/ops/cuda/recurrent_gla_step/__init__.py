@@ -9,10 +9,7 @@
 Recurrent GLA Step Hardware Operators.
 """
 
-from neuralops.ops.cuda.recurrent_gla_step.gla_step_autograd import (
-    recurrent_gla_step,
-    recurrent_gla_step_pytorch_ref,
-)
+from neuralops.ops.cuda.recurrent_gla_step.gla_step_autograd import recurrent_gla_step, recurrent_gla_step_pytorch_ref
 
 __all__ = [
     "recurrent_gla_step",

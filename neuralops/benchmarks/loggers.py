@@ -70,10 +70,13 @@ class LocalTracker(BaseTracker):
 class WandbTracker(BaseTracker):
     """Weights & Biases integration."""
 
-    def __init__(self, project_name: str = "neuralops", run_name: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, project_name: str = "neuralops", run_name: Optional[str] = None, config: Optional[Dict[str, Any]] = None
+    ):
         self.available = False
         try:
             import wandb
+
             self.wandb = wandb
             self.run = wandb.init(project=project_name, name=run_name, config=config or {}, reinit=True)
             self.available = True
@@ -100,6 +103,7 @@ class MLflowTracker(BaseTracker):
         self.available = False
         try:
             import mlflow
+
             self.mlflow = mlflow
             mlflow.set_experiment(experiment_name)
             self.active_run = mlflow.start_run(run_name=run_name)
@@ -128,6 +132,7 @@ class TensorBoardTracker(BaseTracker):
         self.available = False
         try:
             from torch.utils.tensorboard import SummaryWriter
+
             self.writer = SummaryWriter(log_dir=str(log_dir))
             self.available = True
         except Exception as e:

@@ -13,9 +13,10 @@ Executes end-to-end verification runs on synthetic datasets to ensure pipeline c
 
 import torch
 
+
 class TrainingValidator:
     @staticmethod
-    def overfit_test(model, batch, n_samples=8, steps=50, lr=1e-3, device='cpu'):
+    def overfit_test(model, batch, n_samples=8, steps=50, lr=1e-3, device="cpu"):
         print(f"\n=== Overfit test ({n_samples} samples, {steps} steps) ===")
         small_batch = {k: v[:n_samples].to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
@@ -29,10 +30,10 @@ class TrainingValidator:
             optimizer.zero_grad()
             losses.append(loss.item())
             if step % 10 == 0:
-                print(f'  step {step}: loss = {loss.item():.4f}')
+                print(f"  step {step}: loss = {loss.item():.4f}")
         if losses[-1] < losses[0] * 0.5:
-            print(f'  ✅ Overfit OK: {losses[0]:.4f} → {losses[-1]:.4f}')
+            print(f"  ✅ Overfit OK: {losses[0]:.4f} → {losses[-1]:.4f}")
             return True
         else:
-            print(f'  ❌ Overfit FAIL: {losses[0]:.4f} → {losses[-1]:.4f} (did not decrease by 50%)')
+            print(f"  ❌ Overfit FAIL: {losses[0]:.4f} → {losses[-1]:.4f} (did not decrease by 50%)")
             return False

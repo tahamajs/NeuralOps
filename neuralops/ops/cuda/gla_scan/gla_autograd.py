@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 import logging
 from typing import Any
+
 """
 Gated Linear Attention (GLA) Scan Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -80,6 +82,7 @@ def gla_scan_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.gla_scan import gla_scan_triton
+
         return gla_scan_triton
     except (ImportError, AttributeError):
         return None
@@ -92,6 +95,7 @@ def _gla_scan_dispatch(
     alpha: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """3-Level Dispatched GLA Scan."""
+
     def cuda_fn(q, k, v, alpha=None, **kwargs):
         mod = _get_module()
         return mod.gla_scan_fwd(
@@ -155,6 +159,7 @@ class _Gla_scanFunction(torch.autograd.Function):
             else:
                 res.append(None)
         return tuple(res)
+
 
 def gla_scan(q, k, v, alpha=None):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, alpha)):

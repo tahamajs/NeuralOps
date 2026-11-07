@@ -11,10 +11,6 @@ BAM-UMoE: Unified Mixture of Experts Attention Block
 Unified mixture-of-experts attention block combining low-rank factorization with expert routing.
 """
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -23,9 +19,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -102,14 +99,10 @@ class FactorisedLoRALinear(nn.Module):
             self.V.data.zero_()
             self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
             self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
-            self.V.data[:, :r].copy_(
-                Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype)
-            )
+            self.V.data[:, :r].copy_(Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype))
             if bias is not None and self.bias is not None:
                 n = min(self.bias.numel(), bias.numel())
-                self.bias.data[:n].copy_(
-                    bias[:n].to(device=self.bias.device, dtype=self.bias.dtype)
-                )
+                self.bias.data[:n].copy_(bias[:n].to(device=self.bias.device, dtype=self.bias.dtype))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_dtype = x.dtype
@@ -222,6 +215,7 @@ class UnifiedMoE(nn.Module):
         if x.is_cuda and len(self.experts) == 2 and self.top_k == 2:
             try:
                 from neuralops.ops.cuda.samba_moe import samba_moe
+
                 out = samba_moe(exp_outs[0], exp_outs[1], scores)
             except Exception:
                 out, _ = fused_bam_unified_qkv_moe_triton(exp_outs, logits, self.top_k)
@@ -238,9 +232,7 @@ class UnifiedMoE(nn.Module):
         return self._aux_loss.to(device)
 
 
-@ATTENTION_REGISTRY.register(
-    "bam_umoe", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("bam_umoe", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class BAMUMoEBlock(BaseAttention):
     """BAMUMoEBlock neural operator.
 
@@ -250,6 +242,7 @@ class BAMUMoEBlock(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -269,14 +262,13 @@ class BAMUMoEBlock(BaseAttention):
         **kwargs: Any,
     ) -> None:
         if config is None:
+
             class _Cfg:
                 pass
 
             config = _Cfg()
             config.hidden_size = kwargs.get("hidden_size", 768)
-            config.num_attention_heads = kwargs.get(
-                "num_heads", kwargs.get("num_attention_heads", 12)
-            )
+            config.num_attention_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
             config.head_dim = kwargs.get("head_dim", 64)
             config.model_type = kwargs.get("model_type", "")
 
@@ -314,9 +306,7 @@ class BAMUMoEBlock(BaseAttention):
         self.kv_repeat = self.num_heads // self.num_kv_heads
 
         cfg_hd = getattr(config, "head_dim", None)
-        self.head_dim = int(
-            cfg_hd or kwargs.get("head_dim") or (self.dim // max(1, self.num_heads))
-        )
+        self.head_dim = int(cfg_hd or kwargs.get("head_dim") or (self.dim // max(1, self.num_heads)))
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
@@ -324,22 +314,14 @@ class BAMUMoEBlock(BaseAttention):
             getattr(
                 config,
                 "lora_rank",
-                (
-                    getattr(comp_config, "lora_rank", lora_rank)
-                    if comp_config is not None
-                    else lora_rank
-                ),
+                (getattr(comp_config, "lora_rank", lora_rank) if comp_config is not None else lora_rank),
             )
         )
         self.lora_alpha = float(
             getattr(
                 config,
                 "lora_alpha",
-                (
-                    getattr(comp_config, "lora_alpha", lora_alpha)
-                    if comp_config is not None
-                    else lora_alpha
-                ),
+                (getattr(comp_config, "lora_alpha", lora_alpha) if comp_config is not None else lora_alpha),
             )
         )
         self.freeze_base = self.lora_rank > 0
@@ -434,9 +416,7 @@ class BAMUMoEBlock(BaseAttention):
         else:
             self.qkv_moe = None
 
-        dropout_p = float(
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-        )
+        dropout_p = float(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)))
         self.dropout = nn.Dropout(dropout_p)
 
         self.layer_id = layer_id
@@ -502,10 +482,7 @@ class BAMUMoEBlock(BaseAttention):
             pass
 
         cls_name = pretrained_attn.__class__.__name__
-        has_out_lin = any(
-            hasattr(pretrained_attn, a)
-            for a in ("out_lin", "c_proj", "o_proj", "out_proj", "dense")
-        )
+        has_out_lin = any(hasattr(pretrained_attn, a) for a in ("out_lin", "c_proj", "o_proj", "out_proj", "dense"))
         is_nested = False
         if (
             (
@@ -619,11 +596,7 @@ class BAMUMoEBlock(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -636,15 +609,10 @@ class BAMUMoEBlock(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
-                f"BAMUMoE.copy_weights: missing {missing_after} from "
-                f"{pretrained_attn.__class__.__name__}"
+                f"BAMUMoE.copy_weights: missing {missing_after} from " f"{pretrained_attn.__class__.__name__}"
             )
 
         def _orient(w, in_dim):
@@ -745,24 +713,9 @@ class BAMUMoEBlock(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         S = kv_input.shape[1]
 
-        q = (
-            self.q_lin(hidden_states)
-            .view(B, L, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.k_lin(kv_input)
-            .view(B, S, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_lin(kv_input)
-            .view(B, S, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_lin(kv_input).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_lin(kv_input).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         cos = kwargs.get("cos")
         sin = kwargs.get("sin")
@@ -795,7 +748,9 @@ class BAMUMoEBlock(BaseAttention):
                 attn_mask = (eff_mask == 1).unsqueeze(1).unsqueeze(2)
             try:
                 context = F.scaled_dot_product_attention(
-                    q, k, v,
+                    q,
+                    k,
+                    v,
                     attn_mask=attn_mask,
                     dropout_p=self.dropout.p if self.training else 0.0,
                     is_causal=is_causal if attn_mask is None else False,
@@ -935,9 +890,7 @@ def inject_bam_umoe(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-    if src_attn is not None and (
-        isinstance(src_attn, BAMUMoEBlock) or "BAMUMoE" in src_attn.__class__.__name__
-    ):
+    if src_attn is not None and (isinstance(src_attn, BAMUMoEBlock) or "BAMUMoE" in src_attn.__class__.__name__):
         return None
 
     if cfg is None and src_attn is not None:

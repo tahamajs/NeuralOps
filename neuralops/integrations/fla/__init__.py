@@ -16,10 +16,7 @@ from __future__ import annotations
 
 import importlib.util
 
-from neuralops.integrations.fla.adapter import (
-    FLALayerAdapter,
-    SUPPORTED_MODEL_FAMILIES,
-)
+from neuralops.integrations.fla.adapter import SUPPORTED_MODEL_FAMILIES, FLALayerAdapter
 from neuralops.integrations.fla.registry_bridge import (
     EXTENSION_ATTENTION_REGISTRY,
     SUPPORTED_FLA_ATTENTIONS,

@@ -13,8 +13,8 @@ Launches the telemetry dashboard and live benchmark monitoring web server.
 
 from __future__ import annotations
 
-import os
 import argparse
+import os
 from pathlib import Path
 
 from neuralops.runners.monitor import (

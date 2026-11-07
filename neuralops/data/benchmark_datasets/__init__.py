@@ -5,8 +5,8 @@
 # LICENSE file in the root directory of this source tree.
 """Offline-capable benchmark dataset registry and loaders."""
 
-from .manifest import BenchmarkDatasetInfo, BenchmarkDatasetRegistry
 from .loaders import BenchmarkTorchDataset, load_benchmark_dataset
+from .manifest import BenchmarkDatasetInfo, BenchmarkDatasetRegistry
 from .synthetic import get_synthetic_benchmark_sample
 
 __all__ = [

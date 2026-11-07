@@ -59,9 +59,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
     and can be saved/loaded via the HuggingFace Hub.
     """
 
-    def __init__(
-        self, model: nn.Module, custom_config: UnifiedTransformerConfig | None = None
-    ) -> None:
+    def __init__(self, model: nn.Module, custom_config: UnifiedTransformerConfig | None = None) -> None:
         super().__init__()
         self.model = model
         self.config = getattr(model, "config", None)

@@ -13,11 +13,6 @@ Random feature linear attention leveraging adaptive spectral kernel approximatio
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -27,10 +22,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -182,11 +178,7 @@ class SpectraformerAttention(BaseAttention):
             Q_ortho, _ = torch.linalg.qr(H)
         self.register_buffer("R", Q_ortho.float())
 
-        dropout_p = (
-            getattr(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
@@ -314,11 +306,7 @@ class SpectraformerAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -331,11 +319,7 @@ class SpectraformerAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"SpectraformerAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
@@ -360,9 +344,7 @@ class SpectraformerAttention(BaseAttention):
 
                 src_norm = torch.linalg.norm(w.float()).item()
                 if src_norm < 1e-4:
-                    logger.warning(
-                        f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4"
-                    )
+                    logger.warning(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -384,10 +366,7 @@ class SpectraformerAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (
-                        b.shape[0] < target_mod.bias.shape[0]
-                        and target_mod.bias.shape[0] % b.shape[0] == 0
-                    ):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -399,9 +378,7 @@ class SpectraformerAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    logger.warning(
-                        "Compressor copy_weights warning. Proceeding with initialized weights."
-                    )
+                    logger.warning("Compressor copy_weights warning. Proceeding with initialized weights.")
 
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
@@ -460,24 +437,9 @@ class SpectraformerAttention(BaseAttention):
             attention_mask = kwargs.get("attention_mask")
         B, N, _ = hidden_states.shape
 
-        q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.k_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -536,27 +498,23 @@ class SpectraformerAttention(BaseAttention):
         with torch.autocast(device_type=device_type, enabled=False):
             if self.is_decoder:
                 causal_mask = torch.tril(torch.ones(N, N, device=Q_proj.device, dtype=torch.bool))
-                aff = torch.matmul(
-                    Q_proj.float(), K_proj.float().transpose(-2, -1).contiguous()
-                )
+                aff = torch.matmul(Q_proj.float(), K_proj.float().transpose(-2, -1).contiguous())
                 aff = aff.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
 
                 num = torch.matmul(aff, v.float())
                 den = aff.sum(dim=-1, keepdim=True) + 1e-8
                 context = (num / den).to(hidden_states.dtype)
             else:
-                KV = torch.matmul(
-                    K_proj.transpose(-2, -1).contiguous().float(), v.float()
-                )
-                Z = (
-                    K_proj.float().sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()
-                )
+                KV = torch.matmul(K_proj.transpose(-2, -1).contiguous().float(), v.float())
+                Z = K_proj.float().sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()
 
                 num = torch.matmul(Q_proj.float(), KV)
                 den = torch.matmul(Q_proj.float(), Z) + 1e-8
                 context = (num / den).to(hidden_states.dtype)
 
-            context = torch.nan_to_num(context.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).to(hidden_states.dtype)
+            context = torch.nan_to_num(context.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).to(
+                hidden_states.dtype
+            )
 
         if head_mask is not None:
             hm = head_mask.to(context.device)
@@ -593,7 +551,7 @@ class SpectraformerAttention(BaseAttention):
         """Exact O(1) single-step autoregressive recurrent update for SpectraformerAttention."""
         from neuralops.ops.triton.state_update import fused_recurrent_linear_step
 
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -626,9 +584,7 @@ class SpectraformerAttention(BaseAttention):
         kv_state = state["kv_state"]
         z_state = state["z_state"]
 
-        out_token, kv_state, z_state = fused_recurrent_linear_step(
-            Q_proj, K_proj, v_in, kv_state, z_state, eps=1e-8
-        )
+        out_token, kv_state, z_state = fused_recurrent_linear_step(Q_proj, K_proj, v_in, kv_state, z_state, eps=1e-8)
         state["kv_state"] = kv_state
         state["z_state"] = z_state
         state["step_idx"] = step_idx + 1
@@ -751,14 +707,8 @@ def inject_spectraformer(
         )
 
         if src_attn is not None:
-            device = (
-                next(src_attn.parameters()).device
-                if list(src_attn.parameters())
-                else torch.device("cpu")
-            )
-            dtype = (
-                next(src_attn.parameters()).dtype if list(src_attn.parameters()) else torch.float32
-            )
+            device = next(src_attn.parameters()).device if list(src_attn.parameters()) else torch.device("cpu")
+            dtype = next(src_attn.parameters()).dtype if list(src_attn.parameters()) else torch.float32
             dummy_input = torch.randn(1, 4, hidden_size, device=device, dtype=dtype)
 
             with torch.no_grad():
@@ -771,9 +721,7 @@ def inject_spectraformer(
                         new_out = new_out[0]
 
                     norm_old = torch.norm(old_out.float(), p="fro").clamp_min(1e-8)
-                    rel_err = (
-                        torch.norm(old_out.float() - new_out.float(), p="fro") / norm_old
-                    ).item()
+                    rel_err = (torch.norm(old_out.float() - new_out.float(), p="fro") / norm_old).item()
                     if rel_err > max_error:
                         logger.warning(
                             "Spectraformer layer %d relative error %.4f > max_error %.4f",

@@ -142,7 +142,7 @@ Matmul $\mathbf{Q}^{(k)} \left(\mathbf{K}^{(k)}\right)^\top$: $2 B H L^2 d_h = 2
 $$\text{Total Naive FLOPs} = 8 B L D^2 + 3 T B L K D + 2 T B L D + 4 K B L^2 D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx 4 B L D^2 + 1.5 T B L K D + 2 K B L^2 D$$
 Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Distance Tensor: $B \cdot H \cdot L \cdot K \times 4 \text{ bytes}$ Concurrently, Cluster Masks: $B \cdot H \cdot L \cdot 1 \times 4 \text{ bytes}$ In this setting, Attention Score Tensor per iteration: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$ Additionally, Peak Memory: $\mathcal{O}(B H L^2 + B H L K)$ due to un-fused $L \times L$ attention allocation inside the cluster loop.
@@ -322,4 +322,3 @@ The empirical evaluation of `routing_attention` across standard sequence lengths
 | **$L = 2048$** | 0.62 ms | 240 MB | $2.50\times$ |
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
-

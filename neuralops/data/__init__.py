@@ -22,22 +22,9 @@ from typing import Any
 
 import torch
 
-from neuralops.data.base import (
-    DataConfig,
-    ProductionDataCollator,
-    TaskType,
-    create_dataloader,
-    preprocess_function,
-)
-from neuralops.data.multidataset import (
-    MultiDatasetLoader,
-    create_multidataset_loader,
-)
-from neuralops.data.packing import (
-    PackedCollator,
-    PackedDataset,
-    pack_sequences,
-)
+from neuralops.data.base import DataConfig, ProductionDataCollator, TaskType, create_dataloader, preprocess_function
+from neuralops.data.multidataset import MultiDatasetLoader, create_multidataset_loader
+from neuralops.data.packing import PackedCollator, PackedDataset, pack_sequences
 
 
 def list_local_datasets(base_dir: str | None = None) -> list[str]:
@@ -86,6 +73,7 @@ def generate_synthetic_data(
 ) -> Any:
     """Generate synthetic text/token sequences for testing."""
     import pandas as pd
+
     data = {
         "sentence": [f"Synthetic sample {i} for {domain} domain." for i in range(num_samples)],
         "label": [i % 2 for i in range(num_samples)],
@@ -123,6 +111,7 @@ def get_text_columns(task_name: str) -> list[str]:
 
 class BenchmarkDatasetRegistry:
     """Registry catalog for benchmark datasets."""
+
     _datasets: dict[str, Any] = {}
 
     @classmethod

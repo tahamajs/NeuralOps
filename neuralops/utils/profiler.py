@@ -32,9 +32,7 @@ class ModelProfiler:
     def _get_layer_name(self, name: str) -> str:
         """get layer name."""
         parts = name.split(".")
-        filtered = [
-            p for p in parts if p.isdigit() or p in ("attention", "ffn", "mlp", "intermediate")
-        ]
+        filtered = [p for p in parts if p.isdigit() or p in ("attention", "ffn", "mlp", "intermediate")]
         return ".".join(filtered) if filtered else name
 
     def start_profiling(self) -> None:
@@ -60,9 +58,7 @@ class ModelProfiler:
         for name, module in self.model.named_modules():
             if any(layer in name.lower() for layer in ("attention", "ffn", "mlp", "intermediate")):
                 pre = module.register_forward_pre_hook(lambda m, i, n=name: pre_hook_fn(m, i, n))
-                post = module.register_forward_hook(
-                    lambda m, i, o, n=name: post_hook_fn(m, i, o, n)
-                )
+                post = module.register_forward_hook(lambda m, i, o, n=name: post_hook_fn(m, i, o, n))
                 self.hooks.extend([pre, post])
 
     def stop_profiling(self) -> None:
@@ -113,9 +109,7 @@ class ModelProfiler:
                     print(f"   Memory: {stats['avg_memory_mb']:.2f} MB")
 
 
-def measure_inference_latency(
-    model, dataloader, device, num_samples: int = 100, warmup: int = 10
-) -> dict[str, float]:
+def measure_inference_latency(model, dataloader, device, num_samples: int = 100, warmup: int = 10) -> dict[str, float]:
     """Measure inference latency."""
     model.eval()
     model.to(device)

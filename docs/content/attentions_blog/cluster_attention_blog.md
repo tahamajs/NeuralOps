@@ -1,12 +1,12 @@
 # 🌟 Deep Dive: Cluster Attention (`ClusterAttention`)
 
-> **Category**: Hierarchical Multi-Scale & Dynamic Sparse Routing  
-> **Target Workload**: Ultra-long context training, memory-constrained inference, and high-concurrency LLM serving.  
+> **Category**: Hierarchical Multi-Scale & Dynamic Sparse Routing
+> **Target Workload**: Ultra-long context training, memory-constrained inference, and high-concurrency LLM serving.
 > **Key Innovation**: Routing token queries across coarse semantic clusters and fine local windows to eliminate uninformative computations.
 
 ---
 
-> [!NOTE] **Empirical Methodology & Theoretical Projection Notice**  
+> [!NOTE] **Empirical Methodology & Theoretical Projection Notice**
 > Benchmark metrics and trade-off tables presented in this architectural monograph reflect theoretical asymptotic scaling, design projections, or illustrative simulations from reference literature. For physical hardware benchmarks executed on dedicated silicon (NVIDIA RTX 4070 SM 8.9 / RTX 3090 SM 8.6) with cryptographic execution provenance, consult the authoritative [Master Results Matrix](https://huggingface.co/datasets/Hooshaai/neuralops-results) and [Results Ledger](../../api/results_ledger.md).
 
 ---
@@ -166,18 +166,18 @@ class ClusterAttentionEngine(nn.Module):
         self.num_heads = num_heads
         self.head_dim = hidden_size // num_heads
         self.rank = rank
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, rank, bias=bias)
         self.up_proj = nn.Linear(rank, hidden_size, bias=bias)
         self.q_proj = nn.Linear(hidden_size, hidden_size, bias=bias)
         self.out_proj = nn.Linear(hidden_size, hidden_size, bias=bias)
-        
+
         # Normalization & Regularization
         self.norm = nn.RMSNorm(rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(rank)
         self.dropout = nn.Dropout(dropout)
         self.scale = 1.0 / math.sqrt(self.head_dim)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -192,30 +192,30 @@ class ClusterAttentionEngine(nn.Module):
         attention_mask: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
         B, N, D = hidden_states.shape
-        
+
         # 1. Project into compressed subspace
         compressed = self.norm(self.down_proj(hidden_states))  # [B, N, rank]
-        
+
         # 2. Expand into key-value manifold
         reconstructed = self.up_proj(compressed)               # [B, N, D]
-        
+
         # 3. Query projection
         queries = self.q_proj(hidden_states)                  # [B, N, D]
-        
+
         # 4. Multi-head split
         q = queries.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         k = reconstructed.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         v = reconstructed.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        
+
         # 5. Scaled Dot-Product Attention with Flash-Kernel Dispatch
         scores = torch.matmul(q, k.transpose(-2, -1)) * self.scale
         if attention_mask is not None:
             scores = scores + attention_mask
-        
+
         probs = F.softmax(scores, dim=-1)
         probs = self.dropout(probs)
         context = torch.matmul(probs, v)  # [B, H, N, head_dim]
-        
+
         # 6. Reassemble and outward project
         context = context.transpose(1, 2).contiguous().view(B, N, D)
         return self.out_proj(context)
@@ -273,5 +273,5 @@ class ClusterAttentionEngine(nn.Module):
 
 ## 11. AI Architectural Infographic Generation Prompt
 
-> 🎨 **Midjourney v6 / DALL-E 3 Prompt:**  
+> 🎨 **Midjourney v6 / DALL-E 3 Prompt:**
 > A high-tech, futuristic 3D isometric scientific infographic on a dark cybernetic slate background `#0B0F19`. Visualizing the `Cluster Attention` neural attention architecture. Glowing data pipelines flow through translucent glassmorphic tensor matrices illuminated in neon emerald `#10B981` and laser cyan `#00F0FF`. Golden and cyan laser beams illustrate the mathematical transformation of token vectors into lightweight low-rank manifolds. Clean minimalist HUD annotations show FLOP reduction and memory savings metrics. Volumetric studio lighting, ray-traced reflections, 8k resolution, cinematic scientific visualization.

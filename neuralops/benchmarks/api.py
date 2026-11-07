@@ -37,6 +37,7 @@ def benchmark(
     seq_len: int = 128,
     eval_only: bool = False,
     timeout_s: int = 1800,
+    seed: int = 42,
     **kwargs: Any,
 ) -> BenchmarkResult:
     """Run a single benchmark evaluation for a module on model & dataset."""
@@ -50,6 +51,7 @@ def benchmark(
         batch_size=batch_size,
         lr=lr,
         max_length=seq_len,
+        seed=seed,
         eval_only=eval_only,
         timeout_s=timeout_s,
         **kwargs,
@@ -77,15 +79,40 @@ class Runner:
         **kwargs: Any,
     ) -> None:
         shortcut_keys = {
-            "delta", "all_delta", "gated", "all_gated", "svd", "all_svd",
-            "ssm", "all_ssm", "linear", "all_linear", "sparse", "all_sparse",
-            "hybrid", "all_hybrid", "all_attn", "all_attention", "all_comp",
-            "all_compressors", "all_modules", "fail_delta", "errors_only",
+            "delta",
+            "all_delta",
+            "gated",
+            "all_gated",
+            "svd",
+            "all_svd",
+            "ssm",
+            "all_ssm",
+            "linear",
+            "all_linear",
+            "sparse",
+            "all_sparse",
+            "hybrid",
+            "all_hybrid",
+            "all_attn",
+            "all_attention",
+            "all_comp",
+            "all_compressors",
+            "all_modules",
+            "fail_delta",
+            "errors_only",
         }
         config_kwargs = {k: v for k, v in kwargs.items() if k not in shortcut_keys}
         self.config = BenchmarkConfig(
-            model=models[0] if isinstance(models, list) and models else (models if isinstance(models, str) else "distilbert-base-uncased"),
-            dataset=datasets[0] if isinstance(datasets, list) and datasets else (datasets if isinstance(datasets, str) else "sst2"),
+            model=(
+                models[0]
+                if isinstance(models, list) and models
+                else (models if isinstance(models, str) else "distilbert-base-uncased")
+            ),
+            dataset=(
+                datasets[0]
+                if isinstance(datasets, list) and datasets
+                else (datasets if isinstance(datasets, str) else "sst2")
+            ),
             output_dir=Path(output_dir),
             device=device,
             epochs=epochs,

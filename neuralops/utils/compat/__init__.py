@@ -13,11 +13,13 @@ from __future__ import annotations
 
 import math
 from typing import Any
+
 import torch
 import torch.nn.functional as F
 
 # Backward compatibility bridge for PyTorch < 2.0 (e.g. PyTorch 1.12 with CUDA 11.3)
 if not hasattr(F, "scaled_dot_product_attention"):
+
     def _scaled_dot_product_attention(
         query: torch.Tensor,
         key: torch.Tensor,
@@ -46,6 +48,7 @@ if not hasattr(F, "scaled_dot_product_attention"):
     F.scaled_dot_product_attention = _scaled_dot_product_attention
 
 if not hasattr(torch, "compile"):
+
     def _compile(model: Any = None, *args: Any, **kwargs: Any) -> Any:
         if model is None:
             return lambda fn: fn
@@ -72,12 +75,7 @@ from .architectures import (
     should_compress_qwen3_5,
     wrap_for_family,
 )
-from .param_recovery import (
-    PROTECTED_KEYWORDS,
-    SVD_FACTOR_KEYWORDS,
-    _is_protected_param,
-    get_recovery_params,
-)
+from .param_recovery import PROTECTED_KEYWORDS, SVD_FACTOR_KEYWORDS, _is_protected_param, get_recovery_params
 
 __all__ = [
     "ALLOWED_FFN_PATTERNS",
@@ -103,7 +101,4 @@ __all__ = [
     "wrap_for_family",
 ]
 
-from neuralops.utils.compat import aliases
-from neuralops.utils.compat import architectures
-from neuralops.utils.compat import param_recovery
-
+from neuralops.utils.compat import aliases, architectures, param_recovery

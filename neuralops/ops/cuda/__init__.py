@@ -18,11 +18,7 @@ import importlib
 from typing import Any
 
 import neuralops.ops.cuda._bindings  # noqa: F401
-from neuralops.ops.cuda._map import (
-    CUDA_KERNEL_CATALOG,
-    _KERNEL_SYMBOL_MAP,
-    _SPECIAL_MAP,
-)
+from neuralops.ops.cuda._map import _KERNEL_SYMBOL_MAP, _SPECIAL_MAP, CUDA_KERNEL_CATALOG
 
 
 def list_cuda_kernels(category: str | None = None) -> list[str]:
@@ -38,52 +34,177 @@ def list_cuda_kernels(category: str | None = None) -> list[str]:
         Sorted list of kernel names.
     """
     if category == "modules":
-        return sorted(list({
-            "act_scale_gemm", "adaptive_span", "adaptive_sparse", "admm", "aegis_gate_norm",
-            "alibi_attention", "asvd", "awq", "based_taylor_attention", "bigbird",
-            "bitonic_topk", "block_diag_gemm", "causal_conv1d", "channel_shuffle",
-            "chela_slay", "chela_slay_wide", "cluster_attention", "cosformer", "cross_attention",
-            "decay_linear_attention", "differential_attention", "direct_svd", "dynamic_conv",
-            "dynamic_conv1d", "entmax_bisect", "entropy_gate", "entropy_pruning", "fast_attention",
-            "fast_gelu", "favor_plus", "flash_decode_stage2", "flash_decoding", "flash_gqa",
-            "fms_scan", "fp4_gemm", "fp8_compressor", "fp8_gemm", "fused_ce", "fused_dropout_add",
-            "fused_kd", "fused_norm_linear", "fused_rope", "fused_svd_projection", "fwht_transform",
-            "fwsvd", "galerkin_attention", "gated_deltanet", "gdn_delta_rule", "gdn_scan",
-            "gla_chunk_attn", "gla_scan", "gla_unnormalized_scan", "goldfinch_ahn", "griffin_ssd",
-            "hadamard_gemm", "hgrn2_scan", "hgrn2_spatial_scan", "hla_attention", "hnc_svd",
-            "hstu_attention", "hybrid_local_kernel", "hydra_attention", "hymba_transx", "jamba",
-            "jamba_info", "kmeans_quantize", "kronecker_gemm", "latent_kv_attn", "layernorm",
-            "lightning_attention", "linear_attention", "linear_rnn_attention", "linformer_attention",
-            "liquid_attention", "local_attention", "logcumsumexp", "longformer", "low_rank_svd",
-            "lsh_attention", "lut_gemm", "mamba2_block", "mamba_block", "mamba_svd_flash",
-            "moe_routing", "multi_scale_retention", "nasc_attention", "nexus", "nystrom_attention",
-            "orion", "paged_attention", "paged_kv_cache", "paged_kv_evict", "paged_recurrent_step",
-            "phantom", "quantized_gemm", "rala", "recurrent_gla_step", "recurrent_hgrn2_step",
-            "reformer", "retnet_chunk_retention", "rfa_attention", "rms_variance_match", "rmsnorm",
-            "rotational_svd", "routing_attention", "rpca_sparse_svd", "rwkv6", "rwkv6_state_scan",
-            "samba_m3", "samba_moe", "selective_scan", "selective_ssm", "simple_ssm",
-            "sliding_window", "soa_attn", "softplus", "sparse_attention", "sparsegpt",
-            "spectra_v2", "spectraformer_attention", "spectral_mamba", "spectral_shrinkage",
-            "speculative_verify", "split_head_norm", "state_update", "svd_linear_decay",
-            "svd_mamba_fused", "svd_prefix_scan", "swiglu", "ternary_gemm", "token_compressed",
-            "tpa_attention", "tt_contraction", "ttt_linear_step", "unified_rope_offset",
-            "upi_stuffed_mamba", "varlen_attention", "vspec", "wanda",
-        }))
+        return sorted(
+            list(
+                {
+                    "act_scale_gemm",
+                    "adaptive_span",
+                    "adaptive_sparse",
+                    "admm",
+                    "aegis_gate_norm",
+                    "alibi_attention",
+                    "asvd",
+                    "awq",
+                    "based_taylor_attention",
+                    "bigbird",
+                    "bitonic_topk",
+                    "block_diag_gemm",
+                    "causal_conv1d",
+                    "channel_shuffle",
+                    "chela_slay",
+                    "chela_slay_wide",
+                    "cluster_attention",
+                    "cosformer",
+                    "cross_attention",
+                    "decay_linear_attention",
+                    "differential_attention",
+                    "direct_svd",
+                    "dynamic_conv",
+                    "dynamic_conv1d",
+                    "entmax_bisect",
+                    "entropy_gate",
+                    "entropy_pruning",
+                    "fast_attention",
+                    "fast_gelu",
+                    "favor_plus",
+                    "flash_decode_stage2",
+                    "flash_decoding",
+                    "flash_gqa",
+                    "fms_scan",
+                    "fp4_gemm",
+                    "fp8_compressor",
+                    "fp8_gemm",
+                    "fused_ce",
+                    "fused_dropout_add",
+                    "fused_kd",
+                    "fused_norm_linear",
+                    "fused_rope",
+                    "fused_svd_projection",
+                    "fwht_transform",
+                    "fwsvd",
+                    "galerkin_attention",
+                    "gated_deltanet",
+                    "gdn_delta_rule",
+                    "gdn_scan",
+                    "gla_chunk_attn",
+                    "gla_scan",
+                    "gla_unnormalized_scan",
+                    "goldfinch_ahn",
+                    "griffin_ssd",
+                    "hadamard_gemm",
+                    "hgrn2_scan",
+                    "hgrn2_spatial_scan",
+                    "hla_attention",
+                    "hnc_svd",
+                    "hstu_attention",
+                    "hybrid_local_kernel",
+                    "hydra_attention",
+                    "hymba_transx",
+                    "jamba",
+                    "jamba_info",
+                    "kmeans_quantize",
+                    "kronecker_gemm",
+                    "latent_kv_attn",
+                    "layernorm",
+                    "lightning_attention",
+                    "linear_attention",
+                    "linear_rnn_attention",
+                    "linformer_attention",
+                    "liquid_attention",
+                    "local_attention",
+                    "logcumsumexp",
+                    "longformer",
+                    "low_rank_svd",
+                    "lsh_attention",
+                    "lut_gemm",
+                    "mamba2_block",
+                    "mamba_block",
+                    "mamba_svd_flash",
+                    "moe_routing",
+                    "multi_scale_retention",
+                    "nasc_attention",
+                    "nexus",
+                    "nystrom_attention",
+                    "orion",
+                    "paged_attention",
+                    "paged_kv_cache",
+                    "paged_kv_evict",
+                    "paged_recurrent_step",
+                    "phantom",
+                    "quantized_gemm",
+                    "rala",
+                    "recurrent_gla_step",
+                    "recurrent_hgrn2_step",
+                    "reformer",
+                    "retnet_chunk_retention",
+                    "rfa_attention",
+                    "rms_variance_match",
+                    "rmsnorm",
+                    "rotational_svd",
+                    "routing_attention",
+                    "rpca_sparse_svd",
+                    "rwkv6",
+                    "rwkv6_state_scan",
+                    "samba_m3",
+                    "samba_moe",
+                    "selective_scan",
+                    "selective_ssm",
+                    "simple_ssm",
+                    "sliding_window",
+                    "soa_attn",
+                    "softplus",
+                    "sparse_attention",
+                    "sparsegpt",
+                    "spectra_v2",
+                    "spectraformer_attention",
+                    "spectral_mamba",
+                    "spectral_shrinkage",
+                    "speculative_verify",
+                    "split_head_norm",
+                    "state_update",
+                    "svd_linear_decay",
+                    "svd_mamba_fused",
+                    "svd_prefix_scan",
+                    "swiglu",
+                    "ternary_gemm",
+                    "token_compressed",
+                    "tpa_attention",
+                    "tt_contraction",
+                    "ttt_linear_step",
+                    "unified_rope_offset",
+                    "upi_stuffed_mamba",
+                    "varlen_attention",
+                    "vspec",
+                    "wanda",
+                }
+            )
+        )
     if category == "operators":
         import neuralops.ops.cuda as nck
+
         util_names = {
-            "load_cuda_module", "get_cuda_arch_flags", "dispatch", "force_kernel_backend",
-            "get_dispatch_stats", "reset_dispatch_stats", "is_cuda_available",
-            "get_device_capability", "check_cuda_error", "list_cuda_kernels",
+            "load_cuda_module",
+            "get_cuda_arch_flags",
+            "dispatch",
+            "force_kernel_backend",
+            "get_dispatch_stats",
+            "reset_dispatch_stats",
+            "is_cuda_available",
+            "get_device_capability",
+            "check_cuda_error",
+            "list_cuda_kernels",
         }
-        return sorted([
-            k for k in nck.__all__
-            if k not in util_names
-            and not k.endswith("_pytorch_ref")
-            and not k.endswith("_pytorch_reference")
-            and not k.endswith("_pytorch")
-            and not k.endswith("_ref")
-        ])
+        return sorted(
+            [
+                k
+                for k in nck.__all__
+                if k not in util_names
+                and not k.endswith("_pytorch_ref")
+                and not k.endswith("_pytorch_reference")
+                and not k.endswith("_pytorch")
+                and not k.endswith("_ref")
+            ]
+        )
     return list(CUDA_KERNEL_CATALOG)
 
 
@@ -108,9 +229,7 @@ def __dir__() -> list[str]:
 
 
 __all__ = sorted(
-    list(_KERNEL_SYMBOL_MAP.keys())
-    + list(_SPECIAL_MAP.keys())
-    + ["CUDA_KERNEL_CATALOG", "list_cuda_kernels"]
+    list(_KERNEL_SYMBOL_MAP.keys()) + list(_SPECIAL_MAP.keys()) + ["CUDA_KERNEL_CATALOG", "list_cuda_kernels"]
 )
 
 if "annotations" in globals():

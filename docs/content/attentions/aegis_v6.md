@@ -144,10 +144,10 @@ RMSNorm pre-norm: $\mathcal{O}(B N D)$ Furthermore, FAVOR+ projection matrix pro
 $$\text{FLOPs}_{\text{total}} \approx 16 B N D (r_{\text{svd}} + r_{\text{lora}}) + 4 B N D W + 6 B N m d_h + 9 B N D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx 8 B N D (r_{\text{svd}} + r_{\text{lora}}) + 2 B N D W + 3 B N m d_h + 4.5 B N D$$
-Specifically, regarding \textbf{Parameter Footprint}, 
+Specifically, regarding \textbf{Parameter Footprint},
 
   $$\Theta = 4 r_{\text{svd}} + 8 D r_{\text{lora}} + d_h m + 3 D$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Local tiled outputs: $\mathcal{O}(B H N d_h)$ Concurrently, FAVOR+ random feature tensor $\phi(\hat{Q})$: $\mathcal{O}(B H N m)$ In this setting, Global memory accumulator matrix $M^{\text{global}}$: $\mathcal{O}(B H m d_h)$ Additionally, Total Activation Memory: $\mathcal{O}(B N D + B H N m + B H m d_h)$
@@ -241,4 +241,3 @@ The empirical evaluation of `aegis_v6` across standard sequence lengths and lang
 | **$L = 2048$** | 0.55 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.04 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.05 ms** | **440 MB** | **6.24x** |
-

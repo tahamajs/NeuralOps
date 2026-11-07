@@ -56,13 +56,13 @@ def export(
 
     if fmt not in SUPPORTED_FORMATS:
         raise IntegrationNotImplementedError(
-            f"Export format '{format}' is not supported. "
-            f"Supported formats: {', '.join(SUPPORTED_FORMATS)}."
+            f"Export format '{format}' is not supported. " f"Supported formats: {', '.join(SUPPORTED_FORMATS)}."
         )
 
     if fmt == "safetensors":
         try:
             from safetensors.torch import save_file
+
             state_dict = model.state_dict()
             save_file(state_dict, str(out))
             return str(out)
@@ -99,6 +99,7 @@ def export(
 
     elif fmt == "gguf":
         from neuralops.export.gguf_exporter import export_to_gguf
+
         exported_path = export_to_gguf(
             model=model,
             output_path=out,

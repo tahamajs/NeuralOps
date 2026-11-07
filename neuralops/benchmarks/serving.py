@@ -35,8 +35,8 @@ class PagedKVCache:
         if self.position + n > self.storage.shape[0] * self.storage.shape[2]:
             raise RuntimeError("PagedKVCache capacity exceeded")
         flat = self.storage.view(2, -1, self.storage.shape[-2], self.storage.shape[-1])
-        flat[0, self.position:self.position + n].copy_(key)
-        flat[1, self.position:self.position + n].copy_(value)
+        flat[0, self.position : self.position + n].copy_(key)
+        flat[1, self.position : self.position + n].copy_(value)
         self.position += n
 
 
@@ -61,4 +61,12 @@ def run_benchmark(device: str = "cuda", prompt_tokens: int = 128, decode_tokens:
         token_k = token.view(1, 1, heads, head_dim).transpose(0, 1)
         cache.append(token_k, token_k)
     decode_ms = (time.perf_counter() - decode_start) * 1000.0 / decode_tokens
-    return {"module": "paged_kv_serving", "category": "serving", "device": str(target), "ttft_ms": ttft, "itl_ms": decode_ms, "requests_per_second": 1000.0 / ttft if ttft else 0.0, "status": "PASS" if torch.isfinite(projected).all() else "FAIL"}
+    return {
+        "module": "paged_kv_serving",
+        "category": "serving",
+        "device": str(target),
+        "ttft_ms": ttft,
+        "itl_ms": decode_ms,
+        "requests_per_second": 1000.0 / ttft if ttft else 0.0,
+        "status": "PASS" if torch.isfinite(projected).all() else "FAIL",
+    }

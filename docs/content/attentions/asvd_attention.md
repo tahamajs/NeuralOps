@@ -137,7 +137,7 @@ Specifically, regarding \textbf{Total MACs}, $8 B N D r + 2 B N^2 D$ Furthermore
 
 
 ### Parameter Footprint Comparison
-Specifically, regarding \textbf{Dense Uncompressed MHA}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{ASVD MHA Parameter Count}, 
+Specifically, regarding \textbf{Dense Uncompressed MHA}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{ASVD MHA Parameter Count},
 
   \[
   \text{Params}_{\text{ASVD}} = 4 \cdot [D \cdot r + r + r \cdot D] + 4 D = 8 D r + 4 r + 4 D \text{ floats}
@@ -213,4 +213,3 @@ The empirical evaluation of `asvd_attention` across standard sequence lengths an
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

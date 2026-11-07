@@ -12,12 +12,6 @@ Streaming multi-head attention utilizing rolling window caches and anchor tokens
 """
 
 from __future__ import annotations
-from neuralops.core.common import _find_layer_list
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -28,9 +22,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import apply_attention_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _find_layer_list
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +104,7 @@ class SpanExpandedAttention(BaseAttention):
 
     This module is deprecated. Use 'adaptive_span_attention' instead.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -127,9 +124,7 @@ class SpanExpandedAttention(BaseAttention):
 
         self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         self.dim = self.hidden_size
-        self.num_heads: int = getattr(
-            config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
-        )
+        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         self.num_kv_heads: int = getattr(
             config,
             "num_key_value_heads",
@@ -144,13 +139,16 @@ class SpanExpandedAttention(BaseAttention):
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
         default_span = 64
-        self.expansion_span: int = int(kwargs.get("expansion_span", default_span if (not expansion_span or expansion_span == 1024) else expansion_span))
+        self.expansion_span: int = int(
+            kwargs.get(
+                "expansion_span", default_span if (not expansion_span or expansion_span == 1024) else expansion_span
+            )
+        )
         self.num_sink_tokens: int = max(0, min(int(num_sink_tokens), self.expansion_span))
 
         if self.expansion_span <= self.num_sink_tokens:
             raise ValueError(
-                f"expansion_span ({self.expansion_span}) must be > "
-                f"num_sink_tokens ({self.num_sink_tokens})."
+                f"expansion_span ({self.expansion_span}) must be > " f"num_sink_tokens ({self.num_sink_tokens})."
             )
 
         is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
@@ -183,23 +181,35 @@ class SpanExpandedAttention(BaseAttention):
         self.supports_gqa = True
 
         self.q_proj = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -248,9 +258,12 @@ class SpanExpandedAttention(BaseAttention):
                 and hasattr(src.output, "dense")
             )
             or (
-                cls_name in [
-                    "BertSelfAttention", "RobertaSelfAttention",
-                    "XLMRobertaSelfAttention", "ElectraSelfAttention",
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
                 or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
@@ -261,8 +274,10 @@ class SpanExpandedAttention(BaseAttention):
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None),
-            "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -307,7 +322,8 @@ class SpanExpandedAttention(BaseAttention):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (
-                        o_w, bias_o.data.clone() if bias_o is not None else None,
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
                     )
 
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -344,13 +360,11 @@ class SpanExpandedAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -359,19 +373,17 @@ class SpanExpandedAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
-                f"SpanExpandedAttention copy_weights failed: missing "
-                f"{missing_after} from {src.__class__.__name__}."
+                f"SpanExpandedAttention copy_weights failed: missing " f"{missing_after} from {src.__class__.__name__}."
             )
 
         target_map = {
-            "q": self.q_proj, "k": self.k_proj,
-            "v": self.v_proj, "o": self.out_proj,
+            "q": self.q_proj,
+            "k": self.k_proj,
+            "v": self.v_proj,
+            "o": self.out_proj,
         }
 
         with torch.no_grad():
@@ -389,10 +401,7 @@ class SpanExpandedAttention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif (
-                    w.shape[0] < target_mod.weight.shape[0]
-                    and target_mod.weight.shape[0] % w.shape[0] == 0
-                ):
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -404,10 +413,7 @@ class SpanExpandedAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (
-                        b.shape[0] < target_mod.bias.shape[0]
-                        and target_mod.bias.shape[0] % b.shape[0] == 0
-                    ):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -420,8 +426,9 @@ class SpanExpandedAttention(BaseAttention):
                 fnorm = float(torch.linalg.norm(target_mod.weight.float()).item())
                 if fnorm < 1e-4:
                     logger.warning(
-                        "SpanExpandedAttention copy_weights: %s has near-zero "
-                        "norm (%.2e).", proj_key, fnorm,
+                        "SpanExpandedAttention copy_weights: %s has near-zero " "norm (%.2e).",
+                        proj_key,
+                        fnorm,
                     )
 
         if self.freeze_base:
@@ -503,6 +510,7 @@ class SpanExpandedAttention(BaseAttention):
         if k.is_cuda:
             try:
                 from neuralops.ops.triton.paged_attention import paged_kv_evict_compact_triton
+
                 return (
                     k.index_select(-2, keep_idx),
                     v.index_select(-2, keep_idx),
@@ -535,21 +543,15 @@ class SpanExpandedAttention(BaseAttention):
         **kwargs: Any,
     ):
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "SpanExpandedAttention does not support cross-attention."
-            )
+            raise NotImplementedError("SpanExpandedAttention does not support cross-attention.")
 
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
         device = hidden_states.device
 
         q = self.q_proj(hidden_states).view(B, L, H, Dh).permute(0, 2, 1, 3).contiguous()
-        k_new = self.k_proj(hidden_states).view(
-            B, L, self.num_kv_heads, Dh
-        ).permute(0, 2, 1, 3).contiguous()
-        v_new = self.v_proj(hidden_states).view(
-            B, L, self.num_kv_heads, Dh
-        ).permute(0, 2, 1, 3).contiguous()
+        k_new = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3).contiguous()
+        v_new = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3).contiguous()
 
         past_k, past_v, past_pos, seen = self._get_past_kv(past_key_value, layer_idx)
 
@@ -561,18 +563,13 @@ class SpanExpandedAttention(BaseAttention):
             new_positions = position_ids.long()
         elif past_pos is not None:
             start_pos = int(past_pos[:, -1].max().item()) + 1
-            new_positions = (
-                torch.arange(start_pos, start_pos + L, device=device)
-                .unsqueeze(0).expand(B, -1)
-            )
+            new_positions = torch.arange(start_pos, start_pos + L, device=device).unsqueeze(0).expand(B, -1)
         else:
             start_pos = seen
-            new_positions = (
-                torch.arange(start_pos, start_pos + L, device=device)
-                .unsqueeze(0).expand(B, -1)
-            )
+            new_positions = torch.arange(start_pos, start_pos + L, device=device).unsqueeze(0).expand(B, -1)
             if past_pos is None and past_k is not None and past_k.shape[-2] >= self.expansion_span:
                 from neuralops.utils.logging_config import warn_once
+
                 warn_once(
                     "span_expanded_cache_sat",
                     "SpanExpandedAttention: cache length has saturated at "
@@ -594,10 +591,7 @@ class SpanExpandedAttention(BaseAttention):
             if past_pos is not None:
                 pos_full = torch.cat([past_pos, new_positions], dim=-1)
             else:
-                pos_full = (
-                    torch.arange(k_full.shape[-2], device=device)
-                    .unsqueeze(0).expand(B, -1)
-                )
+                pos_full = torch.arange(k_full.shape[-2], device=device).unsqueeze(0).expand(B, -1)
         else:
             k_full = k_new
             v_full = v_new
@@ -609,13 +603,9 @@ class SpanExpandedAttention(BaseAttention):
             attn_k = k_full
             attn_v = v_full
             attn_pos = pos_full
-            cache_k, cache_v, cache_pos = self._truncate_cache_with_sinks(
-                k_full, v_full, pos_full
-            )
+            cache_k, cache_v, cache_pos = self._truncate_cache_with_sinks(k_full, v_full, pos_full)
         else:
-            cache_k, cache_v, cache_pos = self._truncate_cache_with_sinks(
-                k_full, v_full, pos_full
-            )
+            cache_k, cache_v, cache_pos = self._truncate_cache_with_sinks(k_full, v_full, pos_full)
             attn_k = cache_k
             attn_v = cache_v
             attn_pos = cache_pos
@@ -647,24 +637,18 @@ class SpanExpandedAttention(BaseAttention):
 
         N_k = attn_k_exp.shape[-2]
 
-        use_sdpa = (
-            attention_mask is None
-            and head_mask is None
-            and not output_attentions
-            and not self.training
-        )
+        use_sdpa = attention_mask is None and head_mask is None and not output_attentions and not self.training
         if use_sdpa:
             _is_causal = bool(self.is_decoder) and is_prefill and start_pos == 0
             try:
                 sdpa_out = F.scaled_dot_product_attention(
-                    q, attn_k_exp, attn_v_exp,
+                    q,
+                    attn_k_exp,
+                    attn_v_exp,
                     is_causal=_is_causal,
                     dropout_p=0.0,
                 )
-                sdpa_out = (
-                    sdpa_out.permute(0, 2, 1, 3).contiguous()
-                    .view(B, L, self.all_head_size)
-                )
+                sdpa_out = sdpa_out.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
                 sdpa_out = torch.nan_to_num(sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                 if self.is_nested_encoder:
                     return sdpa_out, None, present_key_value
@@ -675,9 +659,7 @@ class SpanExpandedAttention(BaseAttention):
                 pass
 
         scale = 1.0 / math.sqrt(int(Dh))
-        scores = torch.matmul(
-            q.float(), attn_k_exp.float().transpose(-2, -1).contiguous()
-        ) * scale
+        scores = torch.matmul(q.float(), attn_k_exp.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder:
             q_pos = new_positions.view(B, 1, L, 1)
@@ -696,17 +678,11 @@ class SpanExpandedAttention(BaseAttention):
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                probs = probs * head_mask.view(
-                    head_mask.size(0), self.num_heads, 1, 1
-                ).to(probs.dtype)
+                probs = probs * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(probs.dtype)
             elif head_mask.dim() == 4:
                 probs = probs * head_mask.to(probs.dtype)
 
-        context = (
-            torch.matmul(probs, attn_v_exp)
-            .permute(0, 2, 1, 3).contiguous()
-            .view(B, L, self.all_head_size)
-        )
+        context = torch.matmul(probs, attn_v_exp).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         attn_weights = probs if output_attentions else None

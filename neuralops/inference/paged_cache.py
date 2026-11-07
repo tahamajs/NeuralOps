@@ -37,6 +37,7 @@ import collections
 import logging
 import time
 from typing import Any
+
 import torch
 
 logger = logging.getLogger("NeuralOps.PagedKVCache")
@@ -46,10 +47,8 @@ try:
 except ImportError:
     PagedStateTable = None
 
-from neuralops.ops.triton.paged_attention import (
-    paged_attention_kernel,
-    paged_attention_pytorch as paged_attention_reference,
-)
+from neuralops.ops.triton.paged_attention import paged_attention_kernel
+from neuralops.ops.triton.paged_attention import paged_attention_pytorch as paged_attention_reference
 
 __all__ = [
     "PagedKVCache",
@@ -287,7 +286,9 @@ class PagedKVCache:
             raise KeyError(f"Sequence {seq_id} not found.")
         blocks = self.block_tables[seq_id]
         if not blocks:
-            empty = torch.empty((0, self.block_size, self.num_heads, self.head_dim), dtype=self.dtype, device=self.device)
+            empty = torch.empty(
+                (0, self.block_size, self.num_heads, self.head_dim), dtype=self.dtype, device=self.device
+            )
             return empty, empty
         if len(blocks) == 1:
             b = blocks[0]
@@ -362,7 +363,9 @@ class PagedKVCache:
                 "reads_per_sec": round(self._total_reads / read_time, 2),
             },
             "latency": {
-                "avg_append_latency_us": round((self._total_append_time_sec / max(1, self._total_append_tokens)) * 1e6, 2),
+                "avg_append_latency_us": round(
+                    (self._total_append_time_sec / max(1, self._total_append_tokens)) * 1e6, 2
+                ),
                 "avg_read_latency_us": round((self._total_read_time_sec / max(1, self._total_reads)) * 1e6, 2),
             },
             "utilization_pct": round(frag["block_utilization"] * 100.0, 2),
@@ -476,4 +479,3 @@ class PagedKVCache:
 # Serving and cache management compatibility aliases
 PagedKVCacheManager = PagedKVCache
 PagedKVCacheBlock = dict
-

@@ -48,7 +48,9 @@ logger = logging.getLogger("SingleOptimizedKD")
 class DenseTeacherModel(nn.Module):
     """Standard dense Transformer LM teacher for multi-pillar distillation."""
 
-    def __init__(self, vocab_size: int = 1000, hidden_size: int = 768, num_heads: int = 12, num_layers: int = 4) -> None:
+    def __init__(
+        self, vocab_size: int = 1000, hidden_size: int = 768, num_heads: int = 12, num_layers: int = 4
+    ) -> None:
         super().__init__()
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
@@ -56,22 +58,26 @@ class DenseTeacherModel(nn.Module):
         self.head_dim = hidden_size // num_heads
 
         self.embed = nn.Embedding(vocab_size, hidden_size)
-        self.layers = nn.ModuleList([
-            nn.TransformerEncoderLayer(
-                d_model=hidden_size,
-                nhead=num_heads,
-                dim_feedforward=hidden_size * 2,
-                dropout=0.0,
-                activation="gelu",
-                batch_first=True,
-                norm_first=True,
-            )
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                nn.TransformerEncoderLayer(
+                    d_model=hidden_size,
+                    nhead=num_heads,
+                    dim_feedforward=hidden_size * 2,
+                    dropout=0.0,
+                    activation="gelu",
+                    batch_first=True,
+                    norm_first=True,
+                )
+                for _ in range(num_layers)
+            ]
+        )
         self.norm = nn.LayerNorm(hidden_size)
         self.head = nn.Linear(hidden_size, vocab_size, bias=False)
 
-    def forward(self, input_ids: torch.Tensor) -> tuple[torch.Tensor, list[torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+    def forward(
+        self, input_ids: torch.Tensor
+    ) -> tuple[torch.Tensor, list[torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         B, S = input_ids.shape
         x = self.embed(input_ids)
         hidden_states = []
@@ -316,7 +322,9 @@ def run_single_optimized_kd(
     logger.info(f"  Steps completed: {steps} ({final_tps} tok/s)")
     logger.info(f"  PPL Initial:     {res['initial_ppl']} -> Final: {res['final_ppl']} (Best: {res['best_ppl']})")
     logger.info(f"  PPL Reduction:   {res['best_ppl_drop_pct']}% best drop")
-    logger.info(f"  CE Loss Initial: {res['initial_ce_loss']} -> Final: {res['final_ce_loss']} (Best: {res['best_ce_loss']})")
+    logger.info(
+        f"  CE Loss Initial: {res['initial_ce_loss']} -> Final: {res['final_ce_loss']} (Best: {res['best_ce_loss']})"
+    )
     logger.info("=" * 70)
     sys.stdout.flush()
     return res

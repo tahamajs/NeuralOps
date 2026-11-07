@@ -2,7 +2,7 @@
 
 ## 1. Executive Abstract & Architectural Motivation
 
-Standard Multi-Head Attention treats sequences as 1D structures, incurring $\mathcal{O}(N^2)$ quadratic complexity over length $N$. Vision Grid Attention (ViG) reformulates 1D token sequences of length $N$ into a 2D spatial grid of dimensions $H \times W$ (where $H \cdot W \ge N$). 
+Standard Multi-Head Attention treats sequences as 1D structures, incurring $\mathcal{O}(N^2)$ quadratic complexity over length $N$. Vision Grid Attention (ViG) reformulates 1D token sequences of length $N$ into a 2D spatial grid of dimensions $H \times W$ (where $H \cdot W \ge N$).
 
 By factorizing attention interactions into separate row-wise and column-wise linear attention passes using non-negative feature maps $\phi(x) = \text{ELU}(x) + 1.0$, ViG computes bidirectional contextual interactions in $\mathcal{O}(N \sqrt{N})$ sequence time. Furthermore, dynamic sigmoidal gating channels adaptively blend row and column attention outputs per head, enabling vision models and 2D spatial sequence processors to achieve global context receptive fields with linear-grid efficiency.
 
@@ -155,19 +155,19 @@ def _vig_grid_fused_kernel(
 ):
     pid_bh = tl.program_id(0)
     pid_row = tl.program_id(1) # Row index
-    
+
     # SRAM Associative Matrix State [d_k, d_k]
     kv_row = tl.zeros((d_k, d_k), dtype=tl.float32)
-    
+
     # Compute row associative state over grid width W
     for w in range(W):
         k_val = tl.load(K_ptr + pid_bh * stride_qh + pid_row * stride_qh_dim + w * stride_qw + tl.arange(0, d_k))
         v_val = tl.load(V_ptr + pid_bh * stride_qh + pid_row * stride_qh_dim + w * stride_qw + tl.arange(0, d_k))
-        
+
         # ELU + 1.0 Feature Map
         phi_k = tl.where(k_val > 0, k_val + 1.0, tl.exp(k_val))
         kv_row += phi_k[:, None] * v_val[None, :]
-        
+
     # Store row output tile
 ```
 
@@ -203,4 +203,3 @@ The empirical evaluation of `vig_attention` across standard sequence lengths and
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

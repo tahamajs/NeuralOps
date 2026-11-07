@@ -125,9 +125,7 @@ class ModelAdapter:
         self.raw_family = raw_family
         self.family = FAMILY_ALIASES.get(raw_family, raw_family)
 
-        self.hidden_size = int(
-            getattr(self.source, "hidden_size", getattr(self.source, "d_model", 0)) or 0
-        )
+        self.hidden_size = int(getattr(self.source, "hidden_size", getattr(self.source, "d_model", 0)) or 0)
         heads = getattr(
             self.source,
             "num_attention_heads",
@@ -140,9 +138,7 @@ class ModelAdapter:
         self.num_heads = int(heads or 0)
         h_dim = getattr(self.source, "head_dim", None)
         self.head_dim = int(
-            h_dim
-            if h_dim is not None
-            else (self.hidden_size // self.num_heads if self.num_heads else 0)
+            h_dim if h_dim is not None else (self.hidden_size // self.num_heads if self.num_heads else 0)
         )
         kv_heads = getattr(
             self.source,
@@ -156,9 +152,7 @@ class ModelAdapter:
         self.num_key_value_heads = int(kv_heads or self.num_heads or 0)
         if self.num_key_value_heads <= 0:
             self.num_key_value_heads = self.num_heads
-        self.num_hidden_layers = int(
-            getattr(self.source, "num_hidden_layers", getattr(self.source, "num_layers", 0))
-        )
+        self.num_hidden_layers = int(getattr(self.source, "num_hidden_layers", getattr(self.source, "num_layers", 0)))
         self.q_proj_out = self.num_heads * self.head_dim
         self.kv_proj_out = self.num_key_value_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_key_value_heads))

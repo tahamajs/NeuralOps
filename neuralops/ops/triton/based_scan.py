@@ -19,12 +19,7 @@ from typing import Optional
 
 import torch
 
-from neuralops.ops.triton._types import (
-    HAS_TRITON,
-    check_triton_suitability,
-    tl,
-    triton,
-)
+from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability, tl, triton
 
 logger = logging.getLogger(__name__)
 
@@ -35,15 +30,34 @@ __all__ = [
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _fused_based_taylor_scan_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Out_ptr,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Out_ptr,
         scale,
-        B, H, T, D,
-        stride_qb, stride_qh, stride_qt, stride_qd,
-        stride_kb, stride_kh, stride_kt, stride_kd,
-        stride_vb, stride_vh, stride_vt, stride_vd,
-        stride_ob, stride_oh, stride_ot, stride_od,
+        B,
+        H,
+        T,
+        D,
+        stride_qb,
+        stride_qh,
+        stride_qt,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kt,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vt,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_ot,
+        stride_od,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
         BLOCK_D: tl.constexpr,
@@ -56,7 +70,9 @@ if HAS_TRITON and tl is not None:
         offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
         offs_d = tl.arange(0, BLOCK_D)
 
-        q_ptrs = Q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_m[:, None] * stride_qt + offs_d[None, :] * stride_qd
+        q_ptrs = (
+            Q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_m[:, None] * stride_qt + offs_d[None, :] * stride_qd
+        )
         q = tl.load(q_ptrs, mask=(offs_m[:, None] < T) & (offs_d[None, :] < D), other=0.0)
 
         acc = tl.zeros((BLOCK_M, BLOCK_D), dtype=tl.float32)
@@ -65,8 +81,20 @@ if HAS_TRITON and tl is not None:
         num_n_blocks = tl.cdiv(T, BLOCK_N)
         for n_blk in range(num_n_blocks):
             offs_n = n_blk * BLOCK_N + tl.arange(0, BLOCK_N)
-            k_ptrs = K_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_n[:, None] * stride_kt + offs_d[None, :] * stride_kd
-            v_ptrs = V_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_n[:, None] * stride_vt + offs_d[None, :] * stride_vd
+            k_ptrs = (
+                K_ptr
+                + pid_b * stride_kb
+                + pid_h * stride_kh
+                + offs_n[:, None] * stride_kt
+                + offs_d[None, :] * stride_kd
+            )
+            v_ptrs = (
+                V_ptr
+                + pid_b * stride_vb
+                + pid_h * stride_vh
+                + offs_n[:, None] * stride_vt
+                + offs_d[None, :] * stride_vd
+            )
 
             k = tl.load(k_ptrs, mask=(offs_n[:, None] < T) & (offs_d[None, :] < D), other=0.0)
             v = tl.load(v_ptrs, mask=(offs_n[:, None] < T) & (offs_d[None, :] < D), other=0.0)
@@ -85,9 +113,13 @@ if HAS_TRITON and tl is not None:
         denom = tl.maximum(denom_acc[:, None], 1e-6)
         out = acc / denom
 
-        o_ptrs = Out_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_m[:, None] * stride_ot + offs_d[None, :] * stride_od
+        o_ptrs = (
+            Out_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_m[:, None] * stride_ot + offs_d[None, :] * stride_od
+        )
         tl.store(o_ptrs, out.to(Out_ptr.dtype.element_ty), mask=(offs_m[:, None] < T) & (offs_d[None, :] < D))
+
 else:
+
     def _fused_based_taylor_scan_fwd_kernel(*args, **kwargs):
         pass
 
@@ -129,7 +161,7 @@ def based_taylor_scan(
 
     try:
         B, H, T, D = q.shape
-        sc = float(scale) if scale is not None else (1.0 / (D ** 0.5))
+        sc = float(scale) if scale is not None else (1.0 / (D**0.5))
         BLOCK_M = 32
         BLOCK_N = 32
         BLOCK_D = triton.next_power_of_2(D)
@@ -137,13 +169,31 @@ def based_taylor_scan(
         grid = (B, H, triton.cdiv(T, BLOCK_M))
 
         _fused_based_taylor_scan_fwd_kernel[grid](
-            q.contiguous(), k.contiguous(), v.contiguous(), out,
+            q.contiguous(),
+            k.contiguous(),
+            v.contiguous(),
+            out,
             sc,
-            B, H, T, D,
-            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            B,
+            H,
+            T,
+            D,
+            q.stride(0),
+            q.stride(1),
+            q.stride(2),
+            q.stride(3),
+            k.stride(0),
+            k.stride(1),
+            k.stride(2),
+            k.stride(3),
+            v.stride(0),
+            v.stride(1),
+            v.stride(2),
+            v.stride(3),
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            out.stride(3),
             BLOCK_M=BLOCK_M,
             BLOCK_N=BLOCK_N,
             BLOCK_D=BLOCK_D,

@@ -78,8 +78,7 @@ def _infer_hidden_size(old_attn: nn.Module, attn_attr: str = "", model_type: str
     if hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
         return int(old_attn.self.query.in_features)
     raise ValueError(
-        f"Cannot infer hidden_size from {type(old_attn).__name__} "
-        f"(model_type={model_type}, attn_attr={attn_attr})"
+        f"Cannot infer hidden_size from {type(old_attn).__name__} " f"(model_type={model_type}, attn_attr={attn_attr})"
     )
 
 
@@ -101,25 +100,19 @@ def _infer_num_heads(old_attn: nn.Module, attn_attr: str = "", model_type: str =
     raise ValueError(f"Cannot infer num_heads from {type(old_attn).__name__}")
 
 
-def _replace_bert_attention(
-    layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any
-) -> None:
+def _replace_bert_attention(layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any) -> None:
     from neuralops.core._attention_helpers import _replace_layers
 
     _replace_layers([layer], "attention", inject_fn, model_config, kwargs, "bert")
 
 
-def _replace_gpt_attention(
-    layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any
-) -> None:
+def _replace_gpt_attention(layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any) -> None:
     from neuralops.core._attention_helpers import _replace_layers
 
     _replace_layers([layer], "attn", inject_fn, model_config, kwargs, "gpt2")
 
 
-def _replace_distilbert_attention(
-    layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any
-) -> None:
+def _replace_distilbert_attention(layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any) -> None:
     from neuralops.core._attention_helpers import _replace_layers
 
     _replace_layers([layer], "attention", inject_fn, model_config, kwargs, "distilbert")

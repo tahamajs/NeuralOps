@@ -13,13 +13,6 @@ Attention replacement synthesizing causal depthwise convolution kernels dynamica
 
 from __future__ import annotations
 
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _detect_decoder, _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    LoRALinear,
-)
-
 import logging
 from typing import Any
 
@@ -27,7 +20,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get, _detect_decoder, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -117,16 +112,13 @@ class DynamicConvAttention(BaseAttention):
         n_heads = num_heads or kwargs.get("num_heads") or kwargs.get("num_attention_heads")
         if n_heads is None and config is not None:
             n_heads = (
-                _cfg_get(config, "num_attention_heads")
-                or _cfg_get(config, "num_heads")
-                or _cfg_get(config, "n_head")
+                _cfg_get(config, "num_attention_heads") or _cfg_get(config, "num_heads") or _cfg_get(config, "n_head")
             )
         if n_heads is None and src_attn is not None:
             n_heads = getattr(
                 src_attn,
                 "num_heads",
-                getattr(src_attn, "num_attention_heads",
-                        getattr(src_attn, "n_head", None)),
+                getattr(src_attn, "num_attention_heads", getattr(src_attn, "n_head", None)),
             )
         self.num_heads = int(n_heads or 12)
 
@@ -145,16 +137,12 @@ class DynamicConvAttention(BaseAttention):
         self.is_decoder = _detect_decoder(config, is_decoder, src_attn)
         self.is_nested_encoder = False
 
-        comp_config = kwargs.get("comp_config") or (
-            getattr(config, "compression_config", None) if config else None
-        )
+        comp_config = kwargs.get("comp_config") or (getattr(config, "compression_config", None) if config else None)
         self.lora_rank = int(
-            _cfg_get(config, "lora_rank",
-                     _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
         )
         self.lora_alpha = float(
-            _cfg_get(config, "lora_alpha",
-                     _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+            _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         )
         self.freeze_base = self.lora_rank > 0
 
@@ -165,14 +153,22 @@ class DynamicConvAttention(BaseAttention):
                 target_dtype = p.dtype
 
         self.v_proj = LoRALinear(
-            self.hidden_size, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base, dtype=target_dtype,
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.hidden_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base, dtype=target_dtype,
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
         )
 
         bottleneck = max(64, self.hidden_size // 4)
@@ -185,9 +181,7 @@ class DynamicConvAttention(BaseAttention):
         with torch.no_grad():
             nn.init.zeros_(self.weight_generator[-1].weight)
             self.weight_generator[-1].bias.zero_()
-            bias_view = self.weight_generator[-1].bias.view(
-                self.num_heads, self.kernel_size
-            )
+            bias_view = self.weight_generator[-1].bias.view(self.num_heads, self.kernel_size)
             bias_view[:, -1] = 6.0
 
         self.q_proj = None
@@ -201,7 +195,8 @@ class DynamicConvAttention(BaseAttention):
         self.c_proj = self.out_proj
 
         dropout_p = _cfg_get(
-            config, "dropout",
+            config,
+            "dropout",
             _cfg_get(config, "attention_probs_dropout_prob", 0.1),
         )
         self.dropout = nn.Dropout(float(dropout_p))
@@ -221,12 +216,15 @@ class DynamicConvAttention(BaseAttention):
 
         is_nested = False
         if (
-            (hasattr(src, "self") and hasattr(src.self, "query")
-             and hasattr(src, "output") and hasattr(src.output, "dense"))
-            or cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                            "XLMRobertaSelfAttention", "ElectraSelfAttention")
-            or (cls_name.endswith("SelfAttention")
-                and "distil" not in cls_name.lower() and not has_out_lin)
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or cls_name
+            in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention")
+            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_lin)
         ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
@@ -273,6 +271,7 @@ class DynamicConvAttention(BaseAttention):
         if v_weight is None or (o_weight is None and not self.is_nested_encoder):
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 if v_weight is None:
                     w, b = adapter.get_weight_bias(src, "v")
@@ -286,9 +285,7 @@ class DynamicConvAttention(BaseAttention):
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
         if v_weight is None:
-            raise RuntimeError(
-                f"DynamicConvAttention.copy_weights: missing V projection from {cls_name}."
-            )
+            raise RuntimeError(f"DynamicConvAttention.copy_weights: missing V projection from {cls_name}.")
 
         def _orient(w: torch.Tensor, target_shape: tuple[int, int]) -> torch.Tensor:
             if w.dim() != 2:
@@ -310,9 +307,7 @@ class DynamicConvAttention(BaseAttention):
             if v_bias is not None and self.v_proj.bias is not None:
                 mn = min(self.v_proj.bias.numel(), v_bias.numel())
                 self.v_proj.bias.data.zero_()
-                self.v_proj.bias.data[:mn].copy_(
-                    v_bias[:mn].to(self.v_proj.bias.device, self.v_proj.bias.dtype)
-                )
+                self.v_proj.bias.data[:mn].copy_(v_bias[:mn].to(self.v_proj.bias.device, self.v_proj.bias.dtype))
             elif self.v_proj.bias is not None:
                 self.v_proj.bias.data.zero_()
 
@@ -363,6 +358,7 @@ class DynamicConvAttention(BaseAttention):
         """Compute out[b,h,i,:] = sum_k v_full[b,h,i+k,:] * dyn_w[b,h,i,k]."""
         try:
             from neuralops.ops.triton.elementwise import fused_dynamic_conv1d_triton
+
             return fused_dynamic_conv1d_triton(v_full, dyn_w)
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -381,9 +377,7 @@ class DynamicConvAttention(BaseAttention):
             end = min(start + chunk, N)
             v_chunk = v_win_all[:, :, start:end, :, :]
             w_chunk = dyn_w[:, :, start:end, :]
-            out[:, :, start:end, :] = torch.einsum(
-                "bhcdk,bhck->bhcd", v_chunk, w_chunk
-            )
+            out[:, :, start:end, :] = torch.einsum("bhcdk,bhck->bhcd", v_chunk, w_chunk)
         return out
 
     def forward(
@@ -438,9 +432,7 @@ class DynamicConvAttention(BaseAttention):
             valid_full = torch.cat([pad_valid, valid], dim=1)
             valid_window = valid_full.unfold(1, K, 1)
 
-            dyn_logits = dyn_logits.masked_fill(
-                ~valid_window.unsqueeze(2), -1e4
-            )
+            dyn_logits = dyn_logits.masked_fill(~valid_window.unsqueeze(2), -1e4)
 
         dyn_w = F.softmax(dyn_logits, dim=-1)
         dyn_w = dyn_w.permute(0, 2, 1, 3)
@@ -455,21 +447,16 @@ class DynamicConvAttention(BaseAttention):
             pad = torch.zeros((B, H, K - 1, d), dtype=v.dtype, device=v.device)
             v_full = torch.cat([pad, v], dim=2)
 
-        use_cache = (
-            kwargs.get("use_cache", False)
-            or (past_key_value is not None and past_key_value is not False)
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         present_kv: Any | None = None
         if use_cache:
             keep = K - 1 if K > 1 else 0
             if keep > 0:
-                v_cache = v_full[:, :, v_full.shape[2] - keep:, :].contiguous()
+                v_cache = v_full[:, :, v_full.shape[2] - keep :, :].contiguous()
             else:
                 v_cache = v_full[:, :, :0, :].contiguous()
 
-            dummy_k_cache = torch.empty(
-                (B, H, 0, d), dtype=v_cache.dtype, device=v_cache.device
-            )
+            dummy_k_cache = torch.empty((B, H, 0, d), dtype=v_cache.dtype, device=v_cache.device)
             present_kv = (dummy_k_cache, v_cache)
 
         out = self._chunked_windowed_conv(v_full, dyn_w, chunk=self._CONV_CHUNK)
@@ -577,6 +564,7 @@ def inject_dynamic_conv(
         return target if n_inj > 0 else None
 
     try:
+
         def _already_injected(m: Any) -> bool:
             """Detect if m is already a custom attention (DynamicConv, WGQA, etc)."""
             if m is None:
@@ -584,11 +572,20 @@ def inject_dynamic_conv(
             if isinstance(m, DynamicConvAttention):
                 return True
             cls_name = m.__class__.__name__
-            if any(k in cls_name for k in (
-                "DynamicConv", "WeightedGrouped", "WGQA", "ALiBi",
-                "CrossAttention", "SlidingWindow", "AdaptiveSpan",
-                "GatedDelta", "Mamba",
-            )):
+            if any(
+                k in cls_name
+                for k in (
+                    "DynamicConv",
+                    "WeightedGrouped",
+                    "WGQA",
+                    "ALiBi",
+                    "CrossAttention",
+                    "SlidingWindow",
+                    "AdaptiveSpan",
+                    "GatedDelta",
+                    "Mamba",
+                )
+            ):
                 return True
             if hasattr(m, "inner") and isinstance(m.inner, DynamicConvAttention):
                 return True
@@ -663,10 +660,9 @@ def inject_dynamic_conv(
 
         if not spliced:
             logger.error(
-                "inject_dynamic_conv: no writable attention attribute on %s. "
-                "Available modules: %s",
+                "inject_dynamic_conv: no writable attention attribute on %s. " "Available modules: %s",
                 type(target).__name__,
-                [n for n, _ in target.named_children()]
+                [n for n, _ in target.named_children()],
             )
             return None
 
@@ -676,11 +672,14 @@ def inject_dynamic_conv(
         logger.exception("inject_dynamic_conv failed: %s", e)
         return None
 
+
 __all__ = [
     "DynamicConvAttention",
     "LoRALinear",
     "inject_dynamic_conv",
 ]
+
+
 class SlidingWindowAttention(nn.Module):
     """Production Sliding Window Attention layer attending strictly to local window context."""
 
@@ -717,13 +716,14 @@ class SlidingWindowAttention(nn.Module):
     ) -> tuple[torch.Tensor, None]:
         B, N, D = x.shape
         if self.window_size is not None and N > self.window_size and kwargs.get("clamp_window", False):
-            x = x[:, -self.window_size:, :]
+            x = x[:, -self.window_size :, :]
             N = x.size(1)
         elif self.window_size is not None and N == 100 and self.window_size == 32:
-            return x[:, -self.window_size:, :], None
+            return x[:, -self.window_size :, :], None
 
         if self.q_proj is not None and D == self.dim:
             from neuralops.ops.triton.sliding_window import sliding_window_attention_kernel
+
             q = self.q_proj(x).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
             k = self.k_proj(x).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
             v = self.v_proj(x).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
@@ -733,6 +733,7 @@ class SlidingWindowAttention(nn.Module):
             return out, None
 
         from neuralops.ops.triton.sliding_window import sliding_window_pytorch
+
         head_dim = min(32, D)
         heads = max(1, D // head_dim)
         act_dim = heads * head_dim

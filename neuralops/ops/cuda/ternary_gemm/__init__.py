@@ -9,10 +9,7 @@
 1.58-Bit Ternary GEMM Hardware Operators.
 """
 
-from neuralops.ops.cuda.ternary_gemm.ternary_autograd import (
-    ternary_gemm,
-    ternary_gemm_pytorch_ref,
-)
+from neuralops.ops.cuda.ternary_gemm.ternary_autograd import ternary_gemm, ternary_gemm_pytorch_ref
 
 __all__ = [
     "ternary_gemm",

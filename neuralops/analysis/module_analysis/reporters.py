@@ -20,7 +20,6 @@ from typing import Any, Dict, List
 
 from neuralops.analysis.module_analysis.constants import CSV_OUT, MD_OUT
 
-
 ANALYSIS_FIELDNAMES = [
     "module_name",
     "file_path",

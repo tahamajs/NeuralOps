@@ -21,10 +21,10 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from pathlib import Path
 import sqlite3
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -39,7 +39,8 @@ def init_sqlite_ledger(db_path: Path) -> sqlite3.Connection:
     # Enable WAL mode for crash-resilience and concurrency
     cursor.execute("PRAGMA journal_mode=WAL;")
 
-    cursor.execute("""
+    cursor.execute(
+        """
     CREATE TABLE IF NOT EXISTS benchmark_runs (
         run_id TEXT PRIMARY KEY,
         timestamp TEXT,
@@ -47,9 +48,11 @@ def init_sqlite_ledger(db_path: Path) -> sqlite3.Connection:
         total_modules INTEGER,
         passed_modules INTEGER
     );
-    """)
+    """
+    )
 
-    cursor.execute("""
+    cursor.execute(
+        """
     CREATE TABLE IF NOT EXISTS module_metrics (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         run_id TEXT,
@@ -68,7 +71,8 @@ def init_sqlite_ledger(db_path: Path) -> sqlite3.Connection:
         status TEXT,
         FOREIGN KEY (run_id) REFERENCES benchmark_runs (run_id)
     );
-    """)
+    """
+    )
 
     # Schema migration checks
     cursor.execute("PRAGMA table_info(module_metrics);")
@@ -112,11 +116,13 @@ def export_benchmark_results(
 
     try:
         import subprocess
+
         commit_sha = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
     except Exception:
         commit_sha = "unknown"
 
     import socket
+
     hostname = socket.gethostname()
 
     cur.execute("PRAGMA table_info(benchmark_runs)")
@@ -193,9 +199,19 @@ def export_benchmark_results(
     # 3. CSV summary
     csv_path = output_dir / "benchmarks_latest.csv"
     headers = [
-        "module", "type", "latency_ms", "p50_ms", "p95_ms", "p99_ms",
-        "peak_vram_mb", "backward_ms", "throughput_tok_s", "sqnr_db",
-        "compression_ratio", "compress_latency_ms", "status",
+        "module",
+        "type",
+        "latency_ms",
+        "p50_ms",
+        "p95_ms",
+        "p99_ms",
+        "peak_vram_mb",
+        "backward_ms",
+        "throughput_tok_s",
+        "sqnr_db",
+        "compression_ratio",
+        "compress_latency_ms",
+        "status",
     ]
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=headers, extrasaction="ignore")
@@ -207,6 +223,7 @@ def export_benchmark_results(
     try:
         import pyarrow as pa  # type: ignore[import-untyped]
         import pyarrow.parquet as pq  # type: ignore[import-untyped]
+
         table = pa.Table.from_pylist(records)
         pq.write_table(table, str(parquet_path))
     except Exception:
@@ -219,9 +236,13 @@ def export_benchmark_results(
         f.write(f"- **Run ID**: `{run_id}`\n")
         f.write(f"- **Timestamp**: {timestamp}\n")
         f.write(f"- **Target Accelerator**: `{device}`\n")
-        f.write(f"- **Modules Verified**: {passed_count}/{len(records)} ({passed_count / max(1, len(records)) * 100:.1f}%)\n\n")
+        f.write(
+            f"- **Modules Verified**: {passed_count}/{len(records)} ({passed_count / max(1, len(records)) * 100:.1f}%)\n\n"
+        )
         f.write("## Verified Module Telemetry\n\n")
-        f.write("| Module | Category | Latency (ms) | p95 (ms) | VRAM (MB) | Throughput (tok/s) | SQNR (dB) | Status |\n")
+        f.write(
+            "| Module | Category | Latency (ms) | p95 (ms) | VRAM (MB) | Throughput (tok/s) | SQNR (dB) | Status |\n"
+        )
         f.write("|---|---|---|---|---|---|---|---|\n")
         for r in records:
             f.write(
@@ -239,7 +260,9 @@ def export_benchmark_results(
         f.write("\\small\n")
         f.write("\\begin{tabular}{llcccc}\n")
         f.write("\\toprule\n")
-        f.write("\\textbf{Module} & \\textbf{Category} & \\textbf{Latency (ms)} & \\textbf{p95 (ms)} & \\textbf{Throughput (tok/s)} & \\textbf{Status} \\\\\n")
+        f.write(
+            "\\textbf{Module} & \\textbf{Category} & \\textbf{Latency (ms)} & \\textbf{p95 (ms)} & \\textbf{Throughput (tok/s)} & \\textbf{Status} \\\\\n"
+        )
         f.write("\\midrule\n")
         for r in records[:25]:
             mod_escaped = str(r.get("module", "")).replace("_", "\\_")
@@ -287,10 +310,42 @@ def main() -> int:
         paths = export_benchmark_results(records, device=device)
     else:
         sample_records = [
-            {"module": "cosformer", "type": "attention", "latency_ms": 0.65, "p50_ms": 0.64, "p95_ms": 0.68, "peak_vram_mb": 12.4, "throughput_tok_s": 395000.0, "status": "PASS"},
-            {"module": "gla_attention", "type": "attention", "latency_ms": 0.72, "p50_ms": 0.71, "p95_ms": 0.76, "peak_vram_mb": 14.2, "throughput_tok_s": 355000.0, "status": "PASS"},
-            {"module": "direct_svd", "type": "compressor", "sqnr_db": 24.5, "compression_ratio": 4.0, "compress_latency_ms": 1.1, "status": "PASS"},
-            {"module": "hnc_svd", "type": "compressor", "sqnr_db": 31.8, "compression_ratio": 4.0, "compress_latency_ms": 2.3, "status": "PASS"},
+            {
+                "module": "cosformer",
+                "type": "attention",
+                "latency_ms": 0.65,
+                "p50_ms": 0.64,
+                "p95_ms": 0.68,
+                "peak_vram_mb": 12.4,
+                "throughput_tok_s": 395000.0,
+                "status": "PASS",
+            },
+            {
+                "module": "gla_attention",
+                "type": "attention",
+                "latency_ms": 0.72,
+                "p50_ms": 0.71,
+                "p95_ms": 0.76,
+                "peak_vram_mb": 14.2,
+                "throughput_tok_s": 355000.0,
+                "status": "PASS",
+            },
+            {
+                "module": "direct_svd",
+                "type": "compressor",
+                "sqnr_db": 24.5,
+                "compression_ratio": 4.0,
+                "compress_latency_ms": 1.1,
+                "status": "PASS",
+            },
+            {
+                "module": "hnc_svd",
+                "type": "compressor",
+                "sqnr_db": 31.8,
+                "compression_ratio": 4.0,
+                "compress_latency_ms": 2.3,
+                "status": "PASS",
+            },
         ]
         paths = export_benchmark_results(sample_records, device="mps")
 

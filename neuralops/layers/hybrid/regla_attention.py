@@ -11,13 +11,6 @@ Refined Gated Linear Attention (ReGLA)
 Refined gated linear attention stabilizing recurrent states via bounded activation normalization.
 """
 
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 from typing import Any
 
@@ -25,9 +18,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +37,7 @@ class ReGLAAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -368,11 +364,7 @@ class ReGLAAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -388,15 +380,9 @@ class ReGLAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"ReGLAAttention.copy_weights: missing {missing_after} from {cls_name}."
-            )
+            raise RuntimeError(f"ReGLAAttention.copy_weights: missing {missing_after} from {cls_name}.")
 
         with torch.no_grad():
             for proj_key, target_mod in (
@@ -416,18 +402,13 @@ class ReGLAAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
 
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
 
                 if b is not None and target_mod.bias is not None:
@@ -470,30 +451,10 @@ class ReGLAAttention(BaseAttention):
         device = x.device
         dtype = x.dtype
 
-        q = (
-            self.q_proj(x)
-            .view(B, L, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-        )
-        k = (
-            self.k_proj(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-        )
-        g = (
-            self.gate_proj(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-        )
+        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
+        k = self.k_proj(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
+        v = self.v_proj(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
+        g = self.gate_proj(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -521,9 +482,7 @@ class ReGLAAttention(BaseAttention):
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 valid_mask = (
-                    (attention_mask > 0)
-                    if not attention_mask.dtype.is_floating_point
-                    else (attention_mask > -1e4)
+                    (attention_mask > 0) if not attention_mask.dtype.is_floating_point else (attention_mask > -1e4)
                 )
             elif attention_mask.dim() == 4:
                 if attention_mask.dtype.is_floating_point:
@@ -543,9 +502,11 @@ class ReGLAAttention(BaseAttention):
 
         if is_causal:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
             if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q_act.is_cuda and self.head_dim <= 128:
                 try:
                     from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
+
                     out = fused_svd_linear_chunk_scan_triton(
                         q_act.to(v_gated.dtype),
                         k_gated.to(v_gated.dtype),
@@ -640,9 +601,7 @@ class ReGLAAttention(BaseAttention):
             ).permute(0, 2, 1)
 
         if loc.shape[-1] != self.dim:
-            raise RuntimeError(
-                f"ReGLAAttention: conv output dim {loc.shape[-1]} != hidden dim {self.dim}"
-            )
+            raise RuntimeError(f"ReGLAAttention: conv output dim {loc.shape[-1]} != hidden dim {self.dim}")
 
         fused = (out.to(dtype) + self.conv_scale.to(dtype) * loc.to(dtype)).to(dtype)
         fused = fused * valid_mask.unsqueeze(-1).to(dtype)
@@ -697,11 +656,7 @@ def inject_regla(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

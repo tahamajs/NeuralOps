@@ -31,7 +31,10 @@ def run_perplexity_evaluation(**kwargs: Any) -> dict[str, Any]:
 
 
 def run_synthetic_perplexity(
-    *, device: str = "cuda", batches: int = 3, batch_size: int = 2,
+    *,
+    device: str = "cuda",
+    batches: int = 3,
+    batch_size: int = 2,
     seq_len: int = 32,
 ) -> dict[str, Any]:
     """Measure perplexity on a deterministic synthetic token stream."""
@@ -76,9 +79,16 @@ def main() -> int:
     parser.add_argument("--output", default=None)
     parser.add_argument("--synthetic", action="store_true", help="Use deterministic tiny-model data without downloads")
     args = parser.parse_args()
-    result = run_synthetic_perplexity(device=args.device) if args.synthetic else run_perplexity_evaluation(
-        module_name=args.module, module_type=args.module_type,
-        model_name=args.model, dataset_name=args.dataset, device=args.device,
+    result = (
+        run_synthetic_perplexity(device=args.device)
+        if args.synthetic
+        else run_perplexity_evaluation(
+            module_name=args.module,
+            module_type=args.module_type,
+            model_name=args.model,
+            dataset_name=args.dataset,
+            device=args.device,
+        )
     )
     payload = json.dumps(result, indent=2, default=str)
     print(payload)

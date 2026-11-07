@@ -12,14 +12,6 @@ Quality and capacity-aware grouped query attention balancing generation fidelity
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _detect_decoder
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -28,6 +20,9 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import _cfg_get, _detect_decoder, _read_past_kv
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +46,7 @@ class QCQAAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
@@ -68,15 +64,9 @@ class QCQAAttention(BaseAttention):
         rank = kwargs.pop("rank", 64)
         super().__init__(config, rank)
         self.config = config
-        comp_config = kwargs.get("comp_config") or (
-            getattr(config, "compression_config", None) if config else None
-        )
+        comp_config = kwargs.get("comp_config") or (getattr(config, "compression_config", None) if config else None)
 
-        h_size = (
-            kwargs.get("hidden_size")
-            or getattr(config, "hidden_size", None)
-            or getattr(config, "d_model", None)
-        )
+        h_size = kwargs.get("hidden_size") or getattr(config, "hidden_size", None) or getattr(config, "d_model", None)
         if h_size is None and pretrained_attn is not None:
             for cand in ("q_proj", "q_lin", "query", "c_attn"):
                 mod = getattr(pretrained_attn, cand, None)
@@ -119,9 +109,7 @@ class QCQAAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        self.router_temp = float(
-            _cfg_get(comp_config, "router_temp", kwargs.get("router_temp", router_temp))
-        )
+        self.router_temp = float(_cfg_get(comp_config, "router_temp", kwargs.get("router_temp", router_temp)))
         if self.router_temp <= 0:
             self.router_temp = 1.0
 
@@ -151,24 +139,40 @@ class QCQAAttention(BaseAttention):
                 target_dtype = p.dtype
 
         self.q_proj = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base, dtype=target_dtype,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
         )
         self.k_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base, dtype=target_dtype,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
         )
         self.v_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base, dtype=target_dtype,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base, dtype=target_dtype,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
         )
 
         self.query = self.q_proj
@@ -182,17 +186,13 @@ class QCQAAttention(BaseAttention):
         self.o_proj = self.out_proj
         self.c_proj = self.out_proj
 
-        self.router_static = nn.Parameter(
-            torch.zeros(self.num_heads, self.num_kv_heads)
-        )
+        self.router_static = nn.Parameter(torch.zeros(self.num_heads, self.num_kv_heads))
         self._init_router_gqa()
 
         self.router_dynamic = nn.Linear(self.head_dim, self.num_kv_heads, bias=False)
         nn.init.normal_(self.router_dynamic.weight, std=0.02)
 
-        dropout_p = _cfg_get(
-            config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
-        )
+        dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
@@ -230,22 +230,23 @@ class QCQAAttention(BaseAttention):
                 and hasattr(src, "output")
                 and hasattr(src.output, "dense")
             )
-            or cls_name in (
-                "BertSelfAttention", "RobertaSelfAttention",
-                "XLMRobertaSelfAttention", "ElectraSelfAttention",
+            or cls_name
+            in (
+                "BertSelfAttention",
+                "RobertaSelfAttention",
+                "XLMRobertaSelfAttention",
+                "ElectraSelfAttention",
             )
-            or (
-                cls_name.endswith("SelfAttention")
-                and "distil" not in cls_name.lower()
-                and not has_out_lin
-            )
+            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_lin)
         ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None),
-            "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -266,10 +267,11 @@ class QCQAAttention(BaseAttention):
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
                 extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :],
-                                   c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :],
-                                   c_b[2 * split_size :] if c_b is not None else None)
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -322,13 +324,11 @@ class QCQAAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -337,10 +337,7 @@ class QCQAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"QCQAAttention.copy_weights: missing mandatory projections "
@@ -381,10 +378,7 @@ class QCQAAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (
-                        b.shape[0] < target_mod.bias.shape[0]
-                        and target_mod.bias.shape[0] % b.shape[0] == 0
-                    ):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -448,7 +442,6 @@ class QCQAAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[Any, ...]:
-
         B, L, _ = hidden_states.shape
         device = hidden_states.device
         is_cross = encoder_hidden_states is not None
@@ -528,6 +521,7 @@ class QCQAAttention(BaseAttention):
         if K_perm.is_cuda and w_head.is_cuda:
             try:
                 from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
+
                 B_q, H_kv_q, N_kv_q, d_q = K_perm.shape
                 H_q = w_head.shape[1]
                 K_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, K_perm)
@@ -549,10 +543,7 @@ class QCQAAttention(BaseAttention):
                 abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
                 causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
             else:
-                causal = (
-                    torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool))
-                    .unsqueeze(0).unsqueeze(0)
-                )
+                causal = torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             causal_mask = causal
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
@@ -570,12 +561,9 @@ class QCQAAttention(BaseAttention):
                 # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
                 try:
                     from neuralops.ops.cuda.flash_gqa import flash_gqa
+
                     out_cuda = flash_gqa(q_heads, K_mixed, V_mixed, is_causal=is_causal_flag, scale=scale)
-                    context = (
-                        out_cuda.to(q.dtype)
-                        .permute(0, 2, 1, 3).contiguous()
-                        .view(B, L, self.all_head_size)
-                    )
+                    context = out_cuda.to(q.dtype).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
                     context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
                     dispatched = True
                 except Exception as e_cuda:
@@ -585,14 +573,11 @@ class QCQAAttention(BaseAttention):
                 # Level 2: Triton JIT autotuned online softmax kernel
                 try:
                     from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+
                     out_triton = fused_weighted_gqa_online_softmax_triton(
                         q_heads, K_mixed, V_mixed, head_weights=None, is_causal=is_causal_flag, scale=scale
                     )
-                    context = (
-                        out_triton.to(q.dtype)
-                        .permute(0, 2, 1, 3).contiguous()
-                        .view(B, L, self.all_head_size)
-                    )
+                    context = out_triton.to(q.dtype).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
                     context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
                     dispatched = True
                 except Exception as e_triton:
@@ -613,25 +598,21 @@ class QCQAAttention(BaseAttention):
                     v_sdp = maybe_half(V_mixed)
 
                     out_sdp = F.scaled_dot_product_attention(
-                        q_sdp, k_sdp, v_sdp,
+                        q_sdp,
+                        k_sdp,
+                        v_sdp,
                         attn_mask=bool_mask,
                         is_causal=False,
                         dropout_p=self.dropout.p if self.training else 0.0,
                     )
-                    context = (
-                        out_sdp.to(q.dtype)
-                        .permute(0, 2, 1, 3).contiguous()
-                        .view(B, L, self.all_head_size)
-                    )
+                    context = out_sdp.to(q.dtype).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
                     context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
                 except Exception as e:
                     logger.debug("QCQA SDPA failed: %s; falling back to manual.", e)
                     context = None
 
         if context is None:
-            scores = torch.matmul(
-                q_heads.float(), K_mixed.float().transpose(-2, -1).contiguous()
-            ) * scale
+            scores = torch.matmul(q_heads.float(), K_mixed.float().transpose(-2, -1).contiguous()) * scale
 
             if causal_mask is not None:
                 scores = scores.masked_fill(~causal_mask, -1e4)
@@ -737,6 +718,7 @@ def inject_qcqa(
         return target if num_injected > 0 else None
 
     try:
+
         def _already_injected(m):
             if m is None:
                 return False

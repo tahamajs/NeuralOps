@@ -60,12 +60,14 @@ def fused_norm_linear_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.fused_norm_linear import fused_norm_linear_pytorch
+
     return fused_norm_linear_pytorch(x, weight, bias=bias, eps=eps)
 
 
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.fused_norm_linear import fused_norm_linear
+
         return fused_norm_linear
     except ImportError:
         return None

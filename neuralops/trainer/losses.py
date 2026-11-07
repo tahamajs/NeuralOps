@@ -33,7 +33,10 @@ class CrossEntropyLoss(nn.Module):
         if logits.is_cuda and self.loss.weight is None:
             try:
                 from neuralops.core.triton_kernels.fused_ce import fused_cross_entropy
-                return fused_cross_entropy(logits, labels, ignore_index=self.loss.ignore_index, reduction=self.loss.reduction)
+
+                return fused_cross_entropy(
+                    logits, labels, ignore_index=self.loss.ignore_index, reduction=self.loss.reduction
+                )
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
@@ -108,9 +111,7 @@ class ContrastiveLoss(nn.Module):
     def forward(self, embeddings, labels) -> Any:
         """Forward pass — compute module output from inputs."""
         dist = F.pairwise_distance(embeddings[0], embeddings[1])
-        loss = (1 - labels) * 0.5 * dist.pow(2) + labels * 0.5 * torch.clamp(
-            self.margin - dist, min=0
-        ).pow(2)
+        loss = (1 - labels) * 0.5 * dist.pow(2) + labels * 0.5 * torch.clamp(self.margin - dist, min=0).pow(2)
         return loss.mean()
 
 

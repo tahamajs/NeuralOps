@@ -12,12 +12,6 @@ Fast attention via Positive Orthogonal Random Features (FAVOR+) approximating so
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -29,9 +23,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.ops.triton import triton_dispatch
 
 logger = logging.getLogger(__name__)
@@ -95,6 +91,7 @@ class PerformerAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     triton_kernel = "linear_attn"
 
@@ -113,9 +110,7 @@ class PerformerAttention(BaseAttention):
         super().__init__(config, rank)
 
         hidden_size = kwargs.get("hidden_size", kwargs.get("dim", kwargs.get("d_model")))
-        num_heads = kwargs.get(
-            "num_attention_heads", kwargs.get("num_heads", kwargs.get("n_heads"))
-        )
+        num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", kwargs.get("n_heads")))
         num_kv_heads = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))
 
         if hidden_size is None or num_heads is None:
@@ -187,13 +182,9 @@ class PerformerAttention(BaseAttention):
             num_kv_heads = num_heads
 
         if num_heads <= 0 or num_kv_heads <= 0:
-            raise ValueError(
-                f"Invalid head counts: num_heads={num_heads}, num_kv_heads={num_kv_heads}"
-            )
+            raise ValueError(f"Invalid head counts: num_heads={num_heads}, num_kv_heads={num_kv_heads}")
         if num_heads % num_kv_heads != 0:
-            raise ValueError(
-                f"num_heads ({num_heads}) must be divisible by num_kv_heads ({num_kv_heads})"
-            )
+            raise ValueError(f"num_heads ({num_heads}) must be divisible by num_kv_heads ({num_kv_heads})")
 
         self.dim = int(hidden_size)
         self.hidden_size = self.dim
@@ -252,10 +243,7 @@ class PerformerAttention(BaseAttention):
         if (
             any(_mt.startswith(p) for p in _decoder_prefixes)
             or hasattr(config, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -349,9 +337,7 @@ class PerformerAttention(BaseAttention):
             success = self.copy_weights(source_attn)
             if not success:
                 if kwargs.get("_allow_copy_failure", False):
-                    logger.warning(
-                        "PerformerAttention: copy_weights failed. Proceeding with initialized weights."
-                    )
+                    logger.warning("PerformerAttention: copy_weights failed. Proceeding with initialized weights.")
                 else:
                     raise RuntimeError("PerformerAttention: copy_weights failed")
 
@@ -392,6 +378,7 @@ class PerformerAttention(BaseAttention):
         """
         try:
             from neuralops.ops.triton.elementwise import fused_favor_plus_feature_map_triton
+
             return fused_favor_plus_feature_map_triton(
                 x, self.omega, self.num_features, kernel_type=self.kernel_type, eps=self.eps
             )
@@ -537,11 +524,7 @@ class PerformerAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -558,11 +541,7 @@ class PerformerAttention(BaseAttention):
                 # allowed-swallow: best-effort-telemetry
                 pass
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning(
                 "PerformerAttention copy_weights failed: missing mandatory projections %s from %s.",
@@ -591,10 +570,7 @@ class PerformerAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
 
                 out_d = min(target_mod.weight.size(0), w.size(0))
@@ -621,8 +597,7 @@ class PerformerAttention(BaseAttention):
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
                     logger.warning(
-                        "PerformerAttention weight verification notice for %s: "
-                        "norm too small (%.2e)",
+                        "PerformerAttention weight verification notice for %s: " "norm too small (%.2e)",
                         proj_key,
                         w_norm,
                     )
@@ -668,10 +643,7 @@ class PerformerAttention(BaseAttention):
 
         scale = d**-0.25
         Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous() * scale
-        K = (
-            self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-            * scale
-        )
+        K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous() * scale
         V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if (
@@ -837,12 +809,7 @@ def _is_single_layer(obj: Any) -> bool:
     if cls_name in single_layer_classes:
         return True
 
-    has_attn = (
-        hasattr(obj, "attention")
-        or hasattr(obj, "attn")
-        or hasattr(obj, "self_attn")
-        or hasattr(obj, "self")
-    )
+    has_attn = hasattr(obj, "attention") or hasattr(obj, "attn") or hasattr(obj, "self_attn") or hasattr(obj, "self")
     has_model = (
         hasattr(obj, "transformer")
         or hasattr(obj, "distilbert")

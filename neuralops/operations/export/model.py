@@ -53,6 +53,7 @@ class ExportModelOperation(Operation):
         fmt = config.get("format", "hf")
         if fmt == "gguf":
             from neuralops.export.gguf_exporter import export_to_gguf
+
             out_dir = Path(config.get("output_dir", "."))
             out_path = export_to_gguf(
                 model=model,
@@ -60,7 +61,12 @@ class ExportModelOperation(Operation):
                 model_name=config.get("model_name", "model"),
                 quantization=config.get("quantization", "f16"),
             )
-            return model, {"format": "gguf", "output_path": str(out_path), "operation_version": self.version, "output_state": self.output_state}
+            return model, {
+                "format": "gguf",
+                "output_path": str(out_path),
+                "operation_version": self.version,
+                "output_state": self.output_state,
+            }
         elif fmt not in ("hf", "safetensors"):
             raise IntegrationNotImplementedError(f"export.model format='{fmt}' requires Serving Engine integration.")
         return model, {"format": fmt, "operation_version": self.version, "output_state": self.output_state}

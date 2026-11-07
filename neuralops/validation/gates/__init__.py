@@ -23,10 +23,7 @@ from neuralops.validation.gates.empirical import (
     ThroughputGate,
     VRAMGate,
 )
-from neuralops.validation.gates.numerical import (
-    ForwardPassRunsGate,
-    NoNanInfGate,
-)
+from neuralops.validation.gates.numerical import ForwardPassRunsGate, NoNanInfGate
 from neuralops.validation.gates.structural import (
     ConnectivityGate,
     DtypesMatchGate,

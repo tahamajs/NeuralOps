@@ -14,13 +14,11 @@ Core HuggingFace PreTrainedModel implementation supporting plug-and-play attenti
 from __future__ import annotations
 
 from typing import Any
+
 import torch
 import torch.nn as nn
+from transformers.modeling_outputs import BaseModelOutputWithPast, CausalLMOutputWithPast
 from transformers.modeling_utils import PreTrainedModel
-from transformers.modeling_outputs import (
-    BaseModelOutputWithPast,
-    CausalLMOutputWithPast,
-)
 
 try:
     from .configuration_neuralops import NeuralOpsConfig
@@ -41,7 +39,6 @@ except ImportError:
         from neuralops.models.modeling_block import NeuralOpsBlock
         from neuralops.models.modeling_norm import build_norm_layer
 
-
 from transformers.generation import GenerationMixin
 
 __all__ = ["NeuralOpsPreTrainedModel", "NeuralOpsModel", "NeuralOpsForCausalLM"]
@@ -58,6 +55,7 @@ class NeuralOpsPreTrainedModel(PreTrainedModel):
 
     def _init_weights(self, module: nn.Module) -> None:
         import torch.nn.init as nn_init
+
         std = getattr(self.config, "initializer_range", 0.02)
         if isinstance(module, nn.Linear):
             if getattr(module, "weight", None) is not None:
@@ -84,15 +82,9 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
         self.padding_idx = config.pad_token_id
         self.vocab_size = config.vocab_size
 
-        self.embed_tokens = nn.Embedding(
-            config.vocab_size, config.hidden_size, self.padding_idx
-        )
-        self.layers = nn.ModuleList(
-            [NeuralOpsBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)]
-        )
-        self.norm = build_norm_layer(
-            config.norm_type, config.hidden_size, eps=config.rms_norm_eps
-        )
+        self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
+        self.layers = nn.ModuleList([NeuralOpsBlock(config, layer_idx=i) for i in range(config.num_hidden_layers)])
+        self.norm = build_norm_layer(config.norm_type, config.hidden_size, eps=config.rms_norm_eps)
 
         self.post_init()
 
@@ -115,20 +107,12 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
         return_dict: bool | None = None,
         **kwargs: Any,
     ) -> BaseModelOutputWithPast | tuple[torch.Tensor, ...]:
-        output_attentions = (
-            output_attentions
-            if output_attentions is not None
-            else self.config.output_attentions
-        )
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
-            output_hidden_states
-            if output_hidden_states is not None
-            else self.config.output_hidden_states
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
-        return_dict = (
-            return_dict if return_dict is not None else self.config.use_return_dict
-        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("Cannot specify both input_ids and inputs_embeds")
@@ -185,9 +169,7 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
 
         if not return_dict:
             return tuple(
-                v
-                for v in [hidden_states, next_decoder_cache, all_hidden_states, all_self_attns]
-                if v is not None
+                v for v in [hidden_states, next_decoder_cache, all_hidden_states, all_self_attns] if v is not None
             )
 
         return BaseModelOutputWithPast(
@@ -271,10 +253,7 @@ class NeuralOpsForCausalLM(NeuralOpsPreTrainedModel, GenerationMixin):
                 reordered_past += (None,)
             elif isinstance(layer_past, tuple):
                 reordered_past += (
-                    tuple(
-                        past_state.index_select(0, beam_idx.to(past_state.device))
-                        for past_state in layer_past
-                    ),
+                    tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past),
                 )
             else:
                 reordered_past += (layer_past.index_select(0, beam_idx.to(layer_past.device)),)
@@ -294,9 +273,7 @@ class NeuralOpsForCausalLM(NeuralOpsPreTrainedModel, GenerationMixin):
         return_dict: bool | None = None,
         **kwargs: Any,
     ) -> CausalLMOutputWithPast | tuple[torch.Tensor, ...]:
-        return_dict = (
-            return_dict if return_dict is not None else self.config.use_return_dict
-        )
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         outputs = self.model(
             input_ids=input_ids,

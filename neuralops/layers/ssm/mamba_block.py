@@ -12,8 +12,6 @@ Selective state space sequence model enhanced with SVD-based weight distillation
 """
 
 from __future__ import annotations
-from neuralops.core.common import _infer_d_model
-from neuralops.core.common import _detect_return_format
 
 import logging
 import math
@@ -23,6 +21,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.common import _detect_return_format, _infer_d_model
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 try:
@@ -33,16 +32,12 @@ except Exception as e:
     HAS_MAMBA_CUDA = False
 
 try:
-    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
-        selective_scan as cuda_selective_scan,
-    )
+    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan as cuda_selective_scan
 except Exception:
     cuda_selective_scan = None
 
 try:
-    from neuralops.ops.triton.selective_scan import (
-        selective_scan_fn as triton_selective_scan,
-    )
+    from neuralops.ops.triton.selective_scan import selective_scan_fn as triton_selective_scan
 
     HAS_TRITON_MAMBA = True
 except Exception as _e:
@@ -113,9 +108,7 @@ class MambaBlock(nn.Module):
                 "olmo",
             )
             self.is_decoder = (
-                bool(getattr(config, "is_decoder", False) or getattr(config, "causal", False))
-                if config
-                else False
+                bool(getattr(config, "is_decoder", False) or getattr(config, "causal", False)) if config else False
             ) or any(_mt.startswith(p) for p in _dec_prefixes)
 
         if not self.is_decoder and "bidirectional" not in kwargs:
@@ -139,9 +132,7 @@ class MambaBlock(nn.Module):
         self.D = nn.Parameter(torch.ones(self.d_inner))
 
         dt_min, dt_max = 0.001, 0.1
-        dt_init = torch.exp(
-            torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min)
-        )
+        dt_init = torch.exp(torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min))
         dt_init_inv = dt_init + torch.log(-torch.expm1(-dt_init))
         with torch.no_grad():
             self.dt_proj.bias.copy_(dt_init_inv)
@@ -367,9 +358,7 @@ class MambaBlock(nn.Module):
         if self.freeze_base:
             self.freeze_base_weights()
 
-    def _read_state(
-        self, past_state: Any
-    ) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None, int]:
+    def _read_state(self, past_state: Any) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None, int]:
         """Returns (h, conv_state, dt_state, past_len)."""
         if past_state is None:
             return None, None, None, 0
@@ -421,11 +410,9 @@ class MambaBlock(nn.Module):
         delta = F.softplus(delta).to(target_dtype)
         delta_a = delta.unsqueeze(-1) * A.view(1, d_inner, 1, d_state).to(target_dtype)
         delta_a = torch.exp(delta_a).to(target_dtype)
-        delta_b_u = (
-            delta.unsqueeze(-1)
-            * B_ssm.permute(0, 2, 1).unsqueeze(1).to(target_dtype)
-            * u.unsqueeze(-1)
-        ).to(target_dtype)
+        delta_b_u = (delta.unsqueeze(-1) * B_ssm.permute(0, 2, 1).unsqueeze(1).to(target_dtype) * u.unsqueeze(-1)).to(
+            target_dtype
+        )
         C_in = C_ssm.to(target_dtype)
 
         def _scan_chunk(
@@ -439,9 +426,7 @@ class MambaBlock(nn.Module):
             curr_h = h_init
             for i in range(L_c):
                 curr_h = da_c[:, :, i, :] * curr_h + dbu_c[:, :, i, :]
-                c_t = (
-                    c_c[:, :, i].contiguous().unsqueeze(-1)
-                )
+                c_t = c_c[:, :, i].contiguous().unsqueeze(-1)
                 y_t = torch.bmm(curr_h, c_t).squeeze(-1)
                 ys_c.append(y_t)
             return torch.stack(ys_c, dim=-1), curr_h
@@ -628,10 +613,18 @@ class MambaBlock(nn.Module):
             y = 0.5 * (y + y_b)
 
         y_gated = y.float() * F.silu(z.float())
-        y = torch.nan_to_num(y_gated, nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(target_dtype)
+        y = (
+            torch.nan_to_num(y_gated, nan=0.0, posinf=65000.0, neginf=-65000.0)
+            .clamp(-65000.0, 65000.0)
+            .to(target_dtype)
+        )
 
         out = self.out_proj(y).to(target_dtype)
-        out = torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(target_dtype)
+        out = (
+            torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0)
+            .clamp(-65000.0, 65000.0)
+            .to(target_dtype)
+        )
 
         if attention_mask is not None:
             m = attention_mask
@@ -642,11 +635,7 @@ class MambaBlock(nn.Module):
             if m.dim() == 2:
                 out = out * m.unsqueeze(-1)
             elif m.dim() == 3:
-                m_red = (
-                    m.diagonal(dim1=-2, dim2=-1)
-                    if m.size(-1) == L
-                    else m[..., -1]
-                )
+                m_red = m.diagonal(dim1=-2, dim2=-1) if m.size(-1) == L else m[..., -1]
                 out = out * m_red.unsqueeze(-1)
             elif m.dim() == 4:
                 m_sq = m.squeeze(1)

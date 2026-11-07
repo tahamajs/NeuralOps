@@ -12,7 +12,6 @@ Decomposes paired linear projections sharing input dimensions into joint low-ran
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -83,18 +83,14 @@ class MoDeGPTLowRankLinear(nn.Module):
             self.register_parameter("V", None)
             self._uses_shared_V = True
         elif V is not None:
-            self.V = nn.Parameter(
-                V.to(device=target_device, dtype=target_dtype), requires_grad=False
-            )
+            self.V = nn.Parameter(V.to(device=target_device, dtype=target_dtype), requires_grad=False)
             self._shared_V = None
             self._uses_shared_V = False
         else:
             raise ValueError("MoDeGPTLowRankLinear requires either `V` or `shared_V`.")
 
         if bias is not None:
-            self.bias = nn.Parameter(
-                bias.to(device=target_device, dtype=target_dtype), requires_grad=False
-            )
+            self.bias = nn.Parameter(bias.to(device=target_device, dtype=target_dtype), requires_grad=False)
         else:
             self.register_parameter("bias", None)
 
@@ -136,17 +132,15 @@ class MoDeGPTLowRankLinear(nn.Module):
         if V.dtype != x.dtype:
             V = V.to(x.dtype)
         U = self.U.to(x.dtype) if self.U.dtype != x.dtype else self.U
-        b = (
-            self.bias.to(x.dtype)
-            if (self.bias is not None and self.bias.dtype != x.dtype)
-            else self.bias
-        )
+        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 base_b = b if (self.lora_r == 0 or self.lora_A is None) else None
                 out = fused_down_up_gemm_bias_triton(x, V, U.t().contiguous(), bias=base_b)
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
@@ -303,10 +297,7 @@ class MoDeGPTCompressor(BaseCompressor):
         if num_kv_heads >= num_heads:
             return False
         name_lower = name.lower()
-        return any(
-            p in name_lower
-            for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn")
-        )
+        return any(p in name_lower for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"))
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, MoDeGPTLowRankLinear):
@@ -459,9 +450,7 @@ class MoDeGPTCompressor(BaseCompressor):
 
                 if name1 in processed_names or name2 in processed_names:
                     continue
-                if not (
-                    self._is_target_module(name1, mod1) and self._is_target_module(name2, mod2)
-                ):
+                if not (self._is_target_module(name1, mod1) and self._is_target_module(name2, mod2)):
                     continue
 
                 target_l1 = getattr(mod1, "base_layer", mod1)
@@ -507,12 +496,7 @@ class MoDeGPTCompressor(BaseCompressor):
                 self.layer_ranks[name1] = int(r)
                 self.layer_ranks[name2] = int(r)
 
-                if (
-                    not math.isfinite(err1)
-                    or not math.isfinite(err2)
-                    or err1 > self.max_error
-                    or err2 > self.max_error
-                ):
+                if not math.isfinite(err1) or not math.isfinite(err2) or err1 > self.max_error or err2 > self.max_error:
                     logger.warning(
                         "MoDeGPT pair error (%.4f, %.4f) > max_error=%.4f on (%s, %s)",
                         err1,
@@ -532,22 +516,22 @@ class MoDeGPTCompressor(BaseCompressor):
 
                 lora_r_1 = getattr(mod1, "lora_r", getattr(mod1, "r", self.lora_r)) or self.lora_r
                 lora_r_2 = getattr(mod2, "lora_r", getattr(mod2, "r", self.lora_r)) or self.lora_r
-                bias1 = (
-                    target_l1.bias.data if getattr(target_l1, "bias", None) is not None else None
-                )
-                bias2 = (
-                    target_l2.bias.data if getattr(target_l2, "bias", None) is not None else None
-                )
+                bias1 = target_l1.bias.data if getattr(target_l1, "bias", None) is not None else None
+                bias2 = target_l2.bias.data if getattr(target_l2, "bias", None) is not None else None
 
                 in_f = W1_orig.shape[1]
                 out1 = W1_orig.shape[0]
                 out2 = W2_orig.shape[0]
 
                 with torch.no_grad():
-                    g1 = (torch.linalg.norm(W1_orig, dim=1, keepdim=True).clamp_min(1e-8) /
-                          torch.linalg.norm(W1_rec, dim=1, keepdim=True).clamp_min(1e-8)).clamp(0.2, 5.0)
-                    g2 = (torch.linalg.norm(W2_orig, dim=1, keepdim=True).clamp_min(1e-8) /
-                          torch.linalg.norm(W2_rec, dim=1, keepdim=True).clamp_min(1e-8)).clamp(0.2, 5.0)
+                    g1 = (
+                        torch.linalg.norm(W1_orig, dim=1, keepdim=True).clamp_min(1e-8)
+                        / torch.linalg.norm(W1_rec, dim=1, keepdim=True).clamp_min(1e-8)
+                    ).clamp(0.2, 5.0)
+                    g2 = (
+                        torch.linalg.norm(W2_orig, dim=1, keepdim=True).clamp_min(1e-8)
+                        / torch.linalg.norm(W2_rec, dim=1, keepdim=True).clamp_min(1e-8)
+                    ).clamp(0.2, 5.0)
                     U1 = U1 * g1
                     U2 = U2 * g2
 
@@ -639,9 +623,7 @@ class MoDeGPTCompressor(BaseCompressor):
                     self._comp_storage_bytes += self._storage_bytes(target_layer)
                     continue
 
-            bias = (
-                target_layer.bias.data if getattr(target_layer, "bias", None) is not None else None
-            )
+            bias = target_layer.bias.data if getattr(target_layer, "bias", None) is not None else None
             lora_r = getattr(module, "lora_r", getattr(module, "r", self.lora_r)) or self.lora_r
             in_f = W_orig.shape[1]
             out_f = W_orig.shape[0]
@@ -695,21 +677,12 @@ class MoDeGPTCompressor(BaseCompressor):
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
-        storage_ratio = (
-            self._orig_storage_bytes / self._comp_storage_bytes
-            if self._comp_storage_bytes > 0
-            else 1.0
-        )
-        effective_ratio = (
-            self._comp_storage_bytes / self._orig_storage_bytes
-            if self._orig_storage_bytes > 0
-            else 1.0
-        )
+        storage_ratio = self._orig_storage_bytes / self._comp_storage_bytes if self._comp_storage_bytes > 0 else 1.0
+        effective_ratio = self._comp_storage_bytes / self._orig_storage_bytes if self._orig_storage_bytes > 0 else 1.0
 
         stats = self.get_compression_stats()
         stats.update(
@@ -749,9 +722,7 @@ class MoDeGPTCompressor(BaseCompressor):
 
 
 def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
-    rank = kwargs.pop(
-        "rank", _cfg_get(comp_config, "modegpt_rank", _cfg_get(comp_config, "rank", 64))
-    )
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "modegpt_rank", _cfg_get(comp_config, "rank", 64)))
     method = kwargs.pop(
         "method",
         _cfg_get(comp_config, "modegpt_method", _cfg_get(comp_config, "method", "svd")),
@@ -770,9 +741,7 @@ def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) ->
     )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = MoDeGPTCompressor(

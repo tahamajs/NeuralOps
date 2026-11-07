@@ -5,8 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Eval speculative decoding module.
-"""
+"""Eval speculative decoding module."""
 
 
 def main() -> None:
@@ -25,11 +24,9 @@ def main() -> None:
     if not torch.cuda.is_available():
         raise RuntimeError("This speculative decoding benchmark requires CUDA.")
 
-
     def print_log(msg):
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
-
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Speculative Decoding Benchmark running on: {torch.cuda.get_device_name(0)}")
@@ -48,7 +45,6 @@ def main() -> None:
     print_log("Loading full Target Model (GPT-2 Baseline MHA)...")
     target_model = GPT2LMHeadModel.from_pretrained(model_path).to(device).eval()
 
-
     def build_svd_linear_draft(n_layers=4):
         """Build compact early-exit student draft model with SVD linear attention."""
         base = GPT2LMHeadModel.from_pretrained(model_path)
@@ -66,18 +62,15 @@ def main() -> None:
         replace_attention(draft, attention_key="svd_linear_attention")
         return draft.to(device).eval()
 
-
     def build_full_svd_draft():
         """Full 12-layer model surgically converted to SVD linear attention."""
         draft = GPT2LMHeadModel.from_pretrained(model_path)
         replace_attention(draft, attention_key="svd_linear_attention")
         return draft.to(device).eval()
 
-
     print_log("Building draft models...")
     draft_compact_svd = build_svd_linear_draft(n_layers=4)
     draft_full_svd = build_full_svd_draft()
-
 
     def benchmark_standard_autoregressive(target_mod, input_ids, max_new_tokens=40):
         """Measures standard baseline autoregressive greedy decoding."""
@@ -93,7 +86,6 @@ def main() -> None:
         elapsed = time.perf_counter() - t0
         tok_s = max_new_tokens / elapsed
         return curr_ids, elapsed, tok_s
-
 
     results_list = []
 
@@ -168,7 +160,6 @@ def main() -> None:
         json.dump(results_list, f, indent=2)
 
     print_log(f"All speculative decoding benchmarks completed successfully! Written to {output_path}")
-
 
 
 if __name__ == "__main__":

@@ -232,8 +232,8 @@ export function renderLayerDepthProfile(nodeOrLayerIdx, currentModel = 'distilbe
         const p = getLayerDepthProfile(idx, currentModel, profile.totalLayers);
         const isActive = idx === profile.layerIndex;
         return `
-            <button 
-                class="depth-step-btn ${isActive ? 'active' : ''}" 
+            <button
+                class="depth-step-btn ${isActive ? 'active' : ''}"
                 onclick="window.navigateToLayer && window.navigateToLayer(${idx})"
                 style="
                     flex: 1;

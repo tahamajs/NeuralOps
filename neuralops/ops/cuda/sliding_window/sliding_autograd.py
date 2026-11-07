@@ -41,7 +41,9 @@ def _get_module():
             with open(curr_dir / "sliding_window.cu", "r", encoding="utf-8") as f:
                 cuda_src = f.read()
             _MODULE = load_cuda_module(
-                name="cuda_sliding_window", cpp_sources=cpp_src, cuda_sources=cuda_src,
+                name="cuda_sliding_window",
+                cpp_sources=cpp_src,
+                cuda_sources=cuda_src,
                 functions=["sliding_window_attn_fwd"],
             )
         except Exception as exc:
@@ -62,7 +64,7 @@ def sliding_window_pytorch_ref(
     """Pure PyTorch reference with FP32 stability."""
     B, H, N, D = q.shape
     if scale is None:
-        scale = 1.0 / (D ** 0.5)
+        scale = 1.0 / (D**0.5)
 
     scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
 
@@ -87,14 +89,10 @@ def _sliding_window_triton_fallback(
     scale: float | None = None,
 ) -> torch.Tensor | None:
     try:
-        from neuralops.ops.triton.sliding_window import (
-            sliding_window_triton,
-            fused_tri_branch_hybrid_attention_triton,
-        )
+        from neuralops.ops.triton.sliding_window import fused_tri_branch_hybrid_attention_triton, sliding_window_triton
+
         if num_sinks > 0:
-            return fused_tri_branch_hybrid_attention_triton(
-                q, k, v, sink_tokens=num_sinks, window_size=window_size
-            )
+            return fused_tri_branch_hybrid_attention_triton(q, k, v, sink_tokens=num_sinks, window_size=window_size)
         return sliding_window_triton(q, k, v, window_size=window_size)
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed in Triton fallback for sliding_window: %s", exc, exc_info=True)

@@ -74,7 +74,7 @@ class QwenKDBenchmark(AbstractBaseBenchmark):
                     F.log_softmax(s_logits, dim=-1),
                     F.softmax(t_logits, dim=-1),
                     reduction="batchmean",
-                ) * (self.kd_temperature ** 2)
+                ) * (self.kd_temperature**2)
 
                 ce_loss = F.cross_entropy(student_logits.view(-1, vocab_size), targets.view(-1))
                 total_loss = self.kd_alpha * kl_loss + (1.0 - self.kd_alpha) * ce_loss
@@ -109,23 +109,25 @@ class QwenKDBenchmark(AbstractBaseBenchmark):
 
         except Exception as e:
             logger.warning("Qwen KD iteration failed at stage %s: %s", stage, e)
-            self.results_table.append({
-                "step": step,
-                "mechanism_or_kernel": f"qwen_kd_{stage}",
-                "batch_size": batch_size,
-                "seq_len": seq_len,
-                "dtype": "fp32",
-                "stage": stage,
-                "latency_ms": 0.0,
-                "latency_p50_ms": 0.0,
-                "latency_p90_ms": 0.0,
-                "latency_p99_ms": 0.0,
-                "kd_loss": 0.0,
-                "perplexity": 0.0,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": f"FAILED_RUNTIME: {e}",
-            })
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": f"qwen_kd_{stage}",
+                    "batch_size": batch_size,
+                    "seq_len": seq_len,
+                    "dtype": "fp32",
+                    "stage": stage,
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "kd_loss": 0.0,
+                    "perplexity": 0.0,
+                    "tflops": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": f"FAILED_RUNTIME: {e}",
+                }
+            )
             self.tracker.log_metric("kd_loss", 0.0, step=step)
             self.tracker.log_metric("latency_ms", 0.0, step=step)
             return {"kd_loss": 0.0, "latency_ms": 0.0}

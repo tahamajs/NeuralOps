@@ -140,10 +140,10 @@ Pruning MLP: $2 B N D (D/4) + 2 B N (D/4) H = \frac{1}{2} B N D^2 + \frac{1}{2} 
 $$\text{FLOPs}_{\text{total}} \approx 16 B N D r + 4 B N D W + \frac{1}{2} B N D^2 + 4 B N D d_h$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx 8 B N D r + 2 B N D W + \frac{1}{4} B N D^2 + 2 B N D d_h$$
-Specifically, regarding \textbf{Parameter Memory}, 
+Specifically, regarding \textbf{Parameter Memory},
 
   $$\Theta = 8 D r + \frac{D^2}{4} + \frac{5 D H}{4}$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Un-fused local logits: $\mathcal{O}(B H N W)$ Concurrently, Global memory state: $\mathcal{O}(B H d_h^2)$ In this setting, Total Memory: $\mathcal{O}(B N D + B H N W + B H d_h^2)$
@@ -239,4 +239,3 @@ The empirical evaluation of `aegis_v2` across standard sequence lengths and lang
 | **$L = 2048$** | 0.55 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.04 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.05 ms** | **440 MB** | **6.24x** |
-

@@ -58,7 +58,7 @@ def paged_attention_pytorch_reference(
     group_size = num_heads // num_kv_heads
 
     if scale is None:
-        scale = 1.0 / (head_dim ** 0.5)
+        scale = 1.0 / (head_dim**0.5)
 
     out = torch.zeros_like(q)
 
@@ -98,6 +98,7 @@ def paged_attention_pytorch_reference(
         out[seq_idx] = o_seq
 
     return out
+
 
 paged_attention_pytorch_ref = paged_attention_pytorch_reference
 paged_attention_ref = paged_attention_pytorch_reference
@@ -248,9 +249,7 @@ def paged_attention(
         scale = 1.0 / (q.shape[-1] ** 0.5)
 
     if torch.is_grad_enabled() and (q.requires_grad or k_cache.requires_grad or v_cache.requires_grad):
-        return _PagedAttentionAutograd.apply(
-            q, k_cache, v_cache, block_tables, context_lens, block_size, scale
-        )
+        return _PagedAttentionAutograd.apply(q, k_cache, v_cache, block_tables, context_lens, block_size, scale)
 
     mod = _get_module()
     cuda_fn = mod.paged_attention_v1 if mod is not None else None

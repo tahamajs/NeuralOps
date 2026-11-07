@@ -25,11 +25,7 @@ from neuralops.core.low_rank.svd_linear import SVDLinear
 from neuralops.operations.base import Operation, OperationContract
 from neuralops.operations.errors import OperationExecutionError, PreconditionFailedError
 from neuralops.operations.registry import register_operation
-from neuralops.operations.weights.svd.aasvd import (
-    aasvd_decompose,
-    allocate_rank_auto,
-    compute_activation_covariance,
-)
+from neuralops.operations.weights.svd.aasvd import aasvd_decompose, allocate_rank_auto, compute_activation_covariance
 
 logger = logging.getLogger("NeuralOps.Operations.Weights.AASVD")
 
@@ -107,9 +103,7 @@ class WeightsCompressAASVDOperation(Operation):
 
         # Filter only nn.Linear that are not already SVDLinear
         linear_targets: List[Tuple[str, nn.Linear]] = [
-            (path, mod)
-            for path, mod in target_modules
-            if isinstance(mod, nn.Linear) and not isinstance(mod, SVDLinear)
+            (path, mod) for path, mod in target_modules if isinstance(mod, nn.Linear) and not isinstance(mod, SVDLinear)
         ]
 
         if not linear_targets:
@@ -200,15 +194,17 @@ class WeightsCompressAASVDOperation(Operation):
             mod_params = count_parameters(svd_mod)
             compressed_target_params += mod_params
 
-            compressed_records.append({
-                "path": path,
-                "in_features": d_in,
-                "out_features": d_out,
-                "rank": r,
-                "energy_retention": energy_retention,
-                "original_parameters": count_parameters(linear_mod),
-                "compressed_parameters": mod_params,
-            })
+            compressed_records.append(
+                {
+                    "path": path,
+                    "in_features": d_in,
+                    "out_features": d_out,
+                    "rank": r,
+                    "energy_retention": energy_retention,
+                    "original_parameters": count_parameters(linear_mod),
+                    "compressed_parameters": mod_params,
+                }
+            )
 
         final_total_params = count_parameters(model)
         compression_ratio = final_total_params / baseline_params

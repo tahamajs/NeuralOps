@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 _INTERPRET_MODE = os.environ.get("TRITON_INTERPRET") == "1"
 
 if HAS_TRITON and triton is not None and tl is not None:
+
     @triton.jit
     def _rala_causal_step_kernel(
         Q_ptr,
@@ -158,7 +159,9 @@ def _rala_attention_pytorch(
 
     if lora_U is not None and lora_V is not None:
         rank_mat = torch.einsum("hdr,her->hde", lora_U.float(), lora_V.float())
-        aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+        aug_out = torch.nan_to_num(
+            torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4
+        ).to(q.dtype)
         return lin_out + aug_out
 
     return lin_out
@@ -248,7 +251,9 @@ def rala_attention_forward(
         rank_mat = torch.einsum("hdr,her->hde", lora_U.float(), lora_V.float())
         z = k_p.cumsum(dim=2)
         denom = (q_p * z).sum(dim=-1, keepdim=True).clamp(min=1e-4)
-        aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
+        aug_out = torch.nan_to_num(
+            torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4
+        ).to(dtype)
         return out + aug_out
 
     return out

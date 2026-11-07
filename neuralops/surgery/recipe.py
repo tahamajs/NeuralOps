@@ -90,6 +90,7 @@ def save_recipe_to_hub(
 
     try:
         from huggingface_hub import HfApi
+
         api = HfApi()
         with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as tmp:
             tmp_path = tmp.name
@@ -101,9 +102,7 @@ def save_recipe_to_hub(
             commit_message=commit_message,
         )
     except Exception as exc:
-        raise RuntimeError(
-            f"Failed to publish recipe to HuggingFace Hub '{repo_id}': {exc}"
-        ) from exc
+        raise RuntimeError(f"Failed to publish recipe to HuggingFace Hub '{repo_id}': {exc}") from exc
 
 
 __all__ = [

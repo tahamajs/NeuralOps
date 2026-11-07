@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -156,6 +157,7 @@ def kd_train_step(
     amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
 
     optimizer.zero_grad()
+
     def _call_model(mod: nn.Module) -> Any:
         try:
             if kd_loss_fn.use_fused_linear:

@@ -9,9 +9,6 @@
 Log-CumSum-Exp Prefix Scan Hardware Operators.
 """
 
-from neuralops.ops.cuda.logcumsumexp.logcumsumexp_autograd import (
-    logcumsumexp,
-    logcumsumexp_pytorch_ref,
-)
+from neuralops.ops.cuda.logcumsumexp.logcumsumexp_autograd import logcumsumexp, logcumsumexp_pytorch_ref
 
 __all__ = ["logcumsumexp", "logcumsumexp_pytorch_ref"]

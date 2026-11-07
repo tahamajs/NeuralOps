@@ -19,6 +19,7 @@ from neuralops.ui.queries.ledger import (
     get_results,
     list_tables,
 )
+from neuralops.ui.queries.models_notebooks import list_model_zoo, list_notebooks
 from neuralops.ui.queries.static_catalog import (
     get_attention_metadata,
     get_compressor_metadata,
@@ -26,11 +27,6 @@ from neuralops.ui.queries.static_catalog import (
     list_compressors,
     list_families,
     list_paradigms,
-)
-
-from neuralops.ui.queries.models_notebooks import (
-    list_model_zoo,
-    list_notebooks,
 )
 
 __all__ = [

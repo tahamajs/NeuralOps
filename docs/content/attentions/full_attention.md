@@ -147,7 +147,7 @@ Specifically, regarding \textbf{Total MACs}, $4 B N D^2 + 2 B N^2 D$ Furthermore
 
 
 ### Memory Footprint & Peak KV Cache Analysis
-Specifically, regarding \textbf{Model Parameters}, $4 D^2 + 4 D$ (with biases). Furthermore, regarding \textbf{Transient Activation Footprint},  Concurrently, $Q, K, V$ states: $3 \times B \times H \times N \times d_k \times \text{BytesPerElement} = 3 B N D \cdot b$ bytes. In this setting, Raw + Modulated Score Matrix: $2 \times B \times H \times N^2 \cdot b$ bytes. Additionally, Context Matrix: $B \times N \times D \cdot b$ bytes. Moreover, regarding \textbf{Autoregressive Decoding KV Cache Footprint}, 
+Specifically, regarding \textbf{Model Parameters}, $4 D^2 + 4 D$ (with biases). Furthermore, regarding \textbf{Transient Activation Footprint},  Concurrently, $Q, K, V$ states: $3 \times B \times H \times N \times d_k \times \text{BytesPerElement} = 3 B N D \cdot b$ bytes. In this setting, Raw + Modulated Score Matrix: $2 \times B \times H \times N^2 \cdot b$ bytes. Additionally, Context Matrix: $B \times N \times D \cdot b$ bytes. Moreover, regarding \textbf{Autoregressive Decoding KV Cache Footprint},
 
   During decoding at token step $N$:
   \[
@@ -230,4 +230,3 @@ The empirical evaluation of `full_attention` across standard sequence lengths an
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

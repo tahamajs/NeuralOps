@@ -12,12 +12,6 @@ Hybrid adaptive architecture integrating sliding-window attention with gated rec
 """
 
 from __future__ import annotations
-from neuralops.core.common import _env_flag
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -29,9 +23,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _env_flag
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -136,14 +132,12 @@ class GoldFinchAHNBlock(BaseAttention):
                             out_layer = getattr(source_attn, attr)
                             break
                     if out_layer is not None:
-                        d_model = getattr(out_layer, "out_features",
-                                          getattr(out_layer, "in_features", 768))
+                        d_model = getattr(out_layer, "out_features", getattr(out_layer, "in_features", 768))
                     else:
                         for attr in ("q_proj", "query", "q_lin"):
                             q_l = getattr(source_attn, attr, None)
                             if q_l is not None:
-                                d_model = getattr(q_l, "in_features",
-                                                  getattr(q_l, "out_features", 768))
+                                d_model = getattr(q_l, "in_features", getattr(q_l, "out_features", 768))
                                 break
                 if d_model is None:
                     d_model = 768
@@ -155,11 +149,9 @@ class GoldFinchAHNBlock(BaseAttention):
             num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
             if num_heads is None:
                 if config is not None:
-                    num_heads = getattr(config, "num_attention_heads",
-                                        getattr(config, "n_heads", 12))
+                    num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
                 elif source_attn is not None:
-                    num_heads = getattr(source_attn, "num_attention_heads",
-                                        getattr(source_attn, "n_heads", 12))
+                    num_heads = getattr(source_attn, "num_attention_heads", getattr(source_attn, "n_heads", 12))
                 else:
                     num_heads = 12
 
@@ -169,8 +161,9 @@ class GoldFinchAHNBlock(BaseAttention):
 
         if config is not None:
             self.num_kv_heads = getattr(
-                config, "num_key_value_heads",
-                getattr(config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads))
+                config,
+                "num_key_value_heads",
+                getattr(config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads)),
             )
         elif source_attn is not None:
             self.num_kv_heads = (
@@ -195,14 +188,18 @@ class GoldFinchAHNBlock(BaseAttention):
         full_ctx = _env_flag("GOLDFINCH_FULL_CONTEXT", False)
         if config is not None:
             self.window_size = int(
-                getattr(config, "window_size",
-                        getattr(comp_config, "window_size",
-                                kwargs.get("window_size", window_size))
-                        if comp_config is not None else window_size)
+                getattr(
+                    config,
+                    "window_size",
+                    (
+                        getattr(comp_config, "window_size", kwargs.get("window_size", window_size))
+                        if comp_config is not None
+                        else window_size
+                    ),
+                )
             )
         elif comp_config is not None:
-            self.window_size = int(getattr(comp_config, "window_size",
-                                           kwargs.get("window_size", window_size)))
+            self.window_size = int(getattr(comp_config, "window_size", kwargs.get("window_size", window_size)))
         else:
             self.window_size = int(kwargs.get("window_size", window_size))
 
@@ -214,12 +211,24 @@ class GoldFinchAHNBlock(BaseAttention):
         model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
         is_dec = False
         if config is not None:
-            is_dec = bool(getattr(config, "is_decoder", False)
-                          or getattr(config, "is_causal", False))
-        if any(model_type.startswith(p) for p in (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt",
-            "bloom", "falcon", "olmo", "mpt", "stablelm",
-        )):
+            is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
+        if any(
+            model_type.startswith(p)
+            for p in (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False) or is_causal:
             is_dec = True
@@ -231,12 +240,28 @@ class GoldFinchAHNBlock(BaseAttention):
         self.is_nested_encoder = False
 
         if config is not None:
-            self.lora_rank = int(getattr(config, "lora_rank",
-                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
-                if comp_config is not None else kwargs.get("lora_rank", 16)))
-            self.lora_alpha = float(getattr(config, "lora_alpha",
-                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
-                if comp_config is not None else kwargs.get("lora_alpha", 32.0)))
+            self.lora_rank = int(
+                getattr(
+                    config,
+                    "lora_rank",
+                    (
+                        getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
+                        if comp_config is not None
+                        else kwargs.get("lora_rank", 16)
+                    ),
+                )
+            )
+            self.lora_alpha = float(
+                getattr(
+                    config,
+                    "lora_alpha",
+                    (
+                        getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+                        if comp_config is not None
+                        else kwargs.get("lora_alpha", 32.0)
+                    ),
+                )
+            )
         elif comp_config is not None:
             self.lora_rank = int(getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
             self.lora_alpha = float(getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
@@ -245,19 +270,32 @@ class GoldFinchAHNBlock(BaseAttention):
             self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
 
         self.freeze_base = self.lora_rank > 0
-        self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
-        )
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
-        self.W_q = LoRALinear(self.dim, self.all_head_size, bias=True,
-                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                              freeze_base=self.freeze_base)
-        self.W_k = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                              freeze_base=self.freeze_base)
-        self.W_v = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                              freeze_base=self.freeze_base)
+        self.W_q = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.W_k = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.W_v = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         self.delta_mem = GatedRecurrentMemory(self.dim, chunk_size=16)
 
@@ -267,14 +305,18 @@ class GoldFinchAHNBlock(BaseAttention):
             self.gate.bias.data.fill_(_gate_bias)
             nn.init.zeros_(self.gate.weight)
 
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
-                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                   freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         dropout_p = 0.1
         if config is not None:
-            dropout_p = float(getattr(config, "dropout",
-                getattr(config, "attention_probs_dropout_prob", 0.1)))
+            dropout_p = float(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)))
         elif comp_config is not None:
             dropout_p = float(getattr(comp_config, "dropout", 0.1))
         self.dropout = nn.Dropout(dropout_p)
@@ -290,39 +332,51 @@ class GoldFinchAHNBlock(BaseAttention):
     @property
     def query(self):
         return self.W_q
+
     @property
     def key(self):
         return self.W_k
+
     @property
     def value(self):
         return self.W_v
+
     @property
     def q_proj(self):
         return self.W_q
+
     @property
     def k_proj(self):
         return self.W_k
+
     @property
     def v_proj(self):
         return self.W_v
+
     @property
     def q_lin(self):
         return self.W_q
+
     @property
     def k_lin(self):
         return self.W_k
+
     @property
     def v_lin(self):
         return self.W_v
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
@@ -357,17 +411,21 @@ class GoldFinchAHNBlock(BaseAttention):
         has_out = any(hasattr(src, a) for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
         is_nested = False
         if (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                         "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                         "DebertaSelfAttention")
+            cls_name
+            in (
+                "BertSelfAttention",
+                "RobertaSelfAttention",
+                "XLMRobertaSelfAttention",
+                "ElectraSelfAttention",
+                "DebertaSelfAttention",
+            )
             or (hasattr(src, "query") and not has_out)
             or (hasattr(src, "self") and hasattr(src, "output"))
         ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted = {"q": (None, None), "k": (None, None),
-                     "v": (None, None), "o": (None, None)}
+        extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
@@ -378,7 +436,8 @@ class GoldFinchAHNBlock(BaseAttention):
                 is_conv = (
                     "Conv1D" in c_attn_mod.__class__.__name__
                     or "Conv1D" in base_c.__class__.__name__
-                    or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf")
+                    or hasattr(c_attn_mod, "nf")
+                    or hasattr(base_c, "nf")
                     or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
                 )
                 if is_conv:
@@ -387,8 +446,8 @@ class GoldFinchAHNBlock(BaseAttention):
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
                 extracted["q"] = (c_w[:split], c_b[:split] if c_b is not None else None)
-                extracted["k"] = (c_w[split:2*split], c_b[split:2*split] if c_b is not None else None)
-                extracted["v"] = (c_w[2*split:], c_b[2*split:] if c_b is not None else None)
+                extracted["k"] = (c_w[split : 2 * split], c_b[split : 2 * split] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split :], c_b[2 * split :] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -399,7 +458,8 @@ class GoldFinchAHNBlock(BaseAttention):
                     is_conv_o = (
                         "Conv1D" in c_proj_mod.__class__.__name__
                         or "Conv1D" in base_o.__class__.__name__
-                        or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf")
+                        or hasattr(c_proj_mod, "nf")
+                        or hasattr(base_o, "nf")
                         or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
                     )
                     if is_conv_o:
@@ -413,18 +473,15 @@ class GoldFinchAHNBlock(BaseAttention):
                 m = getattr(s, sub, None)
                 if m is not None and hasattr(m, "weight"):
                     b = getattr(m, "bias", None)
-                    extracted[key] = (m.weight.data.clone(),
-                                      b.data.clone() if b is not None else None)
+                    extracted[key] = (m.weight.data.clone(), b.data.clone() if b is not None else None)
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 d = src.output.dense
                 b = getattr(d, "bias", None)
-                extracted["o"] = (d.weight.data.clone(),
-                                  b.data.clone() if b is not None else None)
+                extracted["o"] = (d.weight.data.clone(), b.data.clone() if b is not None else None)
 
         else:
             if hasattr(src, "weight") and isinstance(src, nn.Linear):
-                extracted["q"] = (src.weight.data.clone(),
-                                  src.bias.data.clone() if src.bias is not None else None)
+                extracted["q"] = (src.weight.data.clone(), src.bias.data.clone() if src.bias is not None else None)
 
             candidates = {
                 "q": ("q_lin", "q_proj", "query", "W_q"),
@@ -440,15 +497,14 @@ class GoldFinchAHNBlock(BaseAttention):
                         m = getattr(src, n)
                         if m is not None and hasattr(m, "weight"):
                             b = getattr(m, "bias", None)
-                            extracted[key] = (m.weight.data.clone(),
-                                              b.data.clone() if b is not None else None)
+                            extracted[key] = (m.weight.data.clone(), b.data.clone() if b is not None else None)
                             break
 
-        missing = [k for k, (w, _) in extracted.items()
-                   if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -457,11 +513,9 @@ class GoldFinchAHNBlock(BaseAttention):
             except Exception as e:
                 logger.debug("Goldfinch UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items()
-                         if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            logger.warning("Goldfinch copy_weights: missing %s; using initialized weights",
-                           missing_after)
+            logger.warning("Goldfinch copy_weights: missing %s; using initialized weights", missing_after)
 
         target_map = {"q": self.W_q, "k": self.W_k, "v": self.W_v, "o": self.out_proj}
 
@@ -477,15 +531,12 @@ class GoldFinchAHNBlock(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-                if (w.shape != target.weight.shape
-                        and w.t().contiguous().shape == target.weight.shape):
+                if w.shape != target.weight.shape and w.t().contiguous().shape == target.weight.shape:
                     w = w.t().contiguous()
 
                 out_d = min(target.weight.size(0), w.size(0))
                 in_d = min(target.weight.size(1), w.size(1))
-                target.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
-                )
+                target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
 
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
@@ -649,7 +700,9 @@ class GoldFinchAHNBlock(BaseAttention):
                 else:
                     attn_mask = valid_local_4d
                 short_out = F.scaled_dot_product_attention(
-                    q, k, v,
+                    q,
+                    k,
+                    v,
                     attn_mask=attn_mask,
                     dropout_p=self.dropout.p if self.training else 0.0,
                     is_causal=False,
@@ -687,7 +740,7 @@ class GoldFinchAHNBlock(BaseAttention):
             if long_out.shape[-1] < self.all_head_size:
                 long_out = F.pad(long_out, (0, self.all_head_size - long_out.shape[-1]))
             else:
-                long_out = long_out[..., :self.all_head_size]
+                long_out = long_out[..., : self.all_head_size]
 
         fused = (gate * short_out.to(dtype_in) + (1.0 - gate) * long_out).to(dtype_in)
 
@@ -713,8 +766,11 @@ class GoldFinchAHNBlock(BaseAttention):
 
         out = {}
         for name, m in (
-            ("W_q", self.W_q), ("W_k", self.W_k), ("W_v", self.W_v),
-            ("out_proj", self.out_proj), ("delta_mem", self.delta_mem),
+            ("W_q", self.W_q),
+            ("W_k", self.W_k),
+            ("W_v", self.W_v),
+            ("out_proj", self.out_proj),
+            ("delta_mem", self.delta_mem),
             ("gate", self.gate),
         ):
             out[name] = sum(_sz(p) for p in m.parameters())
@@ -757,8 +813,7 @@ def inject_goldfinch_ahn(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (hasattr(target, "bert") and hasattr(target.bert, "encoder")
-          and hasattr(target.bert.encoder, "layer")):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -768,8 +823,13 @@ def inject_goldfinch_ahn(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_goldfinch_ahn(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -786,14 +846,10 @@ def inject_goldfinch_ahn(
     if src_attn is None and target is not None and hasattr(target, "forward"):
         src_attn = target
 
-    if src_attn is not None and (
-        isinstance(src_attn, GoldFinchAHNBlock)
-        or "GoldFinch" in src_attn.__class__.__name__
-    ):
+    if src_attn is not None and (isinstance(src_attn, GoldFinchAHNBlock) or "GoldFinch" in src_attn.__class__.__name__):
         return None
     if src_attn is not None and (
-        "DeltaNet" in src_attn.__class__.__name__
-        or "LinearAttention" in src_attn.__class__.__name__
+        "DeltaNet" in src_attn.__class__.__name__ or "LinearAttention" in src_attn.__class__.__name__
     ):
         return None
 
@@ -822,10 +878,13 @@ def inject_goldfinch_ahn(
         kwargs.pop("num_attention_heads", None)
         kwargs.pop("old_attn", None)
         new_attn = GoldFinchAHNBlock(
-            config=cfg, comp_config=comp_config,
-            d_model=hidden_size, num_heads=num_heads,
+            config=cfg,
+            comp_config=comp_config,
+            d_model=hidden_size,
+            num_heads=num_heads,
             old_attn=src_attn,
-            hidden_size=hidden_size, num_attention_heads=num_heads,
+            hidden_size=hidden_size,
+            num_attention_heads=num_heads,
             **kwargs,
         )
         if src_attn is not None:

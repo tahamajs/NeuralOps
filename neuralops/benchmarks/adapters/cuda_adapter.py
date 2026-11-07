@@ -27,11 +27,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
-from neuralops.benchmarks.adapters.base import (
-    BaseBenchmarkAdapter,
-    BenchmarkInputs,
-    NumericsReport,
-)
+from neuralops.benchmarks.adapters.base import BaseBenchmarkAdapter, BenchmarkInputs, NumericsReport
 from neuralops.benchmarks.results.schema import BenchmarkResult, BenchmarkStatus
 from neuralops.ops.cuda import list_cuda_kernels
 from neuralops.ops.cuda._fallback import (
@@ -130,7 +126,15 @@ class CUDAKernelAdapter(BaseBenchmarkAdapter):
                             break
             if self._cuda_fn is None:
                 base_name = mod_name.replace("_attention", "").replace("_gemm", "").replace("_scan", "")
-                for cand in (mod_name, base_name, f"{mod_name}_cuda", f"{mod_name}_fwd", f"{mod_name}_forward", "forward", "fwd"):
+                for cand in (
+                    mod_name,
+                    base_name,
+                    f"{mod_name}_cuda",
+                    f"{mod_name}_fwd",
+                    f"{mod_name}_forward",
+                    "forward",
+                    "fwd",
+                ):
                     if hasattr(mod, cand):
                         fn = getattr(mod, cand)
                         if callable(fn):
@@ -143,6 +147,7 @@ class CUDAKernelAdapter(BaseBenchmarkAdapter):
         if self._cuda_fn is None:
             try:
                 import neuralops.ops.cuda as nck
+
                 if hasattr(nck, self.kernel_name):
                     fn = getattr(nck, self.kernel_name)
                     if callable(fn):
@@ -153,6 +158,7 @@ class CUDAKernelAdapter(BaseBenchmarkAdapter):
         # Level 2: Triton kernel resolution
         try:
             from neuralops.benchmarks.adapters.triton_adapter import TritonKernelAdapter
+
             triton_adapter = TritonKernelAdapter(mod_name, device=self.device)
             if triton_adapter._kernel_fn is not None:
                 self._triton_fn = triton_adapter._kernel_fn
@@ -193,6 +199,7 @@ class CUDAKernelAdapter(BaseBenchmarkAdapter):
         if self._pytorch_ref_fn is None:
             try:
                 import neuralops.ops.cuda as nck
+
                 for ref_cand in (
                     f"{self.kernel_name}_pytorch_ref",
                     f"{self.kernel_name}_ref",

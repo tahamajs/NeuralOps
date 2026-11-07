@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List, Optional, Union
+
 import torch
 import torch.nn as nn
 
@@ -44,6 +45,7 @@ class _BaseAutoNeuralOps:
         """Loads model via HuggingFace from_pretrained, then executes specified surgery recipe."""
         if cls._HF_CLASS is None:
             from transformers import AutoModel
+
             hf_loader = AutoModel
         else:
             hf_loader = cls._HF_CLASS
@@ -53,20 +55,24 @@ class _BaseAutoNeuralOps:
 
         if recipe is not None:
             from neuralops.recipes import oneshot
+
             return oneshot(model, recipe=recipe)
 
         if attention is not None:
             from neuralops.api import replace_attention
+
             model = replace_attention(model, attention=attention, rank=rank)
 
         if compressor is not None:
             from neuralops.api import compress
+
             model = compress(model, method=compressor, rank=rank, rank_ratio=rank_ratio)
 
         if peft_recovery is not None:
             peft_str = peft_recovery.lower()
             if "pissa" in peft_str:
                 from neuralops.trainer.peft_recovery.svd_adapters import inject_pissa_adapters
+
                 inject_pissa_adapters(model, rank=rank or 16)
 
         return model
@@ -74,27 +80,33 @@ class _BaseAutoNeuralOps:
 
 class AutoNeuralOpsModel(_BaseAutoNeuralOps):
     """AutoModel replacement applying NeuralOps attention and compression on load."""
+
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: str, *model_args: Any, **kwargs: Any) -> nn.Module:
         from transformers import AutoModel
+
         cls._HF_CLASS = AutoModel
         return super().from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
 
 
 class AutoNeuralOpsForCausalLM(_BaseAutoNeuralOps):
     """AutoModelForCausalLM replacement applying NeuralOps attention and compression on load."""
+
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: str, *model_args: Any, **kwargs: Any) -> nn.Module:
         from transformers import AutoModelForCausalLM
+
         cls._HF_CLASS = AutoModelForCausalLM
         return super().from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
 
 
 class AutoNeuralOpsForSequenceClassification(_BaseAutoNeuralOps):
     """AutoModelForSequenceClassification replacement applying NeuralOps attention and compression on load."""
+
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: str, *model_args: Any, **kwargs: Any) -> nn.Module:
         from transformers import AutoModelForSequenceClassification
+
         cls._HF_CLASS = AutoModelForSequenceClassification
         return super().from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
 
@@ -113,8 +125,10 @@ def patch_transformers(
     """
     try:
         import transformers.models.llama.modeling_llama as llama_mod
+
         if rope and hasattr(llama_mod, "apply_rotary_pos_emb"):
             from neuralops.core.triton_kernels.fused_rope import fused_rotary_position_embedding
+
             logger.info("patch_transformers: Fused RoPE enabled for LLaMA")
     except Exception:
         # allowed-swallow: best-effort-telemetry

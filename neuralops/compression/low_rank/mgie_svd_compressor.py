@@ -12,7 +12,6 @@ Allocates layer-wise compression ranks proportionally to activation information 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 
 from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -231,9 +231,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
         total = sum(ranks)
         while total > self.total_rank_budget:
-            candidates = [
-                i for i in range(n) if ranks[i] > max(1, min(self.min_rank, max_ranks[i]))
-            ]
+            candidates = [i for i in range(n) if ranks[i] > max(1, min(self.min_rank, max_ranks[i]))]
             if not candidates:
                 break
             idx = max(candidates, key=lambda i: ranks[i])
@@ -419,20 +417,9 @@ class MGIESVDBudgetCompressor(BaseCompressor):
                     and svd_layer.lora_B is not None
                 ):
                     with torch.no_grad():
-                        src_A = (
-                            module.lora_A.weight.data
-                            if hasattr(module.lora_A, "weight")
-                            else module.lora_A.data
-                        )
-                        src_B = (
-                            module.lora_B.weight.data
-                            if hasattr(module.lora_B, "weight")
-                            else module.lora_B.data
-                        )
-                        if (
-                            src_A.shape == svd_layer.lora_A.shape
-                            and src_B.shape == svd_layer.lora_B.shape
-                        ):
+                        src_A = module.lora_A.weight.data if hasattr(module.lora_A, "weight") else module.lora_A.data
+                        src_B = module.lora_B.weight.data if hasattr(module.lora_B, "weight") else module.lora_B.data
+                        if src_A.shape == svd_layer.lora_A.shape and src_B.shape == svd_layer.lora_B.shape:
                             svd_layer.lora_A.copy_(
                                 src_A.to(
                                     svd_layer.lora_A.device,
@@ -495,11 +482,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
         eff_ratio = self._compressed_params / max(1, total_orig_params)
 
-        avg_err = (
-            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
-        )
+        avg_err = sum(self.layer_errors.values()) / max(1, len(self.layer_errors)) if self.layer_errors else 0.0
 
         allocated_ranks = [self.layer_ranks.get(name, 0) for name in self.layer_ranks]
         total_allocated = sum(allocated_ranks)
@@ -520,9 +503,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
                 "fallback_to_original": self.fallback_to_original,
                 "total_rank_budget": self.total_rank_budget,
                 "total_allocated_rank": total_allocated,
-                "rank_budget_utilization_pct": round(
-                    100.0 * total_allocated / max(1, self.total_rank_budget), 2
-                ),
+                "rank_budget_utilization_pct": round(100.0 * total_allocated / max(1, self.total_rank_budget), 2),
                 "total_params_before": total_orig_params,
                 "total_params_after": self._compressed_params,
                 "effective_parameter_ratio": round(eff_ratio, 4),

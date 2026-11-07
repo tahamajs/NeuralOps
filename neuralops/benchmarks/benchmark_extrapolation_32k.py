@@ -24,11 +24,12 @@ import torch
 import torch.nn.functional as F
 
 import neuralops.core.triton_kernels._types as tt
+
 tt.MAX_TRITON_SEQ_LEN = 65536
 
-from neuralops.core.triton_kernels.gla_scan import gla_scan
-from neuralops.core.triton_kernels.gdn_scan import gdn_scan
 from neuralops.attentions.svd.svd_linear_attention import SVDLinearAttention
+from neuralops.core.triton_kernels.gdn_scan import gdn_scan
+from neuralops.core.triton_kernels.gla_scan import gla_scan
 
 DEFAULT_SEQ_LENS = [512, 1024, 2048, 4096, 8192, 16384, 32768]
 QUICK_SEQ_LENS = [512, 1024]
@@ -84,8 +85,8 @@ def run_extrapolation_benchmark(
     for L in seq_lens:
         print(f"\n================ Sequence Length L = {L} ================")
 
-        q = (torch.randn(B, H, L, D, device=device, dtype=dtype) / (D ** 0.5)).contiguous()
-        k = (torch.randn(B, H, L, D, device=device, dtype=dtype) / (D ** 0.5)).contiguous()
+        q = (torch.randn(B, H, L, D, device=device, dtype=dtype) / (D**0.5)).contiguous()
+        k = (torch.randn(B, H, L, D, device=device, dtype=dtype) / (D**0.5)).contiguous()
         v = (torch.randn(B, H, L, D, device=device, dtype=dtype) * 0.1).contiguous()
         lam = (-torch.rand(B, H, L, device=device, dtype=dtype) * 0.1).contiguous()
         beta = torch.sigmoid(torch.randn(B, H, L, device=device, dtype=dtype)).contiguous()
@@ -140,7 +141,9 @@ def run_extrapolation_benchmark(
                 state_complexity = "O(1)"
                 with torch.no_grad():
                     try:
-                        svd32 = SVDLinearAttention(embed_dim=embed_dim, num_heads=H, rank=rank).to(device=device, dtype=torch.float32)
+                        svd32 = SVDLinearAttention(embed_dim=embed_dim, num_heads=H, rank=rank).to(
+                            device=device, dtype=torch.float32
+                        )
                         svd32.load_state_dict({k_n: v_t.float() for k_n, v_t in svd_model.state_dict().items()})
                         ref32 = svd32(x_svd.float())[0]
                         y = fn()[0]
@@ -162,7 +165,7 @@ def run_extrapolation_benchmark(
                     torch.cuda.synchronize()
                 lat_ms = ((time.perf_counter() - t0) / iters) * 1000.0
 
-                peak_mem_mb = (torch.cuda.max_memory_allocated(device) / (1024.0 ** 2)) if device.type == "cuda" else 0.0
+                peak_mem_mb = (torch.cuda.max_memory_allocated(device) / (1024.0**2)) if device.type == "cuda" else 0.0
 
                 if isinstance(out, tuple):
                     out = out[0]
@@ -179,27 +182,41 @@ def run_extrapolation_benchmark(
                     "zero_nan": not has_nan,
                 }
                 results.append(row)
-                print(f"  {m_name:<28} | Latency: {lat_ms:6.2f} ms | Peak VRAM: {peak_mem_mb:6.1f} MB | KV State: {kv_state_kb:8.1f} KB ({state_complexity}) | Drift: {drift:9.2e} | Stable: {not has_nan}")
+                print(
+                    f"  {m_name:<28} | Latency: {lat_ms:6.2f} ms | Peak VRAM: {peak_mem_mb:6.1f} MB | KV State: {kv_state_kb:8.1f} KB ({state_complexity}) | Drift: {drift:9.2e} | Stable: {not has_nan}"
+                )
             except Exception as exc:
                 print(f"  {m_name:<28} | EXCEPTION: {exc}")
-                results.append({
-                    "sequence_length": L,
-                    "mechanism": m_name,
-                    "latency_ms": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "kv_state_kb": round(kv_state_kb, 1),
-                    "state_complexity": state_complexity,
-                    "state_drift_rel": float("nan"),
-                    "zero_nan": False,
-                })
+                results.append(
+                    {
+                        "sequence_length": L,
+                        "mechanism": m_name,
+                        "latency_ms": 0.0,
+                        "peak_vram_mb": 0.0,
+                        "kv_state_kb": round(kv_state_kb, 1),
+                        "state_complexity": state_complexity,
+                        "state_drift_rel": float("nan"),
+                        "zero_nan": False,
+                    }
+                )
 
     if output_csv:
         csv_path = Path(output_csv)
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=[
-                "sequence_length", "mechanism", "latency_ms", "peak_vram_mb", "kv_state_kb", "state_complexity", "state_drift_rel", "zero_nan"
-            ])
+            writer = csv.DictWriter(
+                f,
+                fieldnames=[
+                    "sequence_length",
+                    "mechanism",
+                    "latency_ms",
+                    "peak_vram_mb",
+                    "kv_state_kb",
+                    "state_complexity",
+                    "state_drift_rel",
+                    "zero_nan",
+                ],
+            )
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
@@ -221,7 +238,9 @@ def run_extrapolation_benchmark(
             r"\begin{table*}[t]",
             r"\centering",
             r"\small",
-            r"\caption{Long-Horizon Sequence Extrapolation and KV-State Scaling on " + gpu_name + r". Comparing standard causal softmax attention with recurrent linear associative scan mechanisms.}",
+            r"\caption{Long-Horizon Sequence Extrapolation and KV-State Scaling on "
+            + gpu_name
+            + r". Comparing standard causal softmax attention with recurrent linear associative scan mechanisms.}",
             r"\label{tab:extrapolation_32k}",
             r"\begin{tabular}{llccccc}",
             r"\toprule",
@@ -231,7 +250,7 @@ def run_extrapolation_benchmark(
 
         curr_L = None
         for r in results:
-            L_val = r['sequence_length']
+            L_val = r["sequence_length"]
             if L_val != curr_L:
                 if curr_L is not None:
                     tex.append(r"\midrule")
@@ -240,20 +259,24 @@ def run_extrapolation_benchmark(
             else:
                 l_col = ""
 
-            mech_disp = r['mechanism']
+            mech_disp = r["mechanism"]
             lat_str = f"{r['latency_ms']:.2f}"
             vram_str = f"{r['peak_vram_mb']:.1f}"
             kv_str = f"{r['kv_state_kb']:.0f} KB ($\\mathcal{{O}}({r['state_complexity'][2:-1]})$)"
-            drift_str = "Baseline" if r['mechanism'] == "Standard Quadratic Attention" else f"{r['state_drift_rel']:.2e}"
-            status_str = r"\checkmark" if r['zero_nan'] else r"\times"
+            drift_str = (
+                "Baseline" if r["mechanism"] == "Standard Quadratic Attention" else f"{r['state_drift_rel']:.2e}"
+            )
+            status_str = r"\checkmark" if r["zero_nan"] else r"\times"
 
             tex.append(f"{l_col} & {mech_disp} & {lat_str} & {vram_str} & {kv_str} & {drift_str} & {status_str} \\\\")
 
-        tex.extend([
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table*}",
-        ])
+        tex.extend(
+            [
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table*}",
+            ]
+        )
         with open(tex_path, mode="w", encoding="utf-8") as f:
             f.write("\n".join(tex) + "\n")
         print(f"Saved LaTeX Table to: {tex_path}")
@@ -263,12 +286,40 @@ def run_extrapolation_benchmark(
 
 def main():
     parser = argparse.ArgumentParser(description="Long-Horizon Sequence Extrapolation Benchmark")
-    parser.add_argument("--output", type=str, default="docs/benchmarks/paper_benchmarks_extrapolation_32k.csv", help="Path to save CSV output")
-    parser.add_argument("--output-json", type=str, default="results/paper_benchmarks_extrapolation_32k.json", help="Path to save JSON output")
-    parser.add_argument("--tex-output", type=str, default="docs/reports/PAPER_TABLES_EXTRAPOLATION_32K.tex", help="Path to save LaTeX table")
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
-    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16", "fp16", "fp32", "bf16"], help="Precision")
-    parser.add_argument("--seq-lens", type=str, default="512,1024,2048,4096,8192,16384,32768", help="Comma-separated sequence lengths")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="docs/benchmarks/paper_benchmarks_extrapolation_32k.csv",
+        help="Path to save CSV output",
+    )
+    parser.add_argument(
+        "--output-json",
+        type=str,
+        default="results/paper_benchmarks_extrapolation_32k.json",
+        help="Path to save JSON output",
+    )
+    parser.add_argument(
+        "--tex-output",
+        type=str,
+        default="docs/reports/PAPER_TABLES_EXTRAPOLATION_32K.tex",
+        help="Path to save LaTeX table",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        help="Device to execute benchmark",
+    )
+    parser.add_argument(
+        "--dtype",
+        type=str,
+        default="float16",
+        choices=["float16", "float32", "bfloat16", "fp16", "fp32", "bf16"],
+        help="Precision",
+    )
+    parser.add_argument(
+        "--seq-lens", type=str, default="512,1024,2048,4096,8192,16384,32768", help="Comma-separated sequence lengths"
+    )
     parser.add_argument("--min-len", type=int, default=None, help="Minimum sequence length (powers of 2 scaling)")
     parser.add_argument("--max-len", type=int, default=None, help="Maximum sequence length (powers of 2 scaling)")
     parser.add_argument("--warmup", type=int, default=3, help="Warmup iterations")

@@ -11,14 +11,6 @@ Universal Rotary Position Embedding Attention (UnifiedRoPE)
 Universal rotary position embedding layer standardizing rotary transformations across arbitrary attention layouts.
 """
 
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _detect_decoder
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -30,9 +22,11 @@ import torch.nn.functional as F
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import apply_attention_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _detect_decoder
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +70,7 @@ class UnifiedRoPE(BaseAttention):
 
         if dim is None:
             if config is not None and not isinstance(config, int):
-                dim = _cfg_get(config, "hidden_size",
-                              _cfg_get(config, "dim", _cfg_get(config, "d_model", None)))
+                dim = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", None)))
             if dim is None and src is not None:
                 dim = getattr(src, "hidden_size", getattr(src, "embed_dim", None))
                 if dim is None and hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features"):
@@ -95,14 +88,10 @@ class UnifiedRoPE(BaseAttention):
         if num_heads is None:
             if config is not None and not isinstance(config, int):
                 num_heads = _cfg_get(
-                    config, "num_attention_heads",
-                    _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", None))
+                    config, "num_attention_heads", _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", None))
                 )
             if num_heads is None and src is not None:
-                num_heads = getattr(
-                    src, "num_heads",
-                    getattr(src, "num_attention_heads", getattr(src, "n_head", None))
-                )
+                num_heads = getattr(src, "num_heads", getattr(src, "num_attention_heads", getattr(src, "n_head", None)))
             if num_heads is None:
                 num_heads = 12
 
@@ -117,7 +106,8 @@ class UnifiedRoPE(BaseAttention):
 
         cfg_kv = (
             _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
-            if config is not None else None
+            if config is not None
+            else None
         )
         if cfg_kv is None and src is not None:
             cfg_kv = getattr(src, "num_key_value_heads", getattr(src, "num_kv_heads", None))
@@ -138,24 +128,40 @@ class UnifiedRoPE(BaseAttention):
                 target_dtype = p.dtype
 
         self.q_proj = LoRALinear(
-            self.hidden_size, self.q_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.hidden_size,
+            self.q_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
         self.k_proj = LoRALinear(
-            self.hidden_size, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
         self.v_proj = LoRALinear(
-            self.hidden_size, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
         self.out_proj = LoRALinear(
-            self.q_head_size, self.hidden_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.q_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
 
         self.query = self.q_proj
@@ -170,9 +176,7 @@ class UnifiedRoPE(BaseAttention):
         self.c_proj = self.out_proj
 
         dropout_p = (
-            getattr(config, "dropout",
-                    getattr(config, "attention_probs_dropout_prob", dropout))
-            if config else dropout
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", dropout)) if config else dropout
         )
         self.dropout = nn.Dropout(float(dropout_p))
 
@@ -242,14 +246,13 @@ class UnifiedRoPE(BaseAttention):
         if x.is_cuda:
             try:
                 from neuralops.ops.cuda.unified_rope_offset import unified_rope_offset
+
                 return unified_rope_offset(x, self.cos_cached, self.sin_cached, rotary_dim, offset=past_len)
             except Exception as e_cuda:
                 logger.debug("UnifiedRoPE Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
 
-        from neuralops.ops.triton.fused_rope import (
-            fused_unified_rope_offset_triton,
-            fused_unified_rope_offset_pytorch,
-        )
+        from neuralops.ops.triton.fused_rope import fused_unified_rope_offset_pytorch, fused_unified_rope_offset_triton
+
         try:
             return fused_unified_rope_offset_triton(x, self.cos_cached, self.sin_cached, rotary_dim, offset=past_len)
         except Exception:
@@ -261,9 +264,7 @@ class UnifiedRoPE(BaseAttention):
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                hasattr(old_attn, "query") and not hasattr(old_attn, "dense") and not hasattr(old_attn, "out_proj")
             ):
                 self.is_nested_encoder = True
 
@@ -283,12 +284,12 @@ class UnifiedRoPE(BaseAttention):
                     c_w = c_w.t().contiguous()
                 q_dim, k_dim, v_dim = self.q_head_size, self.kv_head_size, self.kv_head_size
                 w_q = c_w[:q_dim, :]
-                w_k = c_w[q_dim:q_dim + k_dim, :]
-                w_v = c_w[q_dim + k_dim:q_dim + k_dim + v_dim, :]
+                w_k = c_w[q_dim : q_dim + k_dim, :]
+                w_v = c_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
                 if c_b is not None:
                     b_q = c_b[:q_dim]
-                    b_k = c_b[q_dim:q_dim + k_dim]
-                    b_v = c_b[q_dim + k_dim:q_dim + k_dim + v_dim]
+                    b_k = c_b[q_dim : q_dim + k_dim]
+                    b_v = c_b[q_dim + k_dim : q_dim + k_dim + v_dim]
                 out_w = src.c_proj.weight.detach()
                 if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
                     out_w = out_w.t().contiguous()
@@ -485,15 +486,19 @@ class UnifiedRoPE(BaseAttention):
                 # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
                 try:
                     from neuralops.ops.cuda.flash_gqa import flash_gqa
+
                     attn_out = flash_gqa(q, K_cat, V_cat, is_causal=is_causal, scale=self.scale).to(q.dtype)
                     dispatched = True
                 except Exception as e_cuda:
-                    logger.debug("UnifiedRoPE Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
+                    logger.debug(
+                        "UnifiedRoPE Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda
+                    )
 
             if not dispatched and q.is_cuda and not self.training and attention_mask is None and d_val <= 128:
                 # Level 2: Triton JIT autotuned online softmax kernel
                 try:
                     from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+
                     attn_out = fused_weighted_gqa_online_softmax_triton(
                         q, K_cat, V_cat, head_weights=None, is_causal=is_causal, scale=self.scale
                     ).to(q.dtype)
@@ -525,7 +530,9 @@ class UnifiedRoPE(BaseAttention):
                     v_s = maybe_half(V_full)
 
                     out_sdp = F.scaled_dot_product_attention(
-                        q_s, k_s, v_s,
+                        q_s,
+                        k_s,
+                        v_s,
                         attn_mask=bool_mask,
                         is_causal=False,
                         dropout_p=self.dropout.p if self.training else 0.0,
@@ -647,6 +654,7 @@ def inject_unified_rope(
         return target if num_injected > 0 else None
 
     try:
+
         def _already_injected(m):
             if m is None:
                 return False

@@ -9,10 +9,7 @@
 Fused RMSNorm Hardware Operators.
 """
 
-from neuralops.ops.cuda.rmsnorm.rmsnorm_autograd import (
-    rmsnorm,
-    rmsnorm_pytorch_ref,
-)
+from neuralops.ops.cuda.rmsnorm.rmsnorm_autograd import rmsnorm, rmsnorm_pytorch_ref
 
 __all__ = [
     "rmsnorm",

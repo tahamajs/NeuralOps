@@ -14,10 +14,10 @@ Computes associative matrix memory state recurrence with per-head constant decay
 from __future__ import annotations
 
 import math
+from typing import Any
+
 import torch
 import torch.nn.functional as F
-
-from typing import Any
 
 from neuralops.ops.triton._common import tl, triton
 
@@ -134,13 +134,7 @@ def _fms_fwd_kernel(
             )
             tl.store(s_ptrs, S)
 
-            z_ptrs = (
-                z_workspace_ptr
-                + pid_b * stride_zwb
-                + pid_h * stride_zwh
-                + t * stride_zwl
-                + offs_d * stride_zwd
-            )
+            z_ptrs = z_workspace_ptr + pid_b * stride_zwb + pid_h * stride_zwh + t * stride_zwl + offs_d * stride_zwd
             tl.store(z_ptrs, Z, mask=mask_d)
 
 
@@ -261,13 +255,7 @@ def _fms_bwd_kernel(
         )
         S_t = tl.load(s_t_ptrs)
 
-        z_t_ptrs = (
-            z_workspace_ptr
-            + pid_b * stride_zwb
-            + pid_h * stride_zwh
-            + t * stride_zwl
-            + offs_d * stride_zwd
-        )
+        z_t_ptrs = z_workspace_ptr + pid_b * stride_zwb + pid_h * stride_zwh + t * stride_zwl + offs_d * stride_zwd
         Z_t = tl.load(z_t_ptrs, mask=mask_d, other=0.0)
 
         num_t = tl.sum(q_f[:, None] * S_t, axis=0)
@@ -325,11 +313,7 @@ def _fms_bwd_kernel(
             S_prev = tl.load(s_prev_ptrs)
 
             z_prev_ptrs = (
-                z_workspace_ptr
-                + pid_b * stride_zwb
-                + pid_h * stride_zwh
-                + (t - 1) * stride_zwl
-                + offs_d * stride_zwd
+                z_workspace_ptr + pid_b * stride_zwb + pid_h * stride_zwh + (t - 1) * stride_zwl + offs_d * stride_zwd
             )
             Z_prev = tl.load(z_prev_ptrs, mask=mask_d, other=0.0)
 
@@ -479,9 +463,7 @@ class _FMSScanFn(torch.autograd.Function):
         return dq, dk, dv, ddecay_acc.to(decay.dtype)
 
 
-def fms_scan_triton(
-    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
-) -> torch.Tensor:
+def fms_scan_triton(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
     """Triton-accelerated FMS scan function. head_dim must be <= 64."""
     B, H, L, D = q.shape
     if D > MAX_REGISTER_DIM:
@@ -498,9 +480,7 @@ def fms_scan_triton(
     return _FMSScanFn.apply(q, k, v, decay)
 
 
-def fms_scan_pytorch(
-    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
-) -> torch.Tensor:
+def fms_scan_pytorch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
     """Pure PyTorch reference implementation for Factorised Matrix State (FMS) recurrent scan."""
     B, H, L, D = q.shape
     device = q.device
@@ -542,12 +522,13 @@ def fms_scan_pytorch(
     return torch.stack(ys, dim=2).to(dtype)
 
 
-def fms_scan(
-    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
-) -> torch.Tensor:
+def fms_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
     """Dispatches FMS scan to Triton GPU kernel when suitable, else PyTorch fallback."""
     from neuralops.ops.triton._types import check_triton_suitability
-    suitable, _ = check_triton_suitability(q, "fms_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True)
+
+    suitable, _ = check_triton_suitability(
+        q, "fms_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True
+    )
     if suitable and hasattr(triton, "jit") and q.shape[-1] <= MAX_REGISTER_DIM:
         try:
             return fms_scan_triton(q, k, v, decay)
@@ -611,6 +592,7 @@ def fused_goldfinch_hopfield_lookup_pytorch(
 from neuralops.ops.triton._types import HAS_TRITON
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _goldfinch_hopfield_fused_scan_kernel(
         g_ptr,
@@ -639,10 +621,18 @@ if HAS_TRITON and tl is not None:
         h = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
         for t in range(L):
-            g = tl.load(g_ptr + pid_b * stride_gb + t * stride_gl + offs_d * stride_gd, mask=mask_d, other=0.0).to(tl.float32)
-            v = tl.load(v_ptr + pid_b * stride_vb + t * stride_vl + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
+            g = tl.load(g_ptr + pid_b * stride_gb + t * stride_gl + offs_d * stride_gd, mask=mask_d, other=0.0).to(
+                tl.float32
+            )
+            v = tl.load(v_ptr + pid_b * stride_vb + t * stride_vl + offs_d * stride_vd, mask=mask_d, other=0.0).to(
+                tl.float32
+            )
             h = (1.0 - g) * h + g * v
-            tl.store(out_ptr + pid_b * stride_ob + t * stride_ol + offs_d * stride_od, h.to(out_ptr.dtype.element_ty), mask=mask_d)
+            tl.store(
+                out_ptr + pid_b * stride_ob + t * stride_ol + offs_d * stride_od,
+                h.to(out_ptr.dtype.element_ty),
+                mask=mask_d,
+            )
 
 
 def fused_goldfinch_hopfield_lookup_triton(
@@ -662,12 +652,23 @@ def fused_goldfinch_hopfield_lookup_triton(
             BLOCK_D = min(128, triton.next_power_of_2(D))
             grid = (B, triton.cdiv(D, BLOCK_D))
             _goldfinch_hopfield_fused_scan_kernel[grid](
-                g_c, v_c, out,
-                B, L=L, D=D,
-                stride_gb=g_c.stride(0), stride_gl=g_c.stride(1), stride_gd=g_c.stride(2),
-                stride_vb=v_c.stride(0), stride_vl=v_c.stride(1), stride_vd=v_c.stride(2),
-                stride_ob=out.stride(0), stride_ol=out.stride(1), stride_od=out.stride(2),
-                BLOCK_D=BLOCK_D, num_warps=4,
+                g_c,
+                v_c,
+                out,
+                B,
+                L=L,
+                D=D,
+                stride_gb=g_c.stride(0),
+                stride_gl=g_c.stride(1),
+                stride_gd=g_c.stride(2),
+                stride_vb=v_c.stride(0),
+                stride_vl=v_c.stride(1),
+                stride_vd=v_c.stride(2),
+                stride_ob=out.stride(0),
+                stride_ol=out.stride(1),
+                stride_od=out.stride(2),
+                BLOCK_D=BLOCK_D,
+                num_warps=4,
             )
             return out
         except Exception:
@@ -714,11 +715,11 @@ def fused_phantom_ghost_state_scan_triton(
 
 
 __all__ = [
-    'fms_scan_triton',
-    'fms_scan_pytorch',
-    'fms_scan',
-    'fused_goldfinch_hopfield_lookup_triton',
-    'fused_goldfinch_hopfield_lookup_pytorch',
-    'fused_phantom_ghost_state_scan_triton',
-    'fused_phantom_ghost_state_scan_pytorch',
+    "fms_scan_triton",
+    "fms_scan_pytorch",
+    "fms_scan",
+    "fused_goldfinch_hopfield_lookup_triton",
+    "fused_goldfinch_hopfield_lookup_pytorch",
+    "fused_phantom_ghost_state_scan_triton",
+    "fused_phantom_ghost_state_scan_pytorch",
 ]

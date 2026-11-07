@@ -12,7 +12,6 @@ Applies leverage score CUR factorizations across expert feedforward blocks to co
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -105,10 +105,7 @@ class CURMoECompressor(BaseCompressor):
         cls_name = target_mod.__class__.__name__.lower()
         wrapper_name = module.__class__.__name__.lower()
         is_conv1d = (
-            "conv1d" in cls_name
-            or "conv1d" in wrapper_name
-            or hasattr(module, "nf")
-            or hasattr(target_mod, "nf")
+            "conv1d" in cls_name or "conv1d" in wrapper_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
         )
         (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
@@ -130,9 +127,7 @@ class CURMoECompressor(BaseCompressor):
             return False
 
         target_r = min(self.rank, max_rank)
-        while target_r >= self.min_rank and (target_r * (in_f + out_f + target_r)) >= 0.85 * (
-            in_f * out_f
-        ):
+        while target_r >= self.min_rank and (target_r * (in_f + out_f + target_r)) >= 0.85 * (in_f * out_f):
             target_r = int(target_r * 0.8)
 
         if target_r < self.min_rank:
@@ -278,9 +273,7 @@ class CURMoECompressor(BaseCompressor):
                     for exp_idx, expert in enumerate(experts_container):
                         for child_name, child_mod in list(expert.named_children()):
                             child_full_name = (
-                                f"{name}.experts.{exp_idx}.{child_name}"
-                                if name
-                                else f"experts.{exp_idx}.{child_name}"
+                                f"{name}.experts.{exp_idx}.{child_name}" if name else f"experts.{exp_idx}.{child_name}"
                             )
                             is_linear_like = (
                                 isinstance(child_mod, nn.Linear)
@@ -341,9 +334,7 @@ class CURMoECompressor(BaseCompressor):
                     continue
 
                 last_part = name.split(".")[-1]
-                is_attn_proj = (last_part in _ATTN_NAMES) or any(
-                    k in name_lower for k in ("attn", "attention")
-                )
+                is_attn_proj = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
 
                 if is_attn_proj:
                     if self.target_attention_only:
@@ -362,13 +353,9 @@ class CURMoECompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         effective_param_ratio = (
-            self.total_comp_decomp_params / self.total_orig_decomp_params
-            if self.total_orig_decomp_params > 0
-            else 1.0
+            self.total_comp_decomp_params / self.total_orig_decomp_params if self.total_orig_decomp_params > 0 else 1.0
         )
         stats.update(
             {
@@ -423,9 +410,7 @@ def cur_moe_factory(
         "max_error",
         _cfg_get(comp_config, "cur_moe_max_error", _cfg_get(comp_config, "max_error", 0.90)),
     )
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
     target_attention_only = kwargs.pop(
         "target_attention_only",
         _cfg_get(

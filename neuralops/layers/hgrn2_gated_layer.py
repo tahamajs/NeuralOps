@@ -8,4 +8,5 @@
 """
 Compatibility alias for neuralops.layers.gated.hgrn2_gated_layer.
 """
+
 from neuralops.layers.gated.hgrn2_gated_layer import *  # noqa: F401, F403

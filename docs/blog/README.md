@@ -9,8 +9,8 @@
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 [![Coverage: 98%](https://img.shields.io/badge/coverage-98%25-brightgreen.svg)](./Codes/framework/tests/)
 
-> **Module Identifier**: `./Docs/blog/README.md`  
-> **Subsystem Classification**: `DocsBlog`  
+> **Module Identifier**: `./Docs/blog/README.md`
+> **Subsystem Classification**: `DocsBlog`
 > **Publication Standard**: Exhaustive Masterclass Technical Specification (2,000+ Lines)
 
 ---
@@ -109,13 +109,13 @@ $$	ext{Parameter Reduction: } rac{r(d_{in} + d_{out})}{d_{in} \cdot d_{out}} \l
 
 ### 2. Activation Outlier Scaling & Covariance Preconditioning
 To prevent severe quantization error from kurtosis outliers in deep layers, activation covariance scaling is applied:
-$$S_X = 	ext{diag}\left( \sqrt{\mathbb{E}_{x \sim \mathcal{D}}[X^2]} + \epsilon 
+$$S_X = 	ext{diag}\left( \sqrt{\mathbb{E}_{x \sim \mathcal{D}}[X^2]} + \epsilon
 ight) \in \mathbb{R}^{d_{in} 	imes d_{in}}$$
 $$	ilde{W} = W \cdot S_X, \quad 	ilde{X} = X \cdot S_X^{-1}$$
 $$	ilde{W} = 	ilde{U}_r 	ilde{\Sigma}_r 	ilde{V}_r^T \implies Y = 	ilde{X} 	ilde{W}^T = X W^T$$
 
 ### 3. Optimal Brain Surgeon (OBS) Second-Order Error Minimization
-$$\min_{\hat{W}} 	ext{Tr}\left( (W - \hat{W}) H (W - \hat{W})^T 
+$$\min_{\hat{W}} 	ext{Tr}\left( (W - \hat{W}) H (W - \hat{W})^T
 ight) \quad 	ext{where } H = 2 X^T X + \lambda I$$
 
 ---
@@ -151,12 +151,12 @@ class DocsBlogEngine_01(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -173,14 +173,14 @@ class DocsBlogEngine_01(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -227,12 +227,12 @@ class DocsBlogEngine_02(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -249,14 +249,14 @@ class DocsBlogEngine_02(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -303,12 +303,12 @@ class DocsBlogEngine_03(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -325,14 +325,14 @@ class DocsBlogEngine_03(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -379,12 +379,12 @@ class DocsBlogEngine_04(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -401,14 +401,14 @@ class DocsBlogEngine_04(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -455,12 +455,12 @@ class DocsBlogEngine_05(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -477,14 +477,14 @@ class DocsBlogEngine_05(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -531,12 +531,12 @@ class DocsBlogEngine_06(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -553,14 +553,14 @@ class DocsBlogEngine_06(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -607,12 +607,12 @@ class DocsBlogEngine_07(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -629,14 +629,14 @@ class DocsBlogEngine_07(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -683,12 +683,12 @@ class DocsBlogEngine_08(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -705,14 +705,14 @@ class DocsBlogEngine_08(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -759,12 +759,12 @@ class DocsBlogEngine_09(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -781,14 +781,14 @@ class DocsBlogEngine_09(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -835,12 +835,12 @@ class DocsBlogEngine_10(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -857,14 +857,14 @@ class DocsBlogEngine_10(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -911,12 +911,12 @@ class DocsBlogEngine_11(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -933,14 +933,14 @@ class DocsBlogEngine_11(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -987,12 +987,12 @@ class DocsBlogEngine_12(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1009,14 +1009,14 @@ class DocsBlogEngine_12(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1063,12 +1063,12 @@ class DocsBlogEngine_13(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1085,14 +1085,14 @@ class DocsBlogEngine_13(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1139,12 +1139,12 @@ class DocsBlogEngine_14(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1161,14 +1161,14 @@ class DocsBlogEngine_14(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1215,12 +1215,12 @@ class DocsBlogEngine_15(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1237,14 +1237,14 @@ class DocsBlogEngine_15(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1291,12 +1291,12 @@ class DocsBlogEngine_16(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1313,14 +1313,14 @@ class DocsBlogEngine_16(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1367,12 +1367,12 @@ class DocsBlogEngine_17(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1389,14 +1389,14 @@ class DocsBlogEngine_17(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1443,12 +1443,12 @@ class DocsBlogEngine_18(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1465,14 +1465,14 @@ class DocsBlogEngine_18(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1519,12 +1519,12 @@ class DocsBlogEngine_19(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1541,14 +1541,14 @@ class DocsBlogEngine_19(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1595,12 +1595,12 @@ class DocsBlogEngine_20(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1617,14 +1617,14 @@ class DocsBlogEngine_20(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1671,12 +1671,12 @@ class DocsBlogEngine_21(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1693,14 +1693,14 @@ class DocsBlogEngine_21(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1747,12 +1747,12 @@ class DocsBlogEngine_22(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1769,14 +1769,14 @@ class DocsBlogEngine_22(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1823,12 +1823,12 @@ class DocsBlogEngine_23(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1845,14 +1845,14 @@ class DocsBlogEngine_23(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """
@@ -1899,12 +1899,12 @@ class DocsBlogEngine_24(nn.Module):
         self.bottleneck_rank = bottleneck_rank
         self.quant_bits = quant_bits
         self.dtype = dtype
-        
+
         # Subspace Projections
         self.down_proj = nn.Linear(hidden_size, bottleneck_rank, bias=False, dtype=dtype)
         self.up_proj = nn.Linear(bottleneck_rank, intermediate_size, bias=False, dtype=dtype)
         self.norm = nn.RMSNorm(bottleneck_rank) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(bottleneck_rank)
-        
+
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -1921,14 +1921,14 @@ class DocsBlogEngine_24(nn.Module):
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor]]]:
         """
         Executes forward transformation with hardware-aligned kernel dispatch.
-        
+
         Args:
             hidden_states: Input tensor of shape [B, N, D]
             attention_mask: Optional mask tensor of shape [B, 1, N, N]
             position_ids: Optional position indices of shape [B, N]
             past_key_value: Optional cached KV states for autoregressive decoding
             use_cache: Whether to return updated KV state cache
-            
+
         Returns:
             Tuple of (output_tensor [B, N, D], updated_cache)
         """

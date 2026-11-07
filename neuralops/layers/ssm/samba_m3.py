@@ -13,13 +13,6 @@ Integrates sliding-window local attention with spectral Mamba state space blocks
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
-from neuralops.core.common import _cfg_get
-
 import logging
 import math
 from typing import Any
@@ -29,8 +22,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 try:
     from neuralops.layers.ssm.simple_ssm import SimpleSSM
@@ -65,7 +60,7 @@ class SpectralMamba(nn.Module):
         self.dt_scale = nn.Parameter(torch.full((self.d_model,), 0.5))
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         x_in = x.unsqueeze(1) if is_2d else x
 
         if isinstance(self.mamba, nn.Identity):
@@ -155,16 +150,12 @@ class SAMBAM3Block(nn.Module):
         self.n_heads: int = int(n_heads)
 
         if self.n_heads <= 0 or self.d_model % self.n_heads != 0:
-            raise ValueError(
-                f"d_model ({self.d_model}) must be divisible by n_heads ({self.n_heads})"
-            )
+            raise ValueError(f"d_model ({self.d_model}) must be divisible by n_heads ({self.n_heads})")
 
         self.head_dim: int = self.d_model // self.n_heads
         self.window: int = window
         self.lora_rank: int = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
-        self.lora_alpha: float = float(
-            kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
-        )
+        self.lora_alpha: float = float(kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)))
 
         cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.n_heads
@@ -239,16 +230,12 @@ class SAMBAM3Block(nn.Module):
             freeze_base=True,
         )
 
-        self.mamba = SpectralMamba(
-            self.d_model, config=config, is_decoder=self.is_decoder, **kwargs
-        )
+        self.mamba = SpectralMamba(self.d_model, config=config, is_decoder=self.is_decoder, **kwargs)
 
         self.alpha = nn.Parameter(torch.tensor(0.0, dtype=torch.float32))
         self.gate_fn = nn.Sigmoid()
 
-        dropout_p = float(
-            _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
-        )
+        dropout_p = float(_cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)))
         self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -358,30 +345,14 @@ class SAMBAM3Block(nn.Module):
 
             elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
-                b_q = (
-                    src.q_proj.bias.detach()
-                    if getattr(src.q_proj, "bias", None) is not None
-                    else None
-                )
+                b_q = src.q_proj.bias.detach() if getattr(src.q_proj, "bias", None) is not None else None
                 w_k = src.k_proj.weight.detach()
-                b_k = (
-                    src.k_proj.bias.detach()
-                    if getattr(src.k_proj, "bias", None) is not None
-                    else None
-                )
+                b_k = src.k_proj.bias.detach() if getattr(src.k_proj, "bias", None) is not None else None
                 w_v = src.v_proj.weight.detach()
-                b_v = (
-                    src.v_proj.bias.detach()
-                    if getattr(src.v_proj, "bias", None) is not None
-                    else None
-                )
+                b_v = src.v_proj.bias.detach() if getattr(src.v_proj, "bias", None) is not None else None
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = (
-                        src.o_proj.bias.detach()
-                        if getattr(src.o_proj, "bias", None) is not None
-                        else None
-                    )
+                    b_o = src.o_proj.bias.detach() if getattr(src.o_proj, "bias", None) is not None else None
 
             elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
@@ -457,8 +428,10 @@ class SAMBAM3Block(nn.Module):
         if q.is_cuda and past_len == 0 and attention_mask is None and head_mask is None and d <= 64:
             try:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
+
                 if not FORCE_PYTORCH_FALLBACK:
                     from neuralops.ops.triton.sliding_window import sliding_window_triton
+
                     is_dec = getattr(self, "_active_is_decoder", self.is_decoder)
                     return sliding_window_triton(q, k, v, window_size=self.window, is_causal=bool(is_dec))
             except Exception:
@@ -503,13 +476,13 @@ class SAMBAM3Block(nn.Module):
                     pad = (attention_mask[:, k_abs_start:k_abs_end] == 0).unsqueeze(1).unsqueeze(2)
                     scores = scores.masked_fill(pad, -1e4)
                 elif attention_mask.dim() == 3:
-                    scores = scores + attention_mask[
-                        :, q_abs_start:q_abs_end, k_abs_start:k_abs_end
-                    ].unsqueeze(1).to(scores.dtype)
+                    scores = scores + attention_mask[:, q_abs_start:q_abs_end, k_abs_start:k_abs_end].unsqueeze(1).to(
+                        scores.dtype
+                    )
                 elif attention_mask.dim() == 4:
-                    scores = scores + attention_mask[
-                        :, :, q_abs_start:q_abs_end, k_abs_start:k_abs_end
-                    ].to(scores.dtype)
+                    scores = scores + attention_mask[:, :, q_abs_start:q_abs_end, k_abs_start:k_abs_end].to(
+                        scores.dtype
+                    )
 
             probs = F.softmax(scores, dim=-1)
             probs = torch.nan_to_num(probs, nan=0.0)
@@ -573,24 +546,9 @@ class SAMBAM3Block(nn.Module):
                 if hasattr(past_key_value, "mamba_state") and past_key_value.mamba_state:
                     past_mamba = past_key_value.mamba_state[0]
 
-        q = (
-            self.q_lin(hidden_states)
-            .view(B, L, self.n_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.k_lin(hidden_states)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_lin(hidden_states)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_lin(hidden_states).view(B, L, self.n_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         pos_emb = position_embeddings or kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
@@ -625,9 +583,7 @@ class SAMBAM3Block(nn.Module):
         past_mamba = kwargs_mamba.pop("past_state", past_mamba)
         kwargs_mamba["is_decoder"] = is_dec
         kwargs_mamba["is_causal"] = is_dec
-        m_res = self.mamba(
-            hidden_states, attention_mask=attention_mask, past_state=past_mamba, **kwargs_mamba
-        )
+        m_res = self.mamba(hidden_states, attention_mask=attention_mask, past_state=past_mamba, **kwargs_mamba)
         if isinstance(m_res, tuple):
             mamba_out = m_res[0]
             present_mamba = m_res[1] if len(m_res) > 1 else None

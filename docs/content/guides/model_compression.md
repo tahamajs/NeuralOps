@@ -77,5 +77,5 @@ compressed_model = compressor.compress()
 All compression engines are evaluated on physical hardware:
 - **Testbed**: Dedicated **NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, AD104 silicon)**.
 - **Metrics Tracked**: Parameter reduction (%), WikiText-2 Perplexity ($\Delta \text{PPL}$), Zero-shot GLUE retention (%), Peak VRAM allocation (MB), Latency speedup ($x$).
-- **Master Results Ledger**: Mirrored and synchronized at  
+- **Master Results Ledger**: Mirrored and synchronized at
   👉 **[https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)**

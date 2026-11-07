@@ -77,9 +77,7 @@ class HuggingFaceTrainer(BaseTrainer):
             "save_strategy": self.config.get("save_strategy", "epoch"),
             "save_total_limit": self.config.get("save_total_limit", 2),
             "load_best_model_at_end": (
-                self.config.get("load_best_model_at_end", True)
-                if self.eval_dataset is not None
-                else False
+                self.config.get("load_best_model_at_end", True) if self.eval_dataset is not None else False
             ),
             "metric_for_best_model": self.config.get("metric_for_best_model", "eval_loss"),
             "fp16": self.config.get("fp16", False),

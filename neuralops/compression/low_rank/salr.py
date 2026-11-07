@@ -12,7 +12,6 @@ Integrates low-rank matrix decomposition with bottleneck channel pruning to simu
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -87,12 +87,8 @@ class SALRLayer(nn.Module):
         self.register_buffer("mask", mask)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=dtype, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=dtype, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=dtype, device=device))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
             self.register_parameter("lora_A", None)
@@ -116,14 +112,19 @@ class SALRLayer(nn.Module):
         V_masked = self.V * self.mask
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
                 out = fused_down_up_gemm_bias_triton(x, V_masked, self.U.t().contiguous(), bias=base_bias)
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-                    lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias) * self.scaling
+                    lora_out = (
+                        fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias)
+                        * self.scaling
+                    )
                     return out + lora_out
                 return out
             except Exception:
@@ -163,6 +164,7 @@ class SALRCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     SALR Compressor: Structure-Aware Low-Rank and Sparse Pruning.
@@ -207,18 +209,13 @@ class SALRCompressor(BaseCompressor):
         self.sparsity = max(
             0.0,
             min(
-                float(
-                    sparsity
-                    or _cfg_get(cfg_obj, "salr_sparsity", _cfg_get(cfg_obj, "sparsity", 0.5))
-                ),
+                float(sparsity or _cfg_get(cfg_obj, "salr_sparsity", _cfg_get(cfg_obj, "sparsity", 0.5))),
                 0.90,
             ),
         )
         self.min_rank = max(1, int(min_rank or _cfg_get(cfg_obj, "min_rank", 8)))
         self.skip_attention_qkv = bool(
-            skip_attention_qkv
-            if skip_attention_qkv is not None
-            else _cfg_get(cfg_obj, "skip_attention_qkv", False)
+            skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, "skip_attention_qkv", False)
         )
         self.target_attention_only = bool(
             target_attention_only
@@ -242,14 +239,10 @@ class SALRCompressor(BaseCompressor):
                 self.target_device = torch.device(device)
             except Exception:
                 self.target_device = (
-                    next(model.parameters()).device
-                    if list(model.parameters())
-                    else torch.device("cpu")
+                    next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
                 )
         else:
-            self.target_device = (
-                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
-            )
+            self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
 
         self.visited_weights: set[int] = set()
         self.compressed_layers: list[str] = []
@@ -374,10 +367,7 @@ class SALRCompressor(BaseCompressor):
         r = max(self.min_rank, min(rank, max_r - 1, param_cap))
 
         if r >= max_r:
-            logger.debug(
-                "SALR: rank %d >= max_r %d; skipping layer for no parameter reduction",
-                r, max_r
-            )
+            logger.debug("SALR: rank %d >= max_r %d; skipping layer for no parameter reduction", r, max_r)
             return None
 
         device = base_layer.weight.device
@@ -427,12 +417,20 @@ class SALRCompressor(BaseCompressor):
             try:
                 if hasattr(layer.lora_A, "weight") and salr_layer.lora_A is not None:
                     salr_layer.lora_A.data.copy_(layer.lora_A.weight.data)
-                elif hasattr(layer, "lora_A") and isinstance(layer.lora_A, torch.Tensor) and salr_layer.lora_A is not None:
+                elif (
+                    hasattr(layer, "lora_A")
+                    and isinstance(layer.lora_A, torch.Tensor)
+                    and salr_layer.lora_A is not None
+                ):
                     salr_layer.lora_A.data.copy_(layer.lora_A.data)
 
                 if hasattr(layer.lora_B, "weight") and salr_layer.lora_B is not None:
                     salr_layer.lora_B.data.copy_(layer.lora_B.weight.data)
-                elif hasattr(layer, "lora_B") and isinstance(layer.lora_B, torch.Tensor) and salr_layer.lora_B is not None:
+                elif (
+                    hasattr(layer, "lora_B")
+                    and isinstance(layer.lora_B, torch.Tensor)
+                    and salr_layer.lora_B is not None
+                ):
                     salr_layer.lora_B.data.copy_(layer.lora_B.data)
             except Exception as e_lora:
                 logger.warning("Could not copy existing LoRA adapters: %s", e_lora)
@@ -449,7 +447,8 @@ class SALRCompressor(BaseCompressor):
         if rel_err > self.max_error:
             logger.warning(
                 "SALR: Rank-truncation error %.4f exceeded threshold %.4f. Compressing anyway.",
-                rel_err, self.max_error,
+                rel_err,
+                self.max_error,
             )
             if self.fallback_to_original:
                 return None
@@ -469,11 +468,7 @@ class SALRCompressor(BaseCompressor):
         self.fallback_layers.clear()
         self.failed_layers.clear()
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not target_layers:
             logger.warning("SALR: No compressible linear layers found.")
@@ -494,9 +489,7 @@ class SALRCompressor(BaseCompressor):
                 if new_layer is not None:
                     err = getattr(new_layer, "reconstruction_error", 0.0)
                     self.layer_errors[name] = err
-                    self.replaced_layers.append(
-                        {"name": name, "rank": new_layer.rank, "error": err}
-                    )
+                    self.replaced_layers.append({"name": name, "rank": new_layer.rank, "error": err})
                     replace_module(self.model, name, new_layer)
                     self.compressed_layers.append(name)
                 else:
@@ -519,9 +512,7 @@ class SALRCompressor(BaseCompressor):
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
-        avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         stats = self.get_compression_stats()
         stats.update(
             {
@@ -566,19 +557,13 @@ def salr_factory(
         _cfg_get(comp_config, "salr_sparsity", _cfg_get(comp_config, "sparsity", 0.5)),
     )
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "min_rank", 8))
-    skip_attention_qkv = kwargs.pop(
-        "skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False)
-    )
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
 
     compressor = SALRCompressor(
         model,

@@ -150,11 +150,11 @@ stateDiagram-v2
     PublicEntry --> NormalizeArgs: Argument & Default Normalization
     NormalizeArgs --> PreFlightGuard: Dtype & Contiguity Guard
     PreFlightGuard --> HardwareVerifier: Capability & Architecture Check
-    
+
     HardwareVerifier --> Level1_CUDA: Supported & SM >= 8.0 & C++ Available
     HardwareVerifier --> Level2_Triton: CUDA Rejected / Triton Available
     HardwareVerifier --> Level3_PyTorch: Triton Rejected / CPU / Fallback Forced
-    
+
     Level1_CUDA --> Output: Return Result
     Level2_Triton --> Output: Return Result
     Level3_PyTorch --> Output: Return Result

@@ -70,9 +70,7 @@ class LoRALinear(nn.Module):
         self.alpha = self.lora_alpha
         self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
         self.scaling = self.lora_scaling
-        self.lora_dropout = (
-            nn.Dropout(p=effective_dropout) if effective_dropout > 0.0 else nn.Identity()
-        )
+        self.lora_dropout = nn.Dropout(p=effective_dropout) if effective_dropout > 0.0 else nn.Identity()
         self.merged = False
         self.merge_weights = merge_weights
         self.freeze_base = freeze_base
@@ -100,24 +98,16 @@ class LoRALinear(nn.Module):
         else:
             self.is_wrapper = False
             self.in_features = int(base_or_in_features)
-            self.out_features = int(
-                out_features if out_features is not None else base_or_in_features
-            )
-            self.weight = nn.Parameter(
-                torch.empty((self.out_features, self.in_features), **factory_kwargs)
-            )
+            self.out_features = int(out_features if out_features is not None else base_or_in_features)
+            self.weight = nn.Parameter(torch.empty((self.out_features, self.in_features), **factory_kwargs))
             if bias:
                 self.bias = nn.Parameter(torch.empty(self.out_features, **factory_kwargs))
             else:
                 self.register_parameter("bias", None)
 
         if self.lora_rank > 0 and self.in_features and self.out_features:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_rank, self.in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((self.out_features, self.lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, self.in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((self.out_features, self.lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -227,23 +217,15 @@ class LoRALinear(nn.Module):
         else:
             res = F.linear(x, self.weight, self.bias)
 
-        if (
-            not self.merged
-            and self.lora_rank > 0
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        if not self.merged and self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             drop_x = self.lora_dropout(x)
             if HAS_TRITON and triton_dispatch is not None and drop_x.is_cuda:
                 try:
                     lora_out = (
-                        triton_dispatch("low_rank", drop_x, self.lora_B, self.lora_A, bias=None)
-                        * self.lora_scaling
+                        triton_dispatch("low_rank", drop_x, self.lora_B, self.lora_A, bias=None) * self.lora_scaling
                     )
                 except Exception:
-                    lora_out = (
-                        F.linear(F.linear(drop_x, self.lora_A), self.lora_B) * self.lora_scaling
-                    )
+                    lora_out = F.linear(F.linear(drop_x, self.lora_A), self.lora_B) * self.lora_scaling
             else:
                 lora_out = F.linear(F.linear(drop_x, self.lora_A), self.lora_B) * self.lora_scaling
             res = res + lora_out

@@ -187,8 +187,8 @@ class PerplexityEvaluator:
 
                     loss_sum = loss.sum(dim=0).cpu().to(torch.float64)
                     b_size = inp_b.size(0)
-                    pos_losses[:loss_sum.size(0)] += loss_sum
-                    pos_counts[:loss_sum.size(0)] += b_size
+                    pos_losses[: loss_sum.size(0)] += loss_sum
+                    pos_counts[: loss_sum.size(0)] += b_size
 
                     for b_i in range(b_size):
                         block_nlls.append(float(loss[b_i].mean().item()))
@@ -204,8 +204,8 @@ class PerplexityEvaluator:
                 loss = loss_fn(logits.transpose(1, 2), tgt_b)
                 loss_sum = loss.sum(dim=0).cpu().to(torch.float64)
                 b_size = inp_b.size(0)
-                pos_losses[:loss_sum.size(0)] += loss_sum
-                pos_counts[:loss_sum.size(0)] += b_size
+                pos_losses[: loss_sum.size(0)] += loss_sum
+                pos_counts[: loss_sum.size(0)] += b_size
                 for b_i in range(b_size):
                     block_nlls.append(float(loss[b_i].mean().item()))
             batch_inputs.clear()

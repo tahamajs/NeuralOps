@@ -143,20 +143,22 @@ def cmd_eval(args: Any) -> int:
 
     if not output_json:
         if HAS_RICH and console is not None:
-            console.print(Panel(
-                f"[bold cyan]NeuralOps Unified Evaluation Runner[/bold cyan]\n"
-                f"[bold white]Model:[/]     [yellow]{model_id}[/]\n"
-                f"[bold white]Dataset:[/]   [green]{dataset}[/] ({dataset_name or 'default'}, {split})\n"
-                f"[bold white]Batch Size:[/] {batch_size}  [bold white]| Samples:[/] {max_samples}  [bold white]| Device:[/] [magenta]{str(device).upper()}[/]",
-                title="[bold cyan]NeuralOps Evaluation & Benchmark Suite[/bold cyan]",
-                border_style="cyan",
-            ))
+            console.print(
+                Panel(
+                    f"[bold cyan]NeuralOps Unified Evaluation Runner[/bold cyan]\n"
+                    f"[bold white]Model:[/]     [yellow]{model_id}[/]\n"
+                    f"[bold white]Dataset:[/]   [green]{dataset}[/] ({dataset_name or 'default'}, {split})\n"
+                    f"[bold white]Batch Size:[/] {batch_size}  [bold white]| Samples:[/] {max_samples}  [bold white]| Device:[/] [magenta]{str(device).upper()}[/]",
+                    title="[bold cyan]NeuralOps Evaluation & Benchmark Suite[/bold cyan]",
+                    border_style="cyan",
+                )
+            )
         else:
             print("=================================================================")
             print(f"NeuralOps Model Evaluation: {model_id} on {dataset} ({device})")
             print("=================================================================")
 
-    from neuralops.benchmarks.eval_bridge import BenchmarkEvaluator, BenchmarkEvalResult
+    from neuralops.benchmarks.eval_bridge import BenchmarkEvalResult, BenchmarkEvaluator
 
     evaluator = BenchmarkEvaluator(
         model=model_id,
@@ -175,21 +177,23 @@ def cmd_eval(args: Any) -> int:
     )
 
     results_data: Dict[str, Any] = eval_result.to_dict()
-    results_data.update({
-        "model": model_id,
-        "dataset": dataset,
-        "split": split,
-        "samples_evaluated": eval_result.samples_evaluated,
-        "total_tokens": eval_result.total_tokens,
-        "elapsed_seconds": eval_result.duration_seconds,
-        "loss": eval_result.loss,
-        "perplexity": eval_result.perplexity,
-        "throughput_tokens_per_sec": eval_result.throughput_tokens_per_sec,
-        "latency_ms_per_token": eval_result.latency_ms_per_token,
-        "peak_vram_mb": eval_result.peak_vram_mb,
-        "accuracy_pct": eval_result.accuracy_pct,
-        "device": str(evaluator.device),
-    })
+    results_data.update(
+        {
+            "model": model_id,
+            "dataset": dataset,
+            "split": split,
+            "samples_evaluated": eval_result.samples_evaluated,
+            "total_tokens": eval_result.total_tokens,
+            "elapsed_seconds": eval_result.duration_seconds,
+            "loss": eval_result.loss,
+            "perplexity": eval_result.perplexity,
+            "throughput_tokens_per_sec": eval_result.throughput_tokens_per_sec,
+            "latency_ms_per_token": eval_result.latency_ms_per_token,
+            "peak_vram_mb": eval_result.peak_vram_mb,
+            "accuracy_pct": eval_result.accuracy_pct,
+            "device": str(evaluator.device),
+        }
+    )
 
     avg_loss = eval_result.loss or 0.0
     perplexity = eval_result.perplexity or 0.0

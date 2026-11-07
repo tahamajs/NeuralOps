@@ -12,12 +12,6 @@ Streaming attention retaining key initial sink tokens alongside a rolling key-va
 """
 
 from __future__ import annotations
-from neuralops.core.common import _find_layer_list
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -27,10 +21,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _find_layer_list
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.gqa import repeat_kv
-from neuralops.core.attention_mask import get_token_valid_mask
 
 logger = logging.getLogger(__name__)
 
@@ -137,24 +133,23 @@ class SinkAttention(BaseAttention):
         comp_config = getattr(config, "compression_config", None)
 
         self.d_model = int(
-            kwargs.get("dim")
-            or getattr(config, "hidden_size", None) or d_model
-            or kwargs.get("hidden_size") or 768
+            kwargs.get("dim") or getattr(config, "hidden_size", None) or d_model or kwargs.get("hidden_size") or 768
         )
         self.dim = self.d_model
         self.num_heads = int(
-            kwargs.get("num_heads")
-            or getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+            kwargs.get("num_heads") or getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         )
         self.num_kv_heads = int(
             getattr(
-                config, "num_key_value_heads",
+                config,
+                "num_key_value_heads",
                 kwargs.get("num_key_value_heads", self.num_heads),
             )
         )
         self.head_dim = int(
             getattr(
-                config, "head_dim",
+                config,
+                "head_dim",
                 kwargs.get("head_dim", self.dim // max(1, self.num_heads)),
             )
         )
@@ -162,14 +157,19 @@ class SinkAttention(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
         self.num_sink_tokens = int(
-            getattr(comp_config, "num_sink_tokens",
-                    kwargs.get("num_sink_tokens", num_sink_tokens))
-            if comp_config else num_sink_tokens
+            getattr(comp_config, "num_sink_tokens", kwargs.get("num_sink_tokens", num_sink_tokens))
+            if comp_config
+            else num_sink_tokens
         )
         default_win = 64
         self.window_size = int(
-            getattr(comp_config, "window_size", kwargs.get("window_size", default_win if window_size == 4096 else window_size))
-            if comp_config else (default_win if window_size == 4096 else window_size)
+            getattr(
+                comp_config,
+                "window_size",
+                kwargs.get("window_size", default_win if window_size == 4096 else window_size),
+            )
+            if comp_config
+            else (default_win if window_size == 4096 else window_size)
         )
         if self.num_sink_tokens < 1:
             raise ValueError("num_sink_tokens must be >= 1.")
@@ -184,36 +184,48 @@ class SinkAttention(BaseAttention):
         self.is_nested_encoder = False
 
         self.lora_rank = int(
-            getattr(config, "lora_rank",
-                    getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-            if config else 16
+            getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            if config
+            else 16
         )
         self.lora_alpha = float(
-            getattr(config, "lora_alpha",
-                    getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
-            if config else 32.0
+            getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+            if config
+            else 32.0
         )
         self.freeze_base = self.lora_rank > 0
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.q_lin = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_lin = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_lin = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_lin = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -228,15 +240,12 @@ class SinkAttention(BaseAttention):
         self.c_proj = self.out_lin
         self.o_proj = self.out_lin
 
-        dropout_p = (
-            getattr(config, "dropout",
-                    getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         src = (
-            pretrained_attn if pretrained_attn is not None
+            pretrained_attn
+            if pretrained_attn is not None
             else (old_attn if old_attn is not None else kwargs.get("source_attn"))
         )
         if src is not None:
@@ -282,19 +291,22 @@ class SinkAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
-                hasattr(src, "self") and hasattr(src.self, "query")
-                and hasattr(src, "output") and hasattr(src.output, "dense")
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
             )
             or (
-                cls_name in (
-                    "BertSelfAttention", "RobertaSelfAttention",
-                    "XLMRobertaSelfAttention", "ElectraSelfAttention",
+                cls_name
+                in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
                 or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
@@ -305,8 +317,10 @@ class SinkAttention(BaseAttention):
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None),
-            "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -327,12 +341,12 @@ class SinkAttention(BaseAttention):
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
                 extracted["q"] = (c_w[:split, :], c_b[:split] if c_b is not None else None)
                 extracted["k"] = (
-                    c_w[split:2 * split, :],
-                    c_b[split:2 * split] if c_b is not None else None,
+                    c_w[split : 2 * split, :],
+                    c_b[split : 2 * split] if c_b is not None else None,
                 )
                 extracted["v"] = (
-                    c_w[2 * split:, :],
-                    c_b[2 * split:] if c_b is not None else None,
+                    c_w[2 * split :, :],
+                    c_b[2 * split :] if c_b is not None else None,
                 )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
@@ -385,13 +399,11 @@ class SinkAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -400,14 +412,10 @@ class SinkAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
-                f"SinkAttention.copy_weights failed: missing "
-                f"{missing_after} from {src.__class__.__name__}."
+                f"SinkAttention.copy_weights failed: missing " f"{missing_after} from {src.__class__.__name__}."
             )
 
         target_map = {"q": self.q_lin, "k": self.k_lin, "v": self.v_lin, "o": self.out_lin}
@@ -426,10 +434,7 @@ class SinkAttention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif (
-                    w.shape[0] < target_mod.weight.shape[0]
-                    and target_mod.weight.shape[0] % w.shape[0] == 0
-                ):
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -473,6 +478,7 @@ class SinkAttention(BaseAttention):
 
         try:
             from neuralops.ops.triton.sliding_window import fused_sink_rolling_cache_triton
+
             return fused_sink_rolling_cache_triton(k, v, positions, W, S)
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -531,11 +537,7 @@ class SinkAttention(BaseAttention):
             cos, sin = position_embeddings
             q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, past_len=offset)
 
-        new_positions = (
-            torch.arange(offset, offset + N, device=device, dtype=torch.long)
-            .unsqueeze(0)
-            .expand(B, -1)
-        )
+        new_positions = torch.arange(offset, offset + N, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
 
         if past_k is not None:
             k_all = torch.cat([past_k, k_new], dim=-2)
@@ -592,8 +594,11 @@ class SinkAttention(BaseAttention):
         ):
             try:
                 from neuralops.ops.cuda.sliding_window import sliding_window_attn
+
                 attn_out = sliding_window_attn(
-                    q, k_att, v_att,
+                    q,
+                    k_att,
+                    v_att,
                     window_size=self.window_size,
                     num_sinks=self.num_sink_tokens,
                 )
@@ -607,33 +612,29 @@ class SinkAttention(BaseAttention):
             except Exception as exc:
                 logger.debug("SinkAttention Level 1/2 hardware dispatch fallback: %s", exc)
 
-        use_sdpa = (
-            not self.training
-            and N_k <= self.window_size
-            and past_k is None
-            and N == N_k
-        )
+        use_sdpa = not self.training and N_k <= self.window_size and past_k is None and N == N_k
         if use_sdpa:
             if self.is_decoder:
                 attn_out = F.scaled_dot_product_attention(
-                    q, k_att, v_att, is_causal=True,
+                    q,
+                    k_att,
+                    v_att,
+                    is_causal=True,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
             else:
                 attn_bias = None
                 if attention_mask is not None:
                     attn_bias = torch.zeros(B, 1, N, N, device=device, dtype=q.dtype)
-                    attn_bias = attn_bias.masked_fill(
-                        ~valid_mask.unsqueeze(1).unsqueeze(2), float("-inf")
-                    )
+                    attn_bias = attn_bias.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), float("-inf"))
                 attn_out = F.scaled_dot_product_attention(
-                    q, k_att, v_att, attn_mask=attn_bias,
+                    q,
+                    k_att,
+                    v_att,
+                    attn_mask=attn_bias,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-            attn_out = (
-                attn_out.permute(0, 2, 1, 3).contiguous()
-                .view(B, N, self.all_head_size)
-            )
+            attn_out = attn_out.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
             if self.is_nested_encoder:
                 return attn_out, None
             out = self.out_lin(attn_out)
@@ -642,9 +643,7 @@ class SinkAttention(BaseAttention):
             return out, None
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(
-            q.float(), k_att.float().transpose(-2, -1).contiguous()
-        ) * scale
+        scores = torch.matmul(q.float(), k_att.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder:
             q_pos = new_positions.view(B, 1, N, 1)
@@ -666,9 +665,7 @@ class SinkAttention(BaseAttention):
             all_valid = valid_lookup.gather(1, pos_keep)
 
         if all_valid.shape[-1] == scores.shape[-1]:
-            scores = scores.masked_fill(
-                ~all_valid.unsqueeze(1).unsqueeze(2), float("-inf")
-            )
+            scores = scores.masked_fill(~all_valid.unsqueeze(1).unsqueeze(2), float("-inf"))
         else:
             av = all_valid[:, None, None, :]
             if av.shape[-1] != scores.shape[-1]:
@@ -684,18 +681,11 @@ class SinkAttention(BaseAttention):
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                probs = probs * head_mask.view(
-                    head_mask.size(0), self.num_heads, 1, 1
-                ).to(probs.dtype)
+                probs = probs * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(probs.dtype)
             elif head_mask.dim() == 4:
                 probs = probs * head_mask.to(probs.dtype)
 
-        attn_out = (
-            torch.matmul(probs, v_att)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-            .view(B, N, self.all_head_size)
-        )
+        attn_out = torch.matmul(probs, v_att).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         attn_weights = probs if output_attentions else None
 

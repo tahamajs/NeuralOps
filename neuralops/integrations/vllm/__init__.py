@@ -12,16 +12,16 @@ vLLM Runtime Integration for NeuralOps.
 import sys
 import types
 from typing import Any, Optional
+
 from neuralops.core.exceptions import IntegrationNotImplementedError
+from neuralops.integrations.vllm.backend import NeuralOpsAttentionImpl
 from neuralops.integrations.vllm.state_table import PagedStateTable
 from neuralops.integrations.vllm_backend.backend import NeuralOpsAttentionBackend
 from neuralops.integrations.vllm_backend.kv_cache_spec import NeuralOpsRecurrentSpec
-from neuralops.integrations.vllm.backend import (
-    NeuralOpsAttentionImpl,
-)
 
 try:
     import vllm
+
     HAS_VLLM = True
 except ImportError:
     HAS_VLLM = False
@@ -41,16 +41,15 @@ class VLLMAdapter:
 
     def generate(self, prompts: Any, **kwargs: Any) -> Any:
         if not HAS_VLLM:
-            raise IntegrationNotImplementedError(
-                "vLLM is not installed. Cannot run generation."
-            )
+            raise IntegrationNotImplementedError("vLLM is not installed. Cannot run generation.")
         return self.model.generate(prompts, **kwargs)
 
 
 def _load_flat_vllm_symbols():
-    from pathlib import Path
     import importlib.util
     import sys
+    from pathlib import Path
+
     _flat_file = Path(__file__).parent.parent / "vllm.py"
     spec = importlib.util.spec_from_file_location("neuralops.integrations.vllm_module", _flat_file)
     if spec and spec.loader:
@@ -59,6 +58,7 @@ def _load_flat_vllm_symbols():
         spec.loader.exec_module(mod)
         return mod
     return None
+
 
 _flat_vllm = _load_flat_vllm_symbols()
 if _flat_vllm is not None:
@@ -75,6 +75,7 @@ class _VLLMModule(types.ModuleType):
         if name == "HAS_VLLM" and _flat_vllm is not None:
             _flat_vllm.HAS_VLLM = value
         super().__setattr__(name, value)
+
 
 sys.modules[__name__].__class__ = _VLLMModule
 

@@ -33,5 +33,6 @@ def run_benchmark(device: str = "cuda", output: str | None = None) -> dict[str, 
     if output:
         import json
         from pathlib import Path
+
         Path(output).write_text(json.dumps(result, indent=2), encoding="utf-8")
     return result

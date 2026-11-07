@@ -16,15 +16,15 @@ ZeroKV-Neo computes output neuron L2 norms across Query/Key/Value projection lay
 ]
 
     \node[block] (input) {\textbf{Input Tensor}: $[B, N, D]$};
-    
+
     \node[block, below of=input] (mask) {\textbf{ZeroKV-Neo Dynamic Pruning}\\Extract Sinks \& Heavy Hitters $\rightarrow$ Mask: $[B, N, H, d_k]$};
-    
+
     \node[block, below of=mask] (scan) {\textbf{Associative Linear Attention Scan}\\Outer Product KV Memory: $\phi(K)^\top V \in \mathbb{R}^{H \times d_k \times d_v}$};
-    
+
     \node[block, below of=scan] (gate) {\textbf{Adaptive Fusion Gate}\\$\alpha = \sigma(X W_{\text{fusion}}), \quad \text{Fused} = \alpha \cdot \text{Local} + (1-\alpha) \cdot \text{Global}$};
-    
+
     \node[block, below of=gate] (proj) {\textbf{Low-Rank Factorized Output Projection}\\$W_{O1} \cdot W_{O2}$};
-    
+
     \node[block, below of=proj] (output) {\textbf{Output Tensor}: $[B, N, D]$};
 
     % Arrows
@@ -180,4 +180,3 @@ The empirical evaluation of `zerokv_neo_compressor` across standard sequence len
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

@@ -9,9 +9,6 @@
 Entropy Pruning Hardware Operators.
 """
 
-from neuralops.ops.cuda.entropy_pruning.entropy_pruning_autograd import (
-    entropy_pruning,
-    entropy_pruning_pytorch_ref,
-)
+from neuralops.ops.cuda.entropy_pruning.entropy_pruning_autograd import entropy_pruning, entropy_pruning_pytorch_ref
 
 __all__ = ["entropy_pruning", "entropy_pruning_pytorch_ref"]

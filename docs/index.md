@@ -64,11 +64,11 @@ Every kernel operation in NeuralOps adheres to a zero-overhead, multi-tier execu
 
 All empirical benchmark claims in NeuralOps are strictly grounded in physical hardware execution on:
 - **Dedicated Primary Testbed**: **NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, AD104 silicon)**: 5,888 CUDA cores, 46 SMs, 184 Tensor Cores (4th gen), 160.2 TFLOPS boost / 141.6 base FP16, 504.0 GB/s GDDR6X, Arithmetic Intensity Ridge Point $I^* = 317.9\text{ FLOP/Byte}$, 12 GB VRAM.
-- **Data Center Secondary Testbed**: **NVIDIA H100 SXM5 (SM 90 Hopper)**. 
+- **Data Center Secondary Testbed**: **NVIDIA H100 SXM5 (SM 90 Hopper)**.
 
 NeuralOps bans hardcoded numeric fallbacks and unverified placeholder outputs. The complete raw results matrix, execution logs, and LaTeX table generators are publicly accessible:
 
-👉 **Official Hugging Face Benchmark Repository:**  
+👉 **Official Hugging Face Benchmark Repository:**
 **[https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)**
 
 ---
@@ -77,31 +77,31 @@ NeuralOps bans hardcoded numeric fallbacks and unverified placeholder outputs. T
 
 <div class="grid cards" markdown>
 
--   :material-rocket-launch: __[Quickstart Guide](QUICKSTART.md)__  
+-   :material-rocket-launch: __[Quickstart Guide](QUICKSTART.md)__
     Install NeuralOps, execute in-place attention surgery, compress models, and deploy continuous batching serving in under 5 minutes.
 
--   :material-view-dashboard: __[Telemetry Dashboard](dashboard.html)__  
+-   :material-view-dashboard: __[Telemetry Dashboard](dashboard.html)__
     Live GPU telemetry, dynamic VRAM tracking, throughput metrics, and hardware temperature monitor.
 
--   :material-chart-bell-curve: __[Ada Roofline Interactive](roofline_interactive.html)__  
+-   :material-chart-bell-curve: __[Ada Roofline Interactive](roofline_interactive.html)__
     Explore arithmetic intensity vs. attained TFLOPS across all 26 Triton and 110 canonical CUDA modules.
 
--   :material-cube-scan: __[3D Attention Lab](visualizer/index.html)__  
+-   :material-cube-scan: __[3D Attention Lab](visualizer/index.html)__
     WebGL 3D interactive atlas inspecting the latent manifolds of 203 unified modules (131 attentions + 72 compressors). Also explore the standalone __[3D Latent Manifold](visualizer/latent_manifold.html)__.
 
--   :material-database-search: __[HuggingFace Benchmark Dataset](https://huggingface.co/datasets/Hooshaai/neuralops-results)__  
+-   :material-database-search: __[HuggingFace Benchmark Dataset](https://huggingface.co/datasets/Hooshaai/neuralops-results)__
     Official published empirical benchmark telemetry, latency, perplexity, and error records across all 203 unified modules.
 
--   :material-file-pdf-box: __[Academic Theses & Manuscripts](academic_monographs.md)__  
+-   :material-file-pdf-box: __[Academic Theses & Manuscripts](academic_monographs.md)__
     Direct PDF downloads: Master of Science Thesis (317 pages), Defense Slide Deck (50 slides), and NeurIPS 2026, ICLR 2027, and MLSys 2027 conference submissions.
 
--   :material-book-open-page-variant: __[Architecture Guide](codebase_architecture/README.md)__  
+-   :material-book-open-page-variant: __[Architecture Guide](codebase_architecture/README.md)__
     In-depth architectural monographs on 3-level dispatch, HNC-SVD whitening, and serving virtual memory.
 
--   :material-code-braces: __[API Reference](api/attentions.md)__  
+-   :material-code-braces: __[API Reference](api/attentions.md)__
     Exhaustive documentation for [Attentions](api/attentions.md), [Compression](api/compression.md), [Kernels](api/kernels.md), [Serving](api/integrations.md), and [Results Ledger](api/results_ledger.md).
 
--   :material-history: __[Changelog](changelog.md)__  
+-   :material-history: __[Changelog](changelog.md)__
     Release history, migration guides, and new features across all versions through v1.6.0.
 
 </div>

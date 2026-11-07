@@ -11,9 +11,6 @@ Minimal NOVA Attention
 Minimal non-linear value aggregation attention utilizing compact low-rank factorized projections.
 """
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 import logging
 import math
 from typing import Any
@@ -23,9 +20,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -55,20 +53,12 @@ class FactorisedLinear(nn.Module):
         self.lora_alpha = lora_alpha
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
 
-        self.down: nn.Linear = nn.Linear(
-            in_features, self.rank, bias=False, device=device, dtype=dtype
-        )
-        self.up: nn.Linear = nn.Linear(
-            self.rank, out_features, bias=bias, device=device, dtype=dtype
-        )
+        self.down: nn.Linear = nn.Linear(in_features, self.rank, bias=False, device=device, dtype=dtype)
+        self.up: nn.Linear = nn.Linear(self.rank, out_features, bias=bias, device=device, dtype=dtype)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.randn(lora_rank, in_features, device=device, dtype=dtype) * 0.01
-            )
-            self.lora_B = nn.Parameter(
-                torch.randn(out_features, lora_rank, device=device, dtype=dtype) * 1e-4
-            )
+            self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features, device=device, dtype=dtype) * 0.01)
+            self.lora_B = nn.Parameter(torch.randn(out_features, lora_rank, device=device, dtype=dtype) * 1e-4)
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -110,9 +100,7 @@ class FactorisedLinear(nn.Module):
                     f"FactorisedLinear shape mismatch: W={W.shape}, expected=({self.out_features}, {self.in_features}). "
                     f"Padding or truncating as fallback."
                 )
-                padded_W = torch.zeros(
-                    self.out_features, self.in_features, device=W.device, dtype=W.dtype
-                )
+                padded_W = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
                 padded_W[
                     : min(self.out_features, W.shape[0]),
                     : min(self.in_features, W.shape[1]),
@@ -137,11 +125,7 @@ class FactorisedLinear(nn.Module):
 
             sqrt_s = torch.sqrt(S[:r])
             A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype).to(self.up.weight.device)
-            B = (
-                (sqrt_s.unsqueeze(1) * Vt[:r, :])
-                .to(self.down.weight.dtype)
-                .to(self.down.weight.device)
-            )
+            B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype).to(self.down.weight.device)
 
             self.up.weight.data.zero_()
             self.down.weight.data.zero_()
@@ -150,9 +134,7 @@ class FactorisedLinear(nn.Module):
 
             if bias is not None and self.up.bias is not None:
                 self.up.bias.data[: min(len(self.up.bias), len(bias))].copy_(
-                    bias[: min(len(self.up.bias), len(bias))].to(
-                        self.up.bias.device, self.up.bias.dtype
-                    )
+                    bias[: min(len(self.up.bias), len(bias))].to(self.up.bias.device, self.up.bias.dtype)
                 )
 
             self.freeze_base_weights()
@@ -185,9 +167,14 @@ class FactorisedLinear(nn.Module):
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+
                 base = fused_lowrank_gated_gemm(x, self.down.weight, self.up.weight, bias=self.up.bias)
                 if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-                    base = base + F.linear(F.linear(x, self.lora_A.to(dtype=x.dtype)), self.lora_B.to(dtype=x.dtype)) * self.lora_scaling
+                    base = (
+                        base
+                        + F.linear(F.linear(x, self.lora_A.to(dtype=x.dtype)), self.lora_B.to(dtype=x.dtype))
+                        * self.lora_scaling
+                    )
                 return base
             except Exception:
                 # allowed-swallow: best-effort-telemetry
@@ -195,6 +182,7 @@ class FactorisedLinear(nn.Module):
         if x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 return fused_svd_lora_sparse_attn_triton(
                     x,
                     w_down=self.down.weight,
@@ -268,9 +256,7 @@ class MinimalNOVAAttention(BaseAttention):
         )
         self.all_head_size: int = self.num_heads * self.head_dim
 
-        cfg_kv = (
-            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None)) if cfg else None
-        )
+        cfg_kv = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None)) if cfg else None
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -362,11 +348,7 @@ class MinimalNOVAAttention(BaseAttention):
             dtype=target_dtype,
         )
 
-        dropout_p = (
-            getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout))
-            if cfg
-            else dropout
-        )
+        dropout_p = getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout)) if cfg else dropout
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -512,18 +494,12 @@ class MinimalNOVAAttention(BaseAttention):
                     "XLMRobertaSelfAttention",
                 )
                 or (cls_name.endswith("SelfAttention") and not has_out_proj)
-                or (
-                    ("roberta" in cls_name.lower() or "bert" in cls_name.lower())
-                    and not has_out_proj
-                )
+                or (("roberta" in cls_name.lower() or "bert" in cls_name.lower()) and not has_out_proj)
             )
         ):
             is_nested = True
         if hasattr(src, "config"):
-            if (
-                getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta")
-                and not has_out_proj
-            ):
+            if getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta") and not has_out_proj:
                 is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -638,20 +614,11 @@ class MinimalNOVAAttention(BaseAttention):
                 dropout_p=self.dropout.p if self.training else 0.0,
             )
 
-            _sdpa_out = (
-                _sdpa_out.to(hidden_states.dtype)
-                .transpose(1, 2)
-                .contiguous()
-                .view(B, N, self.all_head_size)
-            )
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
             _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-            return (
-                self.out_proj(_sdpa_out)
-                if not getattr(self, "is_nested_encoder", False)
-                else _sdpa_out
-            ), None
+            return (self.out_proj(_sdpa_out) if not getattr(self, "is_nested_encoder", False) else _sdpa_out), None
 
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -751,11 +718,7 @@ def inject_minimal_nova(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

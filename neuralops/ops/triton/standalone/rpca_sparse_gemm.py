@@ -13,11 +13,12 @@ Fuses low-rank factor projection with structured sparse outlier matrix multiplic
 
 from __future__ import annotations
 
-from typing import Optional, Tuple, Union
 import warnings
+from typing import Optional, Tuple, Union
 
 import torch
-from neuralops.ops.triton._base import triton, tl, HAS_TRITON
+
+from neuralops.ops.triton._base import HAS_TRITON, tl, triton
 
 
 @triton.autotune(

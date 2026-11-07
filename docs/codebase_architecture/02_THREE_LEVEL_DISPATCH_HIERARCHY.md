@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 02
 # The 3-Level Kernel Dispatch Hierarchy & Zero Silent Fallback Law
 
-**Assigned Subagent**: `Agent 02: Kernel Dispatch & Fallback Specialist`  
+**Assigned Subagent**: `Agent 02: Kernel Dispatch & Fallback Specialist`
 **Target Codebase Paths**:
 - `neuralops/ops/cuda/_fallback.py` (Core 3-level fallback dispatcher & telemetry engine)
 - `neuralops/core/cuda_kernels/_fallback.py` (Compatibility re-export shim)

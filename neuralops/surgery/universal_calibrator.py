@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 
@@ -90,7 +91,7 @@ class UniversalActivationCalibrator:
                         self.hessian_dict[mod_name] += gram
                         self.sample_count_dict[mod_name] += num_samples
 
-                    sq_sum = (x_mat ** 2).sum(dim=0)
+                    sq_sum = (x_mat**2).sum(dim=0)
                     if mod_name not in self.channel_scale_dict:
                         self.channel_scale_dict[mod_name] = sq_sum
                     else:
@@ -159,7 +160,9 @@ class UniversalActivationCalibrator:
                                 if isinstance(out, torch.Tensor)
                                 else (
                                     out[0].float().pow(2).mean()
-                                    if isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor)
+                                    if isinstance(out, (tuple, list))
+                                    and len(out) > 0
+                                    and isinstance(out[0], torch.Tensor)
                                     else torch.tensor(0.0, requires_grad=True)
                                 )
                             )
@@ -185,8 +188,7 @@ class UniversalActivationCalibrator:
                             out = self.model(**batch_device)
                         elif isinstance(batch, (tuple, list)):
                             batch_device = [
-                                value.to(device) if isinstance(value, torch.Tensor) else value
-                                for value in batch
+                                value.to(device) if isinstance(value, torch.Tensor) else value for value in batch
                             ]
                             out = self.model(*batch_device)
                         elif isinstance(batch, torch.Tensor):
@@ -206,7 +208,9 @@ class UniversalActivationCalibrator:
                                     if isinstance(out, torch.Tensor)
                                     else (
                                         out[0].float().pow(2).mean()
-                                        if isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor)
+                                        if isinstance(out, (tuple, list))
+                                        and len(out) > 0
+                                        and isinstance(out[0], torch.Tensor)
                                         else torch.tensor(0.0, requires_grad=True)
                                     )
                                 )
@@ -277,6 +281,7 @@ def compress_model_universal(
         comp_step["calibration_data"] = calibration_data
 
     from neuralops.core.compression_pipeline import compress_model
+
     return compress_model(model=model, config={"compressors": [comp_step]})
 
 

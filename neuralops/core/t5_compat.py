@@ -26,11 +26,7 @@ def is_t5_model(config: Any) -> bool:
     if config is None:
         return False
     model_type = getattr(config, "model_type", "").lower()
-    return (
-        model_type == "t5"
-        or hasattr(config, "d_kv")
-        or getattr(config, "is_encoder_decoder", False)
-    )
+    return model_type == "t5" or hasattr(config, "d_kv") or getattr(config, "is_encoder_decoder", False)
 
 
 def get_t5_dims(config: Any) -> tuple[int, int, int]:
@@ -59,9 +55,7 @@ def relative_position_bucket(
     max_exact = num_buckets // 2
     is_small = n < max_exact
     val_if_large = max_exact + (
-        torch.log(n.float() / max_exact + 1e-10)
-        / math.log(max_distance / max_exact)
-        * (num_buckets - max_exact)
+        torch.log(n.float() / max_exact + 1e-10) / math.log(max_distance / max_exact) * (num_buckets - max_exact)
     ).to(torch.long)
     val_if_large = torch.min(val_if_large, torch.full_like(val_if_large, num_buckets - 1))
     ret += torch.where(is_small, n, val_if_large)
@@ -119,9 +113,7 @@ class T5AttentionMixin:
         self.has_relative_attention_bias = False
         self.relative_attention_bias = None
         self.relative_attention_num_buckets = getattr(config, "relative_attention_num_buckets", 32)
-        self.relative_attention_max_distance = getattr(
-            config, "relative_attention_max_distance", 128
-        )
+        self.relative_attention_max_distance = getattr(config, "relative_attention_max_distance", 128)
         self.is_decoder = getattr(config, "is_decoder", False)
 
     def copy_t5_metadata(self, old_attn: Any) -> None:
@@ -130,12 +122,8 @@ class T5AttentionMixin:
             return
         self.has_relative_attention_bias = getattr(old_attn, "has_relative_attention_bias", False)
         self.relative_attention_bias = getattr(old_attn, "relative_attention_bias", None)
-        self.relative_attention_num_buckets = getattr(
-            old_attn, "relative_attention_num_buckets", 32
-        )
-        self.relative_attention_max_distance = getattr(
-            old_attn, "relative_attention_max_distance", 128
-        )
+        self.relative_attention_num_buckets = getattr(old_attn, "relative_attention_num_buckets", 32)
+        self.relative_attention_max_distance = getattr(old_attn, "relative_attention_max_distance", 128)
         self.is_decoder = getattr(old_attn, "is_decoder", False)
 
     def compute_bias(

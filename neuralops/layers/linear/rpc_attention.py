@@ -12,11 +12,6 @@ Compresses key and value projections using fixed randomized Gaussian subspace sk
 """
 
 from __future__ import annotations
-from neuralops.core.common import FactorizedLoRALinear
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -26,10 +21,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import FactorizedLoRALinear, _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +40,7 @@ class RPCAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -62,9 +59,7 @@ class RPCAttention(BaseAttention):
         comp_config = kwargs.get("comp_config", getattr(config, "compression_config", None))
 
         self.dim = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
-        self.num_heads = int(
-            _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        )
+        self.num_heads = int(_cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12)))
         self.num_kv_heads = int(
             _cfg_get(
                 config,
@@ -89,9 +84,7 @@ class RPCAttention(BaseAttention):
                         inferred = layer_q.weight.shape[0] // max(1, self.num_heads)
                         break
 
-        self.head_dim = int(
-            inferred or (self.dim // max(1, self.num_heads) if self.num_heads > 0 else 64)
-        )
+        self.head_dim = int(inferred or (self.dim // max(1, self.num_heads) if self.num_heads > 0 else 64))
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -214,11 +207,7 @@ class RPCAttention(BaseAttention):
             )
         )
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         self._orig_storage_bytes = 0
@@ -428,11 +417,7 @@ class RPCAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -445,15 +430,9 @@ class RPCAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"RPCAttention.copy_weights: missing {missing_after} from {cls_name}."
-            )
+            raise RuntimeError(f"RPCAttention.copy_weights: missing {missing_after} from {cls_name}.")
 
         for key, target in (
             ("q", self.W_q),
@@ -589,12 +568,9 @@ class RPCAttention(BaseAttention):
         proj_q = self.proj_q.to(dtype=q.dtype, device=q.device)
         proj_k = self.proj_k.to(dtype=k.dtype, device=k.device)
 
-        from neuralops.ops.triton.low_rank import (
-            fused_rpc_sketch_attention_pytorch,
-        )
-        scores = fused_rpc_sketch_attention_pytorch(
-            q, k, proj_q, proj_k, self.sketch_scale
-        )
+        from neuralops.ops.triton.low_rank import fused_rpc_sketch_attention_pytorch
+
+        scores = fused_rpc_sketch_attention_pytorch(q, k, proj_q, proj_k, self.sketch_scale)
 
         if self.is_decoder and not is_cross:
             diag = 1 + max(0, L_kv - L)
@@ -703,11 +679,7 @@ def inject_rpc(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -729,9 +701,12 @@ def inject_rpc(
                 num_injected += 1
         return target if num_injected > 0 else None
 
-    if old_attn is None and isinstance(target, nn.Module) and not any(
-        hasattr(target, a) for a in ("attention", "self_attn", "attn", "self")
-    ) and len(list(target.children())) == 0:
+    if (
+        old_attn is None
+        and isinstance(target, nn.Module)
+        and not any(hasattr(target, a) for a in ("attention", "self_attn", "attn", "self"))
+        and len(list(target.children())) == 0
+    ):
         return None
 
     if cfg is None and hasattr(target, "hidden_size"):

@@ -15,6 +15,7 @@ import math
 from typing import Any
 
 import torch
+
 from neuralops.ops.cuda.lsh_attention.autograd import LSHAttentionFunction
 from neuralops.ops.triton.lsh_attention_triton import _compute_lsh_buckets
 

@@ -135,14 +135,14 @@ sequenceDiagram
     participant P as Producer Warp
     participant B as Hardware MBarrier
     participant C as Consumer Warps (WGMMA)
-    
+
     Note over P,C: Prologue Phase 0
     P->>B: mbarrier_init(expected_bytes, count=1)
     P->>B: tma_load(smem_buffer_0, desc, mbarrier)
     P->>B: mbarrier_arrive(transaction_bytes)
     C->>B: mbarrier_wait(phase=0)
     Note over C: Executes WGMMA on Stage 0
-    
+
     Note over P,C: Steady State Phase 1
     P->>B: tma_load(smem_buffer_1, desc, mbarrier)
     P->>B: mbarrier_arrive(transaction_bytes)

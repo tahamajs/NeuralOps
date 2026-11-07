@@ -12,11 +12,11 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from neuralops.ops.cuda.sparse_attention.sparse_attention_autograd import (
+    _BlockSparseAttnAutograd,
     _get_module,
-    block_sparse_attn_pytorch_ref,
     block_sparse_attn,
     block_sparse_attn_bwd,
-    _BlockSparseAttnAutograd,
+    block_sparse_attn_pytorch_ref,
 )
 
 __all__ = [

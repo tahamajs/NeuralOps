@@ -18,11 +18,7 @@ from typing import Any, Dict, Optional, Tuple
 import torch
 from torch import nn
 
-from neuralops.benchmarks.adapters.base import (
-    BaseBenchmarkAdapter,
-    BenchmarkInputs,
-    NumericsReport,
-)
+from neuralops.benchmarks.adapters.base import BaseBenchmarkAdapter, BenchmarkInputs, NumericsReport
 from neuralops.benchmarks.results.schema import BenchmarkResult, BenchmarkStatus
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -165,9 +161,7 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
         self._original_weights = self._extract_linear_weights(self._snapshot_model)
 
         # Build calibration input tensor
-        calib_x = torch.randn(
-            2, 32, self.hidden_size, device=self.torch_device, dtype=self.dtype
-        )
+        calib_x = torch.randn(2, 32, self.hidden_size, device=self.torch_device, dtype=self.dtype)
 
         return BenchmarkInputs(
             tensors={"calibration_input": calib_x, "x": calib_x},
@@ -286,9 +280,7 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
             compressed = model
 
         if compressed is None or not isinstance(compressed, nn.Module):
-            raise RuntimeError(
-                f"Compressor '{name}' failed to produce a valid nn.Module (got {type(compressed)})."
-            )
+            raise RuntimeError(f"Compressor '{name}' failed to produce a valid nn.Module (got {type(compressed)}).")
 
         return compressed
 
@@ -407,9 +399,7 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
 
         speedup = baseline_ms / candidate_ms if candidate_ms > 0 else 0.0
         peak_vram = (
-            torch.cuda.max_memory_allocated(self.torch_device) / (1024**2)
-            if self.torch_device.type == "cuda"
-            else 0.0
+            torch.cuda.max_memory_allocated(self.torch_device) / (1024**2) if self.torch_device.type == "cuda" else 0.0
         )
 
         return {

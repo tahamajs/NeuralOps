@@ -12,13 +12,17 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
-from typing import Any
+
 from pathlib import Path
+from typing import Any
+
 import torch
+
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -30,6 +34,7 @@ def _get_module():
             cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_mamba2_block", cpp_src, cuda_src, ["mamba2_block_fwd"])
     return _MODULE
+
 
 def mamba2_block_ref(
     u: torch.Tensor,
@@ -46,7 +51,11 @@ def mamba2_block_ref(
     a_val = torch.abs(A.float())
     dA = torch.exp(-torch.clamp(dt * a_val.unsqueeze(0).unsqueeze(-1), min=0.0))
 
-    h = prev_state.float().clone() if prev_state is not None else torch.zeros(B, D, N, device=u.device, dtype=torch.float32)
+    h = (
+        prev_state.float().clone()
+        if prev_state is not None
+        else torch.zeros(B, D, N, device=u.device, dtype=torch.float32)
+    )
     ys = []
 
     for t in range(L):
@@ -66,6 +75,7 @@ def mamba2_block_ref(
 
     out = torch.stack(ys, dim=-1)
     return out, h.to(u.dtype)
+
 
 def _mamba2_block_dispatch(
     u: torch.Tensor,
@@ -136,6 +146,7 @@ class _Mamba2_blockFunction(torch.autograd.Function):
             else:
                 res.append(None)
         return tuple(res)
+
 
 def mamba2_block(u, delta, A, B, C, D):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (u, delta, A, B, C, D)):

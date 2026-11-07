@@ -11,10 +11,7 @@ Rank-Augmented Linear Attention (RALA) CUDA operator.
 
 from __future__ import annotations
 
-from neuralops.ops.cuda.rala.autograd import (
-    RALAAttentionFunction,
-    rala_attention_forward,
-)
+from neuralops.ops.cuda.rala.autograd import RALAAttentionFunction, rala_attention_forward
 
 __all__ = [
     "RALAAttentionFunction",

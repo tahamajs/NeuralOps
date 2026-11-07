@@ -70,6 +70,7 @@ def ternary_gemm_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.fused_norm_linear import ternary_gemm_triton
+
         return ternary_gemm_triton
     except (ImportError, AttributeError):
         return None
@@ -82,6 +83,7 @@ def ternary_gemm(
     bias: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """3-Level Dispatched Ternary GEMM."""
+
     def cuda_fn(x, w_packed, scales, bias=None, **kwargs):
         mod = _get_module()
         return mod.ternary_gemm_fwd(

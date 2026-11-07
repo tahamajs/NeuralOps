@@ -12,7 +12,6 @@ Dynamically bounds Frobenius norm truncation errors per layer to guarantee rigor
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 
 from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -60,6 +60,7 @@ class ERCCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     Error-Controlled SVD (ERC-SVD) Compressor.
@@ -86,9 +87,7 @@ class ERCCompressor(BaseCompressor):
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
-        c_allowed = _cfg_get(
-            cfg, "erc_allowed_error", _cfg_get(cfg, "allowed_error", allowed_error)
-        )
+        c_allowed = _cfg_get(cfg, "erc_allowed_error", _cfg_get(cfg, "allowed_error", allowed_error))
         effective_max = _cfg_get(cfg, "erc_max_error", _cfg_get(cfg, "max_error", max_error))
         if effective_max is None and (c_allowed is None or c_allowed <= 0.25):
             effective_max = adaptive_max_error(rank, 768, 768, "distilbert")
@@ -171,9 +170,7 @@ class ERCCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention")
-            )
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 return False
 
@@ -280,9 +277,7 @@ class ERCCompressor(BaseCompressor):
                 in_features=in_f,
                 out_features=out_f,
                 rank=r,
-                bias=(
-                    getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
-                ),
+                bias=(getattr(target_mod, "bias", None) is not None and target_mod.bias is not None),
                 dtype=dtype,
                 device=device,
                 lora_r=lora_r,
@@ -356,11 +351,7 @@ class ERCCompressor(BaseCompressor):
                         p.requires_grad = False
                     self.skipped_layers.append(name)
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not target_layers:
             logger.warning("ERC-SVD: No compressible linear layers found.")
@@ -446,8 +437,7 @@ class ERCCompressor(BaseCompressor):
 
         effective_ratio = (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -523,9 +513,7 @@ def erc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
             _cfg_get(comp_config, "fallback_to_original", True),
         ),
     )
-    rank = kwargs.pop(
-        "rank", _cfg_get(comp_config, "erc_rank", _cfg_get(comp_config, "rank", None))
-    )
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "erc_rank", _cfg_get(comp_config, "rank", None)))
     max_retries = kwargs.pop("max_retries", _cfg_get(comp_config, "max_retries", 2))
 
     compressor = ERCCompressor(

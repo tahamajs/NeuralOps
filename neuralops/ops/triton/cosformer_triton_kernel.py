@@ -12,33 +12,59 @@ Triton implementation of cosformer linear attention with cosine reweighting and 
 """
 
 import math
+
 import torch
 
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
+
     class _MockTriton:
         @staticmethod
         def jit(fn):
             return fn
+
     triton = _MockTriton()
+
     class _MockTl:
         constexpr = int
+
     tl = _MockTl()
 
 
 @triton.jit
 def _cosformer_global_fwd_kernel(
-    Q_cos_ptr, Q_sin_ptr, K_cos_ptr, K_sin_ptr, V_ptr,
-    Out_ptr, Denom_ptr,
-    stride_qb, stride_qh, stride_qn, stride_qd,
-    stride_kb, stride_kh, stride_kn, stride_kd,
-    stride_vb, stride_vh, stride_vn, stride_vd,
-    stride_ob, stride_oh, stride_on, stride_od,
-    B, H, N, D: tl.constexpr,
+    Q_cos_ptr,
+    Q_sin_ptr,
+    K_cos_ptr,
+    K_sin_ptr,
+    V_ptr,
+    Out_ptr,
+    Denom_ptr,
+    stride_qb,
+    stride_qh,
+    stride_qn,
+    stride_qd,
+    stride_kb,
+    stride_kh,
+    stride_kn,
+    stride_kd,
+    stride_vb,
+    stride_vh,
+    stride_vn,
+    stride_vd,
+    stride_ob,
+    stride_oh,
+    stride_on,
+    stride_od,
+    B,
+    H,
+    N,
+    D: tl.constexpr,
     BLOCK_N: tl.constexpr,
     BLOCK_D: tl.constexpr,
 ):
@@ -54,10 +80,8 @@ def _cosformer_global_fwd_kernel(
     mask_n = offs_n < N
     mask_d = offs_d < D
 
-    q_cos_ptrs = Q_cos_ptr + b * stride_qb + h * stride_qh \
-                 + offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
-    q_sin_ptrs = Q_sin_ptr + b * stride_qb + h * stride_qh \
-                 + offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
+    q_cos_ptrs = Q_cos_ptr + b * stride_qb + h * stride_qh + offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
+    q_sin_ptrs = Q_sin_ptr + b * stride_qb + h * stride_qh + offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
 
     q_cos = tl.load(q_cos_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0)
     q_sin = tl.load(q_sin_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0)
@@ -69,16 +93,17 @@ def _cosformer_global_fwd_kernel(
         offs_k = start_k + tl.arange(0, BLOCK_N)
         mask_k = offs_k < N
 
-        k_cos_ptrs = K_cos_ptr + b * stride_kb + h * stride_kh \
-                     + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
-        k_sin_ptrs = K_sin_ptr + b * stride_kb + h * stride_kh \
-                     + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        k_cos_ptrs = (
+            K_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        )
+        k_sin_ptrs = (
+            K_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        )
 
         k_cos = tl.load(k_cos_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
         k_sin = tl.load(k_sin_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
 
-        v_ptrs = V_ptr + b * stride_vb + h * stride_vh \
-                 + offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
+        v_ptrs = V_ptr + b * stride_vb + h * stride_vh + offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
         v = tl.load(v_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
 
         score = tl.dot(q_cos, tl.trans(k_cos)) + tl.dot(q_sin, tl.trans(k_sin))
@@ -91,8 +116,7 @@ def _cosformer_global_fwd_kernel(
 
     out = acc_num / tl.maximum(acc_denom[:, None], 1e-4)
 
-    out_ptrs = Out_ptr + b * stride_ob + h * stride_oh \
-               + offs_n[:, None] * stride_on + offs_d[None, :] * stride_od
+    out_ptrs = Out_ptr + b * stride_ob + h * stride_oh + offs_n[:, None] * stride_on + offs_d[None, :] * stride_od
     tl.store(out_ptrs, out, mask=mask_n[:, None] & mask_d[None, :])
 
 
@@ -107,12 +131,33 @@ def cosformer_global_triton(q_cos, q_sin, k_cos, k_sin, v, is_decoder=True):
     grid = (B * H, triton.cdiv(N, BLOCK_N))
 
     _cosformer_global_fwd_kernel[grid](
-        q_cos, q_sin, k_cos, k_sin, v, out, denom,
-        q_cos.stride(0), q_cos.stride(1), q_cos.stride(2), q_cos.stride(3),
-        k_cos.stride(0), k_cos.stride(1), k_cos.stride(2), k_cos.stride(3),
-        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-        out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-        B, H, N, D,
+        q_cos,
+        q_sin,
+        k_cos,
+        k_sin,
+        v,
+        out,
+        denom,
+        q_cos.stride(0),
+        q_cos.stride(1),
+        q_cos.stride(2),
+        q_cos.stride(3),
+        k_cos.stride(0),
+        k_cos.stride(1),
+        k_cos.stride(2),
+        k_cos.stride(3),
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        out.stride(0),
+        out.stride(1),
+        out.stride(2),
+        out.stride(3),
+        B,
+        H,
+        N,
+        D,
         BLOCK_N=BLOCK_N,
         BLOCK_D=BLOCK_D,
     )
@@ -198,13 +243,37 @@ def cosformer_pytorch_fwd(
 
 @triton.jit
 def _cosformer_bwd_kernel(
-    Q_cos_ptr, Q_sin_ptr, K_cos_ptr, K_sin_ptr, V_ptr, DO_ptr,
-    DQ_cos_ptr, DQ_sin_ptr, DK_cos_ptr, DK_sin_ptr, DV_ptr,
-    stride_qb, stride_qh, stride_qn, stride_qd,
-    stride_kb, stride_kh, stride_kn, stride_kd,
-    stride_vb, stride_vh, stride_vn, stride_vd,
-    stride_dob, stride_doh, stride_don, stride_dod,
-    B, H, N, D: tl.constexpr,
+    Q_cos_ptr,
+    Q_sin_ptr,
+    K_cos_ptr,
+    K_sin_ptr,
+    V_ptr,
+    DO_ptr,
+    DQ_cos_ptr,
+    DQ_sin_ptr,
+    DK_cos_ptr,
+    DK_sin_ptr,
+    DV_ptr,
+    stride_qb,
+    stride_qh,
+    stride_qn,
+    stride_qd,
+    stride_kb,
+    stride_kh,
+    stride_kn,
+    stride_kd,
+    stride_vb,
+    stride_vh,
+    stride_vn,
+    stride_vd,
+    stride_dob,
+    stride_doh,
+    stride_don,
+    stride_dod,
+    B,
+    H,
+    N,
+    D: tl.constexpr,
     BLOCK_N: tl.constexpr,
     BLOCK_D: tl.constexpr,
 ):
@@ -236,8 +305,12 @@ def _cosformer_bwd_kernel(
         offs_k = start_k + tl.arange(0, BLOCK_N)
         mask_k = offs_k < N
 
-        k_cos_ptrs = K_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
-        k_sin_ptrs = K_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        k_cos_ptrs = (
+            K_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        )
+        k_sin_ptrs = (
+            K_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        )
         k_cos = tl.load(k_cos_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
         k_sin = tl.load(k_sin_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
 
@@ -255,8 +328,12 @@ def _cosformer_bwd_kernel(
         offs_k = start_k + tl.arange(0, BLOCK_N)
         mask_k = offs_k < N
 
-        k_cos_ptrs = K_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
-        k_sin_ptrs = K_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        k_cos_ptrs = (
+            K_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        )
+        k_sin_ptrs = (
+            K_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        )
         v_ptrs = V_ptr + b * stride_vb + h * stride_vh + offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
 
         k_cos = tl.load(k_cos_ptrs, mask=mask_k[:, None] & mask_d[None, :], other=0.0)
@@ -280,8 +357,12 @@ def _cosformer_bwd_kernel(
 
         dk_cos = tl.dot(tl.trans(ds.to(q_cos.dtype)), q_cos)
         dk_sin = tl.dot(tl.trans(ds.to(q_sin.dtype)), q_sin)
-        dk_cos_ptrs = DK_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
-        dk_sin_ptrs = DK_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        dk_cos_ptrs = (
+            DK_cos_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        )
+        dk_sin_ptrs = (
+            DK_sin_ptr + b * stride_kb + h * stride_kh + offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        )
         tl.atomic_add(dk_cos_ptrs, dk_cos, mask=mask_k[:, None] & mask_d[None, :])
         tl.atomic_add(dk_sin_ptrs, dk_sin, mask=mask_k[:, None] & mask_d[None, :])
 
@@ -310,13 +391,37 @@ def cosformer_triton_bwd(
     BLOCK_D = D
     grid = (B * H, triton.cdiv(N, BLOCK_N))
     _cosformer_bwd_kernel[grid](
-        q_cos, q_sin, k_cos, k_sin, v, do,
-        dq_cos, dq_sin, dk_cos, dk_sin, dv,
-        q_cos.stride(0), q_cos.stride(1), q_cos.stride(2), q_cos.stride(3),
-        k_cos.stride(0), k_cos.stride(1), k_cos.stride(2), k_cos.stride(3),
-        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-        do.stride(0), do.stride(1), do.stride(2), do.stride(3),
-        B, H, N, D=D,
+        q_cos,
+        q_sin,
+        k_cos,
+        k_sin,
+        v,
+        do,
+        dq_cos,
+        dq_sin,
+        dk_cos,
+        dk_sin,
+        dv,
+        q_cos.stride(0),
+        q_cos.stride(1),
+        q_cos.stride(2),
+        q_cos.stride(3),
+        k_cos.stride(0),
+        k_cos.stride(1),
+        k_cos.stride(2),
+        k_cos.stride(3),
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        do.stride(0),
+        do.stride(1),
+        do.stride(2),
+        do.stride(3),
+        B,
+        H,
+        N,
+        D=D,
         BLOCK_N=BLOCK_N,
         BLOCK_D=BLOCK_D,
     )
@@ -329,6 +434,7 @@ class _CosformerAutograd(torch.autograd.Function):
         ctx.is_causal = is_causal
         ctx.eps = eps
         from neuralops.ops.triton._types import check_triton_suitability
+
         suitable, _ = check_triton_suitability(q, "cosformer", head_dim=q.shape[-1], seq_len=q.shape[-2])
 
         scale = 1.0 / math.sqrt(q.shape[-1])
@@ -400,6 +506,7 @@ def cosformer_triton_fwd(
 
 
 if HAS_TRITON and hasattr(tl, "constexpr"):
+
     @triton.jit
     def _elu_plus_one(x):
         return tl.where(x > 0.0, x + 1.0, tl.math.exp2(1.44269504 * (x)))
@@ -451,7 +558,9 @@ if HAS_TRITON and hasattr(tl, "constexpr"):
         mask_m = offs_m < L
         offs_m_max = (pid_m + 1) * BLOCK_M
 
-        q_ptrs = q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :] * stride_qd
+        q_ptrs = (
+            q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :] * stride_qd
+        )
         raw_q = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0).to(tl.float32)
         phi_q = _elu_plus_one(raw_q)
 
@@ -470,8 +579,20 @@ if HAS_TRITON and hasattr(tl, "constexpr"):
             offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
             mask_n = offs_n < L
 
-            k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_n[:, None] * stride_kl + offs_d[None, :] * stride_kd
-            v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_n[:, None] * stride_vl + offs_d[None, :] * stride_vd
+            k_ptrs = (
+                k_ptr
+                + pid_b * stride_kb
+                + pid_h * stride_kh
+                + offs_n[:, None] * stride_kl
+                + offs_d[None, :] * stride_kd
+            )
+            v_ptrs = (
+                v_ptr
+                + pid_b * stride_vb
+                + pid_h * stride_vh
+                + offs_n[:, None] * stride_vl
+                + offs_d[None, :] * stride_vd
+            )
 
             raw_k = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
@@ -495,7 +616,9 @@ if HAS_TRITON and hasattr(tl, "constexpr"):
         safe_den = tl.maximum(den_acc[:, None], 1e-5)
         out_tile = num_acc / safe_den
 
-        o_ptrs = o_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_m[:, None] * stride_ol + offs_d[None, :] * stride_od
+        o_ptrs = (
+            o_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_m[:, None] * stride_ol + offs_d[None, :] * stride_od
+        )
         tl.store(o_ptrs, out_tile.to(q_ptr.dtype.element_ty), mask=mask_m[:, None])
 
 
@@ -506,6 +629,7 @@ def triton_cosformer_linear_attention_pytorch_ref(
     is_causal: bool = False,
 ) -> torch.Tensor:
     import torch.nn.functional as F
+
     B, H, L, D = q.shape
     phi_q = F.elu(q.float()) + 1.0
     phi_k = F.elu(k.float()) + 1.0
@@ -527,8 +651,7 @@ def triton_cosformer_linear_attention_pytorch_ref(
         k_cos_sum = k_cos.sum(dim=-2, keepdim=True)
         k_sin_sum = k_sin.sum(dim=-2, keepdim=True)
         denom = (
-            torch.matmul(q_cos, k_cos_sum.transpose(-1, -2))
-            + torch.matmul(q_sin, k_sin_sum.transpose(-1, -2))
+            torch.matmul(q_cos, k_cos_sum.transpose(-1, -2)) + torch.matmul(q_sin, k_sin_sum.transpose(-1, -2))
         ).clamp_min(1e-5)
         return (num / denom).to(q.dtype)
 

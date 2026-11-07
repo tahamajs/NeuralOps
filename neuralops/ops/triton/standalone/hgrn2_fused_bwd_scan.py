@@ -14,6 +14,7 @@ Fuses forward and reverse recurrence passes using directional pointer arithmetic
 from __future__ import annotations
 
 import torch
+
 from neuralops.ops.triton._base import HAS_TRITON, tl, triton
 
 

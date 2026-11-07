@@ -17,28 +17,34 @@ import sys
 from pathlib import Path
 from typing import Any, List, Optional
 
+
 def execute_recipe(*args: Any, **kwargs: Any) -> Any:
     from neuralops.executor.executor import execute_recipe as _impl
+
     return _impl(*args, **kwargs)
 
 
 def plan_recipe(*args: Any, **kwargs: Any) -> Any:
     from neuralops.executor.planner import plan_recipe as _impl
+
     return _impl(*args, **kwargs)
 
 
 def load_recipe(*args: Any, **kwargs: Any) -> Any:
     from neuralops.recipe.loader import load_recipe as _impl
+
     return _impl(*args, **kwargs)
 
 
 def validate_recipe_static(*args: Any, **kwargs: Any) -> Any:
     from neuralops.validation.static import validate_recipe_static as _impl
+
     return _impl(*args, **kwargs)
 
 
 def _get_model_surgery():
     from neuralops.surgery import ModelSurgery
+
     return ModelSurgery
 
 
@@ -185,16 +191,24 @@ def cmd_transplant(args: argparse.Namespace) -> int:
     import copy
     import math
     import os
+
     import torch
     from transformers import AutoModel, AutoTokenizer
+
     from neuralops import transplant_attention
 
-    calib_text = getattr(args, "calibration_text", None) or getattr(args, "calibration_dataset", None) or getattr(args, "dataset", None)
+    calib_text = (
+        getattr(args, "calibration_text", None)
+        or getattr(args, "calibration_dataset", None)
+        or getattr(args, "dataset", None)
+    )
 
     if not isinstance(args.rank, int) or isinstance(args.rank, bool) or args.rank < 1:
         raise ValueError("--rank must be a positive integer")
     if (args.calibrate or args.heal) and not calib_text:
-        raise ValueError("--calibrate and --heal require --calibration-text / --calibration-dataset so real model inputs are used.")
+        raise ValueError(
+            "--calibrate and --heal require --calibration-text / --calibration-dataset so real model inputs are used."
+        )
     if args.heal and (
         not isinstance(args.heal_steps, int)
         or isinstance(args.heal_steps, bool)
@@ -224,9 +238,7 @@ def cmd_transplant(args: argparse.Namespace) -> int:
                 pass
         encoded = tokenizer(sample_text or "The quick brown fox jumps over the lazy dog.", return_tensors="pt")
         calibration_inputs = {
-            key: value.to(device)
-            for key, value in encoded.items()
-            if isinstance(value, torch.Tensor)
+            key: value.to(device) for key, value in encoded.items() if isinstance(value, torch.Tensor)
         }
 
     print(f"[+] Transplanting attention '{args.attention}' (rank={args.rank}, calibrate={args.calibrate})...")
@@ -234,11 +246,13 @@ def cmd_transplant(args: argparse.Namespace) -> int:
 
     if args.calibrate:
         from neuralops.core._attention_surgery import calibrate_attention_subspace
+
         transplanted = calibrate_attention_subspace(teacher, transplanted, calibration_inputs)
 
     if getattr(args, "heal", False):
         print(f"[+] Running layerwise subspace micro-healing (steps={args.heal_steps}, lr={args.heal_lr})...")
         from neuralops.core._attention_surgery import heal_replaced_model
+
         heal_stats = heal_replaced_model(
             teacher_model=teacher,
             student_model=transplanted,
@@ -247,9 +261,12 @@ def cmd_transplant(args: argparse.Namespace) -> int:
             lr=args.heal_lr,
             also_ridge_init=True,
         )
-        print(f"[✓] Micro-healing completed: Initial MSE={heal_stats['initial_mse']:.4f} -> Final MSE={heal_stats['final_mse']:.4f}")
+        print(
+            f"[✓] Micro-healing completed: Initial MSE={heal_stats['initial_mse']:.4f} -> Final MSE={heal_stats['final_mse']:.4f}"
+        )
 
     from neuralops.models.surgical_io import save_surgical_checkpoint
+
     out_dir = getattr(args, "output_dir", None) or getattr(args, "output", "models/transplanted")
     print(f"[+] Saving surgical model checkpoint to '{out_dir}'...")
     save_surgical_checkpoint(transplanted, out_dir)
@@ -295,21 +312,26 @@ def handle_surgery_command(args: argparse.Namespace) -> int:
         try:
             plan = plan_recipe(recipe)
             if getattr(args, "json", False):
-                print(json.dumps({
-                    "recipe_name": plan.recipe_name,
-                    "target_model": plan.target_model,
-                    "stages_count": len(plan.stages),
-                    "stages": [
+                print(
+                    json.dumps(
                         {
-                            "id": s.id,
-                            "operation": s.operation_type,
-                            "version": s.version,
-                            "config": s.config,
-                            "depends_on": s.depends_on,
-                        }
-                        for s in plan.stages
-                    ],
-                }, indent=2))
+                            "recipe_name": plan.recipe_name,
+                            "target_model": plan.target_model,
+                            "stages_count": len(plan.stages),
+                            "stages": [
+                                {
+                                    "id": s.id,
+                                    "operation": s.operation_type,
+                                    "version": s.version,
+                                    "config": s.config,
+                                    "depends_on": s.depends_on,
+                                }
+                                for s in plan.stages
+                            ],
+                        },
+                        indent=2,
+                    )
+                )
             else:
                 print(f"Execution Plan: {plan.recipe_name} (target: {plan.target_model})")
                 print(f"Total Stages: {len(plan.stages)}")

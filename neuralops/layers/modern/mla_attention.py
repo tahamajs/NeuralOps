@@ -13,11 +13,6 @@ Compresses key and value vectors into a low-rank latent representation to minimi
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -27,14 +22,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
 try:
     from neuralops.ops.triton import triton_dispatch as _triton_dispatch
+
     HAS_TRITON_DISPATCH = True
 except Exception:
     _triton_dispatch = None
@@ -62,6 +59,7 @@ class MLAAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -79,6 +77,7 @@ class MLAAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         if config is None:
+
             class _Cfg:
                 pass
 
@@ -87,9 +86,7 @@ class MLAAttention(BaseAttention):
             config.num_attention_heads = kwargs.get("num_attention_heads", 12)
             config.head_dim = kwargs.get("head_dim", 64)
             config.model_type = kwargs.get("model_type", "")
-            config.num_key_value_heads = kwargs.get(
-                "num_key_value_heads", kwargs.get("num_attention_heads", 12)
-            )
+            config.num_key_value_heads = kwargs.get("num_key_value_heads", kwargs.get("num_attention_heads", 12))
             config.is_decoder = kwargs.get("is_decoder", False)
 
         try:
@@ -115,9 +112,7 @@ class MLAAttention(BaseAttention):
                 ),
             )
         )
-        self.head_dim: int = int(
-            getattr(config, "head_dim", self.hidden_size // max(1, self.num_heads))
-        )
+        self.head_dim: int = int(getattr(config, "head_dim", self.hidden_size // max(1, self.num_heads)))
         self.q_dim: int = int(getattr(config, "q_proj_out", self.num_heads * self.head_dim))
         self.all_head_size: int = self.q_dim
 
@@ -144,8 +139,18 @@ class MLAAttention(BaseAttention):
         else:
             _mt = str(getattr(config, "model_type", "") or "").lower()
             _dec_pfx = (
-                "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
             )
             self.is_decoder = (
                 bool(getattr(config, "is_decoder", False))
@@ -176,9 +181,7 @@ class MLAAttention(BaseAttention):
             freeze_base=True,
         )
 
-        dropout_p = float(
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-        )
+        dropout_p = float(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)))
         self.dropout = nn.Dropout(dropout_p)
 
         self._orig_storage_bytes: int = 0
@@ -287,10 +290,7 @@ class MLAAttention(BaseAttention):
             w_o = getattr(base_o, "weight", getattr(c_proj, "weight", None))
             if w_o is not None:
                 w_o = w_o.data.clone()
-                is_conv = (
-                    c_proj.__class__.__name__ == "Conv1D"
-                    or base_o.__class__.__name__ == "Conv1D"
-                )
+                is_conv = c_proj.__class__.__name__ == "Conv1D" or base_o.__class__.__name__ == "Conv1D"
                 if is_conv:
                     w_o = w_o.t().contiguous()
                 b_o = getattr(base_o, "bias", getattr(c_proj, "bias", None))
@@ -330,8 +330,7 @@ class MLAAttention(BaseAttention):
 
         cls_name = src.__class__.__name__
         has_out_proj = any(
-            hasattr(src, a)
-            for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
+            hasattr(src, a) for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
         )
         is_nested = False
         if (
@@ -369,16 +368,12 @@ class MLAAttention(BaseAttention):
             in_q = min(self.hidden_size, w_q_oriented.shape[1])
             self.q_proj.weight.data.zero_()
             self.q_proj.weight.data[:out_q, :in_q].copy_(
-                w_q_oriented[:out_q, :in_q].to(
-                    self.q_proj.weight.device, self.q_proj.weight.dtype
-                )
+                w_q_oriented[:out_q, :in_q].to(self.q_proj.weight.device, self.q_proj.weight.dtype)
             )
             if b_q is not None and self.q_proj.bias is not None:
                 mb = min(self.q_proj.bias.numel(), b_q.numel())
                 self.q_proj.bias.data.zero_()
-                self.q_proj.bias.data[:mb].copy_(
-                    b_q[:mb].to(self.q_proj.bias.device, self.q_proj.bias.dtype)
-                )
+                self.q_proj.bias.data[:mb].copy_(b_q[:mb].to(self.q_proj.bias.device, self.q_proj.bias.dtype))
             self.q_proj.freeze_base_weights()
 
             w_o, b_o = extracted["o"]
@@ -388,16 +383,12 @@ class MLAAttention(BaseAttention):
                 in_o = min(self.q_dim, w_o_oriented.shape[1])
                 self.out_proj.weight.data.zero_()
                 self.out_proj.weight.data[:out_o, :in_o].copy_(
-                    w_o_oriented[:out_o, :in_o].to(
-                        self.out_proj.weight.device, self.out_proj.weight.dtype
-                    )
+                    w_o_oriented[:out_o, :in_o].to(self.out_proj.weight.device, self.out_proj.weight.dtype)
                 )
                 if b_o is not None and self.out_proj.bias is not None:
                     mb = min(self.out_proj.bias.numel(), b_o.numel())
                     self.out_proj.bias.data.zero_()
-                    self.out_proj.bias.data[:mb].copy_(
-                        b_o[:mb].to(self.out_proj.bias.device, self.out_proj.bias.dtype)
-                    )
+                    self.out_proj.bias.data[:mb].copy_(b_o[:mb].to(self.out_proj.bias.device, self.out_proj.bias.dtype))
             elif self.is_nested_encoder:
                 min_d = min(self.out_proj.weight.shape[0], self.out_proj.weight.shape[1])
                 self.out_proj.weight.data.zero_()
@@ -467,9 +458,7 @@ class MLAAttention(BaseAttention):
                 vh_kv[:r, :].to(self.kv_down.weight.device, self.kv_down.weight.dtype)
             )
 
-            up = (u_kv[:, :r] * s_kv[:r].unsqueeze(0)).to(
-                self.k_up.weight.device, self.k_up.weight.dtype
-            )
+            up = (u_kv[:, :r] * s_kv[:r].unsqueeze(0)).to(self.k_up.weight.device, self.k_up.weight.dtype)
 
             d_k = min(self.kv_dim, self.k_up.weight.shape[0])
             d_v = min(self.kv_dim, self.v_up.weight.shape[0])
@@ -479,15 +468,11 @@ class MLAAttention(BaseAttention):
             if b_k_f is not None and self.k_up.bias is not None:
                 mb = min(self.k_up.bias.numel(), b_k_f.numel())
                 self.k_up.bias.data.zero_()
-                self.k_up.bias.data[:mb].copy_(
-                    b_k_f[:mb].to(self.k_up.bias.device, self.k_up.bias.dtype)
-                )
+                self.k_up.bias.data[:mb].copy_(b_k_f[:mb].to(self.k_up.bias.device, self.k_up.bias.dtype))
             if b_v_f is not None and self.v_up.bias is not None:
                 mb = min(self.v_up.bias.numel(), b_v_f.numel())
                 self.v_up.bias.data.zero_()
-                self.v_up.bias.data[:mb].copy_(
-                    b_v_f[:mb].to(self.v_up.bias.device, self.v_up.bias.dtype)
-                )
+                self.v_up.bias.data[:mb].copy_(b_v_f[:mb].to(self.v_up.bias.device, self.v_up.bias.dtype))
 
             self.kv_down.weight.requires_grad = False
             self.k_up.weight.requires_grad = False
@@ -527,11 +512,7 @@ class MLAAttention(BaseAttention):
 
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
-        elif (
-            cls_name in ("GPT2Attention", "GPT2Block")
-            or hasattr(src, "c_attn")
-            or "gpt" in cls_name.lower()
-        ):
+        elif cls_name in ("GPT2Attention", "GPT2Block") or hasattr(src, "c_attn") or "gpt" in cls_name.lower():
             self.is_decoder = True
 
         self._source_attn_id = id(src)
@@ -578,9 +559,7 @@ class MLAAttention(BaseAttention):
                 if k is None:
                     return None, None, 0
                 v = None
-                if hasattr(past_key_value, "value_cache") and layer_idx < len(
-                    past_key_value.value_cache
-                ):
+                if hasattr(past_key_value, "value_cache") and layer_idx < len(past_key_value.value_cache):
                     v = past_key_value.value_cache[layer_idx]
                 return k, v, k.shape[-2]
         return None, None, 0
@@ -622,12 +601,7 @@ class MLAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len_new = kv_input.shape[1]
 
-        q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         # Fastpath: Direct Latent KV Cache Attention
         # If sequence is non-causal or single token decode, without masks or RoPE,
         # compute attention directly in latent KV space without materializing uncompressed K/V in DRAM.
@@ -648,6 +622,7 @@ class MLAAttention(BaseAttention):
         ):
             try:
                 from neuralops.ops.cuda.latent_kv_attn import latent_kv_cache_attention
+
                 c_kv = self.kv_down(kv_input)  # (B, L_kv, R) in DRAM
                 u_k = self.k_up.weight  # (D_K, R)
                 u_v = self.v_up.weight.t().contiguous()  # (R, D_V)
@@ -658,7 +633,9 @@ class MLAAttention(BaseAttention):
                     return out, None
                 return self.out_proj(out), None
             except Exception as e_lat:
-                logger.debug("MLA direct latent_kv_cache_attention fastpath bypassed (%s), falling back to standard path", e_lat)
+                logger.debug(
+                    "MLA direct latent_kv_cache_attention fastpath bypassed (%s), falling back to standard path", e_lat
+                )
 
         k_new = _safe_low_rank(kv_input, self.k_up.weight, self.kv_down.weight)
         v_new = _safe_low_rank(kv_input, self.v_up.weight, self.kv_down.weight)
@@ -667,16 +644,8 @@ class MLAAttention(BaseAttention):
         if self.v_up.bias is not None:
             v_new = v_new + self.v_up.bias.to(v_new.dtype)
 
-        k_new = (
-            k_new.view(B, kv_len_new, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v_new = (
-            v_new.view(B, kv_len_new, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k_new = k_new.view(B, kv_len_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v_new = v_new.view(B, kv_len_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         past_k = past_v = None
         past_len = 0
@@ -719,9 +688,16 @@ class MLAAttention(BaseAttention):
             dispatched = False
             # Level 1/2 Hardware Latent KV Cache Attention fast path
             # If sequence is non-causal or single token decode, and sizes match hardware limits
-            if q.is_cuda and not is_causal and self.k_up.bias is None and self.v_up.bias is None and position_embeddings is None:
+            if (
+                q.is_cuda
+                and not is_causal
+                and self.k_up.bias is None
+                and self.v_up.bias is None
+                and position_embeddings is None
+            ):
                 try:
                     from neuralops.ops.cuda.latent_kv_attn import latent_kv_cache_attention
+
                     c_kv = self.kv_down(kv_input)  # (B, L_kv, R)
                     # u_k: (d, R), u_v: (R, d)
                     u_k = self.k_up.weight  # (d, R)
@@ -733,14 +709,18 @@ class MLAAttention(BaseAttention):
                         return out, present_key_value
                     return self.out_proj(out), present_key_value
                 except Exception as e_lat:
-                    logger.debug("MLA latent_kv_cache_attention hardware dispatch failed (%s), falling back to SDPA", e_lat)
+                    logger.debug(
+                        "MLA latent_kv_cache_attention hardware dispatch failed (%s), falling back to SDPA", e_lat
+                    )
 
             try:
                 _qs = maybe_half(q)
                 _ks = maybe_half(k)
                 _vs = maybe_half(v)
                 out = F.scaled_dot_product_attention(
-                    _qs, _ks, _vs,
+                    _qs,
+                    _ks,
+                    _vs,
                     is_causal=is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
@@ -757,10 +737,14 @@ class MLAAttention(BaseAttention):
 
         if is_causal:
             diag = 1 + max(0, kv_len - N)
-            causal = torch.triu(
-                torch.full((N, kv_len), float("-inf"), device=device, dtype=torch.float32),
-                diagonal=diag,
-            ).unsqueeze(0).unsqueeze(0)
+            causal = (
+                torch.triu(
+                    torch.full((N, kv_len), float("-inf"), device=device, dtype=torch.float32),
+                    diagonal=diag,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal
 
         if eff_mask is not None:
@@ -805,6 +789,7 @@ class MLAAttention(BaseAttention):
             return output, attn
         return output, None
 
+
 def inject_mla(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,
@@ -831,11 +816,7 @@ def inject_mla(
         layer_list = target.distilbert.transformer.layer
     elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
         layer_list = target.roberta.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
         layer_list = target.transformer.h

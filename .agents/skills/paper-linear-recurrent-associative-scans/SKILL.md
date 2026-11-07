@@ -426,7 +426,7 @@ permitting parallel prefix evaluation in $\mathcal{O}(\log t)$ algorithmic depth
 \begin{proof}
 Associativity follows from the associativity of matrix multiplication and distributivity over addition:
 \begin{align*}
-\left( (\mathbf{A}_1, \mathbf{U}_1) \otimes (\mathbf{A}_2, \mathbf{U}_2) \right) \otimes (\mathbf{A}_3, \mathbf{U}_3) 
+\left( (\mathbf{A}_1, \mathbf{U}_1) \otimes (\mathbf{A}_2, \mathbf{U}_2) \right) \otimes (\mathbf{A}_3, \mathbf{U}_3)
 &= (\mathbf{A}_2 \mathbf{A}_1, \, \mathbf{A}_2 \mathbf{U}_1 + \mathbf{U}_2) \otimes (\mathbf{A}_3, \mathbf{U}_3) \\
 &= \left(\mathbf{A}_3 (\mathbf{A}_2 \mathbf{A}_1), \, \mathbf{A}_3(\mathbf{A}_2 \mathbf{U}_1 + \mathbf{U}_2) + \mathbf{U}_3\right) \\
 &= \left(\mathbf{A}_3 \mathbf{A}_2 \mathbf{A}_1, \, \mathbf{A}_3 \mathbf{A}_2 \mathbf{U}_1 + \mathbf{A}_3 \mathbf{U}_2 + \mathbf{U}_3\right) \\

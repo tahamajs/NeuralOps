@@ -16,6 +16,7 @@ from __future__ import annotations
 import gc
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -54,11 +55,7 @@ def compute_linear_cka_loss(
     chunk_size: int = 128,
 ) -> torch.Tensor:
     """Computes Linear Centered Kernel Alignment (CKA) difference loss: 1.0 - CKA."""
-    if use_streaming or (
-        teacher_act.dim() >= 2
-        and teacher_act.size(1) > chunk_size
-        and teacher_act.numel() > 65536
-    ):
+    if use_streaming or (teacher_act.dim() >= 2 and teacher_act.size(1) > chunk_size and teacher_act.numel() > 65536):
         hidden_dim = teacher_act.shape[-1]
         cka_mod = StreamingCKALoss(hidden_dim=hidden_dim, eps=eps).to(teacher_act.device)
         return cka_mod(student_act, teacher_act, chunk_size=chunk_size)
@@ -120,7 +117,9 @@ def enable_shadow_twin(
             elif not hasattr(bridge, "normalizer") or bridge.normalizer is None:
                 h_dim = getattr(bridge, "hidden_dim", None)
                 if h_dim is None and hasattr(bridge, "orig_module"):
-                    h_dim = getattr(bridge.orig_module, "hidden_size", None) or getattr(bridge.orig_module, "hidden_dim", 768)
+                    h_dim = getattr(bridge.orig_module, "hidden_size", None) or getattr(
+                        bridge.orig_module, "hidden_dim", 768
+                    )
                 bridge.normalizer = RunningRepresentationNormalizer(hidden_dim=h_dim or 768)
         else:
             bridge.normalizer = None

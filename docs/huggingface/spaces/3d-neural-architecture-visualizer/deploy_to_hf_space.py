@@ -33,8 +33,7 @@ def deploy(
         from huggingface_hub import HfApi
     except ImportError:
         print(
-            "Error: 'huggingface_hub' is not installed. Please install it with:\n"
-            "    pip install huggingface_hub",
+            "Error: 'huggingface_hub' is not installed. Please install it with:\n" "    pip install huggingface_hub",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -108,9 +107,7 @@ def deploy(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Deploy 3D Neural Architecture Visualizer to Hugging Face Spaces."
-    )
+    parser = argparse.ArgumentParser(description="Deploy 3D Neural Architecture Visualizer to Hugging Face Spaces.")
     parser.add_argument(
         "--repo-id",
         type=str,

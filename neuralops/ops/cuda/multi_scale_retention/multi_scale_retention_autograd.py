@@ -12,14 +12,17 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 import logging
 from typing import Any
+
 """
 Multi-Scale Retention Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
 """
 
 from pathlib import Path
+
 import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
@@ -79,6 +82,7 @@ def _multi_scale_retention_dispatch(
     gammas: torch.Tensor,
 ) -> torch.Tensor:
     """3-Level Dispatched Multi-Scale Retention."""
+
     def cuda_fn(q, k, v, gammas, **kwargs):
         mod = _get_module()
         return mod.multi_scale_retention_fwd(
@@ -93,6 +97,7 @@ def _multi_scale_retention_dispatch(
 
     try:
         from neuralops.ops.triton.retnet_retention import triton_multi_scale_retention
+
         triton_fn = triton_multi_scale_retention
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed to initialize Triton implementation for multi_scale_retention: %s", exc, exc_info=True)

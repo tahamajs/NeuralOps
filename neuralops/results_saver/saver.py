@@ -13,28 +13,20 @@ Orchestrates multi-backend result saving, indexing, and telemetry persistence.
 
 from __future__ import annotations
 
-from datetime import datetime
 import json
 import logging
 import os
-from pathlib import Path
 import sqlite3
 import tarfile
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from neuralops.benchmarks.results.saver import MultiFormatSaver
-
 from neuralops.results_saver.config import SaveConfig
-from neuralops.results_saver.storage.sqlite_ops import (
-    configure_sqlite_pragmas,
-    sanitize_json_value,
-    sqlite_file_lock,
-)
+from neuralops.results_saver.storage.sqlite_ops import configure_sqlite_pragmas, sanitize_json_value, sqlite_file_lock
 from neuralops.results_saver.writers.csv_writer import MASTER_CSV_COLUMNS, save_result
-from neuralops.results_saver.writers.json_parquet_writer import (
-    save_result_json,
-    save_trajectories_parquet,
-)
+from neuralops.results_saver.writers.json_parquet_writer import save_result_json, save_trajectories_parquet
 from neuralops.results_saver.writers.plot_writer import generate_plots_for_run
 
 logger = logging.getLogger(__name__)
@@ -196,8 +188,7 @@ class ResultsSaver:
                     "metric_name TEXT, value REAL, timestamp TEXT)"
                 )
                 cursor.execute(
-                    "INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp) "
-                    "VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp) " "VALUES (?, ?, ?, ?, ?)",
                     (
                         self.run_id,
                         step,
@@ -491,9 +482,7 @@ class ResultsSaver:
         """Dispatch metrics and params to configured experiment trackers."""
         for t in self.cfg.experiment_trackers:
             try:
-                mod = __import__(
-                    f"neuralops.results_saver.backends.{t}_tracker", fromlist=["track"]
-                )
+                mod = __import__(f"neuralops.results_saver.backends.{t}_tracker", fromlist=["track"])
                 mod.track(self.run_id, self.run_dir, metrics, params, self.cfg)
             except ImportError:
                 logger.warning(f"Tracker '{t}' not available, skipping")

@@ -335,7 +335,7 @@ Furthermore, if $\theta$ resides in an anisotropic flat valley where the outlier
 ```latex
 \begin{theorem}[Optimality of Hessian Null-Space SVD Factorization]
 \label{thm:hnc_svd_optimality}
-Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ denote an attention projection weight matrix, and let $\mathbf{H}_W = \mathbb{E}_{X \sim \mathcal{D}}[ (X X^\top) \otimes \mathbf{I}_{d_{\text{out}}} ]$ denote the layer Gauss-Newton Hessian under input activation covariance $\mathbf{\Sigma}_X = \mathbb{E}[X X^\top] = \mathbf{L} \mathbf{L}^\top$. Consider rank-$r$ truncated surrogates $\hat{W} = A B$ with $A \in \mathbb{R}^{d_{\text{out}} \times r}, B \in \mathbb{R}^{r \times d_{\text{in}}}$. 
+Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ denote an attention projection weight matrix, and let $\mathbf{H}_W = \mathbb{E}_{X \sim \mathcal{D}}[ (X X^\top) \otimes \mathbf{I}_{d_{\text{out}}} ]$ denote the layer Gauss-Newton Hessian under input activation covariance $\mathbf{\Sigma}_X = \mathbb{E}[X X^\top] = \mathbf{L} \mathbf{L}^\top$. Consider rank-$r$ truncated surrogates $\hat{W} = A B$ with $A \in \mathbb{R}^{d_{\text{out}} \times r}, B \in \mathbb{R}^{r \times d_{\text{in}}}$.
 The second-order loss perturbation $\Delta \mathcal{L} = \frac{1}{2} \operatorname{vec}(W - \hat{W})^\top \mathbf{H}_W \operatorname{vec}(W - \hat{W})$ is globally minimized if and only if $\hat{W}$ is computed via Cholesky-whitened SVD:
 \begin{equation}
 \hat{W}_{\text{HNC}} = \tilde{U}_r \tilde{\boldsymbol{\Sigma}}_r \tilde{V}_r^\top \mathbf{L}^{-1}
@@ -378,7 +378,7 @@ from typing import List, Tuple
 
 def compute_hvp(loss: torch.Tensor, params: List[torch.Tensor], v: List[torch.Tensor]) -> List[torch.Tensor]:
     """Computes exact Hessian-Vector Product H * v using double automatic differentiation.
-    
+
     Memory: O(P), Compute: 2x backward pass FLOPs.
     """
     grads = torch.autograd.grad(loss, params, create_graph=True, retain_graph=True)
@@ -387,11 +387,11 @@ def compute_hvp(loss: torch.Tensor, params: List[torch.Tensor], v: List[torch.Te
     return [h.detach() for h in hvp_tensors]
 
 def lanczos_top_eigenvalues(
-    model: nn.Module, 
-    loss_fn: nn.Module, 
-    x_batch: torch.Tensor, 
-    y_batch: torch.Tensor, 
-    k_dim: int = 50, 
+    model: nn.Module,
+    loss_fn: nn.Module,
+    x_batch: torch.Tensor,
+    y_batch: torch.Tensor,
+    k_dim: int = 50,
     target_param: torch.Tensor = None
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Matrix-free Lanczos tridiagonalization extracting top-k Ritz eigenvalues."""
@@ -400,37 +400,37 @@ def lanczos_top_eigenvalues(
         params = [p for p in model.parameters() if p.requires_grad]
     else:
         params = [target_param]
-        
+
     # Forward loss
     out = model(x_batch)
     loss = loss_fn(out, y_batch)
-    
+
     # Initialize normalized probe vector v_1
     v = [torch.randn_like(p) for p in params]
     norm_v = torch.sqrt(sum((vi ** 2).sum() for vi in v))
     v = [vi / (norm_v + 1e-12) for vi in v]
-    
+
     alphas = []
     betas = []
     v_prev = [torch.zeros_like(p) for p in params]
     beta_prev = 0.0
-    
+
     for j in range(k_dim):
         Hv = compute_hvp(loss, params, v)
         # alpha_j = <Hv, v>
         alpha_j = sum((h * vi).sum() for h, vi in zip(Hv, v)).item()
         alphas.append(alpha_j)
-        
+
         # w_tilde = Hv - alpha_j * v - beta_{j-1} * v_{j-1}
         w_tilde = [h - alpha_j * vi - beta_prev * vp for h, vi, vp in zip(Hv, v, v_prev)]
         beta_j = torch.sqrt(sum((wt ** 2).sum() for wt in w_tilde)).item()
-        
+
         if j < k_dim - 1:
             betas.append(beta_j)
             v_prev = v
             v = [wt / (beta_j + 1e-12) for wt in w_tilde]
             beta_prev = beta_j
-            
+
     # Construct tridiagonal matrix T_m
     T = torch.zeros(k_dim, k_dim)
     for i in range(k_dim):
@@ -438,7 +438,7 @@ def lanczos_top_eigenvalues(
         if i < k_dim - 1:
             T[i, i + 1] = betas[i]
             T[i + 1, i] = betas[i]
-            
+
     ritz_values, ritz_vectors = torch.linalg.eigh(T)
     # Sort descending
     sorted_indices = torch.argsort(ritz_values, descending=True)
@@ -464,14 +464,14 @@ import seaborn as sns
 import numpy as np
 
 def plot_publication_hessian_dashboard(
-    eigenvalues_dict: dict, 
-    contour_grids: dict, 
+    eigenvalues_dict: dict,
+    contour_grids: dict,
     save_path: str = "figures/hessian_diagnostics_300dpi.pdf"
 ):
     """Generates a 300 DPI, 4-panel publication-grade Hessian diagnostics dashboard."""
     fig, axes = plt.subplots(2, 2, figsize=(11.0, 9.0), dpi=300)
     palette = sns.color_palette("deep")
-    
+
     # Panel A: Eigenspectrum Decay (Log-Log)
     ax1 = axes[0, 0]
     for idx, (label, evals) in enumerate(eigenvalues_dict.items()):
@@ -482,7 +482,7 @@ def plot_publication_hessian_dashboard(
     ax1.set_title(r"\textbf{(a) Hessian Eigenspectrum Decay}", fontsize=10, loc="left")
     ax1.grid(True, which="both", ls="--", lw=0.4, alpha=0.6)
     ax1.legend(frameon=True, fontsize=8)
-    
+
     # Panel B: Spectral Density
     ax2 = axes[0, 1]
     for idx, (label, evals) in enumerate(eigenvalues_dict.items()):
@@ -492,7 +492,7 @@ def plot_publication_hessian_dashboard(
     ax2.set_title(r"\textbf{(b) Empirical Spectral Density}", fontsize=10, loc="left")
     ax2.grid(True, ls="--", lw=0.4, alpha=0.6)
     ax2.legend(frameon=True, fontsize=8)
-    
+
     # Panel C: Condition Number Progression
     ax3 = axes[1, 0]
     stages = list(eigenvalues_dict.keys())
@@ -517,7 +517,7 @@ def plot_publication_hessian_dashboard(
     ax4.set_xlabel(r"Principal Eigenvector $u_1$", fontsize=9)
     ax4.set_ylabel(r"Second Eigenvector $u_2$", fontsize=9)
     ax4.set_title(r"\textbf{(d) 2D Loss Basin Geometry (Li et al. Normalization)}", fontsize=10, loc="left")
-    
+
     plt.tight_layout()
     plt.savefig(save_path, bbox_inches="tight")
     plt.close()

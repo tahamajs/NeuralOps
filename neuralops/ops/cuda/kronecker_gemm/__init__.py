@@ -9,10 +9,7 @@
 Fused Kronecker GEMM Hardware Operators.
 """
 
-from neuralops.ops.cuda.kronecker_gemm.kronecker_autograd import (
-    kronecker_matmul,
-    kronecker_matmul_pytorch_ref,
-)
+from neuralops.ops.cuda.kronecker_gemm.kronecker_autograd import kronecker_matmul, kronecker_matmul_pytorch_ref
 
 __all__ = [
     "kronecker_matmul",

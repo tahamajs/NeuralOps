@@ -7,12 +7,11 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Stable root entry point for the canonical serving benchmark."""
 
-
 import warnings
+
 warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
 
 from neuralops.benchmarks.serving_matrix import main
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

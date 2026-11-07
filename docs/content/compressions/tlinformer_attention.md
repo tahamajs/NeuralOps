@@ -151,17 +151,17 @@ def _tlinformer_fused_kernel(
 ):
     # Load Query block [BLOCK_N, d]
     q = tl.load(Q_ptr + offsets_q)
-    
+
     # Load Key block [BLOCK_N, d] and PK [r, BLOCK_N] into SRAM
     k = tl.load(K_ptr + offsets_k)
     pk = tl.load(PK_ptr + offsets_pk)
-    
+
     # On-chip sequence contraction: K_proj = pk @ k -> [r, d]
     k_proj = tl.dot(pk, k)
-    
+
     # Compute scores in SRAM: scores = q @ k_proj.T -> [BLOCK_N, r]
     scores = tl.dot(q, tl.trans(k_proj)) * scale
-    
+
     # Softmax & Multiply with V_proj inside SRAM registers
 ```
 
@@ -187,4 +187,3 @@ The empirical evaluation of `tlinformer_attention` across standard sequence leng
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

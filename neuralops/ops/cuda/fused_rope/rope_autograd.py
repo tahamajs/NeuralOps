@@ -65,6 +65,7 @@ def fused_rotary_emb_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.fused_rope import fused_rope_triton
+
         return fused_rope_triton
     except ImportError:
         return None
@@ -93,6 +94,7 @@ def fused_rotary_emb(
     sin: torch.Tensor,
 ) -> torch.Tensor:
     """3-Level Dispatched Fused Rotary Position Embedding."""
+
     def cuda_fn(x, cos, sin):
         return _FusedRoPEFunction.apply(x, cos, sin)
 

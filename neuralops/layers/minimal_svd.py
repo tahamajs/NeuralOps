@@ -8,4 +8,5 @@
 """
 Compatibility alias for neuralops.layers.svd.minimal_svd.
 """
+
 from neuralops.layers.svd.minimal_svd import *  # noqa: F401, F403

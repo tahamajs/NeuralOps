@@ -26,13 +26,13 @@ from transformers import (
     DistilBertConfig,
     DistilBertForSequenceClassification,
     GPT2Config,
-    GPT2LMHeadModel,
     GPT2ForSequenceClassification,
+    GPT2LMHeadModel,
     RobertaConfig,
     RobertaForSequenceClassification,
     T5Config,
-    T5ForConditionalGeneration,
     T5EncoderModel,
+    T5ForConditionalGeneration,
 )
 
 from neuralops.core.attention_utils import inject_attention
@@ -158,11 +158,7 @@ def build_model_instance(
             max_position_embeddings=512,
             pad_token_id=0,
         )
-        model = (
-            Qwen2ForSequenceClassification(cfg)
-            if num_labels > 0
-            else Qwen2ForCausalLM(cfg)
-        )
+        model = Qwen2ForSequenceClassification(cfg) if num_labels > 0 else Qwen2ForCausalLM(cfg)
     else:
         raise ValueError(f"Unsupported model family: {model_family}")
 
@@ -208,9 +204,7 @@ def get_base_model_cached(
                 num_layers=num_layers,
                 device=torch.device("cpu"),
             )
-        template_state = {
-            k: v.detach().cpu().clone() for k, v in template_model.state_dict().items()
-        }
+        template_state = {k: v.detach().cpu().clone() for k, v in template_model.state_dict().items()}
         del template_model
         _BASE_MODEL_TEMPLATE_CACHE[cache_key] = (template_state, cfg)
     else:
@@ -258,11 +252,7 @@ def _apply_attention_module(
 
     resolved_mod = ATTENTION_REGISTRY.get(module_name)
     custom_injector: Any = None
-    if (
-        resolved_mod is not None
-        and callable(resolved_mod)
-        and not isinstance(resolved_mod, type)
-    ):
+    if resolved_mod is not None and callable(resolved_mod) and not isinstance(resolved_mod, type):
         custom_injector = resolved_mod
     if custom_injector is None:
         cand = (
@@ -301,9 +291,7 @@ def _apply_attention_module(
                 )
             )
             is_whole_model = (
-                res is not None
-                and isinstance(res, nn.Module)
-                and sum(p.numel() for p in res.parameters()) > 1000
+                res is not None and isinstance(res, nn.Module) and sum(p.numel() for p in res.parameters()) > 1000
             )
             if is_whole_model:
                 model = res
@@ -428,11 +416,7 @@ def _apply_compressor_module(
     if not callable(comp_cls):
         raise RuntimeError(f"Compressor '{module_name}' is not callable")
 
-    tok = (
-        tokenizer
-        or getattr(model, "tokenizer", None)
-        or getattr(getattr(model, "config", None), "tokenizer", None)
-    )
+    tok = tokenizer or getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
     cfg = getattr(model, "config", None)
 
     c_kwargs: dict[str, Any] = {}
@@ -490,9 +474,7 @@ def _apply_compressor_module(
         elif isinstance(candidate, nn.Module) and not hasattr(candidate, "compress"):
             model = candidate
         else:
-            res_mod = _invoke_compressor_instance(
-                candidate, model, calibration_loader, calibration_data
-            )
+            res_mod = _invoke_compressor_instance(candidate, model, calibration_loader, calibration_data)
             if res_mod is not None and isinstance(res_mod, nn.Module):
                 model = res_mod
     else:
@@ -510,12 +492,8 @@ def _apply_compressor_module(
                 continue
 
         if candidate is None:
-            raise RuntimeError(
-                f"Could not instantiate compressor '{module_name}' with any signature."
-            )
-        res_mod = _invoke_compressor_instance(
-            candidate, model, calibration_loader, calibration_data
-        )
+            raise RuntimeError(f"Could not instantiate compressor '{module_name}' with any signature.")
+        res_mod = _invoke_compressor_instance(candidate, model, calibration_loader, calibration_data)
         if res_mod is not None and isinstance(res_mod, nn.Module):
             model = res_mod
 

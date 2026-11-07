@@ -12,7 +12,6 @@ Decomposes weight matrices into low-rank representations and sparse outlier matr
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -23,6 +22,7 @@ import torch.nn.functional as F
 
 from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -37,6 +37,7 @@ class RPCALinear(nn.Module):
     where L = U @ V captures low-rank principal components and S captures sparse outliers.
     Leverages triton_fused_lowrank_sparse_gemm for zero intermediate HBM materialization.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -82,6 +83,7 @@ class RPCALinear(nn.Module):
         if getattr(self, "use_triton", True) and x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import triton_fused_lowrank_sparse_gemm
+
                 out = triton_fused_lowrank_sparse_gemm(x_flat, self.V, self.U, s=self.S_sparse, bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception as e:
@@ -105,6 +107,7 @@ class RPCACompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     Robust Principal Component Analysis (RPCA) Low-Rank Compressor.
@@ -145,14 +148,10 @@ class RPCACompressor(BaseCompressor):
 
         self.rank = int(rank or _cfg_get(cfg_obj, "rpca_rank", _cfg_get(cfg_obj, "rank", 64)))
         self.mu = float(mu or _cfg_get(cfg_obj, "rpca_mu", _cfg_get(cfg_obj, "mu", 1e-3)))
-        self.max_iter = int(
-            max_iter or _cfg_get(cfg_obj, "rpca_max_iter", _cfg_get(cfg_obj, "max_iter", 5))
-        )
+        self.max_iter = int(max_iter or _cfg_get(cfg_obj, "rpca_max_iter", _cfg_get(cfg_obj, "max_iter", 5)))
         self.min_rank = max(1, int(min_rank or _cfg_get(cfg_obj, "min_rank", 8)))
         self.skip_attention_qkv = bool(
-            skip_attention_qkv
-            if skip_attention_qkv is not None
-            else _cfg_get(cfg_obj, "skip_attention_qkv", False)
+            skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, "skip_attention_qkv", False)
         )
         self.target_attention_only = bool(
             target_attention_only
@@ -177,14 +176,10 @@ class RPCACompressor(BaseCompressor):
                 self.target_device = torch.device(device)
             except Exception:
                 self.target_device = (
-                    next(model.parameters()).device
-                    if list(model.parameters())
-                    else torch.device("cpu")
+                    next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
                 )
         else:
-            self.target_device = (
-                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
-            )
+            self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
 
         self.visited_modules: set[int] = set()
         self.compressed_layers: list[str] = []
@@ -414,11 +409,7 @@ class RPCACompressor(BaseCompressor):
         self.fallback_layers.clear()
         self.failed_layers.clear()
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not target_layers:
             logger.warning("RPCA: No compressible linear layers found.")
@@ -437,9 +428,7 @@ class RPCACompressor(BaseCompressor):
                 if svd_layer is not None:
                     err = getattr(svd_layer, "reconstruction_error", 0.0)
                     self.layer_errors[name] = err
-                    self.replaced_layers.append(
-                        {"name": name, "rank": svd_layer.rank, "error": err}
-                    )
+                    self.replaced_layers.append({"name": name, "rank": svd_layer.rank, "error": err})
                     replace_module(self.model, name, svd_layer)
                     self.compressed_layers.append(name)
                 else:
@@ -470,9 +459,7 @@ class RPCACompressor(BaseCompressor):
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
-        avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         stats = self.get_compression_stats()
         stats.update(
             {
@@ -519,19 +506,13 @@ def rpca_compressor_factory(
         _cfg_get(comp_config, "rpca_max_iter", _cfg_get(comp_config, "max_iter", 5)),
     )
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "min_rank", 8))
-    skip_attention_qkv = kwargs.pop(
-        "skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False)
-    )
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False))
 
     compressor = RPCACompressor(
         model,

@@ -144,18 +144,18 @@ export function openAttentionHeatmapExplorer() {
                 <div style="padding:14px 24px; background:#080f1c; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
                     <input id="heatmap-sentence-input" class="modal-search-input" type="text" value="The transformer visualizer explores multi head attention" style="flex:1; min-width:260px;" placeholder="Type a sentence...">
                     <button id="btn-run-heatmap" class="round-button btn-catalog" style="font-size:11px;">Compute Attention ⚡</button>
-                    
+
                     <div style="display:flex; align-items:center; gap:8px;">
                         <label style="font-size:11px; color:var(--text-faint);">Layer:</label>
                         <select id="heatmap-layer-select" class="quick-module-select" style="width:90px; padding:4px 8px; font-size:11px;">
                             ${[0, 1, 2, 3, 4, 5].map(l => `<option value="${l}">Layer ${l}</option>`).join('')}
                         </select>
-                        
+
                         <label style="font-size:11px; color:var(--text-faint);">Head:</label>
                         <select id="heatmap-head-select" class="quick-module-select" style="width:90px; padding:4px 8px; font-size:11px;">
                             ${Array.from({ length: 12 }).map((_, h) => `<option value="${h}">Head ${h}</option>`).join('')}
                         </select>
-                        
+
                         <button id="btn-toggle-all-heads" class="round-button" style="font-size:11px; padding:4px 10px;">All Heads Grid</button>
                     </div>
                 </div>

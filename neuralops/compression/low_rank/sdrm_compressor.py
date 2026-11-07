@@ -12,7 +12,6 @@ Dynamically modulates low-rank factor dimensions across network depth according 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -22,6 +21,7 @@ import torch.nn as nn
 
 from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -38,6 +38,7 @@ class SDRMCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     SDRM: Scaled Dimension Rank Modulation.
@@ -73,18 +74,13 @@ class SDRMCompressor(BaseCompressor):
         self.total_param_ratio = max(
             0.05,
             min(
-                float(
-                    total_param_ratio
-                    or _cfg_get(cfg_obj, "total_param_ratio", _cfg_get(cfg_obj, "ratio", 0.7))
-                ),
+                float(total_param_ratio or _cfg_get(cfg_obj, "total_param_ratio", _cfg_get(cfg_obj, "ratio", 0.7))),
                 1.0,
             ),
         )
         self.min_rank = max(1, int(min_rank or _cfg_get(cfg_obj, "min_rank", 8)))
         self.skip_attention_qkv = bool(
-            skip_attention_qkv
-            if skip_attention_qkv is not None
-            else _cfg_get(cfg_obj, "skip_attention_qkv", False)
+            skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, "skip_attention_qkv", False)
         )
         self.target_attention_only = bool(
             target_attention_only
@@ -109,14 +105,10 @@ class SDRMCompressor(BaseCompressor):
                 self.target_device = torch.device(device)
             except Exception:
                 self.target_device = (
-                    next(model.parameters()).device
-                    if list(model.parameters())
-                    else torch.device("cpu")
+                    next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
                 )
         else:
-            self.target_device = (
-                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
-            )
+            self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
 
         self.visited_modules: set[int] = set()
         self.compressed_layers: list[str] = []
@@ -130,12 +122,8 @@ class SDRMCompressor(BaseCompressor):
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer belongs to an attention projection in a GQA architecture."""
         cfg = getattr(self.model, "config", None)
-        num_heads = getattr(
-            cfg, "num_attention_heads", getattr(module, "num_attention_heads", None)
-        )
-        num_kv_heads = getattr(
-            cfg, "num_key_value_heads", getattr(module, "num_key_value_heads", None)
-        )
+        num_heads = getattr(cfg, "num_attention_heads", getattr(module, "num_attention_heads", None))
+        num_kv_heads = getattr(cfg, "num_key_value_heads", getattr(module, "num_key_value_heads", None))
         is_gqa = num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads
 
         name_l = name.lower()
@@ -290,9 +278,7 @@ class SDRMCompressor(BaseCompressor):
             0
             if has_base_layer
             else (
-                getattr(layer, "r", self.lora_r)
-                if (has_existing_lora and getattr(layer, "r", 0) > 0)
-                else self.lora_r
+                getattr(layer, "r", self.lora_r) if (has_existing_lora and getattr(layer, "r", 0) > 0) else self.lora_r
             )
         )
 
@@ -316,17 +302,9 @@ class SDRMCompressor(BaseCompressor):
                 src_lB = getattr(layer.lora_B, "weight", layer.lora_B)
                 dst_lA = getattr(svd_layer.lora_A, "weight", svd_layer.lora_A)
                 dst_lB = getattr(svd_layer.lora_B, "weight", svd_layer.lora_B)
-                if (
-                    hasattr(src_lA, "data")
-                    and hasattr(dst_lA, "data")
-                    and src_lA.shape == dst_lA.shape
-                ):
+                if hasattr(src_lA, "data") and hasattr(dst_lA, "data") and src_lA.shape == dst_lA.shape:
                     dst_lA.data.copy_(src_lA.data)
-                if (
-                    hasattr(src_lB, "data")
-                    and hasattr(dst_lB, "data")
-                    and src_lB.shape == dst_lB.shape
-                ):
+                if hasattr(src_lB, "data") and hasattr(dst_lB, "data") and src_lB.shape == dst_lB.shape:
                     dst_lB.data.copy_(src_lB.data)
             except Exception as e_lora:
                 logger.warning("Could not copy existing LoRA adapters in SDRM: %s", e_lora)
@@ -361,11 +339,7 @@ class SDRMCompressor(BaseCompressor):
         self.fallback_layers.clear()
         self.failed_layers.clear()
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not target_layers:
             logger.warning("SDRM: No compressible linear layers found.")
@@ -384,12 +358,8 @@ class SDRMCompressor(BaseCompressor):
                 raw_w = base_m.weight.data
                 cls_name = base_m.__class__.__name__
                 is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_m, "nf")
-                out_f = (
-                    raw_w.shape[1] if is_conv1d else getattr(base_m, "out_features", raw_w.shape[0])
-                )
-                in_f = (
-                    raw_w.shape[0] if is_conv1d else getattr(base_m, "in_features", raw_w.shape[1])
-                )
+                out_f = raw_w.shape[1] if is_conv1d else getattr(base_m, "out_features", raw_w.shape[0])
+                in_f = raw_w.shape[0] if is_conv1d else getattr(base_m, "in_features", raw_w.shape[1])
 
                 params = in_f * out_f
                 allowed = params * self.total_param_ratio
@@ -399,23 +369,17 @@ class SDRMCompressor(BaseCompressor):
                 if svd_layer is not None:
                     err = getattr(svd_layer, "reconstruction_error", 0.0)
                     self.layer_errors[name] = err
-                    self.replaced_layers.append(
-                        {"name": name, "rank": svd_layer.rank, "error": err}
-                    )
+                    self.replaced_layers.append({"name": name, "rank": svd_layer.rank, "error": err})
                     if hasattr(module, "base_layer"):
                         module.base_layer = svd_layer
                         if hasattr(module, "lora_A") and module.lora_A is not None:
                             for p in (
-                                module.lora_A.parameters()
-                                if hasattr(module.lora_A, "parameters")
-                                else [module.lora_A]
+                                module.lora_A.parameters() if hasattr(module.lora_A, "parameters") else [module.lora_A]
                             ):
                                 p.requires_grad = True
                         if hasattr(module, "lora_B") and module.lora_B is not None:
                             for p in (
-                                module.lora_B.parameters()
-                                if hasattr(module.lora_B, "parameters")
-                                else [module.lora_B]
+                                module.lora_B.parameters() if hasattr(module.lora_B, "parameters") else [module.lora_B]
                             ):
                                 p.requires_grad = True
                     else:
@@ -441,9 +405,7 @@ class SDRMCompressor(BaseCompressor):
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
-        avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         stats = self.get_compression_stats()
         stats.update(
             {
@@ -490,19 +452,13 @@ def sdrm_compressor_factory(
         ),
     )
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "min_rank", 8))
-    skip_attention_qkv = kwargs.pop(
-        "skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False)
-    )
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
 
     compressor = SDRMCompressor(
         model,

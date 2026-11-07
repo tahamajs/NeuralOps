@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 _INTERPRET_MODE = os.environ.get("TRITON_INTERPRET") == "1"
 
 if HAS_TRITON and triton is not None and tl is not None:
+
     @triton.jit
     def _token_compressed_attn_kernel(
         Q_ptr,
@@ -267,4 +268,8 @@ def token_compressed_attention_forward(
 
 token_compressed_attention_forward_pytorch = _token_compressed_attention_pytorch
 
-__all__ = ["token_compressed_attention_forward", "_token_compressed_attention_pytorch", "token_compressed_attention_forward_pytorch"]
+__all__ = [
+    "token_compressed_attention_forward",
+    "_token_compressed_attention_pytorch",
+    "token_compressed_attention_forward_pytorch",
+]

@@ -21,6 +21,7 @@ kernel name designates the pre-quantization scale-smoothing transform.
 from __future__ import annotations
 
 from typing import Any, Optional
+
 import torch
 import torch.nn as nn
 
@@ -239,9 +240,7 @@ class SmoothQuantCompressor(BaseCompressor):
             stats["layer_errors"]["root"] = float(norm_diff / max(norm_orig, 1e-12))
 
         avg_err = (
-            sum(stats["layer_errors"].values()) / max(1, len(stats["layer_errors"]))
-            if stats["layer_errors"]
-            else 0.0
+            sum(stats["layer_errors"].values()) / max(1, len(stats["layer_errors"])) if stats["layer_errors"] else 0.0
         )
         stats["avg_reconstruction_error"] = float(avg_err)
         stats["compression_ratio"] = round(16.0 / max(1, self.bits), 2)

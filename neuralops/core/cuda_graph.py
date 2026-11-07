@@ -12,7 +12,9 @@ CUDA Graph runner capturing and replaying static-shape execution graphs for late
 """
 
 from __future__ import annotations
+
 from typing import Callable
+
 import torch
 
 __all__ = ["CUDAGraphRunner"]

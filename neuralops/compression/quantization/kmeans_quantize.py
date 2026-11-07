@@ -12,8 +12,6 @@ Groups model weights into cluster centroids using k-means optimization with stra
 """
 
 from __future__ import annotations
-from neuralops.core.common import _get_device
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -24,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get, _get_device
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -71,9 +70,7 @@ class KMeansSTEFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, centroids, indices, x, bias):
         idx_long = indices.long()
-        W = centroids.index_select(0, idx_long.reshape(-1)).reshape(
-            indices.shape[0], indices.shape[1]
-        )
+        W = centroids.index_select(0, idx_long.reshape(-1)).reshape(indices.shape[0], indices.shape[1])
         W = W.to(dtype=x.dtype)
         ctx.save_for_backward(centroids, idx_long, x, bias)
         return F.linear(x, W, bias)
@@ -284,12 +281,8 @@ class KMeansLinear(nn.Module):
         if self.lora_r > 0:
             dev = raw_w.device
             dt = raw_w.dtype
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, self.in_features), dtype=dt, device=dev)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros((self.out_features, self.lora_r), dtype=dt, device=dev)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, self.in_features), dtype=dt, device=dev))
+            self.lora_B = nn.Parameter(torch.zeros((self.out_features, self.lora_r), dtype=dt, device=dev))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
 
             if src_A is not None and src_B is not None:
@@ -355,6 +348,7 @@ class KMeansLinear(nn.Module):
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t())
             except Exception:
                 lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
@@ -372,6 +366,7 @@ class KMeansCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -399,14 +394,10 @@ class KMeansCompressor(BaseCompressor):
         if parsed_bits is not None:
             self.n_clusters = 2 ** int(parsed_bits)
         else:
-            self.n_clusters = int(
-                _cfg_get(cfg, "kmeans_clusters", _cfg_get(cfg, "n_clusters", n_clusters))
-            )
+            self.n_clusters = int(_cfg_get(cfg, "kmeans_clusters", _cfg_get(cfg, "n_clusters", n_clusters)))
         self.bits = int(math.ceil(math.log2(max(self.n_clusters, 2))))
 
-        self.max_error = float(
-            _cfg_get(cfg, "kmeans_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        self.max_error = float(_cfg_get(cfg, "kmeans_max_error", _cfg_get(cfg, "max_error", max_error)))
         self.target_attention_only = bool(
             _cfg_get(
                 cfg,
@@ -561,9 +552,7 @@ class KMeansCompressor(BaseCompressor):
         total_comp_bytes = 0
 
         target_list = [
-            (name, module)
-            for name, module in self.model.named_modules()
-            if self._is_target_module(name, module)
+            (name, module) for name, module in self.model.named_modules() if self._is_target_module(name, module)
         ]
 
         if not target_list:
@@ -680,11 +669,7 @@ class KMeansCompressor(BaseCompressor):
 
         storage_ratio = total_orig_bytes / total_comp_bytes if total_comp_bytes > 0 else 1.0
         effective_ratio = total_comp_bytes / total_orig_bytes if total_orig_bytes > 0 else 1.0
-        avg_err = (
-            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
-        )
+        avg_err = sum(self.layer_errors.values()) / max(1, len(self.layer_errors)) if self.layer_errors else 0.0
 
         try:
             stats = self.get_compression_stats()
@@ -800,9 +785,7 @@ def kmeans_factory(
             _cfg_get(comp_config, "fallback_to_original", True),
         ),
     )
-    lora_r = kwargs.pop(
-        "lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0))
-    )
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0)))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     skip_filter = kwargs.pop(
         "skip_should_compress_filter",

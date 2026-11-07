@@ -62,6 +62,7 @@ def rmsnorm_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.elementwise import fused_rmsnorm
+
         return fused_rmsnorm
     except (ImportError, AttributeError):
         logger.debug("Failed to import Triton fused_rmsnorm implementation", exc_info=True)
@@ -75,6 +76,7 @@ def rmsnorm(
     eps: float = 1e-6,
 ) -> torch.Tensor:
     """3-Level Dispatched Fused RMSNorm."""
+
     def cuda_fn(x, weight, residual=None, eps=1e-6, **kwargs):
         mod = _get_module()
         return mod.rmsnorm_fwd(

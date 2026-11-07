@@ -10,9 +10,9 @@ NeuralOps Benchmarks Metrics Subpackage.
 """
 
 from neuralops.benchmarks.metrics.evaluator import (
+    METRIC_REGISTRY,
     ClassificationMetrics,
     LanguageModelingMetrics,
-    METRIC_REGISTRY,
     Metric,
     QuestionAnsweringMetrics,
     RegressionMetrics,

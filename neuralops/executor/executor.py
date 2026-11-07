@@ -41,7 +41,11 @@ def execute_plan(
     should_rollback = (
         enable_rollback
         if enable_rollback is not None
-        else (plan.execution_spec.rollback == "stage" or plan.execution_spec.rollback == "full" or plan.execution_spec.rollback is True)
+        else (
+            plan.execution_spec.rollback == "stage"
+            or plan.execution_spec.rollback == "full"
+            or plan.execution_spec.rollback is True
+        )
     )
 
     # Initial baseline reference

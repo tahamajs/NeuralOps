@@ -16,10 +16,10 @@ foundation models, surgerized checkpoints, and in-memory architectures.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import json
 import logging
 import os
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
@@ -32,6 +32,7 @@ try:
         PolymorphicGenerationCacheBridge,
         wrap_model_for_generation,
     )
+
     _HAS_CACHE_BRIDGE = True
 except ImportError:
     _HAS_CACHE_BRIDGE = False
@@ -41,6 +42,7 @@ except ImportError:
 
 try:
     from transformers.cache_utils import DynamicCache
+
     _HAS_DYNAMIC_CACHE = True
 except ImportError:
     _HAS_DYNAMIC_CACHE = False
@@ -183,8 +185,10 @@ class BaseModelAdapter(ABC):
             return len(self.model.encoder.layer)
         # Fallback inspection by scanning child modules named 'layer' or 'block'
         layer_submodules = [
-            m for name, m in self.model.named_modules()
-            if any(k in name.lower() for k in [".layer.", ".layers.", ".block.", ".h."]) and len(list(m.children())) == 0
+            m
+            for name, m in self.model.named_modules()
+            if any(k in name.lower() for k in [".layer.", ".layers.", ".block.", ".h."])
+            and len(list(m.children())) == 0
         ]
         return max(1, len(layer_submodules))
 
@@ -367,20 +371,14 @@ class SurgerizedModelAdapter(HuggingFaceModelAdapter):
         super().__init__(model=model, model_name=model_name, tokenizer=tokenizer)
         self.surgery_manifest = surgery_manifest or {}
         self.transplanted_attention = str(
-            self.surgery_manifest.get("transplanted_attention")
-            or self.surgery_manifest.get("attention_key")
-            or ""
+            self.surgery_manifest.get("transplanted_attention") or self.surgery_manifest.get("attention_key") or ""
         )
         self.compressor_key = str(
-            self.surgery_manifest.get("compressor_key")
-            or self.surgery_manifest.get("compression_method")
-            or ""
+            self.surgery_manifest.get("compressor_key") or self.surgery_manifest.get("compression_method") or ""
         )
         self.calibrated = bool(self.surgery_manifest.get("calibrated", False))
         self.ridge_damping = str(
-            self.surgery_manifest.get("ridge_damping")
-            or self.surgery_manifest.get("damping")
-            or "1e-4"
+            self.surgery_manifest.get("ridge_damping") or self.surgery_manifest.get("damping") or "1e-4"
         )
         self.pre_train_healed = str(
             self.surgery_manifest.get("pre_train_healed")
@@ -443,6 +441,7 @@ class SurgerizedModelAdapter(HuggingFaceModelAdapter):
         # Load weights using transformers AutoModelForCausalLM or AutoModel
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer
+
             load_kwargs: Dict[str, Any] = dict(kwargs)
             if torch_dtype is not None:
                 load_kwargs["torch_dtype"] = torch_dtype
@@ -512,6 +511,7 @@ class UniversalModelAdapter:
             # Attempt loading via AutoModelForCausalLM or AutoModel
             try:
                 from transformers import AutoModelForCausalLM, AutoTokenizer
+
                 load_kwargs: Dict[str, Any] = dict(kwargs)
                 if torch_dtype is not None:
                     load_kwargs["torch_dtype"] = torch_dtype
@@ -537,6 +537,7 @@ class UniversalModelAdapter:
         # Case 2: HuggingFace model string identifier
         if isinstance(model_or_path, str):
             from transformers import AutoModelForCausalLM, AutoTokenizer
+
             load_kwargs = dict(kwargs)
             if torch_dtype is not None:
                 load_kwargs["torch_dtype"] = torch_dtype

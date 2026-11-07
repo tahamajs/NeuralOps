@@ -9,10 +9,7 @@
 Activation-Scaled Quantized GEMM Hardware Operators.
 """
 
-from neuralops.ops.cuda.act_scale_gemm.act_scale_autograd import (
-    act_scale_quant_gemm,
-    act_scale_quant_gemm_pytorch_ref,
-)
+from neuralops.ops.cuda.act_scale_gemm.act_scale_autograd import act_scale_quant_gemm, act_scale_quant_gemm_pytorch_ref
 
 __all__ = [
     "act_scale_quant_gemm",

@@ -19,9 +19,9 @@ Welcome to **NeuralOps** (`SVD_linear_Attention` **v1.6.0**), the unified accele
 | **Master Jupyter Notebooks** | **29** | Reproducible demonstration tutorials (00–25, empirical master, integration suites) |
 
 > [!NOTE]
-> Developed at the **Department of Computer Engineering, College of Engineering, University of Tehran**.  
-> Grounded in physical silicon execution on **NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, AD104 silicon: 5,888 CUDA cores, 46 SMs, 184 4th Gen Tensor Cores, 160.2 TFLOPS boost / 141.6 base FP16, 504.0 GB/s GDDR6X, Arithmetic Intensity Ridge Point $I^* = 317.9\text{ FLOP/Byte}$, 12 GB VRAM)**.  
-> All empirical results and benchmark records are mirrored in the official Hugging Face benchmark repository:  
+> Developed at the **Department of Computer Engineering, College of Engineering, University of Tehran**.
+> Grounded in physical silicon execution on **NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, AD104 silicon: 5,888 CUDA cores, 46 SMs, 184 4th Gen Tensor Cores, 160.2 TFLOPS boost / 141.6 base FP16, 504.0 GB/s GDDR6X, Arithmetic Intensity Ridge Point $I^* = 317.9\text{ FLOP/Byte}$, 12 GB VRAM)**.
+> All empirical results and benchmark records are mirrored in the official Hugging Face benchmark repository:
 > 👉 **[https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)**
 
 ---

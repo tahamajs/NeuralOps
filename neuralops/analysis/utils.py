@@ -67,9 +67,7 @@ def statistical_tests(df: pd.DataFrame, group_col: str, value_col: str) -> dict[
     return {"anova_p": p_anova, "pairwise": pairwise}
 
 
-def detect_least_compressible_layers(
-    model, tokenizer, calibration_texts: list[str], k: int = 5
-) -> list[int]:
+def detect_least_compressible_layers(model, tokenizer, calibration_texts: list[str], k: int = 5) -> list[int]:
     """Detect least compressible layers."""
     from .layerwise_analyzer import LayerwiseAnalyzer
 

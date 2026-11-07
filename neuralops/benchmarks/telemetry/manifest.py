@@ -14,23 +14,21 @@ Section 4 & Appendix B of the Unified Benchmark Architecture Specification.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import hashlib
 import json
 import logging
 import os
-from pathlib import Path
 import subprocess
 import sys
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from .host import get_host_environment
 
 logger = logging.getLogger(__name__)
 
-MANIFEST_SCHEMA_URL = (
-    "https://raw.githubusercontent.com/tahamajs/NeuralOps/main/schemas/benchmark_manifest_v1.json"
-)
+MANIFEST_SCHEMA_URL = "https://raw.githubusercontent.com/tahamajs/NeuralOps/main/schemas/benchmark_manifest_v1.json"
 
 
 def get_git_provenance() -> dict[str, Any]:
@@ -43,39 +41,30 @@ def get_git_provenance() -> dict[str, Any]:
     }
     try:
         # Commit SHA
-        sha = (
-            subprocess.check_output(
-                ["git", "rev-parse", "HEAD"],
-                stderr=subprocess.DEVNULL,
-                shell=False,
-                text=True,
-            )
-            .strip()
-        )
+        sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            shell=False,
+            text=True,
+        ).strip()
         git_data["commit_sha"] = sha
 
         # Branch name
-        branch = (
-            subprocess.check_output(
-                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                stderr=subprocess.DEVNULL,
-                shell=False,
-                text=True,
-            )
-            .strip()
-        )
+        branch = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            shell=False,
+            text=True,
+        ).strip()
         git_data["branch"] = branch
 
         # Dirty status
-        status = (
-            subprocess.check_output(
-                ["git", "status", "--porcelain"],
-                stderr=subprocess.DEVNULL,
-                shell=False,
-                text=True,
-            )
-            .strip()
-        )
+        status = subprocess.check_output(
+            ["git", "status", "--porcelain"],
+            stderr=subprocess.DEVNULL,
+            shell=False,
+            text=True,
+        ).strip()
         if status:
             git_data["is_dirty"] = True
             diff = subprocess.check_output(
@@ -179,9 +168,7 @@ class BenchmarkManifestBuilder:
     def save(self, path: Path | str) -> Path:
         """Atomically persist manifest.json to disk."""
         target_path = Path(path)
-        manifest_file = (
-            target_path if target_path.name.endswith(".json") else target_path / "manifest.json"
-        )
+        manifest_file = target_path if target_path.name.endswith(".json") else target_path / "manifest.json"
         manifest_file.parent.mkdir(parents=True, exist_ok=True)
 
         data = self.to_dict()

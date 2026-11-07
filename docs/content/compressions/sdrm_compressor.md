@@ -1,6 +1,6 @@
 # SDRM: Rank Assignment Proportional to Parameter Budget for Edge Inference
 
-**Registered as `sdrm`**  
+**Registered as `sdrm`**
 *Distributes a global parameter budget across linear layers by assigning each a rank proportional to its original size, then replaces weights with truncated SVD approximations.*
 
 ---
@@ -194,4 +194,3 @@ The empirical evaluation of `sdrm_compressor` across standard sequence lengths a
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

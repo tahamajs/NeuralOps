@@ -165,7 +165,7 @@ def svd_mamba_fused_triton(
     out = torch.empty_like(u_c)
     grid = (B_sz, D_dim)
 
-    a_has_d = (A_c.dim() == 2 and A_c.size(0) == D_dim)
+    a_has_d = A_c.dim() == 2 and A_c.size(0) == D_dim
     stride_ad = A_c.stride(0) if a_has_d else 0
     stride_an = A_c.stride(1) if a_has_d else A_c.stride(0)
 

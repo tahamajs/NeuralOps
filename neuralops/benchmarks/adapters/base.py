@@ -38,10 +38,10 @@ import torch
 
 from neuralops.benchmarks.results.schema import BenchmarkResult, BenchmarkStatus
 
-
 # ---------------------------------------------------------------------------
 # Input descriptor
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BenchmarkInputs:
@@ -57,6 +57,7 @@ class BenchmarkInputs:
 # ---------------------------------------------------------------------------
 # Validation result
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class NumericsReport:
@@ -75,6 +76,7 @@ class NumericsReport:
 # ---------------------------------------------------------------------------
 # Base adapter
 # ---------------------------------------------------------------------------
+
 
 class BaseBenchmarkAdapter(abc.ABC):
     """Abstract base for all NeuralOps benchmark adapters.
@@ -227,10 +229,7 @@ class BaseBenchmarkAdapter(abc.ABC):
                 candidate_finite=cand_finite,
                 shape_match=False,
                 dtype_match=dtype_match,
-                failure_reason=(
-                    f"Shape mismatch: reference={reference.shape} "
-                    f"candidate={candidate.shape}"
-                ),
+                failure_reason=(f"Shape mismatch: reference={reference.shape} " f"candidate={candidate.shape}"),
             )
 
         if not cand_finite:
@@ -265,10 +264,7 @@ class BaseBenchmarkAdapter(abc.ABC):
             if max_diff > tol:
                 reason = f"max_diff={max_diff:.6e} exceeds tolerance={tol:.6e}"
             elif not dtype_match:
-                reason = (
-                    f"dtype mismatch: reference={reference.dtype} "
-                    f"candidate={candidate.dtype}"
-                )
+                reason = f"dtype mismatch: reference={reference.dtype} " f"candidate={candidate.dtype}"
 
         return NumericsReport(
             passed=passed,

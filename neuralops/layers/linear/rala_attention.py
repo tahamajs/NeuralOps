@@ -13,13 +13,10 @@ Augments linear attention kernel maps with low-rank static head interaction matr
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 from typing import Any
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +26,8 @@ import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 
 @ATTENTION_REGISTRY.register("rala_attention")
@@ -43,6 +40,7 @@ class RALALinearAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -313,11 +311,7 @@ class RALALinearAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -330,11 +324,7 @@ class RALALinearAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning(
                 "RALALinearAttention.copy_weights: missing %s from %s",
@@ -388,10 +378,7 @@ class RALALinearAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (
-                        b.shape[0] < target_mod.bias.shape[0]
-                        and target_mod.bias.shape[0] % b.shape[0] == 0
-                    ):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -433,21 +420,9 @@ class RALALinearAttention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         batch_size, seq_len, _ = hidden_states.shape
 
-        q = (
-            self.q_proj(hidden_states)
-            .view(batch_size, seq_len, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        k = (
-            self.k_proj(hidden_states)
-            .view(batch_size, seq_len, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        v = (
-            self.v_proj(hidden_states)
-            .view(batch_size, seq_len, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        q = self.q_proj(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k = self.k_proj(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v = self.v_proj(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -471,6 +446,7 @@ class RALALinearAttention(BaseAttention):
 
         try:
             from neuralops.ops.triton.linear_attn import fused_rala_augmented_scan_triton
+
             lin_out, aug_out = fused_rala_augmented_scan_triton(
                 q_prime, k_prime, v_masked, self.lora_U, self.lora_V, is_causal=is_causal
             )
@@ -518,7 +494,9 @@ class RALALinearAttention(BaseAttention):
                     lin_out = torch.nan_to_num(num / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
 
                     rank_mat = torch.einsum("hdr,her->hde", self.lora_U.float(), self.lora_V.float())
-                    aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+                    aug_out = torch.nan_to_num(
+                        torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4
+                    ).to(q.dtype)
             else:
                 with torch.amp.autocast(device_type=hidden_states.device.type, enabled=False):
                     q_p = q_prime.float()
@@ -527,10 +505,14 @@ class RALALinearAttention(BaseAttention):
                     kv = torch.einsum("bhnd,bhne->bhde", k_p, v_m)
                     z = k_p.sum(dim=2)
                     denom = torch.einsum("bhnd,bhd->bhn", q_p, z).unsqueeze(-1).clamp(min=1e-4)
-                    lin_out = torch.nan_to_num(torch.einsum("bhnd,bhde->bhne", q_p, kv) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+                    lin_out = torch.nan_to_num(
+                        torch.einsum("bhnd,bhde->bhne", q_p, kv) / denom, nan=0.0, posinf=1e4, neginf=-1e4
+                    ).to(q.dtype)
 
                     rank_mat = torch.einsum("hdr,her->hde", self.lora_U.float(), self.lora_V.float())
-                    aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+                    aug_out = torch.nan_to_num(
+                        torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4
+                    ).to(q.dtype)
 
         out = (lin_out + self.lora_rank_alpha * aug_out) * mask_4d
 
@@ -585,11 +567,7 @@ def inject_rala(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -21,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -38,21 +41,28 @@ def _get_module():
         )
     return _MODULE
 
+
 def entropy_pruning_pytorch_ref(scores):
     p = torch.softmax(scores.float(), dim=-1)
     return (-p * torch.log(p.clamp(min=1e-8))).sum(dim=-1).to(scores.dtype)
+
+
 def entropy_pruning_triton_ref(scores):
     from neuralops.ops.triton.elementwise import fused_entropy_token_pruning_mask_triton
+
     _, h = fused_entropy_token_pruning_mask_triton(scores)
     return h
 
+
 def entropy_pruning(scores: torch.Tensor) -> torch.Tensor:
     orig_shape = scores.shape[:-1]
+
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = mod.entropy_row_reduction_fwd
         res = fn(*args, **kwargs)
         return res.view(*orig_shape) if len(orig_shape) > 1 else res
+
     return dispatch(
         cuda_fn,
         entropy_pruning_triton_ref,

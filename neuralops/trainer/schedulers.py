@@ -159,11 +159,11 @@ def create_wsd(
 
 
 @SCHEDULER_REGISTRY.register("linear")
-def create_linear(optimizer: torch.optim.Optimizer, num_warmup_steps: int = 0, num_training_steps: int = 10000, **kwargs: Any) -> Any:
+def create_linear(
+    optimizer: torch.optim.Optimizer, num_warmup_steps: int = 0, num_training_steps: int = 10000, **kwargs: Any
+) -> Any:
     """Build and return linear."""
-    return lr_scheduler.LinearLR(
-        optimizer, start_factor=1.0, end_factor=0.0, total_iters=num_training_steps
-    )
+    return lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=0.0, total_iters=num_training_steps)
 
 
 @SCHEDULER_REGISTRY.register("cosine")
@@ -179,11 +179,11 @@ def create_rop(optimizer: torch.optim.Optimizer, factor: float = 0.1, patience: 
 
 
 @SCHEDULER_REGISTRY.register("one_cycle")
-def create_onecycle(optimizer: torch.optim.Optimizer, max_lr: float = 0.01, steps_per_epoch: int = 1000, epochs: int = 10, **kwargs: Any) -> Any:
+def create_onecycle(
+    optimizer: torch.optim.Optimizer, max_lr: float = 0.01, steps_per_epoch: int = 1000, epochs: int = 10, **kwargs: Any
+) -> Any:
     """Build and return onecycle."""
-    return lr_scheduler.OneCycleLR(
-        optimizer, max_lr=max_lr, steps_per_epoch=steps_per_epoch, epochs=epochs
-    )
+    return lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=steps_per_epoch, epochs=epochs)
 
 
 @SCHEDULER_REGISTRY.register("cosine_warmup")
@@ -196,9 +196,7 @@ def create_cosine_warmup(
         """Lr lambda."""
         if current_step < num_warmup_steps:
             return float(current_step) / float(max(1, num_warmup_steps))
-        progress = float(current_step - num_warmup_steps) / float(
-            max(1, num_training_steps - num_warmup_steps)
-        )
+        progress = float(current_step - num_warmup_steps) / float(max(1, num_training_steps - num_warmup_steps))
         return max(0.0, 0.5 * (1.0 + math.cos(math.pi * progress)))
 
     return lr_scheduler.LambdaLR(optimizer, lr_lambda)

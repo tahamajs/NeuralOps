@@ -21,6 +21,7 @@ from typing import Any
 
 import numpy as np
 import torch
+
 from neuralops.benchmarks.registry import register_benchmark
 from neuralops.integrations.radix_prefix_cache import SGLangRadixAdapter
 
@@ -54,9 +55,7 @@ def benchmark_radix_prefix_cache(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for benchmark_radix_prefix_cache, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for benchmark_radix_prefix_cache, but CUDA is not available.")
 
     rng = np.random.default_rng(seed)
 
@@ -148,4 +147,3 @@ def run_benchmark(**kwargs: Any) -> dict[str, Any]:
 
 # Canonical Aliases for Multi-Agent Implementation Plan contract compliance
 CoreModule = benchmark_radix_prefix_cache
-

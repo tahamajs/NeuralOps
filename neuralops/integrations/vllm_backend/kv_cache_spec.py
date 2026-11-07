@@ -98,8 +98,8 @@ class NeuralOpsRecurrentSpec(KVCacheSpec):
 def register_recurrent_spec() -> bool:
     """Register NeuralOpsRecurrentSpec in vLLM's KVCacheSpecRegistry."""
     try:
-        from vllm.v1.kv_cache_spec_registry import KVCacheSpecRegistry  # type: ignore[import-not-found]
         from vllm.v1.core.single_type_kv_cache_manager import MambaManager  # type: ignore[import-not-found]
+        from vllm.v1.kv_cache_spec_registry import KVCacheSpecRegistry  # type: ignore[import-not-found]
 
         KVCacheSpecRegistry._ensure_registered()
         KVCacheSpecRegistry.register(

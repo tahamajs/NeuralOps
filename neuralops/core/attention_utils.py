@@ -34,13 +34,14 @@ from neuralops.core._attention_surgery import (
     split_and_set_qkv_weights,
 )
 from neuralops.core.common import softpick
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.utils.rope import _rotate_half, apply_rope_after_up_projection
 
 logger = logging.getLogger(__name__)
 
 from neuralops.api import replace_attention
+
 inject_attention = replace_attention
 
 
@@ -160,9 +161,7 @@ def normalize_attention_mask(
     return m.to(device=device, dtype=dtype)
 
 
-def broadcast_cos_sin(
-    cos: torch.Tensor, sin: torch.Tensor, q: torch.Tensor
-) -> tuple[torch.Tensor, torch.Tensor]:
+def broadcast_cos_sin(cos: torch.Tensor, sin: torch.Tensor, q: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Broadcast cos/sin embeddings to match query tensor rank."""
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
@@ -218,12 +217,8 @@ def apply_rotary_pos_emb(
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_e = (q_rot * cos_q.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin_q.to(q_rot.dtype)
-        )
-        k_rot_e = (k_rot * cos_k.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin_k.to(k_rot.dtype)
-        )
+        q_rot_e = (q_rot * cos_q.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin_q.to(q_rot.dtype))
+        k_rot_e = (k_rot * cos_k.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin_k.to(k_rot.dtype))
         q = torch.cat([q_rot_e, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_e
         k = torch.cat([k_rot_e, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_e
     else:
@@ -239,7 +234,6 @@ def apply_rotary_pos_emb(
 
 
 from neuralops.core.peft.lora import LoRALinear
-
 
 __all__ = [
     "replace_attention",
@@ -274,5 +268,6 @@ __all__ = [
 def __getattr__(name: str) -> Any:
     if name == "replace_attention":
         from neuralops.api import replace_attention
+
         return replace_attention
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

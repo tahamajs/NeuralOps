@@ -93,12 +93,12 @@ Y = X V_{r^*} \Sigma_{r^*} U_{r^*}^T + b
 ### 4.1 Parameter Calculation Formulas
 Let $M = d_{\text{model}}$ and let $r_Q, r_K, r_V, r_O$ be the dynamically assigned ranks for the four attention projections.
 
-Specifically, regarding \textbf{Uncompressed MHA Parameters}, $P_{\text{uncompressed}} = 4 M^2 + 4 M$ Furthermore, regarding \textbf{Adaptive Compressed Parameters}, 
+Specifically, regarding \textbf{Uncompressed MHA Parameters}, $P_{\text{uncompressed}} = 4 M^2 + 4 M$ Furthermore, regarding \textbf{Adaptive Compressed Parameters},
 
 \[
 P_{\text{adaptive}} = \sum_{m \in \{Q,K,V,O\}} \left( r_m (2 M + 1) + M \right)
 \]
-Specifically, regarding \textbf{Global Compression Ratio}, 
+Specifically, regarding \textbf{Global Compression Ratio},
 
 \[
 \mathcal{C}_R = \frac{4 M^2 + 4 M}{\sum_{m} \left( r_m (2 M + 1) + M \right)} \approx \frac{M}{2 \bar{r}}
@@ -217,4 +217,3 @@ The empirical evaluation of `adaptive_ranks` across standard sequence lengths an
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

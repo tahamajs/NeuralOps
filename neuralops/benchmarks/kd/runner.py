@@ -27,20 +27,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
-from neuralops.trainer.metrics import accuracy_score
-from torch.amp import autocast, GradScaler
+from torch.amp import GradScaler, autocast
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
-from transformers import (
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    DataCollatorWithPadding,
-)
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, DataCollatorWithPadding
 
 from neuralops.benchmarks.kd.config import BenchmarkConfig
 from neuralops.benchmarks.kd.reporter import KDReporter
 from neuralops.core.architecture import get_attention_modules
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.trainer.metrics import accuracy_score
+
 try:
     from neuralops.evaluation.eval_patcher import apply_module_to_model
 except ImportError:
@@ -87,11 +84,7 @@ class KDRunner:
         """Retrieve current git commit hash if available."""
         try:
             return (
-                subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
-                )
-                .decode("utf-8")
-                .strip()
+                subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
             )
         except Exception:
             return "unknown"
@@ -157,9 +150,7 @@ class KDRunner:
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
 
-    def load_data(
-        self, tokenizer: AutoTokenizer
-    ) -> Tuple[DataLoader, DataLoader, DataLoader, str]:
+    def load_data(self, tokenizer: AutoTokenizer) -> Tuple[DataLoader, DataLoader, DataLoader, str]:
         """Resolve dataset specification and instantiate DataLoaders.
 
         Supports formats:
@@ -191,33 +182,50 @@ class KDRunner:
 
             cols = ds["train"].column_names
             if "sentence" in cols:
+
                 def tokenize_batch(examples: Dict[str, List[Any]]) -> Dict[str, Any]:
                     return tokenizer(examples["sentence"], truncation=True, max_length=self.config.max_length)
+
             elif "sentence1" in cols and "sentence2" in cols:
+
                 def tokenize_batch(examples: Dict[str, List[Any]]) -> Dict[str, Any]:
-                    return tokenizer(examples["sentence1"], examples["sentence2"], truncation=True, max_length=self.config.max_length)
+                    return tokenizer(
+                        examples["sentence1"], examples["sentence2"], truncation=True, max_length=self.config.max_length
+                    )
+
             elif "question" in cols and "sentence" in cols:
+
                 def tokenize_batch(examples: Dict[str, List[Any]]) -> Dict[str, Any]:
-                    return tokenizer(examples["question"], examples["sentence"], truncation=True, max_length=self.config.max_length)
+                    return tokenizer(
+                        examples["question"], examples["sentence"], truncation=True, max_length=self.config.max_length
+                    )
+
             else:
                 text_cols = [c for c in cols if c not in ("label", "idx")]
+
                 def tokenize_batch(examples: Dict[str, List[Any]]) -> Dict[str, Any]:
                     args = [examples[c] for c in text_cols[:2]]
                     return tokenizer(*args, truncation=True, max_length=self.config.max_length)
+
         elif task_spec == "imdb":
             ds = load_dataset("imdb")
             dataset_name = "imdb"
+
             def tokenize_batch(examples: Dict[str, List[Any]]) -> Dict[str, Any]:
                 return tokenizer(examples["text"], truncation=True, max_length=self.config.max_length)
+
         elif task_spec == "rotten_tomatoes":
             ds = load_dataset("rotten_tomatoes")
             dataset_name = "rotten_tomatoes"
+
             def tokenize_batch(examples: Dict[str, List[Any]]) -> Dict[str, Any]:
                 return tokenizer(examples["text"], truncation=True, max_length=self.config.max_length)
+
         else:
             ds = load_dataset(task_spec)
             dataset_name = task_spec.replace("/", "_")
             text_col = "text" if "text" in ds["train"].column_names else "sentence"
+
             def tokenize_batch(examples: Dict[str, List[Any]]) -> Dict[str, Any]:
                 return tokenizer(examples[text_col], truncation=True, max_length=self.config.max_length)
 
@@ -227,12 +235,8 @@ class KDRunner:
         ds.set_format("torch", columns=["input_ids", "attention_mask", "labels"])
 
         val_split = "validation" if "validation" in ds else "test"
-        val_pre = ds[val_split].select(
-            range(min(self.config.pre_kd_samples, len(ds[val_split])))
-        )
-        val_full = ds[val_split].select(
-            range(min(self.config.post_kd_samples, len(ds[val_split])))
-        )
+        val_pre = ds[val_split].select(range(min(self.config.pre_kd_samples, len(ds[val_split]))))
+        val_full = ds[val_split].select(range(min(self.config.post_kd_samples, len(ds[val_split]))))
 
         collator = DataCollatorWithPadding(tokenizer)
         train_loader = DataLoader(
@@ -348,9 +352,7 @@ class KDRunner:
         optimizer: Optional[AdamW] = None
 
         try:
-            student = AutoModelForSequenceClassification.from_pretrained(
-                self.config.teacher
-            )
+            student = AutoModelForSequenceClassification.from_pretrained(self.config.teacher)
             student, compression_ratio = apply_module_to_model(
                 student, module_name, rank=self.config.rank, device=self.device
             )
@@ -433,11 +435,13 @@ class KDRunner:
 
                 if step % self.config.eval_every == 0 or step == self.config.kd_steps:
                     acc = self.evaluate(student, val_pre_loader)
-                    eval_history.append({
-                        "step": step,
-                        "loss": final_loss_val,
-                        "acc": round(acc * 100, 2),
-                    })
+                    eval_history.append(
+                        {
+                            "step": step,
+                            "loss": final_loss_val,
+                            "acc": round(acc * 100, 2),
+                        }
+                    )
                     logger.info(
                         "  [%s] step %d/%d: loss=%.4f acc=%.2f%%",
                         module_name,
@@ -449,10 +453,7 @@ class KDRunner:
                     if acc > best_acc:
                         best_acc = acc
                         best_step = step
-                        best_state = {
-                            k: v.detach().cpu().clone()
-                            for k, v in student.state_dict().items()
-                        }
+                        best_state = {k: v.detach().cpu().clone() for k, v in student.state_dict().items()}
                     student.train()
 
             result["best_kd_acc"] = round(best_acc * 100, 2)
@@ -506,9 +507,7 @@ class KDRunner:
         train_loader, val_pre_loader, val_full_loader, dataset_name = self.load_data(tokenizer)
 
         logger.info("Loading teacher model: %s", self.config.teacher)
-        teacher = AutoModelForSequenceClassification.from_pretrained(
-            self.config.teacher
-        ).to(self.device).eval()
+        teacher = AutoModelForSequenceClassification.from_pretrained(self.config.teacher).to(self.device).eval()
         for p in teacher.parameters():
             p.requires_grad = False
 

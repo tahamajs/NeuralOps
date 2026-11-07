@@ -11,10 +11,10 @@ NeuralOps Backend Core Modules.
 
 from neuralops.core.backend.dispatch import (
     BackendDevice,
-    get_available_backend,
     available_backends,
-    get_backend,
     dispatch,
+    get_available_backend,
+    get_backend,
 )
 
 __all__ = [

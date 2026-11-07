@@ -12,12 +12,6 @@ Clusters tokens based on content similarity to enforce block-sparse sequence att
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import FactorizedLoRALinear
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -27,9 +21,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import FactorizedLoRALinear, _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +40,7 @@ class RoutingAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = False
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -66,9 +63,7 @@ class RoutingAttention(BaseAttention):
         comp_config = getattr(config, "compression_config", None) if config else None
 
         self.dim = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
-        self.num_heads = int(
-            _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        )
+        self.num_heads = int(_cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12)))
         self.num_kv_heads = int(
             _cfg_get(
                 config,
@@ -179,9 +174,7 @@ class RoutingAttention(BaseAttention):
             bias=True,
         )
 
-        dropout_p = _cfg_get(
-            config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
-        )
+        dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -371,11 +364,7 @@ class RoutingAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -388,15 +377,9 @@ class RoutingAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"RoutingAttention.copy_weights: missing {missing_after} from {cls_name}."
-            )
+            raise RuntimeError(f"RoutingAttention.copy_weights: missing {missing_after} from {cls_name}.")
 
         for proj_key, target in (
             ("q", self.q_proj),
@@ -487,6 +470,7 @@ class RoutingAttention(BaseAttention):
         if feat.is_cuda:
             try:
                 from neuralops.ops.triton.sparse_attn import fused_kmeans_centroid_assign_triton
+
                 for _ in range(n_iters):
                     centroids, cluster_ids, _ = fused_kmeans_centroid_assign_triton(feat_f, centroids)
                 return cluster_ids
@@ -527,18 +511,8 @@ class RoutingAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3).contiguous()
-        K = (
-            self.k_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-        )
-        V = (
-            self.v_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-        )
+        K = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
+        V = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -698,11 +672,7 @@ def inject_routing(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers

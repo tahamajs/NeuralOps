@@ -9,10 +9,7 @@
 Causal Linear Attention Hardware Operators.
 """
 
-from neuralops.ops.cuda.linear_attention.linear_attn_autograd import (
-    linear_attention,
-    linear_attention_pytorch_ref,
-)
+from neuralops.ops.cuda.linear_attention.linear_attn_autograd import linear_attention, linear_attention_pytorch_ref
 
 __all__ = [
     "linear_attention",

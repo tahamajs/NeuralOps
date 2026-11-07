@@ -1,6 +1,6 @@
 # LiLLaMA: Local Distillation via Cross‑Covariance
 
-**Registered as `lillama`**  
+**Registered as `lillama`**
 *Compresses linear layers by replacing their weights with a low‑rank approximation derived from the cross‑covariance between the layer’s input and output activations on calibration data, mimicking local distillation.*
 
 ---
@@ -173,4 +173,3 @@ The empirical evaluation of `lillama_compressor` across standard sequence length
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

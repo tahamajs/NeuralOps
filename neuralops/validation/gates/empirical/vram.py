@@ -103,10 +103,7 @@ class VRAMGate(Gate):
             if threshold_mb is not None:
                 if peak_mb > float(threshold_mb):
                     passed = False
-                    msg = (
-                        f"Peak VRAM {peak_mb:.2f} MB exceeded maximum threshold "
-                        f"{float(threshold_mb):.2f} MB"
-                    )
+                    msg = f"Peak VRAM {peak_mb:.2f} MB exceeded maximum threshold " f"{float(threshold_mb):.2f} MB"
 
             return GateResult(
                 gate_name=self.name,

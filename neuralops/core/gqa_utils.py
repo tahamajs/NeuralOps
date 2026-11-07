@@ -12,6 +12,7 @@ Backward-compatibility redirection module routing legacy GQA imports to neuralop
 """
 
 import warnings
+
 warnings.warn(
     "neuralops.core.gqa_utils is deprecated. Use neuralops.core.utils.gqa.",
     DeprecationWarning,

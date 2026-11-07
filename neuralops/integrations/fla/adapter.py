@@ -17,13 +17,14 @@ from __future__ import annotations
 import inspect
 import logging
 from typing import Any, Optional, Tuple
+
 import torch
 import torch.nn as nn
 
 from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.integrations.fla.cache_translator import (
-    _translate_hf_cache_to_fla_state,
     _translate_fla_state_to_hf_cache,
+    _translate_hf_cache_to_fla_state,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,9 +105,7 @@ class FLALayerAdapter(nn.Module):
         self.return_arity = 3 if fam in CAUSAL_FAMILIES else 2
 
         if fla_layer_cls is None:
-            raise IntegrationNotImplementedError(
-                "fla_layer_cls cannot be None when instantiating FLALayerAdapter."
-            )
+            raise IntegrationNotImplementedError("fla_layer_cls cannot be None when instantiating FLALayerAdapter.")
 
         # Deferred initialization of inner FLA layer
         hidden_size = getattr(config, "hidden_size", 768)

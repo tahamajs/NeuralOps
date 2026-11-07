@@ -13,11 +13,6 @@ Hybrid attention combining mixture-of-block attention with paged delta KV-cache 
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -26,8 +21,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -155,6 +151,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         super().__init__()
 
         if config is None:
+
             class _Cfg:
                 pass
 
@@ -478,11 +475,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                             if hasattr(layer, "weight"):
                                 extracted[proj] = (
                                     layer.weight.data.clone(),
-                                    (
-                                        layer.bias.data.clone()
-                                        if getattr(layer, "bias", None) is not None
-                                        else None
-                                    ),
+                                    (layer.bias.data.clone() if getattr(layer, "bias", None) is not None else None),
                                 )
                                 break
                         except Exception:
@@ -587,16 +580,12 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 out_rows = min(out_dim, w_o.shape[0])
                 in_cols = min(in_dim, w_o.shape[1])
                 self.out_proj.weight.data[:out_rows, :in_cols].copy_(
-                    w_o[:out_rows, :in_cols].to(
-                        self.out_proj.weight.device, self.out_proj.weight.dtype
-                    )
+                    w_o[:out_rows, :in_cols].to(self.out_proj.weight.device, self.out_proj.weight.dtype)
                 )
                 if b_o is not None and self.out_proj.bias is not None:
                     mb = min(self.out_proj.bias.numel(), b_o.numel())
                     self.out_proj.bias.data.zero_()
-                    self.out_proj.bias.data[:mb].copy_(
-                        b_o[:mb].to(self.out_proj.bias.device, self.out_proj.bias.dtype)
-                    )
+                    self.out_proj.bias.data[:mb].copy_(b_o[:mb].to(self.out_proj.bias.device, self.out_proj.bias.dtype))
             elif self.is_nested_encoder:
                 pass
 
@@ -658,9 +647,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         router_logits = router_logits.masked_fill(~page_valid.unsqueeze(2), float("-inf"))
 
         if self.is_causal:
-            causal_pages = torch.tril(
-                torch.ones(num_pages, num_pages, device=q.device, dtype=torch.bool)
-            )
+            causal_pages = torch.tril(torch.ones(num_pages, num_pages, device=q.device, dtype=torch.bool))
             router_logits = router_logits.masked_fill(~causal_pages, float("-inf"))
 
         router_logits = torch.nan_to_num(router_logits, nan=-1e4, posinf=1e4, neginf=-1e4)
@@ -677,9 +664,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         g_j = F.softmax(topk_logits, dim=-1)
 
         router_probs = F.softmax(router_logits, dim=-1)
-        expert_mask = F.one_hot(
-            topk_indices, num_classes=num_pages
-        ).float()
+        expert_mask = F.one_hot(topk_indices, num_classes=num_pages).float()
         density = expert_mask.sum(dim=-2).mean(dim=(0, 1, 2))
         prob_mean = router_probs.mean(dim=(0, 1, 2))
         with torch.no_grad():
@@ -688,17 +673,13 @@ class MoEDeltaKVPagedAttention(nn.Module):
         expanded_idx = topk_indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, page_size, d)
         k_blocks_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
         v_blocks_exp = v_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
-        k_gathered = torch.gather(
-            k_blocks_exp, dim=3, index=expanded_idx
-        )
+        k_gathered = torch.gather(k_blocks_exp, dim=3, index=expanded_idx)
         v_gathered = torch.gather(v_blocks_exp, dim=3, index=expanded_idx)
 
         valid_blocks_exp = valid_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1)
         exp_valid_idx = topk_indices.unsqueeze(-1).expand(-1, -1, -1, -1, page_size)
         valid_blocks_exp_h = valid_blocks_exp.expand(-1, H, -1, -1, -1)
-        k_valid = torch.gather(
-            valid_blocks_exp_h, dim=3, index=exp_valid_idx
-        )
+        k_valid = torch.gather(valid_blocks_exp_h, dim=3, index=exp_valid_idx)
 
         q_exp = q_blocks.unsqueeze(3)
         attn_scores = torch.matmul(q_exp, k_gathered.transpose(-1, -2).contiguous()) / math.sqrt(d)
@@ -713,6 +694,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         if context_per_expert.is_cuda and g_j.is_cuda:
             try:
                 from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
+
                 B_e, H_e, P_e, K_e, S_e, D_e = context_per_expert.shape
                 ctx_flat = context_per_expert.view(B_e * H_e * P_e, K_e, S_e * D_e)
                 g_flat = g_j.view(B_e * H_e * P_e, K_e)
@@ -744,7 +726,6 @@ class MoEDeltaKVPagedAttention(nn.Module):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
@@ -800,11 +781,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 valid_mask = (m > -1e4).squeeze(1) if m.dtype.is_floating_point else m.squeeze(1)
             elif attention_mask.dim() == 4:
                 m = attention_mask
-                v_bool = (
-                    m
-                    if m.dtype == torch.bool
-                    else (m > -1e4 if m.dtype.is_floating_point else m > 0)
-                )
+                v_bool = m if m.dtype == torch.bool else (m > -1e4 if m.dtype.is_floating_point else m > 0)
                 valid_mask = v_bool.any(dim=-2).squeeze(1)
             if valid_mask is not None and valid_mask.shape[-1] != kv_len:
                 valid_mask = None
@@ -1001,24 +978,15 @@ def inject_moe_deltakv_paged(
     if src_attn is None:
         return None
 
-    if (
-        isinstance(src_attn, MoEDeltaKVPagedAttention)
-        or "MoEDeltaKV" in src_attn.__class__.__name__
-    ):
+    if isinstance(src_attn, MoEDeltaKVPagedAttention) or "MoEDeltaKV" in src_attn.__class__.__name__:
         return None
 
     if cfg is None and hasattr(src_attn, "config"):
         cfg = src_attn.config
 
-    page_size = int(
-        kwargs.pop("page_size", getattr(comp_config, "page_size", 16) if comp_config else 16)
-    )
-    k_experts = int(
-        kwargs.pop("k_experts", getattr(comp_config, "k_experts", 4) if comp_config else 4)
-    )
-    svd_rank = int(
-        kwargs.pop("svd_rank", getattr(comp_config, "svd_rank", 32) if comp_config else 32)
-    )
+    page_size = int(kwargs.pop("page_size", getattr(comp_config, "page_size", 16) if comp_config else 16))
+    k_experts = int(kwargs.pop("k_experts", getattr(comp_config, "k_experts", 4) if comp_config else 4))
+    svd_rank = int(kwargs.pop("svd_rank", getattr(comp_config, "svd_rank", 32) if comp_config else 32))
     q_bits = int(kwargs.pop("q_bits", getattr(comp_config, "q_bits", 4) if comp_config else 4))
     max_delta_error = float(
         kwargs.pop(
@@ -1026,9 +994,7 @@ def inject_moe_deltakv_paged(
             getattr(comp_config, "max_delta_error", 0.35) if comp_config else 0.35,
         )
     )
-    lora_rank = int(
-        kwargs.pop("lora_rank", getattr(comp_config, "lora_rank", 16) if comp_config else 16)
-    )
+    lora_rank = int(kwargs.pop("lora_rank", getattr(comp_config, "lora_rank", 16) if comp_config else 16))
     enable_moe = bool(kwargs.pop("enable_moe", True))
     enable_deltakv = bool(kwargs.pop("enable_deltakv", True))
 

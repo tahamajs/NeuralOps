@@ -12,12 +12,6 @@ Injects static linear position biases into query-key attention scores for superi
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    LoRALinear,
-)
 
 import logging
 import math
@@ -29,9 +23,11 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _read_past_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -146,10 +142,20 @@ class ALiBiAttention(BaseAttention):
             mt = str(_cfg_get(config, "model_type", "")).lower()
             self.is_decoder = bool(
                 _cfg_get(config, "is_decoder", False)
-                or any(mt.startswith(p) for p in (
-                    "gpt", "llama", "qwen", "mistral", "gemma",
-                    "phi", "opt", "bloom", "falcon",
-                ))
+                or any(
+                    mt.startswith(p)
+                    for p in (
+                        "gpt",
+                        "llama",
+                        "qwen",
+                        "mistral",
+                        "gemma",
+                        "phi",
+                        "opt",
+                        "bloom",
+                        "falcon",
+                    )
+                )
             )
 
         self.is_nested_encoder: bool = False
@@ -161,23 +167,35 @@ class ALiBiAttention(BaseAttention):
         self.freeze_base = self.lora_rank > 0
 
         self.q_proj = LoRALinear(
-            self.hidden_size, self.all_head_size,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.hidden_size, self.kv_head_size,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.hidden_size, self.kv_head_size,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.hidden_size,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -188,11 +206,12 @@ class ALiBiAttention(BaseAttention):
         )
 
         dropout_p = _cfg_get(
-            config, "dropout",
+            config,
+            "dropout",
             _cfg_get(
-                config, "hidden_dropout_prob",
-                _cfg_get(config, "attention_probs_dropout_prob",
-                         kwargs.get("dropout", 0.1)),
+                config,
+                "hidden_dropout_prob",
+                _cfg_get(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1)),
             ),
         )
         self.dropout_p = float(dropout_p)
@@ -204,42 +223,55 @@ class ALiBiAttention(BaseAttention):
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
+
     @property
     def W_q(self):
         return self.q_proj
+
     @property
     def W_k(self):
         return self.k_proj
+
     @property
     def W_v(self):
         return self.v_proj
+
     @property
     def out(self):
         return self.out_proj
@@ -292,6 +324,7 @@ class ALiBiAttention(BaseAttention):
 
         try:
             from neuralops.ops.triton.elementwise import fused_alibi_bias_triton
+
             bias = fused_alibi_bias_triton(
                 self.alibi_slopes.to(device),
                 N_q=N_q,
@@ -316,10 +349,14 @@ class ALiBiAttention(BaseAttention):
         self._alibi_cache[cache_key] = bias
 
         return bias
+
     def copy_weights(self, src: Any) -> None:
         """Copy Q/K/V/O weights from any supported source attention."""
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         try:
@@ -339,7 +376,8 @@ class ALiBiAttention(BaseAttention):
                 is_conv1d = (
                     "Conv1D" in c.__class__.__name__
                     or "Conv1D" in base_c.__class__.__name__
-                    or hasattr(c, "nf") or hasattr(base_c, "nf")
+                    or hasattr(c, "nf")
+                    or hasattr(base_c, "nf")
                     or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
                 )
                 if is_conv1d:
@@ -348,8 +386,8 @@ class ALiBiAttention(BaseAttention):
                 bias = getattr(base_c, "bias", getattr(c, "bias", None))
                 bd = bias.data.clone() if bias is not None else None
                 extracted["q"] = (weight[:split, :], bd[:split] if bd is not None else None)
-                extracted["k"] = (weight[split:2*split, :], bd[split:2*split] if bd is not None else None)
-                extracted["v"] = (weight[2*split:, :], bd[2*split:] if bd is not None else None)
+                extracted["k"] = (weight[split : 2 * split, :], bd[split : 2 * split] if bd is not None else None)
+                extracted["v"] = (weight[2 * split :, :], bd[2 * split :] if bd is not None else None)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             p = src.c_proj
@@ -405,9 +443,17 @@ class ALiBiAttention(BaseAttention):
                             break
 
         cls_name = getattr(src, "__class__", type(src)).__name__
-        has_out = any(hasattr(src, a) for a in (
-            "dense", "out_proj", "out_lin", "c_proj", "o_proj", "o",
-        ))
+        has_out = any(
+            hasattr(src, a)
+            for a in (
+                "dense",
+                "out_proj",
+                "out_lin",
+                "c_proj",
+                "o_proj",
+                "o",
+            )
+        )
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out)
@@ -429,8 +475,7 @@ class ALiBiAttention(BaseAttention):
             src_out = w.shape[0]
             if src_out == target_out:
                 return w
-            if (src_out > target_out and src_out % head_dim == 0
-                and target_out % head_dim == 0):
+            if src_out > target_out and src_out % head_dim == 0 and target_out % head_dim == 0:
                 src_heads = src_out // head_dim
                 tgt_heads = target_out // head_dim
                 if src_heads > tgt_heads and src_heads % tgt_heads == 0:
@@ -447,8 +492,7 @@ class ALiBiAttention(BaseAttention):
             return out
 
         with torch.no_grad():
-            for key, target in (("q", self.q_proj), ("k", self.k_proj),
-                                ("v", self.v_proj), ("o", self.out_proj)):
+            for key, target in (("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)):
                 w, b = extracted[key]
                 if w is None:
                     if key == "o" and self.is_nested_encoder:
@@ -471,8 +515,8 @@ class ALiBiAttention(BaseAttention):
                 od, id_ = target.weight.shape
                 so, si = w.shape
                 target.weight.data.zero_()
-                target.weight.data[:min(od, so), :min(id_, si)].copy_(
-                    w[:min(od, so), :min(id_, si)].to(target.weight.device, target.weight.dtype)
+                target.weight.data[: min(od, so), : min(id_, si)].copy_(
+                    w[: min(od, so), : min(id_, si)].to(target.weight.device, target.weight.dtype)
                 )
 
                 if b is not None and target.bias is not None:
@@ -562,6 +606,7 @@ class ALiBiAttention(BaseAttention):
         if use_sdpa and Q.is_cuda and not self.training and N_q == N_k and past_len == 0:
             try:
                 from neuralops.ops.cuda.alibi_attention import alibi_attention
+
                 slopes_tensor = getattr(self, "alibi_slopes", getattr(self, "slopes", None))
                 if slopes_tensor is not None:
                     slopes_tensor = slopes_tensor.to(device=device, dtype=torch.float32)
@@ -591,7 +636,6 @@ class ALiBiAttention(BaseAttention):
             alibi_bias = alibi_bias.masked_fill(~causal_bool.unsqueeze(0).unsqueeze(0), -1e4)
 
         if use_sdpa:
-
             try:
                 _q = Q.to(dtype)
                 _k = K_full.to(dtype)
@@ -600,7 +644,9 @@ class ALiBiAttention(BaseAttention):
                 _bias = alibi_bias.to(_q.dtype)
 
                 out = F.scaled_dot_product_attention(
-                    _q, _k, _v,
+                    _q,
+                    _k,
+                    _v,
                     attn_mask=_bias,
                     is_causal=False,
                     dropout_p=self.dropout_p if self.training else 0.0,
@@ -690,8 +736,7 @@ def inject_alibi(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (hasattr(target, "bert") and hasattr(target.bert, "encoder")
-          and hasattr(target.bert.encoder, "layer")):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -701,8 +746,12 @@ def inject_alibi(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_alibi(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
             )
             if res is not None:
                 n_inj += 1
@@ -739,11 +788,7 @@ def inject_alibi(
         or getattr(src_attn, "num_heads", None)
         or 12
     )
-    num_kv_heads = (
-        _cfg_get(cfg, "num_key_value_heads")
-        or _cfg_get(cfg, "num_kv_heads")
-        or num_heads
-    )
+    num_kv_heads = _cfg_get(cfg, "num_key_value_heads") or _cfg_get(cfg, "num_kv_heads") or num_heads
 
     lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 32.0))

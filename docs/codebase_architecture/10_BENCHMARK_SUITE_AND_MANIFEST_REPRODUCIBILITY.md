@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 10
 # Benchmark Suite, Master Ledger & Manifest Reproducibility
 
-**Assigned Subagent**: `Agent 10: Benchmark Auditor & Manifest Reproducibility Specialist`  
+**Assigned Subagent**: `Agent 10: Benchmark Auditor & Manifest Reproducibility Specialist`
 **Target Codebase Paths**:
 - `neuralops/benchmarks/`
 - `neuralops/results_saver/`

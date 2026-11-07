@@ -160,7 +160,7 @@ Specifically, regarding \textbf{Total MACs}, $4 B N D r_{\text{qkv}} + 2 B N D r
 
 
 ### Memory Footprint & Parameter Reduction
-Specifically, regarding \textbf{Uncompressed MHA Parameter Count}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{Compressed Parameter Count}, 
+Specifically, regarding \textbf{Uncompressed MHA Parameter Count}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{Compressed Parameter Count},
 
   \[
   \text{Params}_{\text{comp}} = (3D + D) \cdot r_{\text{qkv}} + 2D \cdot r_{\text{out}} + 4D \text{ floats}
@@ -235,4 +235,3 @@ The empirical evaluation of `compressed_mha_attention` across standard sequence 
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

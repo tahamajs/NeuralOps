@@ -16,6 +16,7 @@ and boundary state carry-forward without deprecated tl.make_block_ptr constructs
 from __future__ import annotations
 
 import logging
+
 import torch
 import torch.nn.functional as F
 
@@ -89,9 +90,7 @@ def _svd_linear_decay_fwd_kernel(
         phi_k = tl.where(k_val > 0.0, k_val + 1.0, tl.exp(k_val))
 
         if CHANNEL_WISE:
-            lam_ptrs = (
-                lam_ptr + pid_b * stride_lb + pid_h * stride_lh + n * stride_ln + offs_k * stride_ld
-            )
+            lam_ptrs = lam_ptr + pid_b * stride_lb + pid_h * stride_lh + n * stride_ln + offs_k * stride_ld
             lam_val = tl.load(lam_ptrs).to(tl.float32)
             lam_2d = lam_val[:, None]
             lam_1d = lam_val
@@ -116,9 +115,7 @@ def _svd_linear_decay_fwd_kernel(
 
         out_token = num / den
 
-        out_ptrs = (
-            out_ptr + pid_b * stride_ob + pid_h * stride_oh + n * stride_on + offs_v * stride_od
-        )
+        out_ptrs = out_ptr + pid_b * stride_ob + pid_h * stride_oh + n * stride_on + offs_v * stride_od
         tl.store(out_ptrs, out_token)
 
 
@@ -135,9 +132,7 @@ def svd_linear_decay_triton(
     Divided into chunkwise or sequence scan in SRAM / register files.
     """
     if not HAS_TRITON or not q.is_cuda:
-        from neuralops.ops.cuda.svd_linear_decay.svd_linear_decay_autograd import (
-            svd_linear_decay_pytorch_ref,
-        )
+        from neuralops.ops.cuda.svd_linear_decay.svd_linear_decay_autograd import svd_linear_decay_pytorch_ref
 
         return svd_linear_decay_pytorch_ref(q, k, v, lambda_decay, chunk_size=chunk_size, eps=eps)
 
@@ -146,9 +141,7 @@ def svd_linear_decay_triton(
 
     # Ensure power of two sizing for Triton tiles
     if D_k not in (16, 32, 64, 128) or D_v not in (16, 32, 64, 128):
-        from neuralops.ops.cuda.svd_linear_decay.svd_linear_decay_autograd import (
-            svd_linear_decay_pytorch_ref,
-        )
+        from neuralops.ops.cuda.svd_linear_decay.svd_linear_decay_autograd import svd_linear_decay_pytorch_ref
 
         return svd_linear_decay_pytorch_ref(q, k, v, lambda_decay, chunk_size=chunk_size, eps=eps)
 

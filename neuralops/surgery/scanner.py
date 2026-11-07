@@ -17,6 +17,7 @@ import logging
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 
@@ -348,9 +349,7 @@ class UniversalArchitectureScanner:
         return cls.scan(model)
 
     @classmethod
-    def _inspect_module(
-        cls, root_model: nn.Module, path: str, module: nn.Module
-    ) -> Optional[AttentionTargetSpec]:
+    def _inspect_module(cls, root_model: nn.Module, path: str, module: nn.Module) -> Optional[AttentionTargetSpec]:
         """Inspect a single module and match against universal patterns."""
         cls_name = module.__class__.__name__.lower()
 
@@ -499,8 +498,7 @@ class UniversalArchitectureScanner:
             num_heads = getattr(module, "num_heads", getattr(module, "n_head", 12))
             if num_heads <= 0 or split_dim % num_heads:
                 raise ValueError(
-                    f"Invalid fused QKV dimensions at {path!r}: "
-                    f"qkv_width={total_qkv_out}, num_heads={num_heads}"
+                    f"Invalid fused QKV dimensions at {path!r}: " f"qkv_width={total_qkv_out}, num_heads={num_heads}"
                 )
             head_dim = split_dim // num_heads
 
@@ -541,15 +539,12 @@ class UniversalArchitectureScanner:
             if num_heads <= 0:
                 raise ValueError(f"Invalid attention head count at {path!r}: {num_heads}")
 
-            explicit_kv_heads = getattr(
-                module, "num_key_value_heads", getattr(module, "num_kv_heads", None)
-            )
+            explicit_kv_heads = getattr(module, "num_key_value_heads", getattr(module, "num_kv_heads", None))
             head_dim = getattr(module, "head_dim", embed_dim // num_heads)
             expected_mha_out = 3 * num_heads * head_dim
 
-            is_symmetric_mha = (
-                (explicit_kv_heads is None or explicit_kv_heads == num_heads)
-                and (total_out == expected_mha_out or (explicit_kv_heads == num_heads and total_out % 3 == 0))
+            is_symmetric_mha = (explicit_kv_heads is None or explicit_kv_heads == num_heads) and (
+                total_out == expected_mha_out or (explicit_kv_heads == num_heads and total_out % 3 == 0)
             )
 
             if is_symmetric_mha:
@@ -575,9 +570,7 @@ class UniversalArchitectureScanner:
                     )
                 kv_dim = rem_kv // 2
                 if kv_dim % head_dim:
-                    raise ValueError(
-                        f"Fused KV width at {path!r} is not divisible by head_dim={head_dim}"
-                    )
+                    raise ValueError(f"Fused KV width at {path!r} is not divisible by head_dim={head_dim}")
                 num_kv_heads = kv_dim // head_dim
                 W_q = W_qkv[0:q_dim, :]
                 W_k = W_qkv[q_dim : q_dim + kv_dim, :]
@@ -619,12 +612,22 @@ class UniversalArchitectureScanner:
 
         q_mod, k_mod, v_mod, o_mod = None, None, None, None
 
-        if hasattr(module, "q_proj") and hasattr(module, "k_proj") and hasattr(module, "v_proj") and hasattr(module, "o_proj"):
+        if (
+            hasattr(module, "q_proj")
+            and hasattr(module, "k_proj")
+            and hasattr(module, "v_proj")
+            and hasattr(module, "o_proj")
+        ):
             q_mod = module.q_proj
             k_mod = module.k_proj
             v_mod = module.v_proj
             o_mod = module.o_proj
-        elif hasattr(module, "q_lin") and hasattr(module, "k_lin") and hasattr(module, "v_lin") and hasattr(module, "out_lin"):
+        elif (
+            hasattr(module, "q_lin")
+            and hasattr(module, "k_lin")
+            and hasattr(module, "v_lin")
+            and hasattr(module, "out_lin")
+        ):
             q_mod = module.q_lin
             k_mod = module.k_lin
             v_mod = module.v_lin
@@ -634,7 +637,12 @@ class UniversalArchitectureScanner:
             k_mod = module.k
             v_mod = module.v
             o_mod = module.o
-        elif hasattr(module, "query") and hasattr(module, "key") and hasattr(module, "value") and hasattr(module, "out_proj"):
+        elif (
+            hasattr(module, "query")
+            and hasattr(module, "key")
+            and hasattr(module, "value")
+            and hasattr(module, "out_proj")
+        ):
             q_mod = module.query
             k_mod = module.key
             v_mod = module.value
@@ -667,9 +675,7 @@ class UniversalArchitectureScanner:
             if candidate_heads is not None and candidate_heads > 0 and q_width % candidate_heads == 0:
                 num_heads = candidate_heads
             elif (
-                getattr(module, "head_dim", None) is not None
-                and module.head_dim > 0
-                and q_width % module.head_dim == 0
+                getattr(module, "head_dim", None) is not None and module.head_dim > 0 and q_width % module.head_dim == 0
             ):
                 head_dim = module.head_dim
                 num_heads = q_width // head_dim
@@ -696,7 +702,9 @@ class UniversalArchitectureScanner:
                     f"Incompatible projection dimensions at {path!r}: "
                     f"q_width={W_q.shape[0]}, k_width={W_k.shape[0]}, head_dim={head_dim}"
                 )
-            num_kv_heads = getattr(module, "num_key_value_heads", getattr(module, "num_kv_heads", W_k.shape[0] // head_dim))
+            num_kv_heads = getattr(
+                module, "num_key_value_heads", getattr(module, "num_kv_heads", W_k.shape[0] // head_dim)
+            )
             raw_causal = getattr(module, "is_causal", None)
             if raw_causal is not None:
                 is_causal = bool(raw_causal)

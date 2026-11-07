@@ -25,6 +25,7 @@ __all__ = [
 
 try:
     from vllm.attention.backends.abstract import AttentionBackend, AttentionImpl, AttentionMetadata
+
     HAS_VLLM_BACKEND = True
 except (ImportError, AttributeError):
     HAS_VLLM_BACKEND = False

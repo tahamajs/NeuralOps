@@ -18,11 +18,7 @@ from typing import Any
 
 import torch
 
-from neuralops.ops.triton._types import (
-    HAS_TRITON,
-    check_triton_suitability,
-    gqa_pytorch_fallback,
-)
+from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability, gqa_pytorch_fallback
 
 if HAS_TRITON:
     import triton
@@ -56,28 +52,14 @@ if HAS_TRITON:
         offs_d = tl.arange(0, BLOCK_D)
         mask_d = offs_d < D
 
-        in_ptrs = (
-            In_ptr
-            + b_id * stride_in_b
-            + h_in_id * stride_in_h
-            + n_id * stride_in_n
-            + offs_d * stride_in_d
-        )
+        in_ptrs = In_ptr + b_id * stride_in_b + h_in_id * stride_in_h + n_id * stride_in_n + offs_d * stride_in_d
         vals = tl.load(in_ptrs, mask=mask_d, other=0.0)
 
-        out_ptrs = (
-            Out_ptr
-            + b_id * stride_out_b
-            + h_out_id * stride_out_h
-            + n_id * stride_out_n
-            + offs_d * stride_out_d
-        )
+        out_ptrs = Out_ptr + b_id * stride_out_b + h_out_id * stride_out_h + n_id * stride_out_n + offs_d * stride_out_d
         tl.store(out_ptrs, vals, mask=mask_d)
 
 
-def is_supported(
-    k: torch.Tensor, v: torch.Tensor, num_kv_heads: int, num_heads: int, **kwargs: Any
-) -> bool:
+def is_supported(k: torch.Tensor, v: torch.Tensor, num_kv_heads: int, num_heads: int, **kwargs: Any) -> bool:
     """Check whether GQA expansion can run on the Triton kernel."""
     suitable, _ = check_triton_suitability(k, "gqa")
     if not suitable or not v.is_cuda:
@@ -216,11 +198,16 @@ if HAS_TRITON and tl is not None:
 
     @triton.jit
     def _fused_mqa_bias_scale_kernel(
-        Scores_ptr, Out_ptr,
+        Scores_ptr,
+        Out_ptr,
         scale,
         past_len,
-        N_q, N_k,
-        stride_b, stride_h, stride_q, stride_k,
+        N_q,
+        N_k,
+        stride_b,
+        stride_h,
+        stride_q,
+        stride_k,
         IS_CAUSAL: tl.constexpr,
         BLOCK_K: tl.constexpr,
     ):
@@ -249,7 +236,7 @@ def fused_mqa_bias_scale_triton(
     past_len: int = 0,
 ) -> torch.Tensor:
     """Fused MQA score scaling and causal masking kernel in GPU SRAM."""
-    from neuralops.ops.triton._types import check_triton_suitability, HAS_TRITON
+    from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability
 
     if not (HAS_TRITON and scores.is_cuda and scores.is_contiguous()):
         return fused_mqa_bias_scale_pytorch(scores, scale, is_causal=is_causal, past_len=past_len)
@@ -260,11 +247,16 @@ def fused_mqa_bias_scale_triton(
         BLOCK_K = 256 if N_k >= 256 else triton.next_power_of_2(N_k)
         grid = (B * H, N_q, triton.cdiv(N_k, BLOCK_K))
         _fused_mqa_bias_scale_kernel[grid](
-            scores, out,
+            scores,
+            out,
             float(scale),
             int(past_len),
-            N_q, N_k,
-            scores.stride(0) * H, scores.stride(1), scores.stride(2), scores.stride(3),
+            N_q,
+            N_k,
+            scores.stride(0) * H,
+            scores.stride(1),
+            scores.stride(2),
+            scores.stride(3),
             IS_CAUSAL=bool(is_causal),
             BLOCK_K=BLOCK_K,
             num_warps=4,
@@ -308,6 +300,7 @@ def fused_asymmetric_cross_attention_triton(
 
 
 if HAS_TRITON:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 32}, num_stages=2, num_warps=2),
@@ -321,13 +314,35 @@ if HAS_TRITON:
     )
     @triton.jit
     def _triton_gqa_online_softmax_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, HeadWeights_ptr, Out_ptr,
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        HeadWeights_ptr,
+        Out_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
         stride_hw,
-        stride_ob, stride_oh, stride_on, stride_od,
-        B, H_Q, H_KV, N_Q, N_K, D, sm_scale,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
+        B,
+        H_Q,
+        H_KV,
+        N_Q,
+        N_K,
+        D,
+        sm_scale,
         HAS_HEAD_WEIGHTS: tl.constexpr,
         IS_CAUSAL: tl.constexpr,
         BLOCK_M: tl.constexpr,
@@ -368,7 +383,9 @@ if HAS_TRITON:
             offs_n = j * BLOCK_N + tl.arange(0, BLOCK_N)
             mask_n = offs_n < N_K
 
-            k_ptrs = K_ptr + b_id * stride_kb + h_kv * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
+            k_ptrs = (
+                K_ptr + b_id * stride_kb + h_kv * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
+            )
             k = tl.load(k_ptrs, mask=(mask_n[:, None] & mask_d[None, :]), other=0.0).to(tl.float32)
 
             qk = tl.dot(q, tl.trans(k), allow_tf32=True) * sm_scale
@@ -381,7 +398,9 @@ if HAS_TRITON:
             alpha = tl.math.exp2(1.44269504 * (m_i - m_curr))
             p = tl.math.exp2(1.44269504 * (qk - m_curr[:, None]))
 
-            v_ptrs = V_ptr + b_id * stride_vb + h_kv * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            v_ptrs = (
+                V_ptr + b_id * stride_vb + h_kv * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            )
             v = tl.load(v_ptrs, mask=(mask_n[:, None] & mask_d[None, :]), other=0.0).to(tl.float32)
 
             acc = acc * alpha[:, None] + tl.dot(p.to(v.dtype), v, allow_tf32=True)
@@ -389,7 +408,9 @@ if HAS_TRITON:
             m_i = m_curr
 
         out = (acc / (l_i[:, None] + 1e-6)) * hw_val
-        out_ptrs = Out_ptr + b_id * stride_ob + h_q * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+        out_ptrs = (
+            Out_ptr + b_id * stride_ob + h_q * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+        )
         tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=(mask_m[:, None] & mask_d[None, :]))
 
 
@@ -409,6 +430,7 @@ def fused_weighted_gqa_online_softmax_pytorch(
 
     if rep > 1:
         from neuralops.core.utils.gqa import repeat_kv
+
         k_full = repeat_kv(k, rep)
         v_full = repeat_kv(v, rep)
     else:
@@ -461,15 +483,35 @@ def fused_weighted_gqa_online_softmax_triton(
         grid = lambda META: (triton.cdiv(N_Q, META["BLOCK_M"]), B * H_Q)
 
         _triton_gqa_online_softmax_fwd_kernel[grid](
-            q.contiguous(), k.contiguous(), v.contiguous(),
+            q.contiguous(),
+            k.contiguous(),
+            v.contiguous(),
             head_weights.contiguous() if head_weights is not None else q,
             out,
-            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+            q.stride(0),
+            q.stride(1),
+            q.stride(2),
+            q.stride(3),
+            k.stride(0),
+            k.stride(1),
+            k.stride(2),
+            k.stride(3),
+            v.stride(0),
+            v.stride(1),
+            v.stride(2),
+            v.stride(3),
             head_weights.stride(0) if head_weights is not None else 0,
-            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-            B, H_Q, H_KV, N_Q, N_K, D, sm_scale,
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            out.stride(3),
+            B,
+            H_Q,
+            H_KV,
+            N_Q,
+            N_K,
+            D,
+            sm_scale,
             HAS_HEAD_WEIGHTS=(head_weights is not None),
             IS_CAUSAL=is_causal,
             BLOCK_D=BLOCK_D,
@@ -482,14 +524,14 @@ def fused_weighted_gqa_online_softmax_triton(
 cross_attention_triton = fused_asymmetric_cross_attention_triton
 
 __all__ = [
-    'is_supported',
-    'fwd',
-    'bwd',
-    'fused_mqa_bias_scale_triton',
-    'fused_mqa_bias_scale_pytorch',
-    'fused_asymmetric_cross_attention_triton',
-    'fused_asymmetric_cross_attention_pytorch',
-    'cross_attention_triton',
-    'fused_weighted_gqa_online_softmax_triton',
-    'fused_weighted_gqa_online_softmax_pytorch',
+    "is_supported",
+    "fwd",
+    "bwd",
+    "fused_mqa_bias_scale_triton",
+    "fused_mqa_bias_scale_pytorch",
+    "fused_asymmetric_cross_attention_triton",
+    "fused_asymmetric_cross_attention_pytorch",
+    "cross_attention_triton",
+    "fused_weighted_gqa_online_softmax_triton",
+    "fused_weighted_gqa_online_softmax_pytorch",
 ]

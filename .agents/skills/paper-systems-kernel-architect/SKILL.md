@@ -8,7 +8,7 @@ tags: ["neuralops", "paper", "systems", "cuda", "triton", "kernels", "fallback"]
 # Skill: Paper Systems & GPU Kernel Architect for NeuralOps
 
 ## When to Use This Skill
-Use this skill when authoring, reviewing, or revising the systems architecture, GPU kernel engineering, and hardware evaluation sections of machine learning systems papers (targeted at MLSys, NeurIPS Datasets & Benchmarks, ICLR, or arXiv submissions). 
+Use this skill when authoring, reviewing, or revising the systems architecture, GPU kernel engineering, and hardware evaluation sections of machine learning systems papers (targeted at MLSys, NeurIPS Datasets & Benchmarks, ICLR, or arXiv submissions).
 
 Specifically, apply this skill when drafting:
 - **Section 4: System Architecture & 3-Level Fallback Engine**
@@ -92,7 +92,7 @@ Scalar memory transactions underutilize the GDDR6/GDDR6X memory controller. By c
   // Vectorized 128-bit coalesced transaction
   const float4* in_vec = reinterpret_cast<const float4*>(input_ptr + offset);
   float4 data = *in_vec;
-  
+
   // Independent compute on vector components
   float acc = data.x + data.y + data.z + data.w;
   ```
@@ -143,7 +143,7 @@ In NeuralOps, `tl.make_block_ptr` and `tl.advance` are strictly banned in mainli
   offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
   offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
   mask = (offs_m[:, None] < seq_len) & (offs_n[None, :] < head_dim)
-  
+
   ptr = base_ptr + offs_m[:, None] * stride_m + offs_n[None, :] * stride_n
   tile = tl.load(ptr, mask=mask, other=0.0)
   ```
@@ -248,12 +248,12 @@ To reconcile extreme hardware specialization with universal software portability
 Every accelerated operator in \textsc{NeuralOps} implements a polymorphic execution interface structured into three discrete tiers:
 
 \begin{enumerate}[leftmargin=*]
-    \item \textbf{Level 1: Native CUDA C++ / HIP Extension.} 
+    \item \textbf{Level 1: Native CUDA C++ / HIP Extension.}
     The primary execution path targets peak hardware capability through ahead-of-time (AOT) compiled native kernels. Level~1 kernels directly program hardware warp primitives (\texttt{\_\_shfl\_xor\_sync}, \texttt{\_\_shfl\_down\_sync}), vectorize global memory transactions via 128-bit \texttt{float4} loads, and eliminate shared memory bank conflicts through dimension padding. Register allocations are budgeted strictly ($\le 48$ registers per thread) to sustain $>75\%$ theoretical streaming multiprocessor (SM) occupancy.
-    
+
     \item \textbf{Level 2: Autotuned Triton JIT Kernels.}
     When native toolchains are absent or architecture binaries mismatch, execution transitions seamlessly to just-in-time (JIT) compiled Triton kernels. Level~2 operators utilize explicit 2D block-tiling and software pipelining across 2 to 4 pipeline stages. In accordance with repository invariants, mainline Triton kernels strictly avoid experimental block-pointer primitives, guaranteeing stable intermediate LLVM generation across diverse compiler versions. Intermediate dot-product reductions are accumulated strictly in single-precision (\texttt{FP32}) registers to prevent underflow.
-    
+
     \item \textbf{Level 3: Vectorized PyTorch Reference Engine.}
     The baseline tier serves as an invariant mathematical oracle implemented in standard vectorized PyTorch. Executing with full IEEE 754 precision, Level~3 guarantees deterministic execution across host CPUs, Apple Silicon (MPS), and continuous integration runners, ensuring the system never encounters an unhandled runtime crash.
 \end{enumerate}
@@ -291,7 +291,7 @@ Every accelerated operator in \textsc{NeuralOps} implements a polymorphic execut
 \subsection{The Zero Silent Fallback Law}
 \label{subsec:zero_silent_fallback}
 
-A catastrophic pitfall in accelerated system design is the unlogged degradation of specialized kernels into generic reference implementations. Because Level~1 native kernels achieve speedups of up to $1340.6\times$ (as observed in our expert routing kernels), silent degradation to Level~3 produces severe latency regressions that appear indistinguishable from algorithmic deficiency. 
+A catastrophic pitfall in accelerated system design is the unlogged degradation of specialized kernels into generic reference implementations. Because Level~1 native kernels achieve speedups of up to $1340.6\times$ (as observed in our expert routing kernels), silent degradation to Level~3 produces severe latency regressions that appear indistinguishable from algorithmic deficiency.
 
 \textsc{NeuralOps} enforces the \emph{Zero Silent Fallback Law}: any fallback transition between adjacent tiers must synchronously invoke \texttt{logger.warning} recording the operator identifier, input tensor geometries, and the underlying system exception. Simultaneously, telemetry monitors increment atomic failure counters (\texttt{cuda\_failures}, \texttt{triton\_failures}) recorded in the immutable execution ledger. For development and regression auditing, the runtime provides deterministic execution overrides via environment controls: \texttt{NEURALOPS\_STRICT\_CUDA=1} triggers immediate assertion failures upon Level~1 rejection, while \texttt{FORCE\_PYTORCH\_FALLBACK=1} locks execution to Level~3 to calibrate baseline reference throughput.
 

@@ -12,7 +12,6 @@ Solves constrained optimization for joint structured pruning and low-bit quantiz
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.pruning_utils import apply_24_structured_mask, apply_block_mask
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -58,9 +58,7 @@ class ADMMCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="admm", **kwargs)
-        cfg = comp_config or kwargs.get(
-            "comp_config", kwargs.get("cfg", getattr(model, "config", None))
-        )
+        cfg = comp_config or kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
 
         self.sparsity = max(
             0.0,
@@ -69,21 +67,13 @@ class ADMMCompressor(BaseCompressor):
                 0.95,
             ),
         )
-        self.quant_bits = int(
-            _cfg_get(cfg, "admm_quant_bits", _cfg_get(cfg, "quant_bits", quant_bits))
-        )
+        self.quant_bits = int(_cfg_get(cfg, "admm_quant_bits", _cfg_get(cfg, "quant_bits", quant_bits)))
         self.rho1 = float(_cfg_get(cfg, "admm_rho1", _cfg_get(cfg, "rho1", rho1)))
         self.rho2 = float(_cfg_get(cfg, "admm_rho2", _cfg_get(cfg, "rho2", rho2)))
-        self.max_iter = max(
-            1, int(_cfg_get(cfg, "admm_max_iter", _cfg_get(cfg, "max_iter", max_iter)))
-        )
-        self.structured_24 = bool(
-            _cfg_get(cfg, "admm_structured_24", _cfg_get(cfg, "structured_24", structured_24))
-        )
+        self.max_iter = max(1, int(_cfg_get(cfg, "admm_max_iter", _cfg_get(cfg, "max_iter", max_iter))))
+        self.structured_24 = bool(_cfg_get(cfg, "admm_structured_24", _cfg_get(cfg, "structured_24", structured_24)))
         self.block_size = block_size
-        self.max_error = float(
-            _cfg_get(cfg, "admm_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        self.max_error = float(_cfg_get(cfg, "admm_max_error", _cfg_get(cfg, "max_error", max_error)))
         self.fallback_to_original = bool(
             _cfg_get(
                 cfg,
@@ -115,10 +105,7 @@ class ADMMCompressor(BaseCompressor):
         self.layer_compression_ratios: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(
-            name.endswith(sfx)
-            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
-        ):
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
             return False
 
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -131,10 +118,7 @@ class ADMMCompressor(BaseCompressor):
         is_linear_like = (
             isinstance(module, nn.Linear)
             or isinstance(target_mod, nn.Linear)
-            or (
-                Conv1D is not None
-                and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
-            )
+            or (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
             or hasattr(module, "nf")
             or hasattr(target_mod, "nf")
             or "loralinear" in cls_name
@@ -231,9 +215,7 @@ class ADMMCompressor(BaseCompressor):
                 pruned, _ = apply_24_structured_mask(tensor, saliency=tensor.abs(), dim=1)
                 return pruned
             elif self.block_size != (1, 1):
-                pruned, _ = apply_block_mask(
-                    tensor, block_size=self.block_size, sparsity=self.sparsity
-                )
+                pruned, _ = apply_block_mask(tensor, block_size=self.block_size, sparsity=self.sparsity)
                 return pruned
             else:
                 flat = tensor.abs().reshape(-1)
@@ -254,11 +236,7 @@ class ADMMCompressor(BaseCompressor):
         self.layer_pruned_counts = {}
         self.layer_compression_ratios = {}
 
-        targets = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        targets = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not targets:
             logger.warning("ADMM: No compressible layers found.")
@@ -309,11 +287,7 @@ class ADMMCompressor(BaseCompressor):
                         U1 = U1 + (W - Z)
                         U2 = U2 + (W - Q)
 
-                        if (
-                            not torch.isfinite(W).all()
-                            or not torch.isfinite(Z).all()
-                            or not torch.isfinite(Q).all()
-                        ):
+                        if not torch.isfinite(W).all() or not torch.isfinite(Z).all() or not torch.isfinite(Q).all():
                             logger.warning(
                                 "ADMM: non-finite state at iter %d on %s",
                                 it,
@@ -394,7 +368,7 @@ class ADMMCompressor(BaseCompressor):
             with torch.no_grad():
                 target_mod.weight.data.copy_(res_w)
 
-            binary_mask = (res_w != 0.0)
+            binary_mask = res_w != 0.0
             active_count = int(binary_mask.sum().item())
             total_count = int(res_w.numel())
             pruned_count = total_count - active_count
@@ -411,9 +385,7 @@ class ADMMCompressor(BaseCompressor):
             target_mod.register_buffer("pruning_mask", binary_mask)
             target_mod.register_buffer("mask", binary_mask.to(dtype=target_mod.weight.dtype))
 
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
-                module, "base_layer"
-            )
+            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
             if has_lora:
                 if hasattr(target_mod, "weight") and target_mod.weight is not None:
                     target_mod.weight.requires_grad = False
@@ -440,8 +412,7 @@ class ADMMCompressor(BaseCompressor):
             stats = {}
 
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -522,24 +493,14 @@ class ADMMCompressor(BaseCompressor):
 def admm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for ADMM compressor."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    cfg = (
-        comp_config
-        if comp_config is not None
-        else kwargs.get("comp_config", getattr(model, "config", None))
-    )
-    sparsity = kwargs.pop(
-        "sparsity", _cfg_get(cfg, "admm_sparsity", _cfg_get(cfg, "sparsity", 0.5))
-    )
-    quant_bits = kwargs.pop(
-        "quant_bits", _cfg_get(cfg, "admm_quant_bits", _cfg_get(cfg, "quant_bits", 4))
-    )
+    cfg = comp_config if comp_config is not None else kwargs.get("comp_config", getattr(model, "config", None))
+    sparsity = kwargs.pop("sparsity", _cfg_get(cfg, "admm_sparsity", _cfg_get(cfg, "sparsity", 0.5)))
+    quant_bits = kwargs.pop("quant_bits", _cfg_get(cfg, "admm_quant_bits", _cfg_get(cfg, "quant_bits", 4)))
     structured_24 = kwargs.pop(
         "structured_24",
         _cfg_get(cfg, "admm_structured_24", _cfg_get(cfg, "structured_24", True)),
     )
-    max_error = kwargs.pop(
-        "max_error", _cfg_get(cfg, "admm_max_error", _cfg_get(cfg, "max_error", 0.45))
-    )
+    max_error = kwargs.pop("max_error", _cfg_get(cfg, "admm_max_error", _cfg_get(cfg, "max_error", 0.45)))
     fallback = kwargs.pop(
         "fallback_to_original",
         _cfg_get(

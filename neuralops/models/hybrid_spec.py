@@ -16,7 +16,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-
 __all__ = ["HybridAttentionSpec", "normalize_hybrid_spec", "get_layer_spec"]
 
 
@@ -58,9 +57,7 @@ def normalize_hybrid_spec(
     if num_layers <= 0:
         raise ValueError(f"num_layers must be positive, got {num_layers}")
 
-    result: list[dict[str, Any]] = [
-        {"type": default_type} for _ in range(num_layers)
-    ]
+    result: list[dict[str, Any]] = [{"type": default_type} for _ in range(num_layers)]
 
     if spec is None:
         return result

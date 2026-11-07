@@ -9,10 +9,7 @@
 Speculative Verification Hardware Operators.
 """
 
-from neuralops.ops.cuda.speculative_verify.spec_autograd import (
-    speculative_verify,
-    speculative_verify_pytorch_ref,
-)
+from neuralops.ops.cuda.speculative_verify.spec_autograd import speculative_verify, speculative_verify_pytorch_ref
 
 __all__ = [
     "speculative_verify",

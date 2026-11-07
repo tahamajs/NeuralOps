@@ -44,7 +44,8 @@ async def notebooks_page(request: Request, query: str | None = None) -> HTMLResp
     if query:
         q = query.strip().lower()
         notebooks = [
-            nb for nb in all_notebooks
+            nb
+            for nb in all_notebooks
             if q in nb["title"].lower() or q in nb["description"].lower() or q in nb["filename"].lower()
         ]
     else:

@@ -52,6 +52,7 @@ class ArchitectureDropLayerOperation(Operation):
         drop_count = config.get("drop_count", 1)
         try:
             from neuralops.surgery.layers.prune import prune_layers
+
             pruned = prune_layers(model, drop_count=drop_count)
             return pruned, {"params_used": config, "operation_version": self.version, "output_state": self.output_state}
         except Exception as exc:

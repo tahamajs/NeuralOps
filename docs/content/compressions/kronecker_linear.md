@@ -127,7 +127,7 @@ For efficient computation without full tensor expansion, matrix-vector product p
 ### 4.1 Parameter Count Formulas
 Let $M = d_{\text{out}} = out_a \cdot out_b$ and $N = d_{\text{in}} = in_a \cdot in_b$.
 
-Specifically, regarding \textbf{Uncompressed Dense Parameters}, $P_{\text{dense}} = M \cdot N + M$ Furthermore, regarding \textbf{Kronecker Factorized Parameters}, $P_{\text{Kronecker}} = (out_a \cdot in_a) + (out_b \cdot in_b) + M$ Concurrently, regarding \textbf{Theoretical Parameter Reduction Ratio}, 
+Specifically, regarding \textbf{Uncompressed Dense Parameters}, $P_{\text{dense}} = M \cdot N + M$ Furthermore, regarding \textbf{Kronecker Factorized Parameters}, $P_{\text{Kronecker}} = (out_a \cdot in_a) + (out_b \cdot in_b) + M$ Concurrently, regarding \textbf{Theoretical Parameter Reduction Ratio},
 
 \[
 \mathcal{C}_R = \frac{M \cdot N}{(out_a \cdot in_a) + (out_b \cdot in_b)} \approx \frac{out_a \cdot out_b \cdot in_a \cdot in_b}{out_a \cdot in_a + out_b \cdot in_b}
@@ -202,7 +202,7 @@ def kronecker_reshaped_forward_kernel(
 
     for ia in range(0, in_a):
         a_val = tl.load(A_ptr + offs_oa[:, None] * stride_aa + ia * stride_ai, mask=offs_oa[:, None] < out_a, other=0.0)
-        
+
         for ib in range(0, in_b, BLOCK_IN_B):
             offs_ib = ib + tl.arange(0, BLOCK_IN_B)
             x_tile = tl.load(X_ptr + offs_b[:, None] * stride_xb + (ia * in_b + offs_ib)[None, :] * stride_xi, mask=(offs_b[:, None] < B_Size) & (offs_ib[None, :] < in_b), other=0.0)
@@ -253,4 +253,3 @@ The empirical evaluation of `kronecker_linear` across standard sequence lengths 
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

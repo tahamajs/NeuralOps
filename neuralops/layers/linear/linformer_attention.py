@@ -12,11 +12,6 @@ Projects sequence dimension into low-rank sub-spaces to achieve linear time and 
 """
 
 from __future__ import annotations
-from neuralops.core.common import FactorizedLoRALinear, _detect_decoder
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -26,9 +21,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import FactorizedLoRALinear, _detect_decoder
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +40,7 @@ class LinformerAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -100,9 +98,7 @@ class LinformerAttention(BaseAttention):
             pos_emb = max_seq_len if max_seq_len is not None else 512
         self.max_seq_len = max(512, int(pos_emb))
 
-        self.is_decoder = _detect_decoder(
-            config, is_decoder or kwargs.get("is_causal"), source_attn
-        )
+        self.is_decoder = _detect_decoder(config, is_decoder or kwargs.get("is_causal"), source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
         self.rotary_emb: Any = None
@@ -209,9 +205,7 @@ class LinformerAttention(BaseAttention):
         return 768
 
     @staticmethod
-    def _detect_num_heads(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any], hidden_size: int
-    ) -> int:
+    def _detect_num_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any], hidden_size: int) -> int:
         for k in ("num_heads", "num_attention_heads", "n_heads", "n_head"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -229,9 +223,7 @@ class LinformerAttention(BaseAttention):
         return max(1, hidden_size // 64)
 
     @staticmethod
-    def _detect_num_kv_heads(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any], num_heads: int
-    ) -> int:
+    def _detect_num_kv_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any], num_heads: int) -> int:
         for k in ("num_key_value_heads", "num_kv_heads"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -467,11 +459,7 @@ class LinformerAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -484,15 +472,10 @@ class LinformerAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
-                f"LinformerAttention.copy_weights: missing mandatory projections "
-                f"{missing_after} from {cls_name}."
+                f"LinformerAttention.copy_weights: missing mandatory projections " f"{missing_after} from {cls_name}."
             )
 
         def _orient(w, in_dim):
@@ -607,11 +590,7 @@ class LinformerAttention(BaseAttention):
         k = self.k_proj(hidden_states).reshape(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
         v = self.v_proj(hidden_states).reshape(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        pos_emb = (
-            position_embeddings
-            if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             past_len = 0
@@ -686,6 +665,7 @@ class LinformerAttention(BaseAttention):
 
         try:
             from neuralops.ops.triton.low_rank import fused_linformer_seq_proj_triton
+
             K_proj = fused_linformer_seq_proj_triton(E_act, k)
             V_proj = fused_linformer_seq_proj_triton(F_act, v)
         except Exception:
@@ -697,9 +677,7 @@ class LinformerAttention(BaseAttention):
 
         if self.is_decoder:
             if self.k_proj_dim >= L:
-                causal_scores = (
-                    torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float()) * scale
-                )
+                causal_scores = torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float()) * scale
                 causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
                 scores = causal_scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
                 V_proj = v
@@ -801,11 +779,7 @@ def inject_linformer(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

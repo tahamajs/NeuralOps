@@ -44,34 +44,40 @@ def render_report(evidence: Dict[str, Any]) -> str:
     metrics = evidence.get("metrics", {})
     comp_ratio = metrics.get("compression_ratio")
 
-    lines.extend([
-        f"- **Source:** `{model_info.get('source', 'unknown')}`",
-        f"- **Revision:** `{model_info.get('revision', 'main')}`",
-        f"- **Final Parameter Count:** {model_info.get('final_parameter_count', 0):,}",
-    ])
+    lines.extend(
+        [
+            f"- **Source:** `{model_info.get('source', 'unknown')}`",
+            f"- **Revision:** `{model_info.get('revision', 'main')}`",
+            f"- **Final Parameter Count:** {model_info.get('final_parameter_count', 0):,}",
+        ]
+    )
     if comp_ratio is not None:
         lines.append(f"- **Final Compression Ratio:** {comp_ratio:.4f}")
 
-    lines.extend([
-        "",
-        "## Environment",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Environment",
+            "",
+        ]
+    )
 
     env = evidence.get("environment", {})
-    lines.extend([
-        f"- **Hostname:** `{env.get('hostname', 'unknown')}`",
-        f"- **NeuralOps:** `v{env.get('neuralops', 'unknown')}` (`{str(env.get('git_sha', 'unknown'))[:8]}`)",
-        f"- **PyTorch:** `{env.get('torch', 'unknown')}`",
-        f"- **CUDA:** `{env.get('cuda', 'None (CPU)')}`",
-        f"- **GPU:** `{env.get('gpu', 'None')}`",
-        f"- **Transformers:** `{env.get('transformers', 'Not installed')}`",
-        "",
-        "## Stages",
-        "",
-        "| Stage ID | Operation | Status | Duration | Gates Passed | Metrics |",
-        "| :--- | :--- | :---: | :---: | :--- | :--- |",
-    ])
+    lines.extend(
+        [
+            f"- **Hostname:** `{env.get('hostname', 'unknown')}`",
+            f"- **NeuralOps:** `v{env.get('neuralops', 'unknown')}` (`{str(env.get('git_sha', 'unknown'))[:8]}`)",
+            f"- **PyTorch:** `{env.get('torch', 'unknown')}`",
+            f"- **CUDA:** `{env.get('cuda', 'None (CPU)')}`",
+            f"- **GPU:** `{env.get('gpu', 'None')}`",
+            f"- **Transformers:** `{env.get('transformers', 'Not installed')}`",
+            "",
+            "## Stages",
+            "",
+            "| Stage ID | Operation | Status | Duration | Gates Passed | Metrics |",
+            "| :--- | :--- | :---: | :---: | :--- | :--- |",
+        ]
+    )
 
     stages = evidence.get("stages", [])
     for s in stages:
@@ -95,20 +101,24 @@ def render_report(evidence: Dict[str, Any]) -> str:
 
         lines.append(f"| `{st_id}` | `{op_name}` | {ok} | {dur:.2f}s | {gates_str} | {metrics_str} |")
 
-    lines.extend([
-        "",
-        "## Repro",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Repro",
+            "",
+        ]
+    )
 
     repro = evidence.get("reproducibility", {})
-    lines.extend([
-        f"- **Language Version:** `{repro.get('language_version', 'v1.0.0')}`",
-        f"- **Seed:** `{repro.get('seed', 'None')}`",
-        f"- **Deterministic:** `{repro.get('deterministic', True)}`",
-        f"- **Operations:** {repro.get('op_versions', {})}",
-        "",
-    ])
+    lines.extend(
+        [
+            f"- **Language Version:** `{repro.get('language_version', 'v1.0.0')}`",
+            f"- **Seed:** `{repro.get('seed', 'None')}`",
+            f"- **Deterministic:** `{repro.get('deterministic', True)}`",
+            f"- **Operations:** {repro.get('op_versions', {})}",
+            "",
+        ]
+    )
 
     return "\n".join(lines)
 

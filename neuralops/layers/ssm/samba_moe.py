@@ -11,8 +11,6 @@ Samba-MoE: Hybrid Selective State Space and REAP-MoE Block
 Combines sliding-window self-attention, spectral state space recurrence, and mixture-of-experts routing.
 """
 
-from neuralops.core.common import _cfg_get
-
 import logging
 from typing import Any
 
@@ -21,6 +19,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 from .samba_m3 import SAMBAM3Block
@@ -56,11 +55,7 @@ class MinimalMoEFallback(nn.Module):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         router_in = self.router.in_features
         if x.shape[-1] != router_in:
-            x_in = (
-                F.pad(x, (0, router_in - x.shape[-1]))
-                if x.shape[-1] < router_in
-                else x[..., :router_in]
-            )
+            x_in = F.pad(x, (0, router_in - x.shape[-1])) if x.shape[-1] < router_in else x[..., :router_in]
         else:
             x_in = x
         logits = self.router(x_in)
@@ -68,6 +63,7 @@ class MinimalMoEFallback(nn.Module):
         if x_in.is_cuda and len(self.experts) >= 2:
             try:
                 from neuralops.ops.cuda.samba_moe import samba_moe
+
                 e1 = self.experts[0](x_in)
                 e2 = self.experts[1](x_in)
                 rw = weights[..., :2]
@@ -77,6 +73,7 @@ class MinimalMoEFallback(nn.Module):
             except Exception:
                 try:
                     from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
+
                     exp_outputs = [exp(x_in) for exp in self.experts]
                     stacked = torch.stack(exp_outputs, dim=-2)
                     out = fused_topk_sparse_route_and_combine_triton(stacked, logits, top_k=min(2, self.n_experts))
@@ -87,6 +84,7 @@ class MinimalMoEFallback(nn.Module):
         elif x_in.is_cuda and len(self.experts) > 0:
             try:
                 from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
+
                 exp_outputs = [exp(x_in) for exp in self.experts]
                 stacked = torch.stack(exp_outputs, dim=-2)
                 out = fused_topk_sparse_route_and_combine_triton(stacked, logits, top_k=min(2, self.n_experts))
@@ -100,9 +98,7 @@ class MinimalMoEFallback(nn.Module):
                 out = out + weights[..., i : i + 1] * exp(x_in)
         if out.shape[-1] != x.shape[-1]:
             out = (
-                F.pad(out, (0, x.shape[-1] - out.shape[-1]))
-                if out.shape[-1] < x.shape[-1]
-                else out[..., : x.shape[-1]]
+                F.pad(out, (0, x.shape[-1] - out.shape[-1])) if out.shape[-1] < x.shape[-1] else out[..., : x.shape[-1]]
             )
         density_1 = weights.view(-1, self.n_experts).mean(dim=0)
         density_1_proxy = logits.softmax(dim=-1).view(-1, self.n_experts).mean(dim=0)
@@ -143,17 +139,9 @@ class SambaMoEBlock(BaseAttention):
                     getattr(pretrained_attn, "all_head_size", None),
                 ),
             )
-            if (
-                cand is None
-                and hasattr(pretrained_attn, "q_proj")
-                and hasattr(pretrained_attn.q_proj, "in_features")
-            ):
+            if cand is None and hasattr(pretrained_attn, "q_proj") and hasattr(pretrained_attn.q_proj, "in_features"):
                 cand = pretrained_attn.q_proj.in_features
-            elif (
-                cand is None
-                and hasattr(pretrained_attn, "q_lin")
-                and hasattr(pretrained_attn.q_lin, "in_features")
-            ):
+            elif cand is None and hasattr(pretrained_attn, "q_lin") and hasattr(pretrained_attn.q_lin, "in_features"):
                 cand = pretrained_attn.q_lin.in_features
             if cand is not None:
                 hidden_size = cand
@@ -303,11 +291,7 @@ class SambaMoEBlock(BaseAttention):
             router_in = self.moe.router.in_features
 
         if x.shape[-1] != router_in:
-            x_moe = (
-                F.pad(x, (0, router_in - x.shape[-1]))
-                if x.shape[-1] < router_in
-                else x[..., :router_in]
-            )
+            x_moe = F.pad(x, (0, router_in - x.shape[-1])) if x.shape[-1] < router_in else x[..., :router_in]
         else:
             x_moe = x
 

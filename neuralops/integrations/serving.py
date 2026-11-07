@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import math
 from typing import Any, List, Optional
+
 import torch
 import torch.nn as nn
 
@@ -26,12 +27,14 @@ except ImportError:
 
 try:
     import vllm
+
     HAS_VLLM = True
 except ImportError:
     HAS_VLLM = False
 
 try:
     import text_generation_server
+
     HAS_TGI = True
 except ImportError:
     HAS_TGI = False
@@ -53,9 +56,7 @@ class VLLMAttentionAdapter:
     def register(self, backend_cls: type) -> bool:
         """Register a concrete vLLM AttentionBackend implementation."""
         if not HAS_VLLM:
-            raise RuntimeError(
-                "vLLM is not installed. Please install neuralops[serving] or run: pip install vllm"
-            )
+            raise RuntimeError("vLLM is not installed. Please install neuralops[serving] or run: pip install vllm")
         backend_name = getattr(backend_cls, "get_name", lambda: None)()
         if not backend_name:
             raise ValueError("backend_cls must implement get_name() from vLLM's AttentionBackend contract")
@@ -87,6 +88,7 @@ class VLLMAttentionAdapter:
             raise ValueError("block_size must be a positive integer")
 
         from neuralops.core.triton_kernels.paged_attention import paged_attention_kernel
+
         return paged_attention_kernel(
             q=query,
             k_cache=key_cache,
@@ -199,11 +201,7 @@ class SGLangRadixLinearCacheAdapter:
         if not isinstance(num_nodes, int) or isinstance(num_nodes, bool) or num_nodes < 0:
             raise ValueError("num_nodes must be a non-negative integer")
         evicted = 0
-        unlocked = [
-            (prefix, node["last_accessed"])
-            for prefix, node in self.tree.items()
-            if node["ref_count"] == 0
-        ]
+        unlocked = [(prefix, node["last_accessed"]) for prefix, node in self.tree.items() if node["ref_count"] == 0]
         unlocked.sort(key=lambda x: x[1])
 
         for prefix, _ in unlocked[:num_nodes]:
@@ -282,11 +280,13 @@ def create_openai_serving_app(
     if backend not in ("auto", "neuralops_native", "fastapi"):
         if backend in ("vllm", "sglang", "tgi", "tensorrt_llm"):
             from neuralops.core.exceptions import IntegrationNotImplementedError
+
             raise IntegrationNotImplementedError(
                 f"Serving backend '{backend}' is not implemented in live HTTP serving. "
                 "Only the OpenAI-compatible FastAPI engine ('fastapi' or 'neuralops_native') is currently supported."
             )
         from neuralops.core.exceptions import ConfigError
+
         raise ConfigError(f"Unsupported serving backend '{backend}'.")
 
     if kv_cache_budget_gb <= 0:
@@ -296,12 +296,11 @@ def create_openai_serving_app(
         raise TypeError(f"create_openai_serving_app() got unexpected keyword argument(s): {list(kwargs.keys())}")
 
     try:
-        from fastapi import FastAPI, Request, HTTPException
+        from fastapi import FastAPI, HTTPException, Request
         from fastapi.responses import JSONResponse, StreamingResponse
     except ImportError:
         raise ImportError(
-            "FastAPI is required for OpenAI-compatible serving. "
-            "Install with: pip install fastapi uvicorn"
+            "FastAPI is required for OpenAI-compatible serving. " "Install with: pip install fastapi uvicorn"
         )
 
     import os
@@ -406,6 +405,7 @@ def create_openai_serving_app(
         created = int(time.time())
 
         if stream:
+
             async def event_generator():
                 chunk = {
                     "id": req_id,
@@ -468,13 +468,16 @@ def create_openai_serving_app(
         app.state.request_latencies.append(elapsed_sec)
 
         if stream:
+
             async def event_generator():
                 chunk = {
                     "id": req_id,
                     "object": "chat.completion.chunk",
                     "created": created,
                     "model": model_name,
-                    "choices": [{"index": 0, "delta": {"role": "assistant", "content": generated_text}, "finish_reason": "stop"}],
+                    "choices": [
+                        {"index": 0, "delta": {"role": "assistant", "content": generated_text}, "finish_reason": "stop"}
+                    ],
                 }
                 yield f"data: {json.dumps(chunk)}\n\n"
                 yield "data: [DONE]\n\n"
@@ -629,7 +632,7 @@ def _generate_text(
         sequences = sequences.sequences
     if not isinstance(sequences, torch.Tensor) or sequences.ndim != 2:
         raise RuntimeError("Model.generate must return token IDs with shape [batch, sequence]")
-    generated = sequences[0, input_ids.shape[1]:]
+    generated = sequences[0, input_ids.shape[1] :]
     text = tokenizer.decode(generated, skip_special_tokens=True)
     prompt_count = int(encoded.get("attention_mask", torch.ones_like(input_ids)).sum().item())
     return text, prompt_count, int(generated.numel())

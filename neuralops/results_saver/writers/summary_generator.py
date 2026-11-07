@@ -221,7 +221,9 @@ class BenchmarkSummaryGenerator:
                 lines.append(header)
                 lines.append(sep)
                 for row in sample:
-                    row_vals = [str(round(row[c], 4) if isinstance(row.get(c), float) else row.get(c, "-")) for c in valid_cols]
+                    row_vals = [
+                        str(round(row[c], 4) if isinstance(row.get(c), float) else row.get(c, "-")) for c in valid_cols
+                    ]
                     lines.append("| " + " | ".join(row_vals) + " |")
                 lines.append("")
 

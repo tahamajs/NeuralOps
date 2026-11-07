@@ -12,7 +12,8 @@ Structured exception hierarchy providing actionable diagnostic messages across a
 """
 
 from __future__ import annotations
-from typing import Optional, Any
+
+from typing import Any, Optional
 
 
 class NeuralOpsError(Exception):

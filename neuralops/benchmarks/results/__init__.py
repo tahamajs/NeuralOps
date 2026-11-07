@@ -10,10 +10,11 @@ NeuralOps Benchmarks Results Subpackage.
 """
 
 from __future__ import annotations
-from .schema import normalize_legacy_result_dict
 
 import importlib
 from typing import Any
+
+from .schema import normalize_legacy_result_dict
 
 __all__ = [
     "BenchmarkResult",

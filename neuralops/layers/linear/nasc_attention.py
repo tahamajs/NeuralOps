@@ -11,13 +11,6 @@ NASC: NEXUS-AEGIS Spectral Cascade Attention
 Cascaded attention routing tokens across spectral decompositions and low-rank factorized projections.
 """
 
-from neuralops.core.common import softpick
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -26,9 +19,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import softpick
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +54,7 @@ class NASCAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
         self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads: int = getattr(
-            config, "num_attention_heads", kwargs.get("num_attention_heads", 4)
-        )
+        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 4))
 
         cfg_head_dim = getattr(config, "head_dim", None) if config else None
         if cfg_head_dim is not None:
@@ -74,11 +67,7 @@ class NASCAttention(BaseAttention):
             self.head_dim = 64
         self.all_head_size: int = self.num_heads * self.head_dim
 
-        cfg_kv = (
-            getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
-            if config
-            else None
-        )
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None)) if config else None
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -172,11 +161,7 @@ class NASCAttention(BaseAttention):
         self.rff_proj = nn.Parameter(rff_init, requires_grad=False)
         self.gate_proj = nn.Linear(self.hidden_size, 3)
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -459,9 +444,7 @@ class NASCAttention(BaseAttention):
         Q_mean = Qb.mean(dim=3)
         K_mean = Kb.mean(dim=3)
         scale = 1.0 / math.sqrt(d)
-        blk_scores = (
-            torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale
-        )
+        blk_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
             causal_blk_mask = torch.triu(
@@ -485,10 +468,7 @@ class NASCAttention(BaseAttention):
             K_sel = torch.gather(Kb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
             V_sel = torch.gather(Vb, 2, idx_exp).reshape(B, H, top_k * self.block_size, d)
 
-            scores_i = (
-                torch.matmul(Qb[:, :, i].float(), K_sel.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores_i = torch.matmul(Qb[:, :, i].float(), K_sel.float().transpose(-2, -1).contiguous()) * scale
 
             if is_causal:
                 q_pos = (i * self.block_size + torch.arange(self.block_size, device=Q.device)).view(
@@ -550,11 +530,7 @@ class NASCAttention(BaseAttention):
         elif eff_mask.dim() == 2:
             valid_mask = eff_mask.bool() if eff_mask.dtype == torch.bool else eff_mask > 0
         elif eff_mask.dim() == 4:
-            valid_mask = (
-                eff_mask[:, 0, 0, :] > -10000.0
-                if eff_mask.min() < -1000
-                else eff_mask[:, 0, 0, :] > 0
-            )
+            valid_mask = eff_mask[:, 0, 0, :] > -10000.0 if eff_mask.min() < -1000 else eff_mask[:, 0, 0, :] > 0
         else:
             valid_mask = torch.ones(B, L_kv, device=hidden_states.device, dtype=torch.bool)
 
@@ -695,11 +671,7 @@ def inject_nasc(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -753,26 +725,14 @@ def inject_nasc(
         if cfg is None:
             cfg = type("Cfg", (), {"hidden_size": 64, "num_heads": 4, "rank": 32})()
 
-        rank = (
-            getattr(comp_config, "rank", 16) if comp_config is not None else kwargs.pop("rank", 16)
-        )
+        rank = getattr(comp_config, "rank", 16) if comp_config is not None else kwargs.pop("rank", 16)
         window_size = (
-            getattr(comp_config, "window_size", 64)
-            if comp_config is not None
-            else kwargs.pop("window_size", 64)
+            getattr(comp_config, "window_size", 64) if comp_config is not None else kwargs.pop("window_size", 64)
         )
-        block_size = (
-            getattr(comp_config, "block_size", 32)
-            if comp_config is not None
-            else kwargs.pop("block_size", 32)
-        )
-        top_k = (
-            getattr(comp_config, "top_k", 2) if comp_config is not None else kwargs.pop("top_k", 2)
-        )
+        block_size = getattr(comp_config, "block_size", 32) if comp_config is not None else kwargs.pop("block_size", 32)
+        top_k = getattr(comp_config, "top_k", 2) if comp_config is not None else kwargs.pop("top_k", 2)
         rff_features = (
-            getattr(comp_config, "rff_features", 64)
-            if comp_config is not None
-            else kwargs.pop("rff_features", 64)
+            getattr(comp_config, "rff_features", 64) if comp_config is not None else kwargs.pop("rff_features", 64)
         )
 
         kwargs.pop("rank", None)

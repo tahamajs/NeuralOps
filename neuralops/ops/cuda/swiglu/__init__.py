@@ -9,10 +9,7 @@
 Fused SwiGLU Activation Hardware Operators.
 """
 
-from neuralops.ops.cuda.swiglu.swiglu_autograd import (
-    swiglu,
-    swiglu_pytorch_ref,
-)
+from neuralops.ops.cuda.swiglu.swiglu_autograd import swiglu, swiglu_pytorch_ref
 
 __all__ = [
     "swiglu",

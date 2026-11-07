@@ -13,12 +13,6 @@ Dynamically adjusts per-head attention context spans to optimize memory and long
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    safe_mask_value as _safe_mask_value,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from dataclasses import dataclass
@@ -28,9 +22,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.attention_utils import safe_mask_value as _safe_mask_value
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -39,6 +35,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AdaptiveSpanConfig:
     """Runtime configuration for AdaptiveSpanAttention."""
+
     max_span: int = 128
     min_span: float = 32.0
     ramp_size: float = 32.0
@@ -101,11 +98,7 @@ def _build_keep_mask(
         elif am.dim() == 4:
             am_b = am
         else:
-            return (
-                mask
-                if mask is not None
-                else torch.ones((B, 1, N_q, N_k), device=device, dtype=torch.bool)
-            )
+            return mask if mask is not None else torch.ones((B, 1, N_q, N_k), device=device, dtype=torch.bool)
 
         if am_b.dtype != torch.bool:
             if am_b.max() <= 1.0 and am_b.min() >= 0.0:
@@ -118,9 +111,9 @@ def _build_keep_mask(
         am = _combine(attention_mask)
         if mask is not None:
             if am.shape[-1] != mask.shape[-1]:
-                am = am[..., :mask.shape[-1]]
+                am = am[..., : mask.shape[-1]]
             if am.shape[-2] != mask.shape[-2]:
-                am = am[..., :mask.shape[-2], :]
+                am = am[..., : mask.shape[-2], :]
             mask = mask & am
         else:
             mask = am
@@ -154,6 +147,7 @@ class AdaptiveSpanAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_bidirectional: bool = False
     supports_gqa: bool = True
@@ -180,9 +174,7 @@ class AdaptiveSpanAttention(BaseAttention):
         super().__init__(config, rank)
 
         hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
-        num_heads = (
-            kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
-        )
+        num_heads = kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
         num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
         head_dim = 0
 
@@ -229,9 +221,7 @@ class AdaptiveSpanAttention(BaseAttention):
             cfg_ramp = getattr(comp_config, "ramp_size", cfg_ramp)
         self.max_span: int = int(cfg_max_span)
         self.ramp_size: float = float(cfg_ramp)
-        self.min_span: float = float(
-            kwargs.get("min_span", getattr(config, "min_span", 32.0) if config else 32.0)
-        )
+        self.min_span: float = float(kwargs.get("min_span", getattr(config, "min_span", 32.0) if config else 32.0))
 
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = (
@@ -244,14 +234,23 @@ class AdaptiveSpanAttention(BaseAttention):
             else False
         )
         _dec_prefixes = (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt",
-            "bloom", "falcon", "olmo", "mpt", "stablelm",
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
         )
         if any(model_type.startswith(p) for p in _dec_prefixes):
             is_dec = True
         if hasattr(config, "architectures") and any(
-            "GPT" in str(a) or "CausalLM" in str(a)
-            for a in (getattr(config, "architectures", []) or [])
+            "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -260,17 +259,14 @@ class AdaptiveSpanAttention(BaseAttention):
 
         source_cls = source_attn.__class__.__name__ if source_attn is not None else ""
         cfg_model_type = getattr(config, "model_type", "").lower() if config else ""
-        is_nested = (
-            not is_dec
-            and (
-                source_cls in ("BertSelfAttention", "RobertaSelfAttention")
-                or cfg_model_type in ("roberta", "bert")
-                or (
-                    source_cls.endswith(("SelfAttention", "SelfAttn"))
-                    and "distil" not in source_cls.lower()
-                    and "gpt" not in source_cls.lower()
-                    and "qwen" not in source_cls.lower()
-                )
+        is_nested = not is_dec and (
+            source_cls in ("BertSelfAttention", "RobertaSelfAttention")
+            or cfg_model_type in ("roberta", "bert")
+            or (
+                source_cls.endswith(("SelfAttention", "SelfAttn"))
+                and "distil" not in source_cls.lower()
+                and "gpt" not in source_cls.lower()
+                and "qwen" not in source_cls.lower()
             )
         )
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", is_nested))
@@ -309,12 +305,8 @@ class AdaptiveSpanAttention(BaseAttention):
                 getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
             )
         elif comp_config is not None:
-            resolved_lora_rank = getattr(
-                comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)
-            )
-            resolved_lora_alpha = getattr(
-                comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
-            )
+            resolved_lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
+            resolved_lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
         else:
             resolved_lora_rank = kwargs.get("lora_rank", lora_rank)
             resolved_lora_alpha = kwargs.get("lora_alpha", 32.0)
@@ -330,27 +322,43 @@ class AdaptiveSpanAttention(BaseAttention):
         self.freeze_base: bool = self.lora_rank > 0
 
         self.q_proj = LoRALinear(
-            self.hidden_size, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base, dtype=target_dtype,
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
         )
         self.k_proj = LoRALinear(
-            self.hidden_size, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base, dtype=target_dtype,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
         )
         self.v_proj = LoRALinear(
-            self.hidden_size, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base, dtype=target_dtype,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
         )
         if self.is_nested_encoder:
             self.out_proj: nn.Module = IdentityOutProj()
         else:
             self.out_proj = LoRALinear(
-                self.all_head_size, self.hidden_size, bias=True,
-                lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                freeze_base=self.freeze_base, dtype=target_dtype,
+                self.all_head_size,
+                self.hidden_size,
+                bias=True,
+                lora_rank=self.lora_rank,
+                lora_alpha=self.lora_alpha,
+                freeze_base=self.freeze_base,
+                dtype=target_dtype,
             )
 
         self.span_logits = nn.Parameter(torch.full((self.num_heads,), -1.5, dtype=torch.float32))
@@ -370,9 +378,7 @@ class AdaptiveSpanAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
-        )
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -398,18 +404,14 @@ class AdaptiveSpanAttention(BaseAttention):
     def get_span_regularization_loss(self, lambda_span: float = 0.01) -> torch.Tensor:
         return lambda_span * torch.sigmoid(self.span_logits).mean()
 
-    def _relative_position_bucket(
-        self, relative_position, bidirectional=True, num_buckets=32, max_distance=128
-    ):
+    def _relative_position_bucket(self, relative_position, bidirectional=True, num_buckets=32, max_distance=128):
         relative_buckets = 0
         if bidirectional:
             num_buckets //= 2
             relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
             relative_position = torch.abs(relative_position)
         else:
-            relative_position = -torch.min(
-                relative_position, torch.zeros_like(relative_position)
-            )
+            relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
         max_exact = num_buckets // 2
         is_small = relative_position < max_exact
         rel_large = max_exact + (
@@ -679,9 +681,8 @@ class AdaptiveSpanAttention(BaseAttention):
 
         try:
             from neuralops.ops.triton.elementwise import fused_adaptive_span_penalty_triton
-            penalty = fused_adaptive_span_penalty_triton(
-                span, q_pos, k_pos, float(self.ramp_size), is_causal=is_causal
-            )
+
+            penalty = fused_adaptive_span_penalty_triton(span, q_pos, k_pos, float(self.ramp_size), is_causal=is_causal)
             return penalty.to(scores.dtype)
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -725,35 +726,23 @@ class AdaptiveSpanAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K_new = (
-            self.k_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        )
-        V_new = (
-            self.v_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        )
+        K_new = self.k_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V_new = self.v_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         position_ids = kwargs.get("position_ids")
         past_len = self._read_past_len(past_key_value, self.layer_idx) if not is_cross_attention else 0
         if position_ids is None and not is_cross_attention:
             position_ids = (
-                torch.arange(past_len, past_len + N_q, device=device, dtype=torch.long)
-                .unsqueeze(0)
-                .expand(B, -1)
+                torch.arange(past_len, past_len + N_q, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
             )
 
-        pos_emb = (
-            position_embeddings
-            if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin, position_ids=position_ids)
         elif getattr(self, "rotary_emb", None) is not None:
             if position_ids is None:
-                position_ids = (
-                    torch.arange(N_q, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
-                )
+                position_ids = torch.arange(N_q, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
             try:
                 cos, sin = self.rotary_emb(K_new, position_ids=position_ids)
             except TypeError:
@@ -772,10 +761,7 @@ class AdaptiveSpanAttention(BaseAttention):
             new_past_key_value = past_key_value
         else:
             K, V, new_past_key_value = self._update_cache(K_new, V_new, past_key_value)
-            if (
-                self.rolling_cache_size is not None
-                and K.shape[-2] > self.rolling_cache_size
-            ):
+            if self.rolling_cache_size is not None and K.shape[-2] > self.rolling_cache_size:
                 K = K[..., -self.rolling_cache_size :, :].contiguous()
                 V = V[..., -self.rolling_cache_size :, :].contiguous()
                 if isinstance(new_past_key_value, tuple):
@@ -795,7 +781,7 @@ class AdaptiveSpanAttention(BaseAttention):
             K_full, V_full = K, V
 
         scale = 1.0 / math.sqrt(int(d))
-        scores = (torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale)
+        scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
         position_bias = kwargs.get("position_bias")
         if position_bias is None and self.has_relative_attention_bias:
@@ -805,14 +791,15 @@ class AdaptiveSpanAttention(BaseAttention):
 
         if not is_cross_attention:
             is_causal_here = self.is_decoder or kwargs.get("is_causal", False)
-            penalty = self._compute_span_penalty(
-                scores, position_ids, N_k, device, is_causal_here
-            )
+            penalty = self._compute_span_penalty(scores, position_ids, N_k, device, is_causal_here)
             scores = scores + penalty.float()
 
         is_causal = self.is_decoder and not is_cross_attention
         keep_mask = _build_keep_mask(
-            B=B, N_q=N_q, N_k=N_k, is_causal=is_causal,
+            B=B,
+            N_q=N_q,
+            N_k=N_k,
+            is_causal=is_causal,
             attention_mask=attention_mask,
             encoder_attention_mask=(encoder_attention_mask if is_cross_attention else None),
             device=device,
@@ -967,9 +954,7 @@ def inject_adaptive_span(
             return True
         inner = getattr(obj, "inner", None)
         wrapped = getattr(obj, "_wrapped_attention", None)
-        return isinstance(inner, AdaptiveSpanAttention) or isinstance(
-            wrapped, AdaptiveSpanAttention
-        )
+        return isinstance(inner, AdaptiveSpanAttention) or isinstance(wrapped, AdaptiveSpanAttention)
 
     if _already_wrapped(src_attn):
         return None

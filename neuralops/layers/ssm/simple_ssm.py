@@ -13,10 +13,6 @@ Simplified state space attention block providing fast recurrent updates for mult
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 from typing import Any
 
@@ -24,9 +20,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core.common import LoRALinear
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import LoRALinear
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -42,6 +39,7 @@ class SimpleSSM(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True
@@ -79,9 +77,7 @@ class SimpleSSM(BaseAttention):
         heads = num_heads or _get("num_attention_heads") or _get("num_heads") or _get("n_head") or 4
         self.num_heads = int(heads)
 
-        kv_heads = (
-            num_kv_heads or _get("num_key_value_heads") or _get("num_kv_heads") or self.num_heads
-        )
+        kv_heads = num_kv_heads or _get("num_key_value_heads") or _get("num_kv_heads") or self.num_heads
         self.num_kv_heads = int(kv_heads)
         if d_model is not None:
             self.head_dim = max(1, self.dim // max(1, self.num_heads))
@@ -114,21 +110,14 @@ class SimpleSSM(BaseAttention):
 
         model_type = str(_get("model_type", "")).lower()
         is_dec = _get("is_decoder", kwargs.get("is_decoder", False))
-        if any(
-            model_type.startswith(pfx)
-            for pfx in ("gpt", "qwen", "llama", "mistral", "opt", "bloom")
-        ):
+        if any(model_type.startswith(pfx) for pfx in ("gpt", "qwen", "llama", "mistral", "opt", "bloom")):
             is_dec = True
         self.is_decoder = bool(is_dec)
 
         is_nested = False
         if old_attn is not None:
             src_cls = old_attn.__class__.__name__
-            if (
-                "Roberta" in src_cls
-                or "Bert" in src_cls
-                or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))
-            ):
+            if "Roberta" in src_cls or "Bert" in src_cls or (hasattr(old_attn, "self") and hasattr(old_attn, "output")):
                 is_nested = True
         if not is_nested and model_type in ["roberta", "bert"] and not self.is_decoder:
             is_nested = True
@@ -143,11 +132,7 @@ class SimpleSSM(BaseAttention):
             return
 
         src_cls = old_attn.__class__.__name__
-        if (
-            "Roberta" in src_cls
-            or "Bert" in src_cls
-            or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))
-        ):
+        if "Roberta" in src_cls or "Bert" in src_cls or (hasattr(old_attn, "self") and hasattr(old_attn, "output")):
             self.is_nested_encoder = True
 
         target_dtype = self.in_proj.weight.dtype
@@ -246,8 +231,8 @@ class SimpleSSM(BaseAttention):
             state = torch.zeros(B, H, 1, d, device=u_heads.device, dtype=target_dtype)
             decay_val = decay.to(target_dtype)
             for t in range(L):
-                state = state * decay_val + u_heads[:, :, t:t+1, :]
-                y_heads[:, :, t:t+1, :] = state
+                state = state * decay_val + u_heads[:, :, t : t + 1, :]
+                y_heads[:, :, t : t + 1, :] = state
             y = y_heads.transpose(1, 2).contiguous().view(B, L, H * d)
         else:
             dist = torch.abs(pos_diff).unsqueeze(0).unsqueeze(0)

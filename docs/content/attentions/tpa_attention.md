@@ -141,7 +141,7 @@ Specifically, regarding \textbf{Total MACs}, $2 B N D^2 + 4 B N D H r + B N H r^
 
 
 ### Parameter Footprint Analysis
-Specifically, regarding \textbf{Standard MHA Parameter Count}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{TPAttention Parameter Count}, 
+Specifically, regarding \textbf{Standard MHA Parameter Count}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{TPAttention Parameter Count},
 
   \[
   \text{Params}_{\text{TPA}} = 2 D^2 + 4 D H r + 2 D \text{ floats}
@@ -217,4 +217,3 @@ The empirical evaluation of `tpa_attention` across standard sequence lengths and
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

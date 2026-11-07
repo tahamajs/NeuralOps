@@ -40,9 +40,9 @@ import pyarrow.ipc as ipc
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from safetensors.torch import load_file
 from torch.utils.data import DataLoader, Dataset
 from transformers import PreTrainedTokenizerFast
-from safetensors.torch import load_file
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("qwen_wiki_kd")
@@ -50,6 +50,7 @@ logger = logging.getLogger("qwen_wiki_kd")
 
 class RMSNorm(nn.Module):
     """Root Mean Square Layer Normalization."""
+
     def __init__(self, dim: int, eps: float = 1e-6) -> None:
         super().__init__()
         self.eps = eps
@@ -64,6 +65,7 @@ class RMSNorm(nn.Module):
 
 class RoPEEmbedding(nn.Module):
     """Rotary Position Embedding for Qwen2 causal attention."""
+
     def __init__(self, dim: int, max_position_embeddings: int = 32768, base: float = 1000000.0) -> None:
         super().__init__()
         self.dim = dim
@@ -97,6 +99,7 @@ def apply_rotary_pos_emb(
 
 class Qwen2MLP(nn.Module):
     """SwiGLU Multi-Layer Perceptron."""
+
     def __init__(self, hidden_size: int, intermediate_size: int) -> None:
         super().__init__()
         self.gate_proj = nn.Linear(hidden_size, intermediate_size, bias=False)
@@ -109,6 +112,7 @@ class Qwen2MLP(nn.Module):
 
 class Qwen2Attention(nn.Module):
     """Standard Grouped-Query Causal Attention with RoPE."""
+
     def __init__(self, hidden_size: int, num_heads: int, num_kv_heads: int) -> None:
         super().__init__()
         self.hidden_size = hidden_size
@@ -151,6 +155,7 @@ class Qwen2Attention(nn.Module):
 
 class CausalAttentionSurgeonAdapter(nn.Module):
     """Universal Adapter reconciling Grouped-Query Attention & RoPE with Registry modules."""
+
     def __init__(self, core_attn: nn.Module, hidden_size: int) -> None:
         super().__init__()
         self.core_attn = core_attn
@@ -169,6 +174,7 @@ class CausalAttentionSurgeonAdapter(nn.Module):
 
 class Qwen2DecoderLayer(nn.Module):
     """Single transformer decoder block."""
+
     def __init__(
         self,
         hidden_size: int,
@@ -197,6 +203,7 @@ class Qwen2DecoderLayer(nn.Module):
 
 class StandaloneQwen2ForCausalLM(nn.Module):
     """Clean PyTorch 1.12+ compatible implementation of Qwen2/2.5 Causal LM."""
+
     def __init__(self, config: dict[str, Any]) -> None:
         super().__init__()
         self.config = config
@@ -210,10 +217,12 @@ class StandaloneQwen2ForCausalLM(nn.Module):
 
         self.embed_tokens = nn.Embedding(vocab_size, hidden_size)
         self.rotary_emb = RoPEEmbedding(hidden_size // num_heads, base=config.get("rope_theta", 1000000.0))
-        self.layers = nn.ModuleList([
-            Qwen2DecoderLayer(hidden_size, intermediate_size, num_heads, num_kv_heads, rms_eps)
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                Qwen2DecoderLayer(hidden_size, intermediate_size, num_heads, num_kv_heads, rms_eps)
+                for _ in range(num_layers)
+            ]
+        )
         self.norm = RMSNorm(hidden_size, eps=rms_eps)
         self.lm_head = nn.Linear(hidden_size, vocab_size, bias=False)
         if config.get("tie_word_embeddings", False):
@@ -249,9 +258,9 @@ class StandaloneQwen2ForCausalLM(nn.Module):
             chunk_size = 64
             vocab_sz = self.config["vocab_size"]
             for i in range(0, shift_x.size(1), chunk_size):
-                h_c = shift_x[:, i:i + chunk_size, :]
-                l_c = shift_labels[:, i:i + chunk_size]
-                logits_c = self.lm_head(h_c).float() # compute loss in FP32 for numerical stability
+                h_c = shift_x[:, i : i + chunk_size, :]
+                l_c = shift_labels[:, i : i + chunk_size]
+                logits_c = self.lm_head(h_c).float()  # compute loss in FP32 for numerical stability
                 loss_c = F.cross_entropy(logits_c.view(-1, vocab_sz), l_c.reshape(-1), reduction="sum")
                 total_loss_sum = total_loss_sum + loss_c
             loss = total_loss_sum / shift_labels.numel()
@@ -263,6 +272,7 @@ class StandaloneQwen2ForCausalLM(nn.Module):
 
 class ArrowWikiTextDataset(Dataset):
     """Direct streaming of tokenized WikiText-2 blocks for Causal LM evaluation."""
+
     def __init__(self, arrow_path: str, tokenizer: Any, seq_len: int = 512) -> None:
         with open(arrow_path, "rb") as f:
             reader = ipc.open_stream(f)
@@ -271,7 +281,7 @@ class ArrowWikiTextDataset(Dataset):
         concatenated = "\n\n".join([t for t in raw_texts if t.strip()])
         tokens = tokenizer.encode(concatenated)
         self.num_samples = len(tokens) // seq_len
-        self.tokens = torch.tensor(tokens[:self.num_samples * seq_len], dtype=torch.long)
+        self.tokens = torch.tensor(tokens[: self.num_samples * seq_len], dtype=torch.long)
         self.seq_len = seq_len
 
     def __len__(self) -> int:
@@ -279,11 +289,8 @@ class ArrowWikiTextDataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         start = idx * self.seq_len
-        chunk = self.tokens[start:start + self.seq_len]
-        return {
-            "input_ids": chunk,
-            "labels": chunk.clone()
-        }
+        chunk = self.tokens[start : start + self.seq_len]
+        return {"input_ids": chunk, "labels": chunk.clone()}
 
 
 def evaluate_ppl(model: nn.Module, dataloader: DataLoader, device: torch.device, max_batches: int = 40) -> float:
@@ -426,15 +433,18 @@ def run_qwen_surgery_pipeline(
         "isolated_time_s": round(t_iso_dur, 1),
         "polish_time_s": round(t_pol_dur, 1),
         "total_time_s": round(total_dur, 1),
-        "status": "PASSED"
+        "status": "PASSED",
     }
 
 
-def persist_qwen_sqlite(results: list[dict[str, Any]], base_ppl: float, sqlite_path: str = "results/master_ledger.sqlite") -> None:
+def persist_qwen_sqlite(
+    results: list[dict[str, Any]], base_ppl: float, sqlite_path: str = "results/master_ledger.sqlite"
+) -> None:
     os.makedirs(os.path.dirname(sqlite_path), exist_ok=True)
     conn = sqlite3.connect(sqlite_path)
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS qwen_wikitext_kd_ablation (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT,
@@ -449,37 +459,50 @@ def persist_qwen_sqlite(results: list[dict[str, Any]], base_ppl: float, sqlite_p
             total_time_s REAL,
             status TEXT
         )
-    """)
+    """
+    )
     ts = datetime.datetime.now(datetime.timezone.utc).isoformat()
     for r in results:
         pol_ppl = r.get("polished_ppl", 0.0)
         delta = round(pol_ppl - base_ppl, 2)
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO qwen_wikitext_kd_ablation (
                 timestamp, model_name, dataset, module, teacher_baseline_ppl,
                 zero_shot_ppl, isolated_ppl, polished_ppl, ppl_delta,
                 total_time_s, status
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            ts,
-            "Qwen/Qwen2.5-0.5B",
-            "WikiText-2",
-            r.get("module"),
-            base_ppl,
-            r.get("zero_shot_ppl", 0.0),
-            r.get("isolated_ppl", 0.0),
-            pol_ppl,
-            delta,
-            r.get("total_time_s", 0.0),
-            r.get("status", "UNKNOWN")
-        ))
+        """,
+            (
+                ts,
+                "Qwen/Qwen2.5-0.5B",
+                "WikiText-2",
+                r.get("module"),
+                base_ppl,
+                r.get("zero_shot_ppl", 0.0),
+                r.get("isolated_ppl", 0.0),
+                pol_ppl,
+                delta,
+                r.get("total_time_s", 0.0),
+                r.get("status", "UNKNOWN"),
+            ),
+        )
     conn.commit()
     conn.close()
 
 
 def main():
     parser = argparse.ArgumentParser(description="Qwen WikiText-2 Causal KD Ablation")
-    parser.add_argument("--model-path", type=str, default=os.environ.get("HF_QWEN_MODEL_PATH", os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots/060db6499f32faf8b98477b0a26969ef7d8b9987")))
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        default=os.environ.get(
+            "HF_QWEN_MODEL_PATH",
+            os.path.expanduser(
+                "~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B/snapshots/060db6499f32faf8b98477b0a26969ef7d8b9987"
+            ),
+        ),
+    )
     parser.add_argument("--module", type=str, default=None)
     parser.add_argument("--all-modules", action="store_true")
     parser.add_argument("--batch-size", type=int, default=2)
@@ -499,8 +522,12 @@ def main():
     tokenizer_path = os.path.join(args.model_path, "tokenizer.json")
     tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_path)
 
-    train_path = os.path.expanduser("~/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-train.arrow")
-    test_path = os.path.expanduser("~/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-test.arrow")
+    train_path = os.path.expanduser(
+        "~/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-train.arrow"
+    )
+    test_path = os.path.expanduser(
+        "~/.cache/huggingface/datasets/wikitext/wikitext-2-raw-v1/0.0.0/b08601e04326c79dfdd32d625aee71d232d685c3/wikitext-test.arrow"
+    )
 
     train_dataset = ArrowWikiTextDataset(train_path, tokenizer, seq_len=args.seq_len)
     test_dataset = ArrowWikiTextDataset(test_path, tokenizer, seq_len=args.seq_len)
@@ -527,6 +554,7 @@ def main():
         target_modules = [args.module]
     elif args.all_modules:
         from neuralops.core.registry import ATTENTION_REGISTRY
+
         target_modules = list(ATTENTION_REGISTRY.keys())
     else:
         target_modules = [
@@ -555,21 +583,24 @@ def main():
             results.append(res)
         except Exception as exc:
             logger.error(f"Error evaluating {mod_name} on Qwen: {exc}")
-            results.append({
-                "module": mod_name,
-                "zero_shot_ppl": 999.9,
-                "isolated_ppl": 999.9,
-                "polished_ppl": 999.9,
-                "teacher_ppl": teacher_ppl,
-                "total_time_s": 0.0,
-                "status": f"FAILED: {exc}"
-            })
+            results.append(
+                {
+                    "module": mod_name,
+                    "zero_shot_ppl": 999.9,
+                    "isolated_ppl": 999.9,
+                    "polished_ppl": 999.9,
+                    "teacher_ppl": teacher_ppl,
+                    "total_time_s": 0.0,
+                    "status": f"FAILED: {exc}",
+                }
+            )
 
         os.makedirs(os.path.dirname(args.out_json), exist_ok=True)
         with open(args.out_json, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
 
     import pandas as pd
+
     df = pd.DataFrame(results)
     df.to_csv(args.out_csv, index=False)
     persist_qwen_sqlite(results, base_ppl=teacher_ppl, sqlite_path=args.ledger_db)
@@ -577,7 +608,9 @@ def main():
     print("\n" + "=" * 105)
     print(f"QWEN WIKITEXT-2 PERPLEXITY ABLATION SUMMARY (Teacher Baseline PPL: {teacher_ppl:.2f})")
     print("=" * 105)
-    print(f"{'Module':<25} | {'Zero-Shot PPL':<15} | {'Isolated PPL':<15} | {'Polished PPL':<15} | {'Total Time':<12} | {'Status'}")
+    print(
+        f"{'Module':<25} | {'Zero-Shot PPL':<15} | {'Isolated PPL':<15} | {'Polished PPL':<15} | {'Total Time':<12} | {'Status'}"
+    )
     print("-" * 105)
     for r in results:
         mod = r.get("module", "")[:24]

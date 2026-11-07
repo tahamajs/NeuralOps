@@ -50,6 +50,7 @@ def create_app(auth_credentials: tuple[str, str] | None = None) -> FastAPI:
     # Optional Basic Auth middleware
     if auth_credentials:
         from neuralops.ui.auth import BasicAuthMiddleware
+
         user, pwd = auth_credentials
         app.add_middleware(BasicAuthMiddleware, username=user, password=pwd)
 

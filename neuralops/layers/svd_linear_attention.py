@@ -8,4 +8,5 @@
 """
 Compatibility alias for neuralops.layers.svd.svd_linear_attention.
 """
+
 from neuralops.layers.svd.svd_linear_attention import *  # noqa: F401, F403

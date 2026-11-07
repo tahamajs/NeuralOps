@@ -21,29 +21,38 @@ import torch
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
+
     class _MockTriton:
         @staticmethod
         def jit(fn):
             return fn
+
         @staticmethod
         def autotune(*args, **kwargs):
             return lambda fn: fn
+
         @staticmethod
         def cdiv(a, b):
             return (a + b - 1) // b
+
         class Config:
             def __init__(self, *args, **kwargs):
                 pass
+
     triton = _MockTriton()
+
     class _MockTl:
         constexpr = int
+
     tl = _MockTl()
 
 
 if HAS_TRITON:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_L": 64, "BLOCK_D": 32}, num_warps=4, num_stages=2),
@@ -55,11 +64,23 @@ if HAS_TRITON:
     )
     @triton.jit
     def _hydra_fwd_kernel(
-        Q_ptr, S_ptr, Out_ptr,
-        stride_qb, stride_qh, stride_ql, stride_qd,
-        stride_sb, stride_sh, stride_sd,
-        stride_ob, stride_oh, stride_ol, stride_od,
-        B, H, L,
+        Q_ptr,
+        S_ptr,
+        Out_ptr,
+        stride_qb,
+        stride_qh,
+        stride_ql,
+        stride_qd,
+        stride_sb,
+        stride_sh,
+        stride_sd,
+        stride_ob,
+        stride_oh,
+        stride_ol,
+        stride_od,
+        B,
+        H,
+        L,
         D: tl.constexpr,
         BLOCK_L: tl.constexpr,
         BLOCK_D: tl.constexpr,
@@ -100,19 +121,53 @@ if HAS_TRITON:
     )
     @triton.jit
     def _hydra_bwd_kernel(
-        Dout_ptr, Q_ptr, K_ptr, V_ptr, S_ptr, T_ptr,
-        Dq_ptr, Dk_ptr, Dv_ptr,
-        stride_dout_b, stride_dout_h, stride_dout_l, stride_dout_d,
-        stride_qb, stride_qh, stride_ql, stride_qd,
-        stride_kb, stride_kh, stride_kl, stride_kd,
-        stride_vb, stride_vh, stride_vl, stride_vd,
-        stride_sb, stride_sh, stride_sd,
-        stride_tb, stride_th, stride_td,
-        stride_dq_b, stride_dq_h, stride_dq_l, stride_dq_d,
-        stride_dk_b, stride_dk_h, stride_dk_l, stride_dk_d,
-        stride_dv_b, stride_dv_h, stride_dv_l, stride_dv_d,
+        Dout_ptr,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        S_ptr,
+        T_ptr,
+        Dq_ptr,
+        Dk_ptr,
+        Dv_ptr,
+        stride_dout_b,
+        stride_dout_h,
+        stride_dout_l,
+        stride_dout_d,
+        stride_qb,
+        stride_qh,
+        stride_ql,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kl,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vl,
+        stride_vd,
+        stride_sb,
+        stride_sh,
+        stride_sd,
+        stride_tb,
+        stride_th,
+        stride_td,
+        stride_dq_b,
+        stride_dq_h,
+        stride_dq_l,
+        stride_dq_d,
+        stride_dk_b,
+        stride_dk_h,
+        stride_dk_l,
+        stride_dk_d,
+        stride_dv_b,
+        stride_dv_h,
+        stride_dv_l,
+        stride_dv_d,
         inv_L,
-        B, H, L,
+        B,
+        H,
+        L,
         D: tl.constexpr,
         BLOCK_L: tl.constexpr,
     ):
@@ -131,7 +186,11 @@ if HAS_TRITON:
         t = tl.load(T_ptr + b * stride_tb + h * stride_th + offs_d * stride_td)
 
         dout = tl.load(
-            Dout_ptr + b * stride_dout_b + h * stride_dout_h + offs_l[:, None] * stride_dout_l + offs_d[None, :] * stride_dout_d,
+            Dout_ptr
+            + b * stride_dout_b
+            + h * stride_dout_h
+            + offs_l[:, None] * stride_dout_l
+            + offs_d[None, :] * stride_dout_d,
             mask=mask_l[:, None],
             other=0.0,
         )
@@ -165,9 +224,12 @@ if HAS_TRITON:
             dv,
             mask=mask_l[:, None],
         )
+
 else:
+
     def _hydra_fwd_kernel(*args, **kwargs):
         pass
+
     def _hydra_bwd_kernel(*args, **kwargs):
         pass
 
@@ -191,7 +253,7 @@ class TritonHydraAttentionFunction(torch.autograd.Function):
         v: torch.Tensor,
     ) -> torch.Tensor:
         orig_shape = q.shape
-        is_3d = (q.ndim == 3)
+        is_3d = q.ndim == 3
         if is_3d:
             B, L, D = q.shape
             H = 1
@@ -220,11 +282,23 @@ class TritonHydraAttentionFunction(torch.autograd.Function):
         grid = lambda META: (triton.cdiv(L, META["BLOCK_L"]), B * H)
 
         _hydra_fwd_kernel[grid](
-            q_c, s_vec, out_4d,
-            q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-            s_vec.stride(0), s_vec.stride(1), s_vec.stride(2),
-            out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
-            B, H, L,
+            q_c,
+            s_vec,
+            out_4d,
+            q_c.stride(0),
+            q_c.stride(1),
+            q_c.stride(2),
+            q_c.stride(3),
+            s_vec.stride(0),
+            s_vec.stride(1),
+            s_vec.stride(2),
+            out_4d.stride(0),
+            out_4d.stride(1),
+            out_4d.stride(2),
+            out_4d.stride(3),
+            B,
+            H,
+            L,
             D=D,
         )
 
@@ -248,19 +322,53 @@ class TritonHydraAttentionFunction(torch.autograd.Function):
         grid = lambda META: (triton.cdiv(L, META["BLOCK_L"]), B * H)
 
         _hydra_bwd_kernel[grid](
-            dout_c, q, k, v, s_vec, t_vec,
-            dq, dk, dv,
-            dout_c.stride(0), dout_c.stride(1), dout_c.stride(2), dout_c.stride(3),
-            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-            s_vec.stride(0), s_vec.stride(1), s_vec.stride(2),
-            t_vec.stride(0), t_vec.stride(1), t_vec.stride(2),
-            dq.stride(0), dq.stride(1), dq.stride(2), dq.stride(3),
-            dk.stride(0), dk.stride(1), dk.stride(2), dk.stride(3),
-            dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
+            dout_c,
+            q,
+            k,
+            v,
+            s_vec,
+            t_vec,
+            dq,
+            dk,
+            dv,
+            dout_c.stride(0),
+            dout_c.stride(1),
+            dout_c.stride(2),
+            dout_c.stride(3),
+            q.stride(0),
+            q.stride(1),
+            q.stride(2),
+            q.stride(3),
+            k.stride(0),
+            k.stride(1),
+            k.stride(2),
+            k.stride(3),
+            v.stride(0),
+            v.stride(1),
+            v.stride(2),
+            v.stride(3),
+            s_vec.stride(0),
+            s_vec.stride(1),
+            s_vec.stride(2),
+            t_vec.stride(0),
+            t_vec.stride(1),
+            t_vec.stride(2),
+            dq.stride(0),
+            dq.stride(1),
+            dq.stride(2),
+            dq.stride(3),
+            dk.stride(0),
+            dk.stride(1),
+            dk.stride(2),
+            dk.stride(3),
+            dv.stride(0),
+            dv.stride(1),
+            dv.stride(2),
+            dv.stride(3),
             1.0 / float(L),
-            B, H, L,
+            B,
+            H,
+            L,
             D=D,
         )
 
@@ -277,13 +385,11 @@ def triton_hydra_attention(
     v: torch.Tensor,
 ) -> torch.Tensor:
     """Dispatched Hydra Attention with full Autograd backward support."""
-    if torch.is_grad_enabled() and any(
-        t.requires_grad for t in (q, k, v) if isinstance(t, torch.Tensor)
-    ):
+    if torch.is_grad_enabled() and any(t.requires_grad for t in (q, k, v) if isinstance(t, torch.Tensor)):
         return TritonHydraAttentionFunction.apply(q, k, v)
 
     orig_shape = q.shape
-    is_3d = (q.ndim == 3)
+    is_3d = q.ndim == 3
     if is_3d:
         B, L, D = q.shape
         H = 1
@@ -307,11 +413,23 @@ def triton_hydra_attention(
     grid = lambda META: (triton.cdiv(L, META["BLOCK_L"]), B * H)
 
     _hydra_fwd_kernel[grid](
-        q_c, s_vec, out_4d,
-        q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-        s_vec.stride(0), s_vec.stride(1), s_vec.stride(2),
-        out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
-        B, H, L,
+        q_c,
+        s_vec,
+        out_4d,
+        q_c.stride(0),
+        q_c.stride(1),
+        q_c.stride(2),
+        q_c.stride(3),
+        s_vec.stride(0),
+        s_vec.stride(1),
+        s_vec.stride(2),
+        out_4d.stride(0),
+        out_4d.stride(1),
+        out_4d.stride(2),
+        out_4d.stride(3),
+        B,
+        H,
+        L,
         D=D,
     )
 

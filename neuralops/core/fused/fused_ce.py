@@ -12,9 +12,11 @@ Memory-efficient fused linear projection and cross-entropy loss kernel minimizin
 """
 
 from __future__ import annotations
+
+from typing import Literal
+
 import torch
 import torch.nn.functional as F
-from typing import Literal
 
 
 def fused_linear_cross_entropy(

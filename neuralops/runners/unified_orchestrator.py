@@ -70,9 +70,7 @@ def run_orchestrator(module_key: str, default_args: list = None):
         proc = subprocess.run(cmd, capture_output=True, text=True)
         elapsed = time.time() - t0
         if proc.returncode != 0:
-            logger.error(
-                "Failed %s (exit %d):\n%s", m["name"], proc.returncode, proc.stderr[-1000:]
-            )
+            logger.error("Failed %s (exit %d):\n%s", m["name"], proc.returncode, proc.stderr[-1000:])
         else:
             logger.info("Finished %s in %.1fs", m["name"], elapsed)
 

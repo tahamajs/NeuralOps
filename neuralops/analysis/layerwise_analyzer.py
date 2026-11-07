@@ -106,9 +106,7 @@ class StreamingLayerAccumulator:
             else:
                 total_s = self.cov_samples + sub_n
                 delta = sub_mean - self.cov_mean
-                self.cov_m2 += batch_m2 + np.outer(delta, delta) * (
-                    self.cov_samples * sub_n / total_s
-                )
+                self.cov_m2 += batch_m2 + np.outer(delta, delta) * (self.cov_samples * sub_n / total_s)
                 self.cov_mean += delta * (sub_n / total_s)
                 self.cov_samples = total_s
             self.cov_matrix = self.cov_m2 / self.cov_samples
@@ -285,11 +283,7 @@ class LayerwiseAnalyzer:
             }
 
         mean_vectors = [
-            (
-                acc.running_mean_vector
-                if acc.running_mean_vector is not None
-                else np.zeros(128, dtype=np.float32)
-            )
+            (acc.running_mean_vector if acc.running_mean_vector is not None else np.zeros(128, dtype=np.float32))
             for acc in self.layer_accumulators
         ]
 
@@ -311,9 +305,7 @@ class LayerwiseAnalyzer:
 
         np.stack(mean_vectors) if num_layers > 1 else np.zeros((1, 128))
         intrinsic_dims = [
-            estimate_intrinsic_dimension(
-                acc.cov_matrix if acc.cov_matrix is not None else np.eye(10), k=3
-            )
+            estimate_intrinsic_dimension(acc.cov_matrix if acc.cov_matrix is not None else np.eye(10), k=3)
             for acc in self.layer_accumulators
         ]
 
@@ -345,10 +337,7 @@ def estimate_intrinsic_dimension(hidden_states: np.ndarray, k: int = 5) -> float
     if hidden_states.ndim == 1:
         return 1.0
     if hidden_states.ndim != 2:
-        raise ValueError(
-            "hidden_states must have shape [samples, features], "
-            f"got {hidden_states.shape}"
-        )
+        raise ValueError("hidden_states must have shape [samples, features], " f"got {hidden_states.shape}")
     N, D = hidden_states.shape
     if N == 0 or D == 0:
         return 0.0
@@ -366,9 +355,7 @@ def estimate_intrinsic_dimension(hidden_states: np.ndarray, k: int = 5) -> float
         if not valid.any():
             return float(D)
 
-        log_ratios = np.log(
-            kth_dists[valid, None] / nearest[valid, :-1]
-        )
+        log_ratios = np.log(kth_dists[valid, None] / nearest[valid, :-1])
         mean_log_ratio_sum = float(np.mean(np.sum(log_ratios, axis=1)))
         if not np.isfinite(mean_log_ratio_sum) or mean_log_ratio_sum <= 0:
             return float(D)

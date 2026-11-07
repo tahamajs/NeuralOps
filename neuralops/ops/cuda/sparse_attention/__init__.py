@@ -11,8 +11,8 @@ Block-Sparse Attention Hardware Operators.
 
 from neuralops.ops.cuda.sparse_attention.sparse_attention_autograd import (
     block_sparse_attn,
-    block_sparse_attn_pytorch_ref,
     block_sparse_attn_bwd,
+    block_sparse_attn_pytorch_ref,
 )
 
 __all__ = ["block_sparse_attn", "block_sparse_attn_pytorch_ref", "block_sparse_attn_bwd"]

@@ -13,6 +13,7 @@ Sets deterministic random seeds across PyTorch, NumPy, and Python standard libra
 
 from __future__ import annotations
 
-from neuralops.core.utils.general import set_seed, set_seed as set_all_seeds
+from neuralops.core.utils.general import set_seed
+from neuralops.core.utils.general import set_seed as set_all_seeds
 
 __all__ = ["set_all_seeds", "set_seed"]

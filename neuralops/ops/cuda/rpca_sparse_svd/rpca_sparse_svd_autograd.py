@@ -54,12 +54,14 @@ def rpca_sparse_svd_gemm_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.low_rank import triton_fused_lowrank_sparse_gemm_pytorch_ref
+
     return triton_fused_lowrank_sparse_gemm_pytorch_ref(x, v_r, u_r, s=s, bias=bias)
 
 
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.low_rank import triton_fused_lowrank_sparse_gemm
+
         return triton_fused_lowrank_sparse_gemm
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed to initialize Triton implementation for rpca_sparse_svd: %s", exc, exc_info=True)
@@ -126,8 +128,8 @@ class _RPCASparseSVDGemmFunction(torch.autograd.Function):
         ctx.save_for_backward(x_2d, V, U, s if isinstance(s, torch.Tensor) else None)
         ctx.has_bias = bias is not None
         ctx.has_s = s is not None and isinstance(s, torch.Tensor)
-        ctx.v_r_transposed = (v_r.shape[1] != K)
-        ctx.u_r_transposed = (u_r.shape[1] != R)
+        ctx.v_r_transposed = v_r.shape[1] != K
+        ctx.u_r_transposed = u_r.shape[1] != R
         ctx.orig_shape = orig_shape
         ctx.out_features = N
 

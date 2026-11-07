@@ -1,9 +1,9 @@
 # AGT-05 Completion Report: Dispatch Auto-Mode and Missing PyTorch Fallback Guard
 
-**Task:** AGT-05 (P0 — Findings F-27, F-28)  
-**Date:** 2026-11-07  
-**Environment:** Existing project venv (`/Users/tahamajs/dev/Project/.venv`, Python 3.14.3)  
-**Status:** Complete & Verified  
+**Task:** AGT-05 (P0 — Findings F-27, F-28)
+**Date:** 2026-11-07
+**Environment:** Existing project venv (`/Users/tahamajs/dev/Project/.venv`, Python 3.14.3)
+**Status:** Complete & Verified
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## 1. Executive Abstract & Theoretical Motivation
 
-Pruning neural network weight tensors without sacrificing performance is a fundamental challenge in model compression. Standard magnitude pruning suffers from greedy decisions that create unrecoverable optimization bottlenecks. **ADMM Pruner** addresses this problem by formulating model pruning as a constrained non-convex optimization problem solved via the **Alternating Direction Method of Multipliers (ADMM)**. 
+Pruning neural network weight tensors without sacrificing performance is a fundamental challenge in model compression. Standard magnitude pruning suffers from greedy decisions that create unrecoverable optimization bottlenecks. **ADMM Pruner** addresses this problem by formulating model pruning as a constrained non-convex optimization problem solved via the **Alternating Direction Method of Multipliers (ADMM)**.
 
 By decomposing the hard $L_0$-norm / percentile sparsity constraint into a sequence of subproblems, ADMM decouples continuous parameter updates from discrete structural pruning. The algorithm alternates between updating the continuous weight matrix $W$, projecting onto the sparse constraint set $Z$, and updating a dual multiplier tensor $U$ that tracks constraint residual drift.
 
@@ -193,4 +193,3 @@ The empirical evaluation of `admm_pruner` across standard sequence lengths and l
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

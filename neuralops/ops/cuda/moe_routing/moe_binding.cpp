@@ -222,4 +222,3 @@ std::tuple<torch::Tensor, torch::Tensor> moe_topk_routing(
 
     return std::make_tuple(routing_weights, topk_indices);
 }
-

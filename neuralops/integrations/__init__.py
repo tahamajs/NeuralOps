@@ -47,8 +47,20 @@ _EXPORTS = {
     "RadixTrieProtocol": ("protocols", "RadixTrieProtocol"),
 }
 _MODULES = {
-    "capabilities", "compressed_tensors", "distributed_compile", "hf_automodel", "protocols", "serving",
-    "sglang", "sglang_backend", "tensorrt_llm", "tensorrt_llm_plugin", "tgi", "vllm", "vllm_backend", "vllm_plugin",
+    "capabilities",
+    "compressed_tensors",
+    "distributed_compile",
+    "hf_automodel",
+    "protocols",
+    "serving",
+    "sglang",
+    "sglang_backend",
+    "tensorrt_llm",
+    "tensorrt_llm_plugin",
+    "tgi",
+    "vllm",
+    "vllm_backend",
+    "vllm_plugin",
 }
 
 __all__ = [*_EXPORTS, *_MODULES]

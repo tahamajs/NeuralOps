@@ -106,11 +106,7 @@ def svd_mamba_fused_pytorch_ref(
         h_den_inter = decay_c * h_den_running.unsqueeze(1)
         h_den_chunk = torch.clamp(h_den_intra + h_den_inter, min=0.0, max=1e4)
 
-        denom_c = (
-            (C_ssm[:, s_idx:e_idx].abs().unsqueeze(2).float() * h_den_chunk)
-            .sum(dim=-1)
-            .clamp(min=1e-4)
-        )
+        denom_c = (C_ssm[:, s_idx:e_idx].abs().unsqueeze(2).float() * h_den_chunk).sum(dim=-1).clamp(min=1e-4)
         num_c = (C_ssm[:, s_idx:e_idx].unsqueeze(2).float() * h_chunk).sum(dim=-1)
         y_c = (num_c / denom_c).to(u.dtype)
         y_chunks.append(y_c)
@@ -156,9 +152,7 @@ def _svd_mamba_fused_fwd_dispatch(
         from neuralops.ops.triton.svd_mamba_fused_triton import svd_mamba_fused_triton
 
         def _triton_wrapper(u_in, delta_in, A_in, B_in, C_in, D_in=None, z_in=None, g_in=None):
-            return svd_mamba_fused_triton(
-                u_in, delta_in, A_in, B_in, C_in, D=D_in, z=z_in, global_mix=g_in
-            )
+            return svd_mamba_fused_triton(u_in, delta_in, A_in, B_in, C_in, D=D_in, z=z_in, global_mix=g_in)
 
         triton_fn = _triton_wrapper
     except Exception as exc:

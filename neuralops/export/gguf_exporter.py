@@ -34,6 +34,7 @@ GGUF_DEFAULT_ALIGNMENT = 32
 
 class GGUFValueType(enum.IntEnum):
     """GGUF metadata value data types."""
+
     UINT8 = 0
     INT8 = 1
     UINT16 = 2
@@ -51,6 +52,7 @@ class GGUFValueType(enum.IntEnum):
 
 class GGMLType(enum.IntEnum):
     """GGML tensor data types."""
+
     F32 = 0
     F16 = 1
     Q4_0 = 2
@@ -86,9 +88,7 @@ def quantize_to_q8_0(tensor: torch.Tensor) -> bytes:
     flat = tensor.detach().cpu().to(torch.float32).flatten()
     n = flat.numel()
     if n % 32 != 0:
-        raise ValueError(
-            f"Tensor element count ({n}) must be a multiple of 32 for Q8_0 quantization."
-        )
+        raise ValueError(f"Tensor element count ({n}) must be a multiple of 32 for Q8_0 quantization.")
     blocks = flat.view(-1, 32)
     # block scale factor d = amax / 127.0
     d = torch.max(torch.abs(blocks), dim=-1, keepdim=True).values / 127.0
@@ -261,7 +261,7 @@ class GGUFWriter:
                 # Align tensor data offset to self.alignment (32 bytes)
                 rem = current_data_offset % self.alignment
                 if rem != 0:
-                    current_data_offset += (self.alignment - rem)
+                    current_data_offset += self.alignment - rem
                 tensor_data_offsets.append(current_data_offset)
 
                 # Reverse dimensions for GGUF/GGML convention

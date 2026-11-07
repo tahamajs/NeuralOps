@@ -13,11 +13,6 @@ Replaces full attention projections with low-rank adaptation matrices for parame
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -26,9 +21,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -491,14 +487,10 @@ class LoRAAttention(BaseAttention):
         is_decoder = bool(
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "")
-            in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
         if is_decoder and not is_cross:
-            causal = torch.tril(
-                torch.ones(N_q, N_k, device=device, dtype=torch.bool),
-                diagonal=max(0, N_k - N_q)
-            )
+            causal = torch.tril(torch.ones(N_q, N_k, device=device, dtype=torch.bool), diagonal=max(0, N_k - N_q))
             scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
         attn = F.softmax(scores, dim=-1).to(dtype)
@@ -525,6 +517,7 @@ class LoRAAttention(BaseAttention):
             if context.is_cuda and hasattr(self.out_proj, "weight"):
                 try:
                     from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                     output = self.out_proj(context)
                 except Exception:
                     output = self.out_proj(context)

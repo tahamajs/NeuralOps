@@ -117,7 +117,7 @@ During pre-trained model transfer, source linear projections often contain non-t
 ```
 
 ### 6.1 Triton Strategy 1: Fused Dual-GEMM Factorized Projection Operator
-Standard PyTorch implementations evaluate low-rank factorized projections through two independent, sequential matrix multiplications (`x @ down.weight.T` followed by `@ up.weight.T`). This non-fused execution materializes an intermediate tensor of shape $[B, N, r]$ in global DRAM, creating a severe memory-bandwidth bottleneck. 
+Standard PyTorch implementations evaluate low-rank factorized projections through two independent, sequential matrix multiplications (`x @ down.weight.T` followed by `@ up.weight.T`). This non-fused execution materializes an intermediate tensor of shape $[B, N, r]$ in global DRAM, creating a severe memory-bandwidth bottleneck.
 
 To circumvent this latency overhead, a custom Triton GEMM kernel streams input tiles $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ directly into on-chip SRAM scratchpads. The kernel evaluates the down-projection with $V_{:, :r}^T$ entirely within SIMD register files and immediately pipes the intermediate results into the up-projection stage with $(U_{:, :r} \Sigma_{:r})^T$. This end-to-end register-level fusion reduces global DRAM traffic by $2\times$ and achieves up to a $1.8\times$ kernel latency reduction without additional buffer allocation.
 
@@ -144,4 +144,3 @@ The empirical evaluation of `minimal_prism` across standard sequence lengths and
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

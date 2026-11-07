@@ -12,7 +12,6 @@ Learnable progressive token pruning module with guaranteed prefix retention and 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _find_layer_list
 
 import logging
 import math
@@ -23,13 +22,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
-from neuralops.core.attention_utils import (
-    LoRALinear,
-    apply_rotary_pos_emb,
-)
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _find_layer_list
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -100,31 +97,26 @@ class ProgressiveTokenPruning(BaseAttention):
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
-        self.d_model = int(
-            getattr(config, "hidden_size", None) or d_model
-            or kwargs.get("hidden_size") or 768
-        )
+        self.d_model = int(getattr(config, "hidden_size", None) or d_model or kwargs.get("hidden_size") or 768)
         self.dim = self.d_model
-        self.num_heads = int(
-            getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        )
+        self.num_heads = int(getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12)))
         self.num_kv_heads = int(
             getattr(
-                config, "num_key_value_heads",
+                config,
+                "num_key_value_heads",
                 kwargs.get("num_key_value_heads", self.num_heads),
             )
         )
         self.head_dim = int(
             getattr(
-                config, "head_dim",
+                config,
+                "head_dim",
                 kwargs.get("head_dim", self.dim // max(1, self.num_heads)),
             )
         )
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
-        self.keep_ratio = float(
-            getattr(comp_config, "keep_ratio", kwargs.get("keep_ratio", keep_ratio))
-        )
+        self.keep_ratio = float(getattr(comp_config, "keep_ratio", kwargs.get("keep_ratio", keep_ratio)))
 
         is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
         if kwargs.get("is_causal", False):
@@ -134,37 +126,49 @@ class ProgressiveTokenPruning(BaseAttention):
         self.is_nested_encoder = False
 
         self.lora_rank = int(
-            getattr(config, "lora_rank",
-                    getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-            if config else 16
+            getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            if config
+            else 16
         )
         self.lora_alpha = float(
-            getattr(config, "lora_alpha",
-                    getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
-            if config else 32.0
+            getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+            if config
+            else 32.0
         )
         self.freeze_base = self.lora_rank > 0
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
         self.q_lin = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_lin = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_lin = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_lin = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -191,11 +195,7 @@ class ProgressiveTokenPruning(BaseAttention):
             self.score_network = SharedTokenScorer(self.dim, hidden=64)
             self._uses_shared_scorer = False
 
-        dropout_p = (
-            getattr(config, "dropout",
-                    getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         src = (
@@ -219,19 +219,22 @@ class ProgressiveTokenPruning(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
-                hasattr(src, "self") and hasattr(src.self, "query")
-                and hasattr(src, "output") and hasattr(src.output, "dense")
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
             )
             or (
-                cls_name in (
-                    "BertSelfAttention", "RobertaSelfAttention",
-                    "XLMRobertaSelfAttention", "ElectraSelfAttention",
+                cls_name
+                in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
                 or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
@@ -242,8 +245,10 @@ class ProgressiveTokenPruning(BaseAttention):
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None),
-            "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -264,12 +269,12 @@ class ProgressiveTokenPruning(BaseAttention):
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
                 extracted["q"] = (c_w[:split, :], c_b[:split] if c_b is not None else None)
                 extracted["k"] = (
-                    c_w[split:2*split, :],
-                    c_b[split:2*split] if c_b is not None else None,
+                    c_w[split : 2 * split, :],
+                    c_b[split : 2 * split] if c_b is not None else None,
                 )
                 extracted["v"] = (
-                    c_w[2*split:, :],
-                    c_b[2*split:] if c_b is not None else None,
+                    c_w[2 * split :, :],
+                    c_b[2 * split :] if c_b is not None else None,
                 )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
@@ -286,9 +291,7 @@ class ProgressiveTokenPruning(BaseAttention):
                     if is_conv_o:
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (
-                        o_w, bias_o.data.clone() if bias_o is not None else None
-                    )
+                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
@@ -324,13 +327,11 @@ class ProgressiveTokenPruning(BaseAttention):
                             )
                             break
 
-        missing = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -339,10 +340,7 @@ class ProgressiveTokenPruning(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"ProgressiveTokenPruning copy_weights failed: missing "
@@ -350,8 +348,10 @@ class ProgressiveTokenPruning(BaseAttention):
             )
 
         target_map = {
-            "q": self.q_lin, "k": self.k_lin,
-            "v": self.v_lin, "o": self.out_lin,
+            "q": self.q_lin,
+            "k": self.k_lin,
+            "v": self.v_lin,
+            "o": self.out_lin,
         }
 
         with torch.no_grad():
@@ -368,8 +368,7 @@ class ProgressiveTokenPruning(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif (w.shape[0] < target_mod.weight.shape[0]
-                      and target_mod.weight.shape[0] % w.shape[0] == 0):
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -390,17 +389,13 @@ class ProgressiveTokenPruning(BaseAttention):
 
                 fnorm = float(torch.linalg.norm(target_mod.weight.float()).item())
                 if fnorm < 1e-4:
-                    logger.warning(
-                        "PTP: '%s' weight has near-zero norm (%.2e).", key, fnorm
-                    )
+                    logger.warning("PTP: '%s' weight has near-zero norm (%.2e).", key, fnorm)
 
         if self.freeze_base:
             for m in (self.q_lin, self.k_lin, self.v_lin, self.out_lin):
                 m.freeze_base_weights()
 
-    def _select_causal_indices(
-        self, L: int, k_tokens: int, B: int, device: torch.device
-    ) -> torch.Tensor:
+    def _select_causal_indices(self, L: int, k_tokens: int, B: int, device: torch.device) -> torch.Tensor:
         """
         Causal-safe selection: keep first token + last (k_tokens - 1) tokens.
 
@@ -496,7 +491,9 @@ class ProgressiveTokenPruning(BaseAttention):
 
             if self.is_decoder:
                 attn_out = F.scaled_dot_product_attention(
-                    q, k_full, v_full,
+                    q,
+                    k_full,
+                    v_full,
                     is_causal=True,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
@@ -504,19 +501,16 @@ class ProgressiveTokenPruning(BaseAttention):
                 attn_bias = None
                 if attention_mask is not None:
                     attn_bias = torch.zeros(B, 1, L, L, device=device, dtype=q.dtype)
-                    attn_bias = attn_bias.masked_fill(
-                        ~valid_mask.unsqueeze(1).unsqueeze(2), float("-inf")
-                    )
+                    attn_bias = attn_bias.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), float("-inf"))
                 attn_out = F.scaled_dot_product_attention(
-                    q, k_full, v_full,
+                    q,
+                    k_full,
+                    v_full,
                     attn_mask=attn_bias,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
 
-            attn_out = (
-                attn_out.permute(0, 2, 1, 3).contiguous()
-                .view(B, L, self.all_head_size)
-            )
+            attn_out = attn_out.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
             attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
             if cache_obj is not None:
@@ -536,10 +530,7 @@ class ProgressiveTokenPruning(BaseAttention):
                 out = self.out_lin(attn_out)
                 return (out, None)
 
-        top_idx_exp = (
-            top_indices.unsqueeze(1).unsqueeze(-1)
-            .expand(-1, self.num_kv_heads, -1, self.head_dim)
-        )
+        top_idx_exp = top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, self.num_kv_heads, -1, self.head_dim)
         k_pruned = torch.gather(k_new, 2, top_idx_exp)
         v_pruned = torch.gather(v_new, 2, top_idx_exp)
 
@@ -550,9 +541,7 @@ class ProgressiveTokenPruning(BaseAttention):
             past_positions = torch.arange(past_len, device=device).view(1, 1, -1)
             past_positions = past_positions.expand(B, 1, -1)
             current_positions = top_indices + past_len
-            k_positions = torch.cat(
-                [past_positions, current_positions.unsqueeze(1)], dim=-1
-            )
+            k_positions = torch.cat([past_positions, current_positions.unsqueeze(1)], dim=-1)
         else:
             k_all = k_pruned
             v_all = v_pruned
@@ -563,9 +552,7 @@ class ProgressiveTokenPruning(BaseAttention):
             v_all = repeat_kv(v_all, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        attn_scores = torch.matmul(
-            q.float(), k_all.float().transpose(-2, -1).contiguous()
-        ) * scale
+        attn_scores = torch.matmul(q.float(), k_all.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder:
             q_pos = (past_len + torch.arange(L, device=device)).view(1, 1, L, 1)
@@ -583,9 +570,7 @@ class ProgressiveTokenPruning(BaseAttention):
             )
         else:
             all_valid = current_valid
-        attn_scores = attn_scores.masked_fill(
-            ~all_valid.unsqueeze(1).unsqueeze(2), -1e4
-        )
+        attn_scores = attn_scores.masked_fill(~all_valid.unsqueeze(1).unsqueeze(2), -1e4)
 
         probs = F.softmax(attn_scores, dim=-1).to(x.dtype)
         probs = torch.nan_to_num(probs, nan=0.0)
@@ -595,18 +580,11 @@ class ProgressiveTokenPruning(BaseAttention):
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                probs = probs * head_mask.view(
-                    head_mask.size(0), self.num_heads, 1, 1
-                ).to(probs.dtype)
+                probs = probs * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(probs.dtype)
             elif head_mask.dim() == 4:
                 probs = probs * head_mask.to(probs.dtype)
 
-        attn_out = (
-            torch.matmul(probs, v_all)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-            .view(B, L, self.all_head_size)
-        )
+        attn_out = torch.matmul(probs, v_all).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         updated_cache = None
@@ -670,10 +648,7 @@ def inject_progressive_token_pruning(
 
         share = kwargs.get("share_scorer", False)
         if share and shared_scorer is None:
-            dim = (
-                getattr(getattr(model, "config", None), "hidden_size", None)
-                or kwargs.get("hidden_size", 768)
-            )
+            dim = getattr(getattr(model, "config", None), "hidden_size", None) or kwargs.get("hidden_size", 768)
             shared_scorer = SharedTokenScorer(int(dim), hidden=64)
             logger.warning(
                 "PTP: share_scorer=True — using a single shared scorer across "

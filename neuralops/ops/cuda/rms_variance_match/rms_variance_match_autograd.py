@@ -61,9 +61,7 @@ def rms_variance_match_pytorch_ref(
 def _fwd_dispatch(y, v_ref, clamp_min=0.25, clamp_max=4.0):
     def cuda_fn(y, v_ref, clamp_min=0.25, clamp_max=4.0):
         mod = _get_module()
-        return mod.rms_variance_match_fwd(
-            y.contiguous(), v_ref.contiguous(), float(clamp_min), float(clamp_max)
-        )
+        return mod.rms_variance_match_fwd(y.contiguous(), v_ref.contiguous(), float(clamp_min), float(clamp_max))
 
     return dispatch(
         cuda_fn,
@@ -98,14 +96,13 @@ class _RMSVarianceMatchFunction(torch.autograd.Function):
         clamp_min = ctx.clamp_min
         clamp_max = ctx.clamp_max
 
-
         y_f = y.float()
         v_f = v_ref.float()
         dout_f = dout.float()
         D = y_f.shape[-1]
 
-        v_sq = torch.mean(v_f ** 2, dim=-1, keepdim=True).clamp_min(1e-8)
-        y_sq = torch.mean(y_f ** 2, dim=-1, keepdim=True).clamp_min(1e-8)
+        v_sq = torch.mean(v_f**2, dim=-1, keepdim=True).clamp_min(1e-8)
+        y_sq = torch.mean(y_f**2, dim=-1, keepdim=True).clamp_min(1e-8)
         v_rms = torch.sqrt(v_sq)
         y_rms = torch.sqrt(y_sq)
 
@@ -117,7 +114,7 @@ class _RMSVarianceMatchFunction(torch.autograd.Function):
         if ctx.needs_input_grad[0]:
             term1 = dout_f * gain
             dot_y = (dout_f * y_f).sum(dim=-1, keepdim=True)
-            term2 = active * (- v_rms / (D * (y_rms ** 3))) * dot_y * y_f
+            term2 = active * (-v_rms / (D * (y_rms**3))) * dot_y * y_f
             dy = (term1 + term2).to(y.dtype)
 
         dv_ref = None
@@ -135,9 +132,7 @@ def rms_variance_match(
     clamp_max: float = 4.0,
 ) -> torch.Tensor:
     """3-Level Dispatched RMS Variance Match with full autograd support."""
-    needs_grad = torch.is_grad_enabled() and any(
-        t.requires_grad for t in (y, v_ref) if isinstance(t, torch.Tensor)
-    )
+    needs_grad = torch.is_grad_enabled() and any(t.requires_grad for t in (y, v_ref) if isinstance(t, torch.Tensor))
 
     if needs_grad:
         return _RMSVarianceMatchFunction.apply(y, v_ref, clamp_min, clamp_max)

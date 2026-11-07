@@ -9,10 +9,7 @@
 Fast GELU Activation Hardware Operators.
 """
 
-from neuralops.ops.cuda.fast_gelu.fast_gelu_autograd import (
-    fast_gelu,
-    fast_gelu_pytorch_ref,
-)
+from neuralops.ops.cuda.fast_gelu.fast_gelu_autograd import fast_gelu, fast_gelu_pytorch_ref
 
 __all__ = [
     "fast_gelu",

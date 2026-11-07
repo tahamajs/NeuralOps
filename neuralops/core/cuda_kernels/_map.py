@@ -9,10 +9,6 @@
 
 from __future__ import annotations
 
-from neuralops.ops.cuda._map import (
-    CUDA_KERNEL_CATALOG,
-    _KERNEL_SYMBOL_MAP,
-    _SPECIAL_MAP,
-)
+from neuralops.ops.cuda._map import _KERNEL_SYMBOL_MAP, _SPECIAL_MAP, CUDA_KERNEL_CATALOG
 
 __all__ = ["CUDA_KERNEL_CATALOG", "_KERNEL_SYMBOL_MAP", "_SPECIAL_MAP"]

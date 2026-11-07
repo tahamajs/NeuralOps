@@ -97,9 +97,7 @@ def configure_logging(level: str = "INFO", dedup: bool = True) -> None:
 
     if not root.handlers:
         handler = logging.StreamHandler()
-        handler.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-        )
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
         if dedup:
             handler.addFilter(DedupFilter())
         root.addHandler(handler)

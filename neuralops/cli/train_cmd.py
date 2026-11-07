@@ -30,12 +30,7 @@ from torch.utils.data import DataLoader
 
 from neuralops.data.multidataset import MultiDatasetLoader
 from neuralops.data.packing import PackedCollator, PackedDataset
-from neuralops.trainer.optimizers import (
-    create_adamw,
-    create_lion,
-    create_muon,
-    create_sgd,
-)
+from neuralops.trainer.optimizers import create_adamw, create_lion, create_muon, create_sgd
 from neuralops.trainer.schedulers import get_lr_scheduler
 
 try:
@@ -498,7 +493,9 @@ def cmd_train(args: Any) -> int:
     with open(os.path.join(save_dir, "training_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 
-    print(f"\n[✓] Training complete. Processed {total_tokens_processed:,} tokens in {elapsed_total:.2f}s ({avg_tokens_sec:,.0f} tok/s).")
+    print(
+        f"\n[✓] Training complete. Processed {total_tokens_processed:,} tokens in {elapsed_total:.2f}s ({avg_tokens_sec:,.0f} tok/s)."
+    )
     print(f"[✓] Checkpoint and manifest written to '{save_dir}'.")
     return 0
 

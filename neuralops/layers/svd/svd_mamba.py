@@ -11,13 +11,6 @@ SVD-Mamba: SVD-Factorized Selective State Space Model
 SVD-factorized selective state space model compressing state transitions for resource-constrained inference.
 """
 
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _unpack_weight_bias, repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -28,7 +21,9 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get, _unpack_weight_bias, repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -86,12 +81,8 @@ class SVDMamba(BaseAttention):
         self.inner_dim = self.expand * self.d_model
         self.dt_rank = dt_rank if dt_rank is not None else max(1, math.ceil(self.d_model / 16))
         self.global_rank = min(global_rank, self.d_model, self.inner_dim)
-        self.lora_rank = _cfg_get(
-            config, "lora_rank", _cfg_get(comp_config, "lora_rank", lora_rank)
-        )
-        self.lora_alpha = _cfg_get(
-            config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha)
-        )
+        self.lora_rank = _cfg_get(config, "lora_rank", _cfg_get(comp_config, "lora_rank", lora_rank))
+        self.lora_alpha = _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha))
 
         model_type = str(_cfg_get(config, "model_type", "") or "").lower()
         decoder_prefixes = (
@@ -118,10 +109,7 @@ class SVDMamba(BaseAttention):
         if (
             any(model_type.startswith(p) for p in decoder_prefixes)
             or hasattr(config, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
         ):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
@@ -288,9 +276,7 @@ class SVDMamba(BaseAttention):
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                hasattr(old_attn, "query") and not hasattr(old_attn, "dense") and not hasattr(old_attn, "out_proj")
             ):
                 self.is_nested_encoder = True
 
@@ -322,11 +308,7 @@ class SVDMamba(BaseAttention):
 
                 c_proj_w, c_proj_b = _unpack_weight_bias(src.c_proj)
                 if c_proj_w is not None:
-                    if (
-                        c_proj_w.dim() == 2
-                        and c_proj_w.shape[0] != self.d_model
-                        and c_proj_w.shape[1] == self.d_model
-                    ):
+                    if c_proj_w.dim() == 2 and c_proj_w.shape[0] != self.d_model and c_proj_w.shape[1] == self.d_model:
                         c_proj_w = c_proj_w.t().contiguous()
                     w_o = c_proj_w
                     b_o = c_proj_b
@@ -377,9 +359,7 @@ class SVDMamba(BaseAttention):
                 missing.append("Out projection")
 
             if missing:
-                logger.warning(
-                    f"SVDMamba: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}"
-                )
+                logger.warning(f"SVDMamba: Failed to extract weights: {', '.join(missing)} from {type(old_attn)}")
                 return
 
             if w_k is None:
@@ -435,9 +415,7 @@ class SVDMamba(BaseAttention):
             if out_w.shape[1] < self.all_head_size:
                 n_rep = math.ceil(self.all_head_size / out_w.shape[1])
                 out_w = out_w.repeat(1, n_rep)[:, : self.all_head_size]
-            self.attn_out_proj.decompose_from_weight(
-                out_w, b_o[: self.d_model] if b_o is not None else None
-            )
+            self.attn_out_proj.decompose_from_weight(out_w, b_o[: self.d_model] if b_o is not None else None)
 
             if float(torch.linalg.norm(self.in_proj.weight.float())) < 1e-4:
                 logger.warning("SVDMamba: in_proj near-zero norm")
@@ -489,12 +467,7 @@ class SVDMamba(BaseAttention):
         if mask_bool is None:
             mask_bool = torch.ones(batch, seqlen, device=hidden_states.device, dtype=torch.bool)
 
-        Q = (
-            self.q_proj(hidden_states)
-            .view(batch, seqlen, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q = self.q_proj(hidden_states).view(batch, seqlen, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         K = (
             self.k_proj(hidden_states)
             .view(batch, seqlen, self.num_kv_heads, self.head_dim)
@@ -508,11 +481,7 @@ class SVDMamba(BaseAttention):
             .contiguous()
         )
 
-        pos_emb = (
-            position_embeddings
-            if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -551,9 +520,7 @@ class SVDMamba(BaseAttention):
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
             if self.is_decoder:
-                causal_mask = torch.tril(
-                    torch.ones(seqlen, seqlen, device=hidden_states.device, dtype=torch.bool)
-                )
+                causal_mask = torch.tril(torch.ones(seqlen, seqlen, device=hidden_states.device, dtype=torch.bool))
                 scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
             if mask_bool is not None:
@@ -561,12 +528,7 @@ class SVDMamba(BaseAttention):
 
             probs = F.softmax(scores, dim=-1).to(V_attn.dtype)
             probs = torch.nan_to_num(probs, nan=0.0)
-            attn_out = (
-                torch.matmul(probs, V_attn)
-                .transpose(1, 2)
-                .contiguous()
-                .view(batch, seqlen, self.all_head_size)
-            )
+            attn_out = torch.matmul(probs, V_attn).transpose(1, 2).contiguous().view(batch, seqlen, self.all_head_size)
             attn_out = self.attn_out_proj(attn_out)
 
         xz = self.in_proj(hidden_states)
@@ -722,9 +684,7 @@ def inject_svd_mamba(
                     return None
                 if hasattr(cand, "inner") and isinstance(cand.inner, SVDMamba):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(
-                    cand._wrapped_attention, SVDMamba
-                ):
+                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, SVDMamba):
                     return None
 
         if src is not None:
@@ -737,21 +697,9 @@ def inject_svd_mamba(
             or kwargs.get("d_model")
             or getattr(src, "hidden_size", None)
             or getattr(src, "embed_dim", None)
-            or (
-                src.q_proj.in_features
-                if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features")
-                else None
-            )
-            or (
-                src.query.in_features
-                if hasattr(src, "query") and hasattr(src.query, "in_features")
-                else None
-            )
-            or (
-                src.q_lin.in_features
-                if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features")
-                else None
-            )
+            or (src.q_proj.in_features if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features") else None)
+            or (src.query.in_features if hasattr(src, "query") and hasattr(src.query, "in_features") else None)
+            or (src.q_lin.in_features if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features") else None)
             or (target.in_features if hasattr(target, "in_features") else None)
             or _cfg_get(cfg, "hidden_size", None)
             or _cfg_get(cfg, "d_model", 768)

@@ -20,13 +20,9 @@ def get_synthetic_benchmark_sample(
         raise ValueError("num_samples must be non-negative")
     rng = random.Random(seed)
     return [
-        f"Synthetic {dataset_name} sample {index}: token-{rng.randrange(1_000_000)}"
-        for index in range(num_samples)
+        f"Synthetic {dataset_name} sample {index}: token-{rng.randrange(1_000_000)}" for index in range(num_samples)
     ]
 
 
 def _generate_synthetic_wikitext(count: int, seed: int = 0) -> list[dict]:
-    return [
-        {"text": sample}
-        for sample in get_synthetic_benchmark_sample("wikitext", count, seed)
-    ]
+    return [{"text": sample} for sample in get_synthetic_benchmark_sample("wikitext", count, seed)]

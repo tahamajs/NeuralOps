@@ -12,7 +12,6 @@ Projects weight matrices onto optimal activation-aligned subspaces using randomi
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -81,11 +81,7 @@ class OptimalSubspaceLoRALinear(nn.Module):
         target_device = device if device is not None else weight.device
         target_dtype = dtype if dtype is not None else weight.dtype
 
-        if (
-            weight.shape[0] == in_features
-            and weight.shape[1] == out_features
-            and in_features != out_features
-        ):
+        if weight.shape[0] == in_features and weight.shape[1] == out_features and in_features != out_features:
             weight = weight.t().contiguous()
 
         self.weight = nn.Parameter(
@@ -129,11 +125,7 @@ class OptimalSubspaceLoRALinear(nn.Module):
         lora_alpha: float = 1.0,
     ) -> OptimalSubspaceLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
-        bias = (
-            base_layer.bias.detach()
-            if hasattr(base_layer, "bias") and base_layer.bias is not None
-            else None
-        )
+        bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
         in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
         out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
         if in_features is None or out_features is None:
@@ -162,16 +154,8 @@ class OptimalSubspaceLoRALinear(nn.Module):
             and layer.lora_B is not None
         ):
             with torch.no_grad():
-                src_A = (
-                    linear.lora_A.weight.data
-                    if hasattr(linear.lora_A, "weight")
-                    else linear.lora_A.data
-                )
-                src_B = (
-                    linear.lora_B.weight.data
-                    if hasattr(linear.lora_B, "weight")
-                    else linear.lora_B.data
-                )
+                src_A = linear.lora_A.weight.data if hasattr(linear.lora_A, "weight") else linear.lora_A.data
+                src_B = linear.lora_B.weight.data if hasattr(linear.lora_B, "weight") else linear.lora_B.data
                 if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
                     layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
                     layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
@@ -184,19 +168,21 @@ class OptimalSubspaceLoRALinear(nn.Module):
         out = F.linear(x, self.weight, self.bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
             suitable, _ = check_triton_suitability(x, "low_rank")
             if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
-                    lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None)
+
+                    lora_out = fused_down_up_gemm_bias_triton(
+                        x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None
+                    )
                     return out + (self.scaling * lora_out)
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
                     pass
 
-            out = out + self.scaling * F.linear(F.linear(x.float(), self.lora_A), self.lora_B).to(
-                out.dtype
-            )
+            out = out + self.scaling * F.linear(F.linear(x.float(), self.lora_A), self.lora_B).to(out.dtype)
         return out
 
 
@@ -242,9 +228,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                 "optimal_subspace_power_iters",
                 _cfg_get(cfg, "power_iters", power_iters),
             )
-            max_error = _cfg_get(
-                cfg, "optimal_subspace_max_error", _cfg_get(cfg, "max_error", max_error)
-            )
+            max_error = _cfg_get(cfg, "optimal_subspace_max_error", _cfg_get(cfg, "max_error", max_error))
             fallback_to_original = _cfg_get(
                 cfg,
                 "optimal_subspace_fallback_to_original",
@@ -271,9 +255,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         self.min_rank = max(1, int(min_rank))
 
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -556,8 +538,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -592,14 +573,10 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
 SubspaceProjectionCompressor = OptimalSubspaceProjectionCompressor
 
 
-def optimal_subspace_projection_factory(
-    model: nn.Module, comp_config: Any = None, **kwargs: Any
-) -> Any:
+def optimal_subspace_projection_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     try:
-        calibration_loader = kwargs.pop(
-            "calibration_loader", _cfg_get(comp_config, "calibration_loader", None)
-        )
+        calibration_loader = kwargs.pop("calibration_loader", _cfg_get(comp_config, "calibration_loader", None))
         rank_ratio = kwargs.pop(
             "rank_ratio",
             _cfg_get(

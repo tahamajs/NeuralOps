@@ -114,7 +114,7 @@ $$\text{FLOPs}_{\text{total}} = 8 B L D^2 + 4 B L^2 D$$
 *(Note: Under FP8 mode, Tensor Core throughput for $\text{FLOPs}_{\text{core}}$ increases by $2\times$.)*
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} = 4 B L D^2 + 2 B L^2 D$$
 Specifically, regarding \textbf{Standard Softmax Attention HBM IO}, $\mathcal{O}(B H L^2 + B L D)$ Furthermore, regarding \textbf{FlashAttention-3 HBM IO}, $\mathcal{O}\left(B L D + \frac{B H L^2 d_h^2}{M_{\text{SRAM}}}\right)$ where $M_{\text{SRAM}}$ is GPU shared memory capacity ($\approx 228 \text{ KB}$ on Hopper H100). Concurrently, regarding \textbf{Parameter Footprint}, $\Theta = 4 D^2$.
@@ -206,4 +206,3 @@ The empirical evaluation of `flash_attention3` across standard sequence lengths 
 | **$L = 2048$** | 0.52 ms | 160 MB | $2.50\times$ |
 | **$L = 4096$** | 0.99 ms | 256 MB | $4.20\times$ |
 | **$L = 8192$** | **3.80 ms** | **620 MB** | **3.37x** |
-

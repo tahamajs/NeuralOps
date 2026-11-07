@@ -12,7 +12,6 @@ Sheds redundant transformer layers and restores representational capacity via le
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -24,6 +23,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import recalibrate_layernorms
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -92,6 +92,7 @@ class CoMeBridge(nn.Module):
             if t.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                     orig_shape = t.shape
                     t_flat = t.reshape(-1, self.hidden_size)
                     low = fused_down_up_gemm_bias_triton(t_flat, A.t().contiguous(), B.t().contiguous(), bias=cb)
@@ -158,9 +159,7 @@ class CoMeBridgedLayer(nn.Module):
         try:
             return super().__getattr__(name)
         except AttributeError:
-            if "layer" in self.__dict__ or (
-                "_modules" in self.__dict__ and "layer" in self._modules
-            ):
+            if "layer" in self.__dict__ or ("_modules" in self.__dict__ and "layer" in self._modules):
                 return getattr(self.layer, name)
             raise
 
@@ -290,6 +289,7 @@ class CoMeLoRALinear(nn.Module):
             if x.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                     lora_out = fused_down_up_gemm_bias_triton(
                         x_flat,
                         self.lora_A.t().to(x_flat.dtype).contiguous(),
@@ -361,9 +361,7 @@ class CoMeCompressor(BaseCompressor):
         if rank is not None:
             rank = int(rank)
 
-        target_layers = _cfg_get(
-            conf, "come_target_layers", _cfg_get(conf, "target_layers", target_layers)
-        )
+        target_layers = _cfg_get(conf, "come_target_layers", _cfg_get(conf, "target_layers", target_layers))
         if target_layers is not None:
             target_layers = int(target_layers)
 
@@ -394,9 +392,7 @@ class CoMeCompressor(BaseCompressor):
         else:
             bridge_rank = hidden_size_probe or 64
 
-        alpha_init = float(
-            _cfg_get(conf, "come_alpha_init", _cfg_get(conf, "alpha_init", alpha_init))
-        )
+        alpha_init = float(_cfg_get(conf, "come_alpha_init", _cfg_get(conf, "alpha_init", alpha_init)))
         lora_r = int(
             _cfg_get(
                 conf,
@@ -404,9 +400,7 @@ class CoMeCompressor(BaseCompressor):
                 _cfg_get(conf, "lora_r", _cfg_get(conf, "lora_rank", lora_r)),
             )
         )
-        lora_alpha = float(
-            _cfg_get(conf, "come_lora_alpha", _cfg_get(conf, "lora_alpha", lora_alpha))
-        )
+        lora_alpha = float(_cfg_get(conf, "come_lora_alpha", _cfg_get(conf, "lora_alpha", lora_alpha)))
         skip_attention_qkv = bool(
             _cfg_get(
                 conf,
@@ -452,9 +446,7 @@ class CoMeCompressor(BaseCompressor):
         self.target_modules = target_modules
         self.rank = rank
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else (next(model.parameters(), torch.tensor(0.0)).device)
+            torch.device(device) if device is not None else (next(model.parameters(), torch.tensor(0.0)).device)
         )
         self.comp_config = conf
 
@@ -491,10 +483,7 @@ class CoMeCompressor(BaseCompressor):
             return False
         if ".bridge." in name or name.endswith(".bridge"):
             return False
-        if any(
-            name.endswith(sfx)
-            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
-        ):
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
             return False
 
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -504,10 +493,7 @@ class CoMeCompressor(BaseCompressor):
         is_linear_like = (
             isinstance(module, nn.Linear)
             or isinstance(target_mod, nn.Linear)
-            or (
-                Conv1D is not None
-                and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
-            )
+            or (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
             or "conv1d" in cls_name
             or "conv1d" in target_cls
             or hasattr(module, "nf")
@@ -613,15 +599,11 @@ class CoMeCompressor(BaseCompressor):
         candidates = [
             (
                 "roberta.encoder.layer",
-                lambda m: getattr(
-                    getattr(getattr(m, "roberta", None), "encoder", None), "layer", None
-                ),
+                lambda m: getattr(getattr(getattr(m, "roberta", None), "encoder", None), "layer", None),
             ),
             (
                 "bert.encoder.layer",
-                lambda m: getattr(
-                    getattr(getattr(m, "bert", None), "encoder", None), "layer", None
-                ),
+                lambda m: getattr(getattr(getattr(m, "bert", None), "encoder", None), "layer", None),
             ),
             (
                 "distilbert.transformer.layer",
@@ -649,15 +631,11 @@ class CoMeCompressor(BaseCompressor):
             ),
             (
                 "model.decoder.layers",
-                lambda m: getattr(
-                    getattr(getattr(m, "model", None), "decoder", None), "layers", None
-                ),
+                lambda m: getattr(getattr(getattr(m, "model", None), "decoder", None), "layers", None),
             ),
             (
                 "model.encoder.layers",
-                lambda m: getattr(
-                    getattr(getattr(m, "model", None), "encoder", None), "layers", None
-                ),
+                lambda m: getattr(getattr(getattr(m, "model", None), "encoder", None), "layers", None),
             ),
             (
                 "encoder.layer",
@@ -672,15 +650,11 @@ class CoMeCompressor(BaseCompressor):
             ("blocks", lambda m: getattr(m, "blocks", None)),
             (
                 "model.encoder.block",
-                lambda m: getattr(
-                    getattr(getattr(m, "model", None), "encoder", None), "block", None
-                ),
+                lambda m: getattr(getattr(getattr(m, "model", None), "encoder", None), "block", None),
             ),
             (
                 "model.decoder.block",
-                lambda m: getattr(
-                    getattr(getattr(m, "model", None), "decoder", None), "block", None
-                ),
+                lambda m: getattr(getattr(getattr(m, "model", None), "decoder", None), "block", None),
             ),
             (
                 "encoder.block",
@@ -779,24 +753,14 @@ class CoMeCompressor(BaseCompressor):
                     try:
                         raw_w = target_mod.weight.data
                         cls_name = module.__class__.__name__.lower()
-                        is_conv1d = (
-                            "conv1d" in cls_name
-                            or hasattr(module, "nf")
-                            or hasattr(target_mod, "nf")
-                        )
-                        W = (
-                            raw_w.t().contiguous().clone().float()
-                            if is_conv1d
-                            else raw_w.clone().float()
-                        )
+                        is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
+                        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
                         U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                         if self.rank is not None:
                             r = max(1, min(int(self.rank), len(S)))
                         else:
                             r = max(1, int(len(S) * (1.0 - self.sparsity)))
-                        from neuralops.compression.svd.aa_svd_compressor import (
-                            SVDLinear,
-                        )
+                        from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 
                         in_features = W.shape[1]
                         out_features = W.shape[0]
@@ -837,10 +801,7 @@ class CoMeCompressor(BaseCompressor):
                     seen_weights.add(w_id)
                     if has_lora:
                         target_mod.weight.requires_grad = False
-                        if (
-                            getattr(target_mod, "bias", None) is not None
-                            and target_mod.bias is not None
-                        ):
+                        if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
                             target_mod.bias.requires_grad = False
                         for p_name, p in module.named_parameters():
                             if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
@@ -879,7 +840,11 @@ class CoMeCompressor(BaseCompressor):
             forward_check_success = True
         except Exception as e:
             logger.warning("CoMe post-compression forward sanity check failed: %s", e)
-            if not self.allow_forward_failure and "shape" not in str(e).lower() and "cannot be multiplied" not in str(e).lower():
+            if (
+                not self.allow_forward_failure
+                and "shape" not in str(e).lower()
+                and "cannot be multiplied" not in str(e).lower()
+            ):
                 raise RuntimeError(f"CoMe post-compression forward check failed: {e}") from e
 
         self._compressed_params = self._count_params(self.model)
@@ -888,10 +853,7 @@ class CoMeCompressor(BaseCompressor):
         flops_reduction = f"{reduc_ratio * 100:.1f}%"
 
         bridge_params_count = sum(
-            p.numel()
-            for m in self.model.modules()
-            if isinstance(m, CoMeBridge)
-            for p in m.parameters()
+            p.numel() for m in self.model.modules() if isinstance(m, CoMeBridge) for p in m.parameters()
         )
         lora_params_count = sum(
             p.numel()

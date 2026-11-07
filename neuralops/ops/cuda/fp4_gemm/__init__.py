@@ -9,10 +9,7 @@
 FP4 Quantized GEMM Hardware Operators.
 """
 
-from neuralops.ops.cuda.fp4_gemm.fp4_autograd import (
-    fp4_gemm,
-    fp4_gemm_pytorch_ref,
-)
+from neuralops.ops.cuda.fp4_gemm.fp4_autograd import fp4_gemm, fp4_gemm_pytorch_ref
 
 __all__ = [
     "fp4_gemm",

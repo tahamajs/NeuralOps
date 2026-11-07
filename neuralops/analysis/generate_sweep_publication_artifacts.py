@@ -105,9 +105,7 @@ def classify_module(name: str, path: str = "") -> tuple[str, str]:
 
     if any(k in name_lower for k in ["mamba", "ssm", "s4", "s5", "h3", "rwkv", "retnet", "hyena"]):
         return "Attention", "State-Space Model (SSM)"
-    elif any(
-        k in name_lower for k in ["linear", "kernel", "cosformer", "performer", "reformer", "favor"]
-    ):
+    elif any(k in name_lower for k in ["linear", "kernel", "cosformer", "performer", "reformer", "favor"]):
         return "Attention", "Linear / Kernel Attention"
     elif any(k in name_lower for k in ["svd", "lora", "low_rank", "rank", "aegis", "lola"]):
         return "Attention", "Low-Rank / SVD Attention"
@@ -143,9 +141,7 @@ def load_and_enrich_summary(summary_csv: Path) -> pd.DataFrame:
     required = {"module_name", "status", "accuracy_pct"}
     missing = sorted(required.difference(df.columns))
     if missing:
-        raise ValueError(
-            f"Summary file is missing required result columns: {', '.join(missing)}"
-        )
+        raise ValueError(f"Summary file is missing required result columns: {', '.join(missing)}")
     for col in ("error", "path"):
         if col not in df.columns:
             df[col] = ""
@@ -155,24 +151,16 @@ def load_and_enrich_summary(summary_csv: Path) -> pd.DataFrame:
     df["accuracy_pct"] = pd.to_numeric(df["accuracy_pct"], errors="coerce")
     df["elapsed_s"] = pd.to_numeric(df["elapsed_s"], errors="coerce")
 
-    classifications = [
-        classify_module(row["module_name"], str(row.get("path", ""))) for _, row in df.iterrows()
-    ]
+    classifications = [classify_module(row["module_name"], str(row.get("path", ""))) for _, row in df.iterrows()]
     df["module_type"] = [c[0] for c in classifications]
     df["subfamily"] = [c[1] for c in classifications]
 
     full_baseline = df[df["module_name"] == "full"]
-    baseline_acc = (
-        float(full_baseline["accuracy_pct"].iloc[0])
-        if not full_baseline.empty
-        else np.nan
-    )
+    baseline_acc = float(full_baseline["accuracy_pct"].iloc[0]) if not full_baseline.empty else np.nan
     df["baseline_acc"] = baseline_acc
     df["delta_acc"] = df["accuracy_pct"] - baseline_acc
     df["retention_pct"] = (
-        (df["accuracy_pct"] / baseline_acc) * 100.0
-        if np.isfinite(baseline_acc) and baseline_acc != 0
-        else np.nan
+        (df["accuracy_pct"] / baseline_acc) * 100.0 if np.isfinite(baseline_acc) and baseline_acc != 0 else np.nan
     )
 
     return df
@@ -223,9 +211,7 @@ def plot_fig1_top_modules(df: pd.DataFrame, out_dir: Path, top_n: int = 25):
 
     ax.set_xlim(0, 100)
     dataset_name = (
-        str(df["dataset"].dropna().iloc[0])
-        if "dataset" in df and df["dataset"].notna().any()
-        else "evaluation dataset"
+        str(df["dataset"].dropna().iloc[0]) if "dataset" in df and df["dataset"].notna().any() else "evaluation dataset"
     )
     ax.set_xlabel(f"Validation Accuracy — {dataset_name} (%)", fontweight="bold")
     ax.set_title(f"Top {len(subset)} Passing Evaluated Modules", fontweight="bold", pad=12)
@@ -373,9 +359,7 @@ def plot_fig3_status_breakdown(df: pd.DataFrame, out_dir: Path):
         "OTHER_SKIP": "#9467bd",
         "FAIL": "#e377c2",
     }
-    col_order = [
-        c for c in ["PASS", "INCOMPATIBLE", "OOM_SKIP", "OTHER_SKIP", "FAIL"] if c in ct.columns
-    ]
+    col_order = [c for c in ["PASS", "INCOMPATIBLE", "OOM_SKIP", "OTHER_SKIP", "FAIL"] if c in ct.columns]
     ct = ct[col_order]
 
     fig, ax = plt.subplots(figsize=(7, 4.5), tight_layout=True)
@@ -413,9 +397,7 @@ def plot_fig4_category_performance(df: pd.DataFrame, out_dir: Path):
         return
 
     stats = (
-        passing.groupby("subfamily")["accuracy_pct"]
-        .agg(["mean", "std", "count"])
-        .sort_values("mean", ascending=True)
+        passing.groupby("subfamily")["accuracy_pct"].agg(["mean", "std", "count"]).sort_values("mean", ascending=True)
     )
 
     fig, ax = plt.subplots(figsize=(9, max(4.5, len(stats) * 0.4)), tight_layout=True)
@@ -537,22 +519,10 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
     num_fail = len(df[df["status"] == "FAIL"])
 
     full_baseline = df[df["module_name"] == "full"]
-    baseline_acc = (
-        float(full_baseline["accuracy_pct"].iloc[0])
-        if not full_baseline.empty
-        else np.nan
-    )
+    baseline_acc = float(full_baseline["accuracy_pct"].iloc[0]) if not full_baseline.empty else np.nan
 
-    top_attns = (
-        passing[passing["module_type"] == "Attention"]
-        .sort_values("accuracy_pct", ascending=False)
-        .head(10)
-    )
-    top_comps = (
-        passing[passing["module_type"] == "Compressor"]
-        .sort_values("accuracy_pct", ascending=False)
-        .head(10)
-    )
+    top_attns = passing[passing["module_type"] == "Attention"].sort_values("accuracy_pct", ascending=False).head(10)
+    top_comps = passing[passing["module_type"] == "Compressor"].sort_values("accuracy_pct", ascending=False).head(10)
 
     lines = [
         "# Attention & Compressor Evaluation Report",
@@ -567,7 +537,11 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
         f"- **Reported Architectural Incompatibilities:** {num_incompat}",
         f"- **CUDA Out-of-Memory (OOM):** {num_oom}",
         f"- **Execution / Dtype Failures:** {num_fail}",
-        f"- **Full Attention Baseline Accuracy:** **{baseline_acc:.2f}%**\n" if np.isfinite(baseline_acc) else "- **Full Attention Baseline Accuracy:** Not present in the input records.\n",
+        (
+            f"- **Full Attention Baseline Accuracy:** **{baseline_acc:.2f}%**\n"
+            if np.isfinite(baseline_acc)
+            else "- **Full Attention Baseline Accuracy:** Not present in the input records.\n"
+        ),
         "---",
         "## 2. Top-10 Attention Replacements",
         "| Rank | Module | Sub-Family | Accuracy (%) | Delta vs Baseline | Latency (s) |",
@@ -614,9 +588,7 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate publication-grade artifacts from sweep results."
-    )
+    parser = argparse.ArgumentParser(description="Generate publication-grade artifacts from sweep results.")
     parser.add_argument(
         "--results_dir",
         type=str,

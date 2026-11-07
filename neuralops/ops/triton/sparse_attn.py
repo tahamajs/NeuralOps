@@ -19,11 +19,7 @@ from typing import Any
 import torch
 import torch.nn.functional as F
 
-from neuralops.ops.triton._types import (
-    HAS_TRITON,
-    check_triton_suitability,
-    sparse_attn_pytorch_fallback,
-)
+from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability, sparse_attn_pytorch_fallback
 
 if HAS_TRITON:
     import triton
@@ -138,20 +134,40 @@ if HAS_TRITON:
 
 if HAS_TRITON and tl is not None:
 
-
     @triton.jit
     def _triton_block_sparse_bwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Mask_ptr, DO_ptr,
-        DQ_ptr, DK_ptr, DV_ptr,
-        stride_qbh, stride_qn, stride_qd,
-        stride_kbh, stride_kn, stride_kd,
-        stride_vbh, stride_vn, stride_vd,
-        stride_dobh, stride_don, stride_dod,
-        stride_dqbh, stride_dqn, stride_dqd,
-        stride_dkbh, stride_dkn, stride_dkd,
-        stride_dvbh, stride_dvn, stride_dvd,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Mask_ptr,
+        DO_ptr,
+        DQ_ptr,
+        DK_ptr,
+        DV_ptr,
+        stride_qbh,
+        stride_qn,
+        stride_qd,
+        stride_kbh,
+        stride_kn,
+        stride_kd,
+        stride_vbh,
+        stride_vn,
+        stride_vd,
+        stride_dobh,
+        stride_don,
+        stride_dod,
+        stride_dqbh,
+        stride_dqn,
+        stride_dqd,
+        stride_dkbh,
+        stride_dkn,
+        stride_dkd,
+        stride_dvbh,
+        stride_dvn,
+        stride_dvd,
         stride_mbh,
-        stride_mq, stride_mk,
+        stride_mq,
+        stride_mk,
         sm_scale,
         N_Q: tl.constexpr,
         N_K: tl.constexpr,
@@ -357,6 +373,7 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
         if HAS_TRITON and q.is_cuda:
             try:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
+
                 if not FORCE_PYTORCH_FALLBACK:
                     orig_shape = q.shape
                     D = q.shape[-1]
@@ -388,17 +405,38 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
                     grid = (BH, n_q_blocks)
 
                     _triton_block_sparse_bwd_kernel[grid](
-                        q_flat, k_flat, v_flat, bm_flat, grad_flat,
-                        dq, dk, dv,
-                        q_flat.stride(0), q_flat.stride(1), q_flat.stride(2),
-                        k_flat.stride(0), k_flat.stride(1), k_flat.stride(2),
-                        v_flat.stride(0), v_flat.stride(1), v_flat.stride(2),
-                        grad_flat.stride(0), grad_flat.stride(1), grad_flat.stride(2),
-                        dq.stride(0), dq.stride(1), dq.stride(2),
-                        dk.stride(0), dk.stride(1), dk.stride(2),
-                        dv.stride(0), dv.stride(1), dv.stride(2),
+                        q_flat,
+                        k_flat,
+                        v_flat,
+                        bm_flat,
+                        grad_flat,
+                        dq,
+                        dk,
+                        dv,
+                        q_flat.stride(0),
+                        q_flat.stride(1),
+                        q_flat.stride(2),
+                        k_flat.stride(0),
+                        k_flat.stride(1),
+                        k_flat.stride(2),
+                        v_flat.stride(0),
+                        v_flat.stride(1),
+                        v_flat.stride(2),
+                        grad_flat.stride(0),
+                        grad_flat.stride(1),
+                        grad_flat.stride(2),
+                        dq.stride(0),
+                        dq.stride(1),
+                        dq.stride(2),
+                        dk.stride(0),
+                        dk.stride(1),
+                        dk.stride(2),
+                        dv.stride(0),
+                        dv.stride(1),
+                        dv.stride(2),
                         stride_mbh,
-                        stride_mq, stride_mk,
+                        stride_mq,
+                        stride_mk,
                         sm_scale,
                         N_Q=N_Q,
                         N_K=N_K,
@@ -506,6 +544,7 @@ def bwd(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _fused_reap_router_softmax_kernel(
         Logits_ptr,
@@ -536,11 +575,21 @@ if HAS_TRITON:
 
     @triton.jit
     def _fused_topk_route_kernel(
-        Branches_ptr, Weights_ptr, Out_ptr,
-        B, T, D,
-        stride_bb, stride_bt, stride_bd,
-        stride_wb, stride_wt, stride_wm,
-        stride_ob, stride_ot, stride_od,
+        Branches_ptr,
+        Weights_ptr,
+        Out_ptr,
+        B,
+        T,
+        D,
+        stride_bb,
+        stride_bt,
+        stride_bd,
+        stride_wb,
+        stride_wt,
+        stride_wm,
+        stride_ob,
+        stride_ot,
+        stride_od,
         NUM_BRANCHES: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
@@ -555,7 +604,11 @@ if HAS_TRITON:
 
         for m in range(NUM_BRANCHES):
             w = tl.load(Weights_ptr + b * stride_wb + t * stride_wt + m * stride_wm).to(tl.float32)
-            b_val = tl.load(Branches_ptr + m * (B * T * D) + b * stride_bb + t * stride_bt + offs_d * stride_bd, mask=mask_d, other=0.0).to(tl.float32)
+            b_val = tl.load(
+                Branches_ptr + m * (B * T * D) + b * stride_bb + t * stride_bt + offs_d * stride_bd,
+                mask=mask_d,
+                other=0.0,
+            ).to(tl.float32)
             acc = acc + w * b_val
 
         out_ptr = Out_ptr + b * stride_ob + t * stride_ot + offs_d * stride_od
@@ -599,7 +652,11 @@ def fused_topk_sparse_route_and_combine_triton(
     if top_k is not None and top_k < router_weights.shape[-1]:
         topk_vals, topk_indices = torch.topk(router_weights, top_k, dim=-1)
         router_weights = torch.zeros_like(router_weights).scatter_(-1, topk_indices, F.softmax(topk_vals, dim=-1))
-    elif router_weights.min() < 0.0 or router_weights.max() > 1.0 or not torch.allclose(router_weights.sum(dim=-1), torch.ones_like(router_weights.sum(dim=-1)), atol=1e-2):
+    elif (
+        router_weights.min() < 0.0
+        or router_weights.max() > 1.0
+        or not torch.allclose(router_weights.sum(dim=-1), torch.ones_like(router_weights.sum(dim=-1)), atol=1e-2)
+    ):
         router_weights = F.softmax(router_weights, dim=-1)
 
     b0 = branch_list[0]
@@ -614,11 +671,21 @@ def fused_topk_sparse_route_and_combine_triton(
             grid = (B * T,)
 
             _fused_topk_route_kernel[grid](
-                stacked_branches, w_c, out,
-                B, T, D,
-                b0.stride(0), b0.stride(1), b0.stride(2),
-                w_c.stride(0), w_c.stride(1), w_c.stride(2),
-                out.stride(0), out.stride(1), out.stride(2),
+                stacked_branches,
+                w_c,
+                out,
+                B,
+                T,
+                D,
+                b0.stride(0),
+                b0.stride(1),
+                b0.stride(2),
+                w_c.stride(0),
+                w_c.stride(1),
+                w_c.stride(2),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
                 NUM_BRANCHES=M,
                 BLOCK_D=BLOCK_D,
             )
@@ -633,15 +700,27 @@ def fused_topk_sparse_route_and_combine_triton(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _triton_lsh_hash_bin_kernel(
         Norm_ptr,
         Proj_ptr,
         Out_ptr,
-        B, H, N, D, NUM_PLANES, NUM_BUCKETS,
-        stride_nb, stride_nh, stride_nn, stride_nd,
-        stride_pd, stride_pp,
-        stride_ob, stride_oh, stride_on,
+        B,
+        H,
+        N,
+        D,
+        NUM_PLANES,
+        NUM_BUCKETS,
+        stride_nb,
+        stride_nh,
+        stride_nn,
+        stride_nd,
+        stride_pd,
+        stride_pp,
+        stride_ob,
+        stride_oh,
+        stride_on,
         BLOCK_D: tl.constexpr,
         BLOCK_P: tl.constexpr,
     ):
@@ -677,6 +756,7 @@ def fused_lsh_hash_and_bin_pytorch(
 ) -> torch.Tensor:
     """Exact PyTorch fallback for LSH hash and bin indexing."""
     import torch.nn.functional as F
+
     norm = F.normalize(vectors.float(), p=2, dim=-1)
     dots = torch.matmul(norm, proj.float())
     signs = (dots >= 0).long()
@@ -702,6 +782,7 @@ def fused_lsh_hash_and_bin_triton(
 
     try:
         import torch.nn.functional as F
+
         norm = F.normalize(vectors.float(), p=2, dim=-1).contiguous()
         proj_c = proj.float().contiguous()
         out = torch.empty((B, H, N), device=vectors.device, dtype=torch.long)
@@ -709,11 +790,24 @@ def fused_lsh_hash_and_bin_triton(
         grid = (B, H, N)
 
         _triton_lsh_hash_bin_kernel[grid](
-            norm, proj_c, out,
-            B, H, N, D, num_planes, num_buckets,
-            norm.stride(0), norm.stride(1), norm.stride(2), norm.stride(3),
-            proj_c.stride(0), proj_c.stride(1),
-            out.stride(0), out.stride(1), out.stride(2),
+            norm,
+            proj_c,
+            out,
+            B,
+            H,
+            N,
+            D,
+            num_planes,
+            num_buckets,
+            norm.stride(0),
+            norm.stride(1),
+            norm.stride(2),
+            norm.stride(3),
+            proj_c.stride(0),
+            proj_c.stride(1),
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
             BLOCK_D=BLOCK_D,
             BLOCK_P=32,
         )
@@ -731,16 +825,15 @@ def fused_hamming_scores_pytorch(
 ) -> torch.Tensor:
     """Exact reference PyTorch implementation for continuous Hamming attention scores."""
     import math
+
     import torch.nn.functional as F
+
     Dh = q.shape[-1]
     H = q.shape[1]
     q_b = torch.tanh(5.0 * q * lora_q_scale.view(1, H, 1, 1))
     k_b = torch.tanh(5.0 * k * lora_k_scale.view(1, H, 1, 1))
     t = F.softplus(temp) + 1e-3
-    scores = (
-        t * (torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh)
-        / (2.0 * math.sqrt(Dh))
-    )
+    scores = t * (torch.matmul(q_b, k_b.transpose(-2, -1).contiguous()) - Dh) / (2.0 * math.sqrt(Dh))
     return scores
 
 
@@ -757,7 +850,9 @@ def fused_hamming_scores_triton(
 
     try:
         import math
+
         import torch.nn.functional as F
+
         Dh = q.shape[-1]
         H = q.shape[1]
         q_b = torch.tanh(5.0 * q * lora_q_scale.view(1, H, 1, 1)).contiguous()
@@ -776,6 +871,7 @@ def fused_kmeans_centroid_assign_pytorch(
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Exact PyTorch fallback for KMeans centroid assignment and update."""
     import torch.nn.functional as F
+
     B, H, L, D = Q.shape
     K = centroids.shape[2]
     Q_f = Q.float()
@@ -830,6 +926,7 @@ def fused_expert_choice_scatter_gather_triton(
     if gate_scores.is_cuda:
         try:
             from neuralops.ops.cuda.moe_routing import moe_topk_routing_fused
+
             topk_vals, topk_indices = moe_topk_routing_fused(gate_scores, top_k_experts)
             return topk_vals, topk_indices, gate_scores
         except Exception:
@@ -936,7 +1033,8 @@ def fused_reap_moe_router_triton(
     top_k: int,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Fused REAP-MoE router gating in GPU SRAM without CPU synchronization."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and gate_logits.is_cuda:
         try:
             num_experts = gate_logits.shape[-1]
@@ -992,17 +1090,38 @@ def fused_padre_polynomial_attn_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _fused_padre_polynomial_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Out_ptr,
-        stride_qb, stride_qh, stride_qm, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_om, stride_od,
-        H, N_q, N_k,
-        scale, temperature,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Out_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qm,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_om,
+        stride_od,
+        H,
+        N_q,
+        N_k,
+        scale,
+        temperature,
         ORDER: tl.constexpr,
-        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_D: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_D: tl.constexpr,
     ):
         pid_m = tl.program_id(0)
         pid_bh = tl.program_id(1)
@@ -1024,8 +1143,12 @@ if HAS_TRITON and tl is not None:
             offs_n = j * BLOCK_N + tl.arange(0, BLOCK_N)
             mask_n = offs_n < N_k
 
-            k_ptrs = K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
-            v_ptrs = V_ptr + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            k_ptrs = (
+                K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
+            )
+            v_ptrs = (
+                V_ptr + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            )
 
             k = tl.load(k_ptrs, mask=mask_n[None, :], other=0.0)
             v = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
@@ -1034,7 +1157,7 @@ if HAS_TRITON and tl is not None:
             s = tl.dot(q, k) * scale
             s_centered = s * inv_temp
             base = tl.clamp(1.0 + (s_centered / ORDER), 0.0, 10.0)
-            
+
             p = base
             if ORDER == 2:
                 p = base * base
@@ -1045,7 +1168,9 @@ if HAS_TRITON and tl is not None:
             p = tl.where(mask_m[:, None] & mask_n[None, :], p, 0.0)
             acc += tl.dot(p.to(v.dtype), v)
 
-        out_ptrs = Out_ptr + i_b * stride_ob + i_h * stride_oh + offs_m[:, None] * stride_om + offs_d[None, :] * stride_od
+        out_ptrs = (
+            Out_ptr + i_b * stride_ob + i_h * stride_oh + offs_m[:, None] * stride_om + offs_d[None, :] * stride_od
+        )
         tl.store(out_ptrs, acc.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
 
 
@@ -1071,15 +1196,35 @@ def fused_padre_polynomial_attn_triton(
         grid = (triton.cdiv(N_q, BLOCK_M), B * H)
 
         _fused_padre_polynomial_fwd_kernel[grid](
-            q, k, v, out,
-            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-            H=H, N_q=N_q, N_k=N_k,
-            scale=float(scale), temperature=float(temperature),
+            q,
+            k,
+            v,
+            out,
+            q.stride(0),
+            q.stride(1),
+            q.stride(2),
+            q.stride(3),
+            k.stride(0),
+            k.stride(1),
+            k.stride(2),
+            k.stride(3),
+            v.stride(0),
+            v.stride(1),
+            v.stride(2),
+            v.stride(3),
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            out.stride(3),
+            H=H,
+            N_q=N_q,
+            N_k=N_k,
+            scale=float(scale),
+            temperature=float(temperature),
             ORDER=int(order),
-            BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_D=D,
+            BLOCK_M=BLOCK_M,
+            BLOCK_N=BLOCK_N,
+            BLOCK_D=D,
         )
         return out
     except Exception:
@@ -1100,7 +1245,7 @@ def fused_bam_unified_qkv_moe_pytorch(
     out = torch.zeros_like(expert_outputs[0])
     for i in range(act_k):
         expert_idx = topk_ind[..., i]
-        w_i = norm_w[..., i:i+1]
+        w_i = norm_w[..., i : i + 1]
         for e_num, exp_out in enumerate(expert_outputs):
             sel_mask = (expert_idx == e_num).unsqueeze(-1)
             out = out + torch.where(sel_mask, exp_out * w_i, torch.zeros_like(out))
@@ -1113,7 +1258,7 @@ def fused_bam_unified_qkv_moe_triton(
     top_k: int = 1,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Fused BAM unified MoE weighted combination in GPU SRAM."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and expert_outputs[0].is_cuda:
         try:
@@ -1129,30 +1274,30 @@ def fused_bam_unified_qkv_moe_triton(
 
 
 __all__ = [
-    'is_supported',
-    'fwd',
-    'bwd',
-    'fused_topk_sparse_route_and_combine_triton',
-    'fused_lsh_hash_and_bin_triton',
-    'fused_lsh_hash_and_bin_pytorch',
-    'fused_hamming_scores_triton',
-    'fused_hamming_scores_pytorch',
-    'fused_kmeans_centroid_assign_triton',
-    'fused_kmeans_centroid_assign_pytorch',
-    'fused_expert_choice_scatter_gather_triton',
-    'fused_expert_choice_scatter_gather_pytorch',
-    'fused_vig_knn_graph_agg_triton',
-    'fused_vig_knn_graph_agg_pytorch',
-    'fused_nsa_hierarchical_sparse_triton',
-    'fused_nsa_hierarchical_sparse_pytorch',
-    'fused_reap_moe_router_triton',
-    'fused_reap_moe_router_pytorch',
-    'fused_padre_polynomial_attn_triton',
-    'fused_padre_polynomial_attn_pytorch',
-    'fused_bam_unified_qkv_moe_triton',
-    'fused_bam_unified_qkv_moe_pytorch',
-    'triton_block_sparse_streaming_attn',
-    'triton_block_sparse_streaming_attn_pytorch_ref',
+    "is_supported",
+    "fwd",
+    "bwd",
+    "fused_topk_sparse_route_and_combine_triton",
+    "fused_lsh_hash_and_bin_triton",
+    "fused_lsh_hash_and_bin_pytorch",
+    "fused_hamming_scores_triton",
+    "fused_hamming_scores_pytorch",
+    "fused_kmeans_centroid_assign_triton",
+    "fused_kmeans_centroid_assign_pytorch",
+    "fused_expert_choice_scatter_gather_triton",
+    "fused_expert_choice_scatter_gather_pytorch",
+    "fused_vig_knn_graph_agg_triton",
+    "fused_vig_knn_graph_agg_pytorch",
+    "fused_nsa_hierarchical_sparse_triton",
+    "fused_nsa_hierarchical_sparse_pytorch",
+    "fused_reap_moe_router_triton",
+    "fused_reap_moe_router_pytorch",
+    "fused_padre_polynomial_attn_triton",
+    "fused_padre_polynomial_attn_pytorch",
+    "fused_bam_unified_qkv_moe_triton",
+    "fused_bam_unified_qkv_moe_pytorch",
+    "triton_block_sparse_streaming_attn",
+    "triton_block_sparse_streaming_attn_pytorch_ref",
 ]
 
 from neuralops.ops.triton.block_sparse import (

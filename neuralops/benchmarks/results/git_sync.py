@@ -14,8 +14,8 @@ Implements git sync functionality for NeuralOps.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from typing import List, Optional
 
 from neuralops.benchmarks.results.schema import BenchmarkResult
@@ -126,8 +126,13 @@ class GitCommitter:
             subprocess.run(cmd_add, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             cmd_commit = ["git", "commit", "-m", commit_msg]
-            commit_res = subprocess.run(cmd_commit, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            LOG.info("Auto-committed benchmark results: %s", commit_res.stdout.splitlines()[0] if commit_res.stdout else "committed")
+            commit_res = subprocess.run(
+                cmd_commit, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+            LOG.info(
+                "Auto-committed benchmark results: %s",
+                commit_res.stdout.splitlines()[0] if commit_res.stdout else "committed",
+            )
             self._pending_results.clear()
             return commit_msg
         except subprocess.CalledProcessError as e:

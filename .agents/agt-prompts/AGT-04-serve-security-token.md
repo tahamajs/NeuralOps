@@ -117,7 +117,7 @@ HF TOKEN (F-88):
    - `tests/test_serve_security.py`:
      `test_default_host_is_localhost` (assert `api.serve` and `serve_cmd` default
      to `127.0.0.1`); `test_non_localhost_without_api_key_fails` (assert
-     `serve(host="0.0.0.0")` without an API key raises); 
+     `serve(host="0.0.0.0")` without an API key raises);
      `test_api_key_required_for_protected_endpoints` (with `TestClient`, assert a
      request without an `Authorization` header to a protected endpoint returns
      401 and with the correct key returns 200);

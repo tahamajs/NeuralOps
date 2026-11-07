@@ -53,16 +53,16 @@ import torch.nn.functional as F
 logger = logging.getLogger("TritonKernels")
 
 from neuralops.ops.triton._base import (
-    HAS_TRITON,
-    triton,
-    tl,
     BLOCK_SIZE,
+    FORCE_PYTORCH_FALLBACK,
+    FORWARD_ONLY_KERNELS,
+    HAS_TRITON,
     MAX_TRITON_SEQ_LEN,
     SUPPORTED_HEAD_DIMS,
-    FORWARD_ONLY_KERNELS,
-    FORCE_PYTORCH_FALLBACK,
     check_triton_suitability,
     log_fallback_reason,
+    tl,
+    triton,
 )
 from neuralops.ops.triton.autotuner import Autotuner, autotune_kernel
 from neuralops.ops.triton.hardware_profile import get_device_hardware_profile
@@ -245,12 +245,8 @@ def linear_attn_pytorch_fallback(
                         qs, Z_sin.unsqueeze(-1)
                     ).squeeze(-1)
 
-                    A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(
-                        qs, ks.transpose(-1, -2)
-                    )
-                    causal_mask = torch.tril(
-                        torch.ones(end - start, end - start, device=q.device, dtype=torch.bool)
-                    )
+                    A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(qs, ks.transpose(-1, -2))
+                    causal_mask = torch.tril(torch.ones(end - start, end - start, device=q.device, dtype=torch.bool))
                     A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
                     num_intra = torch.matmul(A_intra, vc)
                     denom_intra = A_intra.sum(dim=-1)
@@ -260,12 +256,8 @@ def linear_attn_pytorch_fallback(
                         denom_safe = torch.clamp(denom_val, min=eff_eps)
                     else:
                         denom_sign = torch.sign(denom_val)
-                        denom_sign = torch.where(
-                            denom_sign == 0, torch.ones_like(denom_sign), denom_sign
-                        )
-                        denom_safe = torch.where(
-                            denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val
-                        )
+                        denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                        denom_safe = torch.where(denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val)
 
                     chunk_out = (num_inter + num_intra) / denom_safe
                     out[:, :, start:end] = chunk_out
@@ -290,9 +282,7 @@ def linear_attn_pytorch_fallback(
                     denom_inter = torch.matmul(qc, Z.unsqueeze(-1)).squeeze(-1)
 
                     A_intra = torch.matmul(qc, kc.transpose(-1, -2))
-                    causal_mask = torch.tril(
-                        torch.ones(end - start, end - start, device=q.device, dtype=torch.bool)
-                    )
+                    causal_mask = torch.tril(torch.ones(end - start, end - start, device=q.device, dtype=torch.bool))
                     A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
                     num_intra = torch.matmul(A_intra, vc)
                     denom_intra = A_intra.sum(dim=-1)
@@ -302,12 +292,8 @@ def linear_attn_pytorch_fallback(
                         denom_safe = torch.clamp(denom_val, min=eff_eps)
                     else:
                         denom_sign = torch.sign(denom_val)
-                        denom_sign = torch.where(
-                            denom_sign == 0, torch.ones_like(denom_sign), denom_sign
-                        )
-                        denom_safe = torch.where(
-                            denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val
-                        )
+                        denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                        denom_safe = torch.where(denom_val.abs() < eff_eps, eff_eps * denom_sign, denom_val)
 
                     chunk_out = (num_inter + num_intra) / denom_safe
                     out[:, :, start:end] = chunk_out
@@ -324,9 +310,7 @@ def linear_attn_pytorch_fallback(
                 Z_sin = k_s.sum(dim=-2, keepdim=True)
 
                 num = torch.matmul(q_c, S_cos) + torch.matmul(q_s, S_sin)
-                denom = torch.matmul(q_c, Z_cos.transpose(-1, -2)) + torch.matmul(
-                    q_s, Z_sin.transpose(-1, -2)
-                )
+                denom = torch.matmul(q_c, Z_cos.transpose(-1, -2)) + torch.matmul(q_s, Z_sin.transpose(-1, -2))
                 if phi in ("elu+1", "relu", "softmax_free"):
                     denom_safe = torch.clamp(denom, min=eff_eps)
                 else:
@@ -381,15 +365,11 @@ def sparse_attn_pytorch_fallback(
     if block_mask is not None:
         bm = block_mask.to(torch.bool)
         if bm.dim() == 2:
-            expanded_mask = bm.repeat_interleave(block_size, dim=0).repeat_interleave(
-                block_size, dim=1
-            )
+            expanded_mask = bm.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)
             expanded_mask = expanded_mask[:N_q, :N_k]
             scores = scores.masked_fill(~expanded_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
         elif bm.dim() == 4:
-            expanded_mask = bm.repeat_interleave(block_size, dim=2).repeat_interleave(
-                block_size, dim=3
-            )
+            expanded_mask = bm.repeat_interleave(block_size, dim=2).repeat_interleave(block_size, dim=3)
             expanded_mask = expanded_mask[..., :N_q, :N_k]
             scores = scores.masked_fill(~expanded_mask, float("-inf"))
 
@@ -518,7 +498,11 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
     Integrates directly with torch.library custom op registrations for clean torch.compile tracing.
     """
     if not kwargs and len(args) >= 3:
-        if kernel_name == "linear_attn" and hasattr(torch.ops, "neuralops") and hasattr(torch.ops.neuralops, "linear_attn"):
+        if (
+            kernel_name == "linear_attn"
+            and hasattr(torch.ops, "neuralops")
+            and hasattr(torch.ops.neuralops, "linear_attn")
+        ):
             try:
                 if torch.compiler.is_compiling():
                     return torch.ops.neuralops.linear_attn(args[0], args[1], args[2])
@@ -543,9 +527,7 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
             q, k, v = args[0], args[1], args[2]
             head_dim = q.shape[-1]
             seq_len = q.shape[-2]
-            suitable, reason = check_triton_suitability(
-                q, kernel_name, head_dim=head_dim, seq_len=seq_len
-            )
+            suitable, reason = check_triton_suitability(q, kernel_name, head_dim=head_dim, seq_len=seq_len)
             if suitable and is_supported(q, k, v, **kwargs):
                 (q_pad, k_pad, v_pad), orig_d = pad_to_triton_power_of_2(q, k, v)
                 q_exec, orig_dtype = coerce_tensor_for_hardware(q_pad)
@@ -570,9 +552,7 @@ def triton_dispatch(kernel_name: str, *args: Any, **kwargs: Any) -> Any:
             q, k, v = args[0], args[1], args[2]
             head_dim = q.shape[-1]
             seq_len = q.shape[-2]
-            suitable, reason = check_triton_suitability(
-                q, kernel_name, head_dim=head_dim, seq_len=seq_len
-            )
+            suitable, reason = check_triton_suitability(q, kernel_name, head_dim=head_dim, seq_len=seq_len)
             if suitable and is_supported(q, k, v, **kwargs):
                 (q_pad, k_pad, v_pad), orig_d = pad_to_triton_power_of_2(q, k, v)
                 q_exec, orig_dtype = coerce_tensor_for_hardware(q_pad)

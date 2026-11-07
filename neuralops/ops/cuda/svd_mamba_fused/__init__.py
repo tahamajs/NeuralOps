@@ -11,9 +11,6 @@ SVD-Mamba Fused CUDA Kernel Package
 
 from __future__ import annotations
 
-from neuralops.ops.cuda.svd_mamba_fused.svd_mamba_fused_autograd import (
-    svd_mamba_fused,
-    svd_mamba_fused_pytorch_ref,
-)
+from neuralops.ops.cuda.svd_mamba_fused.svd_mamba_fused_autograd import svd_mamba_fused, svd_mamba_fused_pytorch_ref
 
 __all__ = ["svd_mamba_fused", "svd_mamba_fused_pytorch_ref"]

@@ -1,7 +1,7 @@
 # سند ممیزی ۰۳: تله‌متری کلان ۲۰۳ ماژول و کارنامه بنچمارک‌های سخت‌افزاری
 ## تحلیل کارنامهٔ کِرنل‌های Triton و CUDA، شکست مسیرهای گسیل و مقایسه با cuBLAS
-**تاریخ ممیزی:** اکتبر ۲۰۲۶  
-**پلتفرم هدف:** `NeuralOps v1.6.0`  
+**تاریخ ممیزی:** اکتبر ۲۰۲۶
+**پلتفرم هدف:** `NeuralOps v1.6.0`
 **منابع داده‌های خام:**
 - `results/triton_26_kernels_comprehensive_benchmark.json`
 - `academic/thesis/results_audit_outputs/results_inventory.csv`

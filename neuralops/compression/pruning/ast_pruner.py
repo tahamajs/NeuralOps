@@ -12,7 +12,6 @@ Computes empirical Fisher information to guide semi-structured 2:4 and N:M pruni
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.pruning_utils import (
     adaptive_max_error,
     apply_24_structured_mask,
@@ -167,6 +167,7 @@ class ASTPrunedLoRALinear(nn.Module):
         if x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 w_pruned = (self.weight * self.mask) if self.mask is not None else self.weight
                 out = fused_svd_lora_sparse_attn_triton(
                     x_flat,
@@ -263,9 +264,7 @@ class ASTPruner(BaseCompressor):
         self.use_fisher = bool(use_fisher)
         self.recalibrate_ln = bool(recalibrate_ln)
         if max_error is None or max_error == 0.20:
-            max_error = adaptive_max_error(
-                int(768 * (self.n_keep / self.block_size)), 768, 768, "distilbert"
-            )
+            max_error = adaptive_max_error(int(768 * (self.n_keep / self.block_size)), 768, 768, "distilbert")
 
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
@@ -279,9 +278,7 @@ class ASTPruner(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -314,9 +311,7 @@ class ASTPruner(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         cls_name = module.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
-        )
+        is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         if not is_linear_like or isinstance(module, ASTPrunedLoRALinear):
             return False
 
@@ -409,20 +404,12 @@ class ASTPruner(BaseCompressor):
                 for batch_input in batches:
                     out = None
                     if isinstance(batch_input, dict):
-                        moved = {
-                            k: v.to(self.target_device) if hasattr(v, "to") else v
-                            for k, v in batch_input.items()
-                        }
+                        moved = {k: v.to(self.target_device) if hasattr(v, "to") else v for k, v in batch_input.items()}
                         out = self.model(**moved)
                     elif isinstance(batch_input, torch.Tensor):
                         out = self.model(batch_input.to(self.target_device))
                     elif isinstance(batch_input, (list, tuple)):
-                        out = self.model(
-                            *[
-                                b.to(self.target_device) if hasattr(b, "to") else b
-                                for b in batch_input
-                            ]
-                        )
+                        out = self.model(*[b.to(self.target_device) if hasattr(b, "to") else b for b in batch_input])
 
                     if self.use_fisher and out is not None:
                         logits = None
@@ -430,11 +417,7 @@ class ASTPruner(BaseCompressor):
                             logits = out.logits
                         elif isinstance(out, torch.Tensor):
                             logits = out
-                        elif (
-                            isinstance(out, (tuple, list))
-                            and out
-                            and isinstance(out[0], torch.Tensor)
-                        ):
+                        elif isinstance(out, (tuple, list)) and out and isinstance(out[0], torch.Tensor):
                             logits = out[0]
 
                         if logits is not None and logits.requires_grad:
@@ -469,9 +452,7 @@ class ASTPruner(BaseCompressor):
             for k in list(fisher_info.keys()):
                 fisher_info[k] = fisher_info[k] * inv
         else:
-            logger.warning(
-                "AST: no successful backward passes; saliency will fall back to |W| only."
-            )
+            logger.warning("AST: no successful backward passes; saliency will fall back to |W| only.")
 
         cov_map: dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
@@ -609,17 +590,11 @@ class ASTPruner(BaseCompressor):
             if hasattr(module, "base_layer"):
                 if hasattr(module, "lora_A") and module.lora_A is not None:
                     src_a = getattr(module.lora_A, "weight", module.lora_A)
-                    if (
-                        isinstance(src_a, torch.Tensor)
-                        and src_a.shape == new_layer.lora_A.shape
-                    ):
+                    if isinstance(src_a, torch.Tensor) and src_a.shape == new_layer.lora_A.shape:
                         new_layer.lora_A.data.copy_(src_a.to(new_layer.lora_A.dtype))
                 if hasattr(module, "lora_B") and module.lora_B is not None:
                     src_b = getattr(module.lora_B, "weight", module.lora_B)
-                    if (
-                        isinstance(src_b, torch.Tensor)
-                        and src_b.shape == new_layer.lora_B.shape
-                    ):
+                    if isinstance(src_b, torch.Tensor) and src_b.shape == new_layer.lora_B.shape:
                         new_layer.lora_B.data.copy_(src_b.to(new_layer.lora_B.dtype))
 
                 module.base_layer = new_layer
@@ -631,9 +606,7 @@ class ASTPruner(BaseCompressor):
 
             self.compressed_layers.append(name)
 
-        if self.recalibrate_ln and (
-            self.calibration_loader is not None or self.calibration_texts is not None
-        ):
+        if self.recalibrate_ln and (self.calibration_loader is not None or self.calibration_texts is not None):
             try:
                 recalibrate_layernorms(
                     self.model,
@@ -668,8 +641,7 @@ class ASTPruner(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -737,13 +709,9 @@ def ast_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
             _cfg_get(comp_config, "fallback_to_original", True),
         ),
     )
-    lora_r = kwargs.pop(
-        "lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0))
-    )
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0)))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    skip_attention_qkv = kwargs.pop(
-        "skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", True)
-    )
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", True))
 
     compressor = ASTPruner(
         model,

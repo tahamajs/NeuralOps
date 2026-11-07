@@ -12,6 +12,7 @@ Backward compatibility shim for neuralops.benchmarks.multi_mode_benchmark.
 from __future__ import annotations
 
 import warnings
+
 from neuralops.benchmarks.multi_mode_benchmark import *  # noqa: F401, F403
 
 warnings.warn(

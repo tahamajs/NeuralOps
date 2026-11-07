@@ -84,10 +84,7 @@ async def partial_attentions(
     attentions = list_attentions(family=family if family else None)
     if query:
         q = query.strip().lower()
-        attentions = [
-            a for a in attentions
-            if q in a["name"].lower() or q in a["doc"].lower()
-        ]
+        attentions = [a for a in attentions if q in a["name"].lower() or q in a["doc"].lower()]
 
     return templates.TemplateResponse(
         request=request,
@@ -107,10 +104,7 @@ async def partial_compressors(
     compressors = list_compressors(paradigm=paradigm if paradigm else None)
     if query:
         q = query.strip().lower()
-        compressors = [
-            c for c in compressors
-            if q in c["name"].lower() or q in c["doc"].lower()
-        ]
+        compressors = [c for c in compressors if q in c["name"].lower() or q in c["doc"].lower()]
 
     return templates.TemplateResponse(
         request=request,

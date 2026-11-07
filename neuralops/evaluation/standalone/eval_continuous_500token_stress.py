@@ -5,29 +5,28 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Eval continuous 500token stress module.
-"""
+"""Eval continuous 500token stress module."""
 
 
 def main() -> None:
     """Run this standalone evaluation experiment."""
 
     import gc
+    import json
     import os
     import time
-    import json
+
     import torch
-    from transformers import GPT2LMHeadModel, AutoTokenizer
+    from transformers import AutoTokenizer, GPT2LMHeadModel
+
     from neuralops.utils.replace_attention import replace_attention
 
     if not torch.cuda.is_available():
         raise RuntimeError("This long-context stress experiment requires a CUDA-capable device.")
 
-
     def print_log(msg):
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
-
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Full-Prefix 500-Token Long-Context Stress on: {torch.cuda.get_device_name(0)}")
@@ -35,7 +34,6 @@ def main() -> None:
     model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     tokenizer.pad_token = tokenizer.eos_token
-
 
     def build_model_for_scaling(attention_type=None, max_pos=8192):
         """Load GPT-2 base and interpolate positional embeddings up to 8192."""
@@ -70,7 +68,6 @@ def main() -> None:
             replace_attention(model, attention_key=attention_type)
 
         return model.to(device).eval()
-
 
     reasoning_prompt = (
         "Problem: Let a sequence be defined by T_0 = 2, and for all n >= 1, T_n = 2 * T_{n-1} + 3. "
@@ -165,8 +162,8 @@ def main() -> None:
             "initial_vram_mb": initial_vram,
             "final_vram_mb": final_vram,
             "vram_drift_mb": round(state_drift, 2),
-                "memory_drift_below_60mb": state_drift < 60.0,
-                "decode_mode": "full_prefix_no_kv_cache",
+            "memory_drift_below_60mb": state_drift < 60.0,
+            "decode_mode": "full_prefix_no_kv_cache",
             "zero_nan_inf": not nan_occurred and not inf_occurred,
             "trajectory_checkpoints": mem_trajectory,
             "text_sample": gen_text[:200],
@@ -181,7 +178,6 @@ def main() -> None:
         json.dump(stress_results, f, indent=2)
 
     print_log(f"All 500-token continuous stress tests finished! Written to {out_path}")
-
 
 
 if __name__ == "__main__":

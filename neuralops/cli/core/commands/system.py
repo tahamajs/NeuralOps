@@ -20,11 +20,12 @@ from neuralops.cli.core.output import CliReporter
 def handle_verify(args: argparse.Namespace) -> int:
     """Verify hardware environment, PyTorch backend, and canonical registry counts."""
     import torch
+
     import neuralops.attentions  # noqa: F401
     import neuralops.compression_engine  # noqa: F401
+    import neuralops.kernels as nk
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     from neuralops.core.triton_kernels import HAS_TRITON
-    import neuralops.kernels as nk
 
     reporter = CliReporter(
         quiet=getattr(args, "quiet", False),
@@ -78,6 +79,7 @@ def handle_verify(args: argparse.Namespace) -> int:
 def handle_doctor(args: argparse.Namespace) -> int:
     """Diagnose environment setup, missing dependencies, and accelerator capabilities."""
     from neuralops.cli.doctor_cmd import cmd_doctor
+
     ret = cmd_doctor(args)
     return int(ret) if ret is not None else int(ExitCode.SUCCESS)
 
@@ -85,6 +87,7 @@ def handle_doctor(args: argparse.Namespace) -> int:
 def handle_info(args: argparse.Namespace) -> int:
     """Show detailed environment and runtime information."""
     from neuralops.cli.info_cmd import cmd_info
+
     ret = cmd_info(args)
     return int(ret) if ret is not None else int(ExitCode.SUCCESS)
 
@@ -92,6 +95,7 @@ def handle_info(args: argparse.Namespace) -> int:
 def handle_compat(args: argparse.Namespace) -> int:
     """Validate cross-hardware portability matrix and fallbacks."""
     from neuralops.cli.compat_cmd import run_compat_suite
+
     reporter = CliReporter(
         quiet=getattr(args, "quiet", False),
         verbose=getattr(args, "verbose", False),
@@ -109,5 +113,6 @@ def handle_compat(args: argparse.Namespace) -> int:
 def handle_ui(args: argparse.Namespace) -> int:
     """Launch interactive terminal UI."""
     from neuralops.cli.terminal_ui import run_interactive_ui
+
     run_interactive_ui(inspect_target=getattr(args, "inspect", None), snapshot=getattr(args, "snapshot", False))
     return int(ExitCode.SUCCESS)

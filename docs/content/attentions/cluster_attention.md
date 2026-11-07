@@ -3,7 +3,7 @@
 ## 1. Executive Abstract & Architectural Motivation
 Dense Multi-Head Self-Attention (MHSA) computes $L \times L$ pairwise interaction matrices across all tokens in a sequence, leading to quadratic time complexity $\mathcal{O}(L^2 d)$ and severe memory constraints for long context models. Standard sparse attention paradigms rely either on fixed positional windows or static random graphs, which fail to adapt to content-dependent semantic clustering in hidden representations.
 
-**ClusterFormer (`ClusterAttention`)** reformulates sequence-wide self-attention as a dynamic, content-driven semantic partitioning problem. Prior to computing attention matrices, token embeddings are dynamically grouped into $K$ spatial clusters using a batch-wise iterative $K$-means clustering algorithm (Lloyd's algorithm) operating in feature space. Pairwise attention is subsequently restricted strictly to tokens within the same cluster assignment $C_k$. 
+**ClusterFormer (`ClusterAttention`)** reformulates sequence-wide self-attention as a dynamic, content-driven semantic partitioning problem. Prior to computing attention matrices, token embeddings are dynamically grouped into $K$ spatial clusters using a batch-wise iterative $K$-means clustering algorithm (Lloyd's algorithm) operating in feature space. Pairwise attention is subsequently restricted strictly to tokens within the same cluster assignment $C_k$.
 
 By constraining attention calculations to intra-cluster token sets of average size $N_k \approx L / K$, ClusterFormer reduces attention score evaluations from $L^2$ to $\sum_{k=1}^K |C_k|^2 \approx L^2 / K$. This achieves an asymptotic $K \times$ reduction in attention matrix computations while preserving long-range semantic interactions among globally distant tokens that share geometric proximity in embedding space.
 
@@ -127,7 +127,7 @@ Attention score matmul: $2 B H L^2 d_h = 2 B L^2 D$ Furthermore, Softmax & conte
 $$\text{Total Naive FLOPs} = 8 B L D^2 + 3 I B L K D + 4 K B L^2 D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx 4 B L D^2 + 1.5 I B L K D + 2 K B L^2 D$$
 Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Distance Tensor: $B \cdot L \cdot K \times 4 \text{ bytes}$ Concurrently, Cluster Masks: $K \times B \cdot 1 \cdot 1 \cdot L \times 4 \text{ bytes}$ In this setting, Full Attention Matrix per cluster iteration: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$. Additionally, Peak memory scale: $\mathcal{O}(B H L^2 + B L K)$ due to un-fused $L \times L$ attention matrices inside the loop.
@@ -306,4 +306,3 @@ The empirical evaluation of `cluster_attention` across standard sequence lengths
 | **$L = 2048$** | 0.62 ms | 240 MB | $2.50\times$ |
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
-

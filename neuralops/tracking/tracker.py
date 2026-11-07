@@ -14,8 +14,8 @@ Manages experiment lifecycles, run parameters, and metric artifact persistence.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import threading
+from pathlib import Path
 from typing import Any, Sequence
 
 from .backends import (
@@ -78,9 +78,7 @@ class ExperimentTracker:
         elif isinstance(backend, Path):
             resolved_log_dir = str(backend)
             resolved_backend = kwargs.get("backend", LOCAL_BACKEND)
-        elif isinstance(backend, str) and (
-            os.path.sep in backend or "/" in backend or backend not in self.BACKEND_MAP
-        ):
+        elif isinstance(backend, str) and (os.path.sep in backend or "/" in backend or backend not in self.BACKEND_MAP):
             if os.path.exists(backend) or "/" in backend or "\\" in backend:
                 resolved_log_dir = backend
                 resolved_backend = kwargs.get("backend", LOCAL_BACKEND)
@@ -114,18 +112,14 @@ class ExperimentTracker:
 
         # Respect config_dict flags if present (both flat and nested 'tracking' config)
         tracking_cfg = (
-            self.config_dict.get("tracking", {})
-            if isinstance(self.config_dict.get("tracking"), dict)
-            else {}
+            self.config_dict.get("tracking", {}) if isinstance(self.config_dict.get("tracking"), dict) else {}
         )
         if (
-            self.config_dict.get("enable_local_jsonl") is True
-            or tracking_cfg.get("enable_local_jsonl") is True
+            self.config_dict.get("enable_local_jsonl") is True or tracking_cfg.get("enable_local_jsonl") is True
         ) and LOCAL_BACKEND not in backend_names:
             backend_names.append(LOCAL_BACKEND)
         if (
-            self.config_dict.get("enable_tensorboard") is True
-            or tracking_cfg.get("enable_tensorboard") is True
+            self.config_dict.get("enable_tensorboard") is True or tracking_cfg.get("enable_tensorboard") is True
         ) and TENSORBOARD_BACKEND not in backend_names:
             backend_names.append(TENSORBOARD_BACKEND)
 
@@ -138,17 +132,11 @@ class ExperimentTracker:
         self._trackers: list[BaseTracker] = []
         for name in backend_names:
             if name not in self.BACKEND_MAP:
-                raise ValueError(
-                    f"Unknown backend '{name}'. Available: {list(self.BACKEND_MAP.keys())}"
-                )
+                raise ValueError(f"Unknown backend '{name}'. Available: {list(self.BACKEND_MAP.keys())}")
             if name == LOCAL_BACKEND:
-                self._trackers.append(
-                    LocalTracker(log_dir=self.log_dir, experiment_name=self.experiment_name)
-                )
+                self._trackers.append(LocalTracker(log_dir=self.log_dir, experiment_name=self.experiment_name))
             elif name == TENSORBOARD_BACKEND:
-                self._trackers.append(
-                    TensorBoardTracker(log_dir=self.log_dir, experiment_name=self.experiment_name)
-                )
+                self._trackers.append(TensorBoardTracker(log_dir=self.log_dir, experiment_name=self.experiment_name))
             elif name == WANDB_BACKEND:
                 self._trackers.append(
                     WandBTracker(

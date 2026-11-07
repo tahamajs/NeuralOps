@@ -82,7 +82,7 @@ Query-Key dot products: $2 B H L^2 d_h = 2 B L^2 D$ Furthermore, Softmax & Value
 $$\text{FLOPs}_{\text{total}} = 16 B L D r + 4 B L^2 D$$
 
 ### 4.2 Memory Footprint & Bandwidth
-Specifically, regarding \textbf{Trainable Parameter Footprint}, 
+Specifically, regarding \textbf{Trainable Parameter Footprint},
 
   $$\Theta_{\text{trainable}} = 4 \times \left( r + D r + r D \right) = 4 r + 8 D r \ll 4 D^2$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Attention logit matrix: $\mathcal{O}(B H L^2)$ Concurrently, Intermediate rank-$r$ residual activations: $\mathcal{O}(B L r)$ In this setting, Total Memory: $\mathcal{O}(B L D + B H L^2 + B L r)$
@@ -152,4 +152,3 @@ The empirical evaluation of `salt` across standard sequence lengths and language
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

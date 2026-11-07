@@ -5,11 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Module providing ab_testing implementations for NeuralOps.
-"""
+"""Module providing ab_testing implementations for NeuralOps."""
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 import numpy as np
 from scipy import stats
@@ -18,6 +17,7 @@ from scipy import stats
 @dataclass
 class ABTestResult:
     """Abtestresult definition."""
+
     metric: str
     mean_a: float
     mean_b: float
@@ -30,13 +30,12 @@ class ABTestResult:
 
 class ABTester:
     """Abtester definition."""
+
     def __init__(self, alpha: float = 0.05) -> None:
         """Execute __init__ operation."""
         self.alpha = alpha
 
-    def compare(
-        self, results_a: dict[str, list[float]], results_b: dict[str, list[float]]
-    ) -> list[ABTestResult]:
+    def compare(self, results_a: dict[str, list[float]], results_b: dict[str, list[float]]) -> list[ABTestResult]:
         """Compare."""
         outcomes = []
         for metric in results_a:

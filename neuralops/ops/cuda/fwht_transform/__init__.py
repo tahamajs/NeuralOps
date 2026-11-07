@@ -10,9 +10,9 @@ Fast Walsh-Hadamard Transform Hardware Operators.
 """
 
 from neuralops.ops.cuda.fwht_transform.fwht_transform_autograd import (
+    fast_hadamard_transform,
     fwht_transform,
     fwht_transform_pytorch_ref,
-    fast_hadamard_transform,
 )
 
 __all__ = ["fwht_transform", "fwht_transform_pytorch_ref", "fast_hadamard_transform"]

@@ -1,10 +1,10 @@
 # AGT-02 Final Report: Removing Silent Random-Model Fallback in Training CLI (P0 / Finding F-47)
 
-**Date**: 2026-11-07  
-**Commit Baseline**: `5e84792c670461277b8687716d63b848fec34151`  
-**Target File**: `neuralops/cli/train_cmd.py`  
-**Test File**: `tests/test_train_cmd_fallback.py`  
-**Environment**: `/Users/tahamajs/dev/Project/.venv` (Python 3.14.3)  
+**Date**: 2026-11-07
+**Commit Baseline**: `5e84792c670461277b8687716d63b848fec34151`
+**Target File**: `neuralops/cli/train_cmd.py`
+**Test File**: `tests/test_train_cmd_fallback.py`
+**Environment**: `/Users/tahamajs/dev/Project/.venv` (Python 3.14.3)
 
 ---
 
@@ -124,7 +124,7 @@ cachedir: .pytest_cache
 rootdir: /Users/tahamajs/dev/Project
 configfile: pytest.ini (WARNING: ignoring pytest config in pyproject.toml!)
 plugins: anyio-4.11.0, cov-7.1.0, xdist-3.8.0, django-4.12.0, hydra-core-1.3.2, langsmith-0.8.5
-collecting ... collecting 3 items                                                             collected 3 items                                                              
+collecting ... collecting 3 items                                                             collected 3 items
 
 tests/test_train_cmd_fallback.py::test_load_model_failure_raises_not_random PASSED [ 33%]
 tests/test_train_cmd_fallback.py::test_cmd_train_fails_fast_on_missing_checkpoint PASSED [ 66%]

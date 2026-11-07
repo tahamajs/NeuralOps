@@ -11,12 +11,6 @@ SALT: Singular Value Adaptation with Low-Rank Tuning
 Parameter-efficient singular value adaptation and low-rank tuning for transformer attention projections.
 """
 
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -26,9 +20,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -85,14 +81,10 @@ class SALTLinear(nn.Module):
         r = self.rank
 
         self.register_buffer("U", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype))
-        self.register_buffer(
-            "Vt", Vt_unw[:r, :].contiguous().to(device=target_dev, dtype=target_dtype)
-        )
+        self.register_buffer("Vt", Vt_unw[:r, :].contiguous().to(device=target_dev, dtype=target_dtype))
         self.register_buffer("S", S[:r].contiguous().to(device=target_dev, dtype=target_dtype))
 
-        self.register_buffer(
-            "U_init", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype)
-        )
+        self.register_buffer("U_init", U[:, :r].contiguous().to(device=target_dev, dtype=target_dtype))
         self.register_buffer(
             "Vt_init",
             Vt_unw[:r, :].contiguous().to(device=target_dev, dtype=target_dtype),
@@ -104,13 +96,9 @@ class SALTLinear(nn.Module):
         self.B = nn.Parameter(torch.zeros(r, in_features, device=target_dev, dtype=target_dtype))
 
         if original_bias is not None:
-            self.bias = nn.Parameter(
-                original_bias.clone().to(device=target_dev, dtype=target_dtype)
-            )
+            self.bias = nn.Parameter(original_bias.clone().to(device=target_dev, dtype=target_dtype))
         else:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features, device=target_dev, dtype=target_dtype)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features, device=target_dev, dtype=target_dtype))
 
     def init_gamma_from_sensitivity(self, sensitivity: torch.Tensor | None = None) -> None:
         """
@@ -120,9 +108,7 @@ class SALTLinear(nn.Module):
         if sensitivity is not None and sensitivity.shape[0] == self.rank:
             s_norm = sensitivity / (sensitivity.mean() + 1e-8)
             self.gamma.data.copy_(
-                torch.sqrt(s_norm.clamp(0.1, 10.0)).to(
-                    dtype=self.gamma.dtype, device=self.gamma.device
-                )
+                torch.sqrt(s_norm.clamp(0.1, 10.0)).to(dtype=self.gamma.dtype, device=self.gamma.device)
             )
         else:
             self.gamma.data.fill_(1.0)
@@ -169,6 +155,7 @@ class SALTLinear(nn.Module):
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+
                 u_eff = (self.U * adapted_S.unsqueeze(0)).to(dtype=x.dtype)
                 x_svd = fused_lowrank_gated_gemm(x, self.Vt.to(dtype=x.dtype), u_eff)
                 x_lora = F.linear(F.linear(x, self.B.to(dtype=x.dtype)), self.A.to(dtype=x.dtype))
@@ -183,6 +170,7 @@ class SALTLinear(nn.Module):
         if x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_gemm_triton
+
                 x_svd = fused_svd_gemm_triton(x, self.U, adapted_S, self.Vt, bias=None)
                 x_lora = F.linear(F.linear(x, self.B.to(dtype=x.dtype)), self.A.to(dtype=x.dtype))
                 out = x_svd + x_lora
@@ -386,9 +374,7 @@ class SALTAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    def _get_projection_ranks(
-        self, pretrained_attn: nn.Module | None, base_rank: int
-    ) -> dict[str, int]:
+    def _get_projection_ranks(self, pretrained_attn: nn.Module | None, base_rank: int) -> dict[str, int]:
         """
         Compute per-projection rank based on SVD energy.
         Returns dict {'q': r_q, 'k': r_k, 'v': r_v, 'o': r_o}.
@@ -414,9 +400,7 @@ class SALTAttention(BaseAttention):
                         if hasattr(target, "weight") and target.weight is not None:
                             W = target.weight.data.float()
                             _, S, _ = torch.linalg.svd(W, full_matrices=False)
-                            ranks[proj_key] = _compute_energy_rank(
-                                S, 0.95, 8, max(base_rank * 2, 32)
-                            )
+                            ranks[proj_key] = _compute_energy_rank(S, 0.95, 8, max(base_rank * 2, 32))
                         break
         except Exception as e:
             logger.debug("Per-projection rank computation failed: %s", e)
@@ -474,11 +458,7 @@ class SALTAttention(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
-            if (
-                w_o.dim() == 2
-                and w_o.shape[0] != self.hidden_size
-                and w_o.shape[1] == self.hidden_size
-            ):
+            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
                 w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -539,9 +519,7 @@ class SALTAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(
-                "Attention module copy_weights warning. Proceeding with initialized weights."
-            )
+            logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
 
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
@@ -579,9 +557,7 @@ class SALTAttention(BaseAttention):
                 if w_cand is not None:
                     try:
                         _, S_cand, _ = torch.linalg.svd(w_cand.float(), full_matrices=False)
-                        self.proj_ranks[proj_key] = _compute_energy_rank(
-                            S_cand, 0.95, 8, max(self.rank * 2, 32)
-                        )
+                        self.proj_ranks[proj_key] = _compute_energy_rank(S_cand, 0.95, 8, max(self.rank * 2, 32))
                     except Exception:
                         # allowed-swallow: best-effort-telemetry
                         pass
@@ -712,17 +688,10 @@ class SALTAttention(BaseAttention):
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
                 _sdpa_out = (
-                    _sdpa_out.to(hidden_states.dtype)
-                    .transpose(1, 2)
-                    .contiguous()
-                    .view(B, L, self.all_head_size)
+                    _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                 )
                 _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                out = (
-                    _sdpa_out
-                    if getattr(self, "is_nested_encoder", False)
-                    else self.out_proj(_sdpa_out)
-                )
+                out = _sdpa_out if getattr(self, "is_nested_encoder", False) else self.out_proj(_sdpa_out)
                 if out.shape[-1] != hidden_states.shape[-1]:
                     out = (
                         F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
@@ -856,9 +825,7 @@ def inject_salt_attention(
         if target is not None:
             for attr in ("attention", "self_attn", "attn", "self"):
                 cand = getattr(target, attr, None)
-                if cand is not None and (
-                    isinstance(cand, SALTAttention) or "SALT" in cand.__class__.__name__
-                ):
+                if cand is not None and (isinstance(cand, SALTAttention) or "SALT" in cand.__class__.__name__):
                     return None
 
         if model_config is None and hasattr(target, "config"):
@@ -935,10 +902,7 @@ def calibrate_gamma(
         )
         inputs = {k: v.to(device) for k, v in inputs.items()}
     elif isinstance(calibration_data, dict):
-        inputs = {
-            k: v.to(device) if isinstance(v, torch.Tensor) else v
-            for k, v in calibration_data.items()
-        }
+        inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in calibration_data.items()}
     elif isinstance(calibration_data, torch.Tensor):
         inputs = calibration_data.to(device)
     else:
@@ -973,11 +937,7 @@ def calibrate_gamma(
         elif hasattr(outputs, "logits") and outputs.logits is not None:
             probs = F.softmax(outputs.logits.float(), dim=-1)
             loss = -(probs * torch.log(probs + 1e-10)).sum(dim=-1).mean()
-        elif (
-            isinstance(outputs, (tuple, list))
-            and len(outputs) > 0
-            and isinstance(outputs[0], torch.Tensor)
-        ):
+        elif isinstance(outputs, (tuple, list)) and len(outputs) > 0 and isinstance(outputs[0], torch.Tensor):
             loss = outputs[0].mean()
         elif isinstance(outputs, torch.Tensor):
             loss = outputs.mean()

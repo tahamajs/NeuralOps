@@ -14,9 +14,10 @@ Fail-closed and safe across non-CUDA and non-Linux platforms.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import importlib.util
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
+
 import torch
 
 
@@ -44,7 +45,7 @@ class BackendCapabilities:
 def _safe_find_spec(module_name: str) -> bool:
     """Safely check if a module spec can be found without throwing unexpected errors."""
     try:
-        return importlib.util.find_spec(module_name) is not None
+        return bool(importlib.util.find_spec(module_name) is not None)
     except (ImportError, ValueError, AttributeError, TypeError):
         return False
 
@@ -80,9 +81,7 @@ def probe_serving_ecosystem() -> Dict[str, Any]:
         # Check for compiled C/CUDA extensions
         # vLLM exposes compiled ops typically via vllm._C or vllm._custom_ops
         vllm_cuda_ops = (
-            _safe_find_spec("vllm._C")
-            or _safe_find_spec("vllm._custom_ops")
-            or _safe_find_spec("vllm.vllm_ops")
+            _safe_find_spec("vllm._C") or _safe_find_spec("vllm._custom_ops") or _safe_find_spec("vllm.vllm_ops")
         )
 
     results["vllm"] = {
@@ -114,10 +113,7 @@ def probe_serving_ecosystem() -> Dict[str, Any]:
     tgi_ver = _safe_get_version("text_generation_server") if tgi_avail else None
     tgi_grpc = False
     if tgi_avail:
-        tgi_grpc = (
-            _safe_find_spec("text_generation_server.pb")
-            or _safe_find_spec("text_generation_server.server")
-        )
+        tgi_grpc = _safe_find_spec("text_generation_server.pb") or _safe_find_spec("text_generation_server.server")
 
     results["tgi"] = {
         "is_available": tgi_avail,

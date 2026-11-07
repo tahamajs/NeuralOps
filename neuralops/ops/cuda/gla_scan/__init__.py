@@ -9,10 +9,7 @@
 Gated Linear Attention Scan Hardware Operators.
 """
 
-from neuralops.ops.cuda.gla_scan.gla_autograd import (
-    gla_scan,
-    gla_scan_pytorch_ref,
-)
+from neuralops.ops.cuda.gla_scan.gla_autograd import gla_scan, gla_scan_pytorch_ref
 
 __all__ = [
     "gla_scan",

@@ -114,7 +114,9 @@ def write_all(result: BenchmarkResult, base_dir: Path | str) -> Path:
     """Write run result according to canonical hierarchy."""
     b = Path(base_dir)
     mod_name = result.module.get("name", "module") if isinstance(result.module, dict) else str(result.module)
-    model_name = Path(result.model.get("name", "model") if isinstance(result.model, dict) else str(result.model)).name.replace("-", "_")
+    model_name = Path(
+        result.model.get("name", "model") if isinstance(result.model, dict) else str(result.model)
+    ).name.replace("-", "_")
     dataset_name = result.dataset.get("name", "dataset") if isinstance(result.dataset, dict) else str(result.dataset)
 
     target_dir = b / "runs" / dataset_name / model_name / mod_name

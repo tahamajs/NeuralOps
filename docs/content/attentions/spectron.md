@@ -131,7 +131,7 @@ Y = X (W_i^{\text{down}})^\top (W_i^{\text{up}})^\top + X S_i^\top + b_i \in \ma
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### Computational Workload and Arithmetic Complexity
-The arithmetic complexity of SpectronAttention is characterized by the joint execution of decomposed low-rank projections, sparse residual evaluations, and standard multi-head dot-product attention. Letting $B$ denote batch size, $N$ sequence length, $D$ model dimension, $H$ attention heads with per-head dimension $d_k = D/H$, $\{r_q, r_k, r_v, r_o\}$ the Lagrangian-assigned projection ranks, and $\rho$ the sparse residual density parameter, the total computational load is partitioned across two primary regimes. 
+The arithmetic complexity of SpectronAttention is characterized by the joint execution of decomposed low-rank projections, sparse residual evaluations, and standard multi-head dot-product attention. Letting $B$ denote batch size, $N$ sequence length, $D$ model dimension, $H$ attention heads with per-head dimension $d_k = D/H$, $\{r_q, r_k, r_v, r_o\}$ the Lagrangian-assigned projection ranks, and $\rho$ the sparse residual density parameter, the total computational load is partitioned across two primary regimes.
 
 First, the projection stage combines low-rank down- and up-projections demanding $4 B N D (r_q + r_k + r_v + r_o)$ floating-point operations (FLOPs) alongside optional sparse residual matrix products that require $4 B N D^2 (1 - \rho)$ FLOPs when active. Second, the core scaled dot-product attention kernel executes query-key score computation $Q K^\top$ and value aggregation $A V$, contributing $4 B N^2 D$ FLOPs, while row-wise softmax normalization and attention masking account for $7 B H N^2$ FLOPs. Aggregating these computational phases, the net multiply-accumulate operations reach $\text{Total MACs} = 2 B N D (r_q + r_k + r_v + r_o) + 2 B N D^2 (1 - \rho) + 2 B N^2 D$, yielding an overall floating-point workload of $\text{Total FLOPs} = 4 B N D (r_q + r_k + r_v + r_o) + 4 B N D^2 (1 - \rho) + 4 B N^2 D + 7 B H N^2$.
 
@@ -201,4 +201,3 @@ The empirical evaluation of `spectron` across standard sequence lengths and lang
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

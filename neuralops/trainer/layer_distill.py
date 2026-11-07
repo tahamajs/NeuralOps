@@ -13,10 +13,11 @@ Performs progressive layer-by-layer attention and hidden-state knowledge distill
 
 from __future__ import annotations
 
+from typing import Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, List, Optional, Tuple
 
 
 class LayerAttentionDistillLoss(nn.Module):
@@ -56,9 +57,7 @@ class LayerAttentionDistillLoss(nn.Module):
             or not teacher_attn_outputs
             or len(student_attn_outputs) != len(teacher_attn_outputs)
         ):
-            raise ValueError(
-                "Student and teacher outputs must contain the same non-zero number of layers."
-            )
+            raise ValueError("Student and teacher outputs must contain the same non-zero number of layers.")
 
         total_loss = student_attn_outputs[0].new_zeros(())
         num_layers = len(student_attn_outputs)
@@ -85,6 +84,7 @@ class LayerAttentionDistillLoss(nn.Module):
             elif self.loss_type in ("kl", "kd"):
                 try:
                     from neuralops.core.triton_kernels.fused_kd import fused_kd_loss
+
                     layer_loss = fused_kd_loss(s_out, t_out, temperature=1.0)
                 except Exception:
                     s_log = F.log_softmax(s_out, dim=-1)

@@ -12,7 +12,6 @@ Evaluates feature map fluctuation metrics across calibration sequences to remove
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,11 +20,8 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
-from neuralops.core.pruning_utils import (
-    adaptive_max_error,
-    apply_24_structured_mask,
-    get_calibration_tensors,
-)
+from neuralops.core.common import _cfg_get
+from neuralops.core.pruning_utils import adaptive_max_error, apply_24_structured_mask, get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -87,7 +83,11 @@ class FLAPCompressor(BaseCompressor):
         self.cfg = cfg
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
-        self.rank = int(kwargs.get("target_rank", kwargs.get("rank"))) if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None) else None
+        self.rank = (
+            int(kwargs.get("target_rank", kwargs.get("rank")))
+            if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None)
+            else None
+        )
         if self.rank is not None:
             self.structured_24 = False
             self.sparsity = 0.5
@@ -97,14 +97,10 @@ class FLAPCompressor(BaseCompressor):
             self.structured_24 = bool(
                 _cfg_get(cfg, "flap_structured_24", _cfg_get(cfg, "structured_24", structured_24))
             )
-        self.metric_type = str(
-            _cfg_get(cfg, "flap_metric_type", _cfg_get(cfg, "metric_type", metric_type))
-        ).upper()
+        self.metric_type = str(_cfg_get(cfg, "flap_metric_type", _cfg_get(cfg, "metric_type", metric_type))).upper()
         c_max_error = _cfg_get(cfg, "flap_max_error", _cfg_get(cfg, "max_error", max_error))
         if c_max_error is None or c_max_error == 0.35:
-            c_max_error = adaptive_max_error(
-                int((1.0 - self.sparsity) * 768), 768, 768, "distilbert"
-            )
+            c_max_error = adaptive_max_error(int((1.0 - self.sparsity) * 768), 768, 768, "distilbert")
             c_max_error = max(c_max_error, 0.60)
 
         self.max_error = float(c_max_error)
@@ -126,13 +122,9 @@ class FLAPCompressor(BaseCompressor):
         self.calibration_texts = calibration_texts
         self.target_modules = target_modules
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
-        self.num_calibration_batches = max(
-            1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches))
-        )
+        self.num_calibration_batches = max(1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches)))
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -176,9 +168,7 @@ class FLAPCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention")
-            )
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 return False
 
@@ -323,11 +313,7 @@ class FLAPCompressor(BaseCompressor):
                         p.requires_grad = False
                     self.skipped_layers.append(name)
 
-        targets = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        targets = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not targets:
             logger.warning("FLAP: No compressible layers found.")
@@ -401,9 +387,7 @@ class FLAPCompressor(BaseCompressor):
                 res_w = W_pruned.to(dtype=dtype, device=device).contiguous()
 
             if res_w.shape != orig_shape:
-                raise RuntimeError(
-                    f"FLAP: shape mismatch on {name}: {tuple(res_w.shape)} vs {tuple(orig_shape)}"
-                )
+                raise RuntimeError(f"FLAP: shape mismatch on {name}: {tuple(res_w.shape)} vs {tuple(orig_shape)}")
 
             with torch.no_grad():
                 target_mod.weight.data.copy_(res_w)
@@ -456,8 +440,7 @@ class FLAPCompressor(BaseCompressor):
 
         effective_ratio = (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -546,9 +529,7 @@ def flap_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) 
         "tokenizer",
         getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None),
     )
-    num_calib = kwargs.pop(
-        "num_calibration_batches", _cfg_get(comp_config, "num_calibration_batches", 8)
-    )
+    num_calib = kwargs.pop("num_calibration_batches", _cfg_get(comp_config, "num_calibration_batches", 8))
 
     compressor = FLAPCompressor(
         model,

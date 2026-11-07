@@ -13,7 +13,6 @@ Decomposes linear projections using joint activation covariance weighting and op
 
 from __future__ import annotations
 
-
 import logging
 import math
 from typing import Any
@@ -26,7 +25,6 @@ from neuralops.core.base import BaseCompressor
 from neuralops.core.pruning_utils import adaptive_max_error, get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
-
 
 logger = logging.getLogger(__name__)
 
@@ -120,11 +118,15 @@ class GFWSLoRALinear(nn.Module):
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
             suitable, _ = check_triton_suitability(x_flat, "low_rank")
             if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
-                    lora_out = fused_down_up_gemm_bias_triton(x_flat, self.lora_A.to(x_flat.dtype), self.lora_B.t().to(x_flat.dtype).contiguous(), bias=None)
+
+                    lora_out = fused_down_up_gemm_bias_triton(
+                        x_flat, self.lora_A.to(x_flat.dtype), self.lora_B.t().to(x_flat.dtype).contiguous(), bias=None
+                    )
                     out = out + (self.scaling * lora_out)
                     return out.reshape(*orig_shape[:-1], self.out_features)
                 except Exception:
@@ -147,6 +149,7 @@ class GFWSCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     Generalized Fisher / Covariance-Weighted SVD Compressor.
@@ -214,9 +217,7 @@ class GFWSCompressor(BaseCompressor):
         self.calibration_texts = calibration_texts
         self.target_modules = target_modules
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
 
         self.compressed_layers: list[str] = []
@@ -366,11 +367,7 @@ class GFWSCompressor(BaseCompressor):
         self.used_covariance = {}
         seen_weights: set[int] = set()
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         for name, module in target_layers:
             if not hasattr(module, "weight") or module.weight is None:
@@ -413,17 +410,13 @@ class GFWSCompressor(BaseCompressor):
                     if not math.isfinite(diag_mean) or diag_mean <= 0.0:
                         diag_mean = 1.0
                     lambda_reg = max(float(self.damping) * diag_mean, 1e-6)
-                    cov_reg = cov_dev + lambda_reg * torch.eye(
-                        in_f, device=device, dtype=torch.float32
-                    )
+                    cov_reg = cov_dev + lambda_reg * torch.eye(in_f, device=device, dtype=torch.float32)
 
                     eigvals, eigvecs = torch.linalg.eigh(cov_reg)
                     eigvals_clamped = torch.clamp(eigvals, min=1e-6)
 
                     cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
-                    cov_inv_sqrt = (
-                        eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
-                    )
+                    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
 
                     M = torch.matmul(W, cov_sqrt)
                     U, S, Vt = torch.linalg.svd(M, full_matrices=False)
@@ -498,20 +491,9 @@ class GFWSCompressor(BaseCompressor):
                     and new_layer.lora_B is not None
                 ):
                     with torch.no_grad():
-                        src_A = (
-                            module.lora_A.weight.data
-                            if hasattr(module.lora_A, "weight")
-                            else module.lora_A.data
-                        )
-                        src_B = (
-                            module.lora_B.weight.data
-                            if hasattr(module.lora_B, "weight")
-                            else module.lora_B.data
-                        )
-                        if (
-                            src_A.shape == new_layer.lora_A.shape
-                            and src_B.shape == new_layer.lora_B.shape
-                        ):
+                        src_A = module.lora_A.weight.data if hasattr(module.lora_A, "weight") else module.lora_A.data
+                        src_B = module.lora_B.weight.data if hasattr(module.lora_B, "weight") else module.lora_B.data
+                        if src_A.shape == new_layer.lora_A.shape and src_B.shape == new_layer.lora_B.shape:
                             new_layer.lora_A.copy_(
                                 src_A.to(
                                     new_layer.lora_A.device,
@@ -538,11 +520,7 @@ class GFWSCompressor(BaseCompressor):
                     self.model(dummy)
                 except Exception:
                     first_linear = next(
-                        (
-                            m
-                            for m in self.model.modules()
-                            if isinstance(m, (nn.Linear, GFWSLoRALinear))
-                        ),
+                        (m for m in self.model.modules() if isinstance(m, (nn.Linear, GFWSLoRALinear))),
                         None,
                     )
                     in_dim = getattr(first_linear, "in_features", 8)
@@ -554,8 +532,7 @@ class GFWSCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -595,27 +572,15 @@ def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """GFWS factory."""
     rank = kwargs.pop(
         "rank",
-        (
-            getattr(comp_config, "gfws_rank", getattr(comp_config, "rank", 64))
-            if comp_config
-            else 64
-        ),
+        (getattr(comp_config, "gfws_rank", getattr(comp_config, "rank", 64)) if comp_config else 64),
     )
     damping = kwargs.pop(
         "damping",
-        (
-            getattr(comp_config, "gfws_damping", getattr(comp_config, "damping", 0.01))
-            if comp_config
-            else 0.01
-        ),
+        (getattr(comp_config, "gfws_damping", getattr(comp_config, "damping", 0.01)) if comp_config else 0.01),
     )
     max_error = kwargs.pop(
         "max_error",
-        (
-            getattr(comp_config, "gfws_max_error", getattr(comp_config, "max_error", 0.20))
-            if comp_config
-            else 0.20
-        ),
+        (getattr(comp_config, "gfws_max_error", getattr(comp_config, "max_error", 0.20)) if comp_config else 0.20),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
@@ -630,9 +595,7 @@ def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         ),
     )
     lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0)
-    lora_alpha = kwargs.pop(
-        "lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0
-    )
+    lora_alpha = kwargs.pop("lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0)
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = GFWSCompressor(

@@ -13,14 +13,15 @@ Defines standard machine-readable exit codes and structured error cards.
 
 from __future__ import annotations
 
-from enum import IntEnum
 import json
 import sys
+from enum import IntEnum
 from typing import Any
 
 try:
     from rich.console import Console
     from rich.panel import Panel
+
     HAS_RICH = True
     err_console = Console(stderr=True)
 except ImportError:

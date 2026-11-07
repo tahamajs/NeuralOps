@@ -17,13 +17,13 @@ Executes comprehensive empirical sweeps across:
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import gc
 import os
-from pathlib import Path
 import statistics
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -129,10 +129,7 @@ def benchmark_single_attention(
                     return fn()
                 except Exception as exc:
                     call_errors.append(f"{type(exc).__name__}: {exc}")
-            raise RuntimeError(
-                f"Forward call signature failed for '{name}'. "
-                f"Attempts: {' | '.join(call_errors)}"
-            )
+            raise RuntimeError(f"Forward call signature failed for '{name}'. " f"Attempts: {' | '.join(call_errors)}")
 
         # Warmup
         for _ in range(warmup):
@@ -167,8 +164,16 @@ def benchmark_single_attention(
         trial_latencies_ms.sort()
         mean_latency_ms = statistics.mean(trial_latencies_ms)
         p50_ms = statistics.median(trial_latencies_ms)
-        p95_ms = trial_latencies_ms[int(0.95 * len(trial_latencies_ms))] if len(trial_latencies_ms) >= 2 else trial_latencies_ms[-1]
-        p99_ms = trial_latencies_ms[int(0.99 * len(trial_latencies_ms))] if len(trial_latencies_ms) >= 2 else trial_latencies_ms[-1]
+        p95_ms = (
+            trial_latencies_ms[int(0.95 * len(trial_latencies_ms))]
+            if len(trial_latencies_ms) >= 2
+            else trial_latencies_ms[-1]
+        )
+        p99_ms = (
+            trial_latencies_ms[int(0.99 * len(trial_latencies_ms))]
+            if len(trial_latencies_ms) >= 2
+            else trial_latencies_ms[-1]
+        )
         tok_per_sec = (b * seq) / max(1e-6, mean_latency_ms / 1000.0)
 
         peak_vram_mb = 0.0
@@ -205,24 +210,28 @@ def benchmark_single_attention(
 
         status = "PASS" if is_finite and not has_nan and (backward_passed is not False) else "FAIL_NUMERICAL"
 
-        record.update({
-            "latency_ms": round(mean_latency_ms, 3),
-            "p50_ms": round(p50_ms, 3),
-            "p95_ms": round(p95_ms, 3),
-            "p99_ms": round(p99_ms, 3),
-            "peak_vram_mb": round(peak_vram_mb, 2),
-            "throughput_tok_s": round(tok_per_sec, 1),
-            "is_finite": is_finite,
-            "has_nan": has_nan,
-            "backward_passed": backward_passed,
-            "backward_ms": backward_ms,
-            "status": status,
-        })
+        record.update(
+            {
+                "latency_ms": round(mean_latency_ms, 3),
+                "p50_ms": round(p50_ms, 3),
+                "p95_ms": round(p95_ms, 3),
+                "p99_ms": round(p99_ms, 3),
+                "peak_vram_mb": round(peak_vram_mb, 2),
+                "throughput_tok_s": round(tok_per_sec, 1),
+                "is_finite": is_finite,
+                "has_nan": has_nan,
+                "backward_passed": backward_passed,
+                "backward_ms": backward_ms,
+                "status": status,
+            }
+        )
     except Exception as exc:
-        record.update({
-            "error": str(exc),
-            "status": "SKIPPED" if "cuda" in str(exc).lower() else "ERROR",
-        })
+        record.update(
+            {
+                "error": str(exc),
+                "status": "SKIPPED" if "cuda" in str(exc).lower() else "ERROR",
+            }
+        )
     return record
 
 
@@ -246,6 +255,7 @@ def benchmark_single_compressor(
 
     try:
         from transformers import BertConfig, BertModel
+
         cfg = BertConfig(num_hidden_layers=1, hidden_size=64, num_attention_heads=2, intermediate_size=128)
         model = BertModel(cfg).to(dev)
         orig_params = sum(p.numel() for p in model.parameters())
@@ -264,7 +274,9 @@ def benchmark_single_compressor(
                 res = cls(model, rank=8, fallback_to_original=False)
             except TypeError:
                 res = cls(model=model, rank=8)
-            compressed_model = res[0] if isinstance(res, tuple) else (res.compress()[0] if hasattr(res, "compress") else res)
+            compressed_model = (
+                res[0] if isinstance(res, tuple) else (res.compress()[0] if hasattr(res, "compress") else res)
+            )
 
         if compressed_model is None or not hasattr(compressed_model, "parameters"):
             raise RuntimeError(f"Compressor '{name}' produced an invalid compressed model.")
@@ -283,10 +295,14 @@ def benchmark_single_compressor(
         residual = compressed_out - reference_out
         reference_norm = torch.linalg.vector_norm(reference_out)
         residual_norm = torch.linalg.vector_norm(residual)
-        relative_frob_error = float((residual_norm / reference_norm.clamp_min(torch.finfo(reference_out.dtype).eps)).item())
+        relative_frob_error = float(
+            (residual_norm / reference_norm.clamp_min(torch.finfo(reference_out.dtype).eps)).item()
+        )
         signal_power = torch.sum(reference_out.square())
         noise_power = torch.sum(residual.square())
-        sqnr_db = float((10.0 * torch.log10(signal_power / noise_power.clamp_min(torch.finfo(reference_out.dtype).eps))).item())
+        sqnr_db = float(
+            (10.0 * torch.log10(signal_power / noise_power.clamp_min(torch.finfo(reference_out.dtype).eps))).item()
+        )
 
         if dev.type == "cuda":
             torch.cuda.synchronize(dev)
@@ -297,19 +313,23 @@ def benchmark_single_compressor(
         compression_ratio = round(max(1.0, orig_params / max(1, compressed_params)), 2)
         param_reduction = round(max(0.0, (1.0 - compressed_params / orig_params) * 100.0), 2)
 
-        record.update({
-            "param_reduction_pct": param_reduction,
-            "compression_ratio": compression_ratio,
-            "compress_latency_ms": compress_latency_ms,
-            "relative_frob_error": relative_frob_error,
-            "sqnr_db": sqnr_db,
-            "status": "PASS",
-        })
+        record.update(
+            {
+                "param_reduction_pct": param_reduction,
+                "compression_ratio": compression_ratio,
+                "compress_latency_ms": compress_latency_ms,
+                "relative_frob_error": relative_frob_error,
+                "sqnr_db": sqnr_db,
+                "status": "PASS",
+            }
+        )
     except Exception as exc:
-        record.update({
-            "error": str(exc),
-            "status": "ERROR",
-        })
+        record.update(
+            {
+                "error": str(exc),
+                "status": "ERROR",
+            }
+        )
     return record
 
 
@@ -321,7 +341,9 @@ def main() -> int:
     parser.add_argument("--parallel-workers", type=int, default=None, help="Parallel concurrency level")
     parser.add_argument("--backward", action="store_true", help="Include autograd backward gradient checks")
     parser.add_argument("--export", action="store_true", help="Atomically export results to results/")
-    parser.add_argument("--dry-run", action="store_true", help="Execute a fast validation check limiting modules to 2 per category")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Execute a fast validation check limiting modules to 2 per category"
+    )
     args = parser.parse_args()
 
     device = _resolve_requested_device(args.device)
@@ -351,18 +373,24 @@ def main() -> int:
         if workers > 1:
             with ThreadPoolExecutor(max_workers=workers) as executor:
                 futures = {
-                    executor.submit(benchmark_single_attention, name, cls, device=device, check_backward=args.backward): name
+                    executor.submit(
+                        benchmark_single_attention, name, cls, device=device, check_backward=args.backward
+                    ): name
                     for name, cls in items
                 }
                 for idx, fut in enumerate(as_completed(futures), 1):
                     rec = fut.result()
                     results.append(rec)
-                    print(f"  [{idx:3d}/{len(items):3d}] {rec['module']:<32}: {rec['status']:<8} (lat={rec.get('latency_ms', 'N/A')} ms, p95={rec.get('p95_ms', 'N/A')} ms)")
+                    print(
+                        f"  [{idx:3d}/{len(items):3d}] {rec['module']:<32}: {rec['status']:<8} (lat={rec.get('latency_ms', 'N/A')} ms, p95={rec.get('p95_ms', 'N/A')} ms)"
+                    )
         else:
             for idx, (name, cls) in enumerate(items, 1):
                 rec = benchmark_single_attention(name, cls, device=device, check_backward=args.backward)
                 results.append(rec)
-                print(f"  [{idx:3d}/{len(items):3d}] {name:<32}: {rec['status']:<8} (lat={rec.get('latency_ms', 'N/A')} ms, p95={rec.get('p95_ms', 'N/A')} ms)")
+                print(
+                    f"  [{idx:3d}/{len(items):3d}] {name:<32}: {rec['status']:<8} (lat={rec.get('latency_ms', 'N/A')} ms, p95={rec.get('p95_ms', 'N/A')} ms)"
+                )
 
     # 2. Compressor Zoo Benchmark
     if args.category in ("compressor", "all"):

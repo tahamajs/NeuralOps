@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any, Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -21,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -38,7 +41,9 @@ def _get_module():
         )
     return _MODULE
 
+
 from neuralops.ops.triton.paged_attention import paged_recurrent_state_step_triton
+
 
 def paged_recurrent_step_pytorch_ref(
     q: torch.Tensor,
@@ -59,8 +64,10 @@ def paged_recurrent_step_pytorch_ref(
     S_next = decay * S_curr + kv
     return torch.matmul(q.unsqueeze(-2), S_next).squeeze(-2)
 
+
 paged_recurrent_step_ref = paged_recurrent_step_pytorch_ref
 paged_recurrent_state_step_pytorch = paged_recurrent_step_pytorch_ref
+
 
 def _paged_recurrent_step_fwd_dispatch(
     q: torch.Tensor,
@@ -83,13 +90,21 @@ def _paged_recurrent_step_fwd_dispatch(
             int(page_slot),
             float(decay),
         )
+
     return dispatch(
         cuda_fn,
         paged_recurrent_state_step_triton,
         paged_recurrent_step_pytorch_ref,
-        q, k, v, page_pool, block_tables, decay=decay, page_slot=page_slot,
+        q,
+        k,
+        v,
+        page_pool,
+        block_tables,
+        decay=decay,
+        page_slot=page_slot,
         kernel_name="paged_recurrent_step",
     )
+
 
 class _PagedRecurrentStepFunction(torch.autograd.Function):
     @staticmethod
@@ -114,6 +129,7 @@ class _PagedRecurrentStepFunction(torch.autograd.Function):
 
         grads = torch.autograd.grad(out_p, [q_p, k_p, v_p, pp_p], dout, allow_unused=True)
         return grads[0], grads[1], grads[2], grads[3], None, None, None
+
 
 def paged_recurrent_step(
     q: torch.Tensor,

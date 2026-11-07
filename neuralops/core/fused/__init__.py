@@ -11,12 +11,7 @@ NeuralOps Fused Kernels Core Modules.
 
 from .fused_ce import fused_linear_cross_entropy
 from .fused_kd import fused_linear_kl_divergence
-from .fused_norm_linear import (
-    RMSNormLinear,
-    LayerNormLinear,
-    RMSNormGated,
-    LayerNormGated,
-)
+from .fused_norm_linear import LayerNormGated, LayerNormLinear, RMSNormGated, RMSNormLinear
 
 __all__ = [
     "fused_linear_cross_entropy",

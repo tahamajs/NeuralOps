@@ -16,7 +16,8 @@ from __future__ import annotations
 from typing import Optional
 
 import torch
-from neuralops.ops.triton._base import triton, tl, HAS_TRITON
+
+from neuralops.ops.triton._base import HAS_TRITON, tl, triton
 
 
 @triton.autotune(
@@ -94,10 +95,16 @@ def _fused_hadamard_w4a16_gemm_kernel(
         w_dequant_0 = (w_low - zero_0) * scale_0
         w_dequant_1 = (w_high - zero_1) * scale_1
 
-        x_even = tl.load(x_ptr + offs_m[:, None] * stride_xm + (2 * offs_k_packed)[None, :] * stride_xk,
-                         mask=mask_m[:, None] & (2 * offs_k_packed < K)[None, :], other=0.0)
-        x_odd = tl.load(x_ptr + offs_m[:, None] * stride_xm + (2 * offs_k_packed + 1)[None, :] * stride_xk,
-                        mask=mask_m[:, None] & (2 * offs_k_packed + 1 < K)[None, :], other=0.0)
+        x_even = tl.load(
+            x_ptr + offs_m[:, None] * stride_xm + (2 * offs_k_packed)[None, :] * stride_xk,
+            mask=mask_m[:, None] & (2 * offs_k_packed < K)[None, :],
+            other=0.0,
+        )
+        x_odd = tl.load(
+            x_ptr + offs_m[:, None] * stride_xm + (2 * offs_k_packed + 1)[None, :] * stride_xk,
+            mask=mask_m[:, None] & (2 * offs_k_packed + 1 < K)[None, :],
+            other=0.0,
+        )
 
         acc += tl.dot(x_even, tl.trans(w_dequant_0.to(x_ptr.dtype.element_ty)), allow_tf32=True)
         acc += tl.dot(x_odd, tl.trans(w_dequant_1.to(x_ptr.dtype.element_ty)), allow_tf32=True)

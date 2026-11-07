@@ -13,10 +13,11 @@ Combines normalization and linear projection into a single memory-fused pass to 
 
 from __future__ import annotations
 
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional
 
 
 class _FusedNormLinearFunction(torch.autograd.Function):
@@ -119,7 +120,7 @@ class _FusedRMSNormGateFunction(torch.autograd.Function):
         d_x_norm = grad_output * gate_act
 
         _var = (x.float() ** 2).mean(dim=-1, keepdim=True)
-        x_norm_raw = (x.float() * rstd)
+        x_norm_raw = x.float() * rstd
         x_norm = (x_norm_raw * norm_weight).to(x.dtype)
         d_gate = (grad_output * x_norm * d_gate_act).to(gate.dtype)
 
@@ -127,7 +128,7 @@ class _FusedRMSNormGateFunction(torch.autograd.Function):
 
         dy = d_x_norm.float() * norm_weight.float()
         sum_dy_x = (dy * x.float()).sum(dim=-1, keepdim=True)
-        dx = (rstd * (dy - (1.0 / D) * x.float() * (rstd ** 2) * sum_dy_x)).to(x.dtype)
+        dx = (rstd * (dy - (1.0 / D) * x.float() * (rstd**2) * sum_dy_x)).to(x.dtype)
 
         return dx, d_gate, d_norm_weight, None, None
 
@@ -174,16 +175,24 @@ class FusedRMSNormLinear(nn.Module):
         return self.linear(self.norm(x))
 
 
-from neuralops.ops.triton._common import HAS_TRITON, triton, tl
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _fused_rmsnorm_silu_gate_fwd_kernel(
-        X_ptr, Gate_ptr, W_ptr, Out_ptr,
-        N, D,
-        stride_xn, stride_xd,
-        stride_gn, stride_gd,
-        stride_on, stride_od,
+        X_ptr,
+        Gate_ptr,
+        W_ptr,
+        Out_ptr,
+        N,
+        D,
+        stride_xn,
+        stride_xd,
+        stride_gn,
+        stride_gd,
+        stride_on,
+        stride_od,
         eps,
         BLOCK_D: tl.constexpr,
     ):
@@ -219,7 +228,7 @@ def fused_rmsnorm_gate_triton(
     activation: str = "silu",
 ) -> torch.Tensor:
     """Hardware-accelerated fused RMSNorm + SiLU gating via Triton kernel."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON, check_triton_suitability
 
     if HAS_TRITON and x.is_cuda and not FORCE_PYTORCH_FALLBACK and activation == "silu":
         try:
@@ -238,11 +247,18 @@ def fused_rmsnorm_gate_triton(
             grid = (N,)
 
             _fused_rmsnorm_silu_gate_fwd_kernel[grid](
-                x_2d, gate_2d, norm_weight.contiguous(), out,
-                N, D,
-                x_2d.stride(0), x_2d.stride(1),
-                gate_2d.stride(0), gate_2d.stride(1),
-                out.stride(0), out.stride(1),
+                x_2d,
+                gate_2d,
+                norm_weight.contiguous(),
+                out,
+                N,
+                D,
+                x_2d.stride(0),
+                x_2d.stride(1),
+                gate_2d.stride(0),
+                gate_2d.stride(1),
+                out.stride(0),
+                out.stride(1),
                 eps,
                 BLOCK_D=BLOCK_D,
             )
@@ -254,6 +270,7 @@ def fused_rmsnorm_gate_triton(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 64}, num_stages=3, num_warps=4),
@@ -443,6 +460,7 @@ def triton_fused_hadamard_w4a16_gemm(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 64}, num_stages=3, num_warps=4),
@@ -623,6 +641,7 @@ def triton_lut_codebook_dequant_gemm(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 64, "BLOCK_K": 64}, num_stages=3, num_warps=4),
@@ -789,10 +808,11 @@ def fp4_gemm_triton(
     N, K_packed = w_packed.shape
     K = K_packed * 2
 
-    lut = torch.tensor([
-        0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0,
-        -0.0, -0.5, -1.0, -1.5, -2.0, -3.0, -4.0, -6.0
-    ], device=x.device, dtype=torch.float32)
+    lut = torch.tensor(
+        [0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0, -0.0, -0.5, -1.0, -1.5, -2.0, -3.0, -4.0, -6.0],
+        device=x.device,
+        dtype=torch.float32,
+    )
 
     w_unpacked = torch.empty((N, K), dtype=torch.float32, device=x.device)
     w_unpacked[:, 0::2] = lut[(w_packed & 0x0F).long()]

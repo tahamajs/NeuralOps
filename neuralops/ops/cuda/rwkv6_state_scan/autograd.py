@@ -69,6 +69,7 @@ def rwkv6_state_scan_pytorch_ref(
 
 def _rwkv6_state_scan_dispatch(r, k, v, w, u) -> torch.Tensor:
     """3-Level Dispatched RWKV-6 State Scan."""
+
     def cuda_fn(r, k, v, w, u, **kwargs):
         mod = _get_module()
         return mod.rwkv6_state_scan_fwd(r.contiguous(), k.contiguous(), v.contiguous(), w.contiguous(), u.contiguous())
@@ -77,7 +78,11 @@ def _rwkv6_state_scan_dispatch(r, k, v, w, u) -> torch.Tensor:
         cuda_fn,
         None,
         rwkv6_state_scan_pytorch_ref,
-        r, k, v, w, u,
+        r,
+        k,
+        v,
+        w,
+        u,
         kernel_name="rwkv6_state_scan",
     )
 

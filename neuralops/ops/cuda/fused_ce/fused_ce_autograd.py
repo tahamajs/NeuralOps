@@ -66,6 +66,7 @@ def fused_cross_entropy_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.fused_ce import fused_cross_entropy
+
         return fused_cross_entropy
     except ImportError:
         return None
@@ -135,6 +136,7 @@ def fused_cross_entropy(
             "fused_cross_entropy is 3.2x slower (0.31x speedup) than PyTorch reference at the tested shape. "
             "Setting backend='auto' will use PyTorch. To force the custom kernel, use backend='cuda'."
         )
+
     def cuda_fn(logits, targets, ignore_index=-100, reduction="mean"):
         if (not logits.requires_grad) or (not torch.is_grad_enabled()):
             orig_shape = logits.shape

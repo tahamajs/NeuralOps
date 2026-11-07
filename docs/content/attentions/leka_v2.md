@@ -115,7 +115,7 @@ Value correction matrix product $V_{\text{land}} W_{\text{corr}}$: $2 B H L_{\ma
 $$\text{FLOPs}_{\text{total}} \approx 6 B N D^2 + 2 B H N L_{\max} d_{\text{feat}} + 2 B N L_{\max} D + 4 B N D W_{\text{local}}$$
 
 ### 4.2 Memory Footprint & Bandwidth
-Specifically, regarding \textbf{Parameter Footprint}, 
+Specifically, regarding \textbf{Parameter Footprint},
 
   $$\Theta = 4 D^2 + (d_h F_1 + d_h F_2) + \Theta_{\text{scorer}} + H d_h^2 = 4 D^2 + d_h (F_1 + F_2) + d_{\text{feat}} F_1 + H d_h^2$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Landmark feature buffers: $\mathcal{O}(B H L_{\max} d_{\text{feat}})$ Concurrently, Landmark attention matrix: $\mathcal{O}(B H N L_{\max})$ In this setting, Local window logits: $\mathcal{O}(B H N W_{\text{local}})$ Additionally, Total Memory: $\mathcal{O}\left(B N D + B H N L_{\max} + B H N W_{\text{local}}\right)$
@@ -199,4 +199,3 @@ The empirical evaluation of `leka_v2` across standard sequence lengths and langu
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

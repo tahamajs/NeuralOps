@@ -12,7 +12,6 @@ Suppresses truncation error propagation across deep networks using spectrum-awar
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -22,6 +21,7 @@ import torch.nn as nn
 
 from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -43,6 +43,7 @@ class SAESSVDCompressorV2(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     SAES-SVD v2 Compressor with iterative spectrum-aware residual correction,
@@ -111,9 +112,7 @@ class SAESSVDCompressorV2(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
         if isinstance(base_mod, SVDLinear):
@@ -229,11 +228,7 @@ class SAESSVDCompressorV2(BaseCompressor):
         self.layer_ranks = {}
         self.replaced_layers = []
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not target_layers:
             logger.warning("SAES-SVD v2: No compressible linear layers found.")

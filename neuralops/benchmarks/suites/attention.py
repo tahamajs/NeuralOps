@@ -47,6 +47,7 @@ class AttentionBenchmark(AbstractBaseBenchmark):
             all_keys = sorted(list(ATTENTION_REGISTRY.keys()))
             try:
                 from neuralops.core.registry import DEPRECATED_ALIASES
+
                 self.mechanisms = [k for k in all_keys if k not in DEPRECATED_ALIASES]
             except ImportError:
                 self.mechanisms = all_keys
@@ -113,20 +114,22 @@ class AttentionBenchmark(AbstractBaseBenchmark):
             mod.eval()
         except Exception as e:
             logger.warning("Instantiation failed for attention '%s': %s", mechanism, e)
-            self.results_table.append({
-                "step": step,
-                "mechanism_or_kernel": mechanism,
-                "batch_size": batch_size,
-                "seq_len": seq_len,
-                "dtype": dtype_str,
-                "latency_ms": 0.0,
-                "latency_p50_ms": 0.0,
-                "latency_p90_ms": 0.0,
-                "latency_p99_ms": 0.0,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": f"FAILED_INIT: {e}",
-            })
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": mechanism,
+                    "batch_size": batch_size,
+                    "seq_len": seq_len,
+                    "dtype": dtype_str,
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "tflops": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": f"FAILED_INIT: {e}",
+                }
+            )
             self.tracker.log_metric("latency_ms", 0.0, step=step)
             return {"latency_ms": 0.0, "tflops": 0.0, "peak_vram_mb": 0.0}
 
@@ -156,14 +159,12 @@ class AttentionBenchmark(AbstractBaseBenchmark):
             p90 = sorted_latencies[min(int(n * 0.90), n - 1)] if n else mean_ms
             p99 = sorted_latencies[min(int(n * 0.99), n - 1)] if n else mean_ms
 
-            flops = 4.0 * batch_size * num_heads * (seq_len ** 2) * head_dim
+            flops = 4.0 * batch_size * num_heads * (seq_len**2) * head_dim
             tflops = _sanitize_float((flops / 1e12) / max(mean_ms / 1000.0, 1e-9))
 
             peak_vram_mb = 0.0
             if self.device.type == "cuda" and torch.cuda.is_available():
-                peak_vram_mb = _sanitize_float(
-                    torch.cuda.max_memory_allocated(self.device) / (1024.0 * 1024.0)
-                )
+                peak_vram_mb = _sanitize_float(torch.cuda.max_memory_allocated(self.device) / (1024.0 * 1024.0))
 
             self.tracker.log_metric("latency_ms", mean_ms, step=step)
 
@@ -189,38 +190,42 @@ class AttentionBenchmark(AbstractBaseBenchmark):
                 logger.warning("OOM encountered for %s at seq_len=%d: %s", mechanism, seq_len, e)
                 if self.device.type == "cuda" and torch.cuda.is_available():
                     torch.cuda.empty_cache()
-                self.results_table.append({
-                    "step": step,
-                    "mechanism_or_kernel": mechanism,
-                    "batch_size": batch_size,
-                    "seq_len": seq_len,
-                    "dtype": dtype_str,
-                    "latency_ms": 0.0,
-                    "latency_p50_ms": 0.0,
-                    "latency_p90_ms": 0.0,
-                    "latency_p99_ms": 0.0,
-                    "tflops": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "status": "FAILED_OOM",
-                })
+                self.results_table.append(
+                    {
+                        "step": step,
+                        "mechanism_or_kernel": mechanism,
+                        "batch_size": batch_size,
+                        "seq_len": seq_len,
+                        "dtype": dtype_str,
+                        "latency_ms": 0.0,
+                        "latency_p50_ms": 0.0,
+                        "latency_p90_ms": 0.0,
+                        "latency_p99_ms": 0.0,
+                        "tflops": 0.0,
+                        "peak_vram_mb": 0.0,
+                        "status": "FAILED_OOM",
+                    }
+                )
                 self.tracker.log_metric("latency_ms", 0.0, step=step)
                 return {"latency_ms": 0.0, "tflops": 0.0, "peak_vram_mb": 0.0}
             else:
                 logger.error("Runtime error in attention %s: %s", mechanism, e)
-                self.results_table.append({
-                    "step": step,
-                    "mechanism_or_kernel": mechanism,
-                    "batch_size": batch_size,
-                    "seq_len": seq_len,
-                    "dtype": dtype_str,
-                    "latency_ms": 0.0,
-                    "latency_p50_ms": 0.0,
-                    "latency_p90_ms": 0.0,
-                    "latency_p99_ms": 0.0,
-                    "tflops": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "status": f"FAILED_RUNTIME: {e}",
-                })
+                self.results_table.append(
+                    {
+                        "step": step,
+                        "mechanism_or_kernel": mechanism,
+                        "batch_size": batch_size,
+                        "seq_len": seq_len,
+                        "dtype": dtype_str,
+                        "latency_ms": 0.0,
+                        "latency_p50_ms": 0.0,
+                        "latency_p90_ms": 0.0,
+                        "latency_p99_ms": 0.0,
+                        "tflops": 0.0,
+                        "peak_vram_mb": 0.0,
+                        "status": f"FAILED_RUNTIME: {e}",
+                    }
+                )
                 self.tracker.log_metric("latency_ms", 0.0, step=step)
                 return {"latency_ms": 0.0, "tflops": 0.0, "peak_vram_mb": 0.0}
 

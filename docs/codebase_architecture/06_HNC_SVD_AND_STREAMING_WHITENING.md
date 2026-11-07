@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 06
 # HNC-SVD: Streaming Whitening & Fisher-Ridge Calibration
 
-**Assigned Subagent**: `Agent 06: SVD & Whitening Compression Specialist`  
+**Assigned Subagent**: `Agent 06: SVD & Whitening Compression Specialist`
 **Target Codebase Paths**:
 - `neuralops/compression/svd/hnc_svd_continuation.py`
 - `neuralops/compression/svd/direct_svd.py`

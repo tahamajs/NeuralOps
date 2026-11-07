@@ -32,7 +32,7 @@ NeuralOps is designed to run universally across environments while maximizing ph
 | **PyTorch** | PyTorch 2.1.0+ | PyTorch 2.4.0+ / 2.6.0+ |
 | **Triton** | Triton 2.1.0+ (optional) | Triton 3.0.0+ |
 
-All empirical benchmark records and raw telemetry traces are openly hosted on Hugging Face:  
+All empirical benchmark records and raw telemetry traces are openly hosted on Hugging Face:
 👉 **[https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)**
 
 ---

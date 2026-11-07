@@ -90,16 +90,32 @@ class TinyCausalLM(nn.Module):
 class TrainingThroughputProfiler:
     """Measure supervised or KD training throughput and peak allocated VRAM."""
 
-    def __init__(self, model: Union[str, nn.Module] = "gpt2", device: str = "cuda" if torch.cuda.is_available() else "cpu", dtype: torch.dtype = torch.float16 if torch.cuda.is_available() else torch.float32, use_kd: bool = False, use_lora: bool = False, kd_temperature: float = 2.0, kd_alpha: float = 0.5, lora_rank: int = 8, lora_alpha: float = 16.0) -> None:
+    def __init__(
+        self,
+        model: Union[str, nn.Module] = "gpt2",
+        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+        dtype: torch.dtype = torch.float16 if torch.cuda.is_available() else torch.float32,
+        use_kd: bool = False,
+        use_lora: bool = False,
+        kd_temperature: float = 2.0,
+        kd_alpha: float = 0.5,
+        lora_rank: int = 8,
+        lora_alpha: float = 16.0,
+    ) -> None:
         self.device, self.dtype = device, dtype
         self._is_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
         self.use_kd, self.use_lora = use_kd, use_lora
         self.kd_temperature, self.kd_alpha = float(kd_temperature), float(kd_alpha)
         self.lora_rank, self.lora_alpha = int(lora_rank), float(lora_alpha)
-        self.model = (AutoModelForCausalLM.from_pretrained(model, torch_dtype=dtype) if isinstance(model, str) else model).to(device).train()
+        self.model = (
+            (AutoModelForCausalLM.from_pretrained(model, torch_dtype=dtype) if isinstance(model, str) else model)
+            .to(device)
+            .train()
+        )
         self.lora_injected = 0
         if use_lora:
             from neuralops.trainer.methods.lora import apply_lora
+
             config = SimpleNamespace(lora_r=self.lora_rank, lora_alpha=self.lora_alpha, lora_dropout=0.0)
             before = {id(module) for module in self.model.modules()}
             apply_lora(self.model, config)
@@ -108,13 +124,27 @@ class TrainingThroughputProfiler:
         if use_kd:
             vocab = int(getattr(getattr(self.model, "config", None), "vocab_size", 256))
             student_width = int(getattr(getattr(self.model, "config", None), "hidden_size", 128))
-            self.teacher = TinyCausalLM(vocab_size=vocab, hidden_size=max(256, student_width * 2)).to(device, dtype=dtype).eval()
+            self.teacher = (
+                TinyCausalLM(vocab_size=vocab, hidden_size=max(256, student_width * 2)).to(device, dtype=dtype).eval()
+            )
             for parameter in self.teacher.parameters():
                 parameter.requires_grad_(False)
 
-    def _kd_loss(self, student_logits: torch.Tensor, teacher_logits: torch.Tensor, student_hidden: torch.Tensor, teacher_hidden: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+    def _kd_loss(
+        self,
+        student_logits: torch.Tensor,
+        teacher_logits: torch.Tensor,
+        student_hidden: torch.Tensor,
+        teacher_hidden: torch.Tensor,
+        labels: torch.Tensor,
+    ) -> torch.Tensor:
         """Combine four logit and two representation losses from the trainer."""
-        from neuralops.trainer.distillation.multi_level_kd import BlockwiseOperatorCloningLoss, LinearCKALoss, LogitDistillationLoss
+        from neuralops.trainer.distillation.multi_level_kd import (
+            BlockwiseOperatorCloningLoss,
+            LinearCKALoss,
+            LogitDistillationLoss,
+        )
+
         teacher_hidden = _match_feature_width(teacher_hidden, student_hidden.shape[-1]).to(student_hidden.dtype)
         terms = [
             LogitDistillationLoss("forward_kl", self.kd_temperature)(student_logits, teacher_logits),
@@ -126,7 +156,14 @@ class TrainingThroughputProfiler:
         ]
         return torch.stack([term.float() for term in terms]).mean()
 
-    def profile_training_step(self, batch_size: int = 2, seq_len: int = 128, warmup_steps: int = 2, num_steps: int = 3, grad_accum_steps: int = 1) -> Dict[str, float]:
+    def profile_training_step(
+        self,
+        batch_size: int = 2,
+        seq_len: int = 128,
+        warmup_steps: int = 2,
+        num_steps: int = 3,
+        grad_accum_steps: int = 1,
+    ) -> Dict[str, float]:
         """Run real optimizer steps and return finite measured metrics."""
         del grad_accum_steps
         vocab_size = int(getattr(getattr(self.model, "config", None), "vocab_size", 1000))
@@ -148,7 +185,13 @@ class TrainingThroughputProfiler:
             if self.teacher is not None:
                 with torch.no_grad():
                     teacher_output = self.teacher(inputs)
-                kd_loss = self._kd_loss(student_logits, _model_logits(teacher_output), _model_hidden(output, student_logits), _model_hidden(teacher_output, _model_logits(teacher_output)), inputs)
+                kd_loss = self._kd_loss(
+                    student_logits,
+                    _model_logits(teacher_output),
+                    _model_hidden(output, student_logits),
+                    _model_hidden(teacher_output, _model_logits(teacher_output)),
+                    inputs,
+                )
                 total_loss = (1.0 - self.kd_alpha) * task_loss + self.kd_alpha * kd_loss
             total_loss.backward()
             optimizer.step()
@@ -174,11 +217,18 @@ class TrainingThroughputProfiler:
         trainable_params = sum(parameter.numel() for parameter in trainable)
         peak_vram_mb = torch.cuda.max_memory_allocated(self.device) / (1024.0 * 1024.0) if self._is_cuda else 0.0
         return {
-            "batch_size": float(batch_size), "seq_len": float(seq_len), "step_latency_ms": round(avg_step_ms, 3),
+            "batch_size": float(batch_size),
+            "seq_len": float(seq_len),
+            "step_latency_ms": round(avg_step_ms, 3),
             "tokens_per_second": round(batch_size * seq_len / (avg_step_ms / 1000.0), 2) if avg_step_ms else 0.0,
-            "peak_vram_mb": round(peak_vram_mb, 2), "use_kd": float(self.use_kd), "use_lora": float(self.use_lora),
-            "kd_loss": round(kd_value, 6), "task_loss": round(task_value, 6), "lora_injected_modules": float(self.lora_injected),
-            "trainable_params": float(trainable_params), "total_params": float(total_params),
+            "peak_vram_mb": round(peak_vram_mb, 2),
+            "use_kd": float(self.use_kd),
+            "use_lora": float(self.use_lora),
+            "kd_loss": round(kd_value, 6),
+            "task_loss": round(task_value, 6),
+            "lora_injected_modules": float(self.lora_injected),
+            "trainable_params": float(trainable_params),
+            "total_params": float(total_params),
             "trainable_param_pct": round(100.0 * trainable_params / max(total_params, 1), 3),
         }
 
@@ -197,5 +247,22 @@ if __name__ == "__main__":
     parser.add_argument("--lora-rank", type=int, default=8)
     parser.add_argument("--lora-alpha", type=float, default=16.0)
     args = parser.parse_args()
-    profiler = TrainingThroughputProfiler(model=TinyCausalLM(), device=args.device, dtype=torch.float16 if args.device.startswith("cuda") else torch.float32, use_kd=args.use_kd, use_lora=args.use_lora, kd_temperature=args.kd_temperature, kd_alpha=args.kd_alpha, lora_rank=args.lora_rank, lora_alpha=args.lora_alpha)
-    print(json.dumps(profiler.profile_training_step(batch_size=args.batch_size, seq_len=args.seq_len, warmup_steps=args.warmup_steps, num_steps=args.steps), indent=2))
+    profiler = TrainingThroughputProfiler(
+        model=TinyCausalLM(),
+        device=args.device,
+        dtype=torch.float16 if args.device.startswith("cuda") else torch.float32,
+        use_kd=args.use_kd,
+        use_lora=args.use_lora,
+        kd_temperature=args.kd_temperature,
+        kd_alpha=args.kd_alpha,
+        lora_rank=args.lora_rank,
+        lora_alpha=args.lora_alpha,
+    )
+    print(
+        json.dumps(
+            profiler.profile_training_step(
+                batch_size=args.batch_size, seq_len=args.seq_len, warmup_steps=args.warmup_steps, num_steps=args.steps
+            ),
+            indent=2,
+        )
+    )

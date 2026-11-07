@@ -12,7 +12,6 @@ Computes fast closed-form truncated singular value decomposition with symmetric 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -22,6 +21,7 @@ import torch.nn as nn
 
 from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -39,6 +39,7 @@ class SwiftSVDCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     Swift-SVD Compressor: Fast Closed-Form Truncated SVD.
@@ -68,12 +69,8 @@ class SwiftSVDCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "swift_svd_rank", _cfg_get(cfg, "rank", rank))
-            rank_ratio = _cfg_get(
-                cfg, "swift_svd_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio)
-            )
-            max_error = _cfg_get(
-                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error)
-            )
+            rank_ratio = _cfg_get(cfg, "swift_svd_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio))
+            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error))
             max_retries = _cfg_get(cfg, "max_retries", max_retries)
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             validation_calibration = _cfg_get(cfg, "validation_calibration", validation_calibration)
@@ -249,11 +246,7 @@ class SwiftSVDCompressor(BaseCompressor):
                 best_err,
                 self.max_error,
                 best_r,
-                (
-                    "Keeping original."
-                    if self.fallback_to_original
-                    else "Using compressed layer anyway."
-                ),
+                ("Keeping original." if self.fallback_to_original else "Using compressed layer anyway."),
             )
             if self.fallback_to_original:
                 return None, best_err, best_r
@@ -326,8 +319,7 @@ class SwiftSVDCompressor(BaseCompressor):
                     orig_out = base_layer(dummy_x)
                     svd_out = svd_layer(dummy_x)
                     rel_diff = (
-                        torch.norm(orig_out.float() - svd_out.float())
-                        / (torch.norm(orig_out.float()) + 1e-8)
+                        torch.norm(orig_out.float() - svd_out.float()) / (torch.norm(orig_out.float()) + 1e-8)
                     ).item()
                     if rel_diff > self.calibration_threshold:
                         logger.warning(
@@ -405,8 +397,7 @@ class SwiftSVDCompressor(BaseCompressor):
 
                 if svd_layer.in_features != expected_in or svd_layer.out_features != expected_out:
                     logger.error(
-                        "SwiftSVD: skipping %s due to shape mismatch "
-                        "(expected in=%d, out=%d; got in=%d, out=%d)",
+                        "SwiftSVD: skipping %s due to shape mismatch " "(expected in=%d, out=%d; got in=%d, out=%d)",
                         name,
                         expected_in,
                         expected_out,
@@ -482,9 +473,7 @@ class SwiftSVDCompressor(BaseCompressor):
 def swift_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """Swift-SVD factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    target_attn = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     compressor = SwiftSVDCompressor(
         model,
         comp_config=comp_config,

@@ -110,9 +110,7 @@ def svd_linear_decay_pytorch_ref(
 
             log_M_intra = log_gamma_c.unsqueeze(-1) - log_gamma_c.unsqueeze(-2)
             causal_bool = torch.tril(torch.ones(Lc, Lc, dtype=torch.bool, device=qc.device))
-            M_intra = torch.exp(torch.clamp(log_M_intra, max=0.0)) * causal_bool.unsqueeze(
-                0
-            ).unsqueeze(0)
+            M_intra = torch.exp(torch.clamp(log_M_intra, max=0.0)) * causal_bool.unsqueeze(0).unsqueeze(0)
 
             aff_intra = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * M_intra
             num_intra = torch.matmul(aff_intra, vc)
@@ -125,20 +123,13 @@ def svd_linear_decay_pytorch_ref(
             out_c = (num_intra + num_inter) / (den_intra + den_inter + eps)
             outputs.append(out_c)
 
-            total_chunk_decay = torch.exp(
-                torch.clamp(log_gamma_c[:, :, -1:], max=0.0)
-            ).unsqueeze(-1)
+            total_chunk_decay = torch.exp(torch.clamp(log_gamma_c[:, :, -1:], max=0.0)).unsqueeze(-1)
             log_w_to_end = log_gamma_c[:, :, -1:] - log_gamma_c
             w_to_end = torch.exp(torch.clamp(log_w_to_end, max=0.0)).unsqueeze(-1)
             kc_w = kc * w_to_end
 
-            S_chunk = total_chunk_decay * S_chunk + torch.matmul(
-                kc_w.transpose(-1, -2).contiguous(), vc
-            )
-            Z_chunk = (
-                total_chunk_decay * Z_chunk
-                + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
-            )
+            S_chunk = total_chunk_decay * S_chunk + torch.matmul(kc_w.transpose(-1, -2).contiguous(), vc)
+            Z_chunk = total_chunk_decay * Z_chunk + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
 
         return torch.cat(outputs, dim=2).to(q.dtype)
 
@@ -259,9 +250,7 @@ def svd_linear_decay(
     eps: float = 1e-4,
 ) -> torch.Tensor:
     """SVD Linear Decay Attention operator with 3-tier fallback hierarchy."""
-    if any(
-        isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, lambda_decay)
-    ):
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, lambda_decay)):
         return _SVDLinearDecayFunction.apply(q, k, v, lambda_decay, eps)
     return _svd_linear_decay_fwd_dispatch(q, k, v, lambda_decay, eps=eps)
 

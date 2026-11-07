@@ -41,12 +41,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 # Backward compat shim for PyTorch 1.12 named_parameters remove_duplicate
 _orig_named_params = nn.Module.named_parameters
+
+
 def _safe_named_parameters(self, prefix="", recurse=True, remove_duplicate=True):
     return _orig_named_params(self, prefix=prefix, recurse=recurse)
+
+
 nn.Module.named_parameters = _safe_named_parameters
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -55,6 +59,7 @@ logger = logging.getLogger("dual_mode_kd")
 
 class ArrowSST2Dataset(Dataset):
     """Direct PyArrow in-memory dataset eliminating third-party network wrappers."""
+
     def __init__(self, arrow_path: str, tokenizer: Any, max_length: int = 128) -> None:
         with open(arrow_path, "rb") as f:
             reader = ipc.open_stream(f)
@@ -69,16 +74,12 @@ class ArrowSST2Dataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         item = self.tokenizer(
-            self.sentences[idx],
-            padding="max_length",
-            truncation=True,
-            max_length=self.max_length,
-            return_tensors="pt"
+            self.sentences[idx], padding="max_length", truncation=True, max_length=self.max_length, return_tensors="pt"
         )
         return {
             "input_ids": item["input_ids"].squeeze(0),
             "attention_mask": item["attention_mask"].squeeze(0),
-            "label": torch.tensor(self.labels[idx], dtype=torch.long)
+            "label": torch.tensor(self.labels[idx], dtype=torch.long),
         }
 
 
@@ -111,7 +112,7 @@ def evaluate_accuracy(model: nn.Module, dataloader: DataLoader, device: torch.de
 
 def configure_parameter_gradients(student_model: nn.Module, freeze_backbone: bool) -> list[torch.nn.Parameter]:
     """Configures parameter freezing based on regime.
-    
+
     If freeze_backbone is True:
         Freezes embeddings, FFN, layer norms, and other layers, keeping ONLY
         the new attention weights and the sequence classification head trainable.
@@ -195,7 +196,7 @@ def train_single_regime_kd(
             ce_loss = F.cross_entropy(s_logits, labels)
             p_s = F.log_softmax(s_logits / temperature, dim=-1)
             p_t = F.softmax(t_logits / temperature, dim=-1)
-            kd_loss = F.kl_div(p_s, p_t, reduction="batchmean") * (temperature ** 2)
+            kd_loss = F.kl_div(p_s, p_t, reduction="batchmean") * (temperature**2)
 
             total_loss = (1.0 - alpha_kd) * ce_loss + alpha_kd * kd_loss
 
@@ -209,13 +210,17 @@ def train_single_regime_kd(
         step += 1
         if step % 25 == 0 or step == kd_steps:
             mem_mb = torch.cuda.max_memory_allocated(device) / (1024 * 1024) if torch.cuda.is_available() else 0.0
-            logger.info(f"[{module_name}|{regime}] Step {step}/{kd_steps} | Loss: {last_loss:.4f} | VRAM: {mem_mb:.1f} MB")
+            logger.info(
+                f"[{module_name}|{regime}] Step {step}/{kd_steps} | Loss: {last_loss:.4f} | VRAM: {mem_mb:.1f} MB"
+            )
 
     duration = time.time() - start_time
     val_acc, val_loss = evaluate_accuracy(student_model, val_loader, device)
-    mem_peak_gb = (torch.cuda.max_memory_allocated(device) / (1024 ** 3)) if torch.cuda.is_available() else 0.0
+    mem_peak_gb = (torch.cuda.max_memory_allocated(device) / (1024**3)) if torch.cuda.is_available() else 0.0
 
-    logger.info(f"[{module_name}|{regime}] COMPLETE: Acc={val_acc:.2f}% | ValLoss={val_loss:.4f} | VRAM={mem_peak_gb:.2f} GB | Time={duration:.1f}s")
+    logger.info(
+        f"[{module_name}|{regime}] COMPLETE: Acc={val_acc:.2f}% | ValLoss={val_loss:.4f} | VRAM={mem_peak_gb:.2f} GB | Time={duration:.1f}s"
+    )
     return {
         "module": module_name,
         "mode": regime,
@@ -226,7 +231,7 @@ def train_single_regime_kd(
         "peak_vram_gb": round(mem_peak_gb, 2),
         "duration_sec": round(duration, 1),
         "steps": kd_steps,
-        "status": "SUCCESS"
+        "status": "SUCCESS",
     }
 
 
@@ -239,7 +244,8 @@ def persist_to_sqlite_ledger(records: list[dict[str, Any]], sqlite_path: str = "
     now_iso = datetime.datetime.utcnow().isoformat() + "Z"
     for r in records:
         rec_id = f"kd_ablation_{r['module']}_{r['mode']}_{int(time.time())}"
-        cur.execute("""
+        cur.execute(
+            """
             INSERT OR REPLACE INTO results (
                 record_id, module_name, category, family, version_tag, revision,
                 status, timestamp_utc, git_commit_sha, algorithm, backbone,
@@ -247,35 +253,37 @@ def persist_to_sqlite_ledger(records: list[dict[str, Any]], sqlite_path: str = "
                 retention_pct, ppl, latency_triton_ms, latency_pytorch_ms,
                 speedup_x, peak_vram_mb, throughput_tok_s, cosine_sim, raw_json
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            rec_id,
-            r["module"],
-            "attention_kd_ablation",
-            r["mode"],
-            "v2.0.4",
-            1,
-            r["status"],
-            now_iso,
-            "main",
-            f"6Pillar_KD_{r['mode']}",
-            "bert-base-uncased",
-            "SST-2",
-            0,
-            128,
-            64,
-            "float16",
-            "NVIDIA GeForce RTX 3090",
-            r["accuracy"],
-            r.get("retention_pct", 100.0),
-            r["val_loss"],
-            0.0,
-            0.0,
-            1.0,
-            r["peak_vram_gb"] * 1024.0,
-            0.0,
-            0.0,
-            json.dumps(r)
-        ))
+        """,
+            (
+                rec_id,
+                r["module"],
+                "attention_kd_ablation",
+                r["mode"],
+                "v2.0.4",
+                1,
+                r["status"],
+                now_iso,
+                "main",
+                f"6Pillar_KD_{r['mode']}",
+                "bert-base-uncased",
+                "SST-2",
+                0,
+                128,
+                64,
+                "float16",
+                "NVIDIA GeForce RTX 3090",
+                r["accuracy"],
+                r.get("retention_pct", 100.0),
+                r["val_loss"],
+                0.0,
+                0.0,
+                1.0,
+                r["peak_vram_gb"] * 1024.0,
+                0.0,
+                0.0,
+                json.dumps(r),
+            ),
+        )
     conn.commit()
     conn.close()
     logger.info(f"Persisted {len(records)} records into SQLite Master Ledger: {sqlite_path}")
@@ -297,11 +305,17 @@ def main() -> None:
 
     # 1. Load Tokenizer & Teacher
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", local_files_only=True)
-    teacher_model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2, local_files_only=True).to(device)
+    teacher_model = AutoModelForSequenceClassification.from_pretrained(
+        "bert-base-uncased", num_labels=2, local_files_only=True
+    ).to(device)
 
     # 2. Ingest datasets directly from Arrow
-    train_arrow = os.path.expanduser("~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-train.arrow")
-    val_arrow = os.path.expanduser("~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-validation.arrow")
+    train_arrow = os.path.expanduser(
+        "~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-train.arrow"
+    )
+    val_arrow = os.path.expanduser(
+        "~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-validation.arrow"
+    )
 
     train_dataset = ArrowSST2Dataset(train_arrow, tokenizer)
     val_dataset = ArrowSST2Dataset(val_arrow, tokenizer)
@@ -343,6 +357,7 @@ def main() -> None:
     ]
 
     from neuralops.core.registry import create_attention
+
     all_ablation_results = []
 
     # Run BOTH modes: Mode 1 (End-to-End) and Mode 2 (Frozen Backbone)
@@ -381,15 +396,17 @@ def main() -> None:
                 all_ablation_results.append(rec)
             except Exception as exc:
                 logger.error(f"Error evaluating {mod_name} under {mode_name}: {exc}")
-                all_ablation_results.append({
-                    "module": mod_name,
-                    "mode": mode_name,
-                    "freeze_backbone": freeze_flag,
-                    "accuracy": 0.0,
-                    "baseline_acc": round(base_acc, 2),
-                    "retention_pct": 0.0,
-                    "status": f"FAILED: {exc}"
-                })
+                all_ablation_results.append(
+                    {
+                        "module": mod_name,
+                        "mode": mode_name,
+                        "freeze_backbone": freeze_flag,
+                        "accuracy": 0.0,
+                        "baseline_acc": round(base_acc, 2),
+                        "retention_pct": 0.0,
+                        "status": f"FAILED: {exc}",
+                    }
+                )
 
             # Intermediate periodic save
             os.makedirs(os.path.dirname(args.out_json), exist_ok=True)
@@ -398,6 +415,7 @@ def main() -> None:
 
     # Persist Final Artifacts: CSV Dashboard and SQLite Ledger
     import pandas as pd
+
     df = pd.DataFrame(all_ablation_results)
     df.to_csv(args.out_csv, index=False)
     logger.info(f"Saved Comparative CSV Dashboard to: {args.out_csv}")

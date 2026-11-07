@@ -13,11 +13,6 @@ Approximates full attention via asymmetric kernel SVD performed directly in the 
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -27,9 +22,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import apply_attention_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +40,7 @@ class PrimalAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -61,9 +58,7 @@ class PrimalAttention(BaseAttention):
         comp_config = getattr(config, "compression_config", None)
 
         self.dim = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        self.num_heads = getattr(
-            config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
-        )
+        self.num_heads = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         self.num_kv_heads = getattr(
             config,
             "num_key_value_heads",
@@ -156,11 +151,7 @@ class PrimalAttention(BaseAttention):
         self.k_proj = self.key
         self.v_proj = self.value
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
@@ -286,11 +277,7 @@ class PrimalAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
 
         if missing:
             try:
@@ -304,11 +291,7 @@ class PrimalAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"PrimalAttention copy_weights failed: missing mandatory projections "
@@ -334,8 +317,7 @@ class PrimalAttention(BaseAttention):
                         continue
                     else:
                         logger.warning(
-                            "PrimalAttention.copy_weights: no weight for %s, "
-                            "keeping initialized weights.",
+                            "PrimalAttention.copy_weights: no weight for %s, " "keeping initialized weights.",
                             proj_key,
                         )
                         continue
@@ -344,10 +326,7 @@ class PrimalAttention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif (
-                    w.shape[0] < target_mod.weight.shape[0]
-                    and target_mod.weight.shape[0] % w.shape[0] == 0
-                ):
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -359,10 +338,7 @@ class PrimalAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (
-                        b.shape[0] < target_mod.bias.shape[0]
-                        and target_mod.bias.shape[0] % b.shape[0] == 0
-                    ):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -401,21 +377,9 @@ class PrimalAttention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         batch_size, seq_len, _ = hidden_states.shape
 
-        Q = (
-            self.query(hidden_states)
-            .view(batch_size, seq_len, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        K = (
-            self.key(hidden_states)
-            .view(batch_size, seq_len, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        V = (
-            self.value(hidden_states)
-            .view(batch_size, seq_len, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        Q = self.query(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        K = self.key(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        V = self.value(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -454,12 +418,8 @@ class PrimalAttention(BaseAttention):
         num_landmarks = min(self.rank, seq_len)
         if seq_len % num_landmarks == 0:
             seg = seq_len // num_landmarks
-            Q_land = Q.reshape(batch_size, self.num_heads, num_landmarks, seg, self.head_dim).mean(
-                dim=3
-            )
-            K_land = K.reshape(batch_size, self.num_heads, num_landmarks, seg, self.head_dim).mean(
-                dim=3
-            )
+            Q_land = Q.reshape(batch_size, self.num_heads, num_landmarks, seg, self.head_dim).mean(dim=3)
+            K_land = K.reshape(batch_size, self.num_heads, num_landmarks, seg, self.head_dim).mean(dim=3)
         else:
             idx = torch.linspace(
                 0,
@@ -473,8 +433,7 @@ class PrimalAttention(BaseAttention):
 
         if self.chunk_heads > 0 and self.num_heads > self.chunk_heads:
             head_chunks = [
-                (h0, min(h0 + self.chunk_heads, self.num_heads))
-                for h0 in range(0, self.num_heads, self.chunk_heads)
+                (h0, min(h0 + self.chunk_heads, self.num_heads)) for h0 in range(0, self.num_heads, self.chunk_heads)
             ]
         else:
             head_chunks = [(0, self.num_heads)]
@@ -513,9 +472,8 @@ class PrimalAttention(BaseAttention):
 
                     del F2_pinv, I
 
-                from neuralops.ops.triton.low_rank import (
-                    fused_primal_dual_landmark_pytorch,
-                )
+                from neuralops.ops.triton.low_rank import fused_primal_dual_landmark_pytorch
+
                 attn_c = fused_primal_dual_landmark_pytorch(F1, X, F3)
 
                 del F1, F2, F3, F2_f32, X
@@ -540,9 +498,7 @@ class PrimalAttention(BaseAttention):
                     hm = head_mask[h0:h1].view(1, h1 - h0, 1, 1).to(probs_c.dtype)
                     probs_c = probs_c * hm
                 elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                    hm = (
-                        head_mask[:, h0:h1].view(head_mask.size(0), h1 - h0, 1, 1).to(probs_c.dtype)
-                    )
+                    hm = head_mask[:, h0:h1].view(head_mask.size(0), h1 - h0, 1, 1).to(probs_c.dtype)
                     probs_c = probs_c * hm
                 elif head_mask.dim() == 4:
                     hm = head_mask[:, h0:h1].to(probs_c.dtype)
@@ -555,9 +511,7 @@ class PrimalAttention(BaseAttention):
                 attn_for_return = probs_c
 
         context = torch.cat(context_heads, dim=1)
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.all_head_size)
 
         if self.is_nested_encoder:
             return context, (attn_for_return if output_attentions else None)
@@ -604,11 +558,7 @@ def inject_primal(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

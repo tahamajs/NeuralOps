@@ -11,10 +11,7 @@ L2 Numerical Validation Gates Package.
 
 from __future__ import annotations
 
-from neuralops.validation.gates.numerical.forward_pass import (
-    ForwardPassRunsGate,
-    _get_dummy_input,
-)
+from neuralops.validation.gates.numerical.forward_pass import ForwardPassRunsGate, _get_dummy_input
 from neuralops.validation.gates.numerical.no_nan_inf import NoNanInfGate
 
 __all__ = [

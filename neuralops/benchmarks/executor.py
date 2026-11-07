@@ -27,8 +27,8 @@ from neuralops.benchmarks.adapters.perplexity import PerplexityAdapter
 from neuralops.benchmarks.adapters.ruler import RulerAdapter
 from neuralops.benchmarks.adapters.zeroshot import SUPPORTED_ZEROSHOT_DATASETS, ZeroShotAdapter
 from neuralops.benchmarks.discovery import discover_modules
-from neuralops.benchmarks.run_logging import setup_run_logger
 from neuralops.benchmarks.result import BenchmarkResult
+from neuralops.benchmarks.run_logging import setup_run_logger
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,7 @@ def _select_adapter(
     """Route benchmark to appropriate task adapter based on task or dataset task type."""
     if task:
         from neuralops.benchmarks.tasks.adapter import select_universal_task_adapter
+
         adapter_cls = select_universal_task_adapter(task)
         return adapter_cls(
             module_name=module_name,
@@ -168,7 +169,14 @@ def execute_single(
     run_logger, log_file, jsonl_file = setup_run_logger(out_dir, run_id, str(module))
     run_logger.info(
         "Beginning execution of run %s: module=%s, model=%s, dataset=%s, rank=%s, epochs=%s, batch_size=%s, task=%s",
-        run_id, module, model, dataset, rank, epochs, batch_size, task
+        run_id,
+        module,
+        model,
+        dataset,
+        rank,
+        epochs,
+        batch_size,
+        task,
     )
 
     config_dict = {
@@ -246,7 +254,6 @@ def execute_single(
         }
         effective_timeout = timeout_s if timeout_s is not None else mod_info.timeout_s
 
-
     if not is_baseline:
         all_modules = discover_modules()
         if module_name not in all_modules:
@@ -274,9 +281,17 @@ def execute_single(
     if dist_backend in ("accelerate", "ddp", "fsdp", "deepspeed"):
         try:
             import accelerate
-            run_logger.info("Distributed acceleration backend '%s' detected (accelerate %s).", dist_backend, getattr(accelerate, "__version__", ""))
+
+            run_logger.info(
+                "Distributed acceleration backend '%s' detected (accelerate %s).",
+                dist_backend,
+                getattr(accelerate, "__version__", ""),
+            )
         except ImportError:
-            run_logger.warning("Distributed backend '%s' requested but 'accelerate' package is not installed. Falling back to single-device execution.", dist_backend)
+            run_logger.warning(
+                "Distributed backend '%s' requested but 'accelerate' package is not installed. Falling back to single-device execution.",
+                dist_backend,
+            )
             kwargs["distributed_backend"] = "none"
 
     target_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -303,6 +318,7 @@ def execute_single(
     if target_device.startswith("cuda") and torch.cuda.is_available():
         try:
             import gc
+
             gc.collect()
             torch.cuda.empty_cache()
             free_bytes, total_bytes = torch.cuda.mem_get_info()
@@ -310,7 +326,9 @@ def execute_single(
             if free_mb < 500:
                 run_logger.warning(
                     "Low VRAM warning before run %s: only %.1f MB free out of %.1f MB",
-                    run_id, free_mb, total_bytes / (1024 * 1024)
+                    run_id,
+                    free_mb,
+                    total_bytes / (1024 * 1024),
                 )
         except Exception as e:
             run_logger.debug("Could not query GPU memory: %s", e)
@@ -321,6 +339,7 @@ def execute_single(
     if tracker_type and tracker_type != "none":
         try:
             from neuralops.benchmarks.loggers import create_tracker
+
             tracker_instance = create_tracker(
                 tracker_type=tracker_type,
                 project_name=kwargs.get("project_name", "neuralops"),
@@ -360,7 +379,6 @@ def execute_single(
                 nonlocal run_output
                 run_output = adapter.run()
             except BaseException as ex:
-
                 exec_error.append(ex)
 
         worker_thread = threading.Thread(target=target_worker, daemon=True)
@@ -442,17 +460,21 @@ def execute_single(
 
         run_logger.info(
             "Run %s completed successfully in %.2fs (training: %.2fs). Metrics: %s",
-            run_id, duration_s, train_duration_s, eval_metrics
+            run_id,
+            duration_s,
+            train_duration_s,
+            eval_metrics,
         )
 
         if tracker_instance is not None:
             try:
                 log_payload = {**eval_metrics, **resources_dict}
-                tracker_instance.log_metrics({k: float(v) for k, v in log_payload.items() if isinstance(v, (int, float))})
+                tracker_instance.log_metrics(
+                    {k: float(v) for k, v in log_payload.items() if isinstance(v, (int, float))}
+                )
                 tracker_instance.finish()
             except Exception as tracker_err:
                 run_logger.debug("MLOps tracker logging failed: %s", tracker_err)
-
 
         return BenchmarkResult(
             run_id=run_id,
@@ -501,6 +523,7 @@ def execute_single(
                 # allowed-swallow: best-effort-telemetry
                 pass
         import gc
+
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

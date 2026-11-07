@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 _MODULE = None
 
+
 def _get_module():
     global _MODULE
     if _MODULE is None:
@@ -48,6 +49,7 @@ def _get_module():
             functions=["fp8_gemm_fwd"],
         )
     return _MODULE
+
 
 def fp8_gemm_pytorch_ref(
     A: torch.Tensor,
@@ -68,8 +70,10 @@ def fp8_gemm_pytorch_ref(
         out = out + bias.to(torch.float32)
     return out.to(out_dtype)
 
+
 def _get_triton_impl():
     return None
+
 
 def fp8_gemm(
     A: torch.Tensor,

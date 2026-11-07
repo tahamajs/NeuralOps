@@ -306,4 +306,3 @@ The empirical evaluation of `samba_moe` across standard sequence lengths and lan
 | **$L = 2048$** | 0.62 ms | 240 MB | $2.50\times$ |
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
-

@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 import logging
-from typing import Any, Tuple, Optional
+from typing import Any, Optional, Tuple
+
 """
 Recurrent GLA Step Interface with Native CUDA Analytical Backward Pass and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -21,6 +23,7 @@ Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
 
 import math
 from pathlib import Path
+
 import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
@@ -68,6 +71,7 @@ def recurrent_gla_step_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.state_update import fused_recurrent_gla_step
+
         return fused_recurrent_gla_step
     except (ImportError, AttributeError):
         return None
@@ -81,12 +85,11 @@ def _recurrent_gla_step_dispatch(
     alpha_t: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """3-Level Dispatched Recurrent GLA Step."""
+
     def cuda_fn(q, k, v, s, alpha, **kwargs):
         mod = _get_module()
         s_copy = s.clone()
-        res = mod.recurrent_gla_step_fwd(
-            q.contiguous(), k.contiguous(), v.contiguous(), s_copy, alpha.contiguous()
-        )
+        res = mod.recurrent_gla_step_fwd(q.contiguous(), k.contiguous(), v.contiguous(), s_copy, alpha.contiguous())
         return res[0], res[1]
 
     triton_fn = _get_triton_impl()
@@ -136,7 +139,9 @@ class _Recurrent_gla_stepFunction(torch.autograd.Function):
                 dalpha if alpha.requires_grad else None,
             )
         except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
-            logger.warning("CUDA recurrent_gla_step_bwd failed: %s; falling back to PyTorch autograd", exc, exc_info=True)
+            logger.warning(
+                "CUDA recurrent_gla_step_bwd failed: %s; falling back to PyTorch autograd", exc, exc_info=True
+            )
             q_p = q.detach().requires_grad_(q.requires_grad)
             k_p = k.detach().requires_grad_(k.requires_grad)
             v_p = v.detach().requires_grad_(v.requires_grad)

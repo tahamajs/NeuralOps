@@ -52,24 +52,24 @@ Specifically, regarding \textbf{FLOPs Computation},  Furthermore, Dense Linear P
 
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-Specifically, regarding \textbf{Stochastic Output Variance}, 
+Specifically, regarding \textbf{Stochastic Output Variance},
 
   Generating random Gaussian sketching matrix $\Omega$ dynamically in every forward pass creates non-deterministic attention outputs during evaluation, degrading output reproducibility unless seeds are fixed.
-Specifically, regarding \textbf{Padding Information Leakage}, 
+Specifically, regarding \textbf{Padding Information Leakage},
 
   Multiplication $K_{\text{sketch}} = K \Omega$ contracts sequence dimension $N$ before zero-masking padding positions. Unmasked padding tokens leak into valid subspace representations, introducing noise into $K_{\text{sketch}}$.
-Specifically, regarding \textbf{Isotropic Gaussian Sketching Suboptimality}, 
+Specifically, regarding \textbf{Isotropic Gaussian Sketching Suboptimality},
 
   Using isotropic random sketching matrix $\Omega \sim \mathcal{N}(0, 1/N)$ treats all sequence positions uniformly, ignoring token salience or non-uniform sequence density.
 
 ## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
-Specifically, regarding \textbf{Mask-Aware Pre-Filtered Sketch Contraction}, 
+Specifically, regarding \textbf{Mask-Aware Pre-Filtered Sketch Contraction},
 
   Filter out invalid padding tokens prior to sketch contraction: $\tilde{K} = K \odot M_{\text{valid}}$, $\tilde{V} = V \odot M_{\text{valid}}$. This prevents padding token energy from leaking into reduced subspace basis $K_{\text{sketch}}$.
-Specifically, regarding \textbf{Persistent Buffer Sketching with Orthogonal Initialization}, 
+Specifically, regarding \textbf{Persistent Buffer Sketching with Orthogonal Initialization},
 
   Register sketching matrix $\Omega$ as a persistent module buffer initialized via Stiefel-manifold orthogonal decomposition (QR decomposition) to eliminate forward-pass random generation overhead and reduce projection variance.
-Specifically, regarding \textbf{Fused FMA Triton Kernel for Subspace Contractions}, 
+Specifically, regarding \textbf{Fused FMA Triton Kernel for Subspace Contractions},
 
   Implement a fused Triton kernel computing $K \Omega$ contraction, $Q K_{\text{sketch}}^\top$ matmul, softmax, and $P V_{\text{sketch}}$ aggregation in a single CUDA tile pass without instantiating $[B, H, N, r]$ intermediate score tensors in GPU DRAM.
 
@@ -93,4 +93,3 @@ The empirical evaluation of `galerkin_attention` across standard sequence length
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

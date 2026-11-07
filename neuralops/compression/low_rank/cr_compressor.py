@@ -12,7 +12,6 @@ Decomposes target weight matrices into subsets of actual column and row vectors,
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -82,10 +82,12 @@ class CRLinear(nn.Module):
         x_flat = x.reshape(-1, self.in_features)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x_flat, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 out = fused_down_up_gemm_bias_triton(x_flat, self.P, self.C.t().contiguous(), bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
@@ -113,10 +115,7 @@ class CRLinear(nn.Module):
         wrapper_name = linear.__class__.__name__.lower()
 
         is_conv1d = (
-            "conv1d" in cls_name
-            or "conv1d" in wrapper_name
-            or hasattr(target_mod, "nf")
-            or hasattr(linear, "nf")
+            "conv1d" in cls_name or "conv1d" in wrapper_name or hasattr(target_mod, "nf") or hasattr(linear, "nf")
         )
         if is_conv1d:
             W = raw_w.t().contiguous()
@@ -271,9 +270,7 @@ class CRCompressor(BaseCompressor):
         is_linear = isinstance(module, nn.Linear) or "linear" in cls_name
         is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
         is_lora = has_base and (
-            isinstance(module.base_layer, nn.Linear)
-            or "conv1d" in base_cls
-            or hasattr(module.base_layer, "nf")
+            isinstance(module.base_layer, nn.Linear) or "conv1d" in base_cls or hasattr(module.base_layer, "nf")
         )
 
         if not (is_linear or is_conv1d or is_lora):
@@ -371,9 +368,7 @@ class CRCompressor(BaseCompressor):
             target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
             cls_name = module.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
-            (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
-                module, "base_layer"
-            )
+            (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
             raw_w = target_mod.weight.data
             orig_w = raw_w.t().float() if is_conv1d else raw_w.float()
@@ -459,13 +454,9 @@ class CRCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         effective_param_ratio = (
-            total_comp_decomp_params / total_orig_decomp_params
-            if total_orig_decomp_params > 0
-            else 1.0
+            total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
         )
         stats.update(
             {
@@ -513,9 +504,7 @@ def cr_compressor_factory(
         "max_error",
         _cfg_get(comp_config, "cr_max_error", _cfg_get(comp_config, "max_error", 0.20)),
     )
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
     target_attention_only = kwargs.pop(
         "target_attention_only",
         _cfg_get(

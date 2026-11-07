@@ -26,12 +26,7 @@ from neuralops.cli.core.commands.model import (
     handle_train,
     handle_transplant,
 )
-from neuralops.cli.core.commands.module import (
-    handle_inspect,
-    handle_list,
-    handle_scaffold,
-    handle_validate,
-)
+from neuralops.cli.core.commands.module import handle_inspect, handle_list, handle_scaffold, handle_validate
 from neuralops.cli.core.commands.results import (
     handle_evidence,
     handle_ledger,
@@ -39,13 +34,7 @@ from neuralops.cli.core.commands.results import (
     handle_recipe,
     handle_results,
 )
-from neuralops.cli.core.commands.system import (
-    handle_compat,
-    handle_doctor,
-    handle_info,
-    handle_ui,
-    handle_verify,
-)
+from neuralops.cli.core.commands.system import handle_compat, handle_doctor, handle_info, handle_ui, handle_verify
 from neuralops.cli.core.common import add_benchmark_options, add_common_options
 from neuralops.cli.core.errors import CliError, ExitCode, emit_cli_error
 
@@ -96,7 +85,9 @@ def build_app_parser() -> argparse.ArgumentParser:
     validate_sub = mod_sub.add_parser("validate", help="Validate module numerical stability and causal gates")
     add_common_options(validate_sub)
     validate_sub.add_argument("name", type=str, help="Module canonical key to validate")
-    validate_sub.add_argument("--gate", choices=["forward", "backward", "causal", "parity", "dispatch", "all"], default="all")
+    validate_sub.add_argument(
+        "--gate", choices=["forward", "backward", "causal", "parity", "dispatch", "all"], default="all"
+    )
 
     scaffold_sub = mod_sub.add_parser("scaffold", help="Scaffold boilerplate code for a new module")
     add_common_options(scaffold_sub)
@@ -120,7 +111,9 @@ def build_app_parser() -> argparse.ArgumentParser:
     validate_top = subparsers.add_parser("validate", help="Alias for 'module validate'")
     add_common_options(validate_top)
     validate_top.add_argument("name", type=str, help="Module canonical key")
-    validate_top.add_argument("--gate", choices=["forward", "backward", "causal", "parity", "dispatch", "all"], default="all")
+    validate_top.add_argument(
+        "--gate", choices=["forward", "backward", "causal", "parity", "dispatch", "all"], default="all"
+    )
 
     scaffold_top = subparsers.add_parser("scaffold", help="Alias for 'module scaffold'")
     add_common_options(scaffold_top)
@@ -139,7 +132,9 @@ def build_app_parser() -> argparse.ArgumentParser:
     comp_p.add_argument("--rank", type=int, default=16, help="Target rank")
     comp_p.add_argument("--output", type=str, default="compressed_model", help="Save directory")
 
-    trans_p = subparsers.add_parser("transplant", aliases=["surgery"], help="Surgically transplant attention mechanisms")
+    trans_p = subparsers.add_parser(
+        "transplant", aliases=["surgery"], help="Surgically transplant attention mechanisms"
+    )
     add_common_options(trans_p)
     trans_p.add_argument("--model", type=str, required=True, help="Target model ID or path")
     trans_p.add_argument("--target", type=str, required=True, help="Target attention mechanism key")
@@ -231,7 +226,9 @@ def build_app_parser() -> argparse.ArgumentParser:
     # -------------------------------------------------------------
     # 5. Results & Pipelines Family
     # -------------------------------------------------------------
-    res_p = subparsers.add_parser("results", aliases=["ledger"], help="Query and export benchmark results or SQLite ledger")
+    res_p = subparsers.add_parser(
+        "results", aliases=["ledger"], help="Query and export benchmark results or SQLite ledger"
+    )
     add_common_options(res_p)
     res_p.add_argument("--format", choices=["table", "markdown", "latex", "csv", "json"], default="table")
     res_p.add_argument("--dossier", type=str, default=None)

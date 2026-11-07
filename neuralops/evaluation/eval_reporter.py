@@ -19,7 +19,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from neuralops.evaluation.eval_types import BenchmarkResult, LM_DATASETS
+from neuralops.evaluation.eval_types import LM_DATASETS, BenchmarkResult
 
 logger = logging.getLogger("EvalEngine")
 
@@ -92,9 +92,7 @@ def save_benchmark_artifacts(
             "git_sha": extra_metadata.get("git_sha", "clean"),
             "git_dirty": extra_metadata.get("git_dirty", False),
         }
-        (run_dir / "result.json").write_text(
-            json.dumps(full_result_json, indent=2), encoding="utf-8"
-        )
+        (run_dir / "result.json").write_text(json.dumps(full_result_json, indent=2), encoding="utf-8")
 
         summary_dir = base_dir
         summary_dir.mkdir(parents=True, exist_ok=True)

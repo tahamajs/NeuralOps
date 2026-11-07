@@ -57,10 +57,7 @@ from typing import Any, Optional, Tuple
 
 import torch
 
-from neuralops.ops.triton._types import (
-    HAS_TRITON,
-    check_triton_suitability,
-)
+from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability
 
 logger = logging.getLogger(__name__)
 
@@ -111,9 +108,7 @@ def validate_block_tables(
         ValueError: If block table dimensions or indices are invalid.
     """
     if block_tables.ndim != 2:
-        raise ValueError(
-            f"block_tables must be 2D of shape [batch_size, max_num_blocks], got {block_tables.shape}"
-        )
+        raise ValueError(f"block_tables must be 2D of shape [batch_size, max_num_blocks], got {block_tables.shape}")
     if block_size <= 0:
         raise ValueError(f"block_size must be positive, got {block_size}")
     if seq_len < 0:
@@ -129,9 +124,7 @@ def validate_block_tables(
     if (block_tables < 0).any():
         raise ValueError("block_tables contains negative block IDs")
     if (block_tables >= num_blocks).any():
-        raise ValueError(
-            f"block_tables contains out-of-bounds block IDs >= total physical blocks ({num_blocks})"
-        )
+        raise ValueError(f"block_tables contains out-of-bounds block IDs >= total physical blocks ({num_blocks})")
 
 
 def swizzle_tensor_layout(x: torch.Tensor, block_m: int = 16) -> torch.Tensor:
@@ -448,9 +441,7 @@ def paged_linear_attention_pytorch(
     """
     supported_dtypes = (torch.float16, torch.bfloat16, torch.float32)
     if q.dtype not in supported_dtypes:
-        raise TypeError(
-            f"paged_linear_attention_pytorch expects dtype in {supported_dtypes}, got {q.dtype}"
-        )
+        raise TypeError(f"paged_linear_attention_pytorch expects dtype in {supported_dtypes}, got {q.dtype}")
 
     b, t, h, d = q.shape
     device = q.device
@@ -597,9 +588,7 @@ def paged_linear_attention(
     """
     supported_dtypes = (torch.float16, torch.bfloat16, torch.float32)
     if q.dtype not in supported_dtypes:
-        raise TypeError(
-            f"paged_linear_attention expects dtype in {supported_dtypes}, got {q.dtype}"
-        )
+        raise TypeError(f"paged_linear_attention expects dtype in {supported_dtypes}, got {q.dtype}")
 
     b, t, h, d = q.shape
 
@@ -625,9 +614,7 @@ def paged_linear_attention(
         block_tables_t = block_tables
 
     if v_cache_t is None or block_tables_t is None:
-        raise ValueError(
-            "Both v_cache and block_tables must be provided when k_cache is a raw tensor."
-        )
+        raise ValueError("Both v_cache and block_tables must be provided when k_cache is a raw tensor.")
 
     # Validate physical block table properties (Phase 081)
     validate_block_tables(
@@ -735,9 +722,7 @@ def paged_linear_attention_decode_step(
     """
     supported_dtypes = (torch.float16, torch.bfloat16, torch.float32)
     if q.dtype not in supported_dtypes:
-        raise TypeError(
-            f"paged_linear_attention_decode_step expects dtype in {supported_dtypes}, got {q.dtype}"
-        )
+        raise TypeError(f"paged_linear_attention_decode_step expects dtype in {supported_dtypes}, got {q.dtype}")
 
     b = q.shape[0]
     h = q.shape[-2] if q.ndim == 4 else q.shape[1]

@@ -86,21 +86,14 @@ def list_surgeries(category: str | None = None) -> list[str]:
     """Return names of registered surgeries, optionally filtered by category."""
     if category is None:
         return sorted(list(SURGERY_REGISTRY.keys()))
-    return sorted(
-        [
-            name
-            for name, meta in SURGERY_REGISTRY.items()
-            if meta.category == category
-        ]
-    )
+    return sorted([name for name, meta in SURGERY_REGISTRY.items() if meta.category == category])
 
 
 def get_surgery(name: str) -> SurgeryMetadata:
     """Retrieve metadata for a registered surgery operator."""
     if name not in SURGERY_REGISTRY:
         raise KeyError(
-            f"Surgery operator '{name}' not found in SURGERY_REGISTRY. "
-            f"Available surgeries: {list_surgeries()}"
+            f"Surgery operator '{name}' not found in SURGERY_REGISTRY. " f"Available surgeries: {list_surgeries()}"
         )
     return SURGERY_REGISTRY[name]
 

@@ -12,17 +12,16 @@ Backward-compatibility redirection module routing legacy RoPE imports to neuralo
 """
 
 import warnings
+
 warnings.warn(
     "neuralops.core.rope is deprecated. Use neuralops.core.utils.rope.",
     DeprecationWarning,
     stacklevel=2,
 )
 import torch
+
 from neuralops.core.utils.rope import *  # noqa: F401,F403
-from neuralops.core.utils.rope import (  # noqa: F401
-    _rotate_half,
-    apply_rotary_pos_emb,
-)
+from neuralops.core.utils.rope import _rotate_half, apply_rotary_pos_emb  # noqa: F401
 
 
 def apply_rope_after_up_projection(

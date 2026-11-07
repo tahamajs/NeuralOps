@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 
@@ -45,7 +46,13 @@ class SpectralAnnealer:
         self.student = student
         self.total_steps = max(1, total_steps)
         self.target_substrings = target_substrings or [
-            "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "dense", "proj"
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "out_proj",
+            "o_proj",
+            "dense",
+            "proj",
         ]
         self.device = device
 

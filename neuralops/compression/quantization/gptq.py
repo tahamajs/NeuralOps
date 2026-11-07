@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 from typing import Any, Optional
+
 import torch
 import torch.nn as nn
 
@@ -57,9 +58,9 @@ class GPTQQuantizer:
     def _quantize_column(self, W: torch.Tensor, H_inv: torch.Tensor, i: int) -> torch.Tensor:
         """Quantize column i and propagate error across subsequent unquantized columns."""
         w = W[:, i]
-        q_max = 2 ** (self.bits - 1) - 1 if self.sym else 2 ** self.bits - 1
+        q_max = 2 ** (self.bits - 1) - 1 if self.sym else 2**self.bits - 1
         scale = (w.abs().max() / max(q_max, 1)).clamp(min=1e-8)
-        q = torch.round(w / scale).clamp(-2 ** (self.bits - 1), q_max)
+        q = torch.round(w / scale).clamp(-(2 ** (self.bits - 1)), q_max)
         w_q = q * scale
 
         h_ii = H_inv[i, i].clamp(min=1e-8)
@@ -190,9 +191,7 @@ class GPTQCompressor(BaseCompressor):
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 layer_key = name or "root"
-                quantizer = GPTQQuantizer(
-                    module, bits=self.bits, sym=self.sym, group_size=self.group_size
-                )
+                quantizer = GPTQQuantizer(module, bits=self.bits, sym=self.sym, group_size=self.group_size)
                 quantizer.quantize(damp=self.damp)
                 self.quantized_weights[f"{layer_key}.weight"] = module.weight.data.clone()
                 if module.bias is not None:
@@ -204,9 +203,7 @@ class GPTQCompressor(BaseCompressor):
                 total_params += module.weight.numel()
 
         if not stats["layers"] and isinstance(self.model, nn.Linear):
-            quantizer = GPTQQuantizer(
-                self.model, bits=self.bits, sym=self.sym, group_size=self.group_size
-            )
+            quantizer = GPTQQuantizer(self.model, bits=self.bits, sym=self.sym, group_size=self.group_size)
             quantizer.quantize(damp=self.damp)
             self.quantized_weights["weight"] = self.model.weight.data.clone()
             if self.model.bias is not None:
@@ -218,9 +215,7 @@ class GPTQCompressor(BaseCompressor):
             total_params += self.model.weight.numel()
 
         avg_err = (
-            sum(stats["layer_errors"].values()) / max(1, len(stats["layer_errors"]))
-            if stats["layer_errors"]
-            else 0.0
+            sum(stats["layer_errors"].values()) / max(1, len(stats["layer_errors"])) if stats["layer_errors"] else 0.0
         )
         stats["avg_reconstruction_error"] = float(avg_err)
         stats["num_compressed_layers"] = len(stats["layers"])

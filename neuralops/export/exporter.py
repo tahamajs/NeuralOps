@@ -20,6 +20,7 @@ import tempfile
 import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 
@@ -61,6 +62,7 @@ def export_model(
     if kwargs.get("auto_finalize", True):
         try:
             from neuralops.core._attention_surgery import heal_replaced_model
+
             model = heal_replaced_model(model)
         except Exception as e:
             logger.debug("finalize_surgery check skipped or failed: %s", e)
@@ -82,6 +84,7 @@ def export_model(
                     rank = entry_rank
 
     from neuralops.export.surgery_manifest import build_manifest_from_model
+
     manifest = build_manifest_from_model(model)
 
     base_name = model_name_or_path or getattr(model, "name_or_path", None)
@@ -127,7 +130,8 @@ def export_model(
 
     if fmt == "safetensors":
         try:
-            from safetensors.torch import save_model, save_file
+            from safetensors.torch import save_file, save_model
+
             try:
                 save_model(model, str(out_path / "model.safetensors"), metadata={"format": "pt"})
             except TypeError:
@@ -157,12 +161,13 @@ def export_model(
                         json.dump(c_dict, f, indent=2)
 
                 import shutil
+
                 import neuralops.models.configuration as conf_mod
+                import neuralops.models.hybrid_spec as spec_mod
                 import neuralops.models.modeling as model_mod
                 import neuralops.models.modeling_block as block_mod
-                import neuralops.models.modeling_norm as norm_mod
                 import neuralops.models.modeling_mlp as mlp_mod
-                import neuralops.models.hybrid_spec as spec_mod
+                import neuralops.models.modeling_norm as norm_mod
 
                 shutil.copy(conf_mod.__file__, out_path / "configuration_neuralops.py")
                 shutil.copy(model_mod.__file__, out_path / "modeling_neuralops.py")
@@ -198,6 +203,7 @@ def export_model(
         }
 
         import warnings
+
         effective_opset = opset_version
         is_pt_legacy = torch.__version__ < "2.0"
         if is_pt_legacy and effective_opset > 14:
@@ -265,12 +271,11 @@ def export_model(
 
         try:
             import onnxruntime as ort
+
             try:
                 _ = ort.InferenceSession(str(onnx_file))
             except Exception as verif_err:
-                raise RuntimeError(
-                    f"ONNX export verification failed for {onnx_file}: {verif_err}"
-                ) from verif_err
+                raise RuntimeError(f"ONNX export verification failed for {onnx_file}: {verif_err}") from verif_err
         except ImportError as imp_err:
             logger.warning(
                 "onnxruntime is not installed; skipping ONNX runtime verification of %s: %s",
@@ -324,6 +329,7 @@ def export_model(
 
     elif fmt == "gguf":
         from neuralops.export.gguf_exporter import export_to_gguf
+
         gguf_target = out_path / "model.gguf"
         export_to_gguf(
             model=model,
@@ -348,7 +354,9 @@ def export_model(
         )
 
 
-def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+def load_exported_model(
+    export_dir: Union[str, Path], base_model: Optional[nn.Module] = None
+) -> Tuple[nn.Module, Dict[str, Any]]:
     """
     Load an exported NeuralOps model with full round-trip architecture reconstruction.
 
@@ -371,6 +379,7 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
         if base_name and base_name != "unknown":
             try:
                 from transformers import AutoModel
+
                 model = AutoModel.from_pretrained(base_name, trust_remote_code=False)
             except Exception as e:
                 logger.debug("Could not load AutoModel for base '%s': %s", base_name, e)
@@ -384,6 +393,7 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
     surgery_manifest_file = dir_path / "neuralops_surgery_config.json"
     if surgery_manifest_file.exists():
         from neuralops.export.surgery_manifest import SurgeryManifest, replay_surgery_manifest
+
         try:
             with open(surgery_manifest_file, "r", encoding="utf-8") as f:
                 manifest_dict = json.load(f)
@@ -394,6 +404,7 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
             raise RuntimeError(f"Failed to replay surgery manifest from {surgery_manifest_file}: {e}") from e
     else:
         import neuralops
+
         metadata_ops = meta.get("_neuralops_metadata") or meta.get("surgery_history") or []
         if metadata_ops:
             for entry in metadata_ops:
@@ -420,6 +431,7 @@ def load_exported_model(export_dir: Union[str, Path], base_model: Optional[nn.Mo
     if safetensors_path.exists():
         try:
             from safetensors.torch import load_file
+
             state_dict = load_file(str(safetensors_path))
             model.load_state_dict(state_dict, strict=False)
         except Exception as err:
@@ -448,6 +460,7 @@ def load_model(export_dir: Union[str, Path], base_model: Optional[nn.Module] = N
 
 class _TensorOnlyExportWrapper(nn.Module):
     """Wraps arbitrary models returning dicts/dataclasses/tuples into a pure Tensor-returning module."""
+
     def __init__(self, model: nn.Module):
         super().__init__()
         self.model = model
@@ -479,6 +492,7 @@ class _TensorOnlyExportWrapper(nn.Module):
 
 class AOTICompiledModelRunner:
     """Production runtime for AOTInductor compiled artifacts (.so or .pt2) with zero Python overhead."""
+
     def __init__(
         self,
         artifact_path: Union[str, Path],
@@ -583,7 +597,6 @@ def compile_to_so(
         if any(s is not None for s in shapes_list):
             dynamic_shapes = tuple(shapes_list)
 
-
     exported_program = None
     if hasattr(torch, "export") and hasattr(torch.export, "export"):
         try:
@@ -616,6 +629,7 @@ def compile_to_so(
                     if Path(result_path).exists() and out_file.suffix.lower() == ".so":
                         try:
                             import shutil
+
                             shutil.copyfile(result_path, str(out_file))
                         except Exception as exc:
                             logger.debug("Failed copying AOTI result file %s to %s: %s", result_path, out_file, exc)
@@ -631,6 +645,7 @@ def compile_to_so(
                     )
                     if Path(so_path).exists():
                         import shutil
+
                         shutil.copyfile(so_path, str(out_file))
                         compiled_success = True
                 except Exception as e:

@@ -21,20 +21,25 @@ Measures:
     - Surgical transplantation stability
 """
 
+import csv
+import gc
+import json
+import math
 import os
 import sys
 import time
-import math
-import gc
-import json
-import csv
+
 import torch
 import torch.nn as nn
 from transformers import (
-    DistilBertConfig, DistilBertModel,
-    RobertaConfig, RobertaModel,
-    GPT2Config, GPT2Model,
-    LlamaConfig, LlamaModel,
+    DistilBertConfig,
+    DistilBertModel,
+    GPT2Config,
+    GPT2Model,
+    LlamaConfig,
+    LlamaModel,
+    RobertaConfig,
+    RobertaModel,
 )
 
 import neuralops
@@ -89,7 +94,9 @@ MODELS = [
     {
         "name": "LLaMA-1B-Proxy",
         "family": "Decoder RoPE/GQA",
-        "config": LlamaConfig(num_hidden_layers=4, hidden_size=1024, num_attention_heads=16, num_key_value_heads=4, intermediate_size=2816),
+        "config": LlamaConfig(
+            num_hidden_layers=4, hidden_size=1024, num_attention_heads=16, num_key_value_heads=4, intermediate_size=2816
+        ),
         "model_cls": LlamaModel,
         "batch": 2,
         "seq_len": 2048,
@@ -109,7 +116,9 @@ for m_info in MODELS:
 
     print(f"\n>>> MODEL BACKBONE: {m_name} ({fam}) | Batch={b}, Seq={s} (Tokens={total_tokens:,}) <<<")
     print("-" * 115)
-    print(f"| {'Method':<24} | {'Latency (ms)':<15} | {'Throughput (tok/s)':<20} | {'Peak VRAM (MB)':<15} | {'Status':<15} |")
+    print(
+        f"| {'Method':<24} | {'Latency (ms)':<15} | {'Throughput (tok/s)':<20} | {'Peak VRAM (MB)':<15} | {'Status':<15} |"
+    )
     print("-" * 115)
 
     input_ids = torch.randint(100, 1000, (b, s), device=device)
@@ -137,16 +146,21 @@ for m_info in MODELS:
         tok_s = total_tokens / (base_lat / 1000.0)
         vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
 
-        print(f"| {'Dense Baseline':<24} | {base_lat:>11.2f} ms | {tok_s:>16.0f} t/s | {vram_mb:>11.1f} MB | {'SUCCESS':<15} |", flush=True)
-        results.append({
-            "Model": m_name,
-            "Family": fam,
-            "Method": "Dense Baseline",
-            "Latency_ms": round(base_lat, 2),
-            "Throughput_tok_s": round(tok_s, 1),
-            "Peak_VRAM_MB": round(vram_mb, 1),
-            "Speedup": 1.0,
-        })
+        print(
+            f"| {'Dense Baseline':<24} | {base_lat:>11.2f} ms | {tok_s:>16.0f} t/s | {vram_mb:>11.1f} MB | {'SUCCESS':<15} |",
+            flush=True,
+        )
+        results.append(
+            {
+                "Model": m_name,
+                "Family": fam,
+                "Method": "Dense Baseline",
+                "Latency_ms": round(base_lat, 2),
+                "Throughput_tok_s": round(tok_s, 1),
+                "Peak_VRAM_MB": round(vram_mb, 1),
+                "Speedup": 1.0,
+            }
+        )
         del model
     except Exception as e:
         print(f"| {'Dense Baseline':<24} | {'FAILED':<15} | {'-':<20} | {'-':<15} | {str(e)[:15]:<15} |", flush=True)
@@ -177,16 +191,21 @@ for m_info in MODELS:
             vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
             speedup = (base_lat / lat) if base_lat else 1.0
 
-            print(f"| {meth_name:<24} | {lat:>11.2f} ms | {tok_s:>16.0f} t/s | {vram_mb:>11.1f} MB | {'SUCCESS':<15} |", flush=True)
-            results.append({
-                "Model": m_name,
-                "Family": fam,
-                "Method": meth_name,
-                "Latency_ms": round(lat, 2),
-                "Throughput_tok_s": round(tok_s, 1),
-                "Peak_VRAM_MB": round(vram_mb, 1),
-                "Speedup": round(speedup, 2),
-            })
+            print(
+                f"| {meth_name:<24} | {lat:>11.2f} ms | {tok_s:>16.0f} t/s | {vram_mb:>11.1f} MB | {'SUCCESS':<15} |",
+                flush=True,
+            )
+            results.append(
+                {
+                    "Model": m_name,
+                    "Family": fam,
+                    "Method": meth_name,
+                    "Latency_ms": round(lat, 2),
+                    "Throughput_tok_s": round(tok_s, 1),
+                    "Peak_VRAM_MB": round(vram_mb, 1),
+                    "Speedup": round(speedup, 2),
+                }
+            )
             del model
         except Exception as e:
             print(f"| {meth_name:<24} | {'FAILED':<15} | {'-':<20} | {'-':<15} | {str(e)[:15]:<15} |", flush=True)
@@ -208,16 +227,22 @@ os.makedirs("academic/paper/tables", exist_ok=True)
 with open(tex_out, "w") as f:
     f.write("% Auto-generated Camera-Ready Cross-Architecture Empirical Benchmark Table\n")
     f.write("\\begin{table*}[t]\n\\centering\\small\n")
-    f.write("\\caption{\\textbf{Cross-Architecture Performance Matrix Across Standard Model Backbones} on NVIDIA RTX 3090 (24GB). Evaluates latency, throughput, and memory retention across diverse encoder/decoder model families.}\n")
+    f.write(
+        "\\caption{\\textbf{Cross-Architecture Performance Matrix Across Standard Model Backbones} on NVIDIA RTX 3090 (24GB). Evaluates latency, throughput, and memory retention across diverse encoder/decoder model families.}\n"
+    )
     f.write("\\label{tab:cross_architecture_empirical}\n")
     f.write("\\begin{tabular}{llcccc}\n\\toprule\n")
-    f.write("\\textbf{Model Backbone} & \\textbf{Method} & \\textbf{Latency (ms)} & \\textbf{Throughput (tok/s)} & \\textbf{Peak VRAM (MB)} & \\textbf{Speedup} \\\\\n\\midrule\n")
+    f.write(
+        "\\textbf{Model Backbone} & \\textbf{Method} & \\textbf{Latency (ms)} & \\textbf{Throughput (tok/s)} & \\textbf{Peak VRAM (MB)} & \\textbf{Speedup} \\\\\n\\midrule\n"
+    )
     cur_m = None
     for r in results:
         if r["Model"] != cur_m:
             if cur_m is not None:
                 f.write("\\midrule\n")
             cur_m = r["Model"]
-        f.write(f"{r['Model']} & {r['Method']} & {r['Latency_ms']} & {int(r['Throughput_tok_s']):,} & {r['Peak_VRAM_MB']} & \\textbf{{{r['Speedup']}$\\times$}} \\\\\n")
+        f.write(
+            f"{r['Model']} & {r['Method']} & {r['Latency_ms']} & {int(r['Throughput_tok_s']):,} & {r['Peak_VRAM_MB']} & \\textbf{{{r['Speedup']}$\\times$}} \\\\\n"
+        )
     f.write("\\bottomrule\n\\end{tabular}\n\\end{table*}\n")
 print(f"Saved Camera-Ready LaTeX Table: {tex_out}")

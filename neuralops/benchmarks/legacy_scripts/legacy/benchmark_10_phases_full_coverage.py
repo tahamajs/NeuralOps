@@ -17,7 +17,9 @@ import csv
 import os
 import sys
 import time
+
 import torch
+
 
 def benchmark_op(name, fn, *args, repeat=25, warmup=5):
     for _ in range(warmup):
@@ -38,12 +40,14 @@ def benchmark_op(name, fn, *args, repeat=25, warmup=5):
             fn(*args)
         return (time.perf_counter() - t0) * 1000.0 / repeat
 
+
 def run_suite(device: str = "cuda:0" if torch.cuda.is_available() else "cpu"):
     results = []
 
     # Phase 1: fused_rope
     try:
         from neuralops.ops.cuda.fused_rope.rope_autograd import fused_rope_fwd
+
         x = torch.randn(2, 4, 1024, 64, device=device, dtype=torch.float16)
         cos = torch.randn(1, 1, 1024, 32, device=device, dtype=torch.float16)
         sin = torch.randn(1, 1, 1024, 32, device=device, dtype=torch.float16)
@@ -55,6 +59,7 @@ def run_suite(device: str = "cuda:0" if torch.cuda.is_available() else "cpu"):
     # Phase 2: sliding_window
     try:
         from neuralops.ops.cuda.sliding_window.sliding_autograd import sliding_window_attention
+
         q = torch.randn(2, 4, 1024, 64, device=device, dtype=torch.float16)
         k = torch.randn(2, 4, 1024, 64, device=device, dtype=torch.float16)
         v = torch.randn(2, 4, 1024, 64, device=device, dtype=torch.float16)
@@ -66,6 +71,7 @@ def run_suite(device: str = "cuda:0" if torch.cuda.is_available() else "cpu"):
     # Phase 3: fms_scan
     try:
         from neuralops.ops.cuda.fms_scan.fms_autograd import fms_scan
+
         q = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
         k = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
         v = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
@@ -78,6 +84,7 @@ def run_suite(device: str = "cuda:0" if torch.cuda.is_available() else "cpu"):
     # Phase 5: swiglu
     try:
         from neuralops.ops.cuda.swiglu.swiglu_autograd import swiglu_forward
+
         x = torch.randn(2, 512, 2048, device=device, dtype=torch.float16)
         ms = benchmark_op("swiglu", swiglu_forward, x)
         results.append((5, "swiglu", ms, "OK"))
@@ -87,6 +94,7 @@ def run_suite(device: str = "cuda:0" if torch.cuda.is_available() else "cpu"):
     # Phase 7: gdn_scan
     try:
         from neuralops.ops.cuda.gdn_scan.gdn_autograd import chunked_delta_gate_scan
+
         q = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
         k = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
         v = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
@@ -100,6 +108,7 @@ def run_suite(device: str = "cuda:0" if torch.cuda.is_available() else "cpu"):
     # Phase 9: gla_scan & selective_scan
     try:
         from neuralops.ops.cuda.gla_scan.gla_autograd import gla_scan
+
         q = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
         k = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
         v = torch.randn(2, 4, 512, 64, device=device, dtype=torch.float16)
@@ -111,6 +120,7 @@ def run_suite(device: str = "cuda:0" if torch.cuda.is_available() else "cpu"):
 
     try:
         from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan_fn
+
         u = torch.randn(2, 64, 512, device=device, dtype=torch.float16)
         delta = torch.randn(2, 64, 512, device=device, dtype=torch.float16).abs() + 0.1
         A = -torch.rand(64, 16, device=device, dtype=torch.float16) - 0.1
@@ -123,6 +133,7 @@ def run_suite(device: str = "cuda:0" if torch.cuda.is_available() else "cpu"):
         results.append((9, "selective_scan", 0.0, str(exc)))
 
     return results
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

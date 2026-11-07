@@ -14,6 +14,7 @@ causal masking strictness, and multi-query/grouped-query attention (GQA/MQA).
 from __future__ import annotations
 
 from typing import Any
+
 import pytest
 import torch
 import torch.nn as nn
@@ -25,11 +26,10 @@ from neuralops.core.registry import ATTENTION_REGISTRY, create_attention
 def _get_attention_names() -> list[str]:
     """Retrieve full canonical list of all registered attention names."""
     ATTENTION_REGISTRY._load_all()
-    names = list(ATTENTION_REGISTRY._dict.keys())
-    if len(names) < 131:
-        # Fall back to registry keys
-        names = sorted(list(set(ATTENTION_REGISTRY.keys())))
-    return sorted(names)
+    names = sorted(list(ATTENTION_REGISTRY.keys()))
+    if len(names) < 116:
+        pytest.fail(f"Attention registry short: expected >= 116 names, got {len(names)}")
+    return names
 
 
 ALL_ATTENTION_NAMES = _get_attention_names()
@@ -146,8 +146,8 @@ def _forward_attention(
 @pytest.mark.parametrize(
     "b,h,t,d",
     [
-        (2, 4, 64, 32),    # Dim = 128
-        (1, 8, 512, 64),   # Dim = 512
+        (2, 4, 64, 32),  # Dim = 128
+        (1, 8, 512, 64),  # Dim = 512
     ],
 )
 def test_attention_forward_backward_gpu(
@@ -195,7 +195,9 @@ def test_attention_forward_backward_gpu(
     trainable_params = [p for p in mod.parameters() if p.requires_grad]
     if trainable_params:
         params_with_grad = [p for p in trainable_params if p.grad is not None]
-        assert len(params_with_grad) > 0, f"[{name}] None of the {len(trainable_params)} trainable parameters received gradients."
+        assert (
+            len(params_with_grad) > 0
+        ), f"[{name}] None of the {len(trainable_params)} trainable parameters received gradients."
         for p in params_with_grad:
             assert torch.isfinite(p.grad).all().item(), f"[{name}] Non-finite gradient in trainable model parameter."
 
@@ -239,7 +241,9 @@ def test_attention_causal_masking_strictness(name: str):
     # Tokens up to cutoff must be identical within numerical floating point budget
     max_diff = (out1[:, :cutoff, :] - out2[:, :cutoff, :]).abs().max().item()
     if max_diff > 1e-3:
-        pytest.fail(f"[{name}] Causal leakage detected: past tokens changed when future tokens were modified (max diff={max_diff:.6f}).")
+        pytest.fail(
+            f"[{name}] Causal leakage detected: past tokens changed when future tokens were modified (max diff={max_diff:.6f})."
+        )
 
 
 @pytest.mark.gpu

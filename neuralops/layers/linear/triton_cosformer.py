@@ -13,10 +13,6 @@ Triton-accelerated implementation of cosine-reweighted linear attention for high
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -25,9 +21,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +38,7 @@ except ImportError:
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _triton_chunked_cosformer_fwd_kernel(
         Q_ptr,
@@ -122,9 +120,7 @@ if HAS_TRITON:
             k_s = phi_k * sin_pos
 
             num_inter = tl.dot(q_c.to(tl.float32), S_cos) + tl.dot(q_s.to(tl.float32), S_sin)
-            denom_inter = tl.sum(q_c * Z_cos[None, :], axis=1) + tl.sum(
-                q_s * Z_sin[None, :], axis=1
-            )
+            denom_inter = tl.sum(q_c * Z_cos[None, :], axis=1) + tl.sum(q_s * Z_sin[None, :], axis=1)
 
             A_cos = tl.dot(q_c.to(tl.float32), tl.trans(k_c.to(tl.float32)))
             A_sin = tl.dot(q_s.to(tl.float32), tl.trans(k_s.to(tl.float32)))
@@ -235,9 +231,7 @@ if HAS_TRITON:
             q_s = phi_q * tl.sin(pos_angles)[:, None]
 
             num = tl.dot(q_c.to(tl.float32), S_cos) + tl.dot(q_s.to(tl.float32), S_sin)
-            denom = (
-                tl.sum(q_c * Z_cos[None, :], axis=1) + tl.sum(q_s * Z_sin[None, :], axis=1) + EPS
-            )
+            denom = tl.sum(q_c * Z_cos[None, :], axis=1) + tl.sum(q_s * Z_sin[None, :], axis=1) + EPS
 
             out_tile = num / denom[:, None]
             out_ptrs = out_base + (cur_m[:, None] * stride_on + offs_d[None, :] * stride_od)
@@ -370,9 +364,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                         score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2))
                         scores = score_c + score_s
 
-                        causal_mask = torch.tril(
-                            torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
-                        )
+                        causal_mask = torch.tril(torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool))
                         scores = scores.masked_fill(~causal_mask, 0.0)
 
                         intra_num = torch.matmul(scores, v_c)
@@ -398,9 +390,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
 
                     num = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
                     denom = (
-                        torch.matmul(qc, Z_cos.transpose(-1, -2))
-                        + torch.matmul(qs, Z_sin.transpose(-1, -2))
-                        + eps
+                        torch.matmul(qc, Z_cos.transpose(-1, -2)) + torch.matmul(qs, Z_sin.transpose(-1, -2)) + eps
                     ).clamp(min=1e-6)
                     out = (num / denom).to(q.dtype)
 
@@ -411,9 +401,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(
-        ctx: Any, grad_out: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
+    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
         q, k, v = ctx.saved_tensors
         is_decoder = ctx.is_decoder
         eps = ctx.eps
@@ -461,9 +449,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
                     score_s = torch.matmul(qs_c, ks_c.transpose(-1, -2))
                     scores = score_c + score_s
 
-                    causal_mask = torch.tril(
-                        torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
-                    )
+                    causal_mask = torch.tril(torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool))
                     scores = scores.masked_fill(~causal_mask, 0.0)
 
                     intra_num = torch.matmul(scores, v_c)
@@ -489,9 +475,7 @@ class _TritonCosformerAutogradFunction(torch.autograd.Function):
 
                 num = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
                 denom = (
-                    torch.matmul(qc, Z_cos.transpose(-1, -2))
-                    + torch.matmul(qs, Z_sin.transpose(-1, -2))
-                    + eps
+                    torch.matmul(qc, Z_cos.transpose(-1, -2)) + torch.matmul(qs, Z_sin.transpose(-1, -2)) + eps
                 ).clamp(min=1e-6)
                 out = (num / denom).to(q.dtype)
 
@@ -541,9 +525,7 @@ class TritonCosformerAttention(BaseAttention):
         super().__init__()
         self.config = config
         self.is_decoder = bool(
-            is_decoder
-            or getattr(config, "is_decoder", False)
-            or getattr(config, "is_causal", False)
+            is_decoder or getattr(config, "is_decoder", False) or getattr(config, "is_causal", False)
         )
         self.eps = eps
         self.triton_kwargs = {
@@ -563,9 +545,7 @@ class TritonCosformerAttention(BaseAttention):
             or getattr(config, "num_attention_heads", 12)
         )
         self.num_kv_heads = (
-            num_kv_heads
-            or kwargs.get("num_kv_heads")
-            or getattr(config, "num_key_value_heads", self.num_heads)
+            num_kv_heads or kwargs.get("num_kv_heads") or getattr(config, "num_key_value_heads", self.num_heads)
         )
         self.head_dim = kwargs.get("head_dim") or (self.embed_dim // self.num_heads)
 
@@ -681,10 +661,7 @@ class TritonCosformerAttention(BaseAttention):
                             ):
                                 w = w.t()
                             target_mod.weight.data.copy_(w)
-                            if (
-                                getattr(base_mod, "bias", None) is not None
-                                and target_mod.bias is not None
-                            ):
+                            if getattr(base_mod, "bias", None) is not None and target_mod.bias is not None:
                                 target_mod.bias.data.copy_(base_mod.bias.data)
                             break
 
@@ -705,24 +682,9 @@ class TritonCosformerAttention(BaseAttention):
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
 
-        q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.k_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -750,9 +712,7 @@ class TritonCosformerAttention(BaseAttention):
                 v = v * mask
 
         try:
-            out = _TritonCosformerAutogradFunction.apply(
-                q, k, v, self.is_decoder, self.eps, self.max_length
-            )
+            out = _TritonCosformerAutogradFunction.apply(q, k, v, self.is_decoder, self.eps, self.max_length)
         except Exception:
             from neuralops.ops.cuda.cosformer.cosformer_autograd import cosformer_linear_attention_pytorch_ref
 
@@ -772,6 +732,4 @@ def inject_triton_cosformer(
     """Safe factory function to inject TritonCosformerAttention into a model."""
     from neuralops.core.attention_utils import inject_attention
 
-    return inject_attention(
-        model, "triton_cosformer", rank=rank, copy_weights=copy_weights, **kwargs
-    )
+    return inject_attention(model, "triton_cosformer", rank=rank, copy_weights=copy_weights, **kwargs)

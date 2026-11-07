@@ -114,7 +114,7 @@ The reconstructed expert weight $\hat{W}_e$ is synthesized as:
 ### 4.1 Global MoE Parameter Budget Equations
 For an MoE layer containing $E$ experts with feed-forward matrices $d_{\text{out}} \times d_{\text{in}}$:
 
-Specifically, regarding \textbf{Uncompressed MoE Parameters}, $P_{\text{MoE}} = E \cdot d_{\text{out}} \cdot d_{\text{in}}$ Furthermore, regarding \textbf{CUR-MoE Compressed Parameters}, $P_{\text{CUR-MoE}} = E \cdot r(d_{\text{out}} + d_{\text{in}} + r)$ Concurrently, regarding \textbf{Global VRAM Savings}, 
+Specifically, regarding \textbf{Uncompressed MoE Parameters}, $P_{\text{MoE}} = E \cdot d_{\text{out}} \cdot d_{\text{in}}$ Furthermore, regarding \textbf{CUR-MoE Compressed Parameters}, $P_{\text{CUR-MoE}} = E \cdot r(d_{\text{out}} + d_{\text{in}} + r)$ Concurrently, regarding \textbf{Global VRAM Savings},
 
 \[
 \text{Savings} = 1 - \frac{r(d_{\text{out}} + d_{\text{in}} + r)}{d_{\text{out}} \cdot d_{\text{in}}}
@@ -189,7 +189,7 @@ def cur_moe_expert_kernel(
     for k in range(0, d_in, BLOCK_N):
         offs_k = k + tl.arange(0, BLOCK_N)
         x_tile = tl.load(X_ptr + offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb, mask=(offs_m[:, None] < B_N) & (offs_k[None, :] < d_in), other=0.0)
-        
+
         r_ptr = R_ptr + (expert_idx * stride_re + offs_r[:, None] * stride_rr + offs_k[None, :] * stride_rn)
         r_tile = tl.load(r_ptr, mask=(offs_r[:, None] < rank) & (offs_k[None, :] < d_in), other=0.0)
         acc_r1 += tl.dot(x_tile, tl.trans(r_tile))
@@ -237,4 +237,3 @@ The empirical evaluation of `cur_moe_compressor` across standard sequence length
 | **$L = 2048$** | 0.62 ms | 240 MB | $2.50\times$ |
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
-

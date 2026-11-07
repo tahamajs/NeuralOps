@@ -33,6 +33,7 @@ def compare(
 ) -> Dict[str, float]:
     """Compares original vs post-surgery model output similarity, CKA, latency, and VRAM delta."""
     import time
+
     import torch.nn.functional as F
 
     device = next(orig_model.parameters()).device
@@ -70,6 +71,7 @@ def compare(
         "relative_l2_error": float(rel_l2.item()),
         "latency_speedup": float(round(speedup, 2)),
     }
+
 
 def summary(model: nn.Module) -> Dict[str, Any]:
     """Computes architectural summary, parameter counts, memory, and active surgery metadata."""
@@ -288,7 +290,20 @@ def _extract_constructor_params(obj: Any) -> List[Dict[str, str]]:
                     p_def = "None"
                 parsed.append({"param": p.name, "type": p_type, "default": p_def})
 
-            priority_keys = ["embed_dim", "d_model", "dim", "hidden_size", "num_heads", "n_heads", "heads", "rank", "r", "chunk_size", "window_size"]
+            priority_keys = [
+                "embed_dim",
+                "d_model",
+                "dim",
+                "hidden_size",
+                "num_heads",
+                "n_heads",
+                "heads",
+                "rank",
+                "r",
+                "chunk_size",
+                "window_size",
+            ]
+
             def _sort_key(item: Dict[str, str]) -> int:
                 p_name = item["param"].lower()
                 for rank_idx, pk in enumerate(priority_keys):
@@ -382,9 +397,7 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
                 name = match_comp[0]
                 is_comp = True
             else:
-                raise KeyError(
-                    f"Module '{name}' not found in ATTENTION_REGISTRY (131) or COMPRESSOR_REGISTRY (72)."
-                )
+                raise KeyError(f"Module '{name}' not found in ATTENTION_REGISTRY (131) or COMPRESSOR_REGISTRY (72).")
 
     resolved_category = "attention" if is_attn else "compressor"
     obj = ATTENTION_REGISTRY.get(name) if is_attn else COMPRESSOR_REGISTRY.get(name)
@@ -400,7 +413,12 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
         else:
             source_file = os.path.basename(full_src)
     except Exception as exc:
-        logger.debug("Failed getting source file for %s (%s): %s; using default fallback", name, getattr(obj, "__name__", obj), exc)
+        logger.debug(
+            "Failed getting source file for %s (%s): %s; using default fallback",
+            name,
+            getattr(obj, "__name__", obj),
+            exc,
+        )
         source_file = f"neuralops/{category}s/{name}.py"
 
     kernel_sym, sram_strat, math_eq, time_c, mem_c = _map_kernel_and_hardware(name, category, family)
@@ -408,6 +426,7 @@ def inspect_architecture(name: str, category: Optional[str] = None) -> Architect
     custom_meta = {}
     try:
         from neuralops.core.extensibility import get_custom_metadata
+
         custom_meta = get_custom_metadata(name)
     except Exception as exc:
         logger.debug("No custom metadata found for %s: %s", name, exc)
@@ -574,6 +593,7 @@ def render_architecture_card(spec: ArchitectureSpec, plain: bool = False) -> str
 
     try:
         from neuralops.core.results_ledger import get_default_ledger
+
         ledger = get_default_ledger()
         dossier = ledger.get_module_dossier(spec.name)
         if dossier and dossier.get("latest_record"):
@@ -581,7 +601,9 @@ def render_architecture_card(spec: ArchitectureSpec, plain: bool = False) -> str
             lines.append("")
             lines.append("── latest verified results (ledger) ──────────────────────────────────")
             lines.append(f"method:     {rec.get('generation_method', {}).get('algorithm', 'Verified Benchmark')}")
-            lines.append(f"provenance: ver {rec.get('version_tag', 'v1.4.0')} (rev {rec.get('revision', 1)}) │ commit {rec.get('git_commit_sha', 'HEAD')[:8]} │ {rec.get('timestamp_utc', '')[:10]}")
+            lines.append(
+                f"provenance: ver {rec.get('version_tag', 'v1.4.0')} (rev {rec.get('revision', 1)}) │ commit {rec.get('git_commit_sha', 'HEAD')[:8]} │ {rec.get('timestamp_utc', '')[:10]}"
+            )
             m_items = [f"{k}: {v}" for k, v in list(rec.get("metrics", {}).items())[:5]]
             if m_items:
                 lines.append(f"metrics:    {' │ '.join(m_items)}")

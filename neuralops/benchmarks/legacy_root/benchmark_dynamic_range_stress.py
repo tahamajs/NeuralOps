@@ -10,11 +10,12 @@
 Delegates directly to canonical neuralops.benchmarks.benchmark_dynamic_range_stress.
 """
 
-
 import warnings
+
 warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
 
 import sys
+
 from neuralops.benchmarks.benchmark_dynamic_range_stress import main
 
 if __name__ == "__main__":

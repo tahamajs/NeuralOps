@@ -74,9 +74,7 @@ def friedman_test(scores_matrix: np.ndarray) -> dict[str, Any]:
     n, k = scores_matrix.shape
     chi2_stat, p_value = friedmanchisquare(*[scores_matrix[:, j] for j in range(k)])
 
-    iman_davenport = (
-        ((n - 1) * chi2_stat) / (n * (k - 1) - chi2_stat) if chi2_stat < n * (k - 1) else np.inf
-    )
+    iman_davenport = ((n - 1) * chi2_stat) / (n * (k - 1) - chi2_stat) if chi2_stat < n * (k - 1) else np.inf
     p_iman = 1 - f_dist.cdf(iman_davenport, k - 1, (k - 1) * (n - 1))
 
     avg_ranks = compute_ranks(scores_matrix)
@@ -104,9 +102,7 @@ def friedman_aligned_ranks_test(scores_matrix: np.ndarray) -> dict[str, Any]:
     R_j = np.sum(aligned_ranks, axis=0)
     total = n * k
     expected = k * n * (total + 1) / (2 * k)
-    T = ((k - 1) * np.sum((R_j - expected) ** 2)) / (
-        np.sum((aligned_ranks.flatten() - (total + 1) / 2) ** 2)
-    )
+    T = ((k - 1) * np.sum((R_j - expected) ** 2)) / (np.sum((aligned_ranks.flatten() - (total + 1) / 2) ** 2))
 
     p_value = 1 - chi2_dist.cdf(T, k - 1)
     significant = bool(p_value < 0.05)
@@ -293,9 +289,7 @@ def holland_copenhaver_correction(
     return adjusted
 
 
-def bergmann_hommel_posthoc(
-    avg_ranks: np.ndarray, n_datasets: int, k: int = None, alpha: float = 0.05
-) -> pd.DataFrame:
+def bergmann_hommel_posthoc(avg_ranks: np.ndarray, n_datasets: int, k: int = None, alpha: float = 0.05) -> pd.DataFrame:
     """
     Bergmann-Hommel post-hoc – the most powerful post-hoc for Friedman test.
     Uses the logical structure of hypotheses for dynamic correction.
@@ -341,9 +335,7 @@ def wilcoxon_signed_rank_test(scores_a: np.ndarray, scores_b: np.ndarray) -> dic
     Wilcoxon signed-rank test – the recommended test for comparing
     two classifiers over multiple datasets (Demšar 2006).
     """
-    statistic, p_value = wilcoxon(
-        scores_a, scores_b, zero_method="wilcox", alternative="two-sided", method="auto"
-    )
+    statistic, p_value = wilcoxon(scores_a, scores_b, zero_method="wilcox", alternative="two-sided", method="auto")
     n = len(scores_a)
     z = (statistic - n * (n + 1) / 4) / np.sqrt(n * (n + 1) * (2 * n + 1) / 24)
     return {
@@ -419,11 +411,7 @@ def cohens_d(a: np.ndarray, b: np.ndarray, paired: bool = True) -> dict[str, flo
         n1, n2 = len(a), len(b)
         sd = np.sqrt(((n1 - 1) * np.var(a, ddof=1) + (n2 - 1) * np.var(b, ddof=1)) / (n1 + n2 - 2))
     d = diff / sd if sd > 0 else 0.0
-    magnitude = (
-        "negligible"
-        if abs(d) < 0.2
-        else ("small" if abs(d) < 0.5 else ("medium" if abs(d) < 0.8 else "large"))
-    )
+    magnitude = "negligible" if abs(d) < 0.2 else ("small" if abs(d) < 0.5 else ("medium" if abs(d) < 0.8 else "large"))
     return {"cohens_d": round(d, 4), "magnitude": magnitude}
 
 
@@ -437,11 +425,7 @@ def hedges_g(a: np.ndarray, b: np.ndarray, paired: bool = True) -> dict[str, flo
     n = len(a) + len(b) if not paired else len(a)
     J = 1 - 3 / (4 * (n - 1) - 1) if n > 2 else 1.0
     g = d * J
-    magnitude = (
-        "negligible"
-        if abs(g) < 0.2
-        else ("small" if abs(g) < 0.5 else ("medium" if abs(g) < 0.8 else "large"))
-    )
+    magnitude = "negligible" if abs(g) < 0.2 else ("small" if abs(g) < 0.5 else ("medium" if abs(g) < 0.8 else "large"))
     return {"hedges_g": round(g, 4), "magnitude": magnitude}
 
 
@@ -462,15 +446,7 @@ def cliffs_delta(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
         lt += np.sum(ai < b)
     delta = (gt - lt) / (n_a * n_b) if n_a * n_b > 0 else 0.0
     d_abs = abs(delta)
-    magnitude = (
-        "negligible"
-        if d_abs < 0.147
-        else "small"
-        if d_abs < 0.330
-        else "medium"
-        if d_abs < 0.474
-        else "large"
-    )
+    magnitude = "negligible" if d_abs < 0.147 else "small" if d_abs < 0.330 else "medium" if d_abs < 0.474 else "large"
     return {"cliffs_delta": round(delta, 4), "magnitude": magnitude}
 
 
@@ -493,11 +469,7 @@ def vargha_delaney_a12(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
     magnitude = (
         "negligible"
         if effect_strength < 0.56
-        else "small"
-        if effect_strength < 0.64
-        else "medium"
-        if effect_strength < 0.71
-        else "large"
+        else "small" if effect_strength < 0.64 else "medium" if effect_strength < 0.71 else "large"
     )
     return {"vargha_delaney_A12": round(a12, 4), "magnitude": magnitude}
 
@@ -653,9 +625,7 @@ def run_full_statistical_analysis(
         "friedman": friedman,
         "friedman_aligned_ranks": friedman_aligned,
         "quade": quade,
-        "ranking": [
-            (name, round(rank, 3)) for name, rank in zip(algorithm_names, friedman["avg_ranks"])
-        ],
+        "ranking": [(name, round(rank, 3)) for name, rank in zip(algorithm_names, friedman["avg_ranks"])],
         "best_algorithm": algorithm_names[np.argmin(friedman["avg_ranks"])],
     }
 
@@ -730,4 +700,3 @@ def welch_two_sample_ttest(
         "n_a": n1,
         "n_b": n2,
     }
-

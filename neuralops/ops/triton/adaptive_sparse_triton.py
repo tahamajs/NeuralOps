@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 _INTERPRET_MODE = os.environ.get("TRITON_INTERPRET") == "1"
 
 if HAS_TRITON and triton is not None and tl is not None:
+
     @triton.jit
     def _adaptive_sparse_attn_kernel(
         Q_ptr,
@@ -246,7 +247,10 @@ def adaptive_sparse_attention_forward(
     if not _INTERPRET_MODE:
         is_suitable, reason = check_triton_suitability(q, "adaptive_sparse_attention", allow_fp32=True)
         if not is_suitable or mask is not None or is_causal:
-            logger.warning("adaptive_sparse_attention Triton fallback: %s. Using PyTorch reference.", reason if not is_suitable else "mask present")
+            logger.warning(
+                "adaptive_sparse_attention Triton fallback: %s. Using PyTorch reference.",
+                reason if not is_suitable else "mask present",
+            )
             return _adaptive_sparse_attention_pytorch(
                 q, k, v, mask=mask, sparsity_ratio=sparsity_ratio, is_causal=is_causal, scale=scale, **kwargs
             )
@@ -328,4 +332,8 @@ def adaptive_sparse_attention_forward(
 
 adaptive_sparse_attention_forward_pytorch = _adaptive_sparse_attention_pytorch
 
-__all__ = ["adaptive_sparse_attention_forward", "_adaptive_sparse_attention_pytorch", "adaptive_sparse_attention_forward_pytorch"]
+__all__ = [
+    "adaptive_sparse_attention_forward",
+    "_adaptive_sparse_attention_pytorch",
+    "adaptive_sparse_attention_forward_pytorch",
+]

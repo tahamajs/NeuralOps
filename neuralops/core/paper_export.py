@@ -12,6 +12,7 @@ Backward compatibility shim for neuralops.analysis.paper_export.
 from __future__ import annotations
 
 import warnings
+
 from neuralops.analysis.paper_export import *  # noqa: F401, F403
 
 warnings.warn(

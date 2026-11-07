@@ -120,7 +120,7 @@ __global__ void hla_attention_kernel_buggy(
     const float* __restrict__ Q,
     const float* __restrict__ K,
     float* __restrict__ Out,
-    int seq_len, int d_model) 
+    int seq_len, int d_model)
 {
     extern __shared__ float smem[];
     float* s_q = smem;
@@ -151,7 +151,7 @@ __global__ void hla_attention_kernel_fixed(
     const float* __restrict__ Q,
     const float* __restrict__ K,
     float* __restrict__ Out,
-    int seq_len, int d_model) 
+    int seq_len, int d_model)
 {
     extern __shared__ float smem[];
     float* s_q = smem;
@@ -259,20 +259,20 @@ class NumericallyShieldedMoERouter(torch.nn.Module):
             x_fp32 = x.float()
             gate_weight_fp32 = self.gate.weight.float()
             logits = torch.nn.functional.linear(x_fp32, gate_weight_fp32)
-            
+
             # 2. Strict logit clamping to prevent exponent overflow in exp()
             # exp(30.0) approx 1.06e13 (safely representable in FP32 without precision loss)
             logits_clamped = torch.clamp(logits, min=-self.max_logit, max=self.max_logit)
-            
+
             # 3. Numerically stable softmax with subtracted maximum
             probs = torch.softmax(logits_clamped, dim=-1)
-            
+
             # 4. Top-K dispatch selection in FP32
             topk_weights, topk_indices = torch.topk(probs, self.top_k, dim=-1)
-            
+
             # 5. Normalize weights across selected experts
             topk_weights = topk_weights / (topk_weights.sum(dim=-1, keepdim=True) + 1e-8)
-            
+
         # 6. Cast routing weights back to input precision (FP16 or BF16)
         return topk_weights.to(x.dtype), topk_indices
 ```
@@ -282,7 +282,7 @@ class NumericallyShieldedMoERouter(torch.nn.Module):
 ```latex
 \subsection{Numerical Singularity and Mixed-Precision Stabilization in MoE Routing}
 \label{sec:autopsy_samba_moe}
-When deploying hybrid state-space MoE architectures (\texttt{samba\_moe}) under IEEE 754 half-precision (FP16) regimes, we observed catastrophic gradient divergence ($\|\mathbf{g}\| \to \text{NaN}$) within fewer than 20 training steps. Forensic evaluation revealed an exponent dynamic range mismatch between recurrent activations and router projection matrices. Unlike standard Transformer attention where LayerNorm constrains token variance, un-decayed SSM hidden trajectories induce activation norms $\|\mathbf{h}_t\|_2 > 25.0$. 
+When deploying hybrid state-space MoE architectures (\texttt{samba\_moe}) under IEEE 754 half-precision (FP16) regimes, we observed catastrophic gradient divergence ($\|\mathbf{g}\| \to \text{NaN}$) within fewer than 20 training steps. Forensic evaluation revealed an exponent dynamic range mismatch between recurrent activations and router projection matrices. Unlike standard Transformer attention where LayerNorm constrains token variance, un-decayed SSM hidden trajectories induce activation norms $\|\mathbf{h}_t\|_2 > 25.0$.
 
 Unclamped projection against routing matrices produced logits $z_k > 70.0$, exceeding the FP16 representational ceiling ($\exp(z_k) \gg 65{,}504$). This triggered hardware overflow to $+\infty$ and rendered softmax normalization indeterminate ($\frac{\infty}{\infty} \to \text{NaN}$). To guarantee numerical closure across arbitrary sequence horizons, we established a strict \emph{Numerical Shield Contract}:
 \begin{equation}
@@ -352,7 +352,7 @@ Instead of writing intermediate chunk states $\mathbf{S}_k$ out to global memory
 \label{sec:autopsy_chunk_gla}
 While Chunk-based Gated Linear Attention (\texttt{chunk\_gla}) possesses linear theoretical complexity $\mathcal{O}(N \cdot d)$, physical scaling tests on NVIDIA Ada Lovelace revealed an anomalous $6.81\times$ latency degradation when transitioning from $N=2048$ to $N=8192$. Microbenchmarking with NVIDIA Nsight Compute (\texttt{ncu --metrics lts\_\_t\_sectors\_hit\_rate.pct,dram\_\_throughput.avg.pct\_of\_peak\_sustained\_elapsed}) confirmed that this regression originated from a hardware cache eviction cascade rather than algorithmic complexity.
 
-The un-fused intermediate state buffer $\mathbf{S} \in \mathbb{R}^{B \times H \times (N/C) \times d^2}$ requires $100.66\text{~MB}$ at $N=8192$, overwhelming the physical $36\text{~MB}$ L2 cache of the RTX 4070. As depicted in Figure~\ref{fig:l2_eviction_profile}, the L2 hit rate drops precipitously from $94.2\%$ at $N \le 2048$ to $12.8\%$ at $N=8192$, triggering saturated global DRAM transfers across the $256\text{~GB/s}$ memory bus. 
+The un-fused intermediate state buffer $\mathbf{S} \in \mathbb{R}^{B \times H \times (N/C) \times d^2}$ requires $100.66\text{~MB}$ at $N=8192$, overwhelming the physical $36\text{~MB}$ L2 cache of the RTX 4070. As depicted in Figure~\ref{fig:l2_eviction_profile}, the L2 hit rate drops precipitously from $94.2\%$ at $N \le 2048$ to $12.8\%$ at $N=8192$, triggering saturated global DRAM transfers across the $256\text{~GB/s}$ memory bus.
 
 We remediated this bottleneck by implementing a fused two-tier recurrence kernel: intra-chunk projections are evaluated entirely within on-chip SRAM ($64\times 64$ tiles), while the inter-chunk state $\mathbf{S}_{k} = \alpha_k \mathbf{S}_{k-1} + \mathbf{k}_k^T \mathbf{v}_k$ is maintained across thread registers during the grid sweep. This reduces global memory traffic from $\mathcal{O}(N \cdot d^2 / C)$ to $\mathcal{O}(N \cdot d)$, completely decoupling L2 cache consumption from sequence length and recovering linear $1.82\text{~ms}$ execution at $N=8192$.
 ```
@@ -418,7 +418,7 @@ __global__ void low_rank_transpose_buggy(const float* __restrict__ In, float* __
 
     // Transposed read: threadIdx.x reads column down threadIdx.y
     // ALL 32 THREADS ACCESS SAME BANK! (Bank index: (threadIdx.y * 32 + threadIdx.x) % 32)
-    float val = tile[threadIdx.x][threadIdx.y]; 
+    float val = tile[threadIdx.x][threadIdx.y];
 
     int out_x = blockIdx.y * TILE_DIM + threadIdx.x;
     int out_y = blockIdx.x * TILE_DIM + threadIdx.y;

@@ -39,7 +39,9 @@ class ValidationResult:
     ) -> ValidationResult:
         total = len(results)
         passed_count = sum(1 for r in results if r.passed)
-        failed_count = sum(1 for r in results if not r.passed and r.severity in (GateSeverity.FATAL, GateSeverity.ERROR))
+        failed_count = sum(
+            1 for r in results if not r.passed and r.severity in (GateSeverity.FATAL, GateSeverity.ERROR)
+        )
         warnings = sum(1 for r in results if not r.passed and r.severity == GateSeverity.WARNING)
         overall_passed = failed_count == 0
 

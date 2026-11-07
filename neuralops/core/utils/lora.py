@@ -13,7 +13,7 @@ LoRA linear projections and factorized low-rank matrix layers with scaling coeff
 
 from __future__ import annotations
 
+from neuralops.core.low_rank.factorized import FactorisedLinear, FactorizedLinear
 from neuralops.core.peft.lora import LoRALinear
-from neuralops.core.low_rank.factorized import FactorizedLinear, FactorisedLinear
 
 __all__ = ["LoRALinear", "FactorizedLinear", "FactorisedLinear"]

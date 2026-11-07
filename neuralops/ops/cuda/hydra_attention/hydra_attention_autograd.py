@@ -12,34 +12,45 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 import logging
 from pathlib import Path
+
 import torch
+
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 logger = logging.getLogger(__name__)
 
 _MODULE = None
+
+
 def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "hydra_attention_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "hydra_attention.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "hydra_attention_binding.cpp", "r", encoding="utf-8") as f:
+            cpp_src = f.read()
+        with open(curr_dir / "hydra_attention.cu", "r", encoding="utf-8") as f:
+            cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_hydra", cpp_src, cuda_src, ["hydra_fwd"])
     return _MODULE
+
 
 def hydra_attention_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     global_kv = (k * v).mean(dim=-2, keepdim=True)
     return q * global_kv
 
+
 def hydra_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     def cuda_fn(q, k, v):
         mod = _get_module()
         return mod.hydra_fwd(q.contiguous(), k.contiguous(), v.contiguous())
+
     try:
         from neuralops.ops.triton.hydra_attention import triton_hydra_attention
+
         triton_fn = triton_hydra_attention
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed to initialize Triton implementation for hydra attention: %s", exc, exc_info=True)

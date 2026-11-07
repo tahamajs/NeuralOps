@@ -224,9 +224,7 @@ def _copy_projection_weights(
                 repeat_factor = target_mod.weight.shape[0] // src_weight_2d.shape[0]
                 target_mod.weight.data.copy_(src_weight_2d.repeat(repeat_factor, 1))
 
-            if hasattr(target_mod, "bias") and isinstance(
-                getattr(target_mod, "bias", None), nn.Parameter
-            ):
+            if hasattr(target_mod, "bias") and isinstance(getattr(target_mod, "bias", None), nn.Parameter):
                 if src_bias is not None and target_mod.bias.shape == src_bias.shape:
                     target_mod.bias.data.copy_(src_bias)
                 elif src_bias is not None and target_mod.bias.shape[0] <= src_bias.shape[0]:
@@ -276,11 +274,7 @@ def _copy_projection_weights(
                 elif hasattr(target_mod, "V") and hasattr(target_mod.V, "shape"):
                     target_in_dim = target_mod.V.shape[1]
 
-            if (
-                target_in_dim is not None
-                and W_float.shape[1] != target_in_dim
-                and W_float.shape[0] == target_in_dim
-            ):
+            if target_in_dim is not None and W_float.shape[1] != target_in_dim and W_float.shape[0] == target_in_dim:
                 W_float = W_float.t()
 
             if target_out_dim is not None and W_float.shape[0] > target_out_dim:
@@ -318,12 +312,8 @@ def _copy_projection_weights(
             energy_scale = math.sqrt(norm_orig / max(norm_recon, 1e-12)) if norm_orig > 1e-12 else 1.0
 
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12)) * math.sqrt(energy_scale)
-            U_balanced = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
-                device=src_weight.device, dtype=src_weight.dtype
-            )
-            V_balanced = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
-                device=src_weight.device, dtype=src_weight.dtype
-            )
+            U_balanced = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=src_weight.device, dtype=src_weight.dtype)
+            V_balanced = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=src_weight.device, dtype=src_weight.dtype)
 
             if setter_fn is not None:
                 setter_fn(U_balanced, V_balanced)
@@ -343,14 +333,8 @@ def _copy_projection_weights(
                 up_mod.weight.data[:r_u0, :r_u1].copy_(U_balanced[:r_u0, :r_u1])
                 if hasattr(up_mod, "bias") and up_mod.bias is not None and src_bias is not None:
                     min_b = min(up_mod.bias.shape[0], src_bias.shape[0])
-                    up_mod.bias.data[:min_b].copy_(
-                        src_bias[:min_b].to(up_mod.bias.device, up_mod.bias.dtype)
-                    )
-                elif (
-                    hasattr(target_mod, "bias")
-                    and target_mod.bias is not None
-                    and src_bias is not None
-                ):
+                    up_mod.bias.data[:min_b].copy_(src_bias[:min_b].to(up_mod.bias.device, up_mod.bias.dtype))
+                elif hasattr(target_mod, "bias") and target_mod.bias is not None and src_bias is not None:
                     min_b = min(target_mod.bias.shape[0], src_bias.shape[0])
                     target_mod.bias.data[:min_b].copy_(
                         src_bias[:min_b].to(target_mod.bias.device, target_mod.bias.dtype)
@@ -362,9 +346,7 @@ def _copy_projection_weights(
                 and isinstance(target_mod.bias, nn.Parameter)
             ):
                 if src_bias is not None:
-                    target_mod.bias.data.copy_(
-                        src_bias.to(target_mod.bias.device, target_mod.bias.dtype)
-                    )
+                    target_mod.bias.data.copy_(src_bias.to(target_mod.bias.device, target_mod.bias.dtype))
                 else:
                     nn.init.zeros_(target_mod.bias)
         return
@@ -401,18 +383,14 @@ def _svd_factorize_weights(
             )
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=src_weight.device, dtype=src_weight.dtype)
-            V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
-                device=src_weight.device, dtype=src_weight.dtype
-            )
+            V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=src_weight.device, dtype=src_weight.dtype)
             min_out = min(lin2.weight.shape[0], U_b.shape[0])
             min_in = min(lin1.weight.shape[1], V_b.shape[1])
             lin1.weight.data[:r, :min_in].copy_(V_b[:, :min_in])
             lin2.weight.data[:min_out, :r].copy_(U_b[:min_out, :])
             if src_bias is not None and getattr(lin2, "bias", None) is not None:
                 min_b = min(lin2.bias.shape[0], src_bias.shape[0])
-                lin2.bias.data[:min_b].copy_(
-                    src_bias[:min_b].to(lin2.bias.device, lin2.bias.dtype)
-                )
+                lin2.bias.data[:min_b].copy_(src_bias[:min_b].to(lin2.bias.device, lin2.bias.dtype))
 
 
 def adapt_decoder_attention_forward(
@@ -597,16 +575,19 @@ def calibrate_surgically_replaced_model(
     hooks = []
 
     for idx, (orig_mod, surg_mod) in enumerate(pairs):
+
         def _make_orig_hook(i: int):
             def _hook(mod, inp, out):
                 val = out[0] if isinstance(out, tuple) else out
                 orig_outs[i] = val.detach().float()
+
             return _hook
 
         def _make_surg_hook(i: int):
             def _hook(mod, inp, out):
                 val = out[0] if isinstance(out, tuple) else out
                 surg_outs[i] = val.detach().float()
+
             return _hook
 
         hooks.append(orig_mod.register_forward_hook(_make_orig_hook(idx)))
@@ -674,18 +655,26 @@ def calibrate_surgically_replaced_model(
             out_proj.weight.data.copy_(W_new.to(dtype=out_proj.weight.dtype, device=out_proj.weight.device))
             if getattr(out_proj, "bias", None) is not None:
                 b_cur = out_proj.bias.data.float()
-                b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * (torch.matmul(b_cur.unsqueeze(0), W_align).squeeze(0) + b_align)
+                b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * (
+                    torch.matmul(b_cur.unsqueeze(0), W_align).squeeze(0) + b_align
+                )
                 out_proj.bias.data.copy_(b_new.to(dtype=out_proj.bias.dtype, device=out_proj.bias.device))
         else:
             W_hook = W_align.to(dtype=dtype, device=device)
             b_hook = b_align.to(dtype=dtype, device=device)
+
             def _affine_forward_hook(m, inp, out):
                 if isinstance(out, tuple):
                     val = out[0]
-                    aligned = (1.0 - blend_alpha) * val + blend_alpha * (torch.matmul(val.float(), W_hook.float()) + b_hook.float()).to(val.dtype)
+                    aligned = (1.0 - blend_alpha) * val + blend_alpha * (
+                        torch.matmul(val.float(), W_hook.float()) + b_hook.float()
+                    ).to(val.dtype)
                     return (aligned,) + out[1:]
                 else:
-                    return (1.0 - blend_alpha) * out + blend_alpha * (torch.matmul(out.float(), W_hook.float()) + b_hook.float()).to(out.dtype)
+                    return (1.0 - blend_alpha) * out + blend_alpha * (
+                        torch.matmul(out.float(), W_hook.float()) + b_hook.float()
+                    ).to(out.dtype)
+
             surg_mod.register_forward_hook(_affine_forward_hook)
 
     if attach_convex_anchor:
@@ -827,6 +816,7 @@ def _heal_replaced_model_impl(
                     in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
                     if isinstance(in_tensor, torch.Tensor):
                         cached_inputs[layer_name].append(in_tensor.detach().float())
+
             return _hook
 
         def _make_parent_prehook(layer_name: str):
@@ -834,6 +824,7 @@ def _heal_replaced_model_impl(
                 in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
                 if isinstance(in_tensor, torch.Tensor):
                     cached_inputs[layer_name].append(in_tensor.detach().float())
+
             return _pre_hook
 
         if parent_mod is not None:
@@ -891,11 +882,15 @@ def _heal_replaced_model_impl(
             denom_mse = float(torch.norm(Y_tgt, p="fro").item() ** 2 + 1e-6)
             init_mse = float(torch.norm(pred0_f - Y_tgt, p="fro").item() ** 2 / denom_mse)
 
-            cos_sim0 = F.cosine_similarity(
-                pred0_f.reshape(-1, Y_tgt.shape[-1]),
-                Y_tgt.reshape(-1, Y_tgt.shape[-1]),
-                dim=-1,
-            ).mean().item()
+            cos_sim0 = (
+                F.cosine_similarity(
+                    pred0_f.reshape(-1, Y_tgt.shape[-1]),
+                    Y_tgt.reshape(-1, Y_tgt.shape[-1]),
+                    dim=-1,
+                )
+                .mean()
+                .item()
+            )
 
         optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, steps))
@@ -923,11 +918,14 @@ def _heal_replaced_model_impl(
             pred_f = pred_val.float()
 
             loss_fro = torch.norm(pred_f - Y_tgt_step, p="fro") ** 2 / denom_mse_step
-            loss_cos = 1.0 - F.cosine_similarity(
-                pred_f.reshape(-1, Y_tgt_step.shape[-1]),
-                Y_tgt_step.reshape(-1, Y_tgt_step.shape[-1]),
-                dim=-1,
-            ).mean()
+            loss_cos = (
+                1.0
+                - F.cosine_similarity(
+                    pred_f.reshape(-1, Y_tgt_step.shape[-1]),
+                    Y_tgt_step.reshape(-1, Y_tgt_step.shape[-1]),
+                    dim=-1,
+                ).mean()
+            )
 
             loss = loss_fro + cosine_weight * loss_cos
 
@@ -967,11 +965,15 @@ def _heal_replaced_model_impl(
             pred_final_f = pred_final_val.float()
 
             final_mse = float(torch.norm(pred_final_f - Y_tgt, p="fro").item() ** 2 / denom_mse)
-            final_cos = F.cosine_similarity(
-                pred_final_f.reshape(-1, Y_tgt.shape[-1]),
-                Y_tgt.reshape(-1, Y_tgt.shape[-1]),
-                dim=-1,
-            ).mean().item()
+            final_cos = (
+                F.cosine_similarity(
+                    pred_final_f.reshape(-1, Y_tgt.shape[-1]),
+                    Y_tgt.reshape(-1, Y_tgt.shape[-1]),
+                    dim=-1,
+                )
+                .mean()
+                .item()
+            )
 
         for p in trainable_params:
             p.requires_grad = False
@@ -1002,13 +1004,17 @@ def _heal_replaced_model_impl(
     if log_to_ledger:
         try:
             from neuralops.core.results_ledger import log_experiment_result
+
             log_experiment_result(
                 module_name="surgical_micro_healing",
                 category="ablation",
                 family="surgery-healing",
                 generation_method={
                     "algorithm": "Fast Layerwise Subspace Micro-Healing",
-                    "pipeline_stages": ["analytical_ridge_init" if also_ridge_init else "none", "adamw_cosine_micro_tuning"],
+                    "pipeline_stages": [
+                        "analytical_ridge_init" if also_ridge_init else "none",
+                        "adamw_cosine_micro_tuning",
+                    ],
                     "source_component": "neuralops.core._attention_surgery.heal_replaced_model",
                 },
                 experimental_setup={
@@ -1068,8 +1074,10 @@ def heal_replaced_model(
 def __getattr__(name: str) -> Any:
     if name in ("replace_attention", "replace_attention_in_model"):
         from neuralops.api import replace_attention
+
         return replace_attention
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 
 __all__ = [
     "replace_attention",

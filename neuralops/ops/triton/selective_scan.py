@@ -97,13 +97,7 @@ def _selective_scan_fwd_kernel(
         h_state = decay * h_state + input_term
 
         if SAVE_WORKSPACE:
-            h_ptrs = (
-                h_workspace_ptr
-                + pid_b * stride_hb
-                + pid_d * stride_hd
-                + l * stride_hl
-                + n_offsets * stride_hn
-            )
+            h_ptrs = h_workspace_ptr + pid_b * stride_hb + pid_d * stride_hd + l * stride_hl + n_offsets * stride_hn
             tl.store(h_ptrs, h_state)
 
         y_val = tl.sum(h_state * c_val) + d_val * u_val
@@ -191,22 +185,12 @@ def _selective_scan_bwd_kernel(
         B_ptrs = B_ptr + pid_b * stride_bb + l * stride_bl + n_offsets * stride_bn
         b_val = tl.load(B_ptrs).to(tl.float32)
 
-        h_t_ptrs = (
-            h_workspace_ptr
-            + pid_b * stride_hb
-            + pid_d * stride_hd
-            + l * stride_hl
-            + n_offsets * stride_hn
-        )
+        h_t_ptrs = h_workspace_ptr + pid_b * stride_hb + pid_d * stride_hd + l * stride_hl + n_offsets * stride_hn
         h_t = tl.load(h_t_ptrs)
 
         if l > 0:
             h_prev_ptrs = (
-                h_workspace_ptr
-                + pid_b * stride_hb
-                + pid_d * stride_hd
-                + (l - 1) * stride_hl
-                + n_offsets * stride_hn
+                h_workspace_ptr + pid_b * stride_hb + pid_d * stride_hd + (l - 1) * stride_hl + n_offsets * stride_hn
             )
             h_prev = tl.load(h_prev_ptrs)
         else:
@@ -477,10 +461,20 @@ def selective_scan_fn(
     suitable, _ = False, None
     if torch.cuda.is_available() and u.is_cuda and hasattr(triton, "jit"):
         from neuralops.ops.triton._types import check_triton_suitability
-        suitable, _ = check_triton_suitability(u_in, "selective_scan", head_dim=None, seq_len=u_in.shape[1], supports_backward=True)
+
+        suitable, _ = check_triton_suitability(
+            u_in, "selective_scan", head_dim=None, seq_len=u_in.shape[1], supports_backward=True
+        )
 
     if suitable:
-        if not torch.is_grad_enabled() and not u_in.requires_grad and not delta_in.requires_grad and not A.requires_grad and not B_in.requires_grad and not C_in.requires_grad:
+        if (
+            not torch.is_grad_enabled()
+            and not u_in.requires_grad
+            and not delta_in.requires_grad
+            and not A.requires_grad
+            and not B_in.requires_grad
+            and not C_in.requires_grad
+        ):
             B_size, L_size, D_dim = u_in.shape
             N_state = A.shape[1]
             out = torch.empty_like(u_in)
@@ -512,7 +506,10 @@ def selective_scan_fn(
                 out.stride(0),
                 out.stride(1),
                 out.stride(2),
-                0, 0, 0, 0,
+                0,
+                0,
+                0,
+                0,
                 B_size,
                 L_size,
                 D_dim,
@@ -561,9 +558,14 @@ def fused_jamba_hybrid_ssm_attn_gate_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _fused_jamba_gate_kernel(
-        Attn_ptr, SSM_ptr, Alpha_ptr, MoE_ptr, Out_ptr,
+        Attn_ptr,
+        SSM_ptr,
+        Alpha_ptr,
+        MoE_ptr,
+        Out_ptr,
         total_elements,
         HAS_MOE: tl.constexpr,
         BLOCK_SIZE: tl.constexpr,
@@ -588,8 +590,14 @@ if HAS_TRITON and tl is not None:
 
     @triton.jit
     def _fused_jamba_gate_bwd_kernel(
-        GradOut_ptr, Attn_ptr, SSM_ptr, Alpha_ptr,
-        GradAttn_ptr, GradSSM_ptr, GradAlpha_ptr, GradMoE_ptr,
+        GradOut_ptr,
+        Attn_ptr,
+        SSM_ptr,
+        Alpha_ptr,
+        GradAttn_ptr,
+        GradSSM_ptr,
+        GradAlpha_ptr,
+        GradMoE_ptr,
         total_elements,
         HAS_MOE: tl.constexpr,
         BLOCK_SIZE: tl.constexpr,
@@ -615,7 +623,6 @@ if HAS_TRITON and tl is not None:
         if HAS_MOE:
             tl.store(GradMoE_ptr + offs, dout.to(GradMoE_ptr.dtype.element_ty), mask=mask)
 
-
     class _FusedJambaGateAutograd(torch.autograd.Function):
         @staticmethod
         def forward(ctx: Any, attn_out: Any, ssm_out: Any, alpha_raw: Any, moe_out: Any) -> Any:
@@ -630,7 +637,9 @@ if HAS_TRITON and tl is not None:
                     H = alpha_expanded.shape[0]
                     B, L, all_head_size = attn_out.shape
                     d = all_head_size // H
-                    alpha_expanded = alpha_expanded.view(1, 1, H, 1).expand(B, L, H, d).reshape(B, L, all_head_size).contiguous()
+                    alpha_expanded = (
+                        alpha_expanded.view(1, 1, H, 1).expand(B, L, H, d).reshape(B, L, all_head_size).contiguous()
+                    )
                 else:
                     alpha_expanded = alpha_expanded.expand_as(attn_out).contiguous()
             else:
@@ -719,21 +728,30 @@ def fused_jamba_hybrid_ssm_attn_gate_triton(
     moe_out: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Fused Jamba hybrid SSM + attention gating in GPU SRAM with full autograd."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and attn_out.is_cuda and attn_out.shape == ssm_out.shape:
         try:
             total_elements = attn_out.numel()
             has_moe = moe_out is not None and moe_out.is_cuda
             # High throughput fast-path when gradients are not required:
-            if not torch.is_grad_enabled() and not attn_out.requires_grad and not ssm_out.requires_grad and not alpha_raw.requires_grad:
+            if (
+                not torch.is_grad_enabled()
+                and not attn_out.requires_grad
+                and not ssm_out.requires_grad
+                and not alpha_raw.requires_grad
+            ):
                 out = torch.empty_like(attn_out)
                 BLOCK_SIZE = 2048
                 grid = (triton.cdiv(total_elements, BLOCK_SIZE),)
                 _fused_jamba_gate_kernel[grid](
                     attn_out.contiguous(),
                     ssm_out.contiguous(),
-                    alpha_raw.contiguous() if alpha_raw.numel() == total_elements else alpha_raw.expand_as(attn_out).contiguous(),
+                    (
+                        alpha_raw.contiguous()
+                        if alpha_raw.numel() == total_elements
+                        else alpha_raw.expand_as(attn_out).contiguous()
+                    ),
                     moe_out.contiguous() if has_moe else attn_out,
                     out,
                     total_elements,
@@ -743,9 +761,7 @@ def fused_jamba_hybrid_ssm_attn_gate_triton(
                 )
                 return out
 
-            return _FusedJambaGateAutograd.apply(
-                attn_out, ssm_out, alpha_raw, moe_out if has_moe else None
-            )
+            return _FusedJambaGateAutograd.apply(attn_out, ssm_out, alpha_raw, moe_out if has_moe else None)
         except Exception:
             # allowed-swallow: best-effort-telemetry
             pass
@@ -761,6 +777,7 @@ def fused_rglru_ssd_scan_pytorch(
 ) -> torch.Tensor:
     """Exact PyTorch reference fallback for Griffin RG-LRU SSD scan."""
     import math
+
     import torch.nn.functional as F
 
     B, H, L, d = q.shape
@@ -850,13 +867,13 @@ except Exception:
 
 
 __all__ = [
-    'TritonSelectiveScanFunction',
-    'selective_scan_fn',
-    'selective_scan_ref',
-    'fused_jamba_hybrid_ssm_attn_gate_triton',
-    'fused_jamba_hybrid_ssm_attn_gate_pytorch',
-    'fused_rglru_ssd_scan_triton',
-    'fused_rglru_ssd_scan_pytorch',
-    'hgrn2_scan_triton',
-    'gdn_scan_triton',
+    "TritonSelectiveScanFunction",
+    "selective_scan_fn",
+    "selective_scan_ref",
+    "fused_jamba_hybrid_ssm_attn_gate_triton",
+    "fused_jamba_hybrid_ssm_attn_gate_pytorch",
+    "fused_rglru_ssd_scan_triton",
+    "fused_rglru_ssd_scan_pytorch",
+    "hgrn2_scan_triton",
+    "gdn_scan_triton",
 ]

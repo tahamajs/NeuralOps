@@ -275,7 +275,9 @@ class SGLangRadixAdapter:
             if matched_len > 0 and cached_kv is not None and matched_len < len(tokens):
                 suffix = inp[:, matched_len:]
                 pos_ids = torch.arange(matched_len, len(tokens), device=inp.device).unsqueeze(0)
-                outputs = _call_model(self.model, suffix, past_key_values=cached_kv, position_ids=pos_ids, use_cache=True)
+                outputs = _call_model(
+                    self.model, suffix, past_key_values=cached_kv, position_ids=pos_ids, use_cache=True
+                )
                 full_kv = getattr(outputs, "past_key_values", cached_kv)
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
             elif matched_len == len(tokens) and cached_kv is not None:
@@ -356,6 +358,7 @@ class SGLangRadixAdapter:
             hit_rate = (self._hit_count / max(1, total_requests)) * 100.0
 
             total_tokens = 0
+
             def _count_tokens(n: RadixPrefixNode):
                 nonlocal total_tokens
                 total_tokens += len(n.token_chunk)
@@ -418,7 +421,7 @@ class SGLangRadixAdapter:
 
             def _build(node: RadixPrefixNode, prefix: str = ""):
                 for i, (tok, child) in enumerate(node.children.items()):
-                    is_last = (i == len(node.children) - 1)
+                    is_last = i == len(node.children) - 1
                     branch = "└── " if is_last else "├── "
                     sub_prefix = "    " if is_last else "│   "
                     kv_flag = " [KV]" if child.kv_cache is not None else ""
@@ -440,13 +443,9 @@ def _call_model(model: nn.Module, input_ids: torch.Tensor, **optional_kwargs: An
         signature = inspect.signature(model.forward)
     except (TypeError, ValueError):
         return model(input_ids)
-    accepts_kwargs = any(
-        parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in signature.parameters.values()
-    )
+    accepts_kwargs = any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in signature.parameters.values())
     accepted = {
-        name: value
-        for name, value in optional_kwargs.items()
-        if accepts_kwargs or name in signature.parameters
+        name: value for name, value in optional_kwargs.items() if accepts_kwargs or name in signature.parameters
     }
     return model(input_ids, **accepted)
 

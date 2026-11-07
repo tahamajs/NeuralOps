@@ -138,4 +138,3 @@ Exact problems (audit 2026-11-07):
 ```
 
 ---
-

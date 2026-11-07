@@ -11,8 +11,6 @@ Selective State Space Model (SelectiveSSM)
 Faithful implementation of selective state space recurrence enabling linear-time causal sequence generation.
 """
 
-from neuralops.core.common import _cfg_get
-
 import logging
 import math
 from typing import Any
@@ -23,20 +21,17 @@ import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.selective_scan import selective_scan
 
 try:
-    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
-        selective_scan as cuda_selective_scan,
-    )
+    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan as cuda_selective_scan
 except Exception:
     cuda_selective_scan = None
 
 try:
-    from neuralops.ops.triton.selective_scan import (
-        selective_scan_fn as triton_selective_scan,
-    )
+    from neuralops.ops.triton.selective_scan import selective_scan_fn as triton_selective_scan
 except Exception:
     triton_selective_scan = None
 
@@ -104,9 +99,7 @@ class SelectiveSSM(BaseAttention):
         self.expand = int(_cfg_get(config, "expand", kwargs.get("expand", expand)))
         self.d_inner = int(self.expand * self.d_model)
         self.dt_rank = math.ceil(self.d_model / 16) if dt_rank is None else int(dt_rank)
-        self.bidirectional = bool(
-            _cfg_get(config, "bidirectional", kwargs.get("bidirectional", bidirectional))
-        )
+        self.bidirectional = bool(_cfg_get(config, "bidirectional", kwargs.get("bidirectional", bidirectional)))
         self.weights_init = weights_init
 
         self.in_proj = nn.Linear(self.d_model, self.d_inner * 2, bias=bias)
@@ -169,28 +162,20 @@ class SelectiveSSM(BaseAttention):
     def _reset_parameters(self) -> None:
         if self.weights_init == "mamba":
             dt_min, dt_max = 0.001, 0.1
-            dt_init = torch.exp(
-                torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min)
-            )
+            dt_init = torch.exp(torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min))
             dt_init_inv = dt_init + torch.log(-torch.expm1(-dt_init))
             with torch.no_grad():
                 self.dt_proj.bias.copy_(dt_init_inv)
-                self.dt_proj.weight.copy_(
-                    torch.ones(self.d_inner, self.dt_rank) * (0.5 / self.dt_rank) ** 0.5
-                )
+                self.dt_proj.weight.copy_(torch.ones(self.d_inner, self.dt_rank) * (0.5 / self.dt_rank) ** 0.5)
                 if self.bidirectional:
                     self.dt_proj_bwd.bias.copy_(dt_init_inv)
-                    self.dt_proj_bwd.weight.copy_(
-                        torch.ones(self.d_inner, self.dt_rank) * (0.5 / self.dt_rank) ** 0.5
-                    )
+                    self.dt_proj_bwd.weight.copy_(torch.ones(self.d_inner, self.dt_rank) * (0.5 / self.dt_rank) ** 0.5)
         elif self.weights_init == "xavier":
             nn.init.xavier_uniform_(self.in_proj.weight)
             nn.init.xavier_uniform_(self.out_proj.weight)
             nn.init.xavier_uniform_(self.x_proj.weight)
 
-    def _read_state(
-        self, past_state: Any
-    ) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+    def _read_state(self, past_state: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
         """Returns (h, conv_state)."""
         if past_state is None:
             return None, None
@@ -334,7 +319,11 @@ class SelectiveSSM(BaseAttention):
                 h_next = delta_b_u_last
 
         y_gated = y.float() * F.silu(z.float())
-        y = torch.nan_to_num(y_gated, nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(target_dtype)
+        y = (
+            torch.nan_to_num(y_gated, nan=0.0, posinf=65000.0, neginf=-65000.0)
+            .clamp(-65000.0, 65000.0)
+            .to(target_dtype)
+        )
         present_state = (h_next, conv_next)
         return y, present_state
 
@@ -350,6 +339,7 @@ class SelectiveSSM(BaseAttention):
             return
 
         from neuralops.core.adapters import UniversalAdapter
+
         adapter = UniversalAdapter()
 
         w_v, b_v = adapter.get_weight_bias(old_attn, "v")
@@ -393,11 +383,15 @@ class SelectiveSSM(BaseAttention):
             if w_o is not None:
                 mapped_o = _to_shape(w_o, self.d_model, self.d_inner)
                 if mapped_o is not None:
-                    self.out_proj.weight.data.copy_(mapped_o.to(self.out_proj.weight.device, self.out_proj.weight.dtype))
+                    self.out_proj.weight.data.copy_(
+                        mapped_o.to(self.out_proj.weight.device, self.out_proj.weight.dtype)
+                    )
             if self.out_proj.bias is not None:
                 if b_o is not None:
                     min_b = min(self.d_model, b_o.numel())
-                    self.out_proj.bias.data[:min_b].copy_(b_o[:min_b].to(self.out_proj.bias.device, self.out_proj.bias.dtype))
+                    self.out_proj.bias.data[:min_b].copy_(
+                        b_o[:min_b].to(self.out_proj.bias.device, self.out_proj.bias.dtype)
+                    )
                 else:
                     self.out_proj.bias.data.zero_()
 
@@ -475,7 +469,11 @@ class SelectiveSSM(BaseAttention):
             y_bwd = torch.flip(y_bwd, [1]).contiguous()
             out = out + self.out_proj_bwd(y_bwd.to(target_dtype))
 
-        out = torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(target_dtype)
+        out = (
+            torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0)
+            .clamp(-65000.0, 65000.0)
+            .to(target_dtype)
+        )
 
         _out_attn = bool(output_attentions or kwargs.get("output_attentions", False))
         present = present_state if self.is_decoder else None

@@ -219,9 +219,7 @@ class FairnessEvaluator:
             return {"statistical_parity_difference": max(vals) - min(vals)}
         return {"statistical_parity_difference": 0.0}
 
-    def _average_metric_by_group(
-        self, all_metrics: dict[str, dict[str, float]]
-    ) -> dict[str, float]:
+    def _average_metric_by_group(self, all_metrics: dict[str, dict[str, float]]) -> dict[str, float]:
         """Compute the average of all metrics for each group."""
         group_scores: dict[str, list[float]] = {}
         for metric_results in all_metrics.values():
@@ -229,9 +227,7 @@ class FairnessEvaluator:
                 group_scores.setdefault(group, []).append(value)
         return {g: np.mean(v) for g, v in group_scores.items()}
 
-    def _generate_suggestions(
-        self, metrics: dict[str, dict[str, float]], threshold: float
-    ) -> list[str]:
+    def _generate_suggestions(self, metrics: dict[str, dict[str, float]], threshold: float) -> list[str]:
         """generate suggestions."""
         suggestions = []
         dp = metrics.get("demographic_parity", {})

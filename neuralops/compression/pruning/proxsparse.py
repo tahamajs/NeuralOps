@@ -12,7 +12,6 @@ Enforces group Lasso and semi-structured sparsity constraints via proximal gradi
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import apply_24_structured_mask, apply_block_mask
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -140,12 +140,7 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         if hasattr(linear, "lora_A") and hasattr(linear, "lora_B"):
             src_A = getattr(linear.lora_A, "weight", linear.lora_A)
             src_B = getattr(linear.lora_B, "weight", linear.lora_B)
-            if (
-                src_A is not None
-                and src_B is not None
-                and instance.lora_A is not None
-                and instance.lora_B is not None
-            ):
+            if src_A is not None and src_B is not None and instance.lora_A is not None and instance.lora_B is not None:
                 if src_A.shape == instance.lora_A.shape:
                     instance.lora_A.data.copy_(src_A.data)
                 if src_B.shape == instance.lora_B.shape:
@@ -159,6 +154,7 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         if x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 out = fused_svd_lora_sparse_attn_triton(
                     x_flat,
                     w_down=self.lora_A if (self.lora_r > 0 and self.lora_A is not None) else None,
@@ -245,11 +241,7 @@ class ProxSparsePruner(BaseCompressor):
         )
         self.steps = max(
             1,
-            int(
-                steps
-                if steps is not None
-                else _cfg_get(cfg_obj, "proxsparse_steps", _cfg_get(cfg_obj, "steps", 5))
-            ),
+            int(steps if steps is not None else _cfg_get(cfg_obj, "proxsparse_steps", _cfg_get(cfg_obj, "steps", 5))),
         )
         self.learning_rate = max(
             1e-4,
@@ -269,14 +261,10 @@ class ProxSparsePruner(BaseCompressor):
             )
         )
         self.block_size = block_size or _cfg_get(cfg_obj, "block_size", (1, 1))
-        self.target_attention_only = bool(
-            target_attention_only or _cfg_get(cfg_obj, "target_attention_only", False)
-        )
+        self.target_attention_only = bool(target_attention_only or _cfg_get(cfg_obj, "target_attention_only", False))
         self.skip_attention_qkv = (
             bool(
-                skip_attention_qkv
-                if skip_attention_qkv is not None
-                else _cfg_get(cfg_obj, "skip_attention_qkv", True)
+                skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, "skip_attention_qkv", True)
             )
             and not self.target_attention_only
         )
@@ -304,14 +292,10 @@ class ProxSparsePruner(BaseCompressor):
                 self.target_device = torch.device(device)
             except Exception:
                 self.target_device = (
-                    next(model.parameters()).device
-                    if list(model.parameters())
-                    else torch.device("cpu")
+                    next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
                 )
         else:
-            self.target_device = (
-                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
-            )
+            self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
 
         self.visited_modules: set[int] = set()
         self.compressed_layers: list[str] = []
@@ -424,9 +408,7 @@ class ProxSparsePruner(BaseCompressor):
             pruned, mask = apply_24_structured_mask(tensor, saliency=torch.abs(tensor), dim=1)
             return pruned, (mask > 0)
         elif self.block_size != (1, 1):
-            pruned, mask = apply_block_mask(
-                tensor, block_size=self.block_size, sparsity=self.sparsity
-            )
+            pruned, mask = apply_block_mask(tensor, block_size=self.block_size, sparsity=self.sparsity)
             return pruned, (mask > 0)
         else:
             flat = tensor.abs().reshape(-1)
@@ -539,8 +521,7 @@ class ProxSparsePruner(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )

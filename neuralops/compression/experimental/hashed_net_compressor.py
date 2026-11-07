@@ -12,7 +12,6 @@ Compresses weight matrices into compact parameter tables using pseudo-random has
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -136,9 +136,7 @@ class HashedLinear(nn.Module):
             )
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.in_features, dtype=dtype, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, dtype=dtype, device=device))
             self.lora_B = nn.Parameter(
                 torch.randn(self.out_features, self.lora_rank, dtype=dtype, device=device) * 1e-4
             )
@@ -162,11 +160,7 @@ class HashedLinear(nn.Module):
         self._cached_versions = ()
 
     def get_weight(self) -> torch.Tensor:
-        if (
-            not self.training
-            and self._cached_weight is not None
-            and self._cached_versions == self._current_versions()
-        ):
+        if not self.training and self._cached_weight is not None and self._cached_versions == self._current_versions():
             return self._cached_weight
 
         w_flat = self.weight_table.index_select(0, self.hash_idx.reshape(-1).long())
@@ -193,6 +187,7 @@ class HashedLinear(nn.Module):
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 lora = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t()) * self.scaling
             except Exception:
                 lora = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
@@ -319,22 +314,16 @@ class HashedLinear(nn.Module):
             bound = 1.0 / math.sqrt(max(1, in_f))
             gen = torch.Generator(device=W.device).manual_seed(0xCAFEBABE)
             n_empty = int((~non_zero).sum().item())
-            mean_per_bucket[~non_zero] = torch.empty(
-                n_empty, device=W.device, dtype=torch.float32
-            ).uniform_(-bound, bound, generator=gen)
+            mean_per_bucket[~non_zero] = torch.empty(n_empty, device=W.device, dtype=torch.float32).uniform_(
+                -bound, bound, generator=gen
+            )
 
         with torch.no_grad():
-            hashed.weight_table.data.copy_(
-                mean_per_bucket.to(dtype=raw_w.dtype, device=raw_w.device)
-            )
+            hashed.weight_table.data.copy_(mean_per_bucket.to(dtype=raw_w.dtype, device=raw_w.device))
             if bias is not None and hashed.bias is not None:
                 hashed.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
 
-        if (
-            existing_lora_A is not None
-            and existing_lora_B is not None
-            and hashed.lora_A is not None
-        ):
+        if existing_lora_A is not None and existing_lora_B is not None and hashed.lora_A is not None:
             w_A = getattr(existing_lora_A, "weight", existing_lora_A)
             w_B = getattr(existing_lora_B, "weight", existing_lora_B)
             try:
@@ -355,12 +344,8 @@ class HashedLinear(nn.Module):
                         sqrt_S = torch.sqrt(torch.clamp(S[:r_eff], min=1e-12))
                         B_init = U[:, :r_eff] * sqrt_S.unsqueeze(0)
                         A_init = (sqrt_S.unsqueeze(1) * Vt[:r_eff, :]) / max(1e-6, hashed.scaling)
-                        hashed.lora_B.data.copy_(
-                            B_init.to(dtype=hashed.lora_B.dtype, device=hashed.lora_B.device)
-                        )
-                        hashed.lora_A.data.copy_(
-                            A_init.to(dtype=hashed.lora_A.dtype, device=hashed.lora_A.device)
-                        )
+                        hashed.lora_B.data.copy_(B_init.to(dtype=hashed.lora_B.dtype, device=hashed.lora_B.device))
+                        hashed.lora_A.data.copy_(A_init.to(dtype=hashed.lora_A.dtype, device=hashed.lora_A.device))
             except Exception as e:
                 logger.debug("HashedLinear residual SVD fit failed: %s", e)
 
@@ -449,16 +434,10 @@ class HashedNetCompressor(BaseCompressor):
             _cfg_get(conf, "lora_r", _cfg_get(conf, "hashed_net_lora_rank", lora_rank)),
         )
         self.lora_rank = (
-            max(16, int(lr_val))
-            if lr_val is not None and lr_val > 0
-            else (16 if lora_rank == 0 else int(lora_rank))
+            max(16, int(lr_val)) if lr_val is not None and lr_val > 0 else (16 if lora_rank == 0 else int(lora_rank))
         )
-        self.lora_alpha = float(
-            _cfg_get(conf, "lora_alpha", _cfg_get(conf, "hashed_net_lora_alpha", lora_alpha))
-        )
-        self.freeze_hash_table = bool(
-            _cfg_get(conf, "freeze_hash_table", freeze_hash_table) or self.lora_rank > 0
-        )
+        self.lora_alpha = float(_cfg_get(conf, "lora_alpha", _cfg_get(conf, "hashed_net_lora_alpha", lora_alpha)))
+        self.freeze_hash_table = bool(_cfg_get(conf, "freeze_hash_table", freeze_hash_table) or self.lora_rank > 0)
         self.skip_attention_qkv = bool(_cfg_get(conf, "skip_attention_qkv", skip_attention_qkv))
         self.target_layers = target_layers or _cfg_get(conf, "target_layers", None)
         if self.target_layers is not None and len(self.target_layers) == 0:
@@ -506,10 +485,7 @@ class HashedNetCompressor(BaseCompressor):
         if num_kv_heads >= num_heads:
             return False
         name_lower = name.lower()
-        return any(
-            p in name_lower
-            for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn")
-        )
+        return any(p in name_lower for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"))
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
@@ -590,11 +566,7 @@ class HashedNetCompressor(BaseCompressor):
         total_orig_bytes = 0
         total_comp_bytes = 0
 
-        targets = [
-            (name, mod)
-            for name, mod in list(self.model.named_modules())
-            if self._is_target_module(name, mod)
-        ]
+        targets = [(name, mod) for name, mod in list(self.model.named_modules()) if self._is_target_module(name, mod)]
 
         if not targets:
             logger.warning("HashedNet: no compressible layers found.")
@@ -620,11 +592,7 @@ class HashedNetCompressor(BaseCompressor):
                 W_target = raw_w.t().float()
             elif hasattr(target_mod, "in_features") and hasattr(target_mod, "out_features"):
                 in_f, out_f = int(target_mod.in_features), int(target_mod.out_features)
-                W_target = (
-                    raw_w.t().float()
-                    if raw_w.shape == (in_f, out_f)
-                    else raw_w.view(out_f, in_f).float()
-                )
+                W_target = raw_w.t().float() if raw_w.shape == (in_f, out_f) else raw_w.view(out_f, in_f).float()
             elif is_conv1d:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
                 W_target = raw_w.t().float()
@@ -657,17 +625,12 @@ class HashedNetCompressor(BaseCompressor):
                     logger.warning("HashedLinear creation failed on %s: %s", name, e)
                     break
 
-                if (
-                    torch.isnan(candidate.weight_table).any()
-                    or torch.isinf(candidate.weight_table).any()
-                ):
+                if torch.isnan(candidate.weight_table).any() or torch.isinf(candidate.weight_table).any():
                     logger.warning("HashedLinear weight_table has NaN/Inf on %s", name)
                     break
 
                 W_rec = candidate.get_weight().float()
-                err = (
-                    torch.norm(W_target - W_rec, p="fro").item() / W_norm if W_norm > 1e-12 else 0.0
-                )
+                err = torch.norm(W_target - W_rec, p="fro").item() / W_norm if W_norm > 1e-12 else 0.0
 
                 if err < best_err:
                     best_err = err
@@ -745,11 +708,7 @@ class HashedNetCompressor(BaseCompressor):
                         self.model(dummy)
                     except Exception:
                         first_linear = next(
-                            (
-                                m
-                                for m in self.model.modules()
-                                if isinstance(m, (nn.Linear, HashedLinear))
-                            ),
+                            (m for m in self.model.modules() if isinstance(m, (nn.Linear, HashedLinear))),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
@@ -773,8 +732,7 @@ class HashedNetCompressor(BaseCompressor):
             stats = {}
 
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )

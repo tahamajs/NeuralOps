@@ -142,7 +142,7 @@ for i in range(L):
 This formulation manifests a severe computational contradiction: to identify the top-$k$ non-local keys, the entire $L \times L$ pairwise attention matrix is fully materialized in High-Bandwidth Memory (HBM), completely forfeiting the theoretical $\mathcal{O}(L(2W+k))$ complexity advantage of sparse attention. Furthermore, the iterative host-side loop (`for i in range(L):`) dispatches $L$ consecutive `topk` and `scatter` kernel invocations sequentially. This serial kernel launching floods the CUDA stream command queue, causing GPU Streaming Multiprocessors (SMs) to suffer severe pipeline starvation and latency under-utilization.
 
 ### 5.2 Top-$k$ Selection Instability & Gradient Blocking
-The discrete selection operator $\operatorname{TopK}(\tilde{\mathbf{S}}_i, k)$ operates on discrete integer indices, introducing severe non-smoothness into the optimization landscape. Because the partial derivative $\frac{\partial \operatorname{TopK}}{\partial \mathbf{S}} = 0$ vanishes almost everywhere, objective gradients backpropagating through the loss function $\mathcal{L}$ flow exclusively into the value and projection matrices of active indices, but are completely obstructed from providing supervisory gradient signals to the Query and Key projection weights ($\mathbf{W}_Q, \mathbf{W}_K$) to adjust routing decisions. 
+The discrete selection operator $\operatorname{TopK}(\tilde{\mathbf{S}}_i, k)$ operates on discrete integer indices, introducing severe non-smoothness into the optimization landscape. Because the partial derivative $\frac{\partial \operatorname{TopK}}{\partial \mathbf{S}} = 0$ vanishes almost everywhere, objective gradients backpropagating through the loss function $\mathcal{L}$ flow exclusively into the value and projection matrices of active indices, but are completely obstructed from providing supervisory gradient signals to the Query and Key projection weights ($\mathbf{W}_Q, \mathbf{W}_K$) to adjust routing decisions.
 
 Moreover, when competing non-local keys exhibit nearly degenerate inner product scores ($S_{i, j_1} \approx S_{i, j_2}$), stochastic gradient perturbations and numerical roundoff noise cause discrete top-$k$ membership to oscillate erratically across optimization steps. This abrupt switching behavior induces sudden discontinuities in the loss surface, destabilizing optimizer momentum buffers and degrading training convergence.
 
@@ -292,4 +292,3 @@ The empirical evaluation of `nsa_attention` across standard sequence lengths and
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

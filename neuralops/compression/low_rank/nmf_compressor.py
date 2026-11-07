@@ -12,11 +12,12 @@ Factorizes non-negative weight tensors into non-negative basis and coefficient m
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
 from typing import Any
+
+from neuralops.core.common import _cfg_get
 
 logger = logging.getLogger(__name__)
 
@@ -93,12 +94,8 @@ class NMFLinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
             self.register_parameter("lora_A", None)
@@ -128,6 +125,7 @@ class NMFLinear(nn.Module):
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 lora_out = fused_down_up_gemm_bias_triton(x_flat.float(), self.lora_A.t(), self.lora_B.t())
             except Exception:
                 lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
@@ -259,23 +257,11 @@ class NMFLinear(nn.Module):
             and nmf_layer.lora_B is not None
         ):
             with torch.no_grad():
-                src_A = (
-                    linear.lora_A.weight.data
-                    if hasattr(linear.lora_A, "weight")
-                    else linear.lora_A.data
-                )
-                src_B = (
-                    linear.lora_B.weight.data
-                    if hasattr(linear.lora_B, "weight")
-                    else linear.lora_B.data
-                )
+                src_A = linear.lora_A.weight.data if hasattr(linear.lora_A, "weight") else linear.lora_A.data
+                src_B = linear.lora_B.weight.data if hasattr(linear.lora_B, "weight") else linear.lora_B.data
                 if src_A.shape == nmf_layer.lora_A.shape and src_B.shape == nmf_layer.lora_B.shape:
-                    nmf_layer.lora_A.copy_(
-                        src_A.to(nmf_layer.lora_A.device, dtype=nmf_layer.lora_A.dtype)
-                    )
-                    nmf_layer.lora_B.copy_(
-                        src_B.to(nmf_layer.lora_B.device, dtype=nmf_layer.lora_B.dtype)
-                    )
+                    nmf_layer.lora_A.copy_(src_A.to(nmf_layer.lora_A.device, dtype=nmf_layer.lora_A.dtype))
+                    nmf_layer.lora_B.copy_(src_B.to(nmf_layer.lora_B.device, dtype=nmf_layer.lora_B.dtype))
             nmf_layer.lora_A.requires_grad = True
             nmf_layer.lora_B.requires_grad = True
 
@@ -340,13 +326,9 @@ class NMFCompressor(BaseCompressor):
         self.target_layers = target_layers or _cfg_get(conf, "target_layers", None)
         if self.target_layers is not None and len(self.target_layers) == 0:
             self.target_layers = None
-        self.target_attention_only = bool(
-            target_attention_only or _cfg_get(conf, "target_attention_only", False)
-        )
+        self.target_attention_only = bool(target_attention_only or _cfg_get(conf, "target_attention_only", False))
         self.max_error = float(_cfg_get(conf, "max_error", max_error))
-        self.fallback_to_original = bool(
-            _cfg_get(conf, "fallback_to_original", fallback_to_original)
-        )
+        self.fallback_to_original = bool(_cfg_get(conf, "fallback_to_original", fallback_to_original))
         self.compressed_layers: list[dict[str, Any]] = []
         self.fallback_layers: list[str] = []
         self.skipped_layers: list[str] = []

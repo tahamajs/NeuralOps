@@ -12,7 +12,6 @@ Couples truncated SVD factorization with hardware-aligned 2:4 sparse projections
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -92,6 +92,7 @@ class ENLightenCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     ENLighten Compressor: Low-Rank SVD + 2:4 Structured Sparsity.
@@ -129,9 +130,7 @@ class ENLightenCompressor(BaseCompressor):
         self.cfg = cfg
 
         self.rank = int(_cfg_get(cfg, "enlighten_rank", _cfg_get(cfg, "rank", rank)))
-        self.sparsity = float(
-            _cfg_get(cfg, "enlighten_sparsity", _cfg_get(cfg, "sparsity", sparsity))
-        )
+        self.sparsity = float(_cfg_get(cfg, "enlighten_sparsity", _cfg_get(cfg, "sparsity", sparsity)))
         self.structured_24 = bool(
             _cfg_get(
                 cfg,
@@ -139,9 +138,7 @@ class ENLightenCompressor(BaseCompressor):
                 _cfg_get(cfg, "structured_24", structured_24),
             )
         )
-        self.max_error = float(
-            _cfg_get(cfg, "enlighten_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        self.max_error = float(_cfg_get(cfg, "enlighten_max_error", _cfg_get(cfg, "max_error", max_error)))
         self.target_attention_only = bool(
             _cfg_get(
                 cfg,
@@ -197,9 +194,7 @@ class ENLightenCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention")
-            )
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 return False
 
@@ -228,11 +223,7 @@ class ENLightenCompressor(BaseCompressor):
 
         W_recon = L + residual_sp
 
-        err = (
-            float(torch.linalg.norm(W - W_recon, ord="fro").item() / max(norm_w, 1e-12))
-            if norm_w > 1e-12
-            else 0.0
-        )
+        err = float(torch.linalg.norm(W - W_recon, ord="fro").item() / max(norm_w, 1e-12)) if norm_w > 1e-12 else 0.0
         return W_recon, err
 
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
@@ -279,9 +270,7 @@ class ENLightenCompressor(BaseCompressor):
 
             if not self._is_target_module(name, module):
                 if self.target_attention_only:
-                    if not any(
-                        part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]
-                    ):
+                    if not any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
                         for p in module.parameters():
                             p.requires_grad = False
                         self.skipped_layers.append(name)
@@ -356,9 +345,7 @@ class ENLightenCompressor(BaseCompressor):
 
             if is_conv1d:
                 target_mod.weight.data.copy_(
-                    best_w_new.t()
-                    .contiguous()
-                    .to(dtype=target_mod.weight.dtype, device=target_mod.weight.device)
+                    best_w_new.t().contiguous().to(dtype=target_mod.weight.dtype, device=target_mod.weight.device)
                 )
             else:
                 target_mod.weight.data.copy_(
@@ -373,16 +360,13 @@ class ENLightenCompressor(BaseCompressor):
 
             self.compressed_layers.append(name)
             effective_sparse_frac = 0.5 if self.structured_24 else (1.0 - self.sparsity)
-            comp_layer_params = current_r * (in_f + out_f) + int(
-                effective_sparse_frac * orig_layer_params
-            )
+            comp_layer_params = current_r * (in_f + out_f) + int(effective_sparse_frac * orig_layer_params)
             total_comp_params += comp_layer_params
 
         self._compressed_params = self._count_params(self.model)
         effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -407,9 +391,7 @@ class ENLightenCompressor(BaseCompressor):
                 "layer_errors": self.layer_errors,
                 "avg_reconstruction_error": avg_err,
                 "num_compressed": len(self.compressed_layers),
-                "num_injected_attention_layers": len(
-                    self.compressed_layers
-                ),
+                "num_injected_attention_layers": len(self.compressed_layers),
                 "num_fallback": len(self.fallback_layers),
                 "effective_parameter_ratio": round(effective_ratio, 4),
             }

@@ -12,14 +12,6 @@ Information-bottlenecked Jamba variant integrating concept bottleneck projection
 """
 
 from __future__ import annotations
-from neuralops.core.cache_utils import read_cache as _read_cache
-from neuralops.core.common import _detect_return_format
-from neuralops.core.common import _detect_decoder, repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -28,6 +20,10 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.cache_utils import read_cache as _read_cache
+from neuralops.core.common import _detect_decoder, _detect_return_format, repeat_kv
 
 try:
     from .simple_ssm import SimpleSSM
@@ -97,6 +93,7 @@ class JambaInfoBlock(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -148,33 +145,51 @@ class JambaInfoBlock(BaseAttention):
         self.freeze_base = self.lora_rank > 0
 
         self.W_q1 = LoRALinear(
-            self.dim, self.all_head_size, bias=False,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.W_k1 = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=False,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.W_q2 = LoRALinear(
-            self.dim, self.all_head_size, bias=False,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.W_k2 = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=False,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.W_v = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=False,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -198,9 +213,7 @@ class JambaInfoBlock(BaseAttention):
         else:
             self.alpha_raw = nn.Parameter(torch.tensor(-2.0))
 
-        bottleneck_dim = int(
-            getattr(comp_config, "bottleneck_dim", 256) if comp_config else 256
-        )
+        bottleneck_dim = int(getattr(comp_config, "bottleneck_dim", 256) if comp_config else 256)
         bottleneck_dim = max(64, min(bottleneck_dim, self.dim))
         self.bottleneck = InfoMambaConceptBottleneck(self.dim, bottleneck_dim=bottleneck_dim)
 
@@ -222,9 +235,7 @@ class JambaInfoBlock(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         if self.per_head_alpha and self.dim != self.all_head_size:
-            self.ssm_adapter: nn.Linear | None = nn.Linear(
-                self.dim, self.all_head_size, bias=False
-            )
+            self.ssm_adapter: nn.Linear | None = nn.Linear(self.dim, self.all_head_size, bias=False)
             nn.init.zeros_(self.ssm_adapter.weight)
             with torch.no_grad():
                 m = min(self.dim, self.all_head_size)
@@ -369,9 +380,7 @@ class JambaInfoBlock(BaseAttention):
             return (out, attn_weights, present)
         return (out, present)
 
-    def _normalize_head_mask(
-        self, head_mask: torch.Tensor, attn: torch.Tensor
-    ) -> torch.Tensor:
+    def _normalize_head_mask(self, head_mask: torch.Tensor, attn: torch.Tensor) -> torch.Tensor:
         hm = head_mask.to(attn.dtype)
         H = self.num_heads
         if hm.dim() == 1:
@@ -406,7 +415,8 @@ class JambaInfoBlock(BaseAttention):
                 and hasattr(src.output, "dense")
             )
             or (
-                cls_name in [
+                cls_name
+                in [
                     "BertSelfAttention",
                     "RobertaSelfAttention",
                     "XLMRobertaSelfAttention",
@@ -508,11 +518,7 @@ class JambaInfoBlock(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -530,33 +536,22 @@ class JambaInfoBlock(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        def _copy_into(
-            target_mod: LoRALinear, w: torch.Tensor | None, b: torch.Tensor | None
-        ) -> None:
+        def _copy_into(target_mod: LoRALinear, w: torch.Tensor | None, b: torch.Tensor | None) -> None:
             if w is None:
                 return
             if w.ndim != 2:
                 w = w.reshape(w.size(0), -1)
-            if (
-                w.shape != target_mod.weight.shape
-                and target_mod.weight.shape == w.t().contiguous().shape
-            ):
+            if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                 w = w.t().contiguous()
             r = min(target_mod.weight.size(0), w.size(0))
             c = min(target_mod.weight.size(1), w.size(1))
             target_mod.weight.data[:r, :c].copy_(
-                w[:r, :c].to(
-                    device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                )
+                w[:r, :c].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
             )
             if b is not None and target_mod.bias is not None:
                 n = min(b.numel(), target_mod.bias.numel())
                 b_val = b.data if isinstance(b, nn.Parameter) else b
-                target_mod.bias.data[:n].copy_(
-                    b_val[:n].to(
-                        device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                    )
-                )
+                target_mod.bias.data[:n].copy_(b_val[:n].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
 
         with torch.no_grad():
             w_q, _ = extracted["q"]
@@ -618,7 +613,11 @@ class JambaInfoBlock(BaseAttention):
 
         past_k1, past_k2, past_v, past_len = None, None, None, 0
         if past_key_value is not None:
-            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 3 and not isinstance(past_key_value[0], (tuple, list)):
+            if (
+                isinstance(past_key_value, (tuple, list))
+                and len(past_key_value) >= 3
+                and not isinstance(past_key_value[0], (tuple, list))
+            ):
                 past_k1, past_k2, past_v = past_key_value[0], past_key_value[1], past_key_value[2]
                 past_len = past_k1.shape[-2] if past_k1 is not None else 0
             else:
@@ -626,25 +625,10 @@ class JambaInfoBlock(BaseAttention):
                 past_k1, past_k2, past_v = pk, pk, pv
 
         q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k1 = (
-            self.W_k1(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k2 = (
-            self.W_k2(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.W_v(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -721,15 +705,11 @@ class JambaInfoBlock(BaseAttention):
         attn2 = F.softmax(scores2, dim=-1).to(q2.dtype)
 
         lambda_full = (
-            torch.exp(self.lambda_q1 * self.lambda_k1)
-            - torch.exp(self.lambda_q2 * self.lambda_k2)
-            + self.lambda_init
+            torch.exp(self.lambda_q1 * self.lambda_k1) - torch.exp(self.lambda_q2 * self.lambda_k2) + self.lambda_init
         ).to(attn1.dtype)
         lambda_full = lambda_full.view(1, self.num_heads, 1, 1)
 
-        scale_factor = (1.0 - self.lambda_init).to(attn1.dtype).view(
-            1, self.num_heads, 1, 1
-        )
+        scale_factor = (1.0 - self.lambda_init).to(attn1.dtype).view(1, self.num_heads, 1, 1)
 
         diff_attn = (attn1 - lambda_full * attn2) * scale_factor
         diff_attn = self.dropout(diff_attn).to(v.dtype)
@@ -737,12 +717,7 @@ class JambaInfoBlock(BaseAttention):
         if head_mask is not None:
             diff_attn = self._normalize_head_mask(head_mask, diff_attn)
 
-        attn_out = (
-            torch.matmul(diff_attn, v)
-            .transpose(1, 2)
-            .contiguous()
-            .view(B, L, self.all_head_size)
-        )
+        attn_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         attn_out = self.diff_norm(attn_out)
 
         z = self.bottleneck.down(x)
@@ -759,9 +734,7 @@ class JambaInfoBlock(BaseAttention):
                         rev_mask = torch.flip(attention_mask, dims=[-1]).contiguous()
                     elif attention_mask.dim() == 4:
                         if attention_mask.shape[-2] == attention_mask.shape[-1]:
-                            rev_mask = torch.flip(
-                                attention_mask, dims=[-2, -1]
-                            ).contiguous()
+                            rev_mask = torch.flip(attention_mask, dims=[-2, -1]).contiguous()
                         else:
                             rev_mask = torch.flip(attention_mask, dims=[-1]).contiguous()
                     else:
@@ -788,18 +761,14 @@ class JambaInfoBlock(BaseAttention):
                 ssm_for_blend = self.ssm_adapter(ssm_branch.to(target_dtype))
             else:
                 ssm_for_blend = ssm_branch
-            combined = fused_jamba_hybrid_ssm_attn_gate_triton(
-                attn_out, ssm_for_blend, self.alpha_raw
-            )
+            combined = fused_jamba_hybrid_ssm_attn_gate_triton(attn_out, ssm_for_blend, self.alpha_raw)
         else:
             if ssm_branch.shape[-1] != attn_out.shape[-1]:
                 if self.ssm_adapter is not None:
                     ssm_branch = self.ssm_adapter(ssm_branch.to(target_dtype))
                 else:
-                    ssm_branch = ssm_branch[..., :attn_out.shape[-1]]
-            combined = fused_jamba_hybrid_ssm_attn_gate_triton(
-                attn_out, ssm_branch, self.alpha_raw
-            )
+                    ssm_branch = ssm_branch[..., : attn_out.shape[-1]]
+            combined = fused_jamba_hybrid_ssm_attn_gate_triton(attn_out, ssm_branch, self.alpha_raw)
 
         combined = torch.nan_to_num(combined, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -884,9 +853,7 @@ def inject_jamba_info(
         if isinstance(src_attn, JambaInfoBlock) or "JambaInfo" in src_attn.__class__.__name__:
             return None
 
-        new_attn = JambaInfoBlock(
-            config=cfg, comp_config=comp_config, old_attn=src_attn, **kwargs
-        )
+        new_attn = JambaInfoBlock(config=cfg, comp_config=comp_config, old_attn=src_attn, **kwargs)
 
         if src_attn is not None:
             p = next(src_attn.parameters(), None)
@@ -918,9 +885,7 @@ def inject_jamba_info(
 
             if not spliced:
                 return None
-            new_attn._return_format = _detect_return_format(
-                src_attn, new_attn.is_nested_encoder
-            )
+            new_attn._return_format = _detect_return_format(src_attn, new_attn.is_nested_encoder)
 
         return new_attn
     except Exception as e:

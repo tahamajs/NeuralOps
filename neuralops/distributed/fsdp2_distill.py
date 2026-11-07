@@ -22,10 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.distributed.context import DistributedContext
-from neuralops.distributed.errors import (
-    DistributedError,
-    E_FSDP2_CONFIG_FAILED,
-)
+from neuralops.distributed.errors import E_FSDP2_CONFIG_FAILED, DistributedError
 
 logger = logging.getLogger(__name__)
 
@@ -110,10 +107,7 @@ class FSDP2Distillation:
         device = self.context.get_device()
 
         if isinstance(batch, dict):
-            device_batch = {
-                k: v.to(device) if isinstance(v, torch.Tensor) else v
-                for k, v in batch.items()
-            }
+            device_batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
             s_out = student(**device_batch)
             with torch.no_grad():
                 t_out = teacher(**device_batch)
@@ -173,9 +167,7 @@ class FSDP2Distillation:
         falling back gracefully to single-GPU heal_replaced_model otherwise.
         """
         if not self.context.is_distributed():
-            logger.info(
-                "Distributed context is not active; falling back to single-device heal_replaced_model."
-            )
+            logger.info("Distributed context is not active; falling back to single-device heal_replaced_model.")
             from neuralops.core._attention_surgery import heal_replaced_model
 
             return heal_replaced_model(

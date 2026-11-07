@@ -49,15 +49,15 @@ where:
   MHA (Standard):      H_kv = H_q (e.g., 32 heads)
   ┌───┬───┬───┬───┬───┬───┬───┬───┐  Key Cache:   32 x D
   └───┴───┴───┴───┴───┴───┴───┴───┘  Value Cache: 32 x D  ──► 100% Base Footprint
-  
+
   GQA (Grouped):       H_kv = H_q / G (e.g., 8 heads, G=4)
   ┌───┬───┬───┬───┐                  Key Cache:    8 x D
   └───┴───┴───┴───┘                  Value Cache:  8 x D  ──►  25% Footprint (4x)
-  
+
   MQA (Multi-Query):   H_kv = 1
   ┌───┐                              Key Cache:    1 x D
   └───┘                              Value Cache:  1 x D  ──► 3.1% Footprint (32x)
-  
+
   MLA (DeepSeek):      Latent Compression Vector c_t^KV in R^{d_c} + RoPE k_t^R in R^{d_R}
   ┌─────────────┬───────┐
   │   d_c       │  d_R  │            Single unified latent cache ──► Ultra-compact
@@ -455,10 +455,10 @@ $(\mathbf{o}_t, \mathbf{A}_t) \leftarrow \operatorname{PagedAttentionWithScores}
 \If{$|\operatorname{ResidentTokens}(\mathbf{B}_s)| > K_{\text{budget}}$}{
     \tcp{Define eviction candidates outside protected sinks and local window}
     $\mathcal{P}_{\text{candidate}} \leftarrow \operatorname{ResidentTokens}(\mathbf{B}_s) \setminus \left( \{1, \dots, S\} \cup \{t - W + 1, \dots, t\} \right)$\;
-    
+
     \tcp{Select victim token with minimal cumulative score}
     $v^* \leftarrow \arg\min_{i \in \mathcal{P}_{\text{candidate}}} s_i^{(t)}$\;
-    
+
     \tcp{Reclaim physical slot via Paged Virtual Memory Manager}
     $\operatorname{EvictPagedSlot}(\mathbf{B}_s, v^*)$\;
 }
@@ -485,7 +485,7 @@ The following table presents empirical benchmark results comparing state-of-the-
 \textbf{Model} & \textbf{Eviction Policy} & \textbf{Cache Budget} & \textbf{KV Memory} & \textbf{Decode Latency} & \textbf{PG19 PPL} & \textbf{NIAH Acc.} \\
  & & ($K_{\text{budget}}$) & (GB @ 32k) & ($\mu\text{s}$ / token) & ($100\text{k}$ stream) & (66 cells) \\
 \midrule
-\multirow{6}{*}{\textbf{LLaMA-3-8B}} 
+\multirow{6}{*}{\textbf{LLaMA-3-8B}}
  & Full Dense Attention (Oracle) & 32,768 (Full) & 2.00 GB & 18.42 & 7.42 & 100.0\% \\
  & Static Sliding Window & 1,024 & 0.06 GB & \textbf{2.14} & $>10^4$ (Diverged) & 12.1\% \\
  & StreamingLLM ($S{=}16, W{=}1008$) & 1,024 & 0.06 GB & 2.21 & 7.58 & 21.2\% \\

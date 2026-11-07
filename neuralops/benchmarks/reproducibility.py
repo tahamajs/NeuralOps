@@ -20,8 +20,8 @@ from neuralops.benchmarks.results import BenchmarkResult, save_all_formats
 
 
 def _run_once(seed: int, device: torch.device) -> torch.Tensor:
-    from neuralops.core.utils.general import set_seed
     from examples._shared.mock_models import TinyClassifier
+    from neuralops.core.utils.general import set_seed
 
     set_seed(seed, deterministic=True)
     model = TinyClassifier(dim=32, num_labels=2, seed=seed).to(device)

@@ -21,11 +21,7 @@ import torch
 import torch.nn as nn
 from torch.optim.optimizer import Optimizer
 
-from neuralops.trainer.optimizers.stiefel import (
-    is_stiefel_parameter,
-    project_stiefel_gradient,
-    stiefel_qr_retraction,
-)
+from neuralops.trainer.optimizers.stiefel import is_stiefel_parameter, project_stiefel_gradient, stiefel_qr_retraction
 
 
 class RiemannianStiefelOptimizer(Optimizer):
@@ -34,10 +30,7 @@ class RiemannianStiefelOptimizer(Optimizer):
     def __init__(
         self,
         params: (
-            Iterable[torch.nn.Parameter]
-            | Iterable[dict[str, Any]]
-            | nn.Module
-            | list[tuple[str, torch.nn.Parameter]]
+            Iterable[torch.nn.Parameter] | Iterable[dict[str, Any]] | nn.Module | list[tuple[str, torch.nn.Parameter]]
         ),
         lr: float = 1e-3,
         lr_stiefel: float | None = None,
@@ -212,9 +205,7 @@ class RiemannianStiefelOptimizer(Optimizer):
         """QR retraction onto Stiefel manifold."""
         return stiefel_qr_retraction(W, grad_R, lr)
 
-    def check_orthogonality_error(
-        self, param: torch.Tensor | None = None
-    ) -> float | dict[int, float]:
+    def check_orthogonality_error(self, param: torch.Tensor | None = None) -> float | dict[int, float]:
         """Compute Frobenius norm orthogonality error for manifold parameters."""
         if param is not None:
             w = param.detach()

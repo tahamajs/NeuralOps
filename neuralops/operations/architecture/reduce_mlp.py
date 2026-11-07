@@ -51,6 +51,7 @@ class ArchitectureReduceMlpOperation(Operation):
         ratio = config.get("ratio", 0.8)
         try:
             from neuralops.surgery.mlp.shrink import shrink_mlp
+
             shrunk = shrink_mlp(model, ratio=ratio)
             return shrunk, {"params_used": config, "operation_version": self.version, "output_state": self.output_state}
         except Exception as exc:

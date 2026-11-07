@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any, Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -21,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -38,25 +41,33 @@ def _get_module():
         )
     return _MODULE
 
+
 def svd_prefix_scan_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     kv = torch.einsum("bhld,bhle->bhlde", k.float(), v.float())
     s = kv.cumsum(dim=2)
     return torch.einsum("bhld,bhlde->bhle", q.float(), s).to(q.dtype)
 
+
 def svd_prefix_scan_triton_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     return svd_prefix_scan_pytorch_ref(q, k, v, eps=eps)
+
 
 def _svd_prefix_scan_fwd_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     def cuda_fn(q, k, v, eps=1e-4, **kwargs):
         mod = _get_module()
         return mod.svd_prefix_scan_fwd(q.contiguous(), k.contiguous(), v.contiguous(), float(eps))
+
     return dispatch(
         cuda_fn,
         svd_prefix_scan_triton_ref,
         svd_prefix_scan_pytorch_ref,
-        q, k, v, float(eps),
+        q,
+        k,
+        v,
+        float(eps),
         kernel_name="svd_prefix_scan",
     )
+
 
 class _SvdPrefixScanFunction(torch.autograd.Function):
     @staticmethod
@@ -79,6 +90,7 @@ class _SvdPrefixScanFunction(torch.autograd.Function):
 
         grads = torch.autograd.grad(out_p, [q_p, k_p, v_p], dout, allow_unused=True)
         return grads[0], grads[1], grads[2], None
+
 
 def svd_prefix_scan(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     if any(t.requires_grad for t in (q, k, v) if isinstance(t, torch.Tensor)):

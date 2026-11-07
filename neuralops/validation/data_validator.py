@@ -11,9 +11,11 @@ Dataset Validator
 Validates dataset schemas, tokenization integrity, and sequence lengths prior to training.
 """
 
-from collections import Counter
 import logging
+from collections import Counter
+
 LOG = logging.getLogger(__name__)
+
 
 class DataValidator:
     def __init__(self, dataset_name, config_name=None):
@@ -24,6 +26,7 @@ class DataValidator:
 
     def validate(self):
         from datasets import load_dataset
+
         print(f"\n=== Validating {self.dataset_name} ===")
         try:
             ds = load_dataset(self.dataset_name, self.config_name, trust_remote_code=True)
@@ -39,8 +42,8 @@ class DataValidator:
             elif count < 10:
                 self.warnings.append(f"Tiny split: {split} ({count})")
 
-        if 'label' in ds['train'].features:
-            labels = ds['train']['label']
+        if "label" in ds["train"].features:
+            labels = ds["train"]["label"]
             dist = Counter(labels)
             print(f"  Label distribution: {dict(dist)}")
             if len(dist) < 2:

@@ -13,5 +13,3 @@ torch::Tensor split_head_norm_fwd(
     const c10::optional<torch::Tensor>& weight_opt,
     float eps
 );
-
-

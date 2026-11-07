@@ -8,7 +8,7 @@ tags: ["neuralops", "paper", "empirical", "telemetry", "benchmarks", "ablations"
 # Skill: Paper Empirical Evaluator for NeuralOps
 
 ## When to Use
-Use this skill when authoring, auditing, or revising empirical evaluation, telemetry, hardware profiling, and ablation study sections for research manuscripts, technical reports, and doctoral dissertations targeting arXiv, NeurIPS, ICLR, ICML, and MLSys. 
+Use this skill when authoring, auditing, or revising empirical evaluation, telemetry, hardware profiling, and ablation study sections for research manuscripts, technical reports, and doctoral dissertations targeting arXiv, NeurIPS, ICLR, ICML, and MLSys.
 
 This skill translates physical GPU execution logs, master telemetry ledgers, and forensic audit records into publication-grade LaTeX tables, figures, and deeply analytical prose. Every numerical claim is verified against raw experimental artifacts, preventing hallucination, silent failure masking, and ungrounded extrapolation.
 
@@ -36,28 +36,28 @@ To guarantee cold-cache execution:
    ```python
    # Cold-cache eviction snippet
    cache_flush_buffer = torch.empty(54 * 1024 * 1024 // 4, dtype=torch.float32, device="cuda")
-   
+
    def benchmark_kernel_cold(fn, args, warmup=10, reps=100):
        # Warmup runs to stabilize clocks and JIT compilation
        for _ in range(warmup):
            fn(*args)
        torch.cuda.synchronize()
-       
+
        start_event = torch.cuda.Event(enable_timing=True)
        end_event = torch.cuda.Event(enable_timing=True)
        timings = []
-       
+
        for _ in range(reps):
            # Invalidate L2 cache (36 MB) with 54 MB scratch pass
            cache_flush_buffer.zero_()
            torch.cuda.synchronize()
-           
+
            start_event.record()
            fn(*args)
            end_event.record()
            torch.cuda.synchronize()
            timings.append(start_event.elapsed_time(end_event)) # milliseconds
-           
+
        return np.median(timings), np.std(timings)
    ```
 3. **Asynchronous CUDA Event Timing**: Always record timings via `torch.cuda.Event(enable_timing=True)`. Never use Python CPU `time.perf_counter()` around GPU calls without full synchronization, as kernel launches are asynchronous.

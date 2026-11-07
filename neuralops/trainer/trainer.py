@@ -70,9 +70,7 @@ class SVDAwareTrainer(Trainer):
         def hook_fn(module, input, output, layer_idx) -> None:
             """Hook fn."""
             if isinstance(output, tuple) and len(output) > 1 and output[1] is not None:
-                self._attention_maps.append(
-                    {"layer": layer_idx, "attention": output[1].detach().cpu()}
-                )
+                self._attention_maps.append({"layer": layer_idx, "attention": output[1].detach().cpu()})
 
         for name, module in self.model.named_modules():
             if "attention" in name.lower() and hasattr(module, "forward"):
@@ -86,9 +84,7 @@ class SVDAwareTrainer(Trainer):
                         except ValueError:
                             pass
                 if layer_idx in self.attention_layers:
-                    hook = module.register_forward_hook(
-                        lambda m, i, o, idx=layer_idx: hook_fn(m, i, o, idx)
-                    )
+                    hook = module.register_forward_hook(lambda m, i, o, idx=layer_idx: hook_fn(m, i, o, idx))
                     self._attention_hooks.append(hook)
 
     def _remove_attention_hooks(self) -> None:
@@ -191,9 +187,7 @@ def create_trainer(
     trainer_kwargs = {k: v for k, v in kwargs.items() if k in trainer_kwarg_names}
     training_args_kwargs = {k: v for k, v in kwargs.items() if k not in trainer_kwarg_names}
 
-    per_device_train_batch_size = training_args_kwargs.pop(
-        "per_device_train_batch_size", batch_size
-    )
+    per_device_train_batch_size = training_args_kwargs.pop("per_device_train_batch_size", batch_size)
     per_device_eval_batch_size = training_args_kwargs.pop("per_device_eval_batch_size", batch_size)
     learning_rate = training_args_kwargs.pop("learning_rate", learning_rate)
     num_train_epochs = training_args_kwargs.pop("num_train_epochs", epochs)
@@ -202,9 +196,7 @@ def create_trainer(
     eval_strategy = training_args_kwargs.pop("eval_strategy", eval_strategy)
     save_strategy = training_args_kwargs.pop("save_strategy", save_strategy)
     save_total_limit = training_args_kwargs.pop("save_total_limit", save_total_limit)
-    load_best_model_at_end = training_args_kwargs.pop(
-        "load_best_model_at_end", load_best_model_at_end
-    )
+    load_best_model_at_end = training_args_kwargs.pop("load_best_model_at_end", load_best_model_at_end)
     metric_for_best_model = training_args_kwargs.pop("metric_for_best_model", metric_for_best_model)
     if compute_metrics is None:
         metric_for_best_model = "eval_loss"
@@ -278,6 +270,7 @@ from neuralops.trainer.metrics import get_task_metrics as get_compute_metrics  #
 def setup_ddp_training(model, *args, **kwargs):
     return model
 
+
 class MixedPrecisionTrainer:
     def __init__(self, model=None, optimizer=None, loss_fn=None, enabled=True, *args, **kwargs):
         self.model = model
@@ -300,17 +293,21 @@ class MixedPrecisionTrainer:
             if isinstance(batch, (tuple, list)) and len(batch) >= 2:
                 x, y = batch[0], batch[1]
             elif isinstance(batch, dict):
-                x = batch.get('input_ids', batch.get('x'))
-                y = batch.get('labels', batch.get('y'))
+                x = batch.get("input_ids", batch.get("x"))
+                y = batch.get("labels", batch.get("y"))
             else:
                 continue
             total_loss += self.train_step(x, y)
             count += 1
         return total_loss / max(1, count)
 
-def train_epoch_mixed_precision(model, dataloader, optimizer, loss_fn=None, scaler=None, grad_accum_steps=1, *args, **kwargs):
+
+def train_epoch_mixed_precision(
+    model, dataloader, optimizer, loss_fn=None, scaler=None, grad_accum_steps=1, *args, **kwargs
+):
     if loss_fn is None:
         import torch.nn as nn
+
         loss_fn = nn.MSELoss()
     total_loss = 0.0
     optimizer.zero_grad()
@@ -324,17 +321,19 @@ def train_epoch_mixed_precision(model, dataloader, optimizer, loss_fn=None, scal
         total_loss += float(loss.item()) * grad_accum_steps
     return total_loss / max(1, len(dataloader))
 
+
 class LoRATrainer:
     def __init__(self, model, lr=1e-3):
         self.model = model
         self.lr = lr
         for name, param in model.named_parameters():
-            if 'lora' in name.lower():
+            if "lora" in name.lower():
                 param.requires_grad = True
             else:
                 param.requires_grad = False
         trainable = [p for p in model.parameters() if p.requires_grad]
         import torch
+
         self.optimizer = torch.optim.AdamW(trainable, lr=lr) if trainable else None
 
     def train_step(self, x, y, loss_fn):
@@ -346,6 +345,7 @@ class LoRATrainer:
         if self.optimizer:
             self.optimizer.step()
         return float(loss.item())
+
 
 class CurriculumScheduler:
     def __init__(self, min_seq_len=128, max_seq_len=1024, total_steps=100):

@@ -312,4 +312,3 @@ torch::Tensor fused_norm_linear_bwd_dx(
     CUDA_KERNEL_LAUNCH_CHECK();
     return dx.reshape(orig_shape);
 }
-

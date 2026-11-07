@@ -11,11 +11,6 @@ Hadamard Linear Attention (HLA)
 Hadamard linear attention utilizing element-wise kernel factorizations for linear-time self-attention.
 """
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -25,9 +20,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -115,29 +111,21 @@ class HLAAttention(BaseAttention):
 
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(
-                    config, "num_attention_heads", getattr(config, "n_heads", 12)
-                )
+                num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
             else:
                 num_heads = kwargs.get("num_attention_heads", 12)
 
         comp_cfg = kwargs.get("comp_config")
         if comp_cfg is not None:
-            lora_rank = getattr(
-                comp_cfg, "lora_rank", getattr(comp_cfg, "rank", lora_rank)
-            )
-            lora_alpha = getattr(
-                comp_cfg, "lora_alpha", getattr(comp_cfg, "alpha", lora_alpha)
-            )
+            lora_rank = getattr(comp_cfg, "lora_rank", getattr(comp_cfg, "rank", lora_rank))
+            lora_alpha = getattr(comp_cfg, "lora_alpha", getattr(comp_cfg, "alpha", lora_alpha))
         elif config is not None:
             lora_rank = getattr(config, "lora_rank", lora_rank)
             lora_alpha = getattr(config, "lora_alpha", lora_alpha)
 
         self.hidden_size: int = int(d_model)
         self.num_heads: int = int(num_heads)
-        self.head_dim: int = (
-            self.hidden_size // self.num_heads if self.num_heads > 0 else 64
-        )
+        self.head_dim: int = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
         self.lora_rank: int = int(lora_rank) if lora_rank is not None else 16
         self.lora_alpha: float = float(lora_alpha) if lora_alpha is not None else 32.0
 
@@ -151,9 +139,7 @@ class HLAAttention(BaseAttention):
             else None
         )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
-        self.num_key_value_groups: int = max(
-            1, self.num_heads // max(1, self.num_kv_heads)
-        )
+        self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.q_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -165,10 +151,7 @@ class HLAAttention(BaseAttention):
             self.is_decoder = bool(
                 getattr(config, "is_decoder", False)
                 or getattr(config, "is_causal", False)
-                or mt.startswith(
-                    ("gpt", "qwen", "llama", "mistral", "gemma",
-                     "phi", "opt", "bloom", "falcon")
-                )
+                or mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon"))
             )
         else:
             self.is_decoder = False
@@ -228,30 +211,39 @@ class HLAAttention(BaseAttention):
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
@@ -269,9 +261,7 @@ class HLAAttention(BaseAttention):
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                hasattr(old_attn, "query") and not hasattr(old_attn, "dense") and not hasattr(old_attn, "out_proj")
             ):
                 self.is_nested_encoder = True
 
@@ -286,15 +276,8 @@ class HLAAttention(BaseAttention):
 
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = (
-                    src.c_attn.bias.detach()
-                    if src.c_attn.bias is not None
-                    else None
-                )
-                if (
-                    c_attn_w.shape[0] == self.hidden_size
-                    and c_attn_w.shape[1] != self.hidden_size
-                ):
+                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
                     c_attn_w = c_attn_w.t().contiguous()
 
                 q_dim = self.q_head_size
@@ -311,23 +294,12 @@ class HLAAttention(BaseAttention):
                     b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
 
                 out_w = src.c_proj.weight.detach()
-                if (
-                    out_w.shape[0] == self.hidden_size
-                    and out_w.shape[1] != self.hidden_size
-                ):
+                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
                     out_w = out_w.t().contiguous()
                 w_o = out_w
-                b_o = (
-                    src.c_proj.bias.detach()
-                    if src.c_proj.bias is not None
-                    else None
-                )
+                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
-            elif (
-                hasattr(src, "query")
-                and hasattr(src, "key")
-                and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -340,18 +312,10 @@ class HLAAttention(BaseAttention):
                         if hasattr(src, attr):
                             proj = getattr(src, attr)
                             w_o = proj.weight.detach()
-                            b_o = (
-                                proj.bias.detach()
-                                if proj.bias is not None
-                                else None
-                            )
+                            b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
@@ -361,17 +325,9 @@ class HLAAttention(BaseAttention):
 
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = (
-                        src.o_proj.bias.detach()
-                        if src.o_proj.bias is not None
-                        else None
-                    )
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -381,11 +337,7 @@ class HLAAttention(BaseAttention):
 
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = (
-                        src.out_lin.bias.detach()
-                        if src.out_lin.bias is not None
-                        else None
-                    )
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
             if w_q is None or w_k is None or w_v is None:
                 try:
@@ -409,8 +361,7 @@ class HLAAttention(BaseAttention):
                 missing.append("Out")
             if missing:
                 raise RuntimeError(
-                    f"HLAAttention: Failed to extract weights {missing} "
-                    f"from {type(old_attn).__name__}"
+                    f"HLAAttention: Failed to extract weights {missing} " f"from {type(old_attn).__name__}"
                 )
 
             for target_mod, w_src in (
@@ -430,9 +381,7 @@ class HLAAttention(BaseAttention):
 
             f_norm_q = float(torch.linalg.norm(self.q_proj.weight.detach().float()))
             if f_norm_q < 1e-4:
-                logger.warning(
-                    "HLAAttention: Q weight norm near zero: %.2e", f_norm_q
-                )
+                logger.warning("HLAAttention: Q weight norm near zero: %.2e", f_norm_q)
 
             if w_o is not None:
                 tw_o = self.out_proj.weight
@@ -451,9 +400,7 @@ class HLAAttention(BaseAttention):
                     min_b = min(tb_o.numel(), b_o_cast.numel())
                     tb_o.data[:min_b].copy_(b_o_cast[:min_b])
 
-                f_norm_o = float(
-                    torch.linalg.norm(self.out_proj.weight.detach().float())
-                )
+                f_norm_o = float(torch.linalg.norm(self.out_proj.weight.detach().float()))
                 if f_norm_o < 1e-4:
                     logger.warning(
                         "HLAAttention: Out projection norm near zero: %.2e",
@@ -506,9 +453,7 @@ class HLAAttention(BaseAttention):
                 S_prev = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
                 Z_prev = torch.zeros(B, H, d, 1, device=device, dtype=torch.float32)
 
-            S_curr = gamma * S_prev + torch.matmul(
-                k_f.transpose(-1, -2).contiguous(), v_f
-            )
+            S_curr = gamma * S_prev + torch.matmul(k_f.transpose(-1, -2).contiguous(), v_f)
             Z_curr = gamma * Z_prev + k_f.transpose(-1, -2).contiguous()
 
             y_num = torch.matmul(q_f, S_curr)
@@ -519,12 +464,14 @@ class HLAAttention(BaseAttention):
         if initial_state is None and q.is_cuda and not reverse:
             try:
                 from neuralops.ops.cuda.hla_attention import hla_attention
+
                 y_accel = hla_attention(q, k, v, decay, eps=1e-5)
                 return y_accel.to(q.dtype), (None, None)
             except Exception:
                 pass
             try:
                 from neuralops.ops.triton.gla_scan import kda_hla_chunk_scan_triton
+
                 log_dec = (log_gamma.view(1, H, 1, 1).expand(B, H, L, 1)).squeeze(-1)
                 y_triton = kda_hla_chunk_scan_triton(q_f, k_f, v_f, log_dec)
                 return y_triton.to(q.dtype), (None, None)
@@ -547,9 +494,7 @@ class HLAAttention(BaseAttention):
 
         t_idx = torch.arange(C, device=device)
         diff = t_idx.unsqueeze(1) - t_idx.unsqueeze(0)
-        tril = torch.tril(
-            torch.ones(C, C, device=device, dtype=torch.bool)
-        )
+        tril = torch.tril(torch.ones(C, C, device=device, dtype=torch.bool))
         exp_arg = diff.view(1, 1, C, C) * log_gamma
         decay_mat = torch.where(
             tril.unsqueeze(0).unsqueeze(0),
@@ -559,9 +504,7 @@ class HLAAttention(BaseAttention):
 
         pos_decay = torch.exp((t_idx.float() + 1.0).view(1, 1, C, 1) * log_gamma)
 
-        update_weight = torch.exp(
-            (C - 1 - t_idx.float()).view(1, 1, C, 1) * log_gamma
-        )
+        update_weight = torch.exp((C - 1 - t_idx.float()).view(1, 1, C, 1) * log_gamma)
 
         block_decay = torch.exp(C * log_gamma)
 
@@ -597,9 +540,7 @@ class HLAAttention(BaseAttention):
 
             k_weighted = k_chunk * update_weight
 
-            S_update = torch.matmul(
-                k_weighted.transpose(-1, -2).contiguous(), v_chunk
-            )
+            S_update = torch.matmul(k_weighted.transpose(-1, -2).contiguous(), v_chunk)
             Z_update = k_weighted.sum(dim=2).unsqueeze(-1)
 
             S_prev = block_decay * S_prev + S_update
@@ -638,24 +579,9 @@ class HLAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
-        q = (
-            self.q_proj(hidden_states)
-            .view(B, L, H, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.k_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         past_state: tuple[torch.Tensor, torch.Tensor] | None = None
         past_len = 0
@@ -675,18 +601,11 @@ class HLAAttention(BaseAttention):
                         past_state = (past_key_value[0], past_key_value[1])
                         if len(past_key_value) >= 3:
                             past_len = int(past_key_value[2])
-                    elif (
-                        isinstance(past_key_value[0], (tuple, list))
-                        and len(past_key_value[0]) >= 2
-                    ):
+                    elif isinstance(past_key_value[0], (tuple, list)) and len(past_key_value[0]) >= 2:
                         inner = past_key_value[0]
                         past_state = (inner[0], inner[1])
 
-        pos_emb = (
-            position_embeddings
-            if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and not is_cross:
             if isinstance(pos_emb, tuple) and len(pos_emb) == 2:
                 cos, sin = pos_emb
@@ -731,7 +650,10 @@ class HLAAttention(BaseAttention):
             v = v * m_exp
 
         y_fwd, next_state = self._hla_chunked_scan(
-            q, k, v, decay,
+            q,
+            k,
+            v,
+            decay,
             initial_state=past_state,
             reverse=False,
         )
@@ -740,7 +662,10 @@ class HLAAttention(BaseAttention):
             y = y_fwd
         else:
             y_bwd, _ = self._hla_chunked_scan(
-                q, k, v, decay,
+                q,
+                k,
+                v,
+                decay,
                 initial_state=None,
                 reverse=True,
             )
@@ -759,8 +684,8 @@ class HLAAttention(BaseAttention):
         context = y.transpose(1, 2).contiguous().view(B, L, H * Dh)
 
         v_flat = v.transpose(1, 2).contiguous().view(B, kv_len, -1)
-        v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
-        c_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        v_rms = torch.sqrt(torch.mean(v_flat**2, dim=-1, keepdim=True).clamp_min(1e-8))
+        c_rms = torch.sqrt(torch.mean(context**2, dim=-1, keepdim=True).clamp_min(1e-8))
         scale = (v_rms / c_rms).clamp(0.25, 4.0)
         proj_dtype = (
             self.out_proj.weight.dtype
@@ -780,9 +705,7 @@ class HLAAttention(BaseAttention):
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(hidden_states.dtype)
 
         new_past_key_value: Any = None
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         if self.is_decoder and use_cache and not is_cross:
             new_past_key_value = HLAState(
                 S=next_state[0],
@@ -799,7 +722,7 @@ class HLAAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Exact O(1) single-step autoregressive recurrent update for HLAAttention."""
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -821,8 +744,8 @@ class HLAAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(Dh)
-        q_act = (F.elu(q.float() * scale) + 1.0)
-        k_act = (F.elu(k.float()) + 1.0)
+        q_act = F.elu(q.float() * scale) + 1.0
+        k_act = F.elu(k.float()) + 1.0
 
         gamma_t = torch.sigmoid(self.lora_beta).view(1, H, 1, 1).to(device=device, dtype=torch.float32)
 
@@ -851,8 +774,8 @@ class HLAAttention(BaseAttention):
         context = yt.transpose(1, 2).contiguous().view(B, 1, H * Dh)
 
         v_flat = v.transpose(1, 2).contiguous().view(B, 1, -1)
-        v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
-        c_rms = torch.sqrt(torch.mean(context ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        v_rms = torch.sqrt(torch.mean(v_flat**2, dim=-1, keepdim=True).clamp_min(1e-8))
+        c_rms = torch.sqrt(torch.mean(context**2, dim=-1, keepdim=True).clamp_min(1e-8))
         scale = (v_rms / c_rms).clamp(0.25, 4.0)
         context = context * scale
 
@@ -958,8 +881,18 @@ def inject_hla(
 
     _mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
     _dec_pfx = (
-        "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-        "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+        "gpt",
+        "qwen",
+        "llama",
+        "mistral",
+        "gemma",
+        "phi",
+        "opt",
+        "bloom",
+        "falcon",
+        "olmo",
+        "mpt",
+        "stablelm",
     )
     is_dec = (
         bool(getattr(cfg, "is_decoder", False) if cfg else False)

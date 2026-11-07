@@ -2,7 +2,7 @@
 
 ## 1. Executive Abstract & Architectural Motivation
 
-Standard Multi-Head Self-Attention (Vaswani et al., 2017) computes pairwise token interactions across length $L$, incurring an $\mathcal{O}(L^2)$ computational and memory complexity wall. Linformer (Wang et al., 2020) mitigates this bottleneck by proving empirically and theoretically that the normalized attention matrix $A \in \mathbb{R}^{L 	imes L}$ is low-rank. 
+Standard Multi-Head Self-Attention (Vaswani et al., 2017) computes pairwise token interactions across length $L$, incurring an $\mathcal{O}(L^2)$ computational and memory complexity wall. Linformer (Wang et al., 2020) mitigates this bottleneck by proving empirically and theoretically that the normalized attention matrix $A \in \mathbb{R}^{L 	imes L}$ is low-rank.
 
 The core architectural motivation of Linformer is to decompose the key and value sequence length projections down to a fixed, compact parameter $k \ll L$. By applying linear projection matrices $E, F \in \mathbb{R}^{k 	imes L}$ along the sequence length dimension, Linformer compresses the key and value representations from $\mathbb{R}^{L 	imes d}$ to $\mathbb{R}^{k 	imes d}$. This enables scaled dot-product attention to be computed in $\mathcal{O}(L \cdot k)$ time and memory, maintaining linear scaling with respect to sequence length $L$. Linformer is particularly effective for long-document processing where $L \gg k$.
 
@@ -39,7 +39,7 @@ A_h = 	ext{Softmax}_k (S_h) \in \mathbb{R}^{B 	imes H 	imes L 	imes k}
 Context aggregation yields head representation $O_h \in \mathbb{R}^{B 	imes H 	imes L 	imes d_k}$:
 
 \[
-O_h = A_h \widetilde{V}_h = 	ext{Softmax}\left( rac{Q_h (E_h K_h)^	op}{\sqrt{d_k}} 
+O_h = A_h \widetilde{V}_h = 	ext{Softmax}\left( rac{Q_h (E_h K_h)^	op}{\sqrt{d_k}}
 ight) (F_h V_h)
 \]
 
@@ -130,24 +130,24 @@ def _linformer_fused_kernel(
 ):
     pid_m = tl.program_id(0)
     pid_bh = tl.program_id(1)
-    
+
     # Load query block [BLOCK_M, d_k]
     offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
     offs_d = tl.arange(0, d_k)
     q = tl.load(Q_ptr + pid_bh * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :])
-    
+
     acc = tl.zeros((BLOCK_M, d_k), dtype=tl.float32)
     # Loop over compressed dimension k
     for k_idx in range(0, k, BLOCK_K):
         offs_k = k_idx + tl.arange(0, BLOCK_K)
         k_comp = tl.load(K_comp_ptr + pid_bh * stride_kh + offs_k[None, :] * stride_kk + offs_d[:, None])
         v_comp = tl.load(V_comp_ptr + pid_bh * stride_kh + offs_k[:, None] * stride_kk + offs_d[None, :])
-        
+
         # Compute fused Q @ K_comp^T
         s = tl.dot(q, k_comp) / tl.sqrt(d_k.to(tl.float32))
         p = tl.softmax(s, dim=-1)
         acc += tl.dot(p, v_comp)
-        
+
     tl.store(Out_ptr + pid_bh * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :], acc)
 ```
 
@@ -179,4 +179,3 @@ The empirical evaluation of `linformer_attention` across standard sequence lengt
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

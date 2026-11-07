@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -21,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -38,11 +41,20 @@ def _get_module():
         )
     return _MODULE
 
+
 def spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau):
     x = torch.complex(x_re.float(), x_im.float())
     total = x_re.numel()
-    wr_c = w_re.reshape(-1)[:total].reshape_as(x_re).contiguous() if w_re.numel() >= total else w_re.expand_as(x_re).contiguous()
-    wi_c = w_im.reshape(-1)[:total].reshape_as(x_im).contiguous() if w_im.numel() >= total else w_im.expand_as(x_im).contiguous()
+    wr_c = (
+        w_re.reshape(-1)[:total].reshape_as(x_re).contiguous()
+        if w_re.numel() >= total
+        else w_re.expand_as(x_re).contiguous()
+    )
+    wi_c = (
+        w_im.reshape(-1)[:total].reshape_as(x_im).contiguous()
+        if w_im.numel() >= total
+        else w_im.expand_as(x_im).contiguous()
+    )
     w = torch.complex(wr_c.float(), wi_c.float())
     z = x * w
     mag = torch.sqrt(z.real * z.real + z.imag * z.imag + 1e-12)
@@ -51,28 +63,40 @@ def spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau):
     scale = torch.clamp((mag - sig_tau) / mag, min=0.0)
     return z * scale
 
+
 def spectral_shrinkage_triton_ref(x_re, x_im, w_re, w_im, tau):
     return spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau)
 
-def spectral_shrinkage(x_re: torch.Tensor, x_im: torch.Tensor, w_re: torch.Tensor, w_im: torch.Tensor, tau: torch.Tensor):
+
+def spectral_shrinkage(
+    x_re: torch.Tensor, x_im: torch.Tensor, w_re: torch.Tensor, w_im: torch.Tensor, tau: torch.Tensor
+):
     def cuda_fn(xr, xi, wr, wi, t, **kwargs):
         mod = _get_module()
         total = xr.numel()
-        wr_c = wr.reshape(-1)[:total].reshape_as(xr).contiguous() if wr.numel() >= total else wr.expand_as(xr).contiguous()
-        wi_c = wi.reshape(-1)[:total].reshape_as(xr).contiguous() if wi.numel() >= total else wi.expand_as(xr).contiguous()
-        t_c = t.expand_as(xr).contiguous() if t.numel() != total else t.contiguous()
-        out = mod.spectral_shrinkage_fwd(
-            xr.contiguous(), xi.contiguous(), wr_c, wi_c, t_c
+        wr_c = (
+            wr.reshape(-1)[:total].reshape_as(xr).contiguous() if wr.numel() >= total else wr.expand_as(xr).contiguous()
         )
+        wi_c = (
+            wi.reshape(-1)[:total].reshape_as(xr).contiguous() if wi.numel() >= total else wi.expand_as(xr).contiguous()
+        )
+        t_c = t.expand_as(xr).contiguous() if t.numel() != total else t.contiguous()
+        out = mod.spectral_shrinkage_fwd(xr.contiguous(), xi.contiguous(), wr_c, wi_c, t_c)
         return torch.complex(out[0], out[1])
 
-    if torch.is_grad_enabled() and any(t.requires_grad for t in (x_re, x_im, w_re, w_im, tau) if isinstance(t, torch.Tensor)):
+    if torch.is_grad_enabled() and any(
+        t.requires_grad for t in (x_re, x_im, w_re, w_im, tau) if isinstance(t, torch.Tensor)
+    ):
         return spectral_shrinkage_pytorch_ref(x_re, x_im, w_re, w_im, tau)
 
     return dispatch(
         cuda_fn,
         spectral_shrinkage_triton_ref,
         spectral_shrinkage_pytorch_ref,
-        x_re, x_im, w_re, w_im, tau,
+        x_re,
+        x_im,
+        w_re,
+        w_im,
+        tau,
         kernel_name="spectral_shrinkage",
     )

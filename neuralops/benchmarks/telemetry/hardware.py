@@ -14,14 +14,14 @@ cross-platform CPU and mock fallbacks for environments without NVIDIA GPUs (e.g.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
 import logging
 import math
 import os
-from pathlib import Path
 import subprocess
 import threading
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -175,16 +175,10 @@ def get_hardware_telemetry(device_index: int = 0) -> dict[str, float]:
         try:
             import psutil
 
-            metrics["cpu_util_pct"] = round(
-                _sanitize_metric(psutil.cpu_percent(interval=None)), 2
-            )
+            metrics["cpu_util_pct"] = round(_sanitize_metric(psutil.cpu_percent(interval=None)), 2)
             vm = psutil.virtual_memory()
-            metrics["cpu_ram_used_mb"] = round(
-                _sanitize_metric(float(vm.used) / (1024.0 * 1024.0)), 2
-            )
-            metrics["cpu_ram_total_mb"] = round(
-                _sanitize_metric(float(vm.total) / (1024.0 * 1024.0)), 2
-            )
+            metrics["cpu_ram_used_mb"] = round(_sanitize_metric(float(vm.used) / (1024.0 * 1024.0)), 2)
+            metrics["cpu_ram_total_mb"] = round(_sanitize_metric(float(vm.total) / (1024.0 * 1024.0)), 2)
         except Exception:
             pass
 
@@ -270,9 +264,7 @@ class HardwareTelemetryMonitor:
         target = self.tracker or self.log_dir
         if target is None:
             raise ValueError("Neither tracker nor log_dir was provided to monitor.")
-        return log_hardware_telemetry(
-            target=target, step=step, device_index=self.device_index
-        )
+        return log_hardware_telemetry(target=target, step=step, device_index=self.device_index)
 
     def start(self) -> None:
         """Start background polling thread."""

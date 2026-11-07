@@ -24,12 +24,14 @@ def _register_core_aliases() -> None:
 
     try:
         from neuralops.compression.svd.direct_svd import DirectSVDCompressor
+
         COMPRESSOR_REGISTRY.register("svd", is_alias=True)(DirectSVDCompressor)
         COMPRESSOR_REGISTRY.register("hnc_svd", is_alias=True)(DirectSVDCompressor)
         COMPRESSOR_REGISTRY.register("hnc_svd_compressor", is_alias=True)(DirectSVDCompressor)
     except Exception as exc:
         try:
             from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
+
             COMPRESSOR_REGISTRY.register("svd", is_alias=True)(DirectSVDCompressor)
             COMPRESSOR_REGISTRY.register("hnc_svd", is_alias=True)(DirectSVDCompressor)
             COMPRESSOR_REGISTRY.register("hnc_svd_compressor", is_alias=True)(DirectSVDCompressor)
@@ -38,10 +40,12 @@ def _register_core_aliases() -> None:
 
     try:
         from neuralops.compression.low_rank.svd_llm_compressor import SVDLLMCompressor
+
         COMPRESSOR_REGISTRY.register("svd_llm", is_alias=True)(SVDLLMCompressor)
     except Exception as exc:
         try:
             from neuralops.compression_engine.low_rank.svd_llm_compressor import SVDLLMCompressor
+
             COMPRESSOR_REGISTRY.register("svd_llm", is_alias=True)(SVDLLMCompressor)
         except Exception as inner_exc:
             logger.warning("Could not register SVD-LLM compressor alias: %s (fallback: %s)", exc, inner_exc)

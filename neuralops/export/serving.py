@@ -20,6 +20,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
+
 import torch
 import torch.nn as nn
 
@@ -27,12 +28,14 @@ logger = logging.getLogger("NeuralOps.Serving")
 
 try:
     import vllm
+
     HAS_VLLM = True
 except ImportError:
     HAS_VLLM = False
 
 try:
     import text_generation_server
+
     HAS_TGI = True
 except ImportError:
     HAS_TGI = False
@@ -50,9 +53,7 @@ class VLLMAdapter:
     def register_attention_backend(name: str, backend_cls: type) -> bool:
         """Register custom attention backend into vLLM attention registry."""
         if not HAS_VLLM:
-            raise RuntimeError(
-                "vLLM is not installed. Please install neuralops[serving] or run: pip install vllm"
-            )
+            raise RuntimeError("vLLM is not installed. Please install neuralops[serving] or run: pip install vllm")
         get_name = getattr(backend_cls, "get_name", None)
         if not callable(get_name) or get_name() != name:
             raise ValueError("backend_cls.get_name() must return the requested registry name")
@@ -226,6 +227,7 @@ def export_serving_bundle(
 
     try:
         from safetensors.torch import save_file
+
         save_file(model.state_dict(), str(out_p / "model.safetensors"))
     except (ImportError, RuntimeError, OSError) as e:
         logger.debug("Safetensors export skipped, using pytorch bin: %s", e)

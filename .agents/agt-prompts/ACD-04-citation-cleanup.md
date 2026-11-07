@@ -144,4 +144,3 @@ ICLR bib and is the consistent one, but you must recount with ONE script):
 - If a `.bib` file is shared between venues (one edit affects two venues) — STOP and report the sharing; do not prune it twice.
 - If a test that passed before now fails — STOP, do not improvise, report exactly what is blocked.
 ```
-

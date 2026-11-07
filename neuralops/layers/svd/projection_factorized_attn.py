@@ -19,12 +19,8 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.layers.svd.svd_linear_attention import (
-    SVDLinear,
-    SVDLinearAttention,
-    inject_svd_linear_attention,
-)
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.layers.svd.svd_linear_attention import SVDLinear, SVDLinearAttention, inject_svd_linear_attention
 
 logger = logging.getLogger(__name__)
 
@@ -162,11 +158,7 @@ def inject_projection_factorized_attn(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers

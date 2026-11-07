@@ -28,13 +28,7 @@ from neuralops.cli.core.commands.results import (
     handle_recipe,
     handle_results,
 )
-from neuralops.cli.core.commands.system import (
-    handle_compat,
-    handle_doctor,
-    handle_info,
-    handle_ui,
-    handle_verify,
-)
+from neuralops.cli.core.commands.system import handle_compat, handle_doctor, handle_info, handle_ui, handle_verify
 
 __all__ = [
     "handle_run",

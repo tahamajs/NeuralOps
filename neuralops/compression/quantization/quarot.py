@@ -12,7 +12,9 @@ Applies randomized Walsh-Hadamard orthogonal rotations to weights and activation
 """
 
 from __future__ import annotations
+
 from typing import Any, Dict, Optional
+
 import torch
 import torch.nn as nn
 
@@ -56,7 +58,7 @@ class QuaRotCompressor(BaseCompressor):
         w = layer.weight.data.float()
         w_rot = fast_hadamard_transform(w, block_size=self.hadamard_block_size)
         q_max = 2 ** (self.bits - 1) - 1
-        q_min = -2 ** (self.bits - 1)
+        q_min = -(2 ** (self.bits - 1))
         scale = (w_rot.abs().amax(dim=1, keepdim=True) / q_max).clamp(min=1e-8)
         w_q = torch.clamp(torch.round(w_rot / scale), q_min, q_max)
         w_dequant_rot = w_q * scale

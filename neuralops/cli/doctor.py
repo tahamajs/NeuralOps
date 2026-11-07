@@ -23,8 +23,9 @@ from typing import Any
 
 try:
     from rich.console import Console
-    from rich.table import Table
     from rich.panel import Panel
+    from rich.table import Table
+
     HAS_RICH = True
     console = Console()
 except ImportError:
@@ -34,6 +35,7 @@ except ImportError:
 
 def cmd_doctor(args: Any = None) -> int:
     import neuralops
+
     ver = getattr(neuralops, "__version__", "2.0.6")
 
     rows = []
@@ -41,13 +43,21 @@ def cmd_doctor(args: Any = None) -> int:
 
     try:
         import torch
+
         cuda_avail = torch.cuda.is_available()
         device_count = torch.cuda.device_count() if cuda_avail else 0
         device_name = torch.cuda.get_device_name(0) if cuda_avail else "N/A"
         capability = torch.cuda.get_device_capability(0) if cuda_avail else (0, 0)
         rows.append(("PyTorch Version", torch.__version__, "pass", "Core runtime"))
         if cuda_avail:
-            rows.append(("CUDA Device", f"{device_name} (CC {capability[0]}.{capability[1]}, {device_count} dev)", "pass", "GPU hardware"))
+            rows.append(
+                (
+                    "CUDA Device",
+                    f"{device_name} (CC {capability[0]}.{capability[1]}, {device_count} dev)",
+                    "pass",
+                    "GPU hardware",
+                )
+            )
         else:
             rows.append(("CUDA Device", "Not Available (CPU only)", "warn", "GPU hardware"))
     except ImportError:
@@ -56,6 +66,7 @@ def cmd_doctor(args: Any = None) -> int:
 
     try:
         import triton
+
         triton_cache = os.environ.get("TRITON_CACHE_DIR", str(Path.home() / ".triton" / "cache"))
         rows.append(("Triton JIT", f"v{triton.__version__} (Cache: {triton_cache})", "pass", "Kernel compiler"))
     except ImportError:
@@ -81,6 +92,7 @@ def cmd_doctor(args: Any = None) -> int:
         import neuralops.attentions  # noqa: F401
         import neuralops.compression_engine  # noqa: F401
         from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
         num_attn = len(ATTENTION_REGISTRY)
         num_comp = len(COMPRESSOR_REGISTRY)
         rows.append(("Attention Registry", f"{num_attn} modules loaded (Canonical: 131)", "pass", "Registry"))

@@ -105,6 +105,7 @@ class ZeroShotAdapter:
         """Load evaluation prompts and choice completions."""
         try:
             from datasets import load_dataset
+
             if "arc" in self.dataset_name:
                 subset = "ARC-Challenge" if "challenge" in self.dataset_name else "ARC-Easy"
                 ds = load_dataset("ai2_arc", subset, split="test")
@@ -117,11 +118,13 @@ class ZeroShotAdapter:
                     labels = row["choices"]["label"]
                     answer_key = row["answerKey"]
                     correct_idx = labels.index(answer_key) if answer_key in labels else 0
-                    items.append({
-                        "prompt": f"Question: {row['question']}\nAnswer:",
-                        "choices": choices,
-                        "answer_idx": correct_idx,
-                    })
+                    items.append(
+                        {
+                            "prompt": f"Question: {row['question']}\nAnswer:",
+                            "choices": choices,
+                            "answer_idx": correct_idx,
+                        }
+                    )
                 return items
             elif "hellaswag" in self.dataset_name:
                 ds = load_dataset("hellaswag", split="validation")
@@ -130,11 +133,13 @@ class ZeroShotAdapter:
                 for i, row in enumerate(ds):
                     if i >= limit:
                         break
-                    items.append({
-                        "prompt": f"Context: {row['ctx']}\nCompletion:",
-                        "choices": row["endings"],
-                        "answer_idx": int(row["label"]),
-                    })
+                    items.append(
+                        {
+                            "prompt": f"Context: {row['ctx']}\nCompletion:",
+                            "choices": row["endings"],
+                            "answer_idx": int(row["label"]),
+                        }
+                    )
                 return items
         except Exception as e:
             LOG.warning("Falling back to local zero-shot sample format: %s", e)

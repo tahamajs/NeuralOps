@@ -118,5 +118,5 @@ print(f"Matched {match_len} prefix tokens. Reusing state: {matched_state is not 
 Serving adapters have been rigorously profiled on:
 - **Hardware**: Dedicated **NVIDIA GeForce RTX 4070 (Ada Lovelace SM 8.9, AD104 silicon, 12 GB VRAM)**.
 - **Throughput Telemetry**: Continuous dynamic batching sustains $>10{,}000\text{ tok/s}$ throughput on subquadratic models, avoiding the memory-capacity cliff of standard quadratic Transformers.
-- **Master Dataset**: Publicly accessible at  
+- **Master Dataset**: Publicly accessible at
   👉 **[https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)**.

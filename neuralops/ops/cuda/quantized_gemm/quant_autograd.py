@@ -88,6 +88,7 @@ def _w4a16_gemm_triton_fallback(
 ) -> torch.Tensor | None:
     try:
         from neuralops.ops.triton.low_rank import fused_w4a16_gemm_triton
+
         return None
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed in Triton fallback for w4a16: %s", exc, exc_info=True)
@@ -195,6 +196,7 @@ def _fp8_gemm_triton_fallback(
 ) -> torch.Tensor | None:
     try:
         from neuralops.ops.triton.low_rank import fp8_tensorcore_matmul_triton
+
         return fp8_tensorcore_matmul_triton(A, B, scale_a, scale_b)
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed in Triton fallback for fp8: %s", exc, exc_info=True)

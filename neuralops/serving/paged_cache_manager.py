@@ -14,10 +14,6 @@ and dynamic memory management routines in serving deployments.
 
 from __future__ import annotations
 
-from neuralops.inference.paged_cache import (
-    PagedKVCache,
-    PagedKVCacheManager,
-    PagedStateTable,
-)
+from neuralops.inference.paged_cache import PagedKVCache, PagedKVCacheManager, PagedStateTable
 
 __all__ = ["PagedKVCache", "PagedKVCacheManager", "PagedStateTable"]

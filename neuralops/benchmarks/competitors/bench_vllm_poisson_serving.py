@@ -21,6 +21,7 @@ from typing import Any
 
 import numpy as np
 import torch
+
 from neuralops.benchmarks.registry import register_benchmark
 from neuralops.inference.paged_cache import PagedKVCache
 
@@ -139,9 +140,7 @@ def benchmark_vllm_poisson_serving(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for benchmark_vllm_poisson_serving, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for benchmark_vllm_poisson_serving, but CUDA is not available.")
 
     rng = np.random.default_rng(seed)
     deltas = rng.exponential(1.0 / arrival_rate_lambda, size=num_requests)
@@ -228,4 +227,3 @@ def run_benchmark(**kwargs: Any) -> dict[str, Any]:
 
 # Canonical Aliases for Multi-Agent Implementation Plan contract compliance
 CoreModule = benchmark_vllm_poisson_serving
-

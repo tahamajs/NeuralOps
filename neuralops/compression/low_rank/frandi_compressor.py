@@ -12,7 +12,6 @@ Minimizes output activation regression error during low-rank factorization by al
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -106,12 +106,8 @@ class FRanDILinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=dtype, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=dtype, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=dtype, device=device))
             with torch.no_grad():
                 tmp = self.lora_A.data.float()
                 nn.init.kaiming_uniform_(tmp, a=math.sqrt(5))
@@ -136,11 +132,7 @@ class FRanDILinear(nn.Module):
 
     @property
     def weight(self) -> torch.Tensor:
-        if (
-            not self.training
-            and self._cached_weight is not None
-            and self._cached_version == self._current_version()
-        ):
+        if not self.training and self._cached_weight is not None and self._cached_version == self._current_version():
             return self._cached_weight
         W = torch.matmul(self.B.float(), self.A.float()).to(self.A.dtype)
         if not self.training:
@@ -156,14 +148,21 @@ class FRanDILinear(nn.Module):
         x_flat = x.reshape(-1, self.in_features)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x_flat, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
                 out = fused_down_up_gemm_bias_triton(x_flat, self.A, self.B.t().contiguous(), bias=base_bias)
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-                    lora_out = fused_down_up_gemm_bias_triton(x_flat, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias) * self.scaling
+                    lora_out = (
+                        fused_down_up_gemm_bias_triton(
+                            x_flat, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias
+                        )
+                        * self.scaling
+                    )
                     return (out + lora_out).view(*orig_shape[:-1], self.out_features)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
@@ -328,11 +327,7 @@ class FRanDILinear(nn.Module):
             if bias is not None and frandi_layer.bias is not None:
                 frandi_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
 
-            if (
-                existing_lora_A is not None
-                and existing_lora_B is not None
-                and frandi_layer.lora_A is not None
-            ):
+            if existing_lora_A is not None and existing_lora_B is not None and frandi_layer.lora_A is not None:
                 w_A = getattr(existing_lora_A, "weight", existing_lora_A)
                 w_B = getattr(existing_lora_B, "weight", existing_lora_B)
                 if hasattr(w_A, "data") and hasattr(w_B, "data"):
@@ -416,9 +411,7 @@ class FRanDICompressor(BaseCompressor):
             tl = None
         self.target_layers = tl
 
-        self.num_calibration_batches = max(
-            1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches))
-        )
+        self.num_calibration_batches = max(1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches)))
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -438,10 +431,7 @@ class FRanDICompressor(BaseCompressor):
         if num_kv_heads >= num_heads:
             return False
         name_lower = name.lower()
-        return any(
-            p in name_lower
-            for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn")
-        )
+        return any(p in name_lower for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"))
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
@@ -529,11 +519,7 @@ class FRanDICompressor(BaseCompressor):
                         break
                     try:
                         if isinstance(batch, dict):
-                            b = {
-                                k: v.to(device)
-                                for k, v in batch.items()
-                                if isinstance(v, torch.Tensor)
-                            }
+                            b = {k: v.to(device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
                             _ = self.model(**b)
                         elif isinstance(batch, (list, tuple)):
                             _ = self.model(batch[0].to(device))
@@ -660,11 +646,7 @@ class FRanDICompressor(BaseCompressor):
                         self.model(dummy)
                     except Exception:
                         first_linear = next(
-                            (
-                                m
-                                for m in self.model.modules()
-                                if isinstance(m, (nn.Linear, FRanDILinear))
-                            ),
+                            (m for m in self.model.modules() if isinstance(m, (nn.Linear, FRanDILinear))),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
@@ -687,9 +669,7 @@ class FRanDICompressor(BaseCompressor):
         except Exception:
             stats = {}
 
-        avg_err = (
-            sum(self.layer_errors.values()) / len(self.layer_errors) if self.layer_errors else 0.0
-        )
+        avg_err = sum(self.layer_errors.values()) / len(self.layer_errors) if self.layer_errors else 0.0
         stats.update(
             {
                 "compressed_layers": self.compressed_layers,
@@ -724,6 +704,7 @@ class FRanDICompressor(BaseCompressor):
 
 
 COMPRESSOR_REGISTRY.register("frandi_compressor")(FRanDICompressor)
+
 
 def frandi_factory(
     model: nn.Module,

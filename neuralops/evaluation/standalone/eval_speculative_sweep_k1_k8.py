@@ -5,30 +5,29 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Eval speculative sweep k1 k8 module.
-"""
+"""Eval speculative sweep k1 k8 module."""
 
 
 def main() -> None:
     """Run this standalone evaluation experiment."""
 
-    import time
-    import os
     import json
+    import os
+    import time
+
     import torch
-    from transformers import AutoTokenizer, GPT2LMHeadModel, GPT2Config
-    from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
+    from transformers import AutoTokenizer, GPT2Config, GPT2LMHeadModel
+
     from neuralops.core.cuda_kernels import speculative_verify
+    from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
     from neuralops.utils.replace_attention import replace_attention
 
     if not torch.cuda.is_available():
         raise RuntimeError("This speculative decoding sweep requires CUDA.")
 
-
     def print_log(msg):
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
-
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Speculative Decoding Empirical Benchmark on: {torch.cuda.get_device_name(0)}")
@@ -61,7 +60,6 @@ def main() -> None:
     print_log("Loading Target Model (GPT-2 Baseline Full Attention, 12 layers, 12 heads, 768 dim)...")
     target_model = GPT2LMHeadModel.from_pretrained(model_path).to(device).eval()
 
-
     def build_draft_model(n_layers=4):
         """Build student draft model with SVD linear attention."""
         base = GPT2LMHeadModel.from_pretrained(model_path)
@@ -79,11 +77,9 @@ def main() -> None:
         replace_attention(draft, attention_key="svd_linear_attention")
         return draft.to(device).eval()
 
-
     print_log("Building SVD Linear Attention Draft Models (Compact 4-Layer and Ultra-Compact 2-Layer)...")
     draft_4l = build_draft_model(n_layers=4)
     draft_2l = build_draft_model(n_layers=2)
-
 
     def standard_autoregressive_greedy(model, input_ids, max_new_tokens=32):
         """Runs baseline target autoregressive greedy generation and measures latency."""
@@ -99,7 +95,6 @@ def main() -> None:
         elapsed = time.perf_counter() - t0
         tok_s = max_new_tokens / elapsed
         return curr_ids, elapsed, tok_s
-
 
     K_VALUES = list(range(1, 9))
     MAX_NEW_TOKENS = 32
@@ -159,7 +154,6 @@ def main() -> None:
         json.dump(benchmark_matrix, f, indent=2)
 
     print_log(f"All benchmarks successfully finished! Results dumped to {out_file}")
-
 
 
 if __name__ == "__main__":

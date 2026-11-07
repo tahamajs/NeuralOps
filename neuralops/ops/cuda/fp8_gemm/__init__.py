@@ -9,10 +9,7 @@
 FP8 Quantized GEMM Hardware Operators.
 """
 
-from neuralops.ops.cuda.fp8_gemm.fp8_autograd import (
-    fp8_gemm,
-    fp8_gemm_pytorch_ref,
-)
+from neuralops.ops.cuda.fp8_gemm.fp8_autograd import fp8_gemm, fp8_gemm_pytorch_ref
 
 __all__ = [
     "fp8_gemm",

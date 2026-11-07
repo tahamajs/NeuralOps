@@ -12,12 +12,6 @@ Approximates softmax attention via positive feature mapping to achieve strict li
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-from neuralops.core.common import FactorizedLoRALinear, _detect_decoder
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 from typing import Any
@@ -27,9 +21,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import FactorizedLoRALinear, _detect_decoder, _read_past_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -84,12 +80,9 @@ class PositiveKernelLinearAttention(BaseAttention):
         self.supports_gqa = True
         self.layer_idx = int(layer_idx)
 
-        self.feature_dim = int(
-            getattr(comp_config, "feature_dim", 256) if comp_config is not None else 256
-        )
+        self.feature_dim = int(getattr(comp_config, "feature_dim", 256) if comp_config is not None else 256)
         dropout_p = float(
-            getattr(comp_config, "dropout", getattr(config, "dropout", 0.1))
-            if config is not None else 0.1
+            getattr(comp_config, "dropout", getattr(config, "dropout", 0.1)) if config is not None else 0.1
         )
 
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
@@ -115,24 +108,36 @@ class PositiveKernelLinearAttention(BaseAttention):
 
         FF = FactorizedLoRALinear
         self.query = FF(
-            self.dim, self.all_head_size,
-            rank=self.proj_rank, lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha, bias=True,
+            self.dim,
+            self.all_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
         )
         self.key = FF(
-            self.dim, self.all_kv_head_size,
-            rank=self.proj_rank, lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha, bias=True,
+            self.dim,
+            self.all_kv_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
         )
         self.value = FF(
-            self.dim, self.all_kv_head_size,
-            rank=self.proj_rank, lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha, bias=True,
+            self.dim,
+            self.all_kv_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
         )
         self.out_proj = FF(
-            self.all_head_size, self.dim,
-            rank=self.proj_rank, lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha, bias=True,
+            self.all_head_size,
+            self.dim,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
         )
 
         self.q_proj = self.query
@@ -151,9 +156,7 @@ class PositiveKernelLinearAttention(BaseAttention):
             self.copy_weights(source_attn)
 
     @staticmethod
-    def _detect_hidden_size(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any]
-    ) -> int:
+    def _detect_hidden_size(config: Any, src: nn.Module | None, kwargs: dict[str, Any]) -> int:
         for k in ("hidden_size", "d_model", "n_embd", "dim"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -175,9 +178,7 @@ class PositiveKernelLinearAttention(BaseAttention):
         return 768
 
     @staticmethod
-    def _detect_num_heads(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any], hidden_size: int
-    ) -> int:
+    def _detect_num_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any], hidden_size: int) -> int:
         for k in ("num_heads", "num_attention_heads", "n_heads", "n_head"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -195,9 +196,7 @@ class PositiveKernelLinearAttention(BaseAttention):
         return max(1, hidden_size // 64)
 
     @staticmethod
-    def _detect_num_kv_heads(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any], num_heads: int
-    ) -> int:
+    def _detect_num_kv_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any], num_heads: int) -> int:
         for k in ("num_key_value_heads", "num_kv_heads"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -251,18 +250,14 @@ class PositiveKernelLinearAttention(BaseAttention):
                 proj[h] = q
             else:
                 num_blocks = (F_dim + d - 1) // d
-                blocks = [
-                    torch.linalg.qr(torch.randn(d, d))[0] for _ in range(num_blocks)
-                ]
+                blocks = [torch.linalg.qr(torch.randn(d, d))[0] for _ in range(num_blocks)]
                 q = torch.cat(blocks, dim=1)[:, :F_dim]
                 proj[h] = q
 
         return proj
 
     @staticmethod
-    def _svd_init(
-        w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear
-    ) -> None:
+    def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear) -> None:
         with torch.no_grad():
             W = w.detach().float()
             if W.ndim != 2:
@@ -311,26 +306,35 @@ class PositiveKernelLinearAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
-            (hasattr(src, "self") and hasattr(src.self, "query")
-             and hasattr(src, "output") and hasattr(src.output, "dense"))
-            or (cls_name in [
-                "BertSelfAttention", "RobertaSelfAttention",
-                "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                "DebertaSelfAttention",
-            ] or (cls_name.endswith("SelfAttention")
-                  and "distil" not in cls_name.lower()))
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+            )
         ) and not has_out_lin:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None),
-            "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -354,12 +358,12 @@ class PositiveKernelLinearAttention(BaseAttention):
                     c_b[:split_size] if c_b is not None else None,
                 )
                 extracted["k"] = (
-                    c_w[split_size:2 * split_size, :],
-                    c_b[split_size:2 * split_size] if c_b is not None else None,
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
                 )
                 extracted["v"] = (
-                    c_w[2 * split_size:, :],
-                    c_b[2 * split_size:] if c_b is not None else None,
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
                 )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
@@ -415,13 +419,11 @@ class PositiveKernelLinearAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -430,10 +432,7 @@ class PositiveKernelLinearAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"PositiveKernelLinearAttention.copy_weights: missing mandatory "
@@ -491,15 +490,18 @@ class PositiveKernelLinearAttention(BaseAttention):
                 self._svd_init(eye, None, self.out_proj)
 
             for name, mod in (
-                ("query", self.query), ("key", self.key),
-                ("value", self.value), ("out_proj", self.out_proj),
+                ("query", self.query),
+                ("key", self.key),
+                ("value", self.value),
+                ("out_proj", self.out_proj),
             ):
                 try:
                     w_norm = float(torch.norm(mod.weight).item())
                     if w_norm < 1e-4:
                         logger.warning(
                             "PositiveKernelLinearAttention: weight '%s' near-zero norm (%.2e).",
-                            name, w_norm,
+                            name,
+                            w_norm,
                         )
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
@@ -543,16 +545,12 @@ class PositiveKernelLinearAttention(BaseAttention):
         KV_cumsum = KV_outer.cumsum(dim=2)
         K_cumsum = K_feat.cumsum(dim=2)
 
-        KV_at_q = KV_cumsum[:, :, past_len:past_len + N, :, :]
-        K_at_q = K_cumsum[:, :, past_len:past_len + N, :]
+        KV_at_q = KV_cumsum[:, :, past_len : past_len + N, :, :]
+        K_at_q = K_cumsum[:, :, past_len : past_len + N, :]
 
         num = torch.matmul(Q_feat.unsqueeze(-2), KV_at_q).squeeze(-2)
 
-        den = (
-            torch.einsum("bhnf,bhnf->bhn", Q_feat, K_at_q)
-            .unsqueeze(-1)
-            .clamp(min=1e-5)
-        )
+        den = torch.einsum("bhnf,bhnf->bhn", Q_feat, K_at_q).unsqueeze(-1).clamp(min=1e-5)
 
         return num / den
 
@@ -612,39 +610,26 @@ class PositiveKernelLinearAttention(BaseAttention):
         device = hidden_states.device
 
         q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        k_new = (
-            self.key(hidden_states)
-            .view(B, N, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v_new = (
-            self.value(hidden_states)
-            .view(B, N, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k_new = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v_new = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
 
-        pos_emb = (
-            position_embeddings if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         pos_ids = kwargs.get("position_ids")
 
         if pos_emb is not None:
             cos, sin = pos_emb
             if past_len > 0:
                 if cos.dim() == 4:
-                    cos_q = cos[..., past_len:past_len + N, :]
-                    sin_q = sin[..., past_len:past_len + N, :]
+                    cos_q = cos[..., past_len : past_len + N, :]
+                    sin_q = sin[..., past_len : past_len + N, :]
                 elif cos.dim() == 3:
-                    cos_q = cos[:, past_len:past_len + N, :].unsqueeze(1)
-                    sin_q = sin[:, past_len:past_len + N, :].unsqueeze(1)
+                    cos_q = cos[:, past_len : past_len + N, :].unsqueeze(1)
+                    sin_q = sin[:, past_len : past_len + N, :].unsqueeze(1)
                 else:
-                    cos_q = cos[past_len:past_len + N, :].unsqueeze(0).unsqueeze(0)
-                    sin_q = sin[past_len:past_len + N, :].unsqueeze(0).unsqueeze(0)
+                    cos_q = cos[past_len : past_len + N, :].unsqueeze(0).unsqueeze(0)
+                    sin_q = sin[past_len : past_len + N, :].unsqueeze(0).unsqueeze(0)
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos_q, sin_q)
             else:
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
@@ -662,9 +647,7 @@ class PositiveKernelLinearAttention(BaseAttention):
             k, v = k_new, v_new
 
         present_kv: Any = None
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         if use_cache:
             present_kv = self._write_past_kv(k, v, past_key_value, self.layer_idx)
         else:
@@ -688,6 +671,7 @@ class PositiveKernelLinearAttention(BaseAttention):
         if q.is_cuda and valid_mask is None and past_len == 0 and q.shape[-1] <= 128:
             try:
                 from neuralops.ops.triton import triton_dispatch
+
                 context = triton_dispatch(
                     "linear_attn",
                     q,
@@ -716,11 +700,7 @@ class PositiveKernelLinearAttention(BaseAttention):
                 KV = torch.einsum("bhnf,bhnd->bhfd", K_features.float(), v.float())
                 K_sum = K_features.float().sum(dim=2)
                 num = torch.einsum("bhnf,bhfd->bhnd", Q_features.float(), KV)
-                den = (
-                    torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum)
-                    .unsqueeze(-1)
-                    .clamp(min=1e-5)
-                )
+                den = torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum).unsqueeze(-1).clamp(min=1e-5)
                 context = (num / den).to(dtype)
 
         context = torch.nan_to_num(context, nan=0.0)
@@ -736,9 +716,7 @@ class PositiveKernelLinearAttention(BaseAttention):
                 hm = head_mask
             context = context * hm.to(context.dtype)
 
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             attn_out = context
@@ -837,16 +815,10 @@ def inject_positive_kernel_linear(
     if src_attn is None:
         src_attn = target
 
-    if (
-        isinstance(src_attn, PositiveKernelLinearAttention)
-        or "PositiveKernelLinear" in src_attn.__class__.__name__
-    ):
+    if isinstance(src_attn, PositiveKernelLinearAttention) or "PositiveKernelLinear" in src_attn.__class__.__name__:
         return None
 
-    if (
-        "DeltaNet" in src_attn.__class__.__name__
-        or "LinearAttention" in src_attn.__class__.__name__
-    ):
+    if "DeltaNet" in src_attn.__class__.__name__ or "LinearAttention" in src_attn.__class__.__name__:
         return None
 
     if cfg is None and hasattr(src_attn, "config"):

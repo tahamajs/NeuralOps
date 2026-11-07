@@ -20,6 +20,7 @@ from typing import Any
 
 import torch
 import torch.nn.functional as F
+
 from neuralops.benchmarks.registry import register_benchmark
 
 logger = logging.getLogger(__name__)
@@ -46,8 +47,8 @@ def benchmark_tensorrt_sqnr(
     quant = quantized_tensor.float()
     diff = orig - quant
 
-    signal_pow = torch.sum(orig ** 2)
-    noise_pow = torch.sum(diff ** 2) + 1e-12
+    signal_pow = torch.sum(orig**2)
+    noise_pow = torch.sum(diff**2) + 1e-12
 
     sqnr_db = 10.0 * torch.log10(signal_pow / noise_pow).item()
     rel_frobenius = (torch.norm(diff) / (torch.norm(orig) + 1e-12)).item()
@@ -145,9 +146,7 @@ def run_tensorrt_quant_sqnr_suite(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for run_tensorrt_quant_sqnr_suite, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for run_tensorrt_quant_sqnr_suite, but CUDA is not available.")
 
     torch.manual_seed(seed)
     if layer_shapes is None:
@@ -190,4 +189,3 @@ def run_benchmark(**kwargs: Any) -> dict[str, Any]:
 # Alias for explicit phase naming compliance
 run_tensorrt_quant_benchmark = run_tensorrt_quant_sqnr_suite
 CoreModule = run_tensorrt_quant_sqnr_suite
-

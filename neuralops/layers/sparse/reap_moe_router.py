@@ -17,9 +17,9 @@ import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
+import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.distributed as dist
 
 from neuralops.layers.sparse.reap_moe import REAPMoE, REAPMoEAttention
 
@@ -94,6 +94,7 @@ def calibrate_expert_activations(
                 weighted_mass = (probs * mask).sum(dim=0).to(torch.float64)
                 importance_accumulators[mod_name] += weighted_mass
                 token_counts[mod_name] += probs.shape[0]
+
         return hook
 
     for name, mod in target_modules.items():
@@ -260,11 +261,7 @@ def distributed_reap_prune(
         if target_mod is not None and name in importance_map:
             scores = importance_map[name]
             curr_n = target_mod.n_experts
-            k_retain = (
-                retain_experts
-                if retain_experts is not None
-                else max(1, int(round(curr_n * retain_ratio)))
-            )
+            k_retain = retain_experts if retain_experts is not None else max(1, int(round(curr_n * retain_ratio)))
             retained, pruned = prune_moe_experts(target_mod, scores, k_retain)
             results[name] = {
                 "retained_experts": retained,

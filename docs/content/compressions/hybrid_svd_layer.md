@@ -1,6 +1,6 @@
 # Hybrid SVD Layer: Single‑Head SVD Approximation with Positional Encoding for Attention‑Free Encoding
 
-**Standalone module; compressor placeholder**  
+**Standalone module; compressor placeholder**
 *Replaces multi‑head self‑attention with a low‑rank SVD‑based mixing of token representations, combining global structure extraction with a standard feed‑forward network.*
 
 ---
@@ -19,7 +19,7 @@ The method is designed to be computationally efficient for moderate sequence len
 
 Given a batch of hidden states **H** ∈ ℝ<sup>B×N×D</sup> (batch size B, sequence length N, hidden size D), the `SVDSingleHead` module performs the following steps:
 
-1. **Positional Encoding Addition**:  
+1. **Positional Encoding Addition**:
    A sinusoidal positional encoding **P** ∈ ℝ<sup>N×D</sup> is added to the input:
 
    ```
@@ -28,7 +28,7 @@ Given a batch of hidden states **H** ∈ ℝ<sup>B×N×D</sup> (batch size B, se
 
    The positional encoding is generated on‑the‑fly and cached for the given sequence length, following the standard sinusoidal formula.
 
-2. **Normalization**:  
+2. **Normalization**:
    The tensor `x` is flattened to shape `(B*N, D)` and L2‑normalized along the feature dimension:
 
    ```
@@ -37,7 +37,7 @@ Given a batch of hidden states **H** ∈ ℝ<sup>B×N×D</sup> (batch size B, se
 
    This ensures that the subsequent SVD is not dominated by scale differences between tokens.
 
-3. **Singular Value Decomposition**:  
+3. **Singular Value Decomposition**:
    An SVD is performed on the normalized matrix **X_flat**:
 
    ```
@@ -46,7 +46,7 @@ Given a batch of hidden states **H** ∈ ℝ<sup>B×N×D</sup> (batch size B, se
 
    Here `U` is `(B*N, min(B*N, D))`, `s` is a vector of singular values, and `Vh` contains the right singular vectors (size `min(B*N, D) × D`). The SVD reveals the principal directions of variation across the token representations.
 
-4. **Softmax over Singular Values**:  
+4. **Softmax over Singular Values**:
    The top `k = min(svd_rank, len(s))` singular values are selected. To convert them into a probability distribution, we first stabilize by subtracting the maximum value, exponentiate, and normalize:
 
    ```
@@ -56,7 +56,7 @@ Given a batch of hidden states **H** ∈ ℝ<sup>B×N×D</sup> (batch size B, se
 
    This gives a weighting of the singular components, emphasizing the strongest ones while still allowing contributions from others.
 
-5. **Weighted Reconstruction**:  
+5. **Weighted Reconstruction**:
    The left singular vectors are weighted by the softmax probabilities:
 
    ```
@@ -250,4 +250,3 @@ The empirical evaluation of `hybrid_svd_layer` across standard sequence lengths 
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

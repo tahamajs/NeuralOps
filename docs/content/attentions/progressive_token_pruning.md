@@ -99,7 +99,7 @@ Top-$k$ heap search: $B \cdot L \log k$ FLOPs. Furthermore, Bitonic monotonic so
 $$\text{Total FLOPs} = 2 B L D + B k D + B L \log k + B k \log k$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx B L D$$
 Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Score Tensor: $B \cdot L \times 4 \text{ bytes}$ Concurrently, Kept Index Tensor: $B \cdot k \times 8 \text{ bytes}$ In this setting, Compacted Output Activation Buffer: $B \cdot k \cdot D \times 2 \text{ bytes}$ (FP16/BF16). Additionally, Memory Footprint drops from $2 B L D$ to $2 B k D$ bytes.
@@ -221,4 +221,3 @@ The empirical evaluation of `progressive_token_pruning` across standard sequence
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

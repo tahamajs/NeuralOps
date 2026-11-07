@@ -41,9 +41,7 @@ _FactorizedLinear = FactorizedLinear
 _randomized_svd = randomized_svd
 
 
-def build_attention(
-    attention_name: str, hidden_size: int, num_heads: int, **kwargs: Any
-) -> nn.Module:
+def build_attention(attention_name: str, hidden_size: int, num_heads: int, **kwargs: Any) -> nn.Module:
     """Public alias for instantiating attention from registry."""
     return _build_attention_from_registry(attention_name, hidden_size, num_heads, **kwargs)
 
@@ -76,9 +74,9 @@ def replace_attention_in_model(
     cfg = getattr(model, "config", None)
 
     if model_type in ("bert", "roberta", "xlm-roberta", "electra", "deberta"):
-        encoder = getattr(
-            getattr(model, model_type.replace("-", "_"), model), "encoder", None
-        ) or getattr(getattr(model, "bert", None), "encoder", None)
+        encoder = getattr(getattr(model, model_type.replace("-", "_"), model), "encoder", None) or getattr(
+            getattr(model, "bert", None), "encoder", None
+        )
         if encoder is None:
             raise AttributeError("Could not locate encoder in model architecture.")
         _replace_layers(encoder.layer, "attention", inject_fn, cfg, attention_params, model_type)
@@ -168,11 +166,7 @@ def inject_replace(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -238,6 +232,7 @@ inject_replace_attention_v2 = inject_replace
 def __getattr__(name: str) -> Any:
     if name == "replace_attention":
         from neuralops.api import replace_attention
+
         return replace_attention
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 

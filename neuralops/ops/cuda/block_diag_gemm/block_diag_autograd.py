@@ -60,6 +60,7 @@ def block_diag_matmul_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.low_rank import block_diag_matmul_triton
+
         return block_diag_matmul_triton
     except (ImportError, AttributeError):
         return None
@@ -71,6 +72,7 @@ def block_diag_matmul(
     bias: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """3-Level Dispatched Block-Diagonal GEMM."""
+
     def cuda_fn(x, weights, bias=None, **kwargs):
         mod = _get_module()
         return mod.block_diag_gemm_fwd(

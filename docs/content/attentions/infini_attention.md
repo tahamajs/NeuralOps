@@ -145,10 +145,10 @@ def _infini_fused_kernel(
     BLOCK_N: tl.constexpr
 ):
     pid_bh = tl.program_id(0)
-    
+
     # Load persistent compressive memory state M [d_k, d_k] into SRAM
     m_state = tl.load(M_ptr + pid_bh * d_k * d_k + tl.arange(0, d_k)[:, None] * d_k + tl.arange(0, d_k)[None, :])
-    
+
     # Compute local FlashAttention tile + compressive memory retrieval tile
     # Fuse gated combination directly in SRAM
 ```
@@ -181,4 +181,3 @@ The empirical evaluation of `infini_attention` across standard sequence lengths 
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

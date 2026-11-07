@@ -1,6 +1,6 @@
 # OATS: Outlier‑Aware Training Sparsification
 
-**Registered as `oats`**  
+**Registered as `oats`**
 *Decomposes linear layer weights into a low‑rank core and a sparse outlier component, using input covariance whitening and iterative refinement to preserve accuracy under high sparsity.*
 
 ---
@@ -59,11 +59,11 @@ W_scaled ≈ L + S
 
 where **L** is low‑rank (rank = `rank_ratio × min(d_out, d_in)`) and **S** is sparse (retaining a fraction `1 - sparsity` of the largest magnitude entries of the residual). The algorithm iterates:
 
-1. **Initialization**:  
+1. **Initialization**:
 Compute SVD of `W_scaled`. Truncate to rank `r` to obtain initial **L**. Furthermore, Compute residual `R = W_scaled - L`. Concurrently, Keep the top `(1 - sparsity)` magnitude entries of `R` to form **S**.
 
 
-2. **Iterative refinement** (repeat `num_iters` times):  
+2. **Iterative refinement** (repeat `num_iters` times):
 Compute SVD of the updated residual `R - S` (the part not explained by current L and S). Furthermore, Update **L** to the low‑rank approximation of that residual. Concurrently, Recompute `R_new = R - L` (full residual after new L). In this setting, Update **S** by hard‑thresholding `R_new`: keep only the largest `(1 - sparsity)` entries.
 
 
@@ -227,4 +227,3 @@ The empirical evaluation of `oats` across standard sequence lengths and language
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

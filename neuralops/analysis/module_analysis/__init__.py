@@ -27,15 +27,8 @@ from neuralops.analysis.module_analysis.constants import (
     RESULTS_DIR,
 )
 from neuralops.analysis.module_analysis.main import main, run_all_modules_analysis
-from neuralops.analysis.module_analysis.parsers import (
-    load_all_csv_records,
-    resolve_code_path,
-)
-from neuralops.analysis.module_analysis.reporters import (
-    ANALYSIS_FIELDNAMES,
-    write_csv_report,
-    write_markdown_report,
-)
+from neuralops.analysis.module_analysis.parsers import load_all_csv_records, resolve_code_path
+from neuralops.analysis.module_analysis.reporters import ANALYSIS_FIELDNAMES, write_csv_report, write_markdown_report
 
 __all__ = [
     "PROJECT_ROOT",
@@ -58,8 +51,4 @@ __all__ = [
     "main",
 ]
 
-from neuralops.analysis.module_analysis import aggregators
-from neuralops.analysis.module_analysis import constants
-from neuralops.analysis.module_analysis import main
-from neuralops.analysis.module_analysis import parsers
-from neuralops.analysis.module_analysis import reporters
+from neuralops.analysis.module_analysis import aggregators, constants, main, parsers, reporters

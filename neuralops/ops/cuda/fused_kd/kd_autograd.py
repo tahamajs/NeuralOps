@@ -50,6 +50,7 @@ def fused_kd_loss_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation using F.kl_div."""
     import torch.nn.functional as F
+
     orig_shape = student_logits.shape
     s_flat = student_logits.reshape(-1, orig_shape[-1])
     t_flat = teacher_logits.reshape(-1, orig_shape[-1])
@@ -71,6 +72,7 @@ def fused_kd_loss_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.fused_kd import fused_kd_loss
+
         return fused_kd_loss
     except ImportError:
         return None
@@ -83,6 +85,7 @@ def fused_kd_loss(
     reduction: str = "batchmean",
 ) -> torch.Tensor:
     """3-Level Dispatched Fused KD Loss."""
+
     def cuda_fn(s_logits, t_logits, temperature=2.0, reduction="batchmean", **kwargs):
         mod = _get_module()
         return mod.fused_kd_loss_fwd(

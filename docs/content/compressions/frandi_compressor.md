@@ -1,6 +1,6 @@
 # FRanDI: Feature‑Regression Aligned Low‑Rank Compression
 
-**Registered as `frandi`**  
+**Registered as `frandi`**
 *Conceptually aligns low‑rank approximation with feature regression targets; current implementation performs standard truncated SVD after a placeholder forward pass.*
 
 ---
@@ -156,4 +156,3 @@ The empirical evaluation of `frandi_compressor` across standard sequence lengths
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

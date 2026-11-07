@@ -12,14 +12,15 @@ Local windowed self-attention restricting receptive field to local bands for lin
 """
 
 from __future__ import annotations
+
 import logging
 import math
+from typing import Any
+
 import torch
 import torch.nn.functional as F
 
-from typing import Any
-
-from neuralops.ops.triton._common import HAS_TRITON, triton, tl
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
 logger = logging.getLogger(__name__)
 
@@ -32,15 +33,35 @@ __all__ = [
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def sliding_window_attn_fwd_kernel(
-        Q, K, V, Out,
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_on, stride_od,
-        H, N, WINDOW: tl.constexpr,
-        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_D: tl.constexpr,
+        Q,
+        K,
+        V,
+        Out,
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
+        H,
+        N,
+        WINDOW: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_D: tl.constexpr,
         IS_CAUSAL: tl.constexpr = True,
     ):
         pid_m = tl.program_id(0)
@@ -80,15 +101,19 @@ if HAS_TRITON and tl is not None:
 
             # Check if current tile is an interior tile strictly inside window and bounds
             is_interior = (
-                (col_end <= N) &
-                (offs_m_max < N) &
-                (col_end <= offs_m_min + 1) &
-                (col_start >= offs_m_max - WINDOW + 1)
-            ) if IS_CAUSAL else (
-                (col_end <= N) &
-                (offs_m_max < N) &
-                (col_end <= offs_m_min + WINDOW) &
-                (col_start >= offs_m_max - WINDOW + 1)
+                (
+                    (col_end <= N)
+                    & (offs_m_max < N)
+                    & (col_end <= offs_m_min + 1)
+                    & (col_start >= offs_m_max - WINDOW + 1)
+                )
+                if IS_CAUSAL
+                else (
+                    (col_end <= N)
+                    & (offs_m_max < N)
+                    & (col_end <= offs_m_min + WINDOW)
+                    & (col_start >= offs_m_max - WINDOW + 1)
+                )
             )
 
             if not is_interior:
@@ -143,18 +168,50 @@ def sliding_window_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _sliding_window_attn_bwd_kernel(
-        Q, K, V, DO, DQ, DK, DV,
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_dob, stride_doh, stride_don, stride_dod,
-        stride_dqb, stride_dqh, stride_dqn, stride_dqd,
-        stride_dkb, stride_dkh, stride_dkn, stride_dkd,
-        stride_dvb, stride_dvh, stride_dvn, stride_dvd,
-        H, N, WINDOW: tl.constexpr,
-        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_D: tl.constexpr,
+        Q,
+        K,
+        V,
+        DO,
+        DQ,
+        DK,
+        DV,
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_dob,
+        stride_doh,
+        stride_don,
+        stride_dod,
+        stride_dqb,
+        stride_dqh,
+        stride_dqn,
+        stride_dqd,
+        stride_dkb,
+        stride_dkh,
+        stride_dkn,
+        stride_dkd,
+        stride_dvb,
+        stride_dvh,
+        stride_dvn,
+        stride_dvd,
+        H,
+        N,
+        WINDOW: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_D: tl.constexpr,
     ):
         pid_m = tl.program_id(0)
         pid_bh = tl.program_id(1)
@@ -190,10 +247,7 @@ if HAS_TRITON and tl is not None:
             scores = tl.dot(q, k) * sm_scale
 
             is_interior = (
-                (col_end <= N) &
-                (offs_m_max < N) &
-                (col_end <= offs_m_min + 1) &
-                (col_start >= offs_m_max - WINDOW + 1)
+                (col_end <= N) & (offs_m_max < N) & (col_end <= offs_m_min + 1) & (col_start >= offs_m_max - WINDOW + 1)
             )
 
             if not is_interior:
@@ -221,10 +275,7 @@ if HAS_TRITON and tl is not None:
             scores = tl.dot(q, tl.trans(k)) * sm_scale
 
             is_interior = (
-                (col_end <= N) &
-                (offs_m_max < N) &
-                (col_end <= offs_m_min + 1) &
-                (col_start >= offs_m_max - WINDOW + 1)
+                (col_end <= N) & (offs_m_max < N) & (col_end <= offs_m_min + 1) & (col_start >= offs_m_max - WINDOW + 1)
             )
 
             if not is_interior:
@@ -240,11 +291,15 @@ if HAS_TRITON and tl is not None:
             ds = p * (dp - tl.sum(p * dp, 1)[:, None]) * sm_scale
             dq += tl.dot(ds.to(k.dtype), k)
 
-            dv_ptrs = DV + i_b * stride_dvb + i_h * stride_dvh + offs_n[:, None] * stride_dvn + offs_d[None, :] * stride_dvd
+            dv_ptrs = (
+                DV + i_b * stride_dvb + i_h * stride_dvh + offs_n[:, None] * stride_dvn + offs_d[None, :] * stride_dvd
+            )
             dv = tl.dot(tl.trans(p.to(do.dtype)), do)
             tl.atomic_add(dv_ptrs, dv, mask=offs_n[:, None] < N)
 
-            dk_ptrs = DK + i_b * stride_dkb + i_h * stride_dkh + offs_n[:, None] * stride_dkn + offs_d[None, :] * stride_dkd
+            dk_ptrs = (
+                DK + i_b * stride_dkb + i_h * stride_dkh + offs_n[:, None] * stride_dkn + offs_d[None, :] * stride_dkd
+            )
             dk = tl.dot(tl.trans(ds.to(q.dtype)), q)
             tl.atomic_add(dk_ptrs, dk, mask=offs_n[:, None] < N)
 
@@ -262,6 +317,7 @@ class _SlidingWindowAutograd(torch.autograd.Function):
         if HAS_TRITON and q.is_cuda:
             try:
                 from neuralops.ops.triton._types import check_triton_suitability
+
                 suitable, _ = check_triton_suitability(q, "sliding_window", head_dim=q.shape[-1], seq_len=q.shape[-2])
             except Exception:
                 suitable = False
@@ -271,20 +327,38 @@ class _SlidingWindowAutograd(torch.autograd.Function):
                 out = torch.empty_like(q)
                 grid = (triton.cdiv(N, 64), B * H)
                 sliding_window_attn_fwd_kernel[grid](
-                    q, k, v, out,
-                    q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                    k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                    v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                    out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                    H, N, WINDOW=window_size,
-                    BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
+                    q,
+                    k,
+                    v,
+                    out,
+                    q.stride(0),
+                    q.stride(1),
+                    q.stride(2),
+                    q.stride(3),
+                    k.stride(0),
+                    k.stride(1),
+                    k.stride(2),
+                    k.stride(3),
+                    v.stride(0),
+                    v.stride(1),
+                    v.stride(2),
+                    v.stride(3),
+                    out.stride(0),
+                    out.stride(1),
+                    out.stride(2),
+                    out.stride(3),
+                    H,
+                    N,
+                    WINDOW=window_size,
+                    BLOCK_M=64,
+                    BLOCK_N=64,
+                    BLOCK_D=D,
                     IS_CAUSAL=is_causal,
                 )
                 return out
             except Exception as exc:
                 logger.warning("Sliding-window Triton forward failed; using PyTorch reference: %s", exc)
         return sliding_window_pytorch(q, k, v, window_size=window_size, is_causal=is_causal)
-
 
     @staticmethod
     def backward(ctx: Any, grad_output: Any) -> tuple[Any, ...]:
@@ -295,6 +369,7 @@ class _SlidingWindowAutograd(torch.autograd.Function):
         if HAS_TRITON and q.is_cuda and is_causal:
             try:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
+
                 if not FORCE_PYTORCH_FALLBACK:
                     B, H, N, D = q.shape
                     dq = torch.zeros_like(q)
@@ -302,16 +377,47 @@ class _SlidingWindowAutograd(torch.autograd.Function):
                     dv = torch.zeros_like(v)
                     grid = (triton.cdiv(N, 64), B * H)
                     _sliding_window_attn_bwd_kernel[grid](
-                        q, k, v, grad_output.contiguous(), dq, dk, dv,
-                        q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                        k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                        grad_output.stride(0), grad_output.stride(1), grad_output.stride(2), grad_output.stride(3),
-                        dq.stride(0), dq.stride(1), dq.stride(2), dq.stride(3),
-                        dk.stride(0), dk.stride(1), dk.stride(2), dk.stride(3),
-                        dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
-                        H, N, WINDOW=window_size,
-                        BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
+                        q,
+                        k,
+                        v,
+                        grad_output.contiguous(),
+                        dq,
+                        dk,
+                        dv,
+                        q.stride(0),
+                        q.stride(1),
+                        q.stride(2),
+                        q.stride(3),
+                        k.stride(0),
+                        k.stride(1),
+                        k.stride(2),
+                        k.stride(3),
+                        v.stride(0),
+                        v.stride(1),
+                        v.stride(2),
+                        v.stride(3),
+                        grad_output.stride(0),
+                        grad_output.stride(1),
+                        grad_output.stride(2),
+                        grad_output.stride(3),
+                        dq.stride(0),
+                        dq.stride(1),
+                        dq.stride(2),
+                        dq.stride(3),
+                        dk.stride(0),
+                        dk.stride(1),
+                        dk.stride(2),
+                        dk.stride(3),
+                        dv.stride(0),
+                        dv.stride(1),
+                        dv.stride(2),
+                        dv.stride(3),
+                        H,
+                        N,
+                        WINDOW=window_size,
+                        BLOCK_M=64,
+                        BLOCK_N=64,
+                        BLOCK_D=D,
                     )
                     return dq, dk, dv, None, None
             except Exception as exc:
@@ -340,6 +446,7 @@ def sliding_window_attention_kernel(
     if HAS_TRITON and q.device.type == "cuda":
         try:
             from neuralops.ops.triton._types import check_triton_suitability
+
             suitable, _ = check_triton_suitability(q, "sliding_window", head_dim=q.shape[-1], seq_len=q.shape[-2])
         except Exception:
             suitable = False
@@ -351,13 +458,32 @@ def sliding_window_attention_kernel(
     out = torch.empty_like(q)
     grid = (triton.cdiv(N, 64), B * H)
     sliding_window_attn_fwd_kernel[grid](
-        q, k, v, out,
-        q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-        k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-        out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-        H, N, WINDOW=window_size,
-        BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
+        q,
+        k,
+        v,
+        out,
+        q.stride(0),
+        q.stride(1),
+        q.stride(2),
+        q.stride(3),
+        k.stride(0),
+        k.stride(1),
+        k.stride(2),
+        k.stride(3),
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        out.stride(0),
+        out.stride(1),
+        out.stride(2),
+        out.stride(3),
+        H,
+        N,
+        WINDOW=window_size,
+        BLOCK_M=64,
+        BLOCK_N=64,
+        BLOCK_D=D,
         IS_CAUSAL=is_causal,
     )
     return out
@@ -368,6 +494,7 @@ sliding_window_attention = sliding_window_attention_kernel
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _fused_sink_prune_kernel(
         k_in_ptr,
@@ -382,10 +509,18 @@ if HAS_TRITON:
         W,
         S,
         d,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_okb, stride_okh, stride_okn, stride_okd,
-        stride_posb, stride_posn,
-        stride_oposb, stride_oposn,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_okb,
+        stride_okh,
+        stride_okn,
+        stride_okd,
+        stride_posb,
+        stride_posn,
+        stride_oposb,
+        stride_oposn,
         BLOCK_D: tl.constexpr,
     ):
         pid_w = tl.program_id(0)
@@ -466,13 +601,30 @@ def fused_sink_rolling_cache_triton(
 
     try:
         _fused_sink_prune_kernel[grid](
-            k, v, positions,
-            k_out, v_out, pos_out,
-            B, H, N_k, W, S, d,
-            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-            k_out.stride(0), k_out.stride(1), k_out.stride(2), k_out.stride(3),
-            positions.stride(0), positions.stride(1),
-            pos_out.stride(0), pos_out.stride(1),
+            k,
+            v,
+            positions,
+            k_out,
+            v_out,
+            pos_out,
+            B,
+            H,
+            N_k,
+            W,
+            S,
+            d,
+            k.stride(0),
+            k.stride(1),
+            k.stride(2),
+            k.stride(3),
+            k_out.stride(0),
+            k_out.stride(1),
+            k_out.stride(2),
+            k_out.stride(3),
+            positions.stride(0),
+            positions.stride(1),
+            pos_out.stride(0),
+            pos_out.stride(1),
             BLOCK_D=BLOCK_D,
         )
         return k_out, v_out, pos_out
@@ -643,7 +795,9 @@ def fused_sink_sliding_window_linear_hybrid_pytorch(
     k_idx = torch.arange(L, device=q.device).unsqueeze(0)
 
     sink_mask = k_idx < sink_tokens
-    window_mask = (q_idx >= k_idx) & ((q_idx - k_idx) < window_size) if is_causal else (q_idx - k_idx).abs() < window_size
+    window_mask = (
+        (q_idx >= k_idx) & ((q_idx - k_idx) < window_size) if is_causal else (q_idx - k_idx).abs() < window_size
+    )
     active_mask = sink_mask | window_mask
 
     scores = scores.masked_fill(~active_mask.unsqueeze(0).unsqueeze(0), -1e4)
@@ -656,7 +810,7 @@ def fused_sink_sliding_window_linear_hybrid_pytorch(
 
     causal_dist = (q_idx >= k_idx) & ~active_mask
     dist_scores = causal_dist.float().unsqueeze(0).unsqueeze(0)
-    linear_attn_weights = (torch.matmul(phi_q, phi_k.transpose(-2, -1)) * dist_scores)
+    linear_attn_weights = torch.matmul(phi_q, phi_k.transpose(-2, -1)) * dist_scores
     den = linear_attn_weights.sum(dim=-1, keepdim=True).clamp_min(1e-4)
     out_dist = torch.matmul(linear_attn_weights / den, v_f).to(v.dtype)
 
@@ -672,7 +826,7 @@ def fused_sink_sliding_window_linear_hybrid_triton(
     is_causal: bool = True,
 ) -> torch.Tensor:
     """Fused Single-Pass Hybrid SRAM Kernel: 100% Needle-in-a-Haystack Retrieval."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON, check_triton_suitability
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda:
         try:
@@ -691,21 +845,40 @@ def fused_sink_sliding_window_linear_hybrid_triton(
         except Exception:
             # allowed-swallow: best-effort-telemetry
             pass
-    return fused_sink_sliding_window_linear_hybrid_pytorch(
-        q, k, v, sink_tokens, window_size, is_causal
-    )
+    return fused_sink_sliding_window_linear_hybrid_pytorch(q, k, v, sink_tokens, window_size, is_causal)
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _fused_tri_branch_hybrid_kernel(
-        Q_ptr, K_ptr, V_ptr, Out_ptr,
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_on, stride_od,
-        H, N, SINK_TOKENS: tl.constexpr, WINDOW: tl.constexpr,
-        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_D: tl.constexpr,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Out_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
+        H,
+        N,
+        SINK_TOKENS: tl.constexpr,
+        WINDOW: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_D: tl.constexpr,
     ):
         """Fused Tri-Branch Hybrid Kernel in GPU SRAM.
         Computes streaming sink tokens + local sliding window + linear recurrent context
@@ -733,8 +906,12 @@ if HAS_TRITON and tl is not None:
 
         if SINK_TOKENS > 0:
             offs_sink = tl.arange(0, SINK_TOKENS)
-            k_sink_ptrs = K_ptr + i_b * stride_kb + i_h * stride_kh + offs_sink[None, :] * stride_kn + offs_d[:, None] * stride_kd
-            v_sink_ptrs = V_ptr + i_b * stride_vb + i_h * stride_vh + offs_sink[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            k_sink_ptrs = (
+                K_ptr + i_b * stride_kb + i_h * stride_kh + offs_sink[None, :] * stride_kn + offs_d[:, None] * stride_kd
+            )
+            v_sink_ptrs = (
+                V_ptr + i_b * stride_vb + i_h * stride_vh + offs_sink[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            )
 
             k_sink = tl.load(k_sink_ptrs, mask=offs_sink[None, :] < N, other=0.0)
             v_sink = tl.load(v_sink_ptrs, mask=offs_sink[:, None] < N, other=0.0)
@@ -756,16 +933,15 @@ if HAS_TRITON and tl is not None:
             col_start = start_col + j * BLOCK_N
             col_end = col_start + BLOCK_N
             offs_n = col_start + tl.arange(0, BLOCK_N)
-            k_ptrs = K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
+            k_ptrs = (
+                K_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
+            )
             k = tl.load(k_ptrs, mask=offs_n[None, :] < N, other=0.0)
 
             scores = tl.dot(q, k) * sm_scale
 
             is_interior = (
-                (col_end <= N) &
-                (offs_m_max < N) &
-                (col_end <= offs_m_min + 1) &
-                (col_start >= offs_m_max - WINDOW + 1)
+                (col_end <= N) & (offs_m_max < N) & (col_end <= offs_m_min + 1) & (col_start >= offs_m_max - WINDOW + 1)
             )
 
             if not is_interior:
@@ -780,12 +956,16 @@ if HAS_TRITON and tl is not None:
             l_i = l_i * alpha + tl.sum(p, 1)
             acc = acc * alpha[:, None]
 
-            v_ptrs = V_ptr + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            v_ptrs = (
+                V_ptr + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+            )
             v = tl.load(v_ptrs, mask=offs_n[:, None] < N, other=0.0)
             acc += tl.dot(p.to(v.dtype), v)
             m_i = m_curr
 
-        out_ptrs = Out_ptr + i_b * stride_ob + i_h * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+        out_ptrs = (
+            Out_ptr + i_b * stride_ob + i_h * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+        )
         out = acc / tl.maximum(l_i[:, None], 1e-6)
         tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
 
@@ -798,7 +978,8 @@ def fused_tri_branch_hybrid_attention_triton(
     window_size: int = 64,
 ) -> torch.Tensor:
     """Dispatches fused single-pass tri-branch hybrid attention in GPU SRAM."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON, check_triton_suitability
+
     suitable, _ = check_triton_suitability(q, "sliding_window", head_dim=q.shape[-1], seq_len=q.shape[-2])
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda and suitable:
@@ -807,15 +988,33 @@ def fused_tri_branch_hybrid_attention_triton(
             out = torch.empty_like(q)
             grid = (triton.cdiv(N, 64), B * H)
             _fused_tri_branch_hybrid_kernel[grid](
-                q, k, v, out,
-                q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-                k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                H=H, N=N,
+                q,
+                k,
+                v,
+                out,
+                q.stride(0),
+                q.stride(1),
+                q.stride(2),
+                q.stride(3),
+                k.stride(0),
+                k.stride(1),
+                k.stride(2),
+                k.stride(3),
+                v.stride(0),
+                v.stride(1),
+                v.stride(2),
+                v.stride(3),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
+                out.stride(3),
+                H=H,
+                N=N,
                 SINK_TOKENS=min(sink_tokens, N),
                 WINDOW=window_size,
-                BLOCK_M=64, BLOCK_N=64, BLOCK_D=D,
+                BLOCK_M=64,
+                BLOCK_N=64,
+                BLOCK_D=D,
             )
             return out
         except Exception:

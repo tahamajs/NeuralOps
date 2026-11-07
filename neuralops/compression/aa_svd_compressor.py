@@ -8,4 +8,5 @@
 """
 Compatibility alias for neuralops.compression.svd.aa_svd_compressor.
 """
+
 from neuralops.compression.svd.aa_svd_compressor import *  # noqa: F401, F403

@@ -1,6 +1,6 @@
 # SAES‑SVD v2: Error Suppression with Fixed Rank Ratio
 
-**Registered as `saes_svd_v2`**  
+**Registered as `saes_svd_v2`**
 *Compresses linear layers via truncated SVD, keeping a fixed fraction of the full rank per layer, with the architecture prepared for future inter‑layer error suppression.*
 
 ---
@@ -171,4 +171,3 @@ The empirical evaluation of `saes_svd` across standard sequence lengths and lang
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

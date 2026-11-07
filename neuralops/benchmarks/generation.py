@@ -35,10 +35,14 @@ class GenerationBenchmark:
         self.dtype = dtype
 
         if isinstance(model, str):
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model,
-                torch_dtype=self.dtype,
-            ).to(self.device).eval()
+            self.model = (
+                AutoModelForCausalLM.from_pretrained(
+                    model,
+                    torch_dtype=self.dtype,
+                )
+                .to(self.device)
+                .eval()
+            )
         else:
             self.model = model.to(self.device).eval()
 

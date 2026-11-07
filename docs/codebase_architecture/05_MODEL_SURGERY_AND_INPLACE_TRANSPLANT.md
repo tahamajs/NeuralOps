@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 05
 # Model Surgery & In-Place Neural Attention Transplant
 
-**Assigned Subagent**: `Agent 05: Model Surgery & Subspace Grafting Specialist`  
+**Assigned Subagent**: `Agent 05: Model Surgery & Subspace Grafting Specialist`
 **Target Codebase Paths**:
 - `neuralops/surgery/`
 - `neuralops/surgery/in_place.py`

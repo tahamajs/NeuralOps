@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from neuralops.benchmarks.core.paths import RunDirectoryContext, StoragePathManager
@@ -68,7 +68,11 @@ class DualCommitPersistenceEngine:
         else:
             aggregates = summary.get("aggregates", {})
 
-        status = summary.get("status", "PASSED") if summary else ("PASSED" if aggregates.get("failed_runtime_iterations", 0) == 0 else "FAILED")
+        status = (
+            summary.get("status", "PASSED")
+            if summary
+            else ("PASSED" if aggregates.get("failed_runtime_iterations", 0) == 0 else "FAILED")
+        )
 
         # Step 2: Write run-local summary artifacts
         BenchmarkSummaryGenerator.generate_summary_json(
@@ -165,26 +169,29 @@ class DualCommitPersistenceEngine:
                         tag=tag,
                         total_cells=aggregates.get("total_iterations", 0),
                         passed_cells=aggregates.get("passed_iterations", 0),
-                        failed_cells=aggregates.get("failed_runtime_iterations", 0) + aggregates.get("failed_oom_iterations", 0),
+                        failed_cells=aggregates.get("failed_runtime_iterations", 0)
+                        + aggregates.get("failed_oom_iterations", 0),
                     )
 
                     if iterations:
                         metrics_to_commit = []
                         for i, it in enumerate(iterations):
-                            metrics_to_commit.append({
-                                "run_id": context.run_id,
-                                "step": it.get("step", i + 1),
-                                "mechanism_or_kernel": it.get("mechanism_or_kernel", it.get("module", "default")),
-                                "batch_size": it.get("batch_size"),
-                                "seq_len": it.get("seq_len"),
-                                "dtype": it.get("dtype"),
-                                "latency_p50_ms": it.get("latency_ms") or it.get("latency_p50_ms"),
-                                "latency_p90_ms": it.get("latency_p90_ms"),
-                                "latency_p99_ms": it.get("latency_p99_ms"),
-                                "tflops": it.get("tflops"),
-                                "peak_vram_mb": it.get("vram_mb") or it.get("peak_vram_mb"),
-                                "extra_metadata": it.get("extra_metadata"),
-                            })
+                            metrics_to_commit.append(
+                                {
+                                    "run_id": context.run_id,
+                                    "step": it.get("step", i + 1),
+                                    "mechanism_or_kernel": it.get("mechanism_or_kernel", it.get("module", "default")),
+                                    "batch_size": it.get("batch_size"),
+                                    "seq_len": it.get("seq_len"),
+                                    "dtype": it.get("dtype"),
+                                    "latency_p50_ms": it.get("latency_ms") or it.get("latency_p50_ms"),
+                                    "latency_p90_ms": it.get("latency_p90_ms"),
+                                    "latency_p99_ms": it.get("latency_p99_ms"),
+                                    "tflops": it.get("tflops"),
+                                    "peak_vram_mb": it.get("vram_mb") or it.get("peak_vram_mb"),
+                                    "extra_metadata": it.get("extra_metadata"),
+                                }
+                            )
                         ledger.record_benchmark_metrics(metrics_to_commit)
 
                 return True

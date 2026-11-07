@@ -12,7 +12,6 @@ Low-rank linear attention with sparse caching and trainable residual adapters fo
 """
 
 from __future__ import annotations
-from neuralops.core.utils.config import _cfg_get
 
 import logging
 import math
@@ -24,8 +23,9 @@ import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.config import _cfg_get
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.utils.rope import apply_rotary_pos_emb
 from neuralops.utils.model_family import ModelAdapter
 
@@ -153,12 +153,12 @@ class LowRankCache(nn.Module):
 
         end = self._recent_pos + take
         if end <= max_recent:
-            self._recent_k[:, self._recent_pos:end, :].copy_(src)
-            self._recent_v[:, self._recent_pos:end, :].copy_(src_v)
+            self._recent_k[:, self._recent_pos : end, :].copy_(src)
+            self._recent_v[:, self._recent_pos : end, :].copy_(src_v)
         else:
             first = max_recent - self._recent_pos
-            self._recent_k[:, self._recent_pos:, :].copy_(src[:, :first, :])
-            self._recent_v[:, self._recent_pos:, :].copy_(src_v[:, :first, :])
+            self._recent_k[:, self._recent_pos :, :].copy_(src[:, :first, :])
+            self._recent_v[:, self._recent_pos :, :].copy_(src_v[:, :first, :])
             rest = take - first
             self._recent_k[:, :rest, :].copy_(src[:, first:, :])
             self._recent_v[:, :rest, :].copy_(src_v[:, first:, :])
@@ -176,12 +176,12 @@ class LowRankCache(nn.Module):
             src_sv = sparse_v[:, -take_s:, :]
             end_s = self._sparse_pos + take_s
             if end_s <= max_sparse:
-                self._sparse_k[:, self._sparse_pos:end_s, :].copy_(src_s)
-                self._sparse_v[:, self._sparse_pos:end_s, :].copy_(src_sv)
+                self._sparse_k[:, self._sparse_pos : end_s, :].copy_(src_s)
+                self._sparse_v[:, self._sparse_pos : end_s, :].copy_(src_sv)
             else:
                 first = max_sparse - self._sparse_pos
-                self._sparse_k[:, self._sparse_pos:, :].copy_(src_s[:, :first, :])
-                self._sparse_v[:, self._sparse_pos:, :].copy_(src_sv[:, :first, :])
+                self._sparse_k[:, self._sparse_pos :, :].copy_(src_s[:, :first, :])
+                self._sparse_v[:, self._sparse_pos :, :].copy_(src_sv[:, :first, :])
                 rest = take_s - first
                 self._sparse_k[:, :rest, :].copy_(src_s[:, first:, :])
                 self._sparse_v[:, :rest, :].copy_(src_sv[:, first:, :])
@@ -190,9 +190,7 @@ class LowRankCache(nn.Module):
             self._sparse_filled = min(max_sparse, self._sparse_filled + take_s)
 
         self._update_step += 1
-        if self._recent_filled >= self.low_rank_k and (
-            self._update_step % 50 == 1 or self._low_rank_k_buf is None
-        ):
+        if self._recent_filled >= self.low_rank_k and (self._update_step % 50 == 1 or self._low_rank_k_buf is None):
             self._refresh_low_rank()
 
     def _refresh_low_rank(self) -> None:
@@ -339,28 +337,18 @@ class LowRankLinear(nn.Module):
         self.out_features = int(out_features)
         self.rank = int(rank)
         self.lora_rank = min(int(lora_rank), min(in_features, out_features))
-        self.lora_scaling = (
-            (32.0 / self.lora_rank) if self.lora_rank > 0 else 1.0
-        )
+        self.lora_scaling = (32.0 / self.lora_rank) if self.lora_rank > 0 else 1.0
 
-        self.U = nn.Parameter(
-            torch.empty(out_features, rank), requires_grad=False
-        )
-        self.V = nn.Parameter(
-            torch.empty(rank, in_features), requires_grad=False
-        )
+        self.U = nn.Parameter(torch.empty(out_features, rank), requires_grad=False)
+        self.V = nn.Parameter(torch.empty(rank, in_features), requires_grad=False)
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features), requires_grad=False)
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, in_features)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty(out_features, self.lora_rank)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features))
+            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_rank))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -388,11 +376,7 @@ class LowRankLinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         w = torch.matmul(self.U, self.V)
-        if (
-            self.lora_rank > 0
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             w = w + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
         return w
 
@@ -404,15 +388,8 @@ class LowRankLinear(nn.Module):
         S_ones = torch.ones(self.U.shape[1], device=x.device, dtype=x.dtype)
         out = fused_lola_3way_decomposition_triton(x, self.U, S_ones, self.V.t().contiguous(), self.bias)
 
-        if (
-            self.lora_rank > 0
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B)
-                * self.lora_scaling
-            )
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
 
         return out.to(orig_dtype)
@@ -458,22 +435,14 @@ class LoLAAttention(BaseAttention):
         except TypeError:
             super().__init__(cfg)
 
-        self.layer_idx = int(
-            layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0)
-        )
+        self.layer_idx = int(layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0))
 
         cfg_head_dim = getattr(cfg, "head_dim", None) if cfg is not None else None
         if cfg is not None and not isinstance(cfg, int):
             self.adapter = ModelAdapter(cfg)
-            self.num_heads = self.adapter.num_heads or getattr(
-                cfg, "num_attention_heads", 12
-            )
-            self.num_kv_heads = self.adapter.num_key_value_heads or getattr(
-                cfg, "num_key_value_heads", self.num_heads
-            )
-            self.hidden_size = self.adapter.hidden_size or getattr(
-                cfg, "hidden_size", 768
-            )
+            self.num_heads = self.adapter.num_heads or getattr(cfg, "num_attention_heads", 12)
+            self.num_kv_heads = self.adapter.num_key_value_heads or getattr(cfg, "num_key_value_heads", self.num_heads)
+            self.hidden_size = self.adapter.hidden_size or getattr(cfg, "hidden_size", 768)
             self.head_dim = int(
                 cfg_head_dim
                 or kwargs.get("head_dim")
@@ -483,17 +452,10 @@ class LoLAAttention(BaseAttention):
             self.kv_repeat = self.adapter.kv_repeat or 1
         else:
             self.adapter = None
-            self.num_heads = int(
-                kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
-            )
-            self.num_kv_heads = int(
-                kwargs.get("num_key_value_heads", self.num_heads)
-            )
+            self.num_heads = int(kwargs.get("num_heads", kwargs.get("num_attention_heads", 12)))
+            self.num_kv_heads = int(kwargs.get("num_key_value_heads", self.num_heads))
             self.hidden_size = int(kwargs.get("hidden_size", 768))
-            self.head_dim = int(
-                kwargs.get("head_dim")
-                or (self.hidden_size // max(1, self.num_heads))
-            )
+            self.head_dim = int(kwargs.get("head_dim") or (self.hidden_size // max(1, self.num_heads)))
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
@@ -501,15 +463,28 @@ class LoLAAttention(BaseAttention):
 
         _mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
         _decoder_prefixes = (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
         )
         self.is_decoder = bool(
-            (cfg is not None and (
-                getattr(cfg, "is_decoder", False)
-                or getattr(cfg, "causal", False)
-                or any(_mt.startswith(p) for p in _decoder_prefixes)
-            ))
+            (
+                cfg is not None
+                and (
+                    getattr(cfg, "is_decoder", False)
+                    or getattr(cfg, "causal", False)
+                    or any(_mt.startswith(p) for p in _decoder_prefixes)
+                )
+            )
             or kwargs.get("is_decoder", False)
             or kwargs.get("is_causal", False)
         )
@@ -522,45 +497,43 @@ class LoLAAttention(BaseAttention):
         self.lora_rank = int(_cfg_get("lora_rank", lora_rank))
 
         self.q_proj = LowRankLinear(
-            self.hidden_size, self.all_head_size, self.rank,
-            lora_rank=self.lora_rank, bias=True,
+            self.hidden_size,
+            self.all_head_size,
+            self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
         )
         self.k_proj = LowRankLinear(
-            self.hidden_size, self.kv_head_size, self.rank,
-            lora_rank=self.lora_rank, bias=True,
+            self.hidden_size,
+            self.kv_head_size,
+            self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
         )
         self.v_proj = LowRankLinear(
-            self.hidden_size, self.kv_head_size, self.rank,
-            lora_rank=self.lora_rank, bias=True,
+            self.hidden_size,
+            self.kv_head_size,
+            self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
         )
         self.out_proj = LowRankLinear(
-            self.all_head_size, self.hidden_size, self.rank,
-            lora_rank=self.lora_rank, bias=True,
+            self.all_head_size,
+            self.hidden_size,
+            self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
         )
 
         self.dropout = nn.Dropout(dropout)
 
-        max_seq_len = (
-            getattr(comp_config, "max_seq_len", 128)
-            if comp_config is not None
-            else 128
-        )
-        low_rank_cache_size = (
-            getattr(comp_config, "low_rank_cache_size", 16)
-            if comp_config is not None
-            else 16
-        )
-        self.cache = LowRankCache(
-            max_len=max_seq_len, low_rank_k=low_rank_cache_size
-        )
+        max_seq_len = getattr(comp_config, "max_seq_len", 128) if comp_config is not None else 128
+        low_rank_cache_size = getattr(comp_config, "low_rank_cache_size", 16) if comp_config is not None else 16
+        self.cache = LowRankCache(max_len=max_seq_len, low_rank_k=low_rank_cache_size)
         self.LR_scale = nn.Parameter(torch.tensor(4.0))
         self.sparse_gate = nn.Parameter(torch.tensor(-3.0))
 
-        self.rotary_emb = (
-            getattr(pretrained_attn, "rotary_emb", None)
-            if pretrained_attn is not None
-            else None
-        )
+        self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None) if pretrained_attn is not None else None
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
@@ -589,12 +562,8 @@ class LoLAAttention(BaseAttention):
 
             sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
 
-            U_r = (U[:, :r] * sqrt_s.unsqueeze(0)).to(
-                device=lowrank.U.device, dtype=lowrank.U.dtype
-            )
-            V_r = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(
-                device=lowrank.V.device, dtype=lowrank.V.dtype
-            )
+            U_r = (U[:, :r] * sqrt_s.unsqueeze(0)).to(device=lowrank.U.device, dtype=lowrank.U.dtype)
+            V_r = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(device=lowrank.V.device, dtype=lowrank.V.dtype)
 
             lowrank.U.data.zero_()
             lowrank.V.data.zero_()
@@ -648,9 +617,7 @@ class LoLAAttention(BaseAttention):
                 pass
 
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -672,9 +639,7 @@ class LoLAAttention(BaseAttention):
                 )
                 extracted["k"] = (
                     weight[split_size : 2 * split_size, :],
-                    bias_data[split_size : 2 * split_size]
-                    if bias_data is not None
-                    else None,
+                    bias_data[split_size : 2 * split_size] if bias_data is not None else None,
                 )
                 extracted["v"] = (
                     weight[2 * split_size :, :],
@@ -704,9 +669,7 @@ class LoLAAttention(BaseAttention):
                 )
 
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             for proj_key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -720,11 +683,7 @@ class LoLAAttention(BaseAttention):
                             b.data.clone() if b is not None else None,
                         )
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             base_dense = getattr(dense, "base_layer", dense)
             if hasattr(base_dense, "weight"):
@@ -758,8 +717,14 @@ class LoLAAttention(BaseAttention):
         has_out_proj = any(
             hasattr(src, attr)
             for attr in (
-                "dense", "out_proj", "c_proj", "out_lin",
-                "o_proj", "wo", "o", "proj",
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
             )
         )
         is_nested = False
@@ -787,18 +752,14 @@ class LoLAAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(
-                "LoLA copy_weights: missing %s; using random init.", missing
-            )
+            logger.warning("LoLA copy_weights: missing %s; using random init.", missing)
 
         for proj_key in ("q", "k", "v", "o"):
             w = extracted[proj_key][0]
             if w is not None:
                 norm = float(torch.linalg.norm(w.float()).item())
                 if norm < 1e-4:
-                    logger.warning(
-                        "LoLA: extracted '%s' near-zero norm (%.2e)", proj_key, norm
-                    )
+                    logger.warning("LoLA: extracted '%s' near-zero norm (%.2e)", proj_key, norm)
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -857,24 +818,9 @@ class LoLAAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = (
-            self.q_proj(hidden_states)
-            .view(B, N_q, H, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        K = (
-            self.k_proj(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.v_proj(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         position_embeddings = kwargs.get("position_embeddings")
         if (
@@ -894,7 +840,11 @@ class LoLAAttention(BaseAttention):
         scores_lr = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
-        mask_val = -1e4 if dtype in (torch.float16, torch.bfloat16) or scores_lr.dtype in (torch.float16, torch.bfloat16) else -1e9
+        mask_val = (
+            -1e4
+            if dtype in (torch.float16, torch.bfloat16) or scores_lr.dtype in (torch.float16, torch.bfloat16)
+            else -1e9
+        )
         if mask is not None:
             if mask.dim() == 4:
                 if mask.dtype == torch.bool:
@@ -906,23 +856,20 @@ class LoLAAttention(BaseAttention):
             else:
                 valid_m = get_token_valid_mask(mask, B, N_k, device)
                 if valid_m is not None:
-                    scores_lr = scores_lr.masked_fill(
-                        (~valid_m).unsqueeze(1).unsqueeze(2), mask_val
-                    )
+                    scores_lr = scores_lr.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), mask_val)
 
         if self.is_decoder and not is_cross_attention and N_k >= N_q:
-            causal_tril = torch.tril(
-                torch.ones((N_q, N_k), device=device, dtype=torch.bool),
-                diagonal=N_k - N_q,
-            ).unsqueeze(0).unsqueeze(0)
+            causal_tril = (
+                torch.tril(
+                    torch.ones((N_q, N_k), device=device, dtype=torch.bool),
+                    diagonal=N_k - N_q,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores_lr = scores_lr.masked_fill(~causal_tril, mask_val)
 
-        is_single_token_decode = (
-            self.is_decoder
-            and not is_cross_attention
-            and N_q == 1
-            and not self.training
-        )
+        is_single_token_decode = self.is_decoder and not is_cross_attention and N_q == 1 and not self.training
 
         use_cache = is_single_token_decode
 
@@ -930,10 +877,16 @@ class LoLAAttention(BaseAttention):
             is_causal = self.is_decoder and not is_cross_attention and N_k >= N_q
             attn_mask = None
             if mask is not None:
-                attn_mask = (mask == 1).unsqueeze(1).unsqueeze(2) if mask.dtype != torch.bool else mask.unsqueeze(1).unsqueeze(2)
+                attn_mask = (
+                    (mask == 1).unsqueeze(1).unsqueeze(2)
+                    if mask.dtype != torch.bool
+                    else mask.unsqueeze(1).unsqueeze(2)
+                )
             try:
                 context = F.scaled_dot_product_attention(
-                    Q, K, V,
+                    Q,
+                    K,
+                    V,
                     attn_mask=attn_mask,
                     dropout_p=self.dropout.p if self.training else 0.0,
                     is_causal=is_causal if attn_mask is None else False,
@@ -957,11 +910,7 @@ class LoLAAttention(BaseAttention):
             self.cache.reset()
             cached_k, cached_v = None, None
 
-        if (
-            cached_k is not None
-            and cached_v is not None
-            and cached_k.size(0) == (B * H)
-        ):
+        if cached_k is not None and cached_v is not None and cached_k.size(0) == (B * H):
             C = cached_k.size(1)
             K_cache = cached_k.view(B, H, C, d)
             V_cache = cached_v.view(B, H, C, d)
@@ -969,16 +918,11 @@ class LoLAAttention(BaseAttention):
             scores_cache = (
                 torch.matmul(Q, K_cache.transpose(-2, -1).contiguous())
                 * scale
-                * torch.sigmoid(
-                    torch.clamp(self.sparse_gate, min=-10.0, max=10.0)
-                )
+                * torch.sigmoid(torch.clamp(self.sparse_gate, min=-10.0, max=10.0))
             )
             scores = torch.cat(
                 [
-                    scores_lr
-                    * torch.sigmoid(
-                        torch.clamp(self.LR_scale, min=-10.0, max=10.0)
-                    ),
+                    scores_lr * torch.sigmoid(torch.clamp(self.LR_scale, min=-10.0, max=10.0)),
                     scores_cache,
                 ],
                 dim=-1,
@@ -1002,9 +946,7 @@ class LoLAAttention(BaseAttention):
             attn = attn * hm
 
         context = torch.matmul(attn, V_comb)
-        context = (
-            context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
-        )
+        context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0)
 
         if self.is_nested_encoder:
@@ -1036,11 +978,7 @@ def inject_lola_attention(
     if target is None:
         return None
 
-    cfg = (
-        model_config
-        if model_config is not None
-        else getattr(target, "config", None)
-    )
+    cfg = model_config if model_config is not None else getattr(target, "config", None)
 
     layer_list = None
     for path in (
@@ -1170,9 +1108,7 @@ def inject_lola_attention(
 
         return new_attn
     except Exception as e:
-        logger.exception(
-            "LoLAAttention injection failed at layer %d: %s", layer_idx, e
-        )
+        logger.exception("LoLAAttention injection failed at layer %d: %s", layer_idx, e)
         return None
 
 

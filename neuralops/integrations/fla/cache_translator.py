@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Optional, Tuple
+
 import torch
 
 from neuralops.core.exceptions import IntegrationNotImplementedError

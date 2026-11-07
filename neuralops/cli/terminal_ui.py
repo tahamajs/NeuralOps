@@ -17,6 +17,7 @@ import os
 import sys
 import time
 from typing import Any, List, Optional
+
 from neuralops.benchmarks.discovery import CATALOG_PATH
 
 try:
@@ -25,16 +26,17 @@ except (ImportError, AttributeError):
     __version__ = "1.4.3"
 
 try:
-    from rich.console import Console
-    from rich.table import Table
-    from rich.panel import Panel
-    from rich.text import Text
-    from rich.syntax import Syntax
-    from rich.columns import Columns
-    from rich.markdown import Markdown
-    from rich.prompt import Prompt, Confirm, IntPrompt
-    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
     from rich import print as rprint
+    from rich.columns import Columns
+    from rich.console import Console
+    from rich.markdown import Markdown
+    from rich.panel import Panel
+    from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
+    from rich.prompt import Confirm, IntPrompt, Prompt
+    from rich.syntax import Syntax
+    from rich.table import Table
+    from rich.text import Text
+
     HAS_RICH = True
 except ImportError:
     HAS_RICH = False
@@ -54,7 +56,10 @@ SUBCOMMAND_GROUPS = [
     {
         "title": "Model Surgery, Composition & Compression",
         "commands": [
-            ("surgery", "1-line surgical attention replacement, Ridge calibration, and micro-healing (alias: transplant)"),
+            (
+                "surgery",
+                "1-line surgical attention replacement, Ridge calibration, and micro-healing (alias: transplant)",
+            ),
             ("compose", "Declarative algebraic builder for custom attention via ComposableAttention"),
             ("recommend", "Hardware-aware advisor recommending optimal attention & compression recipes"),
             ("calibrate", "Closed-form layerwise Ridge/subspace output alignment for surgical models"),
@@ -140,7 +145,10 @@ def print_banner() -> None:
         return
 
     banner_text = Text(BANNER_ART, style="bold cyan")
-    tagline = Text(f"NeuralOps v{__version__} — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n", style="bold white")
+    tagline = Text(
+        f"NeuralOps v{__version__} — High-Performance Attention Zoo, SVD Compression & Fused Triton Kernels\n",
+        style="bold white",
+    )
     tagline.append("https://github.com/tahamajs/SVD_linear_Attention", style="dim underline blue")
 
     panel = Panel(
@@ -168,10 +176,18 @@ def print_hf_style_help() -> None:
         print("\nRun 'neuralops <command> --help' for command-specific flags.\n")
         return
 
-    console.print("\n[bold yellow]Usage:[/bold yellow] [bold green]neuralops[/bold green] [dim][OPTIONS][/dim] [bold cyan]<command>[/bold cyan] [dim][ARGS]...[/dim]\n")
+    console.print(
+        "\n[bold yellow]Usage:[/bold yellow] [bold green]neuralops[/bold green] [dim][OPTIONS][/dim] [bold cyan]<command>[/bold cyan] [dim][ARGS]...[/dim]\n"
+    )
 
     for grp in SUBCOMMAND_GROUPS:
-        table = Table(title=f"[bold magenta]{grp['title']}[/bold magenta]", show_header=True, header_style="bold blue", border_style="dim", expand=True)
+        table = Table(
+            title=f"[bold magenta]{grp['title']}[/bold magenta]",
+            show_header=True,
+            header_style="bold blue",
+            border_style="dim",
+            expand=True,
+        )
         table.add_column("Command", style="bold cyan", width=20)
         table.add_column("Description", style="white")
 
@@ -189,7 +205,9 @@ def print_hf_style_help() -> None:
         "[bold green]$[/bold green] neuralops ui    [dim]# Launch full interactive TUI mode[/dim]"
     )
     console.print(Panel(examples, title="[bold yellow]Quickstart Examples[/bold yellow]", border_style="yellow"))
-    console.print("[dim]Use [bold cyan]neuralops <command> --help[/bold cyan] for full arguments and options on each subcommand.[/dim]\n")
+    console.print(
+        "[dim]Use [bold cyan]neuralops <command> --help[/bold cyan] for full arguments and options on each subcommand.[/dim]\n"
+    )
 
 
 def _interactive_module_inspector(mod_name: str, mod_type: str = "attention") -> None:
@@ -203,6 +221,7 @@ def _interactive_module_inspector(mod_name: str, mod_type: str = "attention") ->
         return
 
     import inspect
+
     doc = inspect.getdoc(cls) or "No docstring provided."
     src_file = inspect.getfile(cls)
 
@@ -219,21 +238,42 @@ def _interactive_module_inspector(mod_name: str, mod_type: str = "attention") ->
 
 def _guided_wizard() -> None:
     """Step-by-step guided wizard for common operations."""
-    console.print(Panel("[bold cyan]Welcome to the NeuralOps Guided Workflow Wizard![/bold cyan]\nAnswer a few prompts and NeuralOps will configure and run your task.", border_style="cyan"))
+    console.print(
+        Panel(
+            "[bold cyan]Welcome to the NeuralOps Guided Workflow Wizard![/bold cyan]\nAnswer a few prompts and NeuralOps will configure and run your task.",
+            border_style="cyan",
+        )
+    )
 
-    task = Prompt.ask("\nWhat task would you like to perform?", choices=["compress", "generate", "benchmark", "diagnostics", "exit"], default="compress")
+    task = Prompt.ask(
+        "\nWhat task would you like to perform?",
+        choices=["compress", "generate", "benchmark", "diagnostics", "exit"],
+        default="compress",
+    )
     if task == "exit":
         return
 
     if task == "compress":
         model_name = Prompt.ask("Enter base model name or path", default="gpt2")
-        method = Prompt.ask("Choose compression engine", choices=["hadamard_incoherent_svd", "svd_linear_attention", "rotational_slicegpt_int4", "asvd", "fisher_svd"], default="hadamard_incoherent_svd")
+        method = Prompt.ask(
+            "Choose compression engine",
+            choices=[
+                "hadamard_incoherent_svd",
+                "svd_linear_attention",
+                "rotational_slicegpt_int4",
+                "asvd",
+                "fisher_svd",
+            ],
+            default="hadamard_incoherent_svd",
+        )
         rank = IntPrompt.ask("Target rank per linear layer", default=32)
         save_dir = Prompt.ask("Save directory (leave empty to skip disk save)", default="")
         save_arg = save_dir if save_dir else None
 
-        from neuralops.benchmarks.cli import handle_compress
         import argparse
+
+        from neuralops.benchmarks.cli import handle_compress
+
         handle_compress(argparse.Namespace(model=model_name, method=method, rank=rank, save_dir=save_arg))
 
     elif task == "generate":
@@ -242,9 +282,20 @@ def _guided_wizard() -> None:
         draft_k = IntPrompt.ask("Draft candidate tokens per step (K)", default=4)
         temp = float(Prompt.ask("Sampling temperature (0.0 for greedy)", default="0.0"))
 
-        from neuralops.benchmarks.cli import handle_generate
         import argparse
-        handle_generate(argparse.Namespace(model=model_name, prompt=prompt_text, max_new_tokens=32, speculative=True, draft_k=draft_k, temperature=temp))
+
+        from neuralops.benchmarks.cli import handle_generate
+
+        handle_generate(
+            argparse.Namespace(
+                model=model_name,
+                prompt=prompt_text,
+                max_new_tokens=32,
+                speculative=True,
+                draft_k=draft_k,
+                temperature=temp,
+            )
+        )
 
     elif task == "benchmark":
         mod = Prompt.ask("Enter attention or compressor module name", default="svd_linear_attention")
@@ -253,26 +304,65 @@ def _guided_wizard() -> None:
         epochs = IntPrompt.ask("Fine-tuning epochs", default=1)
         samples = IntPrompt.ask("Max training samples", default=200)
 
-        from neuralops.benchmarks.cli import handle_run
         import argparse
-        handle_run(argparse.Namespace(
-            module=mod, modules=None, no_compression=False,
-            model=model, models=None, all_models=False,
-            dataset=dataset, datasets=None, all_datasets=False,
-            rank=64, ranks=None, device="cuda", epochs=epochs,
-            batch_size=8, lr=2e-5, seq_len=64, parallel=1,
-            output_dir="results/wizard_runs", timeout_s=1800,
-            training_type="finetune", kd_teacher=None, kd_temperature=2.0, kd_alpha=0.5,
-            recovery_steps=50, max_samples=samples, max_eval_samples=50, grad_accum_steps=1,
-            tracker="none", project_name="neuralops", run_name=None, log_interval=10,
-            distributed_backend="none", mixed_precision="no", trust_remote_code=False,
-            hf_token=None, language=None, text_column=None, label_column=None, id_column=None,
-            preprocess_script=None, config=None, auto_commit=False, no_auto_commit=True,
-            commit_interval=1, push_to_hf=None, no_deduplicate=True, force_rerun=True,
-        ))
+
+        from neuralops.benchmarks.cli import handle_run
+
+        handle_run(
+            argparse.Namespace(
+                module=mod,
+                modules=None,
+                no_compression=False,
+                model=model,
+                models=None,
+                all_models=False,
+                dataset=dataset,
+                datasets=None,
+                all_datasets=False,
+                rank=64,
+                ranks=None,
+                device="cuda",
+                epochs=epochs,
+                batch_size=8,
+                lr=2e-5,
+                seq_len=64,
+                parallel=1,
+                output_dir="results/wizard_runs",
+                timeout_s=1800,
+                training_type="finetune",
+                kd_teacher=None,
+                kd_temperature=2.0,
+                kd_alpha=0.5,
+                recovery_steps=50,
+                max_samples=samples,
+                max_eval_samples=50,
+                grad_accum_steps=1,
+                tracker="none",
+                project_name="neuralops",
+                run_name=None,
+                log_interval=10,
+                distributed_backend="none",
+                mixed_precision="no",
+                trust_remote_code=False,
+                hf_token=None,
+                language=None,
+                text_column=None,
+                label_column=None,
+                id_column=None,
+                preprocess_script=None,
+                config=None,
+                auto_commit=False,
+                no_auto_commit=True,
+                commit_interval=1,
+                push_to_hf=None,
+                no_deduplicate=True,
+                force_rerun=True,
+            )
+        )
 
     elif task == "diagnostics":
         from neuralops.cli.doctor import cmd_doctor
+
         cmd_doctor()
 
 
@@ -280,8 +370,13 @@ def _get_gpu_telemetry_panel() -> Optional[Panel]:
     """Retrieve fast live GPU telemetry via nvidia-smi if available."""
     try:
         import subprocess
+
         res = subprocess.run(
-            ["nvidia-smi", "--query-gpu=name,memory.total,memory.used,utilization.gpu,temperature.gpu", "--format=csv,noheader,nounits"],
+            [
+                "nvidia-smi",
+                "--query-gpu=name,memory.total,memory.used,utilization.gpu,temperature.gpu",
+                "--format=csv,noheader,nounits",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -301,7 +396,12 @@ def _get_gpu_telemetry_panel() -> Optional[Panel]:
                 telemetry.append(f"{util}%   ", style="bold white")
                 telemetry.append("Temp: ", style="bold red")
                 telemetry.append(f"{temp}°C", style="bold white")
-                return Panel(telemetry, title="[bold green]⚡ Live Hardware Telemetry[/bold green]", border_style="green", padding=(0, 1))
+                return Panel(
+                    telemetry,
+                    title="[bold green]⚡ Live Hardware Telemetry[/bold green]",
+                    border_style="green",
+                    padding=(0, 1),
+                )
     except Exception:
         # allowed-swallow: best-effort-telemetry
         pass
@@ -314,6 +414,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
 
     if snapshot:
         import torch
+
         dev_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU Host"
         w = 118
         target = inspect_target or "gated_delta_net"
@@ -325,6 +426,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             return
 
         from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
         all_attns = list(ATTENTION_REGISTRY.keys())
         all_comps = list(COMPRESSOR_REGISTRY.keys())
         all_modules = all_attns + all_comps
@@ -341,7 +443,9 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
         print("  🏛️ NEURALOPS MINIMALIST TWO-PANE ARCHITECTURE EXPLORER")
         print(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · Unified Triton & CUDA Kernels")
         print("=" * w)
-        print(f"  {'REGISTRY EXPLORER':<{left_pane_width}} │ {'14-FIELD ARCHITECTURE SPECIFICATION SHEET':<{right_pane_width}}")
+        print(
+            f"  {'REGISTRY EXPLORER':<{left_pane_width}} │ {'14-FIELD ARCHITECTURE SPECIFICATION SHEET':<{right_pane_width}}"
+        )
         print("─" * (left_pane_width + 2) + "┼─" + "─" * right_pane_width)
 
         for row_idx in range(total_rows):
@@ -382,20 +486,44 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
         if gpu_panel is not None:
             console.print(gpu_panel)
 
-        menu = Table(title="[bold green]NeuralOps Interactive Terminal Control Center[/bold green]", show_header=True, header_style="bold magenta", border_style="cyan", expand=True)
+        menu = Table(
+            title="[bold green]NeuralOps Interactive Terminal Control Center[/bold green]",
+            show_header=True,
+            header_style="bold magenta",
+            border_style="cyan",
+            expand=True,
+        )
         menu.add_column("Key", style="bold yellow", width=6, justify="center")
         menu.add_column("Action", style="bold white", width=36)
         menu.add_column("Description", style="dim")
 
-        menu.add_row("1", "Attention Zoo Explorer (131)", "Browse, filter by Causal/GQA/RoPE, and inspect attention modules")
+        menu.add_row(
+            "1", "Attention Zoo Explorer (131)", "Browse, filter by Causal/GQA/RoPE, and inspect attention modules"
+        )
         menu.add_row("2", "Compression Engines (72)", "Explore SVD, Hadamard Incoherent SVD, W4A16, and Quantizers")
-        menu.add_row("3", "Search & Module Inspector", "Search any module by name or keyword and inspect its architecture")
-        menu.add_row("4", "Run Guided Workflow Wizard", "Interactive step-by-step assistant for compression, generation, and benchmarks")
+        menu.add_row(
+            "3", "Search & Module Inspector", "Search any module by name or keyword and inspect its architecture"
+        )
+        menu.add_row(
+            "4",
+            "Run Guided Workflow Wizard",
+            "Interactive step-by-step assistant for compression, generation, and benchmarks",
+        )
         menu.add_row("5", "Run Fused Triton Profiler", "Measure in-SRAM W4A16 dequant-GEMM and O(1) state step latency")
-        menu.add_row("6", "Run System Diagnostics (Doctor)", "Deep verification of CUDA, SM capability, Triton cache, and VRAM")
-        menu.add_row("7", "Inspect Benchmark Results", "View empirical benchmark metrics, accuracy gains, and loss curves")
-        menu.add_row("8", "Help & Architecture Guides", "In-terminal documentation on SVD, Hadamard rotations, and Triton")
-        menu.add_row("9", "Composable Attention Wizard", "Build custom attention via declarative algebraic primitives and generate Python code")
+        menu.add_row(
+            "6", "Run System Diagnostics (Doctor)", "Deep verification of CUDA, SM capability, Triton cache, and VRAM"
+        )
+        menu.add_row(
+            "7", "Inspect Benchmark Results", "View empirical benchmark metrics, accuracy gains, and loss curves"
+        )
+        menu.add_row(
+            "8", "Help & Architecture Guides", "In-terminal documentation on SVD, Hadamard rotations, and Triton"
+        )
+        menu.add_row(
+            "9",
+            "Composable Attention Wizard",
+            "Build custom attention via declarative algebraic primitives and generate Python code",
+        )
         menu.add_row("q", "Exit", "Close the NeuralOps Control Center")
 
         console.print(menu)
@@ -405,7 +533,9 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             break
 
         if choice == "1":
-            table = Table(title="[bold cyan]NeuralOps Attention Mechanisms Zoo (131 Modules)[/bold cyan]", show_header=True)
+            table = Table(
+                title="[bold cyan]NeuralOps Attention Mechanisms Zoo (131 Modules)[/bold cyan]", show_header=True
+            )
             table.add_column("#", style="dim", width=4)
             table.add_column("Attention Module", style="bold green")
             table.add_column("Causal", justify="center")
@@ -413,6 +543,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             table.add_column("RoPE", justify="center")
 
             import json
+
             attns = []
             if CATALOG_PATH.exists():
                 try:
@@ -431,6 +562,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
                     table.add_row(str(idx), item["name"], causal, gqa, rope)
             else:
                 from neuralops.core.registry import ATTENTION_REGISTRY
+
                 for idx, (name, cls) in enumerate(sorted(ATTENTION_REGISTRY.items()), 1):
                     causal = "[green]✓[/green]" if getattr(cls, "supports_causal", True) else "[red]✗[/red]"
                     gqa = "[green]✓[/green]" if getattr(cls, "supports_gqa", False) else "[dim]✗[/dim]"
@@ -447,6 +579,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             table.add_column("Category", style="cyan")
 
             import json
+
             comps = []
             if CATALOG_PATH.exists():
                 try:
@@ -460,12 +593,21 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             if comps:
                 for idx, item in enumerate(comps, 1):
                     name = item["name"]
-                    c_type = "SVD / Low-Rank Factorization" if "svd" in name or "low_rank" in name else "Quantization / Pruning"
+                    c_type = (
+                        "SVD / Low-Rank Factorization"
+                        if "svd" in name or "low_rank" in name
+                        else "Quantization / Pruning"
+                    )
                     table.add_row(str(idx), name, c_type)
             else:
                 from neuralops.core.registry import COMPRESSOR_REGISTRY
+
                 for idx, (name, cls) in enumerate(sorted(COMPRESSOR_REGISTRY.items()), 1):
-                    c_type = "SVD / Low-Rank Factorization" if "svd" in name or "low_rank" in name else "Quantization / Pruning"
+                    c_type = (
+                        "SVD / Low-Rank Factorization"
+                        if "svd" in name or "low_rank" in name
+                        else "Quantization / Pruning"
+                    )
                     table.add_row(str(idx), name, c_type)
 
             console.print(table)
@@ -474,6 +616,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
         elif choice == "3":
             query = Prompt.ask("\nEnter module name or keyword to search").strip().lower()
             import json
+
             attns, comps = [], []
             if CATALOG_PATH.exists():
                 try:
@@ -486,6 +629,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
                     pass
             if not attns:
                 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
                 attns = list(ATTENTION_REGISTRY.keys())
                 comps = list(COMPRESSOR_REGISTRY.keys())
 
@@ -504,7 +648,9 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
                     res_table.add_row("compressor", k)
                 console.print(res_table)
 
-                inspect_choice = Prompt.ask("\nEnter exact module name to inspect (or press Enter to skip)", default="").strip()
+                inspect_choice = Prompt.ask(
+                    "\nEnter exact module name to inspect (or press Enter to skip)", default=""
+                ).strip()
                 if inspect_choice:
                     m_type = "attention" if inspect_choice in attns else "compressor"
                     _interactive_module_inspector(inspect_choice, mod_type=m_type)
@@ -515,20 +661,33 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             input("\nPress Enter to return to main menu...")
 
         elif choice == "5":
-            from neuralops.benchmarks.cli import handle_benchmark_fused
             import argparse
+
+            from neuralops.benchmarks.cli import handle_benchmark_fused
+
             handle_benchmark_fused(argparse.Namespace(kernel="all", batch_size=4, seq_len=128, dim=768))
             input("\nPress Enter to return to main menu...")
 
         elif choice == "6":
             from neuralops.cli.doctor import cmd_doctor
+
             cmd_doctor()
             input("\nPress Enter to return to main menu...")
 
         elif choice == "7":
-            from neuralops.benchmarks.cli import handle_results
             import argparse
-            dir_choice = Prompt.ask("Choose results directory", choices=["results/roberta_benchmark_sweep", "results/full_queue_all_modules", "results/roberta_compressors_sweep"], default="results/roberta_benchmark_sweep")
+
+            from neuralops.benchmarks.cli import handle_results
+
+            dir_choice = Prompt.ask(
+                "Choose results directory",
+                choices=[
+                    "results/roberta_benchmark_sweep",
+                    "results/full_queue_all_modules",
+                    "results/roberta_compressors_sweep",
+                ],
+                default="results/roberta_benchmark_sweep",
+            )
             handle_results(argparse.Namespace(output_dir=dir_choice))
             input("\nPress Enter to return to main menu...")
 
@@ -536,21 +695,41 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             console.print("\n[bold cyan]Available Architecture Documentation Topics:[/bold cyan]")
             for k in HELP_TOPICS.keys():
                 console.print(f"  • [bold yellow]{k}[/bold yellow]")
-            topic = Prompt.ask("\nChoose topic to read", choices=list(HELP_TOPICS.keys()) + ["back"], default="quickstart")
+            topic = Prompt.ask(
+                "\nChoose topic to read", choices=list(HELP_TOPICS.keys()) + ["back"], default="quickstart"
+            )
             if topic in HELP_TOPICS:
                 console.print(Markdown(HELP_TOPICS[topic]))
             input("\nPress Enter to return to main menu...")
 
         elif choice == "9":
-            console.print(Panel("[bold green]Composable Attention Architecture Wizard[/bold green]\nInteractively assemble custom attention layers and export ready-to-use Python code.", border_style="green"))
-            proj = Prompt.ask("Choose projection (P)", choices=["dense", "svd(rank=32)", "svd(rank=64)", "conv1d(kernel_size=4)"], default="svd(rank=64)")
+            console.print(
+                Panel(
+                    "[bold green]Composable Attention Architecture Wizard[/bold green]\nInteractively assemble custom attention layers and export ready-to-use Python code.",
+                    border_style="green",
+                )
+            )
+            proj = Prompt.ask(
+                "Choose projection (P)",
+                choices=["dense", "svd(rank=32)", "svd(rank=64)", "conv1d(kernel_size=4)"],
+                default="svd(rank=64)",
+            )
             pos = Prompt.ask("Choose positional embedding", choices=["none", "rope", "alibi"], default="rope")
             kmap = Prompt.ask("Choose feature map (phi)", choices=["softmax", "elu+1", "cosformer"], default="elu+1")
-            msk = Prompt.ask("Choose masking (M)", choices=["causal", "sliding_window(128)", "sliding_window(128)+sink(4)", "bidirectional"], default="sliding_window(128)+sink(4)")
-            eng = Prompt.ask("Choose execution engine (E)", choices=["sdpa", "chunked_scan", "delta_rule"], default="chunked_scan")
+            msk = Prompt.ask(
+                "Choose masking (M)",
+                choices=["causal", "sliding_window(128)", "sliding_window(128)+sink(4)", "bidirectional"],
+                default="sliding_window(128)+sink(4)",
+            )
+            eng = Prompt.ask(
+                "Choose execution engine (E)", choices=["sdpa", "chunked_scan", "delta_rule"], default="chunked_scan"
+            )
 
             from neuralops import compose_attention
-            attn = compose_attention(projection=proj, positional=pos, kernel_map=kmap, mask=msk, engine=eng, embed_dim=768, num_heads=12)
+
+            attn = compose_attention(
+                projection=proj, positional=pos, kernel_map=kmap, mask=msk, engine=eng, embed_dim=768, num_heads=12
+            )
             console.print("\n[bold cyan]Assembled Architecture Specification:[/bold cyan]")
             console.print(attn.summary())
 

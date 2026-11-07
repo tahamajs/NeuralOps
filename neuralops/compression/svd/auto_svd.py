@@ -20,9 +20,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
-from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 
 logger = logging.getLogger("NeuralOps.AutoSVD")
 
@@ -59,6 +59,7 @@ class FisherSensitivityProfiler:
                 else:
                     gram_matrices[name].add_(g)
                     counts[name] += x_2d.shape[0]
+
             return hook
 
         for name, mod in self.model.named_modules():
@@ -179,7 +180,10 @@ def solve_optimal_rank_allocation(
         if w is not None and isinstance(w, torch.Tensor) and w.dim() == 2:
             cls_name = mod.__class__.__name__.lower()
             if isinstance(mod, nn.Linear) or "conv1d" in cls_name or hasattr(mod, "nf"):
-                if any(skip in name.lower() for skip in ("lm_head", "classifier", "head", "output_layer", "score", "embed", "wte", "wpe")):
+                if any(
+                    skip in name.lower()
+                    for skip in ("lm_head", "classifier", "head", "output_layer", "score", "embed", "wte", "wpe")
+                ):
                     continue
                 if target_layers is None or any(t in name for t in target_layers):
                     linear_layers[name] = mod

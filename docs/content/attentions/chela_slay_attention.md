@@ -137,24 +137,24 @@ def _chela_slay_fused_kernel(
     BLOCK_M: tl.constexpr
 ):
     pid_bh = tl.program_id(0)
-    
+
     # Initialize persistent state memory in SRAM [2m, d]
     kv_state = tl.zeros((2 * m, d), dtype=tl.float32)
     k_sum = tl.zeros((2 * m,), dtype=tl.float32)
-    
+
     for t in range(L):
         q = tl.load(Q_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d))
         k = tl.load(K_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d))
         v = tl.load(V_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d))
-        
+
         # Unit sphere normalize
         q_norm = q / (tl.sqrt(tl.sum(q * q)) + 1e-6)
         k_norm = k / (tl.sqrt(tl.sum(k * k)) + 1e-6)
-        
+
         # Trigonometric projection
         angle_k = tl.dot(k_norm[None, :], W_ptr)
         phi_k = tl.cat([tl.cos(angle_k), tl.sin(angle_k)], axis=1) / tl.sqrt(m.to(tl.float32))
-        
+
         kv_state += tl.dot(tl.trans(phi_k), v[None, :])
         k_sum += tl.sum(phi_k, axis=0)
 ```
@@ -187,4 +187,3 @@ The empirical evaluation of `chela_slay` across standard sequence lengths and la
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

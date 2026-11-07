@@ -294,7 +294,7 @@ std::vector<torch::Tensor> fp4_gemm_bwd(
 
     auto grad_x = torch::empty_like(x_2d);
     auto grad_scales = torch::empty_like(scales);
-    
+
     const bool has_bias = bias.has_value() && bias.value().defined();
     torch::Tensor grad_bias;
     if (has_bias) {

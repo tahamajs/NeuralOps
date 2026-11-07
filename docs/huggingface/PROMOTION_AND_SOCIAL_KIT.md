@@ -24,39 +24,39 @@ Comprehensive social media copy, viral campaign hooks, visual presentation guide
 
 **Tweet 1 (The Hook):**
 > Stop throwing away billions pre-training linear models from scratch. 🧠⚡️
-> 
+>
 > What if you could take ANY standard Transformer and surgically transplant its quadratic attention into Mamba, Cosformer, or AdaSplash in **1 line of code**?
-> 
+>
 > Meet **Hooshaai & NeuralOps v1.7.0**:
-> 
-> 🔹 131 Attention Mechanisms across 14 families  
-> 🔹 72 SVD & Compression Engines  
-> 🔹 112 Native CUDA C++ & 26 Triton JIT kernels  
-> 🔹 14 Pre-trained checkpoints on Hugging Face  
-> 🔹 Interactive 3D WebGL Architecture Atlas  
-> 
-> 🔗 Follow us on Hugging Face: https://huggingface.co/Hooshaai  
-> ⭐️ Star the GitHub: https://github.com/tahamajs/NeuralOps  
-> 
+>
+> 🔹 131 Attention Mechanisms across 14 families
+> 🔹 72 SVD & Compression Engines
+> 🔹 112 Native CUDA C++ & 26 Triton JIT kernels
+> 🔹 14 Pre-trained checkpoints on Hugging Face
+> 🔹 Interactive 3D WebGL Architecture Atlas
+>
+> 🔗 Follow us on Hugging Face: https://huggingface.co/Hooshaai
+> ⭐️ Star the GitHub: https://github.com/tahamajs/NeuralOps
+>
 > *(Attach a 10s rotating screen recording of the 3D WebGL Atlas Space)* 🧵👇
 
 **Tweet 2 (Hardware Evidence & Benchmarks):**
 > Tested on physical silicon (NVIDIA RTX 4070 SM 8.9):
-> 
-> 📏 **Seq Length: 8,192 Tokens**  
-> • Dense FlashAttention-2: 92.6 ms | 6.85 GB VRAM  
-> • Hooshaai Cosformer: **15.9 ms (5.8x faster)** | 780 MB VRAM  
-> • Hooshaai Griffin-SSD: **12.5 ms (7.4x faster)** | 640 MB VRAM  
-> 
-> 📏 **Seq Length: 32,768 Tokens**  
-> • Standard PyTorch: 💥 CUDA OUT OF MEMORY  
+>
+> 📏 **Seq Length: 8,192 Tokens**
+> • Dense FlashAttention-2: 92.6 ms | 6.85 GB VRAM
+> • Hooshaai Cosformer: **15.9 ms (5.8x faster)** | 780 MB VRAM
+> • Hooshaai Griffin-SSD: **12.5 ms (7.4x faster)** | 640 MB VRAM
+>
+> 📏 **Seq Length: 32,768 Tokens**
+> • Standard PyTorch: 💥 CUDA OUT OF MEMORY
 > • Hooshaai Hymba: **48.1 ms (14.2x scalable)** | 1.84 GB VRAM ✅
 
 **Tweet 3 (The Science & Thesis):**
 > This isn't just a prototype — it's the culmination of a comprehensive 317-page scientific monograph:
-> 
-> 📖 317-Page Monograph (205 MB): https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Master_Thesis_810101504.pdf  
-> 📊 Master SQLite/Parquet Results Dataset: https://huggingface.co/datasets/Hooshaai/neuralops-results  
+>
+> 📖 317-Page Monograph (205 MB): https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Master_Thesis_810101504.pdf
+> 📊 Master SQLite/Parquet Results Dataset: https://huggingface.co/datasets/Hooshaai/neuralops-results
 > 📑 NeurIPS 2026, ICLR 2027, & MLSys 2027 Preprints included!
 
 **Tweet 4 (Call to Action):**
@@ -64,10 +64,10 @@ Comprehensive social media copy, viral campaign hooks, visual presentation guide
 > ```bash
 > pip install neuralops==1.7.0
 > ```
-> 
-> Explore the 14 official checkpoints and follow our Hugging Face Organization to get notified for upcoming LLaMA-3.1 8B/70B surgeries:  
-> 👉 https://huggingface.co/Hooshaai  
-> 
+>
+> Explore the 14 official checkpoints and follow our Hugging Face Organization to get notified for upcoming LLaMA-3.1 8B/70B surgeries:
+> 👉 https://huggingface.co/Hooshaai
+>
 > Drop a ⭐️ if you believe subquadratic sequence modeling is the future!
 
 ---
@@ -116,8 +116,8 @@ Comprehensive social media copy, viral campaign hooks, visual presentation guide
 `pip install neuralops`
 
 🔗 **لینک‌های دسترسی و حمایت:**
-🤗 **هاگینگ‌فیس هوشا:** https://huggingface.co/Hooshaai  
-🌌 **اسپیس سه‌بعدی:** https://huggingface.co/spaces/Hooshaai/3d-neural-architecture-visualizer  
+🤗 **هاگینگ‌فیس هوشا:** https://huggingface.co/Hooshaai
+🌌 **اسپیس سه‌بعدی:** https://huggingface.co/spaces/Hooshaai/3d-neural-architecture-visualizer
 ⭐️ **گیت‌هاب:** https://github.com/tahamajs/NeuralOps
 ```
 
@@ -185,7 +185,7 @@ Feedback, feature requests, and PRs are warmly welcome!
 2. Start screen recording (1080p, 60fps).
 3. Smoothly rotate the 3D manifold around the glowing colored clusters (Dense, Linear, SSM, Sparse).
 4. Click on a node (e.g. `cosformer` or `mamba_block`) to open the HUD info card showing latency, TFLOPS, and memory.
-5. Overlay bold text:  
-   *"131 Attentions. 72 Compressors. 1 Line of Code."*  
+5. Overlay bold text:
+   *"131 Attentions. 72 Compressors. 1 Line of Code."*
    *"Hooshaai / NeuralOps on Hugging Face ⚡️"*
 6. Export as `.mp4` under 15 seconds. This format typically achieves 5x–10x higher engagement than plain text.

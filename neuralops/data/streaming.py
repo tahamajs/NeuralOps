@@ -52,11 +52,7 @@ class PackedTokenStreamDataset(IterableDataset):
     def __iter__(self) -> Iterator[dict[str, torch.Tensor]]:
         stream = self.token_iterator_fn()
         if self.dp_world_size > 1:
-            stream = (
-                document
-                for index, document in enumerate(stream)
-                if index % self.dp_world_size == self.dp_rank
-            )
+            stream = (document for index, document in enumerate(stream) if index % self.dp_world_size == self.dp_rank)
         if self.eos_token_id is not None:
             stream = _append_eos(stream, self.eos_token_id)
         records = pack_sequences(
@@ -67,7 +63,8 @@ class PackedTokenStreamDataset(IterableDataset):
             **{
                 key: value
                 for key, value in self.kwargs.items()
-                if key in {"ignore_index", "mask_cross_document", "allow_cross_boundary_split", "tokenizer", "text_column"}
+                if key
+                in {"ignore_index", "mask_cross_document", "allow_cross_boundary_split", "tokenizer", "text_column"}
             },
         )
         for index, record in enumerate(records):

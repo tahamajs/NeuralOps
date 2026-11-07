@@ -40,14 +40,14 @@
 ```
 
 ### 1. Title & Subtitle
-**SVD Linear Attention: Shrinking Massive Projection Weights via Truncated Singular Value Decomposition**  
+**SVD Linear Attention: Shrinking Massive Projection Weights via Truncated Singular Value Decomposition**
 *Replacing dense $d \times d$ transformer projection matrices with twin low-rank factor bottlenecks to slash parameters by up to 85% with near-zero perplexity loss.*
 
 ### 2. The Analogy
 Imagine a massive, uncompressed ultra-high-definition panoramic photograph ($4000 \times 4000$ pixels). If you store every raw pixel individually, the file is gigantic. But when compressed to JPEG, the image isn't stored as 16 million independent numbers; instead, the compression algorithm identifies the primary color gradients and dominant geometric contours. SVD Linear Attention does the exact same thing to transformer weight matrices: it breaks a bulky square matrix into a tall thin matrix and a wide flat matrix, capturing over 95% of the information while discarding redundant numerical noise.
 
 ### 3. The Problem
-In standard Multi-Head Attention (MHA), every transformer layer projects input activations into Query, Key, Value, and Output spaces using four dense linear operators: $W_q, W_k, W_v, W_o \in \mathbb{R}^{d \times d}$. 
+In standard Multi-Head Attention (MHA), every transformer layer projects input activations into Query, Key, Value, and Output spaces using four dense linear operators: $W_q, W_k, W_v, W_o \in \mathbb{R}^{d \times d}$.
 - For modern large language models where the hidden dimension $d = 4096$, each matrix contains $4096^2 \approx 16.78\text{ million}$ parameters.
 - Across 4 projection matrices per layer and 32 layers, projection weights alone consume over **2.15 billion parameters** (~4.3 GB in FP16), creating severe memory bandwidth saturation and slowing down auto-regressive token generation.
 
@@ -73,7 +73,7 @@ flowchart LR
     Z --> U["W_up [d, r] (Up-Projection)"]
     U --> Bias["+ Bias Vector b [d]"]
     Bias --> Out["Projected Output Y [B, N, d]"]
-    
+
     classDef tensor fill:#1E293B,stroke:#00FF9D,stroke-width:2px,color:#F8FAFC;
     classDef op fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#38BDF8;
     class X,Z,Out tensor;
@@ -115,7 +115,7 @@ $$\text{Compression Factor: } \rho = \frac{2 \cdot d \cdot r}{d^2} = \frac{2r}{d
 ```
 
 ### 1. Title & Subtitle
-**Adaptive SVD Attention: Dynamic Energy-Threshold Rank Allocation & Residual Adapters**  
+**Adaptive SVD Attention: Dynamic Energy-Threshold Rank Allocation & Residual Adapters**
 *Allocating high rank to complex early syntactic layers and minimal rank to low-entropy deep layers based on cumulative spectral energy.*
 
 ### 2. The Analogy
@@ -142,7 +142,7 @@ flowchart TD
     Thresh -- No --> Inc["k = k + 1"] --> Energy
     Thresh -- Yes --> SetRank["Assign Dynamic Rank r_l = k"]
     SetRank --> Split["Split into Frozen SVD Base (U_r, V_r) + Trainable Adapter (A, B)"]
-    
+
     classDef default fill:#1E293B,stroke:#38BDF8,stroke-width:1.5px,color:#F8FAFC;
     classDef decision fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F59E0B;
     class Thresh decision;
@@ -186,7 +186,7 @@ $$\text{Global Parameter Optimization: } \min_{\{r_l\}} \sum_{l=1}^L 2 \cdot d \
 ```
 
 ### 1. Title & Subtitle
-**NASC Attention: Multi-Tier Spectral Cascades with Residual High-Frequency Routing**  
+**NASC Attention: Multi-Tier Spectral Cascades with Residual High-Frequency Routing**
 *Combining truncated low-rank principal components with a micro-residual bypass to preserve critical out-of-distribution token details.*
 
 ### 2. The Analogy
@@ -213,7 +213,7 @@ flowchart TD
     Base --> Add["Fused Sum: Y = Base + γ ⊙ Bypass"]
     Mult --> Add
     Add --> Out["Output Token Representations"]
-    
+
     classDef baseStyle fill:#1E293B,stroke:#00FF9D,stroke-width:2px,color:#F8FAFC;
     classDef bypassStyle fill:#1E293B,stroke:#A855F7,stroke-width:2px,color:#F8FAFC;
     classDef routerStyle fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F59E0B;
@@ -264,7 +264,7 @@ $$\text{Total Reconstruction Error: } \mathbb{E}\left[ \| Y - X W_{\text{orig}}^
 ```
 
 ### 1. Title & Subtitle
-**The AEGIS Hybrid Family: 12 Generations of Spectral Low-Rank & Flash Attention Fusion**  
+**The AEGIS Hybrid Family: 12 Generations of Spectral Low-Rank & Flash Attention Fusion**
 *A comprehensive evolutionary roadmap bridging linear $O(N)$ state-space scaling with high-resolution $O(W^2)$ local window attention.*
 
 ### 2. The Analogy
@@ -296,15 +296,15 @@ The AEGIS family splits multi-head attention into specialized functional branche
 flowchart LR
     Input["Input X [B, N, D]"] --> QKV["Low-Rank Factorized Q, K, V Projections"]
     QKV --> Split{"Head Splitter"}
-    
+
     Split -->|"25% Heads"| Local["Local Sliding-Window Branch\nO(N · W)\nExact Softmax"]
     Split -->|"75% Heads"| Global["Global Linear SVD Branch\nO(N · d_h²)\nφ(x) = ELU(x) + 1"]
-    
+
     Local --> Fuse["Dynamic Gated Fusion:\nα · O_local + (1 - α) · O_global"]
     Global --> Fuse
     Fuse --> OutProj["Low-Rank Output Projection (W_O1 · W_O2)"]
     OutProj --> Out["Final Output [B, N, D]"]
-    
+
     classDef default fill:#1E293B,stroke:#38BDF8,stroke-width:1.5px,color:#F8FAFC;
     classDef branch fill:#0F172A,stroke:#00FF9D,stroke-width:2px,color:#00FF9D;
     class Local,Global branch;
@@ -347,7 +347,7 @@ $$\text{Layer Output: } Y = \left( \left[ \alpha \odot O^{\text{local}} + (1 - \
 ```
 
 ### 1. Title & Subtitle
-**AEGIS-Spectron-FP8: Low-Rank Factorization Meets 8-Bit Floating-Point Tensor Cores**  
+**AEGIS-Spectron-FP8: Low-Rank Factorization Meets 8-Bit Floating-Point Tensor Cores**
 *Accelerating truncated SVD attention projections directly inside native FP8 (E4M3/E5M2) hardware units for a 3.2x throughput surge.*
 
 ### 2. The Analogy
@@ -368,18 +368,18 @@ AEGIS-Spectron-FP8 combines mathematical rank reduction with native hardware pre
 flowchart TD
     X["Input Activation X (FP16)"] --> ScaleX["Per-Tensor Quantization Scale s_X"]
     ScaleX --> QX["FP8 E4M3 Quantized X"]
-    
+
     W1["SVD Factor V_r (FP16)"] --> ScaleV["Per-Channel Scale s_V"]
     ScaleV --> QV["FP8 E4M3 Quantized V_r"]
-    
+
     QX --> WGMMA1["Hopper FP8 WGMMA: Z = Q(X) · Q(V_r)^T"]
     QV --> WGMMA1
-    
+
     WGMMA1 --> W2["SVD Factor U_r (FP8 E4M3)"]
     W2 --> WGMMA2["Hopper FP8 WGMMA: Y = Q(Z) · Q(U_r)^T"]
     WGMMA2 --> Dequant["Dequantize & Scale: s_X · s_V · s_U"]
     Dequant --> Out["Final Output Y (FP16/FP32)"]
-    
+
     classDef default fill:#1E293B,stroke:#38BDF8,stroke-width:1.5px,color:#F8FAFC;
     classDef fp8 fill:#0F172A,stroke:#00FF9D,stroke-width:2px,color:#00FF9D;
     class QX,QV,WGMMA1,WGMMA2 fp8;
@@ -420,7 +420,7 @@ $$\text{Hardware Speedup Ratio: } \text{Speedup} \approx \frac{\text{TFLOPS}_{\t
 ```
 
 ### 1. Title & Subtitle
-**Kronecker & Tensor-Train Attention: Multi-Dimensional Matrix Network Factorization**  
+**Kronecker & Tensor-Train Attention: Multi-Dimensional Matrix Network Factorization**
 *Representing massive attention projection weights as contracted networks of 3D tensor cores to achieve 90%+ extreme parameter compression.*
 
 ### 2. The Analogy
@@ -444,7 +444,7 @@ flowchart LR
     G1 --> G2["Core Tensor G₂ (r₁ × m₂ × n₂ × r₂)"]
     G2 --> G3["Core Tensor G₃ (r₂ × m₃ × n₃ × 1)"]
     G3 --> Out["Output Tensor Y (Reshaped n₁ × n₂ × n₃)"]
-    
+
     classDef default fill:#1E293B,stroke:#38BDF8,stroke-width:1.5px,color:#F8FAFC;
     classDef core fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F59E0B;
     class G1,G2,G3 core;
@@ -485,7 +485,7 @@ $$\text{Forward Contraction: } y = x \left( G_1 \times_{r_1} G_2 \times_{r_2} \d
 ```
 
 ### 1. Title & Subtitle
-**LoRA Cross-Attention: Low-Rank Parameter-Efficient Adaptation for Multimodal Transformers**  
+**LoRA Cross-Attention: Low-Rank Parameter-Efficient Adaptation for Multimodal Transformers**
 *Freezing giant foundation cross-attention weights and injecting lightweight trainable rank-decomposed adapter pairs to enable modular task adaptation.*
 
 ### 2. The Analogy
@@ -511,7 +511,7 @@ flowchart LR
     Frozen --> Add["Sum: W_0 · X + (α/r) · (B · A) · X"]
     Scale --> Add
     Add --> Out["Conditioned Cross-Attention Output"]
-    
+
     classDef default fill:#1E293B,stroke:#38BDF8,stroke-width:1.5px,color:#F8FAFC;
     classDef lora fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F59E0B;
     class A,B,Scale lora;
@@ -550,7 +550,7 @@ $$\text{Inference Weight Fusion: } W_{\text{fused}} = W_0 + \frac{\alpha}{r} B A
 ```
 
 ### 1. Title & Subtitle
-**Eigen-Attention: Pruning Attention Heads along Principal Eigenvalue Manifolds**  
+**Eigen-Attention: Pruning Attention Heads along Principal Eigenvalue Manifolds**
 *Analyzing the covariance matrix of multi-head activations to eliminate redundant subspace dimensions and collapse collinear heads.*
 
 ### 2. The Analogy
@@ -576,7 +576,7 @@ flowchart TD
     Energy --> Prune["Prune Minor Eigen-Modes (λ_{k+1} ... λ_d)"]
     Prune --> Ortho["Project Head Weights onto Principal Subspace V_k"]
     Ortho --> SlimModel["Slimmed Lossless Transformer Model"]
-    
+
     classDef default fill:#1E293B,stroke:#38BDF8,stroke-width:1.5px,color:#F8FAFC;
     classDef highlight fill:#0F172A,stroke:#00FF9D,stroke-width:2px,color:#00FF9D;
     class Eig,SlimModel highlight;
@@ -621,16 +621,16 @@ class SVDLinear(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank
-        
+
         # Factorized low-rank weights
         self.V = nn.Parameter(torch.empty(rank, in_features))
         self.U = nn.Parameter(torch.empty(out_features, rank))
-        
+
         if bias:
             self.bias = nn.Parameter(torch.zeros(out_features))
         else:
             self.register_parameter('bias', None)
-            
+
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -654,16 +654,16 @@ class SVDLinear(nn.Module):
         with torch.no_grad():
             W = linear_layer.weight.data.float() # [out_features, in_features]
             U, S, Vh = torch.linalg.svd(W, full_matrices=False)
-            
+
             # Truncate to rank r
             U_r = U[:, :rank] * torch.sqrt(S[:rank])
             V_r = torch.diag(torch.sqrt(S[:rank])) @ Vh[:rank, :]
-            
-            layer = cls(linear_layer.in_features, linear_layer.out_features, rank=rank, 
+
+            layer = cls(linear_layer.in_features, linear_layer.out_features, rank=rank,
                         bias=linear_layer.bias is not None)
             layer.U.copy_(U_r.to(linear_layer.weight.dtype))
             layer.V.copy_(V_r.to(linear_layer.weight.dtype))
-            
+
             if linear_layer.bias is not None:
                 layer.bias.copy_(linear_layer.bias.data)
             return layer
@@ -679,7 +679,7 @@ class AdaptiveSVDLinear(nn.Module):
         self.svd_base = SVDLinear(in_features, out_features, rank=svd_rank)
         self.svd_base.U.requires_grad = False
         self.svd_base.V.requires_grad = False
-        
+
         # Learnable Residual Adapter
         self.adapter_A = nn.Parameter(torch.randn(res_rank, in_features) * 0.01)
         self.adapter_B = nn.Parameter(torch.zeros(out_features, res_rank))
@@ -697,15 +697,15 @@ if __name__ == "__main__":
     dense = nn.Linear(D, D)
     svd_layer = SVDLinear.from_pretrained_linear(dense, rank=64)
     adaptive_layer = AdaptiveSVDLinear(D, D, svd_rank=64, res_rank=8)
-    
+
     x = torch.randn(B, N, D)
     out_dense = dense(x)
     out_svd = svd_layer(x)
     out_adaptive = adaptive_layer(x)
-    
+
     dense_params = sum(p.numel() for p in dense.parameters())
     svd_params = sum(p.numel() for p in svd_layer.parameters())
-    
+
     print(f"Dense Params:     {dense_params:,}")
     print(f"SVD Params:       {svd_params:,} ({dense_params / svd_params:.1f}x compression!)")
     print(f"Reconstruction Cosine Similarity: {F.cosine_similarity(out_dense.flatten(), out_svd.flatten(), dim=0):.4f}")

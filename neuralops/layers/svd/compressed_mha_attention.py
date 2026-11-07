@@ -13,10 +13,6 @@ Joint truncated singular value decomposition compressing query, key, value, and 
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -25,12 +21,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
+
 logger = logging.getLogger(__name__)
 
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 
@@ -49,6 +47,7 @@ class CompressedDistilBertAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
@@ -70,12 +69,8 @@ class CompressedDistilBertAttention(BaseAttention):
         cfg = config or model_config
         super().__init__(cfg, rank)
         self.adapter = ModelAdapter(cfg)
-        self.hidden_size: int = self.adapter.hidden_size or kwargs.get(
-            "hidden_size", kwargs.get("d_model", 768)
-        )
-        self.num_heads: int = self.adapter.num_heads or kwargs.get(
-            "num_heads", kwargs.get("num_attention_heads", 12)
-        )
+        self.hidden_size: int = self.adapter.hidden_size or kwargs.get("hidden_size", kwargs.get("d_model", 768))
+        self.num_heads: int = self.adapter.num_heads or kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
         self.num_kv_heads: int = self.adapter.num_key_value_heads or kwargs.get(
             "num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads)
         )
@@ -112,21 +107,13 @@ class CompressedDistilBertAttention(BaseAttention):
 
         qkv_out_dim = self.all_head_size + 2 * self.kv_head_size
 
-        self.U_qkv = nn.Parameter(
-            torch.randn(qkv_out_dim, self.rank_qkv) * 0.02, requires_grad=False
-        )
+        self.U_qkv = nn.Parameter(torch.randn(qkv_out_dim, self.rank_qkv) * 0.02, requires_grad=False)
         self.S_qkv = nn.Parameter(torch.ones(self.rank_qkv), requires_grad=False)
-        self.Vh_qkv = nn.Parameter(
-            torch.randn(self.rank_qkv, self.hidden_size) * 0.02, requires_grad=False
-        )
+        self.Vh_qkv = nn.Parameter(torch.randn(self.rank_qkv, self.hidden_size) * 0.02, requires_grad=False)
 
-        self.U_out = nn.Parameter(
-            torch.randn(self.hidden_size, self.rank_out) * 0.02, requires_grad=False
-        )
+        self.U_out = nn.Parameter(torch.randn(self.hidden_size, self.rank_out) * 0.02, requires_grad=False)
         self.S_out = nn.Parameter(torch.ones(self.rank_out), requires_grad=False)
-        self.Vh_out = nn.Parameter(
-            torch.randn(self.rank_out, self.all_head_size) * 0.02, requires_grad=False
-        )
+        self.Vh_out = nn.Parameter(torch.randn(self.rank_out, self.all_head_size) * 0.02, requires_grad=False)
 
         self.bias_q = nn.Parameter(torch.zeros(self.all_head_size), requires_grad=False)
         self.bias_k = nn.Parameter(torch.zeros(self.kv_head_size), requires_grad=False)
@@ -189,9 +176,7 @@ class CompressedDistilBertAttention(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                logger.debug(
-                    f"UniversalAdapter failed for {proj}: {e}"
-                )
+                logger.debug(f"UniversalAdapter failed for {proj}: {e}")
 
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
@@ -335,9 +320,7 @@ class CompressedDistilBertAttention(BaseAttention):
             r_qkv = min(self.rank_qkv, U.size(1), Vh.size(0))
 
             qkv_out_dim = self.all_head_size + 2 * self.kv_head_size
-            self.U_qkv.data[: min(qkv_out_dim, U.size(0)), :r_qkv].copy_(
-                U[: min(qkv_out_dim, U.size(0)), :r_qkv]
-            )
+            self.U_qkv.data[: min(qkv_out_dim, U.size(0)), :r_qkv].copy_(U[: min(qkv_out_dim, U.size(0)), :r_qkv])
             self.S_qkv.data[:r_qkv].copy_(S[:r_qkv])
             self.Vh_qkv.data[:r_qkv, : min(self.hidden_size, Vh.size(1))].copy_(
                 Vh[:r_qkv, : min(self.hidden_size, Vh.size(1))]
@@ -438,6 +421,7 @@ class CompressedDistilBertAttention(BaseAttention):
         if hidden_states.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 qkv_comp = fused_svd_lora_sparse_attn_triton(
                     hidden_states,
                     w_down=qkv_w_down,
@@ -450,16 +434,18 @@ class CompressedDistilBertAttention(BaseAttention):
                 proj = torch.matmul(hidden_states, self.Vh_qkv.t().contiguous()) * self.S_qkv.unsqueeze(0).unsqueeze(0)
                 qkv_comp = torch.matmul(proj, self.U_qkv.t().contiguous())
                 if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
-                    qkv_comp = qkv_comp + (F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling)
+                    qkv_comp = qkv_comp + (
+                        F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling
+                    )
         else:
             proj = torch.matmul(hidden_states, self.Vh_qkv.t().contiguous()) * self.S_qkv.unsqueeze(0).unsqueeze(0)
             qkv_comp = torch.matmul(proj, self.U_qkv.t().contiguous())
             if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
-                qkv_comp = qkv_comp + (F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling)
+                qkv_comp = qkv_comp + (
+                    F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling
+                )
 
-        q_raw, k_raw, v_raw = torch.split(
-            qkv_comp, [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1
-        )
+        q_raw, k_raw, v_raw = torch.split(qkv_comp, [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1)
         q = q_raw + self.bias_q
         k = k_raw + self.bias_k
         v = v_raw + self.bias_v
@@ -514,11 +500,7 @@ class CompressedDistilBertAttention(BaseAttention):
             or any(mt.startswith(p) for p in decoder_prefixes)
         )
         if is_decoder:
-            causal_tril = (
-                torch.tril(torch.ones((N, N), device=device, dtype=torch.bool))
-                .unsqueeze(0)
-                .unsqueeze(0)
-            )
+            causal_tril = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
             scores = scores.masked_fill(~causal_tril, -10000.0)
 
         attn_probs = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
@@ -544,6 +526,7 @@ class CompressedDistilBertAttention(BaseAttention):
             if context.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                     out = fused_svd_lora_sparse_attn_triton(
                         context,
                         w_down=out_w_down,
@@ -554,7 +537,9 @@ class CompressedDistilBertAttention(BaseAttention):
                         bias=self.bias_out,
                     )
                 except Exception:
-                    out_proj = torch.matmul(context, self.Vh_out.t().contiguous()) * self.S_out.unsqueeze(0).unsqueeze(0)
+                    out_proj = torch.matmul(context, self.Vh_out.t().contiguous()) * self.S_out.unsqueeze(0).unsqueeze(
+                        0
+                    )
                     out = torch.matmul(out_proj, self.U_out.t().contiguous()) + self.bias_out
                     if self.lora_rank > 0 and self.lora_A_out is not None and self.lora_B_out is not None:
                         out = out + (F.linear(F.linear(context, self.lora_A_out), self.lora_B_out) * self.lora_scaling)
@@ -598,11 +583,7 @@ def inject_compressed_mha(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -614,9 +595,7 @@ def inject_compressed_mha(
             res = inject_compressed_mha(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -639,11 +618,7 @@ def inject_compressed_mha(
         model_config = getattr(old_attn, "config", None)
 
     try:
-        h_sz = (
-            getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-            if model_config
-            else 768
-        )
+        h_sz = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
         default_rank = min(256, h_sz // 2)
         rank_qkv = (
             getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", default_rank))
@@ -710,16 +685,12 @@ def compressed_mha_fn(
             else:
                 scores = scores + attention_mask.to(scores.dtype)
         else:
-            valid_m = get_token_valid_mask(
-                attention_mask, query.shape[0], query.shape[-2], query.device
-            )
+            valid_m = get_token_valid_mask(attention_mask, query.shape[0], query.shape[-2], query.device)
             if valid_m is not None:
                 scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
     if is_causal:
         seq_len = query.shape[-2]
-        causal_mask = torch.tril(
-            torch.ones((seq_len, seq_len), device=query.device, dtype=torch.bool)
-        )
+        causal_mask = torch.tril(torch.ones((seq_len, seq_len), device=query.device, dtype=torch.bool))
         scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -10000.0)
     attn_probs = torch.softmax(scores.float(), dim=-1).to(query.dtype)
     if dropout_p > 0.0:

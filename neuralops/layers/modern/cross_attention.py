@@ -12,11 +12,6 @@ Cross-attention mechanism enabling low-rank parameter-efficient adaptation acros
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    LoRALinear,
-)
 
 import logging
 import math
@@ -29,9 +24,11 @@ import torch.nn.functional as F
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -131,9 +128,9 @@ class CrossAttention(BaseAttention):
         else:
             self.is_decoder = bool(
                 _cfg_get(config, "is_decoder", False)
-                or str(_cfg_get(config, "model_type", "")).lower().startswith(
-                    ("gpt", "llama", "qwen", "mistral", "t5", "bart", "mbart")
-                )
+                or str(_cfg_get(config, "model_type", ""))
+                .lower()
+                .startswith(("gpt", "llama", "qwen", "mistral", "t5", "bart", "mbart"))
             )
 
         self.is_nested_encoder: bool = False
@@ -144,23 +141,35 @@ class CrossAttention(BaseAttention):
         self.freeze_base = self.lora_rank > 0
 
         self.q_proj = LoRALinear(
-            self.embed_dim, self.all_head_size,
-            bias=bias, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.embed_dim,
+            self.all_head_size,
+            bias=bias,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.embed_dim, self.kv_head_size,
-            bias=bias, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.embed_dim,
+            self.kv_head_size,
+            bias=bias,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.embed_dim, self.kv_head_size,
-            bias=bias, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.embed_dim,
+            self.kv_head_size,
+            bias=bias,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.embed_dim,
-            bias=bias, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.embed_dim,
+            bias=bias,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -178,21 +187,27 @@ class CrossAttention(BaseAttention):
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
@@ -200,7 +215,10 @@ class CrossAttention(BaseAttention):
     def copy_weights(self, src: Any) -> None:
         """Copy Q/K/V/O weights from any source attention architecture."""
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         try:
@@ -217,18 +235,21 @@ class CrossAttention(BaseAttention):
             weight = getattr(base_c, "weight", getattr(c, "weight", None))
             if weight is not None:
                 weight = weight.data.clone()
-                is_conv1d = ("Conv1D" in c.__class__.__name__
-                            or "Conv1D" in base_c.__class__.__name__
-                            or hasattr(c, "nf") or hasattr(base_c, "nf")
-                            or (weight.dim() == 2 and weight.shape[0] < weight.shape[1]))
+                is_conv1d = (
+                    "Conv1D" in c.__class__.__name__
+                    or "Conv1D" in base_c.__class__.__name__
+                    or hasattr(c, "nf")
+                    or hasattr(base_c, "nf")
+                    or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
+                )
                 if is_conv1d:
                     weight = weight.t().contiguous()
                 split = weight.shape[0] // 3
                 bias = getattr(base_c, "bias", getattr(c, "bias", None))
                 bd = bias.data if bias is not None else None
                 extracted["q"] = (weight[:split, :], bd[:split] if bd is not None else None)
-                extracted["k"] = (weight[split:2*split, :], bd[split:2*split] if bd is not None else None)
-                extracted["v"] = (weight[2*split:, :], bd[2*split:] if bd is not None else None)
+                extracted["k"] = (weight[split : 2 * split, :], bd[split : 2 * split] if bd is not None else None)
+                extracted["v"] = (weight[2 * split :, :], bd[2 * split :] if bd is not None else None)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             p = src.c_proj
@@ -236,9 +257,11 @@ class CrossAttention(BaseAttention):
             w_o = getattr(base_p, "weight", getattr(p, "weight", None))
             if w_o is not None:
                 w_o = w_o.data.clone()
-                is_conv1d = ("Conv1D" in p.__class__.__name__
-                            or "Conv1D" in base_p.__class__.__name__
-                            or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]))
+                is_conv1d = (
+                    "Conv1D" in p.__class__.__name__
+                    or "Conv1D" in base_p.__class__.__name__
+                    or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
+                )
                 if is_conv1d:
                     w_o = w_o.t().contiguous()
                 b_o = getattr(base_p, "bias", getattr(p, "bias", None))
@@ -317,8 +340,7 @@ class CrossAttention(BaseAttention):
             return out
 
         with torch.no_grad():
-            for key, target in (("q", self.q_proj), ("k", self.k_proj),
-                                ("v", self.v_proj), ("o", self.out_proj)):
+            for key, target in (("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)):
                 w, b = extracted[key]
                 if w is None:
                     if key == "o" and self.is_nested_encoder:
@@ -341,8 +363,8 @@ class CrossAttention(BaseAttention):
                 od, id_ = target.weight.shape
                 so, si = w.shape
                 target.weight.data.zero_()
-                target.weight.data[:min(od, so), :min(id_, si)].copy_(
-                    w[:min(od, so), :min(id_, si)].to(target.weight.device, target.weight.dtype)
+                target.weight.data[: min(od, so), : min(id_, si)].copy_(
+                    w[: min(od, so), : min(id_, si)].to(target.weight.device, target.weight.dtype)
                 )
 
                 if b is not None and target.bias is not None:
@@ -423,7 +445,7 @@ class CrossAttention(BaseAttention):
 
         is_causal = (not is_cross) and self.is_decoder and N_q > 1
 
-        use_sdpa = (head_mask is None and not output_attentions)
+        use_sdpa = head_mask is None and not output_attentions
         if use_sdpa:
             try:
                 _q = maybe_half(Q)
@@ -440,7 +462,9 @@ class CrossAttention(BaseAttention):
                         attn_bias = ((eff_mask.unsqueeze(1).float() - 1.0) * 1e4).to(_q.dtype)
 
                 out = F.scaled_dot_product_attention(
-                    _q, _k, _v,
+                    _q,
+                    _k,
+                    _v,
                     attn_mask=attn_bias,
                     is_causal=(is_causal and attn_bias is None),
                     dropout_p=self.dropout_p if self.training else 0.0,
@@ -459,19 +483,23 @@ class CrossAttention(BaseAttention):
 
         causal = self._causal_mask(N_q, N_kv, device).unsqueeze(0).unsqueeze(0) if is_causal else None
         from neuralops.ops.triton.gqa import (
-            fused_asymmetric_cross_attention_triton,
             fused_asymmetric_cross_attention_pytorch,
+            fused_asymmetric_cross_attention_triton,
         )
+
         if head_mask is None:
             dispatched = False
             if Q.is_cuda and not self.training and eff_mask is None and not is_causal:
                 # Level 1: Native CUDA cross_attention kernel
                 try:
                     from neuralops.ops.cuda.cross_attention import cross_attention_forward as cross_attn_cuda
+
                     context_out = cross_attn_cuda(Q, K_full, V_full, scale=self.scale).to(dtype)
                     dispatched = True
                 except Exception as e_cuda:
-                    logger.debug("CrossAttention Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
+                    logger.debug(
+                        "CrossAttention Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda
+                    )
 
             if not dispatched:
                 # Level 2: Triton JIT cross attention / Level 3: Reference
@@ -554,8 +582,12 @@ def inject_cross_attention(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_cross_attention(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
             )
             if res is not None:
                 n_inj += 1
@@ -591,11 +623,7 @@ def inject_cross_attention(
         or getattr(src_attn, "num_heads", None)
         or 8
     )
-    num_kv_heads = (
-        _cfg_get(cfg, "num_key_value_heads")
-        or _cfg_get(cfg, "num_kv_heads")
-        or num_heads
-    )
+    num_kv_heads = _cfg_get(cfg, "num_key_value_heads") or _cfg_get(cfg, "num_kv_heads") or num_heads
 
     lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 32.0))

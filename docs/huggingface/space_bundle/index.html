@@ -2781,7 +2781,7 @@ kbd {
     <!-- Scene Wrap with WebGL Canvas and SVG Leader Guides -->
     <section id="scene-wrap" class="scene-wrap" aria-label="Spatial architecture comparison">
         <canvas id="webgl-canvas" aria-label="Interactive 3D architecture" data-engine="three.js"></canvas>
-        
+
         <!-- Screen-space Dynamic Leader Guides & Callout Labels -->
         <div id="labels" class="labels-container">
             <svg id="label-guides" class="label-guides" aria-hidden="true"></svg>
@@ -3200,7 +3200,7 @@ kbd {
     </div>
 
     <!-- Visualizer Logic -->
-    
+
     <script>
         window.__EMBEDDED_SPATIAL_DATA__ = {
   "title": "Multi-Architecture Neural Compression Atlas",
@@ -149940,7 +149940,7 @@ function updateScreenSpaceGuides() {
     pipeItems.forEach(item => {
         const compId = item.getAttribute('data-comp-id');
         if (!compId) return;
-        
+
         let targetKey = compId.toLowerCase();
         let targetMesh = interactableMeshes.find(m => {
             const u = m.userData;
@@ -149950,14 +149950,14 @@ function updateScreenSpaceGuides() {
                    (u.type && u.type.toLowerCase().includes(targetKey)) ||
                    (u.label && u.label.toLowerCase().includes(targetKey));
         });
-        
+
         // If no direct match, try a looser match or skip
         if (!targetMesh) return;
 
         // Project 3D position to 2D screen space
         const pos3D = targetMesh.position.clone();
         pos3D.project(cameraBaseline);
-        
+
         // Check if behind camera
         if (pos3D.z > 1) return;
 
@@ -149978,9 +149978,9 @@ function updateScreenSpaceGuides() {
         const cp1y = screenY;
         const cp2x = screenX + (targetX - screenX) * 0.6;
         const cp2y = targetY;
-        
+
         pathsHTML += `<path d="M ${screenX} ${screenY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${targetX} ${targetY}" fill="none" stroke="${color}" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"></path>`;
-        
+
         // Add a dot at the 3D mesh location
         pathsHTML += `<circle cx="${screenX}" cy="${screenY}" r="3" fill="${color}" opacity="0.8" />`;
     });
@@ -150318,12 +150318,12 @@ const VOCAB_SIZES = {
 function getAugmentedBaselineNodes(modelName) {
     const modelData = spatialData && spatialData.models && spatialData.models[modelName];
     if (!modelData) return [];
-    
+
     const originalNodes = modelData.baseline_nodes || [];
     if (originalNodes.some(n => n.id && n.id.includes('input_embeddings'))) {
         return originalNodes;
     }
-    
+
     const vocabSize = VOCAB_SIZES[modelName] || 30522;
     const dModel = (MODEL_SPECS[modelName] && MODEL_SPECS[modelName].hidden_size) || (modelName === 'qwen' ? 896 : 768);
     const augmented = [];
@@ -151191,43 +151191,43 @@ function synthesizeModule3DNodes(moduleMeta, modelName) {
 // 20. Architectural Matrix, Pipeline & Math Rendering
 // ---------------------------------------------------------------------------
 const MODEL_SPECS = {
-    distilbert: { 
-        name: 'DistilBERT-Base', 
-        family: 'Encoder', 
-        num_layers: 6, 
-        hidden_size: 768, 
-        intermediate_size: 3072, 
-        base_layer_params: 7077888, 
+    distilbert: {
+        name: 'DistilBERT-Base',
+        family: 'Encoder',
+        num_layers: 6,
+        hidden_size: 768,
+        intermediate_size: 3072,
+        base_layer_params: 7077888,
         base_total: 66301440,
         descr: '6 Layers · 768d · 12 Heads · Distilled Encoder'
     },
-    roberta: { 
-        name: 'RoBERTa-Base', 
-        family: 'Encoder', 
-        num_layers: 12, 
-        hidden_size: 768, 
-        intermediate_size: 3072, 
-        base_layer_params: 7077888, 
+    roberta: {
+        name: 'RoBERTa-Base',
+        family: 'Encoder',
+        num_layers: 12,
+        hidden_size: 768,
+        intermediate_size: 3072,
+        base_layer_params: 7077888,
         base_total: 123933696,
         descr: '12 Layers · 768d · 12 Heads · Bidirectional Encoder'
     },
-    gpt2: { 
-        name: 'GPT-2-Small', 
-        family: 'Causal Decoder', 
-        num_layers: 12, 
-        hidden_size: 768, 
-        intermediate_size: 3072, 
-        base_layer_params: 7077888, 
+    gpt2: {
+        name: 'GPT-2-Small',
+        family: 'Causal Decoder',
+        num_layers: 12,
+        hidden_size: 768,
+        intermediate_size: 3072,
+        base_layer_params: 7077888,
         base_total: 124318464,
         descr: '12 Layers · 768d · Fused c_attn Conv1D · Causal LM'
     },
-    qwen: { 
-        name: 'Qwen2.5-0.5B', 
-        family: 'GQA Decoder (SLM)', 
-        num_layers: 24, 
-        hidden_size: 896, 
-        intermediate_size: 4864, 
-        base_layer_params: 14909440, 
+    qwen: {
+        name: 'Qwen2.5-0.5B',
+        family: 'GQA Decoder (SLM)',
+        num_layers: 24,
+        hidden_size: 896,
+        intermediate_size: 4864,
+        base_layer_params: 14909440,
         base_total: 494008320,
         descr: '24 Layers · 896d · GQA (14Q:2KV) · SwiGLU MLP'
     }
@@ -151799,11 +151799,11 @@ function getModelPipelineComponents(moduleMeta, modelKey = currentModel) {
     const dModel = proj.hidden_size || (modelKey === 'qwen' ? 896 : (modelKey === 'gpt2' ? 768 : 768));
     const dFfn = proj.intermediate_size || (modelKey === 'qwen' ? 4864 : (modelKey === 'gpt2' ? 3072 : 3072));
     const vocabSize = VOCAB_SIZES[modelKey] || 30522;
-    
+
     const isAttn = (moduleMeta && (moduleMeta.category || "").toLowerCase().includes("attention")) || (moduleMeta && (moduleMeta.type || "").toLowerCase().includes("attention"));
-    
+
     let pipeline = [];
-    
+
     pipeline.push({
         id: 'input_embeddings', name: 'INPUT EMBEDDINGS', role: 'Token IDs -> Continuous Vectors', path: 'Stage 1: Token Ingestion',
         shape_transform: `[${vocabSize} × ${dModel}]`, math_latex: 'X^{(0)} = W_{\\text{embed}}[T]', color: '#10b981', params: `${((vocabSize * dModel) / 1e6).toFixed(1)}M`, stage: 'Input'
@@ -151813,11 +151813,11 @@ function getModelPipelineComponents(moduleMeta, modelKey = currentModel) {
         let result = [];
         let qkvGroup = [];
         let gateUpGroup = [];
-        
+
         for (let i = 0; i < comps.length; i++) {
             let c = { ...comps[i], stage: stageName, path: comps[i].path || pathName, math_latex: comps[i].math_latex || '\\text{Custom Component}' };
             let id = (c.id || "").toLowerCase();
-            
+
             if ((id.startsWith('q_') || id.startsWith('k_') || id.startsWith('v_')) && !id.includes('factor')) {
                 qkvGroup.push(c);
                 let nextId = (i < comps.length - 1) ? (comps[i+1].id || "").toLowerCase() : "";
@@ -151893,7 +151893,7 @@ function renderTokenLifecycle(moduleMeta, modelKey = currentModel) {
     const dModel = proj.hidden_size || (modelKey === 'qwen' ? 896 : 768);
     const dFfn = proj.intermediate_size || (modelKey === 'qwen' ? 4864 : 3072);
     const vocabSize = VOCAB_SIZES[modelKey] || 30522;
-    
+
     const isAttn = (moduleMeta && (moduleMeta.category || "").toLowerCase().includes("attention")) || (moduleMeta && (moduleMeta.type || "").toLowerCase().includes("attention"));
     const hasCustom = (moduleMeta && moduleMeta.components && moduleMeta.components.length > 0);
 
@@ -151905,12 +151905,12 @@ function renderTokenLifecycle(moduleMeta, modelKey = currentModel) {
             badgeColor: '#10b981',
             badgeBg: 'rgba(16, 185, 129, 0.2)',
             enters: `Token IDs [t_1, ..., t_S] ∈ {1..${vocabSize.toLocaleString()}}`,
-            added: modelKey === 'qwen' 
-                ? 'RoPE Rotary Position Frequencies (Θ_i) injected at Q & K' 
+            added: modelKey === 'qwen'
+                ? 'RoPE Rotary Position Frequencies (Θ_i) injected at Q & K'
                 : `+ W_pos [Positional Vector] ∈ ℝ^{Seq × ${dModel}}`,
             exits: `Continuous Hidden States X^{(0)} ∈ ℝ^{Seq × ${dModel}}`,
-            math: modelKey === 'qwen' 
-                ? 'X^{(0)} = W_e[T], \\quad \\mathbf{q}_m = \\mathbf{R}_{\\Theta, m}^d (W_q x_m), \\; \\mathbf{k}_n = \\mathbf{R}_{\\Theta, n}^d (W_k x_n)' 
+            math: modelKey === 'qwen'
+                ? 'X^{(0)} = W_e[T], \\quad \\mathbf{q}_m = \\mathbf{R}_{\\Theta, m}^d (W_q x_m), \\; \\mathbf{k}_n = \\mathbf{R}_{\\Theta, n}^d (W_k x_n)'
                 : 'X^{(0)} = W_{\\text{embed}}[T] + W_{\\text{pos}}[P] \\in \\mathbb{R}^{S \\times ' + dModel + '}',
             target: 'input_embeddings'
         },
@@ -151959,8 +151959,8 @@ function renderTokenLifecycle(moduleMeta, modelKey = currentModel) {
             badgeColor: '#a855f7',
             badgeBg: 'rgba(168, 85, 247, 0.2)',
             enters: `Contextualized Tokens X_mid ∈ ℝ^{Seq × ${dModel}}`,
-            added: (!isAttn && hasCustom) ? moduleMeta.components.map(c => c.name).join(' ➔ ') : (modelKey === 'qwen' 
-                ? `Bifurcated Non-Linear Gating: SiLU(X W_g) ⊙ (X W_u) across ${dFfn} intermediate dims` 
+            added: (!isAttn && hasCustom) ? moduleMeta.components.map(c => c.name).join(' ➔ ') : (modelKey === 'qwen'
+                ? `Bifurcated Non-Linear Gating: SiLU(X W_g) ⊙ (X W_u) across ${dFfn} intermediate dims`
                 : `4× Dimension Expansion GELU(X W_1 + b_1) across ${dFfn} hidden dims`),
             exits: `Factual Knowledge Delta Y_ffn ∈ ℝ^{Seq × ${dModel}}`,
             math: (!isAttn && hasCustom && moduleMeta.math_latex) ? moduleMeta.math_latex : (modelKey === 'qwen'
@@ -152047,7 +152047,7 @@ function renderComponentPipeline(moduleMeta, modelKey = currentModel) {
 
     const comps = getModelPipelineComponents(moduleMeta, modelKey);
     let totalBlocks = 0;
-    
+
     // Flatten for counting and highlighting logic
     const flatComps = [];
     comps.forEach(c => {
@@ -152722,7 +152722,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn2d.classList.remove('active');
             btn3d.setAttribute('aria-selected', 'true');
             btn2d.setAttribute('aria-selected', 'false');
-            
+
             // Switch to 3D perspective
             controls.enableRotate = true;
             controls.minAzimuthAngle = -Infinity;
@@ -152732,13 +152732,13 @@ document.addEventListener('DOMContentLoaded', () => {
             controls.enableZoom = true;
             smoothFlyCamera(10, 25, 0); // 3D View // Restore typical 3D angle
         });
-        
+
         btn2d.addEventListener('click', () => {
             btn2d.classList.add('active');
             btn3d.classList.remove('active');
             btn2d.setAttribute('aria-selected', 'true');
             btn3d.setAttribute('aria-selected', 'false');
-            
+
             // Switch to 2D Orthographic-like locked perspective
             controls.enableRotate = false;
             // Align camera flat against the network
@@ -152761,7 +152761,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             btn.classList.add('active');
             btn.setAttribute('aria-selected', 'true');
-            
+
             const mModel = btn.dataset.model;
             const mModule = btn.dataset.module || currentCompression;
             if (mModel) {
@@ -152780,7 +152780,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selSpeed = document.getElementById('select-speed');
     const scrubber = document.getElementById('timeline-scrubber');
     const timeCode = document.getElementById('timeline-step');
-    
+
     // Play/Pause - sync with existing playBtn listener
     const playBtnDock = document.getElementById('btn-play-pause');
     if (playBtnDock) {
@@ -152798,7 +152798,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         refreshPlayIcon();
     }
-    
+
     if (selSpeed) {
         selSpeed.addEventListener('change', (e) => {
             simulationSpeed = parseFloat(e.target.value);
@@ -152807,7 +152807,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => { selSpeed.style.color = ''; }, 500);
         });
     }
-    
+
     if (scrubber && timeCode) {
         // Build lifecycle stage labels dynamically
         const getStageTargets = () => {
@@ -152818,7 +152818,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return ['q_lin', 'k_lin', 'v_lin', 'out_lin', 'lin1', 'lin2', 'lin2'];
         };
         const stageLabels = ['01 Input', '02 Norm', '03 Attention', '04 +Residual', '05 FFN', '06 +Residual', '07 Output'];
-        
+
         scrubber.addEventListener('input', (e) => {
             const step = parseInt(e.target.value, 10);
             timeCode.innerText = stageLabels[step] || `Step ${step + 1}/7`;
@@ -152863,7 +152863,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
         }
     });
-    
+
     // ---- Keyboard shortcut tooltip ----
     const shortcutHint = document.createElement('div');
     shortcutHint.id = 'shortcut-hint';
@@ -152875,7 +152875,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="shortcut-row"><kbd>Esc</kbd> Close Modal</div>
     `;
     document.body.appendChild(shortcutHint);
-    
+
     let shortcutTimer;
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT') return;
@@ -152886,6 +152886,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
     </script>
-    
+
 </body>
 </html>

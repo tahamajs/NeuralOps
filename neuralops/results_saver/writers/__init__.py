@@ -17,16 +17,9 @@ from neuralops.results_saver.writers import (
     rolling_aggregator,
     summary_generator,
 )
-from neuralops.results_saver.writers.parquet_writer import (
-    read_metrics_parquet,
-    write_metrics_parquet,
-)
-from neuralops.results_saver.writers.rolling_aggregator import (
-    RollingSuiteAggregator,
-)
-from neuralops.results_saver.writers.summary_generator import (
-    BenchmarkSummaryGenerator,
-)
+from neuralops.results_saver.writers.parquet_writer import read_metrics_parquet, write_metrics_parquet
+from neuralops.results_saver.writers.rolling_aggregator import RollingSuiteAggregator
+from neuralops.results_saver.writers.summary_generator import BenchmarkSummaryGenerator
 
 __all__ = [
     "BenchmarkSummaryGenerator",

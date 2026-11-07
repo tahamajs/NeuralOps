@@ -50,12 +50,14 @@ def kronecker_matmul_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.low_rank import triton_fused_kronecker_matmul_pytorch_ref
+
     return triton_fused_kronecker_matmul_pytorch_ref(x, A, B, bias=bias)
 
 
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.low_rank import triton_fused_kronecker_matmul
+
         return triton_fused_kronecker_matmul
     except ImportError:
         return None
@@ -68,6 +70,7 @@ def kronecker_matmul(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """3-Level Dispatched Fused Kronecker Product Matmul."""
+
     def cuda_fn(x, A, B, bias=None):
         mod = _get_module()
         dummy_bias = torch.empty(0, device=x.device, dtype=x.dtype)

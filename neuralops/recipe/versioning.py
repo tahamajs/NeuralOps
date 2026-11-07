@@ -16,11 +16,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict
 
-from neuralops.recipe.errors import (
-    E_LANG_VERSION_TOO_NEW,
-    E_LANG_VERSION_TOO_OLD,
-    RecipeSchemaError,
-)
+from neuralops.recipe.errors import E_LANG_VERSION_TOO_NEW, E_LANG_VERSION_TOO_OLD, RecipeSchemaError
 
 logger = logging.getLogger("NeuralOps.Recipe.Versioning")
 

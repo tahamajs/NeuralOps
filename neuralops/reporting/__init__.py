@@ -10,12 +10,7 @@ NeuralOps Reporting and Evidence Module.
 """
 
 from neuralops.reporting.environment import capture_environment
-from neuralops.reporting.evidence import (
-    EvidenceRecord,
-    build_evidence,
-    load_evidence,
-    save_evidence,
-)
+from neuralops.reporting.evidence import EvidenceRecord, build_evidence, load_evidence, save_evidence
 from neuralops.reporting.latex_table_generator import LatexTableGenerator
 from neuralops.reporting.report import render_report, save_report
 

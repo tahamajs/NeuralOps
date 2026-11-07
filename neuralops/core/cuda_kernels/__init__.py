@@ -12,13 +12,10 @@ NeuralOps Core CUDA Kernels Hardware Operators (Backward-Compatibility Shim).
 from __future__ import annotations
 
 from typing import Any
+
 import neuralops.ops.cuda as _ops_cuda
-from neuralops.core.cuda_kernels._map import (
-    CUDA_KERNEL_CATALOG,
-    _KERNEL_SYMBOL_MAP,
-    _SPECIAL_MAP,
-)
-from neuralops.ops.cuda import list_cuda_kernels, __all__
+from neuralops.core.cuda_kernels._map import _KERNEL_SYMBOL_MAP, _SPECIAL_MAP, CUDA_KERNEL_CATALOG
+from neuralops.ops.cuda import __all__, list_cuda_kernels
 
 CUDA_KERNEL_CATALOG = CUDA_KERNEL_CATALOG
 list_cuda_kernels = list_cuda_kernels

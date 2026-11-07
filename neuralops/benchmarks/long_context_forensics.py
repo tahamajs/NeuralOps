@@ -28,7 +28,6 @@ import torch.nn.functional as F
 
 from neuralops.core.registry import ATTENTION_REGISTRY, create_attention
 
-
 TARGETS = (
     "cosformer",
     "gla_attention",

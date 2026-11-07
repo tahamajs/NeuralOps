@@ -12,24 +12,32 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
-from typing import Any
+
 from pathlib import Path
+from typing import Any
+
 import torch
+
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
+
 def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "rwkv6_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "rwkv6.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "rwkv6_binding.cpp", "r", encoding="utf-8") as f:
+            cpp_src = f.read()
+        with open(curr_dir / "rwkv6.cu", "r", encoding="utf-8") as f:
+            cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_rwkv6", cpp_src, cuda_src, ["rwkv6_time_mix_fwd"])
     return _MODULE
 
+
 def rwkv6_ref(r: torch.Tensor, k: torch.Tensor, v: torch.Tensor, w: torch.Tensor, u: torch.Tensor) -> torch.Tensor:
-    orig_3d = (r.dim() == 3)
+    orig_3d = r.dim() == 3
     if orig_3d:
         r = r.unsqueeze(1)
         k = k.unsqueeze(1)
@@ -50,8 +58,11 @@ def rwkv6_ref(r: torch.Tensor, k: torch.Tensor, v: torch.Tensor, w: torch.Tensor
         out[:, :, t, :] = y
     return out.squeeze(1) if orig_3d else out
 
-def _rwkv6_dispatch(r: torch.Tensor, k: torch.Tensor, v: torch.Tensor, w: torch.Tensor, u: torch.Tensor) -> torch.Tensor:
-    orig_3d = (r.dim() == 3)
+
+def _rwkv6_dispatch(
+    r: torch.Tensor, k: torch.Tensor, v: torch.Tensor, w: torch.Tensor, u: torch.Tensor
+) -> torch.Tensor:
+    orig_3d = r.dim() == 3
     r_in = r.unsqueeze(1) if orig_3d else r
     k_in = k.unsqueeze(1) if orig_3d else k
     v_in = v.unsqueeze(1) if orig_3d else v
@@ -61,7 +72,9 @@ def _rwkv6_dispatch(r: torch.Tensor, k: torch.Tensor, v: torch.Tensor, w: torch.
 
     def cuda_fn(r_t, k_t, v_t, w_t, u_t):
         mod = _get_module()
-        res = mod.rwkv6_time_mix_fwd(r_t.contiguous(), k_t.contiguous(), v_t.contiguous(), w_t.contiguous(), u_t.contiguous())
+        res = mod.rwkv6_time_mix_fwd(
+            r_t.contiguous(), k_t.contiguous(), v_t.contiguous(), w_t.contiguous(), u_t.contiguous()
+        )
         return res
 
     res = dispatch(cuda_fn, rwkv6_ref, rwkv6_ref, r_in, k=k_in, v=v_in, w=w_in, u=u_in, kernel_name="rwkv6")
@@ -96,7 +109,11 @@ class _Rwkv6Function(torch.autograd.Function):
             return tuple([None] * len(ctx.tensors_mask))
         grads = torch.autograd.grad(out_p, diff_inputs, dout_val, allow_unused=True)
         grad_map = dict(zip(diff_inputs, grads))
-        return tuple(grad_map.get(inp, None) if (is_t and inp.requires_grad) else None for inp, is_t in zip(inputs, ctx.tensors_mask))
+        return tuple(
+            grad_map.get(inp, None) if (is_t and inp.requires_grad) else None
+            for inp, is_t in zip(inputs, ctx.tensors_mask)
+        )
+
 
 def rwkv6(r, k, v, w, u):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (r, k, v, w, u)):

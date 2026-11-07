@@ -9,11 +9,7 @@
 Hardware and system telemetry recording for benchmark runs.
 """
 
-from .hardware import (
-    HardwareTelemetryMonitor,
-    get_hardware_telemetry,
-    log_hardware_telemetry,
-)
+from .hardware import HardwareTelemetryMonitor, get_hardware_telemetry, log_hardware_telemetry
 
 __all__ = [
     "HardwareTelemetryMonitor",

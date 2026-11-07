@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _retnet_recurrent_scan_fwd_kernel(
         q_ptr,
@@ -96,6 +97,7 @@ if HAS_TRITON and tl is not None:
                 + offs_v[None, :] * stride_sv
             )
             tl.store(s_ptrs, S.to(final_state_ptr.dtype.element_ty))
+
 else:
     _retnet_recurrent_scan_fwd_kernel = None
 
@@ -167,7 +169,12 @@ def retnet_scan_triton(
         if not is_suitable:
             logger.warning("Triton kernel 'retnet_scan' using PyTorch fallback: %s", reason)
         return retnet_scan_pytorch(
-            q, k, v, gamma=gammas, initial_state=initial_state, return_final_state=return_final_state,
+            q,
+            k,
+            v,
+            gamma=gammas,
+            initial_state=initial_state,
+            return_final_state=return_final_state,
         )
 
     q_c = q.contiguous()
@@ -181,15 +188,37 @@ def retnet_scan_triton(
     grid = (B, H)
     try:
         _retnet_recurrent_scan_fwd_kernel[grid](
-            q_c, k_c, v_c, g_c, out, final_s,
-            B, H, L,
+            q_c,
+            k_c,
+            v_c,
+            g_c,
+            out,
+            final_s,
+            B,
+            H,
+            L,
             D=D,
-            stride_qb=q_c.stride(0), stride_qh=q_c.stride(1), stride_ql=q_c.stride(2), stride_qd=q_c.stride(3),
-            stride_kb=k_c.stride(0), stride_kh=k_c.stride(1), stride_kl=k_c.stride(2), stride_kd=k_c.stride(3),
-            stride_vb=v_c.stride(0), stride_vh=v_c.stride(1), stride_vl=v_c.stride(2), stride_vd=v_c.stride(3),
+            stride_qb=q_c.stride(0),
+            stride_qh=q_c.stride(1),
+            stride_ql=q_c.stride(2),
+            stride_qd=q_c.stride(3),
+            stride_kb=k_c.stride(0),
+            stride_kh=k_c.stride(1),
+            stride_kl=k_c.stride(2),
+            stride_kd=k_c.stride(3),
+            stride_vb=v_c.stride(0),
+            stride_vh=v_c.stride(1),
+            stride_vl=v_c.stride(2),
+            stride_vd=v_c.stride(3),
             stride_gh=g_c.stride(0),
-            stride_ob=out.stride(0), stride_oh=out.stride(1), stride_ol=out.stride(2), stride_od=out.stride(3),
-            stride_sb=final_s.stride(0), stride_sh=final_s.stride(1), stride_sk=final_s.stride(2), stride_sv=final_s.stride(3),
+            stride_ob=out.stride(0),
+            stride_oh=out.stride(1),
+            stride_ol=out.stride(2),
+            stride_od=out.stride(3),
+            stride_sb=final_s.stride(0),
+            stride_sh=final_s.stride(1),
+            stride_sk=final_s.stride(2),
+            stride_sv=final_s.stride(3),
             SAVE_STATE=return_final_state,
         )
         if return_final_state:
@@ -198,7 +227,12 @@ def retnet_scan_triton(
     except Exception as exc:
         logger.warning("Triton kernel 'retnet_scan' failed (%s); falling back to PyTorch reference.", exc)
         return retnet_scan_pytorch(
-            q, k, v, gamma=gammas, initial_state=initial_state, return_final_state=return_final_state,
+            q,
+            k,
+            v,
+            gamma=gammas,
+            initial_state=initial_state,
+            return_final_state=return_final_state,
         )
 
 

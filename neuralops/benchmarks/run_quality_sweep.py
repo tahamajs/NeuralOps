@@ -14,26 +14,24 @@ Use the unified CLI instead: python -m neuralops.benchmarks run ...
 import warnings
 
 warnings.warn(
-    "neuralops.benchmarks.run_quality_sweep is deprecated and will be removed. "
-    "Use neuralops.benchmarks instead.",
+    "neuralops.benchmarks.run_quality_sweep is deprecated and will be removed. " "Use neuralops.benchmarks instead.",
     DeprecationWarning,
     stacklevel=2,
 )
 
 from neuralops.benchmarks.config import QualitySweepConfig
 
+
 def run_quality_sweep(*args, **kwargs):
     """Legacy shim for running quality sweep benchmarks."""
     from neuralops.benchmarks.runner import BenchmarkRunner
+
     runner = BenchmarkRunner()
     return runner.run_all(*args, **kwargs)
 
+
 try:
-    from neuralops.benchmarks._legacy.run_quality_sweep import (
-        main,
-        evaluate_comprehensive,
-        prepare_eval_batches,
-    )
+    from neuralops.benchmarks._legacy.run_quality_sweep import evaluate_comprehensive, main, prepare_eval_batches
 except ImportError:
     pass
 

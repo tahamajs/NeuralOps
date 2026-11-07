@@ -26,15 +26,8 @@ from neuralops.runners.monitor.endpoints import (
     launch_new_run,
     stop_current_run,
 )
-from neuralops.runners.monitor.rendering import (
-    render_csv_export,
-    render_favicon,
-    render_json_export,
-)
-from neuralops.runners.monitor.stats import (
-    build_aggregated_stats,
-    get_module_doc_index,
-)
+from neuralops.runners.monitor.rendering import render_csv_export, render_favicon, render_json_export
+from neuralops.runners.monitor.stats import build_aggregated_stats, get_module_doc_index
 from neuralops.runners.monitor.telemetry import get_live_logs
 
 
@@ -72,9 +65,7 @@ class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if path == "/api/stats":
-            stats = build_aggregated_stats(
-                self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
-            )
+            stats = build_aggregated_stats(self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu)
             self._send_json(stats)
             return
 
@@ -115,30 +106,22 @@ class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if path == "/api/export/csv":
-            stats = build_aggregated_stats(
-                self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
-            )
+            stats = build_aggregated_stats(self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu)
             csv_bytes = render_csv_export(stats.get("results", []))
             self.send_response(200)
             self.send_header("Content-Type", "text/csv; charset=utf-8")
-            self.send_header(
-                "Content-Disposition", 'attachment; filename="neuralops_benchmark_results.csv"'
-            )
+            self.send_header("Content-Disposition", 'attachment; filename="neuralops_benchmark_results.csv"')
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(csv_bytes)
             return
 
         if path == "/api/export/json":
-            stats = build_aggregated_stats(
-                self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
-            )
+            stats = build_aggregated_stats(self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu)
             json_bytes = render_json_export(stats)
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header(
-                "Content-Disposition", 'attachment; filename="neuralops_benchmark_results.json"'
-            )
+            self.send_header("Content-Disposition", 'attachment; filename="neuralops_benchmark_results.json"')
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json_bytes)
@@ -184,6 +167,7 @@ def run_server(
     if use_fastapi:
         try:
             import uvicorn
+
             from neuralops.runners.monitor.fastapi_app import create_app
 
             app = create_app(project_dir=project_dir, docs_dir=docs_dir)
@@ -194,6 +178,7 @@ def run_server(
             print(f"FastAPI or Uvicorn not installed ({e}). Falling back to standard TCPServer.")
 
     import socketserver
+
     socketserver.ThreadingTCPServer.allow_reuse_address = True
     ComprehensiveStudioHandler.project_dir = project_dir or ComprehensiveStudioHandler.project_dir
     ComprehensiveStudioHandler.docs_dir = docs_dir or ComprehensiveStudioHandler.docs_dir

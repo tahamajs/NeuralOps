@@ -14,9 +14,9 @@ Exports tabular benchmark results and summary metrics into standard CSV format.
 from __future__ import annotations
 
 import csv
-from datetime import datetime
 import logging
 import math
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 

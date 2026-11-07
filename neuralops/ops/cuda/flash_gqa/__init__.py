@@ -9,9 +9,6 @@
 Flash Grouped Query Attention Hardware Operators.
 """
 
-from neuralops.ops.cuda.flash_gqa.flash_gqa_autograd import (
-    flash_gqa,
-    flash_gqa_pytorch_ref,
-)
+from neuralops.ops.cuda.flash_gqa.flash_gqa_autograd import flash_gqa, flash_gqa_pytorch_ref
 
 __all__ = ["flash_gqa", "flash_gqa_pytorch_ref"]

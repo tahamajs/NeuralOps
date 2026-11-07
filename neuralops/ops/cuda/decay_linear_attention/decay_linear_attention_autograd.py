@@ -12,21 +12,29 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
-from typing import Any
+
 from pathlib import Path
+from typing import Any
+
 import torch
+
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
+
 def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "decay_linear_attention_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "decay_linear_attention.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "decay_linear_attention_binding.cpp", "r", encoding="utf-8") as f:
+            cpp_src = f.read()
+        with open(curr_dir / "decay_linear_attention.cu", "r", encoding="utf-8") as f:
+            cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_decay_linear_attention", cpp_src, cuda_src, ["decay_linear_fwd"])
     return _MODULE
+
 
 def decay_linear_attention_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
     B, H, N, D = q.shape
@@ -45,7 +53,10 @@ def decay_linear_attention_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
         out[:, :, t, :] = q[:, :, t, :] * s
     return out
 
-def _decay_linear_attention_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, gamma: torch.Tensor) -> torch.Tensor:
+
+def _decay_linear_attention_dispatch(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, gamma: torch.Tensor
+) -> torch.Tensor:
     B, H, N, D = q.shape
     if gamma.dim() == 2 and gamma.shape == (H, D):
         g_in = gamma
@@ -55,10 +66,21 @@ def _decay_linear_attention_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.
         g_in = gamma.unsqueeze(-1).expand(H, D).contiguous()
     else:
         g_in = gamma.reshape(H, -1).expand(H, D).contiguous()
+
     def cuda_fn(q, k, v, g_val):
         mod = _get_module()
         return mod.decay_linear_fwd(q.contiguous(), k.contiguous(), v.contiguous(), g_val.contiguous())
-    return dispatch(cuda_fn, decay_linear_attention_ref, decay_linear_attention_ref, q, k, v, g_in, kernel_name="decay_linear_attention")
+
+    return dispatch(
+        cuda_fn,
+        decay_linear_attention_ref,
+        decay_linear_attention_ref,
+        q,
+        k,
+        v,
+        g_in,
+        kernel_name="decay_linear_attention",
+    )
 
 
 class _Decay_linear_attentionFunction(torch.autograd.Function):
@@ -88,7 +110,11 @@ class _Decay_linear_attentionFunction(torch.autograd.Function):
             return tuple([None] * len(ctx.tensors_mask))
         grads = torch.autograd.grad(out_p, diff_inputs, dout_val, allow_unused=True)
         grad_map = dict(zip(diff_inputs, grads))
-        return tuple(grad_map.get(inp, None) if (is_t and inp.requires_grad) else None for inp, is_t in zip(inputs, ctx.tensors_mask))
+        return tuple(
+            grad_map.get(inp, None) if (is_t and inp.requires_grad) else None
+            for inp, is_t in zip(inputs, ctx.tensors_mask)
+        )
+
 
 def decay_linear_attention(q, k, v, gamma):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, gamma)):

@@ -53,6 +53,7 @@ except ImportError:
     prepare_eval_batches = None
 
 from neuralops.core.registry import ATTENTION_REGISTRY
+
 try:
     from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
 except ImportError:
@@ -117,22 +118,16 @@ def parse_args():
         description="Run comparative evaluation of literature baselines against proposed method",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument(
-        "--rank", type=int, default=64, help="Decomposition rank for low-rank methods"
-    )
+    parser.add_argument("--rank", type=int, default=64, help="Decomposition rank for low-rank methods")
     parser.add_argument(
         "--output_dir",
         type=str,
         default="results/01_baselines/baseline_comparison",
         help="Destination directory for outputs",
     )
-    parser.add_argument(
-        "--datasets", nargs="*", default=DATASETS, help="List of datasets to evaluate"
-    )
+    parser.add_argument("--datasets", nargs="*", default=DATASETS, help="List of datasets to evaluate")
     parser.add_argument("--batch_size", type=int, default=16, help="Evaluation batch size")
-    parser.add_argument(
-        "--fp16", action="store_true", default=True, help="Evaluate in FP16 precision"
-    )
+    parser.add_argument("--fp16", action="store_true", default=True, help="Evaluate in FP16 precision")
     parser.add_argument(
         "--parallel",
         type=int,
@@ -195,9 +190,7 @@ def main():
 
                 if b_name != "dense":
                     typ = "attention" if b_name in ATTENTION_REGISTRY else "compressor"
-                    model, comp_stats = apply_module_to_model(
-                        model, b_name, typ, rank=args.rank, device=device
-                    )
+                    model, comp_stats = apply_module_to_model(model, b_name, typ, rank=args.rank, device=device)
 
                 p_after = sum(p.numel() for p in model.parameters())
                 comp_rate = round(p_before / max(1, p_after), 4)
@@ -219,9 +212,7 @@ def main():
                     "validation_matched",
                     val_ds.get("validation", val_ds.get("test", None)),
                 )
-                eval_batches = prepare_eval_batches(
-                    tok, val_split, ds_name, 128, args.batch_size, device
-                )
+                eval_batches = prepare_eval_batches(tok, val_split, ds_name, 128, args.batch_size, device)
                 eval_metrics = evaluate_comprehensive(
                     model,
                     tok,

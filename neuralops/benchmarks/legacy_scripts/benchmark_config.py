@@ -40,18 +40,12 @@ except ImportError:
 class BenchmarkConfig(BaseModel):
     """Authoritative benchmark run configuration contract."""
 
-    device: Literal["cuda", "mps", "cpu", "auto"] = Field(
-        default="auto", description="Target accelerator backend."
-    )
+    device: Literal["cuda", "mps", "cpu", "auto"] = Field(default="auto", description="Target accelerator backend.")
     dtype: Literal["float32", "float16", "bfloat16"] = Field(
         default="float32", description="Tensor computation precision."
     )
-    batch_sizes: list[int] = Field(
-        default=[2, 4, 8], description="Batch sizes to evaluate."
-    )
-    seq_lens: list[int] = Field(
-        default=[16, 64, 256], description="Sequence lengths to evaluate."
-    )
+    batch_sizes: list[int] = Field(default=[2, 4, 8], description="Batch sizes to evaluate.")
+    seq_lens: list[int] = Field(default=[16, 64, 256], description="Sequence lengths to evaluate.")
     warmup: int = Field(default=3, description="Number of untimed warmup iterations.")
     iters: int = Field(default=10, description="Number of timed benchmark trials.")
     seed: int = Field(default=42, description="Random seed for reproducible tensors.")
@@ -59,18 +53,10 @@ class BenchmarkConfig(BaseModel):
         default=["attention", "compressor", "kernel"],
         description="Benchmark categories to run.",
     )
-    output_dir: Path = Field(
-        default=Path("results"), description="Root directory for telemetry artifacts."
-    )
-    parallel_workers: int = Field(
-        default=4, description="Concurrency level for CPU/MPS evaluation sweeps."
-    )
-    enable_backward: bool = Field(
-        default=True, description="Whether to execute backward autograd gradient checks."
-    )
-    enable_vram_tracking: bool = Field(
-        default=True, description="Track peak accelerator memory allocations."
-    )
+    output_dir: Path = Field(default=Path("results"), description="Root directory for telemetry artifacts.")
+    parallel_workers: int = Field(default=4, description="Concurrency level for CPU/MPS evaluation sweeps.")
+    enable_backward: bool = Field(default=True, description="Whether to execute backward autograd gradient checks.")
+    enable_vram_tracking: bool = Field(default=True, description="Track peak accelerator memory allocations.")
 
     def to_canonical(self):
         """Convert the legacy script config to the package config contract."""
@@ -106,6 +92,7 @@ class BenchmarkConfig(BaseModel):
         if p.suffix in (".yaml", ".yml"):
             try:
                 import yaml  # type: ignore[import-untyped]
+
                 data = yaml.safe_load(text)
             except ImportError:
                 # Basic JSON fallback if YAML parser unavailable

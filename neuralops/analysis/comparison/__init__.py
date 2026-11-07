@@ -10,6 +10,8 @@ NeuralOps Analysis Comparison Core Modules.
 """
 
 import sys
+
+from neuralops.analysis.comparison import statistical_testing
 from neuralops.analysis.comparison.statistical_testing import (
     bayesian_correlated_ttest,
     bayesian_signed_rank_test,
@@ -23,7 +25,7 @@ from neuralops.analysis.comparison.statistical_testing import (
     sign_test,
     wilcoxon_signed_rank_test,
 )
-from neuralops.analysis.comparison import statistical_testing
+
 statistical_tests = statistical_testing
 sys.modules["neuralops.analysis.comparison.statistical_tests"] = statistical_testing
 

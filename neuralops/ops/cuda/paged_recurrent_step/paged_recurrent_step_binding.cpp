@@ -16,5 +16,3 @@ torch::Tensor paged_recurrent_step_fwd(
     int page_slot,
     float decay
 );
-
-

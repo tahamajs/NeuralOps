@@ -83,7 +83,10 @@ class ArchitectureAdapter(ABC):
             return (has_linear, "" if has_linear else "No uncompressed nn.Linear layers present")
 
         if precondition_name == "has_standard_mlp_blocks":
-            has_mlp = any("mlp" in n.lower() or "feed_forward" in n.lower() or "ffn" in n.lower() for n, _ in model.named_modules())
+            has_mlp = any(
+                "mlp" in n.lower() or "feed_forward" in n.lower() or "ffn" in n.lower()
+                for n, _ in model.named_modules()
+            )
             return (has_mlp, "" if has_mlp else "No standard MLP blocks detected")
 
         if precondition_name == "num_layers > drop_count":
@@ -93,7 +96,7 @@ class ArchitectureAdapter(ABC):
         if "hidden_size % head_dim == 0" in precondition_name:
             h_size = getattr(config, "hidden_size", getattr(config, "d_model", 768))
             # Default check for standard head dim 64
-            ok = (h_size % 64 == 0)
+            ok = h_size % 64 == 0
             return (ok, "" if ok else f"hidden_size {h_size} not divisible by head_dim 64")
 
         # Fail-closed for unrecognized precondition names

@@ -50,19 +50,28 @@ def _text_samples(count: int, seed: int) -> list[dict]:
 
 
 _NAMES = {
-    "wikitext2": ("language_modeling", []), "wikitext103": ("language_modeling", []),
-    "c4": ("language_modeling", []), "ptb": ("language_modeling", []),
-    "pg19": ("language_modeling", []), "gsm8k": ("reasoning", []),
-    "humaneval": ("code", []), "mmlu": ("knowledge", []), "pile": ("language_modeling", []),
-    "arc": ("reasoning", []), "arc_challenge": ("reasoning", []),
-    "hellaswag": ("reasoning", []), "lambada": ("language_modeling", []),
-    "glue_sst2": ("classification", ["glue/sst2"]), "glue_mrpc": ("classification", ["glue/mrpc"]),
-    "glue_qqp": ("classification", []), "glue_stsb": ("classification", []),
-    "glue_mnli": ("classification", []), "glue_qnli": ("classification", []),
-    "glue_rte": ("classification", []), "glue_wnli": ("classification", []),
+    "wikitext2": ("language_modeling", []),
+    "wikitext103": ("language_modeling", []),
+    "c4": ("language_modeling", []),
+    "ptb": ("language_modeling", []),
+    "pg19": ("language_modeling", []),
+    "gsm8k": ("reasoning", []),
+    "humaneval": ("code", []),
+    "mmlu": ("knowledge", []),
+    "pile": ("language_modeling", []),
+    "arc": ("reasoning", []),
+    "arc_challenge": ("reasoning", []),
+    "hellaswag": ("reasoning", []),
+    "lambada": ("language_modeling", []),
+    "glue_sst2": ("classification", ["glue/sst2"]),
+    "glue_mrpc": ("classification", ["glue/mrpc"]),
+    "glue_qqp": ("classification", []),
+    "glue_stsb": ("classification", []),
+    "glue_mnli": ("classification", []),
+    "glue_qnli": ("classification", []),
+    "glue_rte": ("classification", []),
+    "glue_wnli": ("classification", []),
     "glue_cola": ("classification", []),
 }
 for _name, (_category, _aliases) in _NAMES.items():
-    BenchmarkDatasetRegistry.register(
-        BenchmarkDatasetInfo(_name, _aliases, _category, _name, _text_samples)
-    )
+    BenchmarkDatasetRegistry.register(BenchmarkDatasetInfo(_name, _aliases, _category, _name, _text_samples))

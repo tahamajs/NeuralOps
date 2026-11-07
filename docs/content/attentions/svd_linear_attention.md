@@ -126,7 +126,7 @@ Specifically, regarding \textbf{Total MACs}, $8 B N D r + 2 B N^2 D$ Furthermore
 
 
 ### Parameter Footprint Comparison
-Specifically, regarding \textbf{Dense MHA Projection Parameters}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{SVD Linear MHA Parameter Count}, 
+Specifically, regarding \textbf{Dense MHA Projection Parameters}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{SVD Linear MHA Parameter Count},
 
   \[
   \text{Params}_{\text{SVDLinear}} = 4 \cdot r(D + D) + 4 D = 8 D r + 4 D \text{ floats}
@@ -201,4 +201,3 @@ The empirical evaluation of `svd_linear_attention` across standard sequence leng
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

@@ -11,9 +11,6 @@ Aegis-Spectron-FP8 Hybrid Attention
 Three-branch hybrid attention featuring local windows, low-rank linear pathways, and FP8 quantized execution.
 """
 
-from neuralops.core.common import FactorizedLinear
-from neuralops.core.common import _detect_decoder
-
 import logging
 import math
 import os
@@ -23,15 +20,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.common import FactorizedLinear, _detect_decoder
+
 logger = logging.getLogger(__name__)
 
-from neuralops.core.common import repeat_kv
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.rope import _rotate_half
 
 
-def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool = False, use_ste: bool | None = None) -> torch.Tensor:
+def fp8_cast_simulate(
+    x: torch.Tensor, format: str = "e4m3", per_channel: bool = False, use_ste: bool | None = None
+) -> torch.Tensor:
     if os.environ.get("AEGIS_DISABLE_FP8", "0") == "1":
         return x
     if not isinstance(x, torch.Tensor) or not x.is_floating_point():
@@ -45,7 +46,7 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
         amax = x_f.abs().amax(dim=-1, keepdim=True).clamp(min=1e-12)
         scale = 448.0 / amax
         x_scaled = (x_f * scale).clamp(min=-448.0, max=448.0)
-        x_dequant = (x_scaled.to(torch.float8_e4m3fn).to(orig_dtype) / scale.to(orig_dtype))
+        x_dequant = x_scaled.to(torch.float8_e4m3fn).to(orig_dtype) / scale.to(orig_dtype)
         if use_ste:
             return x + (x_dequant - x).detach()
         return x_dequant
@@ -74,7 +75,9 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
         exp = torch.floor(torch.log2(abs_x))
         factor = 2.0 ** (exp - mantissa_bits)
         rounded = torch.round(abs_x / factor) * factor
-        x_dequant = ((torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale.float().clamp(min=1e-8)).to(orig_dtype)
+        x_dequant = (
+            (torch.sign(x_scaled) * rounded).clamp(min=-max_val, max=max_val) / scale.float().clamp(min=1e-8)
+        ).to(orig_dtype)
 
     if use_ste:
         return x + (x_dequant - x).detach()
@@ -83,24 +86,16 @@ def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool =
 
 class AegisSpectronFP8Config:
     def __init__(self, **kwargs: Any):
-        self.hidden_size = int(
-            kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
-        )
-        self.num_heads = int(
-            kwargs.get("num_heads", kwargs.get("num_attention_heads", kwargs.get("n_heads", 4)))
-        )
-        self.num_key_value_heads = int(
-            kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads))
-        )
+        self.hidden_size = int(kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768))))
+        self.num_heads = int(kwargs.get("num_heads", kwargs.get("num_attention_heads", kwargs.get("n_heads", 4))))
+        self.num_key_value_heads = int(kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads)))
         self.head_dim = int(
             kwargs.get(
                 "head_dim",
                 kwargs.get("kv_channels", self.hidden_size // max(1, self.num_heads)),
             )
         )
-        self.window_size = int(
-            kwargs.get("window_size", kwargs.get("local_window", kwargs.get("block_size", 64)))
-        )
+        self.window_size = int(kwargs.get("window_size", kwargs.get("local_window", kwargs.get("block_size", 64))))
         self.svd_rank = int(kwargs.get("svd_rank", kwargs.pop("rank", min(128, self.hidden_size))))
         self.lora_rank = int(kwargs.get("lora_rank", kwargs.get("lora_r", 32)))
         self.temperature = float(kwargs.get("temperature", 1.0))
@@ -128,9 +123,7 @@ class SpectronSpectralEntropyRouter(nn.Module):
         self.register_buffer("costs", torch.tensor([config.c_loc, config.c_glob, config.c_lin]))
         self.h_proj = nn.Linear(config.hidden_size, 3)
         nn.init.zeros_(self.h_proj.weight)
-        self.h_proj.bias.data.copy_(
-            torch.tensor(config.router_init_bias, dtype=self.h_proj.bias.dtype)
-        )
+        self.h_proj.bias.data.copy_(torch.tensor(config.router_init_bias, dtype=self.h_proj.bias.dtype))
 
     def forward(self, X: torch.Tensor, token_valid: torch.Tensor | None = None) -> torch.Tensor:
         B, N, D = X.shape
@@ -170,9 +163,17 @@ def _local_window_attention(
     radius = window // 2
     scale = 1.0 / math.sqrt(int(d))
 
-    if Q.is_cuda and (token_valid is None or bool(token_valid.all())) and past_len == 0 and N == N_k and d <= 256 and (not training or dropout_p == 0.0):
+    if (
+        Q.is_cuda
+        and (token_valid is None or bool(token_valid.all()))
+        and past_len == 0
+        and N == N_k
+        and d <= 256
+        and (not training or dropout_p == 0.0)
+    ):
         try:
             from neuralops.ops.cuda.hybrid_local_kernel import hybrid_local_attn
+
             return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder), None
         except Exception as exc:
             logger.warning("CUDA hybrid_local_attn failed (%s); falling back to PyTorch implementation", exc)
@@ -203,7 +204,9 @@ def _local_window_attention(
         attn_bias = torch.zeros(1, 1, N, N_k, device=Q.device, dtype=Q.dtype)
         attn_bias = attn_bias.masked_fill(~band, mask_val)
         out = F.scaled_dot_product_attention(
-            Q, K, V,
+            Q,
+            K,
+            V,
             attn_mask=attn_bias,
             dropout_p=dropout_p if training else 0.0,
             is_causal=False,
@@ -353,6 +356,7 @@ class SpectronFP8Attention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention = True
 
     def __init__(
@@ -368,9 +372,7 @@ class SpectronFP8Attention(BaseAttention):
             cfg_src = config if config is not None else kwargs
             if isinstance(cfg_src, dict):
                 h_size = hidden_size or cfg_src.get("hidden_size", cfg_src.get("dim", 768))
-                n_heads = num_heads or cfg_src.get(
-                    "num_attention_heads", cfg_src.get("num_heads", 12)
-                )
+                n_heads = num_heads or cfg_src.get("num_attention_heads", cfg_src.get("num_heads", 12))
                 n_kv = cfg_src.get("num_key_value_heads", n_heads)
                 h_dim = cfg_src.get("head_dim", h_size // max(1, n_heads))
             else:
@@ -417,8 +419,7 @@ class SpectronFP8Attention(BaseAttention):
         self.num_kv_heads = config.num_key_value_heads
         if self.num_heads % max(1, self.num_kv_heads) != 0:
             raise ValueError(
-                f"num_heads ({self.num_heads}) must be divisible by "
-                f"num_kv_heads ({self.num_kv_heads})."
+                f"num_heads ({self.num_heads}) must be divisible by " f"num_kv_heads ({self.num_kv_heads})."
             )
         self.kv_repeat = self.num_heads // max(1, self.num_kv_heads)
         self.all_head_size = self.num_heads * self.head_dim
@@ -572,9 +573,7 @@ class SpectronFP8Attention(BaseAttention):
                 nn.init.kaiming_uniform_(proj.lora_A, a=math.sqrt(5))
                 nn.init.normal_(proj.lora_B, mean=0.0, std=1e-4)
 
-    def _extract_proj_weights(
-        self, old_attn: nn.Module
-    ) -> dict[str, tuple[torch.Tensor | None, torch.Tensor | None]]:
+    def _extract_proj_weights(self, old_attn: nn.Module) -> dict[str, tuple[torch.Tensor | None, torch.Tensor | None]]:
         from neuralops.core.adapters import UniversalAdapter
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -629,11 +628,7 @@ class SpectronFP8Attention(BaseAttention):
                     or hasattr(mod, "nf")
                     or hasattr(base, "nf")
                 )
-                if is_conv1d or (
-                    w.dim() == 2
-                    and w.shape[0] != self.hidden_size
-                    and w.shape[1] == self.hidden_size
-                ):
+                if is_conv1d or (w.dim() == 2 and w.shape[0] != self.hidden_size and w.shape[1] == self.hidden_size):
                     w = w.t().contiguous()
                 b = getattr(base, "bias", getattr(mod, "bias", None))
                 extracted["o"] = (w, b.data if b is not None else None)
@@ -647,11 +642,7 @@ class SpectronFP8Attention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(old_attn, "output")
-            and hasattr(old_attn.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") and extracted["o"][0] is None:
             d = old_attn.output.dense
             extracted["o"] = (d.weight.data, getattr(d, "bias", None))
 
@@ -685,15 +676,8 @@ class SpectronFP8Attention(BaseAttention):
         extracted = self._extract_proj_weights(old_attn)
 
         cls_name = old_attn.__class__.__name__
-        has_out = any(
-            hasattr(old_attn, a)
-            for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o")
-        )
-        if (
-            hasattr(old_attn, "out_lin")
-            or hasattr(old_attn, "c_proj")
-            or hasattr(old_attn, "o_proj")
-        ):
+        has_out = any(hasattr(old_attn, a) for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o"))
+        if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
             self.is_nested_encoder = False
         elif (
             (
@@ -720,8 +704,7 @@ class SpectronFP8Attention(BaseAttention):
             missing.append("o")
         if missing:
             raise RuntimeError(
-                f"AegisSpectronFP8Attention.copy_weights: missing {missing} from "
-                f"{cls_name}. Refusing random init."
+                f"AegisSpectronFP8Attention.copy_weights: missing {missing} from " f"{cls_name}. Refusing random init."
             )
 
         for proj, target in (
@@ -853,13 +836,7 @@ class SpectronFP8Attention(BaseAttention):
             else:
                 out = _noncausal_global_linear_attention(phi_Q_f, phi_K_f, V_f)
 
-            return (
-                torch.nan_to_num(out, nan=0.0)
-                .to(Q.dtype)
-                .view(B, N, h, d)
-                .transpose(1, 2)
-                .contiguous()
-            )
+            return torch.nan_to_num(out, nan=0.0).to(Q.dtype).view(B, N, h, d).transpose(1, 2).contiguous()
 
     def _linear_branch(
         self,
@@ -940,12 +917,8 @@ class SpectronFP8Attention(BaseAttention):
         V_new = fp8_cast_simulate(self.v_proj(kv_input), format=fp8_fmt, use_ste=use_ste)
 
         Q = Q_new.view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        K_new_h = (
-            K_new.view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        )
-        V_new_h = (
-            V_new.view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        )
+        K_new_h = K_new.view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V_new_h = V_new.view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -1000,6 +973,7 @@ class SpectronFP8Attention(BaseAttention):
         if out_loc.is_cuda:
             try:
                 from neuralops.ops.cuda.hybrid_local_kernel import hybrid_three_branch_blend
+
                 alpha_h = alpha.unsqueeze(1).expand(B, self.num_heads, N, 3).contiguous()
                 fused = hybrid_three_branch_blend(
                     out_loc.to(target_dt),
@@ -1051,7 +1025,7 @@ class SpectronFP8Attention(BaseAttention):
         """Exact O(1) single-step autoregressive recurrent update for SpectronFP8Attention."""
         from neuralops.ops.triton.state_update import fused_recurrent_linear_step
 
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -1085,8 +1059,8 @@ class SpectronFP8Attention(BaseAttention):
             state["k_cache"] = K
             state["v_cache"] = V
         else:
-            state["k_cache"] = torch.cat([state["k_cache"], K], dim=2)[:, :, -self.window_size:]
-            state["v_cache"] = torch.cat([state["v_cache"], V], dim=2)[:, :, -self.window_size:]
+            state["k_cache"] = torch.cat([state["k_cache"], K], dim=2)[:, :, -self.window_size :]
+            state["v_cache"] = torch.cat([state["v_cache"], V], dim=2)[:, :, -self.window_size :]
 
         scores = torch.matmul(Q, state["k_cache"].transpose(-1, -2)) / math.sqrt(d)
         attn_loc = F.softmax(scores, dim=-1)
@@ -1115,7 +1089,11 @@ class SpectronFP8Attention(BaseAttention):
             state["lin_state"] = torch.zeros((B, H, 1, d), device=device, dtype=torch.float32)
 
         lin_state = state["lin_state"]
-        u = (x.float() * self.linear_B.view(1, 1, -1).to(device=device, dtype=torch.float32)).view(B, 1, H, d).transpose(1, 2)
+        u = (
+            (x.float() * self.linear_B.view(1, 1, -1).to(device=device, dtype=torch.float32))
+            .view(B, 1, H, d)
+            .transpose(1, 2)
+        )
         lin_state = gamma * lin_state + u
         state["lin_state"] = lin_state
 
@@ -1169,6 +1147,7 @@ class SpectronFP8Attention(BaseAttention):
 
 AegisSpectronFP8Attention = SpectronFP8Attention
 
+
 def inject_aegis_spectron_fp8(
     layer: Any = None,
     model: Any = None,
@@ -1205,11 +1184,7 @@ def inject_aegis_spectron_fp8(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -1300,20 +1275,10 @@ def inject_aegis_spectron_fp8(
             num_key_value_heads=n_kv_heads,
             head_dim=h_dim,
             window_size=(
-                getattr(comp_config, "window_size", getattr(comp_config, "local_window", 64))
-                if comp_config
-                else 64
+                getattr(comp_config, "window_size", getattr(comp_config, "local_window", 64)) if comp_config else 64
             ),
-            svd_rank=(
-                getattr(comp_config, "svd_rank", getattr(comp_config, "rank", 128))
-                if comp_config
-                else 128
-            ),
-            lora_rank=(
-                getattr(comp_config, "lora_rank", getattr(comp_config, "lora_r", 32))
-                if comp_config
-                else 32
-            ),
+            svd_rank=(getattr(comp_config, "svd_rank", getattr(comp_config, "rank", 128)) if comp_config else 128),
+            lora_rank=(getattr(comp_config, "lora_rank", getattr(comp_config, "lora_r", 32)) if comp_config else 32),
             dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
             is_decoder=is_dec,
             fp8_format=(getattr(comp_config, "fp8_format", "e4m3") if comp_config else "e4m3"),

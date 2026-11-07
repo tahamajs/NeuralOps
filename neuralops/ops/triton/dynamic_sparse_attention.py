@@ -22,39 +22,69 @@ import torch.nn.functional as F
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
+
     class _MockTriton:
         @staticmethod
         def jit(fn):
             return fn
+
         @staticmethod
         def autotune(*args, **kwargs):
             return lambda fn: fn
+
         @staticmethod
         def cdiv(a, b):
             return (a + b - 1) // b
+
         class Config:
             def __init__(self, *args, **kwargs):
                 pass
+
     triton = _MockTriton()
+
     class _MockTl:
         constexpr = int
+
     tl = _MockTl()
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _dynamic_sparse_attn_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Active_ptr, Out_ptr,
-        stride_qb, stride_qh, stride_qm, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ab_b, stride_ab_h, stride_ab_q, stride_ab_k,
-        stride_ob, stride_oh, stride_om, stride_od,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Active_ptr,
+        Out_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qm,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ab_b,
+        stride_ab_h,
+        stride_ab_q,
+        stride_ab_k,
+        stride_ob,
+        stride_oh,
+        stride_om,
+        stride_od,
         sm_scale,
-        B, H, L,
+        B,
+        H,
+        L,
         D: tl.constexpr,
         K_ACTIVE: tl.constexpr,
         BLOCK_SIZE: tl.constexpr,
@@ -92,8 +122,12 @@ if HAS_TRITON:
                 offs_n = start_n + tl.arange(0, BLOCK_N)
                 mask_n = offs_n < L
 
-                k = tl.load(k_base + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd, mask=mask_n[:, None], other=0.0)
-                v = tl.load(v_base + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd, mask=mask_n[:, None], other=0.0)
+                k = tl.load(
+                    k_base + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd, mask=mask_n[:, None], other=0.0
+                )
+                v = tl.load(
+                    v_base + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd, mask=mask_n[:, None], other=0.0
+                )
 
                 s = tl.dot(q, tl.trans(k)) * sm_scale
                 s = tl.where(mask_m[:, None] & mask_n[None, :], s, -float("inf"))
@@ -107,8 +141,14 @@ if HAS_TRITON:
                 m_i = m_curr
 
         out = acc / tl.maximum(l_i[:, None], 1e-6)
-        tl.store(out_base + offs_m[:, None] * stride_om + offs_d[None, :] * stride_od, out.to(Q_ptr.dtype.element_ty), mask=mask_m[:, None])
+        tl.store(
+            out_base + offs_m[:, None] * stride_om + offs_d[None, :] * stride_od,
+            out.to(Q_ptr.dtype.element_ty),
+            mask=mask_m[:, None],
+        )
+
 else:
+
     def _dynamic_sparse_attn_fwd_kernel(*args, **kwargs):
         pass
 
@@ -170,7 +210,7 @@ class TritonDynamicSparseAttentionFunction(torch.autograd.Function):
         sm_scale: Optional[float] = None,
     ) -> torch.Tensor:
         orig_shape = q.shape
-        is_3d = (q.ndim == 3)
+        is_3d = q.ndim == 3
         if is_3d:
             B, L, D = q.shape
             H = 1
@@ -207,14 +247,35 @@ class TritonDynamicSparseAttentionFunction(torch.autograd.Function):
             grid = (triton.cdiv(L, block_size), B * H)
 
             _dynamic_sparse_attn_fwd_kernel[grid](
-                q_c, k_c, v_c, ab_c, out_4d,
-                q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-                k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
-                v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
-                ab_c.stride(0), ab_c.stride(1), ab_c.stride(2), ab_c.stride(3),
-                out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
+                q_c,
+                k_c,
+                v_c,
+                ab_c,
+                out_4d,
+                q_c.stride(0),
+                q_c.stride(1),
+                q_c.stride(2),
+                q_c.stride(3),
+                k_c.stride(0),
+                k_c.stride(1),
+                k_c.stride(2),
+                k_c.stride(3),
+                v_c.stride(0),
+                v_c.stride(1),
+                v_c.stride(2),
+                v_c.stride(3),
+                ab_c.stride(0),
+                ab_c.stride(1),
+                ab_c.stride(2),
+                ab_c.stride(3),
+                out_4d.stride(0),
+                out_4d.stride(1),
+                out_4d.stride(2),
+                out_4d.stride(3),
                 float(sm_scale),
-                B, H, L,
+                B,
+                H,
+                L,
                 D=D,
                 K_ACTIVE=K_ACTIVE,
                 BLOCK_SIZE=block_size,
@@ -287,7 +348,7 @@ class TritonDynamicSparseAttentionFunction(torch.autograd.Function):
                         dk_sub = torch.matmul(ds.t(), q_sub)
 
                         curr_offset = 0
-                        for (kv_st, kv_ed) in ranges:
+                        for kv_st, kv_ed in ranges:
                             chunk_len = kv_ed - kv_st
                             dk[b, h, kv_st:kv_ed] += dk_sub[curr_offset : curr_offset + chunk_len]
                             dv[b, h, kv_st:kv_ed] += dv_sub[curr_offset : curr_offset + chunk_len]
@@ -309,15 +370,11 @@ def triton_dynamic_sparse_attention(
     sm_scale: Optional[float] = None,
 ) -> torch.Tensor:
     """Dispatched Dynamic Sparse Attention with full Autograd backward support."""
-    if torch.is_grad_enabled() and any(
-        t.requires_grad for t in (q, k, v) if isinstance(t, torch.Tensor)
-    ):
-        return TritonDynamicSparseAttentionFunction.apply(
-            q, k, v, active_block_indices, block_size, sm_scale
-        )
+    if torch.is_grad_enabled() and any(t.requires_grad for t in (q, k, v) if isinstance(t, torch.Tensor)):
+        return TritonDynamicSparseAttentionFunction.apply(q, k, v, active_block_indices, block_size, sm_scale)
 
     orig_shape = q.shape
-    is_3d = (q.ndim == 3)
+    is_3d = q.ndim == 3
     if is_3d:
         B, L, D = q.shape
         H = 1
@@ -348,14 +405,35 @@ def triton_dynamic_sparse_attention(
         grid = (triton.cdiv(L, block_size), B * H)
 
         _dynamic_sparse_attn_fwd_kernel[grid](
-            q_c, k_c, v_c, ab_c, out_4d,
-            q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-            k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
-            v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
-            ab_c.stride(0), ab_c.stride(1), ab_c.stride(2), ab_c.stride(3),
-            out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
+            q_c,
+            k_c,
+            v_c,
+            ab_c,
+            out_4d,
+            q_c.stride(0),
+            q_c.stride(1),
+            q_c.stride(2),
+            q_c.stride(3),
+            k_c.stride(0),
+            k_c.stride(1),
+            k_c.stride(2),
+            k_c.stride(3),
+            v_c.stride(0),
+            v_c.stride(1),
+            v_c.stride(2),
+            v_c.stride(3),
+            ab_c.stride(0),
+            ab_c.stride(1),
+            ab_c.stride(2),
+            ab_c.stride(3),
+            out_4d.stride(0),
+            out_4d.stride(1),
+            out_4d.stride(2),
+            out_4d.stride(3),
             float(sm_scale),
-            B, H, L,
+            B,
+            H,
+            L,
             D=D,
             K_ACTIVE=K_ACTIVE,
             BLOCK_SIZE=block_size,

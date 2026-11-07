@@ -38,7 +38,7 @@ This transaction is serviced in four contiguous 128-byte cache lines (16 sectors
 
 ```
                          128-Bit Vector Load Coalescing (float4)
-      
+
 Warp Lanes (32 threads):
   Lane 0      Lane 1      Lane 2                 Lane 31
  [float4]    [float4]    [float4]   . . . . .   [float4]
@@ -107,10 +107,10 @@ __device__ __forceinline__ void load_128b(
 ) {
     using Policy = VectorLoadPolicy<scalar_t>;
     constexpr int V = Policy::VEC_SIZE;
-    
+
     // Check pointer alignment to 16 bytes and boundary sufficiency
     if (reinterpret_cast<uintptr_t>(src + offset) % 16 == 0 && (offset + V) <= total_elements) {
-        *reinterpret_cast<typename Policy::VecType*>(dst) = 
+        *reinterpret_cast<typename Policy::VecType*>(dst) =
             *reinterpret_cast<const typename Policy::VecType*>(src + offset);
     } else {
         #pragma unroll
@@ -140,13 +140,13 @@ $$\text{Cycles}_{\text{reduction}} = \log_2(32) \times \tau_{\text{shuffle}} = 5
 
 ```
                 5-Stage Intra-Warp Butterfly Reduction Tree
-  
+
   Stage 0 (Mask = 16): XOR distance 16  [Lanes  0..15 <---> Lanes 16..31]
   Stage 1 (Mask =  8): XOR distance  8  [Lanes  0.. 7 <---> Lanes  8..15]
   Stage 2 (Mask =  4): XOR distance  4  [Lanes  0.. 3 <---> Lanes  4.. 7]
   Stage 3 (Mask =  2): XOR distance  2  [Lanes  0.. 1 <---> Lanes  2.. 3]
   Stage 4 (Mask =  1): XOR distance  1  [Lane   0     <---> Lane   1    ]
-  
+
   Result: Lane 0 (or all lanes with __shfl_xor_sync) holds the exact reduction
 ```
 
@@ -221,7 +221,7 @@ $$\text{Bank ID} = \left( \left\lfloor \frac{\text{Byte Address}}{4} \right\rflo
 
 ```
        Naive 32x32 Allocation (32-Way Conflict)         Padded [32][33] Allocation (0 Conflicts)
-  
+
        Bank 0  Bank 1  ...  Bank 31                     Bank 0  Bank 1  ...  Bank 31
 Row 0:  [0,0]   [0,1]  ...  [0,31]                 Row 0:  [0,0]   [0,1]  ...  [0,31]  [Pad]
 Row 1:  [1,0]   [1,1]  ...  [1,31]                 Row 1:  [1,31]  [1,0]  ...  [1,30]  [Pad]

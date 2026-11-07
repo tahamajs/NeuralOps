@@ -12,7 +12,6 @@ Compresses transformer key-value states through task-directed low-rank projectio
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import hashlib
 import logging
@@ -25,6 +24,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import recalibrate_layernorms
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -141,11 +141,15 @@ class CacheNotesLoRALinear(nn.Module):
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
             suitable, _ = check_triton_suitability(x_flat, "low_rank")
             if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
-                    lora_out = fused_down_up_gemm_bias_triton(x_flat, self.lora_A.to(x_flat.dtype), self.lora_B.t().to(x_flat.dtype).contiguous(), bias=None)
+
+                    lora_out = fused_down_up_gemm_bias_triton(
+                        x_flat, self.lora_A.to(x_flat.dtype), self.lora_B.t().to(x_flat.dtype).contiguous(), bias=None
+                    )
                     out = out + (self.scaling * lora_out)
                     return out.reshape(*orig_shape[:-1], self.out_features)
                 except Exception:
@@ -262,15 +266,7 @@ class CPTGenerator(nn.Module):
 
     def _tokenize_text(self, text: str, device: torch.device) -> torch.Tensor:
         """Deterministic hash-based tokenization without external library dependencies."""
-        words = (
-            str(text)
-            .lower()
-            .replace(",", " ")
-            .replace(".", " ")
-            .replace(":", " ")
-            .replace("-", " ")
-            .split()
-        )
+        words = str(text).lower().replace(",", " ").replace(".", " ").replace(":", " ").replace("-", " ").split()
         if not words:
             return torch.tensor([0], dtype=torch.long, device=device)
         indices = []
@@ -403,6 +399,7 @@ class CacheNotesCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     CacheNotes Compressor: Decouples static weight compression from KV cache dynamic pruning
@@ -463,12 +460,8 @@ class CacheNotesCompressor(BaseCompressor):
                 _cfg_get(cfg, "use_learned_cpt", use_learned_cpt),
             )
         )
-        keep_ratio = float(
-            _cfg_get(cfg, "cachenotes_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio))
-        )
-        max_error = float(
-            _cfg_get(cfg, "cachenotes_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        keep_ratio = float(_cfg_get(cfg, "cachenotes_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio)))
+        max_error = float(_cfg_get(cfg, "cachenotes_max_error", _cfg_get(cfg, "max_error", max_error)))
         fallback_to_original = bool(
             _cfg_get(
                 cfg,
@@ -491,9 +484,7 @@ class CacheNotesCompressor(BaseCompressor):
                 _cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)),
             )
         )
-        lora_alpha = float(
-            _cfg_get(cfg, "cachenotes_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha))
-        )
+        lora_alpha = float(_cfg_get(cfg, "cachenotes_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha)))
         skip_attention_qkv = bool(
             _cfg_get(
                 cfg,
@@ -527,9 +518,7 @@ class CacheNotesCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader or kwargs.get("calibration_loader")
         self.calibration_texts = calibration_texts or kwargs.get("calibration_texts")
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else (next(model.parameters(), torch.tensor(0.0)).device)
+            torch.device(device) if device is not None else (next(model.parameters(), torch.tensor(0.0)).device)
         )
         self.comp_config = cfg
 
@@ -576,9 +565,7 @@ class CacheNotesCompressor(BaseCompressor):
 
         if sample_layers is None:
             sample_layers = [
-                (name, mod)
-                for name, mod in self.model.named_modules()
-                if self._is_target_module(name, mod)
+                (name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)
             ][:4]
 
         if not sample_layers:
@@ -599,9 +586,7 @@ class CacheNotesCompressor(BaseCompressor):
                 for name, module in sample_layers:
                     target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
                     cls_name = module.__class__.__name__.lower()
-                    is_conv1d = (
-                        "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
-                    )
+                    is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
                     raw_w = target_mod.weight.data.float().to(self.target_device)
                     W = raw_w.t().contiguous() if is_conv1d else raw_w
                     out_f, in_f = W.shape
@@ -617,15 +602,11 @@ class CacheNotesCompressor(BaseCompressor):
                         U, S, Vt = torch.linalg.svd(W_cpt, full_matrices=False)
                         W_lowrank = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
                         W_approx = W_lowrank / importance.unsqueeze(1)
-                        loss = torch.norm(W - W_approx, p="fro") / max(
-                            torch.norm(W, p="fro").item(), 1e-6
-                        )
+                        loss = torch.norm(W - W_approx, p="fro") / max(torch.norm(W, p="fro").item(), 1e-6)
 
                         optimizer.zero_grad()
                         loss.backward()
-                        torch.nn.utils.clip_grad_norm_(
-                            self.cpt_generator.parameters(), max_norm=1.0
-                        )
+                        torch.nn.utils.clip_grad_norm_(self.cpt_generator.parameters(), max_norm=1.0)
                         optimizer.step()
 
                         total_loss += loss.item()
@@ -699,10 +680,7 @@ class CacheNotesCompressor(BaseCompressor):
         if isinstance(module, CacheNotesLoRALinear):
             return False
 
-        if any(
-            name.endswith(sfx)
-            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
-        ):
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
             return False
 
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -712,10 +690,7 @@ class CacheNotesCompressor(BaseCompressor):
         is_linear_like = (
             isinstance(module, nn.Linear)
             or isinstance(target_mod, nn.Linear)
-            or (
-                Conv1D is not None
-                and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
-            )
+            or (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
             or "conv1d" in cls_name
             or "conv1d" in target_cls
             or hasattr(module, "nf")
@@ -791,9 +766,7 @@ class CacheNotesCompressor(BaseCompressor):
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using task-guided CPT-weighted low-rank SVD."""
         if self.use_learned_cpt and not self.cpt_generator_trained:
-            logger.info(
-                "CPT generator not yet trained. Running initial task-aware training pass..."
-            )
+            logger.info("CPT generator not yet trained. Running initial task-aware training pass...")
             self.train_cpt_generator(epochs=3, lr=1e-4)
 
         self.compressed_layers = []
@@ -810,16 +783,11 @@ class CacheNotesCompressor(BaseCompressor):
             target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
             module.__class__.__name__.lower()
             is_conv1d = (
-                (
-                    Conv1D is not None
-                    and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
-                )
+                (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
                 or hasattr(module, "nf")
                 or hasattr(target_mod, "nf")
             )
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
-                module, "base_layer"
-            )
+            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
             w_id = id(target_mod.weight)
             if w_id in seen_weights:
@@ -873,13 +841,9 @@ class CacheNotesCompressor(BaseCompressor):
 
             if has_lora:
                 if is_conv1d:
-                    target_mod.weight.data.copy_(
-                        W_approx.t().contiguous().to(dtype=dtype, device=device)
-                    )
+                    target_mod.weight.data.copy_(W_approx.t().contiguous().to(dtype=dtype, device=device))
                 else:
-                    target_mod.weight.data.copy_(
-                        W_approx.contiguous().to(dtype=dtype, device=device)
-                    )
+                    target_mod.weight.data.copy_(W_approx.contiguous().to(dtype=dtype, device=device))
                 target_mod.weight.requires_grad = False
                 if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
                     target_mod.bias.requires_grad = False
@@ -899,19 +863,13 @@ class CacheNotesCompressor(BaseCompressor):
                     replace_module(self.model, name, cn_layer)
             else:
                 if is_conv1d:
-                    target_mod.weight.data.copy_(
-                        W_approx.t().contiguous().to(dtype=dtype, device=device)
-                    )
+                    target_mod.weight.data.copy_(W_approx.t().contiguous().to(dtype=dtype, device=device))
                 else:
-                    target_mod.weight.data.copy_(
-                        W_approx.contiguous().to(dtype=dtype, device=device)
-                    )
+                    target_mod.weight.data.copy_(W_approx.contiguous().to(dtype=dtype, device=device))
 
             self.compressed_layers.append(name)
 
-        if self.recalibrate_ln and (
-            self.calibration_loader is not None or self.calibration_texts is not None
-        ):
+        if self.recalibrate_ln and (self.calibration_loader is not None or self.calibration_texts is not None):
             try:
                 recalibrate_layernorms(
                     self.model,
@@ -936,16 +894,12 @@ class CacheNotesCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
         avg_rank = (
-            float(
-                sum(self.actual_ranks[k] for k in self.compressed_layers)
-                / max(1, len(self.compressed_layers))
-            )
+            float(sum(self.actual_ranks[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers)))
             if self.compressed_layers
             else 0.0
         )

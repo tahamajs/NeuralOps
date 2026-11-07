@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import math
 from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -188,6 +189,4 @@ class SymplecticNumericalGuard(nn.Module):
         self.dynamic_range_threshold = dynamic_range_threshold
 
     def forward(self, x: torch.Tensor, dim: int = -1) -> torch.Tensor:
-        return symplectic_guarded_softmax(
-            x, dim=dim, eps_min=self.eps_min, eps_max=self.eps_max
-        )
+        return symplectic_guarded_softmax(x, dim=dim, eps_min=self.eps_min, eps_max=self.eps_max)

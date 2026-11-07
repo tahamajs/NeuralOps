@@ -137,7 +137,7 @@ Specifically, regarding \textbf{Total MACs}, $4 B N D^2 + 4 D^2 r + 2 B N^2 D$ F
 
 
 ### Parameter Footprint Comparison
-Specifically, regarding \textbf{Uncompressed Dense MHA}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{SVD Projection Parameter Count}, 
+Specifically, regarding \textbf{Uncompressed Dense MHA}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{SVD Projection Parameter Count},
 
   \[
   \text{Params}_{\text{SVDProj}} = 4 \cdot r (D + D) + 4 D = 8 D r + 4 D \text{ floats}
@@ -212,4 +212,3 @@ The empirical evaluation of `svd_projection_attention` across standard sequence 
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

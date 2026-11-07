@@ -12,12 +12,6 @@ Variational spectral attention adapting frequency-domain token projections dynam
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-from neuralops.core.utils.rope import _rotate_half
 
 import logging
 import math
@@ -29,9 +23,12 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.utils.rope import _rotate_half
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -118,11 +115,7 @@ class TokenRouter(nn.Module):
             N,
             max(
                 1,
-                (
-                    min(self.min_tokens, N)
-                    if self.min_tokens >= N
-                    else max(self.min_tokens, int(N * self.keep_ratio))
-                ),
+                (min(self.min_tokens, N) if self.min_tokens >= N else max(self.min_tokens, int(N * self.keep_ratio))),
             ),
         )
         idx = scores.topk(keep, dim=1).indices
@@ -211,9 +204,7 @@ class DynamicLowRankProjector(nn.Module):
                 min_b = min(self.bias.size(0), b_val.size(0))
                 self.bias.data[:min_b].copy_(b_val[:min_b])
 
-            rec = (self.U[:, :eff_rank] * self.S[:eff_rank].unsqueeze(0)) @ self.V[
-                :, :eff_rank
-            ].t().contiguous()
+            rec = (self.U[:, :eff_rank] * self.S[:eff_rank].unsqueeze(0)) @ self.V[:, :eff_rank].t().contiguous()
             f_norm = float(torch.linalg.norm(rec))
             if f_norm < 1e-4:
                 logger.warning(
@@ -225,12 +216,7 @@ class DynamicLowRankProjector(nn.Module):
 
     def copy_lora_from(self, sub: Any) -> None:
         """Preserve source LoRA adapters."""
-        if (
-            hasattr(sub, "lora_A")
-            and hasattr(sub, "lora_B")
-            and sub.lora_A is not None
-            and sub.lora_B is not None
-        ):
+        if hasattr(sub, "lora_A") and hasattr(sub, "lora_B") and sub.lora_A is not None and sub.lora_B is not None:
             src_lA = getattr(sub.lora_A, "weight", sub.lora_A)
             src_lB = getattr(sub.lora_B, "weight", sub.lora_B)
             if hasattr(src_lA, "data") and self.lora_A is not None:
@@ -250,6 +236,7 @@ class DynamicLowRankProjector(nn.Module):
         if x.is_cuda:
             try:
                 from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+
                 u_eff = self.U * self.S.unsqueeze(0)
                 out = fused_lowrank_gated_gemm(
                     x, self.V.t().contiguous(), u_eff.t().contiguous(), alpha=gate, bias=self.bias
@@ -257,6 +244,7 @@ class DynamicLowRankProjector(nn.Module):
             except Exception:
                 try:
                     from neuralops.ops.triton.low_rank import low_rank_forward
+
                     out = low_rank_forward(x, self.V, self.S, self.U, gate, self.bias)
                 except Exception:
                     v = self.V.to(x.dtype)
@@ -288,9 +276,7 @@ class DynamicLowRankProjector(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register(
-    "vspec", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("vspec", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class VSpecAttention(BaseAttention):
     r"""VSpec++ Attention: Variational Spectral Token-Adaptive Attention Module."""
 
@@ -347,8 +333,7 @@ class VSpecAttention(BaseAttention):
             else False
         )
         if hasattr(config, "architectures") and any(
-            "GPT" in str(a) or "CausalLM" in str(a)
-            for a in (getattr(config, "architectures", []) or [])
+            "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -359,9 +344,7 @@ class VSpecAttention(BaseAttention):
             self.num_heads: int = self.adapter.num_heads
             self.num_kv_heads: int = self.adapter.num_key_value_heads
             self.hidden_size: int = self.adapter.hidden_size
-            self.head_dim: int = (
-                int(cfg_head_dim) if cfg_head_dim is not None else self.adapter.head_dim
-            )
+            self.head_dim: int = int(cfg_head_dim) if cfg_head_dim is not None else self.adapter.head_dim
             self.all_head_size: int = self.num_heads * self.head_dim
             self.kv_head_size: int = self.num_kv_heads * self.head_dim
             self.kv_repeat: int = self.adapter.kv_repeat
@@ -372,9 +355,7 @@ class VSpecAttention(BaseAttention):
             self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
             self.head_dim = (
-                int(cfg_head_dim)
-                if cfg_head_dim is not None
-                else (self.hidden_size // max(1, self.num_heads))
+                int(cfg_head_dim) if cfg_head_dim is not None else (self.hidden_size // max(1, self.num_heads))
             )
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
@@ -777,6 +758,7 @@ class VSpecAttention(BaseAttention):
                 )
             except (RuntimeError, TypeError, ValueError) as e:
                 from neuralops.utils.logging_config import warn_once
+
                 warn_once("vspec_rotary_failed", "maybe_apply_rotary failed: %s", e)
 
         if self.kv_repeat > 1:
@@ -818,9 +800,7 @@ class VSpecAttention(BaseAttention):
             attn_weights = None
         else:
             scale = 1.0 / math.sqrt(Dh)
-            scores = (
-                torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale * hg.float()
-            )
+            scores = torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale * hg.float()
 
             if is_decoder and k_len > 1:
                 causal_mask = torch.triu(
@@ -830,9 +810,7 @@ class VSpecAttention(BaseAttention):
                 scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
             if valid_routed is not None:
-                pad_mask = (
-                    (~valid_routed).unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
-                )
+                pad_mask = (~valid_routed).unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
                 scores = scores.masked_fill(pad_mask, float("-inf"))
 
             attn_weights = torch.softmax(scores, dim=-1)
@@ -847,10 +825,7 @@ class VSpecAttention(BaseAttention):
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(-1)
                 elif head_mask.dim() == 4:
-                    if (
-                        head_mask.shape[-1] == head_mask.shape[-2]
-                        and head_mask.shape[-1] != attn_weights.shape[-1]
-                    ):
+                    if head_mask.shape[-1] == head_mask.shape[-2] and head_mask.shape[-1] != attn_weights.shape[-1]:
                         head_mask = head_mask.mean(dim=-1, keepdim=True)
                 attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
@@ -906,11 +881,7 @@ def inject_vspec_attn(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -956,9 +927,7 @@ def inject_vspec_attn(
                 return None
             if hasattr(src, "inner") and isinstance(src.inner, VSpecAttention):
                 return None
-            if hasattr(src, "_wrapped_attention") and isinstance(
-                src._wrapped_attention, VSpecAttention
-            ):
+            if hasattr(src, "_wrapped_attention") and isinstance(src._wrapped_attention, VSpecAttention):
                 return None
 
         if target is not None:
@@ -972,9 +941,7 @@ def inject_vspec_attn(
                     return None
                 if hasattr(cand, "inner") and isinstance(cand.inner, VSpecAttention):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(
-                    cand._wrapped_attention, VSpecAttention
-                ):
+                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, VSpecAttention):
                     return None
 
         if src is not None:
@@ -991,21 +958,9 @@ def inject_vspec_attn(
             or _cfg_get(cfg, "dim")
             or getattr(src, "hidden_size", None)
             or getattr(src, "embed_dim", None)
-            or (
-                src.q_proj.in_features
-                if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features")
-                else None
-            )
-            or (
-                src.q_lin.in_features
-                if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features")
-                else None
-            )
-            or (
-                src.query.in_features
-                if hasattr(src, "query") and hasattr(src.query, "in_features")
-                else None
-            )
+            or (src.q_proj.in_features if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features") else None)
+            or (src.q_lin.in_features if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features") else None)
+            or (src.query.in_features if hasattr(src, "query") and hasattr(src.query, "in_features") else None)
             or 768
         )
         (

@@ -104,6 +104,7 @@ class TritonOpsBenchmark(AbstractBaseBenchmark):
         args, ref_fn = self._prepare_inputs(kernel_name)
 
         try:
+
             def dispatched_call() -> Any:
                 return triton_dispatch(kernel_name, *args)
 
@@ -160,23 +161,25 @@ class TritonOpsBenchmark(AbstractBaseBenchmark):
 
         except Exception as e:
             logger.warning("Execution error in triton op %s: %s", kernel_name, e)
-            self.results_table.append({
-                "step": step,
-                "mechanism_or_kernel": kernel_name,
-                "batch_size": 2,
-                "seq_len": 16,
-                "dtype": "fp32",
-                "latency_ms": 0.0,
-                "latency_p50_ms": 0.0,
-                "latency_p90_ms": 0.0,
-                "latency_p99_ms": 0.0,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "ref_ms": 0.0,
-                "speedup": 0.0,
-                "max_diff": 0.0,
-                "status": f"FAILED_RUNTIME: {e}",
-            })
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": kernel_name,
+                    "batch_size": 2,
+                    "seq_len": 16,
+                    "dtype": "fp32",
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "tflops": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "ref_ms": 0.0,
+                    "speedup": 0.0,
+                    "max_diff": 0.0,
+                    "status": f"FAILED_RUNTIME: {e}",
+                }
+            )
             self.tracker.log_metric("triton_ms", 0.0, step=step)
             return {"triton_ms": 0.0, "ref_ms": 0.0, "speedup": 0.0}
 

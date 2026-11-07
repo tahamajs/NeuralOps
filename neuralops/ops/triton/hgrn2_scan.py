@@ -13,9 +13,9 @@ Computes hierarchical gated recurrent unit state transitions with data-controlle
 
 from __future__ import annotations
 
-import torch
-
 from typing import Any
+
+import torch
 
 from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
@@ -155,9 +155,7 @@ def _hgrn2_bwd_kernel(
         f_l = tl.load(f_ptrs, mask=mask_d, other=0.0).to(tl.float32)
 
         if l > 0:
-            h_prev_ptrs = (
-                h_workspace_ptr + pid_b * stride_hwb + (l - 1) * stride_hwl + offs_d * stride_hwd
-            )
+            h_prev_ptrs = h_workspace_ptr + pid_b * stride_hwb + (l - 1) * stride_hwl + offs_d * stride_hwd
             h_prev = tl.load(h_prev_ptrs, mask=mask_d, other=0.0).to(tl.float32)
         elif HAS_INIT_STATE:
             init_ptrs = init_state_ptr + pid_b * stride_isb + offs_d * stride_isd
@@ -214,7 +212,9 @@ def _hgrn2_fwd_inference(f, iv, res_clip=None, initial_state=None, return_final_
         out.stride(0),
         out.stride(1),
         out.stride(2),
-        0, 0, 0,
+        0,
+        0,
+        0,
         init_state.stride(0) if has_init else 0,
         init_state.stride(1) if has_init else 0,
         final_state.stride(0) if has_final else 0,
@@ -236,7 +236,9 @@ def _hgrn2_fwd_inference(f, iv, res_clip=None, initial_state=None, return_final_
 
 class _HGRN2ScanFn(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Any, f: Any, iv: Any, res_clip: Any, initial_state: Any = None, return_final_state: Any = False) -> Any:
+    def forward(
+        ctx: Any, f: Any, iv: Any, res_clip: Any, initial_state: Any = None, return_final_state: Any = False
+    ) -> Any:
         B, L, D = f.shape
         out = torch.empty_like(iv)
         h_workspace = torch.empty((B, L, D), device=f.device, dtype=torch.float32)
@@ -427,6 +429,7 @@ def hgrn2_scan(
 ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
     """Dispatches HGRN2 scan to Triton GPU kernel when suitable, else PyTorch fallback."""
     from neuralops.ops.triton._common import should_use_triton
+
     suitable = should_use_triton(f, "hgrn2_scan", head_dim=f.shape[-1], seq_len=f.shape[1], allow_fp32=True)
     if suitable and hasattr(triton, "jit"):
         try:
@@ -442,6 +445,7 @@ def hgrn2_scan(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _hgrn2_bidirectional_scan_kernel(
         x_ptr,
@@ -563,9 +567,9 @@ def triton_hgrn2_fused_bwd_scan(
 
 
 __all__ = [
-    'hgrn2_scan_triton',
-    'hgrn2_scan_pytorch',
-    'hgrn2_scan',
-    'triton_hgrn2_fused_bwd_scan',
-    'triton_hgrn2_fused_bwd_scan_pytorch_ref',
+    "hgrn2_scan_triton",
+    "hgrn2_scan_pytorch",
+    "hgrn2_scan",
+    "triton_hgrn2_fused_bwd_scan",
+    "triton_hgrn2_fused_bwd_scan_pytorch_ref",
 ]

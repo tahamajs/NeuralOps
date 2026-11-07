@@ -23,9 +23,9 @@ This skill provides full formal derivations, production-grade LaTeX snippets, al
 ## 1. Theoretical Foundations: Post-Surgery Neural Trauma & Distillation Dynamics
 
 ### 1.1 Structural Surgery and the Rank Collapse Theorem
-When dense self-attention layers or dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ undergo structural surgery—such as in-place replacement with linear kernel attention ($\operatorname{Cosformer}$, $\operatorname{Chunk\text{-}GLA}$, $\operatorname{GDN\text{-}2}$) or parameter compression via low-rank decomposition ($W \approx U \Sigma_r V^\top$)—the network experiences acute architectural shock. 
+When dense self-attention layers or dense linear projection matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ undergo structural surgery—such as in-place replacement with linear kernel attention ($\operatorname{Cosformer}$, $\operatorname{Chunk\text{-}GLA}$, $\operatorname{GDN\text{-}2}$) or parameter compression via low-rank decomposition ($W \approx U \Sigma_r V^\top$)—the network experiences acute architectural shock.
 
-In unweighted singular value truncation, directions with small singular values in $W$ are discarded. However, because $W$ operates on non-isotropic token activations $X \sim \mathcal{D}$ with condition numbers $\kappa(\Sigma_X) \gg 10^5$, discarded directions often align with high-variance activation manifolds. 
+In unweighted singular value truncation, directions with small singular values in $W$ are discarded. However, because $W$ operates on non-isotropic token activations $X \sim \mathcal{D}$ with condition numbers $\kappa(\Sigma_X) \gg 10^5$, discarded directions often align with high-variance activation manifolds.
 
 ```latex
 \begin{theorem}[Subspace Rank Collapse under Naive Post-Surgery Truncation]
@@ -239,7 +239,7 @@ This guides gradient updates strictly into $\operatorname{Null}(H_W)$, guarantee
 ## 3. Warmup-Stable-Decay (WSD) Learning Rate Scheduling
 
 ### 3.1 Mathematical Piecewise Formulation
-Standard monotonic cosine annealing decays the learning rate continuously from the initial step, severely restricting parameter exploration before structural weights can realign with the teacher's latent manifold. 
+Standard monotonic cosine annealing decays the learning rate continuously from the initial step, severely restricting parameter exploration before structural weights can realign with the teacher's latent manifold.
 
 The **Warmup-Stable-Decay (WSD)** scheduler divides the healing budget $T_{\text{total}}$ into three distinct regimes:
 1. **Linear Warmup Phase** ($t \in [0, T_{\text{warm}}]$): Rapidly increases learning rate from zero to peak $\eta_{\max}$, preventing initial gradient shock.
@@ -447,7 +447,7 @@ To demonstrate that the six pillars are mutually non-redundant and operate as or
 #### Mathematical Proof of Super-Additive Synergy:
 Summing the individual marginal drops resulting from removing each pillar independently:
 $$\sum_{i=1}^6 |\Delta_i| = 15.20\% + 4.80\% + 3.90\% + 2.10\% + 3.45\% + 2.85\% = 32.30\%$$
-In contrast, the net improvement between single-pillar Logit KD ($78.40\%$) and the full 6-pillar suite ($89.40\%$) is $+11.00\%$. 
+In contrast, the net improvement between single-pillar Logit KD ($78.40\%$) and the full 6-pillar suite ($89.40\%$) is $+11.00\%$.
 Because:
 $$\sum_{i=1}^6 |\Delta_i| = 32.30\% \gg 11.00\% = \Delta_{\text{joint}}$$
 The system exhibits **super-additive synergy** ($\sum |\Delta_i| > \Delta_{\text{net}}$). In Riemannian geometric terms, the loss surfaces of the six pillars intersect transversely rather than tangentially. Each loss acts as a projection operator onto an independent sub-bundle of the tangent space, jointly forming a tight contraction basin that prevents the optimizer from wandering into unconstrained low-rank degenerate manifolds.
@@ -544,40 +544,40 @@ Initialize WSD Scheduler with phases $(T_{\mathrm{warm}}, T_{\mathrm{stable}}, T
 
 \For{$t = 1$ \KwTo $T_{\mathrm{total}}$}{
     Sample mini-batch $(X, y) \sim \mathcal{D}_{\mathrm{calib}}$\;
-    
+
     \tcc{Compute frozen teacher forward pass without gradient computation}
     \WithKwBlock{NoGrad}{with $\mathrm{torch.no\_grad}()$:}{end}
     \NoGrad{
         $z_T, \{H_T^{(\ell)}\}_{\ell=1}^L, \{A_T^{(\ell)}\}_{\ell=1}^L \leftarrow \mathcal{M}_T(X)$\;
     }
-    
+
     \tcc{Compute student forward pass with active autograd tracking}
     $z_S, \{H_S^{(\ell)}\}_{\ell=1}^L, \{A_S^{(\ell)}\}_{\ell=1}^L \leftarrow \mathcal{M}_S(X)$\;
-    
+
     \tcc{Evaluate 6-Pillar Distillation Suite}
     $\tau_t \leftarrow \tau(t)$\;
     $\mathcal{L}_{\mathrm{task}} \leftarrow \mathrm{CrossEntropy}(z_S, y)$\;
     $\mathcal{L}_{\mathrm{KD}} \leftarrow \tau_t^2 \cdot \mathcal{D}_{\mathrm{KL}}\left(\mathrm{softmax}(z_T / \tau_t) \parallel \mathrm{softmax}(z_S / \tau_t)\right)$\;
-    
+
     $\mathcal{L}_{\mathrm{CKA}} \leftarrow \mathrm{SmoothMaxCKA}\left(\{H_S^{(\ell)}\}_{\ell=1}^L, \{H_T^{(\ell)}\}_{\ell=1}^L; \tau_{\mathrm{smooth}}=0.1\right)$\;
     $\mathcal{L}_{\mathrm{attn}} \leftarrow \frac{1}{L} \sum_{\ell=1}^L \mathrm{ChunkedAttnKL}\left(A_S^{(\ell)}, A_T^{(\ell)}; B_T=64\right)$\;
     $\mathcal{L}_{\mathrm{cos}} \leftarrow 1 - \mathrm{CosineSimilarity}(H_S^{(L)}, H_T^{(L)})$\;
     $\mathcal{L}_{\mathrm{stiefel}} \leftarrow \frac{1}{4L} \sum_{\ell=1}^L \left( \|U_\ell^\top U_\ell - I_r\|_F^2 + \|V_\ell^\top V_\ell - I_r\|_F^2 \right)$\;
     $\mathcal{L}_{\mathrm{entropy}} \leftarrow \max\left(0, \gamma_{\mathrm{target}} - \mathcal{H}(A_S)\right)$\;
-    
+
     $\mathcal{L}_{\mathrm{total}} \leftarrow \lambda_{\mathrm{task}} \mathcal{L}_{\mathrm{task}} + \lambda_1 \mathcal{L}_{\mathrm{KD}} + \lambda_2 \mathcal{L}_{\mathrm{CKA}} + \lambda_3 \mathcal{L}_{\mathrm{attn}} + \lambda_4 \mathcal{L}_{\mathrm{cos}} + \lambda_5 \mathcal{L}_{\mathrm{stiefel}} + \lambda_6 \mathcal{L}_{\mathrm{entropy}}$\;
-    
+
     Optimizer zero gradients: $\nabla_\theta \leftarrow \mathbf{0}$\;
     Backpropagate composite loss: $\mathcal{L}_{\mathrm{total}}.\mathrm{backward}()$\;
     Clip gradient norms: $\|\nabla_\theta\|_2 \le 1.0$\;
     Optimizer step: Update adapter weights\;
-    
+
     \tcc{Execute Riemannian Cayley Retraction to enforce exact orthogonality}
     \For{$\ell = 1$ \KwTo $L$}{
         $W_{U,\ell} \leftarrow (\nabla_{U_\ell} \mathcal{L}) U_\ell^\top - U_\ell (\nabla_{U_\ell} \mathcal{L})^\top$\;
         $U_\ell \leftarrow \left(I + \frac{\eta_t}{2} W_{U,\ell}\right)^{-1} \left(I - \frac{\eta_t}{2} W_{U,\ell}\right) U_\ell$\;
     }
-    
+
     Update learning rate: $\eta_{t+1} \leftarrow \mathrm{WSD\_Scheduler.step}()$\;
 }
 \Return{$\mathcal{M}_S^*$ with converged parameters.}

@@ -12,7 +12,6 @@ Decomposes target linear and Conv1D projections into low-rank factor pairs with 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -21,8 +20,9 @@ from typing import Any, Optional
 import torch
 import torch.nn as nn
 
-from neuralops.core.low_rank.svd_linear import SVDLinear
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
+from neuralops.core.low_rank.svd_linear import SVDLinear
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import get_dynamic_compression_rank, should_compress_linear
@@ -56,6 +56,7 @@ class DirectSVDCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     Direct SVD Compressor.
@@ -118,9 +119,7 @@ class DirectSVDCompressor(BaseCompressor):
             "direct_svd_rank_ratio",
             _cfg_get(cfg_obj, "rank_ratio", rank_ratio),
         )
-        max_error = _cfg_get(
-            cfg_obj, "direct_svd_max_error", _cfg_get(cfg_obj, "max_error", max_error)
-        )
+        max_error = _cfg_get(cfg_obj, "direct_svd_max_error", _cfg_get(cfg_obj, "max_error", max_error))
         fallback_to_original = _cfg_get(
             cfg_obj,
             "direct_svd_fallback_to_original",
@@ -166,7 +165,9 @@ class DirectSVDCompressor(BaseCompressor):
             logger.warning(
                 "DirectSVDCompressor: target rank %d is below min_rank %d. "
                 "If explicit low-rank decomposition is required, pass min_rank=%d.",
-                self.rank, self.min_rank, self.rank
+                self.rank,
+                self.min_rank,
+                self.rank,
             )
         self.rank_ratio = float(rank_ratio) if rank_ratio is not None else None
         if max_error is None:
@@ -189,7 +190,9 @@ class DirectSVDCompressor(BaseCompressor):
         self.use_hnc_continuation = bool(
             kwargs.get("use_hnc_continuation", kwargs.get("name") in ("hnc_svd", "hnc_svd_compressor"))
         )
-        self.probe_inputs = kwargs.get("probe_inputs", kwargs.get("calibration_data", kwargs.get("calibration_loader", None)))
+        self.probe_inputs = kwargs.get(
+            "probe_inputs", kwargs.get("calibration_data", kwargs.get("calibration_loader", None))
+        )
         self.hnc_walk_steps = int(kwargs.get("hnc_walk_steps", _cfg_get(cfg_obj, "hnc_walk_steps", 0)))
         self.hnc_stage_d_steps = int(kwargs.get("hnc_stage_d_steps", _cfg_get(cfg_obj, "hnc_stage_d_steps", 30)))
         self.hnc_use_whitening = bool(kwargs.get("hnc_use_whitening", _cfg_get(cfg_obj, "hnc_use_whitening", True)))
@@ -255,9 +258,7 @@ class DirectSVDCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention")
-            )
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 return False
 
@@ -271,11 +272,7 @@ class DirectSVDCompressor(BaseCompressor):
         max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
 
         ref_dim = 768.0
-        if (
-            hasattr(self, "model")
-            and hasattr(self.model, "config")
-            and self.model.config is not None
-        ):
+        if hasattr(self, "model") and hasattr(self.model, "config") and self.model.config is not None:
             cfg_obj = self.model.config
             ref_dim = float(
                 getattr(
@@ -337,6 +334,7 @@ class DirectSVDCompressor(BaseCompressor):
 
         try:
             from neuralops.utils.amp_safety import safe_svd
+
             U, S, Vt = safe_svd(W, full_matrices=False)
         except Exception as e:
             logger.warning("DirectSVD SVD computation failed: %s", e)
@@ -388,21 +386,11 @@ class DirectSVDCompressor(BaseCompressor):
             if target_mod.bias is not None and svd_layer.bias is not None:
                 svd_layer.bias.data.copy_(target_mod.bias.data)
 
-            if (
-                hasattr(layer, "lora_A")
-                and hasattr(layer, "lora_B")
-                and svd_layer.lora_A is not None
-            ):
+            if hasattr(layer, "lora_A") and hasattr(layer, "lora_B") and svd_layer.lora_A is not None:
                 try:
-                    if (
-                        hasattr(layer.lora_A, "weight")
-                        and svd_layer.lora_A.weight.shape == layer.lora_A.weight.shape
-                    ):
+                    if hasattr(layer.lora_A, "weight") and svd_layer.lora_A.weight.shape == layer.lora_A.weight.shape:
                         svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
-                    if (
-                        hasattr(layer.lora_B, "weight")
-                        and svd_layer.lora_B.weight.shape == layer.lora_B.weight.shape
-                    ):
+                    if hasattr(layer.lora_B, "weight") and svd_layer.lora_B.weight.shape == layer.lora_B.weight.shape:
                         svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
                 except Exception as e:
                     logger.debug("DirectSVD adapter preservation notice: %s", e)
@@ -433,9 +421,7 @@ class DirectSVDCompressor(BaseCompressor):
         total_comp_decomp_params = 0
 
         target_layers = [
-            (name, mod)
-            for name, mod in list(self.model.named_modules())
-            if self._is_target_module(name, mod)
+            (name, mod) for name, mod in list(self.model.named_modules()) if self._is_target_module(name, mod)
         ]
 
         if not target_layers:
@@ -446,6 +432,7 @@ class DirectSVDCompressor(BaseCompressor):
         if self.use_hnc_continuation and self.probe_inputs is not None:
             try:
                 from neuralops.compression.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
+
                 hnc_engine = HessianNullSpaceSVDContinuation(
                     self.model,
                     target_rank=self.rank or 32,
@@ -561,16 +548,11 @@ class DirectSVDCompressor(BaseCompressor):
         except Exception as e:
             logger.debug("DirectSVD post-compression forward sanity check exception: %s", e)
 
-        effective_ratio = (
-            total_comp_decomp_params / total_orig_decomp_params
-            if total_orig_decomp_params > 0
-            else 1.0
-        )
+        effective_ratio = total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -633,16 +615,10 @@ def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
             _cfg_get(comp_config, "fallback_to_original", True),
         ),
     )
-    lora_r = kwargs.pop(
-        "lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0))
-    )
+    lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0)))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    skip_attention_qkv = kwargs.pop(
-        "skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", True)
-    )
-    protect_critical = kwargs.pop(
-        "protect_critical", _cfg_get(comp_config, "protect_critical", True)
-    )
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", True))
+    protect_critical = kwargs.pop("protect_critical", _cfg_get(comp_config, "protect_critical", True))
     target_attention_only = kwargs.pop(
         "target_attention_only",
         _cfg_get(
@@ -696,6 +672,7 @@ def merge_for_inference(
     """
     if not inplace:
         import copy
+
         model = copy.deepcopy(model)
 
     merged_count = 0
@@ -786,14 +763,15 @@ class SVDLLMv2Compressor(BaseCompressor):
         """
         r = rank or self.target_rank
         from neuralops.compression.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
-        A_r, B_r = HessianNullSpaceSVDContinuation.truncation_aware_whitening(
-            W, calibration_activations, rank=r
-        )
+
+        A_r, B_r = HessianNullSpaceSVDContinuation.truncation_aware_whitening(W, calibration_activations, rank=r)
         W_r = torch.matmul(A_r, B_r)
         X = calibration_activations.reshape(-1, W.shape[1]).to(W.device).float()
         orig_proj = torch.matmul(X, W.float().t())
         diff_proj = torch.matmul(X, (W.float() - W_r.float()).t())
-        loss = (torch.norm(diff_proj, p="fro") ** 2 / torch.clamp(torch.norm(orig_proj, p="fro") ** 2, min=1e-12)).item()
+        loss = (
+            torch.norm(diff_proj, p="fro") ** 2 / torch.clamp(torch.norm(orig_proj, p="fro") ** 2, min=1e-12)
+        ).item()
         return A_r, B_r, loss
 
     def sequential_finetune(
@@ -824,7 +802,7 @@ class SVDLLMv2Compressor(BaseCompressor):
                 else:
                     out = self.model(batch)
                 logits = out.logits if hasattr(out, "logits") else (out[0] if isinstance(out, tuple) else out)
-                loss = torch.mean(logits ** 2) * 1e-3
+                loss = torch.mean(logits**2) * 1e-3
                 loss.backward()
                 optimizer.step()
                 total_loss += loss.item()
@@ -834,6 +812,7 @@ class SVDLLMv2Compressor(BaseCompressor):
 
     def compress(self, probe_inputs: Any = None) -> tuple[nn.Module, dict[str, Any]]:
         from neuralops.compression.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
+
         self.hnc = HessianNullSpaceSVDContinuation(
             self.model,
             target_rank=self.target_rank,

@@ -12,7 +12,6 @@ Decomposes high-dimensional weight operators into low-rank Tensor Train cores to
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -24,6 +23,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -112,10 +112,12 @@ class SVDLinearLayer(nn.Module):
         x_flat = x.reshape(-1, self.in_features)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x_flat, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 out = fused_down_up_gemm_bias_triton(x_flat, self.B, self.A.t().contiguous(), bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
@@ -186,10 +188,7 @@ class TTLinearLayer(nn.Module):
             self.p_dims, self.q_dims = factorize_dimension_pair(in_features, out_features, 2)
         else:
             self.p_dims, self.q_dims = shape
-            if (
-                int(np.prod(self.p_dims)) != in_features
-                or int(np.prod(self.q_dims)) != out_features
-            ):
+            if int(np.prod(self.p_dims)) != in_features or int(np.prod(self.q_dims)) != out_features:
                 raise ValueError(
                     f"Shape mismatch: p={self.p_dims} prod={np.prod(self.p_dims)} in={in_features}, "
                     f"q={self.q_dims} prod={np.prod(self.q_dims)} out={out_features}"
@@ -245,16 +244,13 @@ class TTLinearLayer(nn.Module):
 
     def materialize_weight(self) -> torch.Tensor:
         """Reconstruct W ∈ R^{out × in} by contracting TT-cores."""
-        if (
-            not self.training
-            and self._cached_weight is not None
-            and self._cached_version == self._current_version()
-        ):
+        if not self.training and self._cached_weight is not None and self._cached_version == self._current_version():
             return self._cached_weight
 
         if getattr(self, "use_triton", True) and self.cores[0].is_cuda and self.d == 2:
             try:
                 from neuralops.ops.triton.low_rank import triton_strided_tt_contraction
+
                 W = triton_strided_tt_contraction(self.cores[0], self.cores[1], self.p_dims, self.q_dims)
                 if not self.training:
                     self._cached_weight = W
@@ -290,6 +286,7 @@ class TTLinearLayer(nn.Module):
         if getattr(self, "use_triton", True) and x.is_cuda and self.d == 2:
             try:
                 from neuralops.ops.triton.low_rank import triton_strided_tt_linear
+
                 return triton_strided_tt_linear(
                     x, self.cores[0], self.cores[1], self.p_dims, self.q_dims, bias=self.bias
                 )
@@ -560,9 +557,7 @@ class TTCompressor(BaseCompressor):
             max_error = _cfg_get(comp_cfg, "max_error", max_error)
             energy_threshold = _cfg_get(comp_cfg, "energy_threshold", energy_threshold)
             fallback_policy = _cfg_get(comp_cfg, "fallback_policy", fallback_policy)
-            target_attention_only = _cfg_get(
-                comp_cfg, "target_attention_only", target_attention_only
-            )
+            target_attention_only = _cfg_get(comp_cfg, "target_attention_only", target_attention_only)
             strict_rank = _cfg_get(comp_cfg, "strict_rank", strict_rank)
 
         for k, caster in (
@@ -665,11 +660,7 @@ class TTCompressor(BaseCompressor):
             isinstance(base_layer, nn.Linear)
             or "conv1d" in cls_name
             or hasattr(base_layer, "nf")
-            or (
-                hasattr(base_layer, "weight")
-                and hasattr(base_layer.weight, "ndim")
-                and base_layer.weight.ndim == 2
-            )
+            or (hasattr(base_layer, "weight") and hasattr(base_layer.weight, "ndim") and base_layer.weight.ndim == 2)
         )
         if not is_linear_like:
             return False
@@ -764,9 +755,7 @@ class TTCompressor(BaseCompressor):
             if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
                 o_bytes += base_layer.bias.numel() * base_layer.bias.element_size()
             c_bytes = sum(p.numel() * p.element_size() for p in chosen_layer.parameters())
-            c_bytes += sum(
-                b.numel() * b.element_size() for b in chosen_layer.buffers() if b is not None
-            )
+            c_bytes += sum(b.numel() * b.element_size() for b in chosen_layer.buffers() if b is not None)
 
             orig_bytes += o_bytes
             comp_bytes += c_bytes
@@ -873,9 +862,7 @@ def tt_compressor_factory(
     )
     num_factors = kwargs.pop("num_factors", _cfg_get(comp_config, "num_factors", 2))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
-    energy_threshold = kwargs.pop(
-        "energy_threshold", _cfg_get(comp_config, "energy_threshold", 0.995)
-    )
+    energy_threshold = kwargs.pop("energy_threshold", _cfg_get(comp_config, "energy_threshold", 0.995))
     fallback_policy = kwargs.pop("fallback_policy", _cfg_get(comp_config, "fallback_policy", "svd"))
     target_attn = kwargs.pop(
         "target_attention_only",

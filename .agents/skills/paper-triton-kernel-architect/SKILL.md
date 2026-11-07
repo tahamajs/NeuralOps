@@ -150,7 +150,7 @@ for k_idx in range(num_k_blocks):
     # Load half-precision tiles
     a_tile = tl.load(...)  # dtype: float16 or bfloat16
     b_tile = tl.load(...)  # dtype: float16 or bfloat16
-    
+
     # Tensor core dot-product accumulating directly into FP32
     acc += tl.dot(a_tile, b_tile, allow_tf32=True)
 
@@ -248,26 +248,26 @@ To reach $> 428.5\text{ GB/s}$ ($>85\%$ of $504.2\text{ GB/s}$):
 ```mermaid
 flowchart TD
     A["Caller Invokes Operator (e.g. linear_attn)"] --> B{"Triton Available &<br>Hardware Compatible?"}
-    
+
     B -- No / CPU / Unsupported Dtype --> C["Level 3: Pure-PyTorch Fallback Engine"]
     B -- Yes --> D["Check Fast Dispatch Cache (_DISPATCH_CACHE)"]
-    
+
     D -- Cache Hit --> E["Retrieve Autotuned JIT Kernel"]
     D -- Cache Miss --> F["Hardware Profiler (SRAM & SM Introspection)"]
-    
+
     F --> G["Autotuner: Filter Valid Configurations (SRAM <= 85%)"]
     G --> H["Compile & Benchmark Candidates (Cold Cache)"]
     H --> I["Persist Optimal Config in Cache"]
     I --> E
-    
+
     E --> J["Launch 2D-Tiled Triton Kernel"]
     J --> K{"Runtime Execution Success?"}
-    
+
     K -- Success --> L["Commit Output to Global Memory (FP16/BF16)"]
     K -- CUDA Error / Launch Failure --> M["Emit Structured logger.warning"]
     M --> N["Update Telemetry (_RUNTIME_FALLBACK_CACHE)"]
     N --> C
-    
+
     C --> O["Return Numerically Verified Output"]
     L --> O
 ```
@@ -394,16 +394,16 @@ def fused_lowrank_gemm_kernel(
     num_k_steps = tl.cdiv(K, BLOCK_K)
     for k_step in range(num_k_steps):
         offs_k = k_step * BLOCK_K + tl.arange(0, BLOCK_K)
-        
+
         x_ptrs = X_ptr + (offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xk)
         v_ptrs = V_ptr + (offs_k[:, None] * stride_vk + offs_r[None, :] * stride_vr)
-        
+
         mask_x = (offs_m[:, None] < M) & (offs_k[None, :] < K)
         mask_v = (offs_k[:, None] < K) & (offs_r[None, :] < R)
-        
+
         x_tile = tl.load(x_ptrs, mask=mask_x, other=0.0)
         v_tile = tl.load(v_ptrs, mask=mask_v, other=0.0)
-        
+
         z_acc += tl.dot(x_tile, v_tile, allow_tf32=True)
 
     # Downcast intermediate tile for second GEMM stage

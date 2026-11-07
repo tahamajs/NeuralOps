@@ -48,18 +48,14 @@ def generate_latex_table(df: pd.DataFrame, output_path: str, caption: str = "Res
         acc = row.get("accuracy", 0)
         drop = row.get("accuracy_drop", "-")
         drop_str = f"{drop:.4f}" if isinstance(drop, (int, float)) else "-"
-        lines.append(
-            f"{row['model']} & {row['task']} & {row['rank']} & {acc:.4f} & {drop_str} \\\\"
-        )
+        lines.append(f"{row['model']} & {row['task']} & {row['rank']} & {acc:.4f} & {drop_str} \\\\")
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
     with open(output_path, "w") as f:
         f.write("\n".join(lines))
     return output_path
 
 
-def generate_full_report(
-    df: pd.DataFrame, output_dir: str, experiment_name: str = "experiment"
-) -> str:
+def generate_full_report(df: pd.DataFrame, output_dir: str, experiment_name: str = "experiment") -> str:
     """Generate full report."""
     os.makedirs(output_dir, exist_ok=True)
     plots_dir = os.path.join(output_dir, "plots")
@@ -82,16 +78,12 @@ def generate_interactive_report(df: pd.DataFrame, output_dir: str) -> str:
     fig1 = go.Figure()
     for task in df["task"].unique():
         sub = df[df["task"] == task]
-        fig1.add_trace(
-            go.Scatter(x=sub["rank"], y=sub["accuracy"], mode="lines+markers", name=task)
-        )
+        fig1.add_trace(go.Scatter(x=sub["rank"], y=sub["accuracy"], mode="lines+markers", name=task))
     fig1.update_layout(title="Accuracy vs Rank", xaxis_title="Rank", yaxis_title="Accuracy")
     fig2 = go.Figure()
     for model in df["model"].unique():
         sub = df[df["model"] == model]
-        fig2.add_trace(
-            go.Scatter(x=sub["rank"], y=sub["accuracy"], mode="lines+markers", name=model)
-        )
+        fig2.add_trace(go.Scatter(x=sub["rank"], y=sub["accuracy"], mode="lines+markers", name=model))
     fig2.update_layout(title="Model Comparison", xaxis_title="Rank", yaxis_title="Accuracy")
     html = f"""<!DOCTYPE html>
 <html><head><script src="https://cdn.plot.ly/plotly-latest.min.js"></script></head>

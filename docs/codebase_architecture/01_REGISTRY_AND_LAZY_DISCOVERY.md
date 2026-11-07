@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 01
 # Unified Registry Architecture & PEP 562 Lazy Discovery
 
-**Assigned Subagent**: `Agent 01: Registry Architect & Discovery Specialist`  
+**Assigned Subagent**: `Agent 01: Registry Architect & Discovery Specialist`
 **Target Codebase Paths**:
 - `neuralops/core/registry.py`
 - `neuralops/__init__.py`

@@ -16,9 +16,7 @@ from __future__ import annotations
 import torch
 
 
-def randomized_svd(
-    W: torch.Tensor, rank: int, n_iter: int = 4
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+def randomized_svd(W: torch.Tensor, rank: int, n_iter: int = 4) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     r"""
     Compute fast randomized Singular Value Decomposition (SVD) for 2D matrices.
 

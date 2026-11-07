@@ -17,11 +17,26 @@ import asyncio
 import json
 import os
 from typing import Any, AsyncGenerator, Dict, List, Optional, Set
+
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from neuralops.runners.monitor.advanced_data import (
+    get_all_11_notebooks,
+    get_all_72_compressors,
+    get_all_131_attentions,
+    get_paged_kv_cache_state,
+    get_speculative_decoding_state,
+)
+from neuralops.runners.monitor.endpoints import (
+    get_doc_content,
+    get_loss_history,
+    get_module_detail,
+    launch_new_run,
+    stop_current_run,
+)
 from neuralops.runners.monitor.schemas import (
     ApiResponse,
     AttentionModuleItem,
@@ -32,22 +47,8 @@ from neuralops.runners.monitor.schemas import (
     PagedKVCacheAllocation,
     SpeculativeDecodingMetrics,
 )
-from neuralops.runners.monitor.advanced_data import (
-    get_all_11_notebooks,
-    get_all_131_attentions,
-    get_all_72_compressors,
-    get_paged_kv_cache_state,
-    get_speculative_decoding_state,
-)
 from neuralops.runners.monitor.stats import build_aggregated_stats
 from neuralops.runners.monitor.telemetry import get_live_gpu_telemetry, get_live_logs
-from neuralops.runners.monitor.endpoints import (
-    get_doc_content,
-    get_loss_history,
-    get_module_detail,
-    launch_new_run,
-    stop_current_run,
-)
 
 
 class ConnectionManager:
@@ -118,7 +119,7 @@ def create_app(
                 "status": "online",
                 "active_ws_clients": len(ws_manager.active_connections),
                 "pid": os.getpid(),
-            }
+            },
         )
 
     @app.websocket("/ws/telemetry")
@@ -129,7 +130,7 @@ def create_app(
             while True:
                 try:
                     data = await asyncio.wait_for(websocket.receive_text(), timeout=0.02)
-                    if data in ("ping", "{\"type\":\"ping\"}"):
+                    if data in ("ping", '{"type":"ping"}'):
                         await websocket.send_text("pong")
                 except asyncio.TimeoutError:
                     pass
@@ -182,6 +183,7 @@ def create_app(
     @app.get("/api/events/live", tags=["Streaming"])
     async def sse_live_telemetry() -> StreamingResponse:
         """Server-Sent Events (SSE) streaming real-time GPU telemetry."""
+
         async def event_generator() -> AsyncGenerator[str, None]:
             while True:
                 gpu_data = get_live_gpu_telemetry(project_dir)
@@ -206,7 +208,6 @@ def create_app(
 
         return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-
     @app.get("/api/benchmarks/history", tags=["Telemetry"])
     async def get_benchmarks_history() -> Dict[str, Any]:
         """Serve historical GPU utilization, temperature, power, and throughput curves."""
@@ -214,12 +215,40 @@ def create_app(
             "success": True,
             "session_id": "sweep_run_20261017",
             "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
-            "timestamps": ["10:00", "10:05", "10:10", "10:15", "10:20", "10:25", "10:30", "10:35", "10:40", "10:45", "10:50", "10:55", "11:00"],
+            "timestamps": [
+                "10:00",
+                "10:05",
+                "10:10",
+                "10:15",
+                "10:20",
+                "10:25",
+                "10:30",
+                "10:35",
+                "10:40",
+                "10:45",
+                "10:50",
+                "10:55",
+                "11:00",
+            ],
             "gpu_utilization_pct": [42.0, 65.0, 88.0, 95.0, 99.0, 98.0, 92.0, 85.0, 96.0, 100.0, 97.0, 89.0, 94.0],
-            "vram_used_mb": [1820.0, 2450.0, 3100.0, 3580.0, 3890.0, 3850.0, 3720.0, 3600.0, 3890.0, 4010.0, 3950.0, 3800.0, 3850.0],
+            "vram_used_mb": [
+                1820.0,
+                2450.0,
+                3100.0,
+                3580.0,
+                3890.0,
+                3850.0,
+                3720.0,
+                3600.0,
+                3890.0,
+                4010.0,
+                3950.0,
+                3800.0,
+                3850.0,
+            ],
             "power_draw_w": [45.2, 58.0, 72.4, 85.1, 94.4, 95.0, 91.2, 84.0, 92.5, 96.0, 94.2, 86.0, 91.0],
             "temperature_c": [52.0, 58.0, 64.0, 69.0, 73.0, 75.0, 74.0, 71.0, 74.0, 76.0, 75.0, 72.0, 74.0],
-            "speculative_speedup": [1.45, 1.82, 2.10, 2.38, 2.45, 2.48, 2.42, 2.35, 2.45, 2.50, 2.48, 2.40, 2.45]
+            "speculative_speedup": [1.45, 1.82, 2.10, 2.38, 2.45, 2.48, 2.42, 2.35, 2.45, 2.50, 2.48, 2.40, 2.45],
         }
 
     @app.get("/api/attentions", response_model=List[AttentionModuleItem], tags=["Attentions"])

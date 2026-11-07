@@ -47,10 +47,8 @@ def push(
         return None
 
     try:
-        from huggingface_hub import (
-            HfApi,  # type: ignore[import]
-            upload_folder,
-        )
+        from huggingface_hub import HfApi  # type: ignore[import]
+        from huggingface_hub import upload_folder
     except ImportError:
         logger.warning(
             "huggingface_hub not installed — skipping HF upload for run '%s'. "

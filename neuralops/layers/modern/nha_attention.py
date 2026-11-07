@@ -12,13 +12,6 @@ Native hybrid attention fusing sliding-window local context with low-rank global
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -29,9 +22,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _read_past_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +34,7 @@ _DENOM_EPS = 1e-5
 
 
 @ATTENTION_REGISTRY.register("nha_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register(
-    "native_hybrid_attention", is_alias=True, supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("native_hybrid_attention", is_alias=True, supports_causal=True, supports_gqa=True)
 class NativeHybridAttention(BaseAttention):
     """NativeHybridAttention neural operator.
 
@@ -51,6 +44,7 @@ class NativeHybridAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     supports_causal: bool = True
     supports_bidirectional: bool = True
@@ -92,17 +86,13 @@ class NativeHybridAttention(BaseAttention):
 
         if config is not None:
             if hidden_size is None:
-                hidden_size = _cfg_get(
-                    config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", 768))
-                )
+                hidden_size = _cfg_get(config, "hidden_size", _cfg_get(config, "dim", _cfg_get(config, "d_model", 768)))
             if num_heads is None:
                 num_heads = _cfg_get(
                     config, "num_attention_heads", _cfg_get(config, "n_heads", _cfg_get(config, "num_heads", 12))
                 )
             if num_kv_heads is None:
-                num_kv_heads = _cfg_get(
-                    config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", num_heads)
-                )
+                num_kv_heads = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", num_heads))
         elif source_attn is not None:
             if hidden_size is None:
                 for a in ("hidden_size", "embed_dim", "all_head_size"):
@@ -133,10 +123,14 @@ class NativeHybridAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.window_size = int(
-            _cfg_get(comp_config, "window_size", _cfg_get(config, "window_size", kwargs.get("window_size", window_size)))
+            _cfg_get(
+                comp_config, "window_size", _cfg_get(config, "window_size", kwargs.get("window_size", window_size))
+            )
         )
         self.rff_features = int(
-            _cfg_get(comp_config, "rff_features", _cfg_get(config, "rff_features", kwargs.get("rff_features", rff_features)))
+            _cfg_get(
+                comp_config, "rff_features", _cfg_get(config, "rff_features", kwargs.get("rff_features", rff_features))
+            )
         )
 
         if is_decoder is not None:
@@ -146,7 +140,20 @@ class NativeHybridAttention(BaseAttention):
             is_dec = False
             if config is not None:
                 is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
-            _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+            _dec_pfx = (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
             if any(model_type.startswith(p) for p in _dec_pfx):
                 is_dec = True
             if hasattr(config, "architectures"):
@@ -184,26 +191,44 @@ class NativeHybridAttention(BaseAttention):
         self.freeze_base = self.lora_rank > 0
 
         self.q_proj = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
         )
 
         omega = self._build_orthogonal_matrix(self.head_dim, self.rff_features)
         self.register_buffer("rff_proj", omega)
 
-        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", dropout)) if config else dropout
+        dropout_p = (
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", dropout)) if config else dropout
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         self.gate = nn.Linear(self.dim, self.num_heads)
@@ -233,14 +258,25 @@ class NativeHybridAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = any(hasattr(src, a) for a in ("out_lin", "c_proj", "o_proj"))
         is_nested = (
-            (hasattr(src, "self") and hasattr(src.self, "query") and hasattr(src, "output") and hasattr(src.output, "dense"))
-            or (cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention")
-                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower()))
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention")
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+            )
         ) and not has_out_lin
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -249,7 +285,11 @@ class NativeHybridAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                is_conv = (c_attn.__class__.__name__ == "Conv1D" or base_c.__class__.__name__ == "Conv1D" or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]))
+                is_conv = (
+                    c_attn.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                )
                 if is_conv:
                     c_w = c_w.t().contiguous()
                 split = c_w.size(0) // 3
@@ -265,7 +305,11 @@ class NativeHybridAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    is_conv_o = (c_proj.__class__.__name__ == "Conv1D" or base_o.__class__.__name__ == "Conv1D" or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]))
+                    is_conv_o = (
+                        c_proj.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    )
                     if is_conv_o:
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj, "bias", None))
@@ -279,24 +323,33 @@ class NativeHybridAttention(BaseAttention):
                     extracted[key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
         else:
             candidates = {
-                "q": ("q_lin", "q_proj", "query"), "k": ("k_lin", "k_proj", "key"),
-                "v": ("v_lin", "v_proj", "value"), "o": ("out_lin", "out_proj", "dense", "o_proj"),
+                "q": ("q_lin", "q_proj", "query"),
+                "k": ("k_lin", "k_proj", "key"),
+                "v": ("v_lin", "v_proj", "value"),
+                "o": ("out_lin", "out_proj", "dense", "o_proj"),
             }
             for key, names in candidates.items():
                 for n in names:
                     if hasattr(src, n):
                         mod = getattr(src, n)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
         missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -311,7 +364,9 @@ class NativeHybridAttention(BaseAttention):
             for key in ("q", "k", "v", "o"):
                 w_chk, _ = extracted[key]
                 if w_chk is not None and torch.linalg.norm(w_chk.float()).item() < 1e-4:
-                    raise RuntimeError(f"NHA: weight norm for {key} is < 1e-4 ({torch.linalg.norm(w_chk.float()).item()})")
+                    raise RuntimeError(
+                        f"NHA: weight norm for {key} is < 1e-4 ({torch.linalg.norm(w_chk.float()).item()})"
+                    )
 
             for key, target_mod in target_map.items():
                 w, b = extracted[key]
@@ -428,10 +483,21 @@ class NativeHybridAttention(BaseAttention):
             return (num / den).to(dtype)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
-        if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and Q.is_cuda and past_len == 0 and valid_mask is None and phi_Q.shape[-1] <= 128:
+
+        if (
+            HAS_TRITON
+            and not FORCE_PYTORCH_FALLBACK
+            and Q.is_cuda
+            and past_len == 0
+            and valid_mask is None
+            and phi_Q.shape[-1] <= 128
+        ):
             try:
                 from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
-                return fused_svd_linear_chunk_scan_triton(phi_Q.to(dtype), phi_K.to(dtype), V_masked.to(dtype), chunk_size=64, eps=_DENOM_EPS).to(dtype)
+
+                return fused_svd_linear_chunk_scan_triton(
+                    phi_Q.to(dtype), phi_K.to(dtype), V_masked.to(dtype), chunk_size=64, eps=_DENOM_EPS
+                ).to(dtype)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
@@ -498,7 +564,11 @@ class NativeHybridAttention(BaseAttention):
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
-        if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
+        if (
+            position_embeddings is not None
+            and isinstance(position_embeddings, (tuple, list))
+            and len(position_embeddings) >= 2
+        ):
             cos, sin = position_embeddings[0], position_embeddings[1]
             if cos.shape[-2] >= past_len + N:
                 cos_slice = cos[..., past_len : past_len + N, :]
@@ -523,13 +593,16 @@ class NativeHybridAttention(BaseAttention):
         )
 
         local_out, local_attn = self._local_window_attention(
-            Q, K_full, V_full, all_valid,
-            is_causal=is_causal, past_len=past_len,
-            output_attentions=bool(output_attentions)
+            Q,
+            K_full,
+            V_full,
+            all_valid,
+            is_causal=is_causal,
+            past_len=past_len,
+            output_attentions=bool(output_attentions),
         )
         global_out = self._global_rff_attention_chunked(
-            Q, K_full, V_full, all_valid,
-            is_causal=is_causal, past_len=past_len
+            Q, K_full, V_full, all_valid, is_causal=is_causal, past_len=past_len
         )
 
         gate = torch.sigmoid(self.gate(hidden_states)).unsqueeze(-1).permute(0, 2, 1, 3)
@@ -582,9 +655,14 @@ def inject_nha(
     if layer is None and model is not None:
         layer_list = None
         for path in (
-            ("distilbert", "transformer", "layer"), ("roberta", "encoder", "layer"),
-            ("bert", "encoder", "layer"), ("transformer", "h"), ("model", "layers"),
-            ("encoder", "layer"), ("layers",), ("h",),
+            ("distilbert", "transformer", "layer"),
+            ("roberta", "encoder", "layer"),
+            ("bert", "encoder", "layer"),
+            ("transformer", "h"),
+            ("model", "layers"),
+            ("encoder", "layer"),
+            ("layers",),
+            ("h",),
         ):
             obj = target
             ok = True
@@ -603,8 +681,13 @@ def inject_nha(
             tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
                 res = inject_nha(
-                    layer=lyr, model_config=cfg, comp_config=comp_config,
-                    layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                    layer=lyr,
+                    model_config=cfg,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    _depth=_depth + 1,
+                    **kwargs,
                 )
                 if res is not None:
                     n_injected += 1
@@ -629,9 +712,11 @@ def inject_nha(
 
     try:
         new_attn = NativeHybridAttention(
-            config=cfg, comp_config=comp_config,
+            config=cfg,
+            comp_config=comp_config,
             pretrained_attn=src_attn if src_attn is not target else None,
-            layer_idx=layer_idx, **kwargs,
+            layer_idx=layer_idx,
+            **kwargs,
         )
     except Exception as e:
         logger.warning("NHA construction/weight copy failed: %s", e)

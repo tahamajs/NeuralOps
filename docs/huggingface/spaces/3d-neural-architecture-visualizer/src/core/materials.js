@@ -212,4 +212,3 @@ export function getLayerDepthEdgeMaterial(layerIdx, totalLayers) {
     layerDepthEdgeCache.set(key, mat);
     return mat;
 }
-

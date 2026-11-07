@@ -38,9 +38,7 @@ BENCHMARK_SUITES: Dict[str, Type[AbstractBaseBenchmark]] = {
 def get_benchmark_suite(name: str) -> Type[AbstractBaseBenchmark]:
     clean_name = name.lower().strip()
     if clean_name not in BENCHMARK_SUITES:
-        raise KeyError(
-            f"Unknown benchmark suite '{name}'. Available suites: {list(BENCHMARK_SUITES.keys())}"
-        )
+        raise KeyError(f"Unknown benchmark suite '{name}'. Available suites: {list(BENCHMARK_SUITES.keys())}")
     return BENCHMARK_SUITES[clean_name]
 
 

@@ -15,4 +15,5 @@ __all__ = ["add_surgery_subparser", "handle_surgery_command", "main"]
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

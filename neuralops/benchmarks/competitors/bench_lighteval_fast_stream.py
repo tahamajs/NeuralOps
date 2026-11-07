@@ -24,6 +24,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
+
 from neuralops.benchmarks.registry import register_benchmark
 
 logger = logging.getLogger(__name__)
@@ -88,7 +89,6 @@ def generate_dataset_reproducibility_manifest(
     }
 
 
-
 @register_benchmark(name="lighteval_fast_stream", mode="lm-eval", hardware="any")
 def benchmark_lighteval_fast_stream(
     num_samples: int = 100,
@@ -113,9 +113,7 @@ def benchmark_lighteval_fast_stream(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for benchmark_lighteval_fast_stream, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for benchmark_lighteval_fast_stream, but CUDA is not available.")
 
     rng = np.random.default_rng(seed)
 
@@ -193,4 +191,3 @@ def run_benchmark(**kwargs: Any) -> dict[str, Any]:
 # Alias for explicit phase naming compliance
 run_lighteval_fast_stream_benchmark = benchmark_lighteval_fast_stream
 CoreModule = benchmark_lighteval_fast_stream
-

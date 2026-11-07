@@ -1,10 +1,10 @@
 # NeuralOps v1.7 Systems, Surgery & Deployment Roadmap
 
-**Authoritative Engineering Specification & Technical Blueprints**  
-**Target Release:** NeuralOps v1.7.0  
-**Current Baseline:** NeuralOps v1.6.0  
-**Authorship & Ownership:** NeuralOps Architecture & Systems Core Team  
-**Standard License:** MIT License (Copyright (c) 2024-2026, Taha Majlesi)  
+**Authoritative Engineering Specification & Technical Blueprints**
+**Target Release:** NeuralOps v1.7.0
+**Current Baseline:** NeuralOps v1.6.0
+**Authorship & Ownership:** NeuralOps Architecture & Systems Core Team
+**Standard License:** MIT License (Copyright (c) 2024-2026, Taha Majlesi)
 
 ---
 

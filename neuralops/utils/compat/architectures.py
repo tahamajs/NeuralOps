@@ -12,8 +12,6 @@ Architectural utilities and family-aware adapters for model compatibility.
 """
 
 from __future__ import annotations
-from neuralops.core.common import repeat_kv
-
 
 import logging
 from typing import Any
@@ -21,6 +19,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 
+from neuralops.core.common import repeat_kv
 from neuralops.utils.model_family import CAUSAL_FAMILIES, ModelAdapter, detect_family
 from neuralops.utils.qwen_compat import QwenIncompatibleError
 
@@ -184,19 +183,29 @@ def should_compress_linear(model: Any, name: str, family: str | None = None) -> 
         return should_compress_qwen3_5(name)
 
     recognized_attn = [
-        "q_lin", "k_lin", "v_lin", "out_lin",
-        "query", "key", "value", "dense", "output.dense",
-        "c_attn", "c_proj",
-        "q_proj", "k_proj", "v_proj", "o_proj", "out_proj",
+        "q_lin",
+        "k_lin",
+        "v_lin",
+        "out_lin",
+        "query",
+        "key",
+        "value",
+        "dense",
+        "output.dense",
+        "c_attn",
+        "c_proj",
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "out_proj",
     ]
 
     if any(leaf == k or k in name_low.split(".") for k in recognized_attn):
         return True
 
     if is_decoder_family(fam):
-        return is_decoder_projection_name(name) or any(
-            kw in name_low for kw in ["mlp", "ffn", "dense", "feed_forward"]
-        )
+        return is_decoder_projection_name(name) or any(kw in name_low for kw in ["mlp", "ffn", "dense", "feed_forward"])
 
     return True
 
@@ -377,22 +386,12 @@ def fp32_linalg(op: Any, *tensors: torch.Tensor, **kwargs: Any) -> Any:
     dtypes = [x.dtype for x in tensors if isinstance(x, torch.Tensor) and x.is_floating_point()]
     dtype = dtypes[0] if dtypes else torch.float32
     result = op(
-        *[
-            (x.float() if isinstance(x, torch.Tensor) and x.is_floating_point() else x)
-            for x in tensors
-        ],
+        *[(x.float() if isinstance(x, torch.Tensor) and x.is_floating_point() else x) for x in tensors],
         **kwargs,
     )
     if isinstance(result, tuple):
-        return tuple(
-            x.to(dtype) if isinstance(x, torch.Tensor) and x.is_floating_point() else x
-            for x in result
-        )
-    return (
-        result.to(dtype)
-        if isinstance(result, torch.Tensor) and result.is_floating_point()
-        else result
-    )
+        return tuple(x.to(dtype) if isinstance(x, torch.Tensor) and x.is_floating_point() else x for x in result)
+    return result.to(dtype) if isinstance(result, torch.Tensor) and result.is_floating_point() else result
 
 
 class FamilyModuleWrapper(nn.Module):
@@ -448,11 +447,7 @@ def wrap_for_family(module: nn.Module, model_family: str | None = None) -> nn.Mo
     install_projection_aliases(module)
     family_aliases = globals().get("FAMILY_ALIASES", {})
     canonical = family_aliases.get(family, family) if isinstance(family_aliases, dict) else family
-    return (
-        module
-        if canonical in {"bert", "roberta", "unknown"}
-        else FamilyModuleWrapper(module, family)
-    )
+    return module if canonical in {"bert", "roberta", "unknown"} else FamilyModuleWrapper(module, family)
 
 
 def module_family_support(name: str) -> dict[str, str]:

@@ -9,8 +9,8 @@ For a list of all contributors, visit:
 
 # NeuralOps v1.7 Architectural & Kernel Roadmap: High-Throughput Linear Attention (FLA) & Microarchitectural Accelerators
 
-**Target Release Window:** Q1 2027  
-**Document Status:** Approved Architectural Specification & Engineering Plan  
+**Target Release Window:** Q1 2027
+**Document Status:** Approved Architectural Specification & Engineering Plan
 **Scope:** Fast Linear Attention (FLA) Integration, Tier-1 CUDA & Tier-2 Triton Kernel Engineering, Next-Gen Hardware Microarchitecture (Hopper SM 90, Blackwell SM 100, Ascend 910B), and Thin-Bottleneck GEMM Fusion.
 
 ---
@@ -19,7 +19,7 @@ For a list of all contributors, visit:
 
 Modern autoregressive language models demand long-context scaling ($N \ge 128\text{k}$) with sub-quadratic inference complexity $\mathcal{O}(1)$ memory per token and $\mathcal{O}(N)$ compute per forward sequence. While standard Softmax attention exhibits $\mathcal{O}(N^2)$ memory and compute scaling, linear attention and associative recurrent mechanisms reformulate the causal state update into streaming matrix associative memory.
 
-NeuralOps v1.6.0 stabilized the structural tier migration (131 attention mechanisms, 72 compression engines, 26 Triton kernel modules housing 62 unified operators across 4 tiers, and 112 native CUDA packages housing 114 kernels). 
+NeuralOps v1.6.0 stabilized the structural tier migration (131 attention mechanisms, 72 compression engines, 26 Triton kernel modules housing 62 unified operators across 4 tiers, and 112 native CUDA packages housing 114 kernels).
 
 The primary mission of **NeuralOps v1.7.0** is to bridge the empirical throughput and mathematical capacity gap between theoretical linear attention and production hardware. By deeply integrating state-of-the-art chunk-parallel kernels inspired by the Flash-Linear-Attention (FLA) ecosystem (pioneered by Songlin Yang, Yu Zhang, et al., MIT License) into the NeuralOps 3-Level Fallback Engine, v1.7.0 delivers:
 1. **Hardware-Efficient Fused Chunk Scans**: Chunked associative evaluation partitioning sequences into $C=64$ or $C=128$ blocks to maximize Tensor Core arithmetic intensity while maintaining exact state propagation across boundaries.

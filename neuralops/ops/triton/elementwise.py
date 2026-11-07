@@ -14,10 +14,11 @@ High-throughput elementwise kernels for SwiGLU, Fast GELU, and RMSNorm with tran
 from __future__ import annotations
 
 import math
+
 import torch
 import torch.nn.functional as F
 
-from neuralops.ops.triton._common import HAS_TRITON, triton, tl
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
 __all__ = [
     "fused_swiglu",
@@ -57,7 +58,9 @@ if HAS_TRITON and tl is not None:
 
     @triton.jit
     def _swiglu_kernel(
-        X, GATE, OUT,
+        X,
+        GATE,
+        OUT,
         N_ELEMENTS,
         BLOCK_SIZE: tl.constexpr,
     ):
@@ -82,9 +85,7 @@ def fused_swiglu(x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
     falls back to ``F.silu(gate) * x`` in pure PyTorch.
     """
     if x.shape != gate.shape:
-        raise ValueError(
-            f"fused_swiglu: shape mismatch x={tuple(x.shape)} gate={tuple(gate.shape)}"
-        )
+        raise ValueError(f"fused_swiglu: shape mismatch x={tuple(x.shape)} gate={tuple(gate.shape)}")
 
     if _cuda_ok(x, gate):
         x_c = x.contiguous()
@@ -112,7 +113,9 @@ if HAS_TRITON and tl is not None:
 
     @triton.jit
     def _rmsnorm_kernel(
-        X, W, OUT,
+        X,
+        W,
+        OUT,
         N,
         eps,
         HAS_WEIGHT: tl.constexpr,
@@ -161,11 +164,7 @@ def fused_rmsnorm(
 
     has_weight = weight is not None
 
-    can_use_triton = (
-        _cuda_ok(x2d)
-        and (weight is None or _cuda_ok(weight))
-        and N <= _RMSNORM_BLOCK * 8
-    )
+    can_use_triton = _cuda_ok(x2d) and (weight is None or _cuda_ok(weight)) and N <= _RMSNORM_BLOCK * 8
 
     if can_use_triton:
         x_c = x2d.contiguous()
@@ -175,8 +174,11 @@ def fused_rmsnorm(
         BLOCK_N = triton.next_power_of_2(N)
         grid = (M,)
         _rmsnorm_kernel[grid](
-            x_c, w_c, out,
-            N, eps,
+            x_c,
+            w_c,
+            out,
+            N,
+            eps,
             HAS_WEIGHT=has_weight,
             BLOCK_N=BLOCK_N,
         )
@@ -190,10 +192,16 @@ def fused_rmsnorm(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _fused_spectral_gate_kernel(
-        X_re_ptr, X_im_ptr, W_re_ptr, W_im_ptr, Tau_ptr,
-        Y_re_ptr, Y_im_ptr,
+        X_re_ptr,
+        X_im_ptr,
+        W_re_ptr,
+        W_im_ptr,
+        Tau_ptr,
+        Y_re_ptr,
+        Y_im_ptr,
         total_elements,
         BLOCK_SIZE: tl.constexpr,
     ):
@@ -242,8 +250,13 @@ def fused_spectral_gate_triton(
         grid = (triton.cdiv(total_elements, BLOCK_SIZE),)
 
         _fused_spectral_gate_kernel[grid](
-            x_re, x_im, w_re, w_im, tau_c,
-            y_re, y_im,
+            x_re,
+            x_im,
+            w_re,
+            w_im,
+            tau_c,
+            y_re,
+            y_im,
             total_elements,
             BLOCK_SIZE=BLOCK_SIZE,
         )
@@ -252,19 +265,27 @@ def fused_spectral_gate_triton(
     y_hat = x_complex * w_complex
     mag = torch.abs(y_hat).clamp_min(1e-8)
     sig_tau = torch.sigmoid(tau)
-    scale = (torch.relu(mag - sig_tau) / mag)
+    scale = torch.relu(mag - sig_tau) / mag
     return y_hat * scale
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _rms_variance_match_kernel(
-        Y_ptr, V_REF_ptr, OUT_ptr,
-        total_rows, D: tl.constexpr,
-        clamp_min, clamp_max,
-        stride_yn, stride_yd,
-        stride_vn, stride_vd,
-        stride_on, stride_od,
+        Y_ptr,
+        V_REF_ptr,
+        OUT_ptr,
+        total_rows,
+        D: tl.constexpr,
+        clamp_min,
+        clamp_max,
+        stride_yn,
+        stride_yd,
+        stride_vn,
+        stride_vd,
+        stride_on,
+        stride_od,
         BLOCK_D: tl.constexpr,
     ):
         """In-SRAM Dual-RMS Energy Matching Kernel."""
@@ -298,14 +319,9 @@ def fused_rms_variance_match_triton(
     clamp_max: float = 4.0,
 ) -> torch.Tensor:
     """Normalizes output y to match reference v_ref's RMS energy in a single pass."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
-    if (
-        HAS_TRITON
-        and not FORCE_PYTORCH_FALLBACK
-        and y.is_cuda
-        and v_ref.is_cuda
-        and y.shape == v_ref.shape
-    ):
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
+    if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and y.is_cuda and v_ref.is_cuda and y.shape == v_ref.shape:
         try:
             orig_shape = y.shape
             D = orig_shape[-1]
@@ -317,12 +333,19 @@ def fused_rms_variance_match_triton(
             block_d = triton.next_power_of_2(D)
             grid = (total_rows,)
             _rms_variance_match_kernel[grid](
-                y_2d, v_2d, out_2d,
-                total_rows, D=D,
-                clamp_min=float(clamp_min), clamp_max=float(clamp_max),
-                stride_yn=y_2d.stride(0), stride_yd=y_2d.stride(1),
-                stride_vn=v_2d.stride(0), stride_vd=v_2d.stride(1),
-                stride_on=out_2d.stride(0), stride_od=out_2d.stride(1),
+                y_2d,
+                v_2d,
+                out_2d,
+                total_rows,
+                D=D,
+                clamp_min=float(clamp_min),
+                clamp_max=float(clamp_max),
+                stride_yn=y_2d.stride(0),
+                stride_yd=y_2d.stride(1),
+                stride_vn=v_2d.stride(0),
+                stride_vd=v_2d.stride(1),
+                stride_on=out_2d.stride(0),
+                stride_od=out_2d.stride(1),
                 BLOCK_D=block_d,
             )
             return out_2d.view(orig_shape)
@@ -357,14 +380,16 @@ def _pytorch_fwht_butterfly(x: torch.Tensor) -> torch.Tensor:
             x_flat[:, i + h : i + 2 * h] = u - v
         h *= 2
 
-    x_flat /= (dim ** 0.5)
+    x_flat /= dim**0.5
     return x_flat.view(orig_shape).to(x.dtype)
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _fwht_sram_kernel(
-        X_ptr, Y_ptr,
+        X_ptr,
+        Y_ptr,
         total_rows,
         BLOCK_D: tl.constexpr,
     ):
@@ -409,7 +434,6 @@ def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Ten
     if b < 2:
         return x
 
-
     rem = d % b
     if rem == 0:
         x_blocks = x.view(-1, d // b, b)
@@ -423,6 +447,7 @@ def fast_hadamard_transform(x: torch.Tensor, block_size: int = 128) -> torch.Ten
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _fused_alibi_bias_kernel(
         Bias_ptr,
@@ -460,11 +485,7 @@ if HAS_TRITON:
 
         bias = -slope * dist
 
-        bias_offs = (
-            head_idx * stride_bh
-            + offs_m[:, None] * stride_q
-            + offs_n[None, :] * stride_k
-        )
+        bias_offs = head_idx * stride_bh + offs_m[:, None] * stride_q + offs_n[None, :] * stride_k
         mask = mask_m[:, None] & mask_n[None, :]
         tl.store(Bias_ptr + bias_offs, bias, mask=mask)
 
@@ -532,6 +553,7 @@ def fused_alibi_bias_triton(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _fused_dynconv1d_fwd_kernel(
         v_ptr,
@@ -579,7 +601,6 @@ if HAS_TRITON:
         out_offset = b * stride_ob + h * stride_oh + pid_n * stride_on + offs_d * stride_od
         tl.store(out_ptr + out_offset, acc.to(out_ptr.dtype.element_ty), mask=mask_d)
 
-
     @triton.jit
     def _fused_dynconv1d_bwd_kernel(
         v_ptr,
@@ -592,11 +613,26 @@ if HAS_TRITON:
         N,
         d,
         K,
-        stride_vb, stride_vh, stride_vt, stride_vd,
-        stride_wb, stride_wh, stride_wn, stride_wk,
-        stride_dob, stride_doh, stride_don, stride_dod,
-        stride_dvb, stride_dvh, stride_dvt, stride_dvd,
-        stride_dwb, stride_dwh, stride_dwn, stride_dwk,
+        stride_vb,
+        stride_vh,
+        stride_vt,
+        stride_vd,
+        stride_wb,
+        stride_wh,
+        stride_wn,
+        stride_wk,
+        stride_dob,
+        stride_doh,
+        stride_don,
+        stride_dod,
+        stride_dvb,
+        stride_dvh,
+        stride_dvt,
+        stride_dvd,
+        stride_dwb,
+        stride_dwh,
+        stride_dwn,
+        stride_dwk,
         BLOCK_D: tl.constexpr,
     ):
         pid_n = tl.program_id(0)
@@ -640,11 +676,26 @@ class _FusedDynamicConv1DTritonFn(torch.autograd.Function):
         grid = (N, B * H)
 
         _fused_dynconv1d_fwd_kernel[grid](
-            v_full, dyn_w, out,
-            B, H, N, d, K,
-            v_full.stride(0), v_full.stride(1), v_full.stride(2), v_full.stride(3),
-            dyn_w.stride(0), dyn_w.stride(1), dyn_w.stride(2), dyn_w.stride(3),
-            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+            v_full,
+            dyn_w,
+            out,
+            B,
+            H,
+            N,
+            d,
+            K,
+            v_full.stride(0),
+            v_full.stride(1),
+            v_full.stride(2),
+            v_full.stride(3),
+            dyn_w.stride(0),
+            dyn_w.stride(1),
+            dyn_w.stride(2),
+            dyn_w.stride(3),
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            out.stride(3),
             BLOCK_D=BLOCK_D,
         )
         ctx.save_for_backward(v_full, dyn_w)
@@ -668,13 +719,36 @@ class _FusedDynamicConv1DTritonFn(torch.autograd.Function):
         if is_modern_gpu:
             try:
                 _fused_dynconv1d_bwd_kernel[grid](
-                    v_full, dyn_w, dout_c, dv, dw,
-                    B, H, N, d, K,
-                    v_full.stride(0), v_full.stride(1), v_full.stride(2), v_full.stride(3),
-                    dyn_w.stride(0), dyn_w.stride(1), dyn_w.stride(2), dyn_w.stride(3),
-                    dout_c.stride(0), dout_c.stride(1), dout_c.stride(2), dout_c.stride(3),
-                    dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
-                    dw.stride(0), dw.stride(1), dw.stride(2), dw.stride(3),
+                    v_full,
+                    dyn_w,
+                    dout_c,
+                    dv,
+                    dw,
+                    B,
+                    H,
+                    N,
+                    d,
+                    K,
+                    v_full.stride(0),
+                    v_full.stride(1),
+                    v_full.stride(2),
+                    v_full.stride(3),
+                    dyn_w.stride(0),
+                    dyn_w.stride(1),
+                    dyn_w.stride(2),
+                    dyn_w.stride(3),
+                    dout_c.stride(0),
+                    dout_c.stride(1),
+                    dout_c.stride(2),
+                    dout_c.stride(3),
+                    dv.stride(0),
+                    dv.stride(1),
+                    dv.stride(2),
+                    dv.stride(3),
+                    dw.stride(0),
+                    dw.stride(1),
+                    dw.stride(2),
+                    dw.stride(3),
                     BLOCK_D=BLOCK_D,
                 )
                 return dv, dw
@@ -724,6 +798,7 @@ def fused_dynamic_conv1d_triton(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _fused_adaptive_span_kernel(
         penalty_ptr,
@@ -776,12 +851,7 @@ if HAS_TRITON:
         ramp = tl.maximum(0.0, tl.minimum(1.0, ramp))
         penalty = tl.log(tl.maximum(1e-9, ramp))
 
-        offs_penalty = (
-            b * stride_pb
-            + h * stride_ph
-            + offs_m[:, None] * stride_pq
-            + offs_n[None, :] * stride_pk
-        )
+        offs_penalty = b * stride_pb + h * stride_ph + offs_m[:, None] * stride_pq + offs_n[None, :] * stride_pk
         mask = mask_m[:, None] & mask_n[None, :]
         tl.store(penalty_ptr + offs_penalty, penalty, mask=mask)
 
@@ -843,10 +913,18 @@ def fused_adaptive_span_penalty_triton(
             q_pos.float(),
             k_pos.float(),
             float(ramp_size),
-            B, H, N_q, N_k,
-            penalty.stride(0), penalty.stride(1), penalty.stride(2), penalty.stride(3),
-            q_pos.stride(0), q_pos.stride(1),
-            k_pos.stride(0), k_pos.stride(1),
+            B,
+            H,
+            N_q,
+            N_k,
+            penalty.stride(0),
+            penalty.stride(1),
+            penalty.stride(2),
+            penalty.stride(3),
+            q_pos.stride(0),
+            q_pos.stride(1),
+            k_pos.stride(0),
+            k_pos.stride(1),
             IS_CAUSAL=is_causal,
             BLOCK_M=BLOCK_M,
             BLOCK_N=BLOCK_N,
@@ -879,13 +957,20 @@ def fused_favor_plus_feature_map_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _favor_plus_act_kernel(
-        Proj_ptr, DiagSq_ptr, Out_ptr,
-        total_tokens, F_dim: tl.constexpr, norm_factor,
-        stride_pn, stride_pf,
+        Proj_ptr,
+        DiagSq_ptr,
+        Out_ptr,
+        total_tokens,
+        F_dim: tl.constexpr,
+        norm_factor,
+        stride_pn,
+        stride_pf,
         stride_dn,
-        stride_on, stride_of,
+        stride_on,
+        stride_of,
         BLOCK_F: tl.constexpr,
     ):
         """Fused in-SRAM exponential activation with diagonal norm shift: exp(proj - 0.5*|x|^2) / sqrt(m)."""
@@ -907,11 +992,19 @@ if HAS_TRITON and tl is not None:
 
     @triton.jit
     def _favor_plus_fused_proj_act_kernel(
-        X_ptr, OmegaT_ptr, Out_ptr,
-        total_tokens, D_in: tl.constexpr, F_dim: tl.constexpr, norm_factor,
-        stride_xn, stride_xd,
-        stride_ot_d, stride_ot_f,
-        stride_on, stride_of,
+        X_ptr,
+        OmegaT_ptr,
+        Out_ptr,
+        total_tokens,
+        D_in: tl.constexpr,
+        F_dim: tl.constexpr,
+        norm_factor,
+        stride_xn,
+        stride_xd,
+        stride_ot_d,
+        stride_ot_f,
+        stride_on,
+        stride_of,
         BLOCK_F: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
@@ -952,7 +1045,7 @@ def fused_favor_plus_feature_map_triton(
     eps: float = 1e-4,
 ) -> torch.Tensor:
     """Fused FAVOR+ feature map in GPU SRAM."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON, check_triton_suitability
 
     if not (HAS_TRITON and not FORCE_PYTORCH_FALLBACK and x.is_cuda and omega.is_cuda):
         return fused_favor_plus_feature_map_pytorch(x, omega, num_features, kernel_type, eps)
@@ -979,12 +1072,21 @@ def fused_favor_plus_feature_map_triton(
             if D_in <= 128:
                 grid = (total_tokens, triton.cdiv(num_features, BLOCK_F))
                 _favor_plus_fused_proj_act_kernel[grid](
-                    x_2d, omega_t, out_2d,
-                    total_tokens, D_in=D_in, F_dim=num_features, norm_factor=float(norm_factor),
-                    stride_xn=x_2d.stride(0), stride_xd=x_2d.stride(1),
-                    stride_ot_d=omega_t.stride(0), stride_ot_f=omega_t.stride(1),
-                    stride_on=out_2d.stride(0), stride_of=out_2d.stride(1),
-                    BLOCK_F=BLOCK_F, BLOCK_D=BLOCK_D,
+                    x_2d,
+                    omega_t,
+                    out_2d,
+                    total_tokens,
+                    D_in=D_in,
+                    F_dim=num_features,
+                    norm_factor=float(norm_factor),
+                    stride_xn=x_2d.stride(0),
+                    stride_xd=x_2d.stride(1),
+                    stride_ot_d=omega_t.stride(0),
+                    stride_ot_f=omega_t.stride(1),
+                    stride_on=out_2d.stride(0),
+                    stride_of=out_2d.stride(1),
+                    BLOCK_F=BLOCK_F,
+                    BLOCK_D=BLOCK_D,
                     num_warps=4,
                 )
                 return out_2d.view(*orig_shape)
@@ -995,11 +1097,17 @@ def fused_favor_plus_feature_map_triton(
             block_f = triton.next_power_of_2(num_features)
             grid = (total_tokens,)
             _favor_plus_act_kernel[grid](
-                proj_2d, diag_sq, out_2d,
-                total_tokens, F_dim=num_features, norm_factor=float(norm_factor),
-                stride_pn=proj_2d.stride(0), stride_pf=proj_2d.stride(1),
+                proj_2d,
+                diag_sq,
+                out_2d,
+                total_tokens,
+                F_dim=num_features,
+                norm_factor=float(norm_factor),
+                stride_pn=proj_2d.stride(0),
+                stride_pf=proj_2d.stride(1),
                 stride_dn=diag_sq.stride(0),
-                stride_on=out_2d.stride(0), stride_of=out_2d.stride(1),
+                stride_on=out_2d.stride(0),
+                stride_of=out_2d.stride(1),
                 BLOCK_F=block_f,
                 num_warps=4,
             )
@@ -1019,12 +1127,17 @@ def fused_favor_plus_feature_map_triton(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _fused_entropy_row_kernel(
-        Scores_ptr, Entropy_ptr,
-        total_rows, L: tl.constexpr,
-        stride_sb, stride_sl,
-        stride_eb, stride_el,
+        Scores_ptr,
+        Entropy_ptr,
+        total_rows,
+        L: tl.constexpr,
+        stride_sb,
+        stride_sl,
+        stride_eb,
+        stride_el,
         BLOCK_L: tl.constexpr,
     ):
         """In-SRAM Softmax and Entropy reduction row-wise."""
@@ -1079,7 +1192,7 @@ def fused_entropy_token_pruning_mask_triton(
     temperature: float = 1.0,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Fused entropy-guided token pruning in GPU SRAM."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and scores.is_cuda and scores.dim() in (2, 3):
         try:
@@ -1091,10 +1204,14 @@ def fused_entropy_token_pruning_mask_triton(
                 block_l = triton.next_power_of_2(L)
                 grid = (B,)
                 _fused_entropy_row_kernel[grid](
-                    scores_2d, entropy,
-                    B, L=L,
-                    stride_sb=scores_2d.stride(0), stride_sl=scores_2d.stride(1),
-                    stride_eb=entropy.stride(0), stride_el=1,
+                    scores_2d,
+                    entropy,
+                    B,
+                    L=L,
+                    stride_sb=scores_2d.stride(0),
+                    stride_sl=scores_2d.stride(1),
+                    stride_eb=entropy.stride(0),
+                    stride_el=1,
                     BLOCK_L=block_l,
                 )
             else:
@@ -1104,10 +1221,14 @@ def fused_entropy_token_pruning_mask_triton(
                 block_l = triton.next_power_of_2(L)
                 grid = (B * H,)
                 _fused_entropy_row_kernel[grid](
-                    scores_2d, ent_bh,
-                    B * H, L=L,
-                    stride_sb=scores_2d.stride(0), stride_sl=scores_2d.stride(1),
-                    stride_eb=ent_bh.stride(0), stride_el=1,
+                    scores_2d,
+                    ent_bh,
+                    B * H,
+                    L=L,
+                    stride_sb=scores_2d.stride(0),
+                    stride_sl=scores_2d.stride(1),
+                    stride_eb=ent_bh.stride(0),
+                    stride_el=1,
                     BLOCK_L=block_l,
                 )
                 entropy = ent_bh.view(B, H).mean(dim=1)
@@ -1139,19 +1260,29 @@ def fused_aegis_multibranch_gate_norm_pytorch(
         bm = branches[m].float()
         rms = torch.rsqrt(bm.pow(2).mean(dim=-1, keepdim=True) + eps)
         normed_bm = bm * rms
-        out = out + normed_bm * weights[..., m:m+1]
+        out = out + normed_bm * weights[..., m : m + 1]
     return out.to(dtype=branches[0].dtype)
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _aegis_multibranch_gate_norm_2branch_kernel(
-        B0_ptr, B1_ptr, W_ptr, OUT_ptr,
-        total_tokens, D: tl.constexpr, eps,
-        stride_b0n, stride_b0d,
-        stride_b1n, stride_b1d,
-        stride_wn, stride_wm,
-        stride_on, stride_od,
+        B0_ptr,
+        B1_ptr,
+        W_ptr,
+        OUT_ptr,
+        total_tokens,
+        D: tl.constexpr,
+        eps,
+        stride_b0n,
+        stride_b0d,
+        stride_b1n,
+        stride_b1d,
+        stride_wn,
+        stride_wm,
+        stride_on,
+        stride_od,
         BLOCK_D: tl.constexpr,
     ):
         pid = tl.program_id(0)
@@ -1185,7 +1316,7 @@ def fused_aegis_multibranch_gate_norm_triton(
     eps: float = 1e-5,
 ) -> torch.Tensor:
     """Fused Aegis multi-branch gating and normalization in GPU SRAM."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     M = len(branches)
     if (
@@ -1208,12 +1339,21 @@ def fused_aegis_multibranch_gate_norm_triton(
             block_d = triton.next_power_of_2(D)
             grid = (total_tokens,)
             _aegis_multibranch_gate_norm_2branch_kernel[grid](
-                b0_2d, b1_2d, weights, out_2d,
-                total_tokens, D=D, eps=float(eps),
-                stride_b0n=b0_2d.stride(0), stride_b0d=b0_2d.stride(1),
-                stride_b1n=b1_2d.stride(0), stride_b1d=b1_2d.stride(1),
-                stride_wn=weights.stride(0), stride_wm=weights.stride(1),
-                stride_on=out_2d.stride(0), stride_od=out_2d.stride(1),
+                b0_2d,
+                b1_2d,
+                weights,
+                out_2d,
+                total_tokens,
+                D=D,
+                eps=float(eps),
+                stride_b0n=b0_2d.stride(0),
+                stride_b0d=b0_2d.stride(1),
+                stride_b1n=b1_2d.stride(0),
+                stride_b1d=b1_2d.stride(1),
+                stride_wn=weights.stride(0),
+                stride_wm=weights.stride(1),
+                stride_on=out_2d.stride(0),
+                stride_od=out_2d.stride(1),
                 BLOCK_D=block_d,
             )
             return out_2d.view(orig_shape)
@@ -1237,12 +1377,18 @@ def fused_split_head_hybrid_concat_norm_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _split_head_rmsnorm_kernel(
-        X_ptr, OUT_ptr,
-        total_rows, D: tl.constexpr, eps,
-        stride_xn, stride_xd,
-        stride_on, stride_od,
+        X_ptr,
+        OUT_ptr,
+        total_rows,
+        D: tl.constexpr,
+        eps,
+        stride_xn,
+        stride_xd,
+        stride_on,
+        stride_od,
         BLOCK_D: tl.constexpr,
     ):
         pid = tl.program_id(0)
@@ -1266,7 +1412,7 @@ def fused_split_head_hybrid_concat_norm_triton(
     eps: float = 1e-5,
 ) -> torch.Tensor:
     """Fused heterogeneous split-head Group-RMSNorm in GPU SRAM."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and head_groups[0].is_cuda:
         try:
@@ -1281,10 +1427,15 @@ def fused_split_head_hybrid_concat_norm_triton(
                 block_d = triton.next_power_of_2(D)
                 grid = (total_rows,)
                 _split_head_rmsnorm_kernel[grid](
-                    g_2d, out_2d,
-                    total_rows, D=D, eps=float(eps),
-                    stride_xn=g_2d.stride(0), stride_xd=g_2d.stride(1),
-                    stride_on=out_2d.stride(0), stride_od=out_2d.stride(1),
+                    g_2d,
+                    out_2d,
+                    total_rows,
+                    D=D,
+                    eps=float(eps),
+                    stride_xn=g_2d.stride(0),
+                    stride_xd=g_2d.stride(1),
+                    stride_on=out_2d.stride(0),
+                    stride_od=out_2d.stride(1),
                     BLOCK_D=block_d,
                 )
                 normed_groups.append(out_2d.view(orig_shape))
@@ -1340,6 +1491,7 @@ def fused_entmax_bisect_pytorch(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _entmax15_bisect_fwd_kernel(
         Scores_ptr,
@@ -1397,7 +1549,8 @@ def fused_entmax_bisect_triton(
     n_iter: int = 15,
 ) -> torch.Tensor:
     """Dispatches genuine compiled Triton alpha=1.5 entmax bisection kernel."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
     if (
         HAS_TRITON
         and not FORCE_PYTORCH_FALLBACK
@@ -1440,7 +1593,9 @@ swiglu_triton = fused_swiglu
 rmsnorm_triton = fused_rmsnorm
 
 
-def dropout_add_triton(x: torch.Tensor, residual: torch.Tensor, p: float = 0.0, training: bool = False, **kwargs) -> torch.Tensor:
+def dropout_add_triton(
+    x: torch.Tensor, residual: torch.Tensor, p: float = 0.0, training: bool = False, **kwargs
+) -> torch.Tensor:
     """Fused dropout and residual add."""
     return F.dropout(x, p=p, training=training) + residual
 

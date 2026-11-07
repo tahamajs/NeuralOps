@@ -151,7 +151,11 @@ class PerplexityDeltaGate(Gate):
                 duration_seconds=time.perf_counter() - t0,
             )
 
-        threshold = float(context.get("max_perplexity_increase", self.max_relative_increase)) if context else self.max_relative_increase
+        threshold = (
+            float(context.get("max_perplexity_increase", self.max_relative_increase))
+            if context
+            else self.max_relative_increase
+        )
 
         active_model.eval()
         base_model.eval()

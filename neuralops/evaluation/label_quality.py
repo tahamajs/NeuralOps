@@ -74,9 +74,7 @@ class LabelQualityDetector:
 
         cj = self._compute_confident_joint(labels, pred_probs)
 
-        label_issues_mask, quality_scores, suggested = self._find_label_issues(
-            labels, pred_probs, cj
-        )
+        label_issues_mask, quality_scores, suggested = self._find_label_issues(labels, pred_probs, cj)
 
         per_class = {}
         for k in range(n_classes):
@@ -159,9 +157,7 @@ class LabelQualityDetector:
 
         return issue_mask, quality_scores, suggested
 
-    def _find_near_duplicates(
-        self, pred_probs: np.ndarray, threshold: float = 0.95
-    ) -> list[tuple[int, int]]:
+    def _find_near_duplicates(self, pred_probs: np.ndarray, threshold: float = 0.95) -> list[tuple[int, int]]:
         """Find pairs of samples whose prediction vectors are nearly identical."""
         from sklearn.metrics.pairwise import cosine_similarity
 
@@ -191,7 +187,5 @@ class LabelQualityDetector:
             "overall_quality": report.overall_quality_score,
             "n_outliers": len(report.outlier_indices),
             "n_near_duplicates": len(report.near_duplicate_pairs),
-            "worst_classes": sorted(
-                report.per_class_issues.items(), key=lambda x: x[1], reverse=True
-            )[:5],
+            "worst_classes": sorted(report.per_class_issues.items(), key=lambda x: x[1], reverse=True)[:5],
         }

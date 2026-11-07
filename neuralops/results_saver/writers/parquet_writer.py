@@ -27,6 +27,7 @@ def is_pyarrow_available() -> bool:
     try:
         import pyarrow  # noqa: F401
         import pyarrow.parquet  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -68,6 +69,7 @@ def write_metrics_parquet(
                 val = r.get(k)
                 if isinstance(val, (dict, list)):
                     import json
+
                     val = json.dumps(val)
                 col_data[k].append(val)
 

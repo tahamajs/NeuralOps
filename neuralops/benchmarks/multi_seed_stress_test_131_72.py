@@ -26,8 +26,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.compression import COMPRESSOR_REGISTRY
+from neuralops.core.registry import ATTENTION_REGISTRY
 
 DEFAULT_SEEDS = [42, 1337, 2026]
 
@@ -49,7 +49,7 @@ class TinyTransformer(nn.Module):
         q = self.q_proj(h)
         k = self.k_proj(h)
         v = self.v_proj(h)
-        scale = 1.0 / (self.hidden_dim ** 0.5)
+        scale = 1.0 / (self.hidden_dim**0.5)
         attn = torch.matmul(q, k.transpose(-1, -2)) * scale
         attn = torch.softmax(attn, dim=-1)
         out = self.out_proj(torch.matmul(attn, v)) + x
@@ -220,7 +220,14 @@ def run_stress_test(
             raw_speedup = t_ref / max(t_mod, 1e-7)
             speedup = max(1.0, round(raw_speedup, 2))
 
-            seed_pass = (not has_nan_fwd) and (not has_inf_fwd) and (not grad_nan) and (not grad_inf) and (not has_nan_fp16) and (not has_inf_fp16)
+            seed_pass = (
+                (not has_nan_fwd)
+                and (not has_inf_fwd)
+                and (not grad_nan)
+                and (not grad_inf)
+                and (not has_nan_fp16)
+                and (not has_inf_fp16)
+            )
 
             attn_rec["seeds"][str(seed)] = {
                 "nan_fwd": has_nan_fwd,
@@ -245,17 +252,21 @@ def run_stress_test(
         audit_results["attentions"][attn_name] = attn_rec
         status_sym = "PASS" if attn_rec["status"] == "PASS" else "FAIL"
         if idx % 10 == 0 or idx == len(attn_keys):
-            print(f"[{idx:3d}/{len(attn_keys)}] {status_sym} {attn_name:<32} | Zero-NaN: {attn_rec['zero_nan']} | Zero-Inf: {attn_rec['zero_inf']} | Min Speedup: {attn_rec['min_speedup']:.2f}x | Max FP16 Diff: {attn_rec['max_fp16_delta']:.4f}")
+            print(
+                f"[{idx:3d}/{len(attn_keys)}] {status_sym} {attn_name:<32} | Zero-NaN: {attn_rec['zero_nan']} | Zero-Inf: {attn_rec['zero_inf']} | Min Speedup: {attn_rec['min_speedup']:.2f}x | Max FP16 Diff: {attn_rec['max_fp16_delta']:.4f}"
+            )
 
-        csv_rows.append({
-            "Category": "Attention",
-            "Name": attn_name,
-            "Status": status_sym,
-            "Zero_NaN": attn_rec["zero_nan"],
-            "Zero_Inf": attn_rec["zero_inf"],
-            "Min_Speedup": f"{attn_rec['min_speedup']:.2f}x",
-            "Max_Error": f"{attn_rec['max_fp16_delta']:.4f}",
-        })
+        csv_rows.append(
+            {
+                "Category": "Attention",
+                "Name": attn_name,
+                "Status": status_sym,
+                "Zero_NaN": attn_rec["zero_nan"],
+                "Zero_Inf": attn_rec["zero_inf"],
+                "Min_Speedup": f"{attn_rec['min_speedup']:.2f}x",
+                "Max_Error": f"{attn_rec['max_fp16_delta']:.4f}",
+            }
+        )
 
     print("\n" + "=" * 80)
     print(f"PHASE 2: COMPRESSORS CROSS-VALIDATION ({len(comp_keys)} COMPRESSORS)")
@@ -318,17 +329,21 @@ def run_stress_test(
         audit_results["compressors"][comp_name] = comp_rec
         status_sym = "PASS" if comp_rec["status"] == "PASS" else "FAIL"
         if idx % 10 == 0 or idx == len(comp_keys):
-            print(f"[{idx:2d}/{len(comp_keys)}] {status_sym} {comp_name:<32} | Zero-NaN: {comp_rec['zero_nan']} | Zero-Inf: {comp_rec['zero_inf']} | Min Speedup: {comp_rec['min_speedup']:.2f}x | Max Error: {comp_rec['max_reconstruction_error']:.4f}")
+            print(
+                f"[{idx:2d}/{len(comp_keys)}] {status_sym} {comp_name:<32} | Zero-NaN: {comp_rec['zero_nan']} | Zero-Inf: {comp_rec['zero_inf']} | Min Speedup: {comp_rec['min_speedup']:.2f}x | Max Error: {comp_rec['max_reconstruction_error']:.4f}"
+            )
 
-        csv_rows.append({
-            "Category": "Compressor",
-            "Name": comp_name,
-            "Status": status_sym,
-            "Zero_NaN": comp_rec["zero_nan"],
-            "Zero_Inf": comp_rec["zero_inf"],
-            "Min_Speedup": f"{comp_rec['min_speedup']:.2f}x",
-            "Max_Error": f"{comp_rec['max_reconstruction_error']:.4f}",
-        })
+        csv_rows.append(
+            {
+                "Category": "Compressor",
+                "Name": comp_name,
+                "Status": status_sym,
+                "Zero_NaN": comp_rec["zero_nan"],
+                "Zero_Inf": comp_rec["zero_inf"],
+                "Min_Speedup": f"{comp_rec['min_speedup']:.2f}x",
+                "Max_Error": f"{comp_rec['max_reconstruction_error']:.4f}",
+            }
+        )
 
     audit_results["overall_summary"] = {
         "all_attentions_pass": all_attentions_pass,
@@ -352,7 +367,9 @@ def run_stress_test(
         csv_p = Path(output_csv)
         csv_p.parent.mkdir(parents=True, exist_ok=True)
         with open(csv_p, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["Category", "Name", "Status", "Zero_NaN", "Zero_Inf", "Min_Speedup", "Max_Error"])
+            writer = csv.DictWriter(
+                f, fieldnames=["Category", "Name", "Status", "Zero_NaN", "Zero_Inf", "Min_Speedup", "Max_Error"]
+            )
             writer.writeheader()
             writer.writerows(csv_rows)
         print(f"CSV results written to: {csv_p}")
@@ -368,9 +385,21 @@ def run_stress_test(
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-Seed Stress Test for Attentions and Compressors")
-    parser.add_argument("--output", type=str, default="results/multi_seed_crossval_stress_test.csv", help="Path to save CSV output")
-    parser.add_argument("--output-json", type=str, default="results/multi_seed_crossval_stress_test.json", help="Path to save JSON output")
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
+    parser.add_argument(
+        "--output", type=str, default="results/multi_seed_crossval_stress_test.csv", help="Path to save CSV output"
+    )
+    parser.add_argument(
+        "--output-json",
+        type=str,
+        default="results/multi_seed_crossval_stress_test.json",
+        help="Path to save JSON output",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        help="Device to execute benchmark",
+    )
     parser.add_argument("--seeds", nargs="+", default=["42,1337,2026"], help="Random seeds (space- or comma-separated)")
     parser.add_argument("--limit-attentions", type=int, default=None, help="Limit number of attention modules")
     parser.add_argument("--limit-compressors", type=int, default=None, help="Limit number of compressor modules")

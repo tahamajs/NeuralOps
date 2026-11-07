@@ -36,9 +36,9 @@ For sequence token indices $i, j \in \{1, \dots, N\}$, relative positional dista
 A differentiable soft masking function $M^{\text{span}} \in \mathbb{R}^{H \times N \times N}$ evaluates relative distance against effective span $S_h$:
 
 \[
-M_{h, i, j}^{\text{span}} = \begin{cases} 
-1 & \text{if } \Delta_{ij} \le S_h \\ 
-0 & \text{if } \Delta_{ij} > S_h 
+M_{h, i, j}^{\text{span}} = \begin{cases}
+1 & \text{if } \Delta_{ij} \le S_h \\
+0 & \text{if } \Delta_{ij} > S_h
 \end{cases}
 \]
 
@@ -134,7 +134,7 @@ Y = \text{Concat}(O_1, \dots, O_H) W_O + b_O \in \mathbb{R}^{B \times N \times D
 ### Computational Workload (FLOPs & MACs)
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_h = D/H$, $S_{\max}$ max span, and $\bar{S} = \frac{1}{H} \sum_{h=1}^H S_h$ average learned head span.
 
-The computational throughput of Adaptive Span Attention exhibits a bifurcated scaling profile governed by the hardware execution paradigm. In the input projection stage, linear transformations across projection matrices $W_Q, W_K, W_V,$ and $W_O$ require $8 B N D^2$ floating-point operations ($4 B N D^2$ multiply-accumulate operations), scaling quadratically with the hidden dimension but strictly linearly with sequence length. 
+The computational throughput of Adaptive Span Attention exhibits a bifurcated scaling profile governed by the hardware execution paradigm. In the input projection stage, linear transformations across projection matrices $W_Q, W_K, W_V,$ and $W_O$ require $8 B N D^2$ floating-point operations ($4 B N D^2$ multiply-accumulate operations), scaling quadratically with the hidden dimension but strictly linearly with sequence length.
 
 Within the core attention mechanism, the theoretical complexity diverges substantially between naive dense evaluation and specialized sparse execution. An un-optimized dense materialization incurs $2 B N^2 D$ FLOPs for raw affinity score computation $Q K^\top$, alongside $H N^2 + B H N^2$ FLOPs dedicated to relative distance construction and mask evaluation. In contrast, under a block-sparse or custom kernel execution where computation is strictly localized to active head windows $\bar{S}$, the softmax aggregation and value multiplication require only $4 B H N \bar{S} d_h = 4 B N \bar{S} D$ FLOPs. Consequently, while standard dense framework implementations yield an asymptotic burden of $8 B N D^2 + 4 B N^2 D + 8 B H N^2$ FLOPs, a hardware-aligned sparse execution achieves $8 B N D^2 + 4 B N \bar{S} D + 7 B H N \bar{S}$ FLOPs, transitioning to near-linear complexity when the mean receptive field satisfies $\bar{S} \ll N$.
 
@@ -211,4 +211,3 @@ The empirical evaluation of `adaptive_span_attention` across standard sequence l
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

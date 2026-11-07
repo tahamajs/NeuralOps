@@ -18,6 +18,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+
 import torch
 import torch.nn as nn
 from transformers import (
@@ -42,9 +43,11 @@ MODEL_ADAPTER_REGISTRY: Dict[str, Type["ModelAdapter"]] = {}
 
 def register_model_adapter(name: str) -> Callable[[Type["ModelAdapter"]], Type["ModelAdapter"]]:
     """Decorator to register a custom model architecture adapter."""
+
     def decorator(cls: Type["ModelAdapter"]) -> Type["ModelAdapter"]:
         MODEL_ADAPTER_REGISTRY[name.lower()] = cls
         return cls
+
     return decorator
 
 
@@ -231,12 +234,14 @@ def load_universal_model(
     elif "classif" in task_lower or "regress" in task_lower:
         candidate_classes.append((AutoModelForSequenceClassification, {}))
 
-    candidate_classes.extend([
-        (AutoModelForSequenceClassification, {}),
-        (AutoModelForCausalLM, {}),
-        (AutoModelForSeq2SeqLM, {}),
-        (AutoModel, {}),
-    ])
+    candidate_classes.extend(
+        [
+            (AutoModelForSequenceClassification, {}),
+            (AutoModelForCausalLM, {}),
+            (AutoModelForSeq2SeqLM, {}),
+            (AutoModel, {}),
+        ]
+    )
 
     model = None
     loaded_class_name = ""
@@ -272,7 +277,11 @@ def load_universal_model(
     meta = inspect_model_metadata(model, config, model_name)
     LOG.info(
         "Successfully loaded '%s' via %s (%d params, dtype=%s, device=%s)",
-        model_name, loaded_class_name, meta.num_params, meta.dtype, target_device
+        model_name,
+        loaded_class_name,
+        meta.num_params,
+        meta.dtype,
+        target_device,
     )
     return model, tokenizer, config
 

@@ -22,7 +22,7 @@ flowchart TD
     Gate["3. Run Frozen Correctness Gate<br/>(torch.autograd.gradcheck & NaN allocation poison)"]
     Bench["4. Reproducible Microbenchmarking<br/>(L2 cache flush, CUDA events, statistical IQR)"]
     Log["5. Structured Candidate Logging<br/>(Candidate JSON log, keep/drop decision)"]
-    
+
     Freeze --> Hypothesis --> Gate
     Gate -->|Pass| Bench
     Gate -->|Fail: Numerical Divergence| Drop["Drop Candidate & Log Failure"]
@@ -75,13 +75,13 @@ def run_kda_gradcheck(
     q = torch.randn(batch_size, num_heads, seq_len, dim_k, device=device, dtype=torch.float64, requires_grad=True)
     k = torch.randn(batch_size, num_heads, seq_len, dim_k, device=device, dtype=torch.float64, requires_grad=True)
     v = torch.randn(batch_size, num_heads, seq_len, dim_v, device=device, dtype=torch.float64, requires_grad=True)
-    
+
     # Raw gates bounded to prevent numerical overflow during finite perturbation
     alpha = torch.empty(batch_size, num_heads, seq_len, device=device, dtype=torch.float64).uniform_(-3.0, -0.5).requires_grad_(True)
     beta = torch.empty(batch_size, num_heads, seq_len, device=device, dtype=torch.float64).uniform_(0.1, 0.9).requires_grad_(True)
 
     print("Running torch.autograd.gradcheck (analytical vs numerical Jacobian)...")
-    
+
     passed = torch.autograd.gradcheck(
         func=op_callable,
         inputs=(q, k, v, alpha, beta),
@@ -108,7 +108,7 @@ def verify_numerical_tolerances(
         torch.float16: {"atol": 1e-3, "rtol": 1e-3},
     }
     t = thresholds.get(dtype, {"atol": 1e-3, "rtol": 1e-3})
-    
+
     torch.testing.assert_close(
         candidate_out,
         reference_out,
@@ -137,7 +137,7 @@ def verify_svd_state_approximation(
     """Verifies that low-rank SVD compression preserves recurrent memory dynamics."""
     # Reconstruct state: U @ S_core @ V^T
     s_approx = torch.matmul(torch.matmul(u_mat, s_core), v_mat.transpose(-1, -2))
-    
+
     frob_diff = torch.linalg.norm(s_exact.float() - s_approx.float(), ord="fro")
     frob_norm = torch.linalg.norm(s_exact.float(), ord="fro")
     rel_error = (frob_diff / torch.clamp(frob_norm, min=1e-6)).item()

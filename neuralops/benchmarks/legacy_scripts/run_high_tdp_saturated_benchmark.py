@@ -16,14 +16,14 @@ Saturates NVIDIA RTX 3090 Tensor Cores & Memory Subsystem (250W - 350W TDP):
     5. Fail-safe isolated execution to prevent OOM/abort.
 """
 
-import os
-import sys
-import time
-import math
+import csv
 import gc
 import json
-import csv
+import math
+import os
 import subprocess
+import sys
+import time
 
 # Ensure repo root is on sys.path
 repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,10 +33,14 @@ if repo_root not in sys.path:
 import torch
 import torch.nn as nn
 from transformers import (
-    DistilBertConfig, DistilBertModel,
-    RobertaConfig, RobertaModel,
-    GPT2Config, GPT2Model,
-    LlamaConfig, LlamaModel,
+    DistilBertConfig,
+    DistilBertModel,
+    GPT2Config,
+    GPT2Model,
+    LlamaConfig,
+    LlamaModel,
+    RobertaConfig,
+    RobertaModel,
 )
 
 import neuralops
@@ -49,16 +53,17 @@ if torch.cuda.is_available():
     torch.backends.cudnn.allow_tf32 = True
     torch.backends.cudnn.benchmark = True
 
+
 def get_gpu_power():
     """Query instantaneous GPU power draw in Watts via nvidia-smi."""
     try:
         res = subprocess.check_output(
-            ["nvidia-smi", "--query-gpu=power.draw", "--format=csv,noheader,nounits"],
-            encoding="utf-8"
+            ["nvidia-smi", "--query-gpu=power.draw", "--format=csv,noheader,nounits"], encoding="utf-8"
         )
         return float(res.strip().split("\n")[0])
     except Exception:
         return 0.0
+
 
 print("=" * 125)
 print("=== HIGH-TDP HIGH-THROUGHPUT HARDWARE-SATURATING EMPIRICAL BENCHMARK (NVIDIA RTX 3090 24GB) ===")
@@ -68,19 +73,19 @@ print("=" * 125)
 # High-TDP Saturation Test Scenarios
 ATTENTION_CANDIDATES = [
     ("Dense Full Attention", "full_attention", "Dense MHA"),
-    ("Sink Attention",       "sink_attention", "Streaming Linear"),
-    ("Triton SVD-Linear",    "triton_svd_linear_attention", "SVD-Triton"),
+    ("Sink Attention", "sink_attention", "Streaming Linear"),
+    ("Triton SVD-Linear", "triton_svd_linear_attention", "SVD-Triton"),
     ("SVD-Linear Attention", "svd_linear_attention", "SVD-Hybrid"),
-    ("Token Compressed",     "token_compressed_attention", "Token-Pruned"),
-    ("Block HIBA",           "block_transformer_hiba", "Block-Sparse"),
-    ("WGQA Attention",       "wgqa_attention", "Grouped-Query"),
+    ("Token Compressed", "token_compressed_attention", "Token-Pruned"),
+    ("Block HIBA", "block_transformer_hiba", "Block-Sparse"),
+    ("WGQA Attention", "wgqa_attention", "Grouped-Query"),
 ]
 
 # Saturated Workloads (Batch & Length tuned to engage all 82 SMs and Tensor Cores)
 SATURATED_REGIMES = [
-    {"name": "Throughput Saturation (B=32, S=1024)", "batch": 32, "seq": 1024, "dim": 768,  "heads": 12},
+    {"name": "Throughput Saturation (B=32, S=1024)", "batch": 32, "seq": 1024, "dim": 768, "heads": 12},
     {"name": "Ultra-Wide Channels   (B=16, S=2048)", "batch": 16, "seq": 2048, "dim": 1024, "heads": 16},
-    {"name": "Deep Sequence Stress  (B=8,  S=4096)", "batch": 8,  "seq": 4096, "dim": 1024, "heads": 16},
+    {"name": "Deep Sequence Stress  (B=8,  S=4096)", "batch": 8, "seq": 4096, "dim": 1024, "heads": 16},
 ]
 
 benchmark_records = []
@@ -91,7 +96,9 @@ for reg in SATURATED_REGIMES:
     total_tokens = b * s
     print(f"\n>>> REGIME: {reg['name']} | Tokens/Step: {total_tokens:,} | Dim: {d} | Heads: {h} <<<")
     print("-" * 125)
-    print(f"| {'Architecture':<26} | {'Latency':<12} | {'Throughput (tok/s)':<20} | {'Peak Power':<12} | {'Energy/Tok':<14} | {'Peak VRAM':<12} | {'Speedup':<8} |")
+    print(
+        f"| {'Architecture':<26} | {'Latency':<12} | {'Throughput (tok/s)':<20} | {'Peak Power':<12} | {'Energy/Tok':<14} | {'Peak VRAM':<12} | {'Speedup':<8} |"
+    )
     print("-" * 125)
 
     if torch.cuda.is_available():
@@ -103,19 +110,26 @@ for reg in SATURATED_REGIMES:
     base_lat = None
     try:
         base_cls = ATTENTION_REGISTRY.get("full_attention")
-        base_mod = base_cls(dim=d, num_heads=h).to(device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32)
+        base_mod = base_cls(dim=d, num_heads=h).to(
+            device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32
+        )
         base_mod.eval()
         with torch.no_grad():
-            for _ in range(5): _ = base_mod(x)
-            if torch.cuda.is_available(): torch.cuda.synchronize()
+            for _ in range(5):
+                _ = base_mod(x)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
             t0 = time.perf_counter()
             iters = 30
-            for _ in range(iters): _ = base_mod(x)
-            if torch.cuda.is_available(): torch.cuda.synchronize()
+            for _ in range(iters):
+                _ = base_mod(x)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
             base_lat = (time.perf_counter() - t0) / iters * 1000.0
         del base_mod
         gc.collect()
-        if torch.cuda.is_available(): torch.cuda.empty_cache()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
     except Exception:
         base_lat = 1.0
 
@@ -130,25 +144,32 @@ for reg in SATURATED_REGIMES:
             if cls is None:
                 continue
             try:
-                mod = cls(dim=d, num_heads=h).to(device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32)
+                mod = cls(dim=d, num_heads=h).to(
+                    device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32
+                )
             except Exception:
                 try:
-                    mod = cls(embed_dim=d, num_heads=h).to(device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32)
+                    mod = cls(embed_dim=d, num_heads=h).to(
+                        device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32
+                    )
                 except Exception:
                     mod = cls().to(device, dtype=torch.float16 if torch.cuda.is_available() else torch.float32)
             mod.eval()
 
             # Warmup
             with torch.no_grad():
-                for _ in range(5): _ = mod(x)
-                if torch.cuda.is_available(): torch.cuda.synchronize()
+                for _ in range(5):
+                    _ = mod(x)
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
 
                 # Sustained Benchmark Loop
                 iters = 50
                 t0 = time.perf_counter()
                 for _ in range(iters):
                     _ = mod(x)
-                if torch.cuda.is_available(): torch.cuda.synchronize()
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
                 t_total = time.perf_counter() - t0
                 avg_lat = (t_total / iters) * 1000.0
 
@@ -158,23 +179,31 @@ for reg in SATURATED_REGIMES:
             energy_uj = (power_w * (avg_lat / 1000.0) / total_tokens) * 1e6 if power_w > 0 else 0.0
             speedup = (base_lat / avg_lat) if base_lat else 1.0
 
-            print(f"| {display_name:<26} | {avg_lat:>8.2f} ms | {throughput:>16.0f} t/s | {power_w:>8.1f} W   | {energy_uj:>10.2f} uJ/t | {vram_mb:>8.1f} MB  | {speedup:>6.2f}x |", flush=True)
+            print(
+                f"| {display_name:<26} | {avg_lat:>8.2f} ms | {throughput:>16.0f} t/s | {power_w:>8.1f} W   | {energy_uj:>10.2f} uJ/t | {vram_mb:>8.1f} MB  | {speedup:>6.2f}x |",
+                flush=True,
+            )
 
-            benchmark_records.append({
-                "Category": "Saturated Kernel",
-                "Workload": reg["name"],
-                "Model_or_Method": display_name,
-                "Family": fam,
-                "Latency_ms": round(avg_lat, 3),
-                "Throughput_tok_s": round(throughput, 1),
-                "Power_Watts": round(power_w, 1),
-                "Energy_uJ_per_tok": round(energy_uj, 2),
-                "Peak_VRAM_MB": round(vram_mb, 1),
-                "Speedup": round(speedup, 2),
-            })
+            benchmark_records.append(
+                {
+                    "Category": "Saturated Kernel",
+                    "Workload": reg["name"],
+                    "Model_or_Method": display_name,
+                    "Family": fam,
+                    "Latency_ms": round(avg_lat, 3),
+                    "Throughput_tok_s": round(throughput, 1),
+                    "Power_Watts": round(power_w, 1),
+                    "Energy_uJ_per_tok": round(energy_uj, 2),
+                    "Peak_VRAM_MB": round(vram_mb, 1),
+                    "Speedup": round(speedup, 2),
+                }
+            )
             del mod
         except Exception as e:
-            print(f"| {display_name:<26} | {'OOM / SKIP':<12} | {'-':<20} | {'-':<12} | {'-':<14} | {'-':<12} | {'-':<8} |", flush=True)
+            print(
+                f"| {display_name:<26} | {'OOM / SKIP':<12} | {'-':<20} | {'-':<12} | {'-':<14} | {'-':<12} | {'-':<8} |",
+                flush=True,
+            )
 
 # --- PART 2: MULTI-MODEL REAL BACKBONES (HIGH TDP SATURATION) ---
 print("\n" + "=" * 125)
@@ -205,7 +234,9 @@ MODELS = [
     },
     {
         "name": "LLaMA-1B-Proxy (RoPE/GQA)",
-        "config": LlamaConfig(num_hidden_layers=6, hidden_size=1024, num_attention_heads=16, num_key_value_heads=4, intermediate_size=2816),
+        "config": LlamaConfig(
+            num_hidden_layers=6, hidden_size=1024, num_attention_heads=16, num_key_value_heads=4, intermediate_size=2816
+        ),
         "model_cls": LlamaModel,
         "batch": 8,
         "seq": 2048,
@@ -229,7 +260,9 @@ for m_spec in MODELS:
 
     print(f"\n>>> BACKBONE: {m_name} | Batch={b}, Seq={s} (Tokens/Step={total_tokens:,}) <<<")
     print("-" * 125)
-    print(f"| {'Method':<26} | {'Latency':<12} | {'Throughput (tok/s)':<20} | {'Peak Power':<12} | {'Energy/Tok':<14} | {'Peak VRAM':<12} | {'Speedup':<8} |")
+    print(
+        f"| {'Method':<26} | {'Latency':<12} | {'Throughput (tok/s)':<20} | {'Peak Power':<12} | {'Energy/Tok':<14} | {'Peak VRAM':<12} | {'Speedup':<8} |"
+    )
     print("-" * 125)
 
     input_ids = torch.randint(100, 1000, (b, s), device=device)
@@ -249,14 +282,17 @@ for m_spec in MODELS:
             model.eval()
 
             with torch.no_grad():
-                for _ in range(3): _ = model(input_ids)
-                if torch.cuda.is_available(): torch.cuda.synchronize()
+                for _ in range(3):
+                    _ = model(input_ids)
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
 
                 iters = 25
                 t0 = time.perf_counter()
                 for _ in range(iters):
                     _ = model(input_ids)
-                if torch.cuda.is_available(): torch.cuda.synchronize()
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
                 avg_lat = ((time.perf_counter() - t0) / iters) * 1000.0
 
             if attn_key is None:
@@ -268,23 +304,31 @@ for m_spec in MODELS:
             energy_uj = (power_w * (avg_lat / 1000.0) / total_tokens) * 1e6 if power_w > 0 else 0.0
             speedup = (base_m_lat / avg_lat) if base_m_lat else 1.0
 
-            print(f"| {meth_name:<26} | {avg_lat:>8.2f} ms | {throughput:>16.0f} t/s | {power_w:>8.1f} W   | {energy_uj:>10.2f} uJ/t | {vram_mb:>8.1f} MB  | {speedup:>6.2f}x |", flush=True)
+            print(
+                f"| {meth_name:<26} | {avg_lat:>8.2f} ms | {throughput:>16.0f} t/s | {power_w:>8.1f} W   | {energy_uj:>10.2f} uJ/t | {vram_mb:>8.1f} MB  | {speedup:>6.2f}x |",
+                flush=True,
+            )
 
-            benchmark_records.append({
-                "Category": "Model Backbone",
-                "Workload": m_name,
-                "Model_or_Method": meth_name,
-                "Family": "End-to-End Model",
-                "Latency_ms": round(avg_lat, 3),
-                "Throughput_tok_s": round(throughput, 1),
-                "Power_Watts": round(power_w, 1),
-                "Energy_uJ_per_tok": round(energy_uj, 2),
-                "Peak_VRAM_MB": round(vram_mb, 1),
-                "Speedup": round(speedup, 2),
-            })
+            benchmark_records.append(
+                {
+                    "Category": "Model Backbone",
+                    "Workload": m_name,
+                    "Model_or_Method": meth_name,
+                    "Family": "End-to-End Model",
+                    "Latency_ms": round(avg_lat, 3),
+                    "Throughput_tok_s": round(throughput, 1),
+                    "Power_Watts": round(power_w, 1),
+                    "Energy_uJ_per_tok": round(energy_uj, 2),
+                    "Peak_VRAM_MB": round(vram_mb, 1),
+                    "Speedup": round(speedup, 2),
+                }
+            )
             del model
         except Exception as e:
-            print(f"| {meth_name:<26} | {'FAILED / OOM':<12} | {'-':<20} | {'-':<12} | {'-':<14} | {'-':<12} | {'-':<8} |", flush=True)
+            print(
+                f"| {meth_name:<26} | {'FAILED / OOM':<12} | {'-':<20} | {'-':<12} | {'-':<14} | {'-':<12} | {'-':<8} |",
+                flush=True,
+            )
 
 # --- SAVE CAMERA-READY ARTIFACTS ---
 out_dir = os.path.join(repo_root, "results")
@@ -301,17 +345,23 @@ tex_file = os.path.join(out_dir, "master_high_tdp_benchmarks.tex")
 with open(tex_file, "w") as f:
     f.write("% Publication-Grade Master High-TDP Benchmark Table for MLSys/NeurIPS\n")
     f.write("\\begin{table*}[t]\n\\centering\\small\n")
-    f.write("\\caption{\\textbf{High-TDP Hardware-Saturating Multi-Model Empirical Evaluation on NVIDIA RTX 3090} (24GB GDDR6X, 350W TDP). Demonstrates peak throughput, power dissipation (Watts), energy efficiency ($\mu$J/tok), and memory retention under sustained Tensor Core load.}\n")
+    f.write(
+        "\\caption{\\textbf{High-TDP Hardware-Saturating Multi-Model Empirical Evaluation on NVIDIA RTX 3090} (24GB GDDR6X, 350W TDP). Demonstrates peak throughput, power dissipation (Watts), energy efficiency ($\mu$J/tok), and memory retention under sustained Tensor Core load.}\n"
+    )
     f.write("\\label{tab:high_tdp_benchmarks}\n")
     f.write("\\begin{tabular}{llcccccc}\n\\toprule\n")
-    f.write("\\textbf{Workload / Backbone} & \\textbf{Method} & \\textbf{Latency (ms)} & \\textbf{Throughput (tok/s)} & \\textbf{Power (W)} & \\textbf{Energy ($\\mu$J/tok)} & \\textbf{VRAM (MB)} & \\textbf{Speedup} \\\\\n\\midrule\n")
+    f.write(
+        "\\textbf{Workload / Backbone} & \\textbf{Method} & \\textbf{Latency (ms)} & \\textbf{Throughput (tok/s)} & \\textbf{Power (W)} & \\textbf{Energy ($\\mu$J/tok)} & \\textbf{VRAM (MB)} & \\textbf{Speedup} \\\\\n\\midrule\n"
+    )
     cur_w = None
     for r in benchmark_records:
         if r["Workload"] != cur_w:
             if cur_w is not None:
                 f.write("\\midrule\n")
             cur_w = r["Workload"]
-        f.write(f"{r['Workload'].split()[0]} & {r['Model_or_Method']} & {r['Latency_ms']} & {int(r['Throughput_tok_s']):,} & {r['Power_Watts']} & {r['Energy_uJ_per_tok']} & {r['Peak_VRAM_MB']} & \\textbf{{{r['Speedup']}$\\times$}} \\\\\n")
+        f.write(
+            f"{r['Workload'].split()[0]} & {r['Model_or_Method']} & {r['Latency_ms']} & {int(r['Throughput_tok_s']):,} & {r['Power_Watts']} & {r['Energy_uJ_per_tok']} & {r['Peak_VRAM_MB']} & \\textbf{{{r['Speedup']}$\\times$}} \\\\\n"
+        )
     f.write("\\bottomrule\n\\end{tabular}\n\\end{table*}\n")
 print(f"[OK] Saved Camera-Ready LaTeX Table: {tex_file}")
 print("=================================================================================")

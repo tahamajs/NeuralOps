@@ -32,6 +32,7 @@ ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "neuralops")]
 
 from neuralops.core.registry import ATTENTION_REGISTRY
+
 try:
     from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
 except ImportError:
@@ -223,9 +224,7 @@ def adapt_model_pos_embeddings(model: nn.Module, target_seq_len: int = 4096) -> 
                 .squeeze(0)
                 .t()
             )
-            new_pos_emb = torch.nn.Embedding(
-                target_seq_len, old_w.shape[1], device=old_w.device, dtype=old_w.dtype
-            )
+            new_pos_emb = torch.nn.Embedding(target_seq_len, old_w.shape[1], device=old_w.device, dtype=old_w.dtype)
             new_pos_emb.weight.data.copy_(new_w)
             model.distilbert.embeddings.position_embeddings = new_pos_emb
             if hasattr(model.distilbert.embeddings, "register_buffer"):
@@ -338,9 +337,7 @@ def main():
     if args.dry_run:
         print("\n[DRY RUN] Planned evaluation sequence:")
         for idx, mod in enumerate(args.modules, 1):
-            print(
-                f"  {idx:2d}. Module: {mod:<25} | Rank: {args.rank} | Output: {args.output_dir}/{mod}/result.json"
-            )
+            print(f"  {idx:2d}. Module: {mod:<25} | Rank: {args.rank} | Output: {args.output_dir}/{mod}/result.json")
         print("\n[DRY RUN COMPLETE] No hardware sweeps executed.")
         return
 
@@ -363,9 +360,7 @@ def main():
     base_model.to(device)
 
     total_params_baseline = sum(p.numel() for p in base_model.parameters())
-    base_metrics = evaluate_long_context(
-        base_model, loader, max_samples=args.max_eval_samples, device=device
-    )
+    base_metrics = evaluate_long_context(base_model, loader, max_samples=args.max_eval_samples, device=device)
     baseline_acc = base_metrics["accuracy_pct"]
 
     LOG.info(
@@ -417,17 +412,13 @@ def main():
             cand_model.to(device)
 
             typ = "attention" if mod in ATTENTION_REGISTRY else "compressor"
-            cand_model, comp_stats = apply_module_to_model(
-                cand_model, mod, typ, rank=args.rank, device=device
-            )
+            cand_model, comp_stats = apply_module_to_model(cand_model, mod, typ, rank=args.rank, device=device)
 
             p_after = sum(p.numel() for p in cand_model.parameters())
             comp_rate = round(total_params_baseline / max(1, p_after), 4)
             comp_pct = round(100.0 * (1.0 - p_after / max(1, total_params_baseline)), 2)
 
-            metrics = evaluate_long_context(
-                cand_model, loader, max_samples=args.max_eval_samples, device=device
-            )
+            metrics = evaluate_long_context(cand_model, loader, max_samples=args.max_eval_samples, device=device)
             delta_acc = round(metrics["accuracy_pct"] - baseline_acc, 2)
             status = "PASS" if metrics["accuracy_pct"] >= 50.0 else "PASS_LOW"
 

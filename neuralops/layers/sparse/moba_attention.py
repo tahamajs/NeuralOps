@@ -11,11 +11,6 @@ MoBA: Mixture of Block Attention
 Mixture-of-block attention routing query blocks dynamically to relevant key-value memory chunks.
 """
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -25,9 +20,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +57,7 @@ class MoBAAttention(BaseAttention):
         super().__init__(config, rank if rank is not None else 32)
 
         if config is None:
+
             class _Cfg:
                 pass
 
@@ -79,11 +76,7 @@ class MoBAAttention(BaseAttention):
         )
         self.hidden_size = int(getattr(config, "hidden_size", kwargs.get("dim") or kwargs.get("hidden_size", 768)))
         cfg_hd = getattr(config, "head_dim", None)
-        self.head_dim = (
-            int(cfg_hd)
-            if cfg_hd is not None
-            else max(1, self.hidden_size // max(1, self.num_heads))
-        )
+        self.head_dim = int(cfg_hd) if cfg_hd is not None else max(1, self.hidden_size // max(1, self.num_heads))
         self.all_head_size = self.num_heads * self.head_dim
 
         cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
@@ -107,9 +100,7 @@ class MoBAAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
         else:
             _mt = str(getattr(config, "model_type", "") or "").lower()
-            self.is_decoder = bool(
-                getattr(config, "is_decoder", False) or getattr(config, "causal", False)
-            ) or any(
+            self.is_decoder = bool(getattr(config, "is_decoder", False) or getattr(config, "causal", False)) or any(
                 _mt.startswith(p)
                 for p in (
                     "gpt",
@@ -131,9 +122,7 @@ class MoBAAttention(BaseAttention):
 
         self.output_scale = nn.Parameter(torch.ones(1))
 
-        dropout_p = float(
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-        )
+        dropout_p = float(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)))
         self.dropout = nn.Dropout(dropout_p)
 
         self.q_proj = LoRALinear(
@@ -442,11 +431,7 @@ class MoBAAttention(BaseAttention):
 
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
-        elif (
-            cls_name in ("GPT2Attention", "GPT2Block")
-            or hasattr(src, "c_attn")
-            or "gpt" in cls_name.lower()
-        ):
+        elif cls_name in ("GPT2Attention", "GPT2Block") or hasattr(src, "c_attn") or "gpt" in cls_name.lower():
             self.is_decoder = True
 
     def forward(
@@ -537,10 +522,7 @@ class MoBAAttention(BaseAttention):
                         dropout_p=self.dropout.p if self.training else 0.0,
                     )
                     _sdpa_out = (
-                        _sdpa_out.to(hidden_states.dtype)
-                        .transpose(1, 2)
-                        .contiguous()
-                        .view(B, L, self.all_head_size)
+                        _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                     )
                     _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                     if self.is_nested_encoder:
@@ -608,9 +590,10 @@ class MoBAAttention(BaseAttention):
             Vb = V_pad.view(B, H, nb, bs, d)
 
             from neuralops.ops.triton.block_sparse import (
-                fused_moba_block_router_combine_triton,
                 fused_moba_block_router_combine_pytorch,
+                fused_moba_block_router_combine_triton,
             )
+
             top_k = min(self.top_k, nb)
             try:
                 block_scores_for_topk, top_idx = fused_moba_block_router_combine_triton(
@@ -623,15 +606,11 @@ class MoBAAttention(BaseAttention):
 
             # Fastpath Level 2: Fused Triton Streaming Block Attention
             triton_attn_success = False
-            if (
-                Q_pad.is_cuda
-                and valid_mask is None
-                and not self.training
-                and d in (32, 64, 128)
-            ):
+            if Q_pad.is_cuda and valid_mask is None and not self.training and d in (32, 64, 128):
                 try:
                     if is_causal:
                         from neuralops.ops.triton.sparse_attn import fwd as triton_sparse_fwd
+
                         b_mask = torch.zeros(B, nb, nb, device=device, dtype=torch.int32)
                         # top_idx: [B, H, nb, top_k] -> take union or broadcast across heads
                         top_idx_any = top_idx.view(B, -1, nb, top_idx.shape[-1])
@@ -641,13 +620,16 @@ class MoBAAttention(BaseAttention):
                         causal_tril_b = torch.tril(torch.ones(nb, nb, device=device, dtype=torch.int32)).unsqueeze(0)
                         b_mask = b_mask * causal_tril_b
                         stream_out = triton_sparse_fwd(
-                            Q_pad, K_pad, V_pad,
+                            Q_pad,
+                            K_pad,
+                            V_pad,
                             block_mask=b_mask,
                             block_size=bs,
                             is_causal=True,
                         )
                     else:
                         from neuralops.ops.triton.block_sparse import triton_block_sparse_streaming_attn
+
                         stream_out = triton_block_sparse_streaming_attn(
                             Q_pad, K_pad, V_pad, top_idx, block_size=bs, sm_scale=scale
                         )
@@ -672,16 +654,12 @@ class MoBAAttention(BaseAttention):
                     k_valid = torch.gather(valid_b_exp, 2, idx_mask_exp).reshape(B, H, 1, top_k * bs)
 
                     Q_i = Qb[:, :, i]
-                    scores_i = (
-                        torch.matmul(Q_i.float(), K_sel.float().transpose(-2, -1).contiguous()) * scale
-                    )
+                    scores_i = torch.matmul(Q_i.float(), K_sel.float().transpose(-2, -1).contiguous()) * scale
                     scores_i = scores_i.masked_fill(~k_valid, -1e4)
 
                     if is_causal:
                         q_pos = (i * bs + torch.arange(bs, device=device)).view(1, 1, bs, 1)
-                        k_offsets = idx.unsqueeze(-1) * bs + torch.arange(bs, device=device).view(
-                            1, 1, 1, bs
-                        )
+                        k_offsets = idx.unsqueeze(-1) * bs + torch.arange(bs, device=device).view(1, 1, 1, bs)
                         k_pos = k_offsets.reshape(B, H, 1, top_k * bs)
                         invalid = k_pos > q_pos
                         scores_i = scores_i.masked_fill(invalid, -1e4)
@@ -763,11 +741,7 @@ def inject_moba(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -811,6 +785,7 @@ def inject_moba(
         if model_config is None and hasattr(target, "config"):
             model_config = target.config
         if model_config is None:
+
             class _Cfg:
                 pass
 

@@ -33,8 +33,10 @@ def run_benchmark(device: str = "cuda", sequence_lengths: tuple[int, ...] = (512
         freq = torch.exp(-torch.arange(256, device=target).float()[None, :] / 256.0)
         angles = positions * freq
         cos, sin = angles.cos().repeat(1, 2), angles.sin().repeat(1, 2)
+
         def apply() -> torch.Tensor:
             return x * cos[None] + _rotate(x) * sin[None]
+
         started = time.perf_counter()
         out = apply()
         elapsed = (time.perf_counter() - started) * 1000.0

@@ -12,22 +12,34 @@ Processes batched sequences of variable lengths using cumulative token offsets w
 """
 
 from __future__ import annotations
+
 import torch
 import torch.nn.functional as F
 
-
-from neuralops.ops.triton._common import HAS_TRITON, triton, tl
-
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _varlen_flash_attn_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Out_ptr,
-        cu_seqlens_q_ptr, cu_seqlens_k_ptr,
-        stride_qn, stride_qh, stride_qd,
-        stride_kn, stride_kh, stride_kd,
-        stride_vn, stride_vh, stride_vd,
-        stride_on, stride_oh, stride_od,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Out_ptr,
+        cu_seqlens_q_ptr,
+        cu_seqlens_k_ptr,
+        stride_qn,
+        stride_qh,
+        stride_qd,
+        stride_kn,
+        stride_kh,
+        stride_kd,
+        stride_vn,
+        stride_vh,
+        stride_vd,
+        stride_on,
+        stride_oh,
+        stride_od,
         H,
         IS_CAUSAL: tl.constexpr,
         BLOCK_M: tl.constexpr,
@@ -104,7 +116,8 @@ def _varlen_attention_fwd(
     B = cu_seqlens_q.shape[0] - 1
     total_q, H, D = q.shape
 
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda and D in (16, 32, 64, 128, 256):
         try:
             out = torch.empty_like(q)
@@ -113,13 +126,24 @@ def _varlen_attention_fwd(
             BLOCK_N = 64
             grid = (triton.cdiv(max_seqlen_q, BLOCK_M), B * H)
             _varlen_flash_attn_fwd_kernel[grid](
-                q, k, v, out,
+                q,
+                k,
+                v,
+                out,
                 cu_seqlens_q.to(device=q.device, dtype=torch.int32),
                 cu_seqlens_k.to(device=k.device, dtype=torch.int32),
-                q.stride(0), q.stride(1), q.stride(2),
-                k.stride(0), k.stride(1), k.stride(2),
-                v.stride(0), v.stride(1), v.stride(2),
-                out.stride(0), out.stride(1), out.stride(2),
+                q.stride(0),
+                q.stride(1),
+                q.stride(2),
+                k.stride(0),
+                k.stride(1),
+                k.stride(2),
+                v.stride(0),
+                v.stride(1),
+                v.stride(2),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
                 H,
                 IS_CAUSAL=causal,
                 BLOCK_M=BLOCK_M,
@@ -141,7 +165,10 @@ def _varlen_attention_fwd(
         v_b = v[ks:ke].transpose(0, 1).unsqueeze(0)
 
         out_b = F.scaled_dot_product_attention(
-            q_b, k_b, v_b, is_causal=causal,
+            q_b,
+            k_b,
+            v_b,
+            is_causal=causal,
         )
         outputs.append(out_b.squeeze(0).transpose(0, 1))
 

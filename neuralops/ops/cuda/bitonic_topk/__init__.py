@@ -9,9 +9,6 @@
 Bitonic Top-K Selection Hardware Operators.
 """
 
-from neuralops.ops.cuda.bitonic_topk.bitonic_topk_autograd import (
-    bitonic_topk,
-    bitonic_topk_pytorch_ref,
-)
+from neuralops.ops.cuda.bitonic_topk.bitonic_topk_autograd import bitonic_topk, bitonic_topk_pytorch_ref
 
 __all__ = ["bitonic_topk", "bitonic_topk_pytorch_ref"]

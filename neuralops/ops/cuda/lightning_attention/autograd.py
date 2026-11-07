@@ -75,9 +75,14 @@ def _get_triton_impl():
 
 def _lightning_attention_dispatch(q, k, v, decay_rate=0.1, scale=None) -> torch.Tensor:
     """3-Level Dispatched Lightning Attention."""
+
     def cuda_fn(q, k, v, decay_rate=0.1, scale=None, **kwargs):
         mod = _get_module()
-        sc = scale if "scale" in kwargs or "scale" in locals() and locals().get("scale") is not None else 1.0 / math.sqrt(q.shape[-1])
+        sc = (
+            scale
+            if "scale" in kwargs or "scale" in locals() and locals().get("scale") is not None
+            else 1.0 / math.sqrt(q.shape[-1])
+        )
         return mod.lightning_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous(), float(decay_rate), sc)
 
     triton_fn = _get_triton_impl()
@@ -86,7 +91,11 @@ def _lightning_attention_dispatch(q, k, v, decay_rate=0.1, scale=None) -> torch.
         cuda_fn,
         triton_fn,
         lightning_attention_pytorch_ref,
-        q, k, v, decay_rate, scale,
+        q,
+        k,
+        v,
+        decay_rate,
+        scale,
         kernel_name="lightning_attention",
     )
 

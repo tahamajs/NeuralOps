@@ -12,16 +12,13 @@ Expert-choice mixture of experts routing tokens to specialized attention experts
 """
 
 from __future__ import annotations
-from neuralops.core.common import repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
 from typing import Any
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -88,9 +85,7 @@ class ExpertChoiceMoE(nn.Module):
         else:
             normed = F.layer_norm(x_flat, (D,))
             if not hasattr(self, "_dynamic_router") or self._dynamic_router.in_features != D:
-                self._dynamic_router = nn.Linear(D, self.n_experts, bias=False).to(
-                    device=x.device, dtype=x.dtype
-                )
+                self._dynamic_router = nn.Linear(D, self.n_experts, bias=False).to(device=x.device, dtype=x.dtype)
                 nn.init.uniform_(self._dynamic_router.weight, -0.01, 0.01)
             logits = self._dynamic_router(normed)
 
@@ -101,17 +96,14 @@ class ExpertChoiceMoE(nn.Module):
 
         top_k_experts = min(2, self.n_experts)
         from neuralops.ops.triton.sparse_attn import (
-            fused_expert_choice_scatter_gather_triton,
             fused_expert_choice_scatter_gather_pytorch,
+            fused_expert_choice_scatter_gather_triton,
         )
+
         try:
-            topk_vals, topk_indices, _ = fused_expert_choice_scatter_gather_triton(
-                x_flat, gate_scores, top_k_experts
-            )
+            topk_vals, topk_indices, _ = fused_expert_choice_scatter_gather_triton(x_flat, gate_scores, top_k_experts)
         except Exception:
-            topk_vals, topk_indices, _ = fused_expert_choice_scatter_gather_pytorch(
-                x_flat, gate_scores, top_k_experts
-            )
+            topk_vals, topk_indices, _ = fused_expert_choice_scatter_gather_pytorch(x_flat, gate_scores, top_k_experts)
 
         out_flat = torch.zeros_like(x_flat)
         for e in range(self.n_experts):
@@ -128,10 +120,7 @@ class ExpertChoiceMoE(nn.Module):
             if selected_x.size(-1) == self.d_model:
                 expert_out = self.experts[e](selected_x)
             else:
-                if (
-                    not hasattr(self, f"_expert_in_proj_{e}")
-                    or getattr(self, f"_expert_in_proj_{e}").in_features != D
-                ):
+                if not hasattr(self, f"_expert_in_proj_{e}") or getattr(self, f"_expert_in_proj_{e}").in_features != D:
                     setattr(
                         self,
                         f"_expert_in_proj_{e}",
@@ -146,9 +135,9 @@ class ExpertChoiceMoE(nn.Module):
                 proj_out = getattr(self, f"_expert_out_proj_{e}")
                 expert_out = proj_out(self.experts[e](proj_in(selected_x)))
 
-            update_val = (
-                expert_out.to(out_flat.dtype) * matched_vals.unsqueeze(-1).to(out_flat.dtype)
-            ).to(dtype=out_flat.dtype)
+            update_val = (expert_out.to(out_flat.dtype) * matched_vals.unsqueeze(-1).to(out_flat.dtype)).to(
+                dtype=out_flat.dtype
+            )
 
             out_flat.index_add_(0, token_indices, update_val)
 
@@ -208,9 +197,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self.dim = int(hidden_size)
         self.num_heads = int(num_heads)
         self.num_kv_heads = (
-            getattr(config, "num_key_value_heads", self.num_heads)
-            if config is not None
-            else self.num_heads
+            getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
         )
         self.head_dim = getattr(config, "head_dim", None) or (self.dim // max(1, self.num_heads))
         self.all_head_size = self.num_heads * self.head_dim
@@ -220,11 +207,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
+            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
         )
         self.layer_idx: int = int(resolved_layer_id)
 
@@ -263,10 +246,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         if (
             any(model_type.startswith(p) for p in decoder_prefixes)
             or hasattr(config, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -308,16 +288,10 @@ class ExpertChoiceMoEAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        self.moe = ExpertChoiceMoE(
-            self.all_head_size, n_experts=n_experts, capacity_factor=capacity_factor
-        )
+        self.moe = ExpertChoiceMoE(self.all_head_size, n_experts=n_experts, capacity_factor=capacity_factor)
         self.moe_gate = nn.Parameter(torch.tensor(float(moe_init_gate)))
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
@@ -509,11 +483,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -526,11 +496,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning(
                 f"ExpertChoiceMoEAttention copy_weights failed: missing mandatory projections {missing_after} "
@@ -557,18 +523,13 @@ class ExpertChoiceMoEAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
 
                 if b is not None and target_mod.bias is not None:
@@ -610,24 +571,9 @@ class ExpertChoiceMoEAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross_attention else hidden_states
         kv_len = kv_input.shape[1]
 
-        q = (
-            self.q_lin(hidden_states)
-            .view(B, L, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.k_lin(kv_input)
-            .view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_lin(kv_input)
-            .view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_lin(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_lin(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is not None and not is_cross_attention:
             if isinstance(position_embeddings, tuple):
@@ -660,12 +606,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
                     is_causal=_is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                attn_out = (
-                    _sdpa_out.to(hidden_states.dtype)
-                    .transpose(1, 2)
-                    .contiguous()
-                    .view(B, L, self.all_head_size)
-                )
+                attn_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                 attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
                 moe_out = self.moe(attn_out)
                 self.aux_loss = self.moe.aux_loss
@@ -723,12 +664,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             probs = probs * head_mask
 
-        attn_out = (
-            torch.matmul(probs.to(v.dtype), v)
-            .transpose(1, 2)
-            .contiguous()
-            .view(B, L, self.all_head_size)
-        )
+        attn_out = torch.matmul(probs.to(v.dtype), v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         moe_out = self.moe(attn_out)
         self.aux_loss = self.moe.aux_loss
@@ -784,11 +720,7 @@ def inject_expert_choice_moe(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -800,9 +732,7 @@ def inject_expert_choice_moe(
             res = inject_expert_choice_moe(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,

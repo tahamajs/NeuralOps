@@ -9,9 +9,6 @@
 
 from __future__ import annotations
 
-from neuralops.ops.cuda.gdn_scan.gdn_autograd import (
-    chunked_delta_gate_scan,
-    chunked_delta_gate_scan_pytorch_ref,
-)
+from neuralops.ops.cuda.gdn_scan.gdn_autograd import chunked_delta_gate_scan, chunked_delta_gate_scan_pytorch_ref
 
 __all__ = ["chunked_delta_gate_scan", "chunked_delta_gate_scan_pytorch_ref"]

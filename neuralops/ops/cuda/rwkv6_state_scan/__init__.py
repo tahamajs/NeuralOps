@@ -9,10 +9,7 @@
 RWKV-6 State Scan Native CUDA Extension.
 """
 
-from neuralops.ops.cuda.rwkv6_state_scan.autograd import (
-    rwkv6_state_scan,
-    rwkv6_state_scan_pytorch_ref,
-)
+from neuralops.ops.cuda.rwkv6_state_scan.autograd import rwkv6_state_scan, rwkv6_state_scan_pytorch_ref
 
 __all__ = [
     "rwkv6_state_scan",

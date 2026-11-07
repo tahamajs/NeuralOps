@@ -12,6 +12,7 @@ KMeans Quantize CUDA Kernel Operator.
 from __future__ import annotations
 
 import torch
+
 from neuralops.compression.quantization.kmeans_quantize import fast_kmeans_1d
 from neuralops.ops.cuda.kmeans_quantize.autograd import KMeansQuantizeFunction
 

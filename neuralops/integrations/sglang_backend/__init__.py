@@ -11,9 +11,7 @@ SGLang Integration Scaffold for NeuralOps.
 
 from __future__ import annotations
 
-from neuralops.integrations.sglang_backend.backend import (
-    NeuralOpsLinearAttnBackend,
-)
+from neuralops.integrations.sglang_backend.backend import NeuralOpsLinearAttnBackend
 from neuralops.integrations.sglang_backend.registry import register
 
 __all__ = [

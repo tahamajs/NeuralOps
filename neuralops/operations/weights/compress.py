@@ -57,6 +57,7 @@ class WeightsCompressOperation(Operation):
         method = config.get("method", "aasvd")
         if method in ("aasvd", "svd", "asvd"):
             from neuralops.operations.weights.svd_aasvd import WeightsCompressAASVDOperation
+
             return WeightsCompressAASVDOperation().apply(model, config)
         raise IntegrationNotImplementedError(
             f"weights.compress method='{method}' implementation stub. "

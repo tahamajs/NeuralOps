@@ -132,7 +132,9 @@ class RulerAdapter:
         parts = [haystack_filler] * needed_fillers
         parts.insert(insertion_index, needle)
 
-        prompt = "".join(parts) + "\nQuestion: What is the special magic passcode?\nAnswer: The special magic passcode is"
+        prompt = (
+            "".join(parts) + "\nQuestion: What is the special magic passcode?\nAnswer: The special magic passcode is"
+        )
         return prompt, secret_number, secret_number
 
     def run(self) -> dict[str, Any]:
@@ -155,11 +157,15 @@ class RulerAdapter:
 
             start_t = time.perf_counter()
             with torch.no_grad():
-                gen_out = self.model.generate(
-                    **inputs,
-                    max_new_tokens=10,
-                    do_sample=False,
-                ) if hasattr(self.model, "generate") else None
+                gen_out = (
+                    self.model.generate(
+                        **inputs,
+                        max_new_tokens=10,
+                        do_sample=False,
+                    )
+                    if hasattr(self.model, "generate")
+                    else None
+                )
 
             duration = time.perf_counter() - start_t
             total_latency_s += duration

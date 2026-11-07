@@ -12,7 +12,6 @@ Interpolates between full softmax attention and linear attention using learned p
 """
 
 from __future__ import annotations
-from neuralops.core.common import _detect_decoder
 
 import logging
 import math
@@ -24,6 +23,7 @@ import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _detect_decoder
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.rope import _rotate_half
 from neuralops.utils.compat import repeat_kv
@@ -282,9 +282,7 @@ class HybridAttention(BaseAttention):
 
                 attn_bias_sdp = None
                 if valid_mask is not None:
-                    attn_bias_sdp = ((valid_mask[:, None, None, :].float() - 1.0) * 1e4).to(
-                        q_sdp.dtype
-                    )
+                    attn_bias_sdp = ((valid_mask[:, None, None, :].float() - 1.0) * 1e4).to(q_sdp.dtype)
 
                 is_causal_sdp = self.is_decoder and past_len == 0 and N > 1
 
@@ -359,9 +357,11 @@ class HybridAttention(BaseAttention):
 
             if self.is_decoder:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
                 if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and phi_Q.is_cuda and D_h <= 128:
                     try:
                         from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
+
                         out_triton = fused_svd_linear_chunk_scan_triton(
                             phi_Q.to(V_f.dtype), phi_K.to(V_f.dtype), V_f, chunk_size=64, eps=1e-6
                         )
@@ -441,24 +441,9 @@ class HybridAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         valid_mask_new = _extract_valid_mask(eff_mask, B, N_kv_new, device)
 
-        Q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        K_new = (
-            self.k_proj(kv_input)
-            .view(B, N_kv_new, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V_new = (
-            self.v_proj(kv_input)
-            .view(B, N_kv_new, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K_new = self.k_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V_new = self.v_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -508,6 +493,7 @@ class HybridAttention(BaseAttention):
 
         if self.use_heterogeneous and past_len == 0 and not is_cross:
             from neuralops.ops.cuda.hybrid_local_kernel import hybrid_heterogeneous_branch
+
             fused = hybrid_heterogeneous_branch(
                 Q,
                 K_cat,
@@ -542,10 +528,11 @@ class HybridAttention(BaseAttention):
             if out_standard.is_cuda and out_linear.is_cuda:
                 try:
                     from neuralops.ops.cuda.hybrid_local_kernel import hybrid_two_branch_blend
+
                     fused = hybrid_two_branch_blend(
                         out_standard.contiguous(),
                         out_linear.contiguous(),
-                        gate.expand_as(out_standard).contiguous().to(out_standard.dtype)
+                        gate.expand_as(out_standard).contiguous().to(out_standard.dtype),
                     )
                 except Exception:
                     fused = gate * out_standard + (1.0 - gate) * out_linear
@@ -580,8 +567,7 @@ class HybridAttention(BaseAttention):
 
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(
-            hasattr(old_attn, attr)
-            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o")
+            hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o")
         )
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
@@ -705,11 +691,7 @@ def inject_weighted_ensemble(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers

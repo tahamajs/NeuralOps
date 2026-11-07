@@ -33,7 +33,7 @@ The 131 attention mechanisms are organized into 14 foundational architectural fa
 
 > [!NOTE]
 > Summing across all 14 families: $6 + 15 + 11 + 7 + 6 + 13 + 19 + 9 + 14 + 6 + 2 + 4 + 5 + 14 = \mathbf{131}$ canonical attention mechanisms.
-> All benchmark results, execution logs, and LaTeX tables are publicly mirrored at:  
+> All benchmark results, execution logs, and LaTeX tables are publicly mirrored at:
 > 👉 **[https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)**
 
 ---

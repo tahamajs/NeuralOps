@@ -12,12 +12,6 @@ Robust expert allocation and pruning module for parameter-efficient mixture-of-e
 """
 
 from __future__ import annotations
-from neuralops.core.common import _detect_decoder
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -27,15 +21,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import _detect_decoder
+
 logger = logging.getLogger(__name__)
 
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
-from neuralops.core.registry import ATTENTION_REGISTRY
-
-
 from neuralops.core.low_rank.svd_linear import SVDLinear
+from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 
 class REAPMoE(nn.Module):
@@ -70,13 +65,16 @@ class REAPMoE(nn.Module):
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
         if use_svd:
+
             def expert_layer():
                 return nn.Sequential(
                     SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
                     nn.GELU(),
                     SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
                 )
+
         else:
+
             def expert_layer():
                 return nn.Sequential(
                     nn.Linear(d_model, d_model, **factory_kwargs),
@@ -126,9 +124,7 @@ class REAPMoE(nn.Module):
         from neuralops.ops.cuda.moe_routing import moe_topk_routing_fused
 
         topk_weights, topk_indices = moe_topk_routing_fused(scores, self.top_k)
-        topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(
-            target_dtype
-        )
+        topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(target_dtype)
 
         router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.n_experts)
         expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
@@ -144,6 +140,7 @@ class REAPMoE(nn.Module):
         if x.is_cuda and self.n_experts == 2 and self.top_k == 2:
             try:
                 from neuralops.ops.cuda.samba_moe import samba_moe
+
                 w = F.softmax(scores.float(), dim=-1).to(target_dtype)
                 out = samba_moe(experts_stack[:, :, 0], experts_stack[:, :, 1], w)
                 return out.to(target_dtype), aux_loss
@@ -153,6 +150,7 @@ class REAPMoE(nn.Module):
         elif x.is_cuda:
             try:
                 from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
+
                 out = fused_topk_sparse_route_and_combine_triton(experts_stack, scores, top_k=self.top_k)
                 return out.to(target_dtype), aux_loss
             except Exception:
@@ -176,6 +174,7 @@ class REAPMoEAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -253,9 +252,7 @@ class REAPMoEAttention(BaseAttention):
         if pre_ln is None:
             pre_ln = getattr(config, "pre_ln", True) if config is not None else True
         self.pre_ln = bool(pre_ln)
-        self.standalone_attn = bool(
-            kwargs.get("standalone_attn", kwargs.get("pure_attention", True))
-        )
+        self.standalone_attn = bool(kwargs.get("standalone_attn", kwargs.get("pure_attention", True)))
 
         self.lora_rank = (
             getattr(
@@ -344,11 +341,7 @@ class REAPMoEAttention(BaseAttention):
         self.norm1 = nn.LayerNorm(self.dim, dtype=target_dtype)
         self.norm2 = nn.LayerNorm(self.dim, dtype=target_dtype)
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         self.register_buffer("_attn_aux_loss", torch.tensor(0.0), persistent=False)
@@ -480,11 +473,7 @@ class REAPMoEAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -497,11 +486,7 @@ class REAPMoEAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"REAPMoEAttention.copy_weights: missing mandatory projections "
@@ -544,10 +529,7 @@ class REAPMoEAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (
-                        b.shape[0] < target_mod.bias.shape[0]
-                        and target_mod.bias.shape[0] % b.shape[0] == 0
-                    ):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -647,12 +629,8 @@ class REAPMoEAttention(BaseAttention):
             residual = hidden_states
 
         q = self.q_lin(attn_input).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k_new = (
-            self.k_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        )
-        v_new = (
-            self.v_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        )
+        k_new = self.k_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v_new = self.v_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -699,9 +677,7 @@ class REAPMoEAttention(BaseAttention):
             K_full = K_cat
             V_full = V_cat
 
-        use_sdpa = (
-            not output_attentions and head_mask is None and not (self.is_decoder and past_len > 0)
-        )
+        use_sdpa = not output_attentions and head_mask is None and not (self.is_decoder and past_len > 0)
 
         if use_sdpa:
             q_sdp = maybe_half(q)
@@ -715,9 +691,7 @@ class REAPMoEAttention(BaseAttention):
                 else:
                     token_valid = self._prepare_valid_mask(attention_mask, B, N_kv, device)
                     if token_valid is not None:
-                        attn_bias_sdp = ((token_valid[:, None, None, :].float() - 1.0) * 1e4).to(
-                            q_sdp.dtype
-                        )
+                        attn_bias_sdp = ((token_valid[:, None, None, :].float() - 1.0) * 1e4).to(q_sdp.dtype)
 
             is_causal_sdp = self.is_decoder and L > 1 and past_len == 0
 
@@ -729,12 +703,7 @@ class REAPMoEAttention(BaseAttention):
                 is_causal=is_causal_sdp,
                 dropout_p=self.dropout.p if self.training else 0.0,
             )
-            attn_out = (
-                attn_out_sdp.to(hidden_states.dtype)
-                .transpose(1, 2)
-                .contiguous()
-                .view(B, L, self.all_head_size)
-            )
+            attn_out = attn_out_sdp.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
             attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
             attn_ret = None
         else:
@@ -749,11 +718,7 @@ class REAPMoEAttention(BaseAttention):
                     abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
                     causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
                 else:
-                    causal = (
-                        torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool))
-                        .unsqueeze(0)
-                        .unsqueeze(0)
-                    )
+                    causal = torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
                 scores = scores.masked_fill(~causal, -1e4)
 
             if token_valid is not None:
@@ -773,12 +738,7 @@ class REAPMoEAttention(BaseAttention):
                     head_mask = head_mask[:, :, :1].unsqueeze(-1)
                 probs = probs * head_mask.to(probs.dtype)
 
-            attn_out = (
-                torch.matmul(probs, V_full)
-                .permute(0, 2, 1, 3)
-                .contiguous()
-                .view(B, L, self.all_head_size)
-            )
+            attn_out = torch.matmul(probs, V_full).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
             attn_ret = probs if output_attentions else None
 
         if self.is_nested_encoder:
@@ -792,9 +752,7 @@ class REAPMoEAttention(BaseAttention):
             return proj.to(target_dtype), attn_ret
 
         n2_dtype = (
-            self.norm2.weight.dtype
-            if hasattr(self.norm2, "weight") and self.norm2.weight is not None
-            else target_dtype
+            self.norm2.weight.dtype if hasattr(self.norm2, "weight") and self.norm2.weight is not None else target_dtype
         )
         if self.pre_ln:
             h1 = (residual + self.dropout(proj.to(target_dtype))).to(target_dtype)
@@ -853,11 +811,7 @@ def inject_reap_moe(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

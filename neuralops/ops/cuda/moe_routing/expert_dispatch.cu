@@ -164,4 +164,3 @@ void moe_gather_cuda(
 
     C10_CUDA_KERNEL_LAUNCH_CHECK();
 }
-

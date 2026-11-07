@@ -115,7 +115,7 @@ Because the denominator is a linear combination of two independent chi-square ra
 ```latex
 % Formal LaTeX definition for paper methodology
 \begin{equation}
-t = \frac{\bar{X}_1 - \bar{X}_2}{\sqrt{\frac{s_1^2}{N_1} + \frac{s_2^2}{N_2}}}, \quad 
+t = \frac{\bar{X}_1 - \bar{X}_2}{\sqrt{\frac{s_1^2}{N_1} + \frac{s_2^2}{N_2}}}, \quad
 \nu \approx \frac{\left(\frac{s_1^2}{N_1} + \frac{s_2^2}{N_2}\right)^2}{\frac{(s_1^2/N_1)^2}{N_1 - 1} + \frac{(s_2^2/N_2)^2}{N_2 - 1}}
 \label{eq:welchs_t_test}
 \end{equation}
@@ -197,7 +197,7 @@ For $B = 10{,}000$ at $\alpha = 0.05$, the interval endpoints are the $250$-th a
 #### 2. Bias-Corrected and Accelerated (BCa) Bootstrap:
 Adjusts for both median bias $z_0$ and distribution skewness (acceleration $a$):
 \begin{equation}
-\alpha_1 = \Phi\left( z_0 + \frac{z_0 + z_{\alpha/2}}{1 - a(z_0 + z_{\alpha/2})} \right), \quad 
+\alpha_1 = \Phi\left( z_0 + \frac{z_0 + z_{\alpha/2}}{1 - a(z_0 + z_{\alpha/2})} \right), \quad
 \alpha_2 = \Phi\left( z_0 + \frac{z_0 + z_{1-\alpha/2}}{1 - a(z_0 + z_{1-\alpha/2})} \right)
 \label{eq:bca_formula}
 \end{equation}
@@ -225,7 +225,7 @@ When comparing two architectures evaluated on identical paired seeds ($s \in \ma
 A statistically significant $p$-value does not necessarily imply a practically significant difference; conversely, small sample sizes might yield $p \approx 0.04$ despite massive empirical shifts. Standardized effect sizes quantify the magnitude of the divergence in units of pooled standard deviation.
 
 \begin{equation}
-d = \frac{\bar{X}_1 - \bar{X}_2}{s_{\text{pooled}}}, \quad 
+d = \frac{\bar{X}_1 - \bar{X}_2}{s_{\text{pooled}}}, \quad
 s_{\text{pooled}} = \sqrt{\frac{(N_1 - 1)s_1^2 + (N_2 - 1)s_2^2}{N_1 + N_2 - 2}}
 \label{eq:cohens_d}
 \end{equation}
@@ -266,8 +266,8 @@ For physical GPU evaluations on dedicated hardware, $\mathrm{CV} \le 1.5\%$ is r
 \begin{table*}[t]
 \centering
 \caption{\textbf{Cross-Seed Statistical Significance and Robustness Matrix Across 6 Random Seeds.}
-Evaluations conducted on \textbf{RoBERTa-base} fine-tuned on SST-2 ($d=768$, $N=6$ seeds: 3 standard $\{42, 123, 456\}$ and 3 adversarial stress $\{404, 777, 999\}$). 
-Welch's two-sample $t$-test and Cohen's $d$ effect sizes are computed relative to the Uncalibrated Direct SVD baseline. 
+Evaluations conducted on \textbf{RoBERTa-base} fine-tuned on SST-2 ($d=768$, $N=6$ seeds: 3 standard $\{42, 123, 456\}$ and 3 adversarial stress $\{404, 777, 999\}$).
+Welch's two-sample $t$-test and Cohen's $d$ effect sizes are computed relative to the Uncalibrated Direct SVD baseline.
 Significance levels: $^{***} p < 0.001$, $^{**} p < 0.01$, $^{*} p < 0.05$.}
 \label{tab:multiseed_significance}
 \small
@@ -275,10 +275,10 @@ Significance levels: $^{***} p < 0.001$, $^{**} p < 0.01$, $^{*} p < 0.05$.}
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{@{} l cccccc ccc cc @{}}
 \toprule
-\textbf{Architecture / Method} & 
-\textbf{Seed 42} & \textbf{Seed 123} & \textbf{Seed 456} & 
-\textbf{Seed 404} & \textbf{Seed 777} & \textbf{Seed 999} & 
-\textbf{Mean (\%)} & \textbf{Std ($\pm$)} & \textbf{95\% CI} & 
+\textbf{Architecture / Method} &
+\textbf{Seed 42} & \textbf{Seed 123} & \textbf{Seed 456} &
+\textbf{Seed 404} & \textbf{Seed 777} & \textbf{Seed 999} &
+\textbf{Mean (\%)} & \textbf{Std ($\pm$)} & \textbf{95\% CI} &
 \textbf{Welch's $t$} & \textbf{Cohen's $d$} \\
 \midrule
 Standard Softmax Baseline     & 94.50 & 94.42 & 94.55 & 94.38 & 94.48 & 94.42 & \textbf{94.46} & 0.06 & $[94.40, 94.52]$ & --- & --- \\
@@ -299,8 +299,8 @@ HNC Nullspace-Only            & 87.90 & 87.75 & 88.05 & 87.60 & 87.95 & 87.80 & 
 \begin{table}[t]
 \centering
 \caption{\textbf{Multi-Seed Robustness Evaluation Across Diverse Model Families and Tasks.}
-Reported as $\text{Mean} \pm \text{Std Dev}$ across $N=6$ independent seeds. 
-Evaluated on bidirectional encoder (\textbf{DistilBERT-base}, \textbf{RoBERTa-base}) and autoregressive causal decoder (\textbf{GPT-2}). 
+Reported as $\text{Mean} \pm \text{Std Dev}$ across $N=6$ independent seeds.
+Evaluated on bidirectional encoder (\textbf{DistilBERT-base}, \textbf{RoBERTa-base}) and autoregressive causal decoder (\textbf{GPT-2}).
 All improvements over direct truncation pass Welch's $t$-test at $p < 0.001$.}
 \label{tab:multitask_multiseed}
 \small
@@ -310,17 +310,17 @@ All improvements over direct truncation pass Welch's $t$-test at $p < 0.001$.}
 \toprule
 \textbf{Backbone Family} & \textbf{Evaluation Task} & \textbf{Dense Baseline} & \textbf{Direct SVD} & \textbf{HNC-SVD (Ours)} & \textbf{Retention (\%)} \\
 \midrule
-\multirow{3}{*}{\textbf{DistilBERT-base}} 
+\multirow{3}{*}{\textbf{DistilBERT-base}}
  & SST-2 (Accuracy \%)       & $90.71 \pm 0.08$ & $51.30 \pm 0.42$ & $\mathbf{87.20 \pm 0.11}$ & $96.13\%$ \\
  & MNLI (Match Acc \%)      & $82.20 \pm 0.12$ & $34.15 \pm 0.38$ & $\mathbf{79.45 \pm 0.14}$ & $96.65\%$ \\
  & AG News (Accuracy \%)     & $93.80 \pm 0.07$ & $64.20 \pm 0.35$ & $\mathbf{91.90 \pm 0.09}$ & $97.97\%$ \\
 \midrule
-\multirow{3}{*}{\textbf{RoBERTa-base}} 
+\multirow{3}{*}{\textbf{RoBERTa-base}}
  & SST-2 (Accuracy \%)       & $94.50 \pm 0.06$ & $84.70 \pm 0.23$ & $\mathbf{93.09 \pm 0.09}$ & $98.51\%$ \\
  & MNLI (Match Acc \%)      & $87.60 \pm 0.10$ & $71.20 \pm 0.31$ & $\mathbf{85.80 \pm 0.12}$ & $97.95\%$ \\
  & AG News (Accuracy \%)     & $94.90 \pm 0.05$ & $86.50 \pm 0.28$ & $\mathbf{93.85 \pm 0.08}$ & $98.89\%$ \\
 \midrule
-\multirow{2}{*}{\textbf{GPT-2 (124M)}} 
+\multirow{2}{*}{\textbf{GPT-2 (124M)}}
  & WikiText-2 (PPL $\downarrow$) & $26.15 \pm 0.05$ & $54.20 \pm 0.37$ & $\mathbf{26.85 \pm 0.06}$ & $97.39\%$ \\
  & LAMBADA (Accuracy \%)     & $45.20 \pm 0.14$ & $18.40 \pm 0.45$ & $\mathbf{43.10 \pm 0.16}$ & $95.35\%$ \\
 \bottomrule
@@ -402,7 +402,7 @@ ax.set_title("Cross-Seed Distribution & Variance Analysis across 6 Random Seeds"
 # Annotate significance comparison bracket
 y_max = 93.30
 ax.plot([1, 1, 4, 4], [y_max, y_max + 0.3, y_max + 0.3, y_max], color="black", lw=1.2)
-ax.text(2.5, y_max + 0.35, r"Welch's $t = 83.31^{***}, \ p < 10^{-12}$", 
+ax.text(2.5, y_max + 0.35, r"Welch's $t = 83.31^{***}, \ p < 10^{-12}$",
         ha="center", va="bottom", fontsize=10, fontweight="bold")
 
 plt.tight_layout()
@@ -517,11 +517,11 @@ Every statistical figure or table caption must explicitly declare:
 ### 9.2 Exemplary Self-Contained Captions
 
 #### Good Table Caption:
-> **Table 4: Multi-Seed Robustness Evaluation and Welch's $t$-Test Significance Matrix.**  
+> **Table 4: Multi-Seed Robustness Evaluation and Welch's $t$-Test Significance Matrix.**
 > Performance reported as $\text{Mean} \pm \text{Std Dev}$ across $N=6$ independent random initializations (standard seeds $\{42, 123, 456\}$ and adversarial stress seeds $\{404, 777, 999\}$) on RoBERTa-base ($d=768$) evaluated on SST-2 validation set. $95\%$ Confidence Intervals are computed via non-parametric BCa bootstrapping with $B=10{,}000$ resamples. Pairwise comparisons against the uncalibrated Direct SVD baseline use two-sided Welch's two-sample $t$-tests ($\nu \approx 6.4$); $^{***} p < 0.001$, $^{**} p < 0.01$, $^{*} p < 0.05$. Cohen's $d$ quantifies standardized effect size. All evaluations executed on an NVIDIA GeForce RTX 4070 (Ada Lovelace, SM 8.9) under identical deterministic CUDA state constraints.
 
 #### Good Figure Caption:
-> **Figure 3: Cross-Seed Accuracy Distributions and Optimization Trajectories.**  
+> **Figure 3: Cross-Seed Accuracy Distributions and Optimization Trajectories.**
 > **(a)** Box-and-whisker distribution plot across $N=6$ seeds ($\mathcal{S} = \{42, 123, 456, 404, 777, 999\}$). Box boundaries indicate the first and third quartiles (IQR); center lines represent medians; diamond markers denote empirical means; overlaid jittered points represent individual seed runs. HNC-SVD achieves a $2.5\times$ variance reduction over Direct SVD ($\sigma = 0.09\%$ vs. $0.23\%$). **(b)** 50-step post-surgery distillation recovery trajectories; shaded envelopes denote two-sided $95\%$ Student's $t$ confidence intervals ($t_{5, 0.975} = 2.571$). 6-pillar distillation recovers $98.5\%$ of dense teacher accuracy with zero seed-induced divergence.
 
 ---

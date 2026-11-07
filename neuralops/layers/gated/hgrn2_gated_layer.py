@@ -12,8 +12,6 @@ Hierarchically gated recurrent neural network attention layer enabling linear co
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _env_float, _unpack_weight_bias
 
 import logging
 import math
@@ -25,6 +23,7 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get, _env_float, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -126,18 +125,24 @@ class HGRN2Layer(BaseAttention):
         self.hidden_size = self.d_model
 
         _res_clip_default = _env_float("HGRN2_RES_CLIP", 0.0)
-        self.res_clip = (
-            res_clip
-            if res_clip is not None
-            else (_res_clip_default if _res_clip_default > 0 else None)
-        )
+        self.res_clip = res_clip if res_clip is not None else (_res_clip_default if _res_clip_default > 0 else None)
 
         self.freeze_base = bool(freeze_base)
 
         _mt = str(_cfg_get(config, "model_type", "") or "").lower()
         _decoder_prefixes = (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
         )
 
         if is_decoder is not None:
@@ -161,20 +166,15 @@ class HGRN2Layer(BaseAttention):
 
         if not self.is_decoder:
             logger.warning(
-                "HGRN2: is_decoder=False — bidirectional mode. "
-                "Future token leak risk for GPT-family models."
+                "HGRN2: is_decoder=False — bidirectional mode. " "Future token leak risk for GPT-family models."
             )
 
         self.is_nested_encoder: bool = False
         self.lora_rank = int(lora_rank) if lora_rank is not None else 16
         self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = (
-            (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
-        )
+        self.lora_scaling = (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
 
-        self.num_heads = int(
-            _cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", 12))
-        )
+        self.num_heads = int(_cfg_get(config, "num_attention_heads", _cfg_get(config, "num_heads", 12)))
         while self.num_heads > 1 and (self.d_model % self.num_heads != 0):
             self.num_heads -= 1
         self.head_dim = self.d_model // max(1, self.num_heads)
@@ -301,11 +301,7 @@ class HGRN2Layer(BaseAttention):
         src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
         is_nested = (
             src_cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-            or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
-            )
+            or (hasattr(old_attn, "query") and not hasattr(old_attn, "dense") and not hasattr(old_attn, "out_proj"))
             or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))
         )
         self.is_nested_encoder = bool(is_nested)
@@ -426,11 +422,7 @@ class HGRN2Layer(BaseAttention):
             h: (B, L, D) all hidden states
             h_last: (B, D) final state
         """
-        if (
-            HAS_TRITON_HGRN2
-            and hgrn2_scan_triton is not None
-            and f.is_cuda
-        ):
+        if HAS_TRITON_HGRN2 and hgrn2_scan_triton is not None and f.is_cuda:
             try:
                 out = hgrn2_scan_triton(
                     f.contiguous(),
@@ -466,13 +458,9 @@ class HGRN2Layer(BaseAttention):
             A = torch.cumsum(f_c, dim=1)
             A_diff = A.unsqueeze(2) - A.unsqueeze(1)
 
-            mask = torch.tril(
-                torch.ones(C, C, device=iv.device, dtype=torch.bool)
-            )
+            mask = torch.tril(torch.ones(C, C, device=iv.device, dtype=torch.bool))
             mask_4d = mask.unsqueeze(0).unsqueeze(-1)
-            A_diff = torch.where(
-                mask_4d, A_diff, torch.full_like(A_diff, -1e4)
-            )
+            A_diff = torch.where(mask_4d, A_diff, torch.full_like(A_diff, -1e4))
 
             decay_weights = torch.exp(A_diff) * mask_4d.float()
             intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)
@@ -591,6 +579,7 @@ class HGRN2Layer(BaseAttention):
             elif q.is_cuda:
                 try:
                     from neuralops.ops.triton.sliding_window import sliding_window_attention_kernel
+
                     out_win = sliding_window_attention_kernel(
                         q, k, v, window_size=self.window_size, is_causal=self.is_decoder
                     )
@@ -700,23 +689,13 @@ class HGRN2Layer(BaseAttention):
             if attention_mask.dim() == 2:
                 mask_bool = attention_mask.bool()
             elif attention_mask.dim() == 3:
-                m = (
-                    (attention_mask > -1e4)
-                    if attention_mask.dtype.is_floating_point
-                    else attention_mask.bool()
-                )
+                m = (attention_mask > -1e4) if attention_mask.dtype.is_floating_point else attention_mask.bool()
                 mask_bool = m.any(dim=1) if m.shape[1] > 1 else m[:, 0, :]
             elif attention_mask.dim() == 4:
-                m = (
-                    (attention_mask > -1e4)
-                    if attention_mask.dtype.is_floating_point
-                    else attention_mask.bool()
-                )
+                m = (attention_mask > -1e4) if attention_mask.dtype.is_floating_point else attention_mask.bool()
                 mask_bool = m.any(dim=-2).any(dim=1)
 
-        h_fwd, h_bwd, next_hgrn_state = self._recurrent_scan(
-            f, iv, initial_state=past_hgrn_state, mask=mask_bool
-        )
+        h_fwd, h_bwd, next_hgrn_state = self._recurrent_scan(f, iv, initial_state=past_hgrn_state, mask=mask_bool)
 
         if self.is_decoder or h_bwd is None:
             h_ctx = h_fwd.to(target_dtype)
@@ -768,9 +747,7 @@ class HGRN2Layer(BaseAttention):
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
         new_past_key_value: Any = None
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         if use_cache or self.is_decoder:
             new_past_key_value = HGRN2CacheState(
                 hgrn_state=next_hgrn_state,
@@ -832,11 +809,7 @@ def inject_hgrn2_layer(
                     p.requires_grad = False
             num_injected = 0
             tot = len(layer_list)
-            sub_kwargs = {
-                k: v
-                for k, v in kwargs.items()
-                if k not in ("lora_rank", "lora_alpha", "freeze_base")
-            }
+            sub_kwargs = {k: v for k, v in kwargs.items() if k not in ("lora_rank", "lora_alpha", "freeze_base")}
             for idx, lyr in enumerate(layer_list):
                 res = inject_hgrn2_layer(
                     layer=lyr,
@@ -879,8 +852,18 @@ def inject_hgrn2_layer(
 
     _mt = str(getattr(cfg, "model_type", "") or "").lower()
     _dec_pfx = (
-        "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-        "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+        "gpt",
+        "qwen",
+        "llama",
+        "mistral",
+        "gemma",
+        "phi",
+        "opt",
+        "bloom",
+        "falcon",
+        "olmo",
+        "mpt",
+        "stablelm",
     )
     is_dec = (
         bool(getattr(cfg, "is_decoder", False) if cfg else False)
@@ -909,15 +892,9 @@ def inject_hgrn2_layer(
 
     if target is not None:
         spliced = False
-        if (
-            is_nested_target
-            and hasattr(target, "attention")
-            and hasattr(target.attention, "self")
-        ):
+        if is_nested_target and hasattr(target, "attention") and hasattr(target.attention, "self"):
             target.attention.self = new_layer
-            if hasattr(target.attention, "output") and hasattr(
-                target.attention.output, "dense"
-            ):
+            if hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"):
                 target.attention.output.dense = nn.Identity()
             spliced = True
         elif hasattr(target, "attention"):

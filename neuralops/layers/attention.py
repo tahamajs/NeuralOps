@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 from typing import Any
+
 import neuralops.layers as _layers
 
 sys.modules["neuralops.layers.attention"] = _layers

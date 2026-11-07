@@ -11,9 +11,6 @@ Minimal SVD Attention
 Streamlined low-rank singular value decomposition attention providing lightweight sequence representation.
 """
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 import logging
 import math
 from typing import Any
@@ -23,9 +20,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -96,9 +94,7 @@ class FactorisedLinear(nn.Module):
                 if bias is not None:
                     bias = bias.view(self.out_features, rep).mean(dim=1)
             elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
-                padded_W = torch.zeros(
-                    self.out_features, self.in_features, device=W.device, dtype=W.dtype
-                )
+                padded_W = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
                 padded_W[
                     : min(self.out_features, W.shape[0]),
                     : min(self.in_features, W.shape[1]),
@@ -131,9 +127,7 @@ class FactorisedLinear(nn.Module):
             self.down.weight.data[:r, :] = B
 
             if bias is not None and self.up.bias is not None:
-                self.up.bias.data[: min(len(self.up.bias), len(bias))].copy_(
-                    bias[: min(len(self.up.bias), len(bias))]
-                )
+                self.up.bias.data[: min(len(self.up.bias), len(bias))].copy_(bias[: min(len(self.up.bias), len(bias))])
 
             self.freeze_base_weights()
 
@@ -167,9 +161,7 @@ class FactorisedLinear(nn.Module):
             try:
                 from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
 
-                base = fused_svd_projection(
-                    x, self.down.weight.t(), V_T=self.up.weight.t(), bias=self.up.bias
-                )
+                base = fused_svd_projection(x, self.down.weight.t(), V_T=self.up.weight.t(), bias=self.up.bias)
                 if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                     base = (
                         base
@@ -185,13 +177,9 @@ class FactorisedLinear(nn.Module):
 
             # Level 2: Triton JIT kernel
             try:
-                from neuralops.ops.triton.fused_svd_projection_triton import (
-                    fused_svd_projection_triton,
-                )
+                from neuralops.ops.triton.fused_svd_projection_triton import fused_svd_projection_triton
 
-                base = fused_svd_projection_triton(
-                    x, self.down.weight.t(), V_T=self.up.weight.t(), bias=self.up.bias
-                )
+                base = fused_svd_projection_triton(x, self.down.weight.t(), V_T=self.up.weight.t(), bias=self.up.bias)
                 if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                     base = (
                         base
@@ -208,6 +196,7 @@ class FactorisedLinear(nn.Module):
             if x.dtype in (torch.float16, torch.bfloat16):
                 try:
                     from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+
                     base = fused_lowrank_gated_gemm(x, self.down.weight, self.up.weight, bias=self.up.bias)
                     if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                         base = (
@@ -225,6 +214,7 @@ class FactorisedLinear(nn.Module):
         if x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 return fused_svd_lora_sparse_attn_triton(
                     x,
                     w_down=self.down.weight,
@@ -295,17 +285,11 @@ class MinimalSVDAttention(BaseAttention):
         self.head_dim: int = int(
             cfg_head_dim
             or kwargs.get("head_dim")
-            or (
-                self.hidden_size // self.num_heads
-                if self.num_heads > 0
-                else (self.hidden_size or 64)
-            )
+            or (self.hidden_size // self.num_heads if self.num_heads > 0 else (self.hidden_size or 64))
         )
         self.all_head_size: int = self.num_heads * self.head_dim
 
-        cfg_kv = (
-            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None)) if cfg else None
-        )
+        cfg_kv = getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None)) if cfg else None
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -332,11 +316,7 @@ class MinimalSVDAttention(BaseAttention):
                 or any(
                     str(
                         getattr(
-                            (
-                                cfg
-                                if "cfg" in locals()
-                                else (config if "config" in locals() else None)
-                            ),
+                            (cfg if "cfg" in locals() else (config if "config" in locals() else None)),
                             "model_type",
                             "",
                         )
@@ -406,11 +386,7 @@ class MinimalSVDAttention(BaseAttention):
             lora_alpha=self.lora_alpha,
         )
 
-        dropout_p = (
-            getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout))
-            if cfg
-            else dropout
-        )
+        dropout_p = getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout)) if cfg else dropout
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -553,18 +529,12 @@ class MinimalSVDAttention(BaseAttention):
                     "XLMRobertaSelfAttention",
                 )
                 or (cls_name.endswith("SelfAttention") and not has_out_proj)
-                or (
-                    ("roberta" in cls_name.lower() or "bert" in cls_name.lower())
-                    and not has_out_proj
-                )
+                or (("roberta" in cls_name.lower() or "bert" in cls_name.lower()) and not has_out_proj)
             )
         ):
             is_nested = True
         if hasattr(src, "config"):
-            if (
-                getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta")
-                and not has_out_proj
-            ):
+            if getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta") and not has_out_proj:
                 is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -681,20 +651,11 @@ class MinimalSVDAttention(BaseAttention):
                 dropout_p=self.dropout.p if self.training else 0.0,
             )
 
-            _sdpa_out = (
-                _sdpa_out.to(hidden_states.dtype)
-                .transpose(1, 2)
-                .contiguous()
-                .view(B, N, self.all_head_size)
-            )
+            _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
             _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-            return (
-                self.out_proj(_sdpa_out)
-                if not getattr(self, "is_nested_encoder", False)
-                else _sdpa_out
-            ), None
+            return (self.out_proj(_sdpa_out) if not getattr(self, "is_nested_encoder", False) else _sdpa_out), None
 
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -789,11 +750,7 @@ def inject_minimal_svd(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -805,9 +762,7 @@ def inject_minimal_svd(
             res = inject_minimal_svd(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -829,11 +784,7 @@ def inject_minimal_svd(
         energy=energy,
         dropout=dropout,
     )
-    src_attn = (
-        old_attn
-        if old_attn is not None
-        else getattr(layer, "attention", getattr(layer, "self", None))
-    )
+    src_attn = old_attn if old_attn is not None else getattr(layer, "attention", getattr(layer, "self", None))
     if src_attn is not None:
         try:
             new_attn.copy_weights(src_attn)

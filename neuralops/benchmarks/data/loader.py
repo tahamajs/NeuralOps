@@ -19,6 +19,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset, TensorDataset
@@ -32,9 +33,11 @@ DATASET_LOADER_REGISTRY: Dict[str, Type["DatasetLoader"]] = {}
 
 def register_dataset_loader(format_name: str) -> Callable[[Type["DatasetLoader"]], Type["DatasetLoader"]]:
     """Decorator to register a custom dataset loader."""
+
     def decorator(cls: Type["DatasetLoader"]) -> Type["DatasetLoader"]:
         DATASET_LOADER_REGISTRY[format_name.lower()] = cls
         return cls
+
     return decorator
 
 
@@ -169,6 +172,7 @@ def load_universal_dataset(
 
     else:
         from datasets import load_dataset
+
         ds_name = dataset_name_or_path
         hf_kwargs: Dict[str, Any] = {}
         if language:

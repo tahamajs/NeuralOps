@@ -134,6 +134,7 @@ def load_attention_from_hub(
     if not attention_type:
         raise ValueError("Selective checkpoint is missing config.json:attention_type.")
     from transformers import AutoModel
+
     from neuralops.api import replace_attention
 
     model = AutoModel.from_pretrained(base_model_name, **from_pretrained_kwargs)

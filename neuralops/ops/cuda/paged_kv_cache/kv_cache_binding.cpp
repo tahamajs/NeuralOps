@@ -66,4 +66,3 @@ std::tuple<torch::Tensor, torch::Tensor> copy_blocks_cow(
 
     return std::make_tuple(dst_k, dst_v);
 }
-

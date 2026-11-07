@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+
 import torch.nn as nn
 
 from neuralops.core._attention_surgery import (
@@ -43,7 +44,6 @@ logger = logging.getLogger("neuralops.surgery.attention_replace")
 
 
 from neuralops.api import replace_attention
-
 
 __all__ = [
     "PROJ_REGEX_PATTERNS",

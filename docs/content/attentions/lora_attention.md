@@ -131,19 +131,19 @@ def _lora_fused_linear_kernel(
 ):
     # Load input tile X [BLOCK_N, D]
     x = tl.load(X_ptr + offsets_x)
-    
+
     # Base projection in SRAM registers: out = x @ W0.T
     w0 = tl.load(W0_ptr + offsets_w)
     out_base = tl.dot(x, tl.trans(w0))
-    
+
     # Adapter path in SRAM registers: down = x @ A.T [BLOCK_N, r]
     a = tl.load(A_ptr + offsets_a)
     down = tl.dot(x, tl.trans(a))
-    
+
     # Up-projection: adapter_out = down @ B.T * scale [BLOCK_N, D]
     b = tl.load(B_ptr + offsets_b)
     out_adapter = tl.dot(down, tl.trans(b)) * ALPHA_SCALE
-    
+
     # Accumulate and store
     tl.store(Out_ptr + offsets_out, out_base + out_adapter)
 ```
@@ -170,4 +170,3 @@ The empirical evaluation of `lora_attention` across standard sequence lengths an
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

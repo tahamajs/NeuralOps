@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 08
 # Real-Time Serving, Paged KV-Cache & Speculative Inference
 
-**Assigned Subagent**: `Agent 08: High-Throughput Serving & Memory Architect`  
+**Assigned Subagent**: `Agent 08: High-Throughput Serving & Memory Architect`
 **Target Codebase Paths**:
 - `neuralops/serving/`
 - `neuralops/serving/paged_kv_cache.py`

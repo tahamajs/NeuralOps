@@ -56,6 +56,7 @@ def register_custom_attention(
     Or:
         neuralops.register_custom_attention("my_attn", MyAttentionClass, ...)
     """
+
     def _decorator(obj: Union[Type[nn.Module], Callable]) -> Union[Type[nn.Module], Callable]:
         key = (name or getattr(obj, "__name__", "custom_attention")).lower()
 
@@ -111,6 +112,7 @@ def register_custom_compressor(
     **extra_metadata: Any,
 ) -> Any:
     """Decorator or direct function to register a custom compression engine."""
+
     def _decorator(obj: Union[Type[Any], Callable]) -> Union[Type[Any], Callable]:
         key = (name or getattr(obj, "__name__", "custom_compressor")).lower()
 
@@ -197,13 +199,14 @@ def validate_module_contract(
     5. Surgical transplantation & micro-healing compatibility on a toy Transformer
     6. Surgical checkpoint serialization save/load bit-exact roundtrip parity.
     """
-    from neuralops.core.inspector import inspect_architecture
-    from neuralops.api import create_attention, replace_attention
-    from neuralops.models.surgical_io import save_surgical_checkpoint, load_surgical_checkpoint
-    from neuralops.core._attention_surgery import heal_replaced_model
-    import tempfile
     import shutil
+    import tempfile
     from pathlib import Path
+
+    from neuralops.api import create_attention, replace_attention
+    from neuralops.core._attention_surgery import heal_replaced_model
+    from neuralops.core.inspector import inspect_architecture
+    from neuralops.models.surgical_io import load_surgical_checkpoint, save_surgical_checkpoint
 
     target_dev = torch.device(device or ("cuda:0" if torch.cuda.is_available() else "cpu"))
     results: Dict[str, Any] = {
@@ -268,7 +271,11 @@ def validate_module_contract(
         loss.backward()
 
         trainable_params = [p for p in module.parameters() if p.requires_grad]
-        has_param_grads = any(p.grad is not None and not torch.isnan(p.grad).any() for p in trainable_params) if trainable_params else True
+        has_param_grads = (
+            any(p.grad is not None and not torch.isnan(p.grad).any() for p in trainable_params)
+            if trainable_params
+            else True
+        )
         if has_param_grads and x_grad.grad is not None and not torch.isnan(x_grad.grad).any():
             results["checks"]["3_backward_gradients"] = {
                 "status": "PASSED",
@@ -305,16 +312,20 @@ def validate_module_contract(
             super().__init__()
             self.attn = nn.MultiheadAttention(d, h, batch_first=True)
             self.linear = nn.Linear(d, d)
+
         def forward(self, h_in):
             a_out, _ = self.attn(h_in, h_in, h_in)
             return self.linear(a_out)
 
     toy_teacher = nn.Sequential(ToyBlock(embed_dim, num_heads)).to(device=target_dev)
     import copy
+
     toy_student = copy.deepcopy(toy_teacher)
     try:
         if isinstance(module_or_name, str):
-            surg_module = create_attention(module_or_name, embed_dim=embed_dim, num_heads=num_heads).to(device=target_dev)
+            surg_module = create_attention(module_or_name, embed_dim=embed_dim, num_heads=num_heads).to(
+                device=target_dev
+            )
         else:
             try:
                 surg_module = copy.deepcopy(module)
@@ -337,7 +348,9 @@ def validate_module_contract(
     try:
         persist_student = copy.deepcopy(toy_teacher)
         if isinstance(module_or_name, str):
-            persist_mod = create_attention(module_or_name, embed_dim=embed_dim, num_heads=num_heads).to(device=target_dev)
+            persist_mod = create_attention(module_or_name, embed_dim=embed_dim, num_heads=num_heads).to(
+                device=target_dev
+            )
         else:
             try:
                 persist_mod = copy.deepcopy(module)
@@ -375,7 +388,7 @@ def validate_module_contract(
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    results["all_passed"] = (results["passed_count"] == results["total_checks"])
+    results["all_passed"] = results["passed_count"] == results["total_checks"]
     return results
 
 

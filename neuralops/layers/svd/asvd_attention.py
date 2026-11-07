@@ -11,10 +11,6 @@ ASVD: Activation-Aware Singular Value Decomposition Attention
 Activation-aware singular value decomposition attention preserving sensitive projection outlier channels.
 """
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -25,9 +21,10 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import apply_attention_mask
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.ops.triton import triton_dispatch
 
 logger = logging.getLogger(__name__)
@@ -75,8 +72,8 @@ class ASVDLinear(nn.Module):
             self.lora_alpha = float(lora_alpha)
             self.lora_scaling = (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
         else:
-            self.register_parameter('lora_A', None)
-            self.register_parameter('lora_B', None)
+            self.register_parameter("lora_A", None)
+            self.register_parameter("lora_B", None)
             self.lora_alpha = float(lora_alpha)
             self.lora_scaling = 1.0
 
@@ -149,9 +146,7 @@ class ASVDLinear(nn.Module):
                     torch.zeros(self.out_features, r, device=device, dtype=dtype),
                     requires_grad=req_grad,
                 )
-                self.S = nn.Parameter(
-                    torch.ones(r, device=device, dtype=dtype), requires_grad=req_grad
-                )
+                self.S = nn.Parameter(torch.ones(r, device=device, dtype=dtype), requires_grad=req_grad)
                 self.V = nn.Parameter(
                     torch.zeros(r, self.in_features, device=device, dtype=dtype),
                     requires_grad=req_grad,
@@ -166,12 +161,8 @@ class ASVDLinear(nn.Module):
 
             U_clean = torch.nan_to_num(U[:out_copy, :r], nan=0.0)
             V_clean = torch.nan_to_num(V[:r, :in_copy], nan=0.0)
-            self.U.data[:out_copy, :r].copy_(
-                U_clean.to(device=self.U.device, dtype=self.U.dtype)
-            )
-            self.V.data[:r, :in_copy].copy_(
-                V_clean.to(device=self.V.device, dtype=self.V.dtype)
-            )
+            self.U.data[:out_copy, :r].copy_(U_clean.to(device=self.U.device, dtype=self.U.dtype))
+            self.V.data[:r, :in_copy].copy_(V_clean.to(device=self.V.device, dtype=self.V.dtype))
             if S is not None:
                 S_clean = torch.nan_to_num(S[:r], nan=1.0)
                 self.S.data[:r].copy_(S_clean.to(device=self.S.device, dtype=self.S.dtype))
@@ -181,9 +172,7 @@ class ASVDLinear(nn.Module):
             if bias is not None and self.bias is not None:
                 min_b = min(self.out_features, bias.numel())
                 bias_clean = torch.nan_to_num(bias[:min_b], nan=0.0)
-                self.bias.data[:min_b].copy_(
-                    bias_clean.to(device=self.bias.device, dtype=self.bias.dtype)
-                )
+                self.bias.data[:min_b].copy_(bias_clean.to(device=self.bias.device, dtype=self.bias.dtype))
             elif self.bias is not None:
                 self.bias.data.zero_()
 
@@ -274,25 +263,15 @@ class ASVDAttention(BaseAttention):
         kw_rank = kwargs.pop("rank", None)
         raw_rank = pos_rank if pos_rank is not None else kw_rank
         resolved_rank = int(
-            raw_rank
-            if raw_rank is not None
-            else getattr(config, "asvd_rank", getattr(config, "rank", 32))
+            raw_rank if raw_rank is not None else getattr(config, "asvd_rank", getattr(config, "rank", 32))
         )
         self.lora_rank = int(getattr(config, "lora_rank", kwargs.pop("lora_rank", 32)))
-        self.freeze_base = bool(
-            getattr(config, "freeze_base", kwargs.pop("freeze_base", self.lora_rank > 0))
-        )
-        self.energy_threshold = float(
-            getattr(config, "asvd_energy_threshold", kwargs.pop("energy_threshold", 0.95))
-        )
-        self.error_threshold = getattr(
-            config, "asvd_error_threshold", kwargs.pop("error_threshold", 0.40)
-        )
+        self.freeze_base = bool(getattr(config, "freeze_base", kwargs.pop("freeze_base", self.lora_rank > 0)))
+        self.energy_threshold = float(getattr(config, "asvd_energy_threshold", kwargs.pop("energy_threshold", 0.95)))
+        self.error_threshold = getattr(config, "asvd_error_threshold", kwargs.pop("error_threshold", 0.40))
         if self.error_threshold is not None:
             self.error_threshold = float(self.error_threshold)
-        self.dynamic_rank = bool(
-            getattr(config, "asvd_dynamic_rank", kwargs.pop("dynamic_rank", True))
-        )
+        self.dynamic_rank = bool(getattr(config, "asvd_dynamic_rank", kwargs.pop("dynamic_rank", True)))
 
         super().__init__(config=config, rank=resolved_rank, **kwargs)
         self.config = config
@@ -372,10 +351,7 @@ class ASVDAttention(BaseAttention):
         if (
             any(model_type.startswith(p) for p in decoder_prefixes)
             or hasattr(config, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
         ):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
@@ -479,13 +455,8 @@ class ASVDAttention(BaseAttention):
         with torch.no_grad():
             W = src_weight.detach().float()
             if W.ndim != 2:
-                raise ValueError(
-                    f"Expected 2D weight matrix for projection {proj_name}, got shape {W.shape}"
-                )
-            if (
-                W.shape[0] != target_linear.out_features
-                and W.shape[1] == target_linear.out_features
-            ):
+                raise ValueError(f"Expected 2D weight matrix for projection {proj_name}, got shape {W.shape}")
+            if W.shape[0] != target_linear.out_features and W.shape[1] == target_linear.out_features:
                 W = W.t().contiguous()
 
             dev = W.device
@@ -530,9 +501,7 @@ class ASVDAttention(BaseAttention):
 
             if self.error_threshold is not None and rel_err > self.error_threshold:
                 if self.dynamic_rank and r < min(U.size(1), Vt.size(0), max_param_r):
-                    indices_strict = (
-                        cum_energy >= (1.0 - (self.error_threshold**2) + 1e-5)
-                    ).nonzero()
+                    indices_strict = (cum_energy >= (1.0 - (self.error_threshold**2) + 1e-5)).nonzero()
                     if len(indices_strict) > 0:
                         r = min(indices_strict[0].item() + 1, max_param_r)
                         w_rec = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
@@ -635,11 +604,7 @@ class ASVDAttention(BaseAttention):
         s = getattr(src, "self", src)
         name_map = {"q": "query", "k": "key", "v": "value"}
         for proj, attr in name_map.items():
-            if (
-                extracted_weights[proj][0] is None
-                and hasattr(s, attr)
-                and hasattr(getattr(s, attr), "weight")
-            ):
+            if extracted_weights[proj][0] is None and hasattr(s, attr) and hasattr(getattr(s, attr), "weight"):
                 mod = getattr(s, attr)
                 b = getattr(mod, "bias", None)
                 extracted_weights[proj] = (
@@ -702,9 +667,7 @@ class ASVDAttention(BaseAttention):
         if extracted_weights["o"][0] is not None:
             norm_o = float(torch.norm(extracted_weights["o"][0].float()).item())
             if norm_o < 1e-4:
-                logger.warning(
-                    f"ASVDAttention extracted weight for 'o' has near-zero Frobenius norm ({norm_o:.2e})"
-                )
+                logger.warning(f"ASVDAttention extracted weight for 'o' has near-zero Frobenius norm ({norm_o:.2e})")
 
         for proj, target in [
             ("q", self.query),
@@ -781,11 +744,7 @@ class ASVDAttention(BaseAttention):
             q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
         elif getattr(self, "rotary_emb", None) is not None:
             try:
-                rotary_out = (
-                    self.rotary_emb(q, position_ids)
-                    if position_ids is not None
-                    else self.rotary_emb(q)
-                )
+                rotary_out = self.rotary_emb(q, position_ids) if position_ids is not None else self.rotary_emb(q)
                 if isinstance(rotary_out, (tuple, list)) and len(rotary_out) >= 2:
                     cos, sin = rotary_out[0], rotary_out[1]
                     q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
@@ -797,9 +756,7 @@ class ASVDAttention(BaseAttention):
             v = repeat_kv(v, H // kv_H)
 
         scale: float = 1.0 / math.sqrt(d)
-        scores: torch.Tensor = (
-            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores: torch.Tensor = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if getattr(self, "is_decoder", False):
             causal_mask = torch.triu(
@@ -889,11 +846,7 @@ def inject_asvd(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -935,9 +888,7 @@ def inject_asvd(
     ):
         from neuralops.core.attention_utils import inject_attention
 
-        return inject_attention(
-            target_model, "asvd", rank=rank, copy_weights=copy_weights, **kwargs
-        )
+        return inject_attention(target_model, "asvd", rank=rank, copy_weights=copy_weights, **kwargs)
 
     if old_attn is None and layer is not None:
         for attr in ("attention", "self_attn", "self", "attn"):

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Literal, Optional
+
 import torch
 
 
@@ -65,6 +66,4 @@ class RuntimeConfig:
         }
         if self.dtype in mapping:
             return mapping[self.dtype]
-        raise ValueError(
-            f"Unsupported dtype '{self.dtype}'. Supported values: {list(mapping.keys())}"
-        )
+        raise ValueError(f"Unsupported dtype '{self.dtype}'. Supported values: {list(mapping.keys())}")

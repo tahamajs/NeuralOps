@@ -12,6 +12,7 @@ FP8 Compressor CUDA Kernel Operator.
 from __future__ import annotations
 
 import torch
+
 from neuralops.ops.cuda.fp8_compressor.autograd import FP8Function
 
 

@@ -27,6 +27,7 @@ RETRAIN_TRIGGER_REGISTRY = Registry("retrain_triggers")
 
 class TriggerType(Enum):
     """Triggertype definition."""
+
     DRIFT = "drift"
     PERFORMANCE = "performance"
     SCHEDULE = "schedule"
@@ -125,11 +126,7 @@ class RetrainingOrchestrator:
                 urgency="high",
             )
 
-        if (
-            TriggerType.PERFORMANCE in self.policy.trigger_types
-            and current_metrics
-            and reference_metrics
-        ):
+        if TriggerType.PERFORMANCE in self.policy.trigger_types and current_metrics and reference_metrics:
             decision = self._check_performance(current_metrics, reference_metrics)
             if decision.should_retrain:
                 return decision
@@ -151,9 +148,7 @@ class RetrainingOrchestrator:
 
         return RetrainDecision(should_retrain=False, reason="No triggers met")
 
-    def _check_performance(
-        self, current: dict[str, float], reference: dict[str, float]
-    ) -> RetrainDecision:
+    def _check_performance(self, current: dict[str, float], reference: dict[str, float]) -> RetrainDecision:
         """check performance."""
         acc_key = "accuracy" if "accuracy" in current else "eval_accuracy"
         curr_acc = current.get(acc_key, 1.0)

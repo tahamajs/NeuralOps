@@ -20,6 +20,7 @@ import operator
 import time
 from collections import deque
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Set, Tuple, Type, Union
+
 import torch
 import torch.fx
 import torch.nn as nn
@@ -56,6 +57,15 @@ LEAF_MODULE_NAMES: Tuple[str, ...] = (
     "Conv1d",
 )
 
+_SDPA_TARGETS: Tuple[Any, ...] = tuple(
+    t
+    for t in (
+        getattr(getattr(torch.ops, "aten", None), "scaled_dot_product_attention", None),
+        getattr(F, "scaled_dot_product_attention", None),
+    )
+    if t is not None
+)
+
 
 def _sanitize_graph_inputs(
     model: Union[nn.Module, Callable[..., Any], Any],
@@ -78,9 +88,7 @@ def _sanitize_graph_inputs(
     if callable(target_fn):
         try:
             sig = inspect.signature(target_fn)
-            has_var_keyword = any(
-                p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
-            )
+            has_var_keyword = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
             for param_name in sig.parameters.keys():
                 if param_name in canonical_defaults:
                     sanitized[param_name] = canonical_defaults[param_name]
@@ -410,8 +418,7 @@ def _find_root_proj(node: Any) -> Any:
         ):
             return curr
         if curr.op in ("call_method", "call_function") and any(
-            op_name in str(curr.target).lower()
-            for op_name in ("view", "reshape", "transpose", "permute", "contiguous")
+            op_name in str(curr.target).lower() for op_name in ("view", "reshape", "transpose", "permute", "contiguous")
         ):
             if len(curr.args) >= 1 and isinstance(curr.args[0], torch.fx.Node):
                 curr = curr.args[0]
@@ -522,10 +529,7 @@ def _match_decomposed_qk_matmul(
     if k_trans_candidate.op in ("call_method", "call_function"):
         kt_target = k_trans_candidate.target
         kt_name = getattr(kt_target, "__name__", str(kt_target))
-        if (
-            kt_target in ("transpose", "permute", torch.transpose, torch.permute)
-            or kt_name in ("transpose", "permute")
-        ):
+        if kt_target in ("transpose", "permute", torch.transpose, torch.permute) or kt_name in ("transpose", "permute"):
             if len(k_trans_candidate.args) >= 1 and isinstance(k_trans_candidate.args[0], torch.fx.Node):
                 k_candidate = k_trans_candidate.args[0]
 
@@ -574,7 +578,7 @@ def _find_attention_candidates(graph: torch.fx.Graph) -> List[AttentionSubgraph]
                     # Check if anchor is SDPA or fast_linear_attention_replacement
                     is_sdpa = curr_cand.op == "call_function" and (
                         curr_cand.target is fast_linear_attention_replacement
-                        or curr_cand.target in (torch.ops.aten.scaled_dot_product_attention, F.scaled_dot_product_attention)
+                        or (_SDPA_TARGETS and curr_cand.target in _SDPA_TARGETS)
                         or "scaled_dot_product_attention" in str(curr_cand.target)
                         or getattr(curr_cand.target, "__name__", "") == "scaled_dot_product_attention"
                     )
@@ -654,7 +658,7 @@ def _find_attention_candidates(graph: torch.fx.Graph) -> List[AttentionSubgraph]
 
         is_sdpa = node.op == "call_function" and (
             node.target is fast_linear_attention_replacement
-            or node.target in (torch.ops.aten.scaled_dot_product_attention, F.scaled_dot_product_attention)
+            or (_SDPA_TARGETS and node.target in _SDPA_TARGETS)
             or "scaled_dot_product_attention" in str(node.target)
             or getattr(node.target, "__name__", "") == "scaled_dot_product_attention"
         )
@@ -910,10 +914,14 @@ def _isolate_softmax_pattern(node: torch.fx.Node) -> SoftmaxProfile:
         else:
             break
 
-    if qk_node is None and isinstance(curr, torch.fx.Node) and (
-        curr.target in (torch.matmul, operator.matmul, torch.bmm)
-        or getattr(curr.target, "__name__", "") in ("matmul", "bmm")
-        or (curr.op == "call_method" and curr.target in ("matmul", "bmm"))
+    if (
+        qk_node is None
+        and isinstance(curr, torch.fx.Node)
+        and (
+            curr.target in (torch.matmul, operator.matmul, torch.bmm)
+            or getattr(curr.target, "__name__", "") in ("matmul", "bmm")
+            or (curr.op == "call_method" and curr.target in ("matmul", "bmm"))
+        )
     ):
         qk_node = curr
 
@@ -1083,8 +1091,7 @@ def _match_sdpa_atomic_node(node: torch.fx.Node) -> Optional[SDPAContext]:
     target_str = str(target)
     target_name = getattr(target, "__name__", "")
     is_sdpa = (
-        target == F.scaled_dot_product_attention
-        or target == torch.ops.aten.scaled_dot_product_attention
+        (_SDPA_TARGETS and target in _SDPA_TARGETS)
         or "scaled_dot_product_attention" in target_str
         or target_name == "scaled_dot_product_attention"
     )
@@ -1671,9 +1678,7 @@ class FXAttentionGraphRewriter:
         enforce_fp32: bool = False,
     ) -> torch.fx.Node:
         """Constructs bidirectional linear attention subgraph directly into an FX Graph."""
-        return _build_bidirectional_linear_subgraph(
-            graph, phi_q, phi_k, v, eps=eps, enforce_fp32=enforce_fp32
-        )
+        return _build_bidirectional_linear_subgraph(graph, phi_q, phi_k, v, eps=eps, enforce_fp32=enforce_fp32)
 
     def _rewire_output_projection(
         self,
@@ -1860,11 +1865,7 @@ def compile_linear_surgery(
         else:
             resolved_backend = backend
 
-        fusion_opts = (
-            configure_inductor_fusion(options)
-            if backend in ("inductor", "linear_surgery")
-            else options
-        )
+        fusion_opts = configure_inductor_fusion(options) if backend in ("inductor", "linear_surgery") else options
         try:
             return torch.compile(
                 rewritten_gm,
@@ -1897,9 +1898,7 @@ def verify_zero_graph_breaks(model: nn.Module, sample_input: torch.Tensor) -> in
     break_count = getattr(explanation, "graph_break_count", 0)
     if break_count != 0:
         breaks = getattr(explanation, "graph_breaks", [])
-        raise RuntimeError(
-            f"TorchDynamo certification failed: {break_count} graph breaks detected: {breaks}"
-        )
+        raise RuntimeError(f"TorchDynamo certification failed: {break_count} graph breaks detected: {breaks}")
     return 0
 
 
@@ -1956,12 +1955,11 @@ def assert_pointwise_fusion(gm: torch.fx.GraphModule) -> bool:
         if node.op == "call_function" and node.target is fast_linear_attention_replacement:
             for arg in node.args:
                 if isinstance(arg, torch.fx.Node):
-                    if arg.target in (torch.clone, torch.detach) or getattr(
-                        arg.target, "__name__", ""
-                    ) in ("clone", "detach"):
-                        raise AssertionError(
-                            f"Pointwise fusion violation: node {arg} causes DRAM spill before {node}."
-                        )
+                    if arg.target in (torch.clone, torch.detach) or getattr(arg.target, "__name__", "") in (
+                        "clone",
+                        "detach",
+                    ):
+                        raise AssertionError(f"Pointwise fusion violation: node {arg} causes DRAM spill before {node}.")
     return True
 
 
@@ -2083,9 +2081,7 @@ class LinearAttentionBackwardGraphModule(nn.Module):
         k: torch.Tensor,
         v: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        return analytical_linear_attention_backward(
-            grad_out, q, k, v, is_causal=self.is_causal, scale=self.scale
-        )
+        return analytical_linear_attention_backward(grad_out, q, k, v, is_causal=self.is_causal, scale=self.scale)
 
 
 def _build_aot_autograd_backward_subgraph(

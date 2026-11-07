@@ -259,7 +259,7 @@ class RadixRecurrentTree:
         """
         tokens_list = list(token_ids)
         matched_tokens, state = self.match_prefix(tokens_list)
-        remaining_tokens = tokens_list[len(matched_tokens):]
+        remaining_tokens = tokens_list[len(matched_tokens) :]
 
         if layer_idx is not None and state is not None:
             if isinstance(state, (list, tuple)) and layer_idx < len(state):

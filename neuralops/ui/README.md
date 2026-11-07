@@ -1,8 +1,8 @@
 # NeuralOps Web UI Specification & Architecture Guide
 
-**Version:** 2.0.6  
-**Package:** `neuralops.ui`  
-**Author:** Taha Majlesi  
+**Version:** 2.0.6
+**Package:** `neuralops.ui`
+**Author:** Taha Majlesi
 
 ---
 

@@ -335,7 +335,7 @@ Drop this block directly into conference paper drafts (`.tex`):
 
 \begin{theorem}[Optimality of Cholesky-Whitened Truncation]
 \label{thm:cholesky_whitened_svd}
-Let $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ denote a transformer projection weight matrix, and let $\mathbf{X} \in \mathbb{R}^{d_{\text{in}} \times N}$ be a calibration activation matrix with regularized empirical covariance $\mathbf{\Sigma}_X = \frac{1}{N}\mathbf{X}\mathbf{X}^\top + \lambda \mathbf{I}_{d_{\text{in}}} \succ 0$. Let $\mathbf{\Sigma}_X = \mathbf{L}\mathbf{L}^\top$ be the unique lower-triangular Cholesky factorization of $\mathbf{\Sigma}_X$, and define the whitened weight matrix $\widetilde{\mathbf{W}} \triangleq \mathbf{W}\mathbf{L}$. Let $\widetilde{\mathbf{W}} = \widetilde{\mathbf{U}}\mathbf{\Sigma}\widetilde{\mathbf{V}}^\top$ be the singular value decomposition of $\widetilde{\mathbf{W}}$, with rank-$r$ truncation $\widetilde{\mathbf{W}}_r = \widetilde{\mathbf{U}}_r \mathbf{\Sigma}_r \widetilde{\mathbf{V}}_r^\top$. 
+Let $\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ denote a transformer projection weight matrix, and let $\mathbf{X} \in \mathbb{R}^{d_{\text{in}} \times N}$ be a calibration activation matrix with regularized empirical covariance $\mathbf{\Sigma}_X = \frac{1}{N}\mathbf{X}\mathbf{X}^\top + \lambda \mathbf{I}_{d_{\text{in}}} \succ 0$. Let $\mathbf{\Sigma}_X = \mathbf{L}\mathbf{L}^\top$ be the unique lower-triangular Cholesky factorization of $\mathbf{\Sigma}_X$, and define the whitened weight matrix $\widetilde{\mathbf{W}} \triangleq \mathbf{W}\mathbf{L}$. Let $\widetilde{\mathbf{W}} = \widetilde{\mathbf{U}}\mathbf{\Sigma}\widetilde{\mathbf{V}}^\top$ be the singular value decomposition of $\widetilde{\mathbf{W}}$, with rank-$r$ truncation $\widetilde{\mathbf{W}}_r = \widetilde{\mathbf{U}}_r \mathbf{\Sigma}_r \widetilde{\mathbf{V}}_r^\top$.
 
 Then, the unique global minimizer of the activation-weighted reconstruction problem:
 \begin{equation}
@@ -453,28 +453,28 @@ def generate_singular_spectrum_plot(
     2. Cumulative Spectral Energy Preservation E(r) with Tau=0.95 gate
     """
     d_out, d_in = W_raw.shape
-    
+
     # 1. Naive SVD on raw weights
     _, S_naive, _ = np.linalg.svd(W_raw, full_matrices=False)
-    
+
     # 2. Regularized Cholesky Whitening
     reg = 1e-4 * np.trace(Sigma_X) / d_in
     Sigma_reg = 0.5 * (Sigma_X + Sigma_X.T) + reg * np.eye(d_in)
     L = np.linalg.cholesky(Sigma_reg)
     W_whitened = W_raw @ L
     _, S_white, _ = np.linalg.svd(W_whitened, full_matrices=False)
-    
+
     # Normalize spectra for fair comparison
     S_naive_norm = S_naive / S_naive[0]
     S_white_norm = S_white / S_white[0]
-    
+
     # Cumulative Energy
     energy_naive = np.cumsum(S_naive ** 2) / np.sum(S_naive ** 2)
     energy_white = np.cumsum(S_white ** 2) / np.sum(S_white ** 2)
     ranks = np.arange(1, len(S_naive) + 1)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.5), dpi=300)
-    
+
     # Panel A: Log Singular Value Decay
     ax1.plot(ranks, S_naive_norm, label="Naive Unweighted SVD", color="#d62728", lw=2, ls="--")
     ax1.plot(ranks, S_white_norm, label="Cholesky-Whitened SVD (Ours)", color="#1f77b4", lw=2)
@@ -484,12 +484,12 @@ def generate_singular_spectrum_plot(
     ax1.set_title("(a) Spectral Decay Rate")
     ax1.set_xlim(1, min(512, len(ranks)))
     ax1.legend(loc="upper right", frameon=True)
-    
+
     # Panel B: Cumulative Energy
     ax2.plot(ranks, energy_white, label="Whitened Subspace", color="#1f77b4", lw=2)
     ax2.plot(ranks, energy_naive, label="Unweighted Subspace", color="#d62728", lw=2, ls="--")
     ax2.axhline(0.95, color="#2ca02c", linestyle=":", lw=1.8, label="Energy Gate ($\\tau = 0.95$)")
-    
+
     # Find cutoff rank for 95% energy
     r_95_white = np.argmax(energy_white >= 0.95) + 1
     ax2.axvline(r_95_white, color="#1f77b4", linestyle="-.", alpha=0.7, lw=1.2)
@@ -501,7 +501,7 @@ def generate_singular_spectrum_plot(
         fontweight="bold",
         color="#1f77b4"
     )
-    
+
     ax2.set_xlabel("Truncation Rank ($r$)")
     ax2.set_ylabel("Cumulative Spectral Energy $\\mathcal{E}(r)$")
     ax2.set_title("(b) Retained Representation Energy")
@@ -521,7 +521,7 @@ if __name__ == "__main__":
     eigenvalues = np.logspace(4, -1, d)  # kappa = 10^5
     Sigma_sim = Q @ np.diag(eigenvalues) @ Q.T
     W_sim = np.random.randn(d, d) / np.sqrt(d)
-    
+
     generate_singular_spectrum_plot(W_sim, Sigma_sim, "spectral_decay_sample.png")
 ```
 

@@ -18,10 +18,10 @@ import numpy as np
 import psutil
 import torch
 import torch.nn as nn
-from neuralops.trainer.metrics import accuracy_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from neuralops.trainer.metrics import accuracy_score
 from neuralops.utils.helpers import count_parameters  # noqa: F401
 
 __all__ = ["train_model", "benchmark_model", "count_parameters"]
@@ -70,9 +70,7 @@ def train_model(
                 optimizer.step()
                 epoch_loss += loss.item()
             pbar.set_postfix({"loss": f"{loss.item():.4f}"})
-    val_accuracy = evaluate_model(
-        model, val_loader, device, num_labels, is_multichoice=is_multichoice
-    )
+    val_accuracy = evaluate_model(model, val_loader, device, num_labels, is_multichoice=is_multichoice)
     return {"final_accuracy": val_accuracy, "avg_loss": epoch_loss / steps_per_epoch if steps_per_epoch > 0 else 0.0}
 
 

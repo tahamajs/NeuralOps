@@ -21,10 +21,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
-from neuralops.core._attention_surgery import (
-    calibrate_attention_subspace,
-    calibrate_surgically_replaced_model,
-)
+from neuralops.core._attention_surgery import calibrate_attention_subspace, calibrate_surgically_replaced_model
 from neuralops.surgery.universal_calibrator import (
     UniversalActivationCalibrator,
     compress_model_universal,
@@ -119,16 +116,10 @@ class GradientCalibrator:
                 # even if caller invoked calibrate() within a torch.no_grad() block.
                 with torch.enable_grad():
                     if isinstance(raw_batch, dict):
-                        batch = {
-                            k: v.to(device) if isinstance(v, torch.Tensor) else v
-                            for k, v in raw_batch.items()
-                        }
+                        batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in raw_batch.items()}
                         out = self.model(**batch)
                     elif isinstance(raw_batch, (tuple, list)):
-                        batch = [
-                            v.to(device) if isinstance(v, torch.Tensor) else v
-                            for v in raw_batch
-                        ]
+                        batch = [v.to(device) if isinstance(v, torch.Tensor) else v for v in raw_batch]
                         out = self.model(*batch)
                     elif isinstance(raw_batch, torch.Tensor):
                         batch = raw_batch.to(device)
@@ -338,17 +329,11 @@ def align_output_projections(
     with torch.no_grad():
         for batch in batches:
             if isinstance(batch, dict):
-                b_in = {
-                    k: v.to(device) if isinstance(v, torch.Tensor) else v
-                    for k, v in batch.items()
-                }
+                b_in = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
                 t_out = teacher(**b_in)
                 s_out = student(**b_in)
             elif isinstance(batch, (tuple, list)):
-                b_in = [
-                    v.to(device) if isinstance(v, torch.Tensor) else v
-                    for v in batch
-                ]
+                b_in = [v.to(device) if isinstance(v, torch.Tensor) else v for v in batch]
                 t_out = teacher(*b_in)
                 s_out = student(*b_in)
             elif isinstance(batch, torch.Tensor):
@@ -401,7 +386,9 @@ def align_output_projections(
             target_proj.weight.data.copy_(w_ridge.t())
             if target_proj.bias is not None and b_ridge is not None:
                 target_proj.bias.data.copy_(b_ridge)
-        logger.info("Successfully updated output projection layer %s via Ridge calibration.", type(target_proj).__name__)
+        logger.info(
+            "Successfully updated output projection layer %s via Ridge calibration.", type(target_proj).__name__
+        )
     else:
         logger.warning(
             "Could not match target projection layer for alignment (shape x: %s, target_proj: %s)",

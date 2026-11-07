@@ -164,10 +164,10 @@ def _zeros_fused_linear_kernel(
         k_tile = tl.load(K_ptr + n * d + offsets_d)
         k_sum += tl.sum(k_tile, axis=0)
     k_mean = k_sum / N
-    
+
     # Pass 2: Stream K, center on-the-fly: k_centered = relu(k - k_mean) + eps
     # Accumulate outer product KV = k_centered.T @ v inside SRAM registers
-    
+
     # Pass 3: Stream Q, apply relu(q) + eps, and compute Out = (q @ KV) / Denom
 ```
 
@@ -193,4 +193,3 @@ The empirical evaluation of `zeros_attention` across standard sequence lengths a
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

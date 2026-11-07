@@ -118,19 +118,19 @@ def _griffin_ssd_chunk_kernel(
     BLOCK_L: tl.constexpr
 ):
     pid_b = tl.program_id(0)
-    
+
     # Persistent matrix state memory in SRAM [D, D]
     h_state = tl.zeros((D, D), dtype=tl.float32)
-    
+
     for t in range(L):
         q = tl.load(Q_ptr + pid_b * stride_qb + t * stride_ql + tl.arange(0, D))
         k = tl.load(K_ptr + pid_b * stride_qb + t * stride_ql + tl.arange(0, D))
         v = tl.load(V_ptr + pid_b * stride_qb + t * stride_ql + tl.arange(0, D))
-        
+
         # Outer product accumulation
         h_state += k[:, None] * v[None, :]
         y_t = tl.sum(q[:, None] * h_state, axis=0)
-        
+
         tl.store(Out_ptr + pid_b * stride_qb + t * stride_ql + tl.arange(0, D), y_t)
 ```
 
@@ -168,4 +168,3 @@ The empirical evaluation of `griffin_ssd` across standard sequence lengths and l
 | **$L = 2048$** | 0.45 ms | 180 MB | $2.50\times$ |
 | **$L = 4096$** | 0.85 ms | 288 MB | $4.20\times$ |
 | **$L = 8192$** | **1.65 ms** | **320 MB** | **7.75x** |
-

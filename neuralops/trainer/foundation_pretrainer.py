@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -41,8 +42,10 @@ class InfiniteContextFoundationPretrainer:
         device: Optional[Union[str, torch.device]] = None,
         clip_grad_norm: float = 1.0,
     ) -> None:
-        self.device = torch.device(device) if device is not None else (
-            torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = (
+            torch.device(device)
+            if device is not None
+            else (torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         )
         self.model = model.to(self.device)
         self.optimizer = optimizer

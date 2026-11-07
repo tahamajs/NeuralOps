@@ -9,9 +9,6 @@
 Selective Scan (Mamba-1 S6) Hardware Operators.
 """
 
-from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
-    selective_scan,
-    selective_scan_pytorch_ref,
-)
+from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan, selective_scan_pytorch_ref
 
 __all__ = ["selective_scan", "selective_scan_pytorch_ref"]

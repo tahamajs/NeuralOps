@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 _INTERPRET_MODE = os.environ.get("TRITON_INTERPRET") == "1"
 
 if HAS_TRITON and triton is not None and tl is not None:
+
     @triton.jit
     def _awq_quantize_kernel(
         W_ptr,
@@ -109,9 +110,7 @@ def _compute_awq_scales(
         W_grouped = W_scaled.reshape(out_features, num_groups, group_size)
         max_val = torch.amax(torch.abs(W_grouped), dim=-1, keepdim=True).clamp(min=1e-8)
         group_scales = max_val / q_max
-        weight_scale = group_scales.expand(out_features, num_groups, group_size).reshape(
-            out_features, in_features
-        )
+        weight_scale = group_scales.expand(out_features, num_groups, group_size).reshape(out_features, in_features)
     else:
         max_val = torch.amax(torch.abs(W_scaled), dim=-1, keepdim=True).clamp(min=1e-8)
         scale = max_val / q_max
@@ -131,9 +130,7 @@ def _awq_pytorch(
     """Pure PyTorch reference matching AWQQuantizer."""
     q_max = float(2 ** (bits - 1) - 1)
     q_min = float(-(2 ** (bits - 1)))
-    effective_scale = _compute_awq_scales(
-        W, group_size=group_size, bits=bits, act_scales=act_scales, alpha=alpha
-    )
+    effective_scale = _compute_awq_scales(W, group_size=group_size, bits=bits, act_scales=act_scales, alpha=alpha)
     W_fp32 = W.to(torch.float32)
     q = torch.clamp(torch.round(W_fp32 / effective_scale), q_min, q_max)
     deq = q * effective_scale
@@ -152,13 +149,9 @@ def awq_compress(
         is_suitable, reason = check_triton_suitability(W, "awq", allow_fp32=True)
         if not is_suitable:
             logger.warning("awq Triton fallback: %s. Using PyTorch reference.", reason)
-            return _awq_pytorch(
-                W, group_size=group_size, bits=bits, act_scales=act_scales, alpha=alpha
-            )
+            return _awq_pytorch(W, group_size=group_size, bits=bits, act_scales=act_scales, alpha=alpha)
 
-    effective_scale = _compute_awq_scales(
-        W, group_size=group_size, bits=bits, act_scales=act_scales, alpha=alpha
-    )
+    effective_scale = _compute_awq_scales(W, group_size=group_size, bits=bits, act_scales=act_scales, alpha=alpha)
 
     q_max = float(2 ** (bits - 1) - 1)
     q_min = float(-(2 ** (bits - 1)))

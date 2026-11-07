@@ -4,7 +4,7 @@
 The scaling of foundation models poses significant memory and computational bottlenecks, particularly during fine-tuning on downstream tasks. **Kronecker-TT-LoRA** introduces a hybrid parameter-efficient fine-tuning (PEFT) mechanism that decomposes weight updates into a Kronecker product and a Tensor-Train (TT) core structure. By integrating dynamic rank adaptation based on singular value entropy, the architecture optimally redistributes parameter capacity across network layers. This synthesis substantially reduces parameter footprint and enables memory-efficient training of large-scale models.
 
 ## 2. Introduction & Motivation
-Standard low-rank adaptation (LoRA) mechanisms parameterize the weight update $\Delta W$ via two low-rank matrices, $A$ and $B$. While effective, standard LoRA limits the expressivity of the intrinsic subspace to a fixed global rank, often overallocating parameters to simpler layers while under-parameterizing complex representations. Furthermore, pure low-rank approximations struggle to capture multi-dimensional structural dependencies within dense weight matrices. 
+Standard low-rank adaptation (LoRA) mechanisms parameterize the weight update $\Delta W$ via two low-rank matrices, $A$ and $B$. While effective, standard LoRA limits the expressivity of the intrinsic subspace to a fixed global rank, often overallocating parameters to simpler layers while under-parameterizing complex representations. Furthermore, pure low-rank approximations struggle to capture multi-dimensional structural dependencies within dense weight matrices.
 
 Kronecker-TT-LoRA solves this by combining the rich structural factorization of Kronecker products with the high-order flexibility of Tensor-Train decomposition, allowing for dynamic parameter adjustment driven by the inherent complexity of the learning task.
 
@@ -36,7 +36,7 @@ To ensure optimal parameter allocation, Kronecker-TT-LoRA monitors the normalize
 $$
 \mathcal{H}_{sv} = -\sum_{i=1}^{r} \hat{\sigma}_i \log \hat{\sigma}_i, \quad \hat{\sigma}_i = \frac{\sigma_i(\Delta W)}{\sum_j \sigma_j(\Delta W)}
 $$
-A high entropy signifies a uniform singular value distribution, indicating that the layer's intrinsic complexity exceeds current capacity. Conversely, low entropy implies redundancy. 
+A high entropy signifies a uniform singular value distribution, indicating that the layer's intrinsic complexity exceeds current capacity. Conversely, low entropy implies redundancy.
 
 The target TT-ranks $r_{tt}^{(l)}$ for layer $l$ update dynamically over training step $t$:
 $$
@@ -49,7 +49,7 @@ Specifically, regarding \textbf{Parameter Overhead}, kronecker-TT-LoRA dramatica
 
 
 ## 7. Implementation Details & Integration Guide
-The `Kronecker-TT-LoRA` layer is implemented as a direct drop-in replacement for `nn.Linear` adapters in PyTorch. 
+The `Kronecker-TT-LoRA` layer is implemented as a direct drop-in replacement for `nn.Linear` adapters in PyTorch.
 
 ### Usage Example
 ```python
@@ -97,4 +97,3 @@ The empirical evaluation of `kronecker_tt_lora` across standard sequence lengths
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

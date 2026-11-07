@@ -19,11 +19,7 @@ from typing import Any
 import torch
 from torch.utils.data import DataLoader
 
-from neuralops.evaluation.eval_types import (
-    GLUE_DATASETS,
-    LM_DATASETS,
-    MODEL_TOKENIZER_MAPPING,
-)
+from neuralops.evaluation.eval_types import GLUE_DATASETS, LM_DATASETS, MODEL_TOKENIZER_MAPPING
 from neuralops.evaluation.eval_utils import _evict_if_needed
 
 logger = logging.getLogger("EvalEngine")
@@ -154,18 +150,12 @@ def get_dataset_batch(
                 def tok_fn(ex: dict[str, Any]) -> Any:
                     """Execute tok_fn operation."""
                     args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
-                    return tokenizer(
-                        *args, padding="max_length", truncation=True, max_length=seq_len
-                    )
+                    return tokenizer(*args, padding="max_length", truncation=True, max_length=seq_len)
 
                 val_tokenized = val_data.map(tok_fn, batched=True)
                 val_tokenized.set_format(
                     type="torch",
-                    columns=[
-                        c
-                        for c in ("input_ids", "attention_mask", "label")
-                        if c in val_tokenized.column_names
-                    ],
+                    columns=[c for c in ("input_ids", "attention_mask", "label") if c in val_tokenized.column_names],
                 )
                 _PREPARED_DATASET_CACHE[dataset_cache_key] = val_tokenized
                 _evict_if_needed(_PREPARED_DATASET_CACHE)
@@ -188,9 +178,7 @@ def get_dataset_batch(
 
                 valid_texts = [t for t in raw_val["text"] if len(t.strip()) > 10][:200]
                 if not valid_texts:
-                    valid_texts = [
-                        "WikiText language model benchmark sample evaluation string."
-                    ] * 50
+                    valid_texts = ["WikiText language model benchmark sample evaluation string."] * 50
 
                 enc = tokenizer(
                     valid_texts,
@@ -221,17 +209,9 @@ def get_dataset_batch(
                     vals = sample[k]
                     if isinstance(vals, torch.Tensor):
                         raw_batch[k] = vals
-                    elif (
-                        isinstance(vals, (list, tuple))
-                        and len(vals) > 0
-                        and isinstance(vals[0], torch.Tensor)
-                    ):
+                    elif isinstance(vals, (list, tuple)) and len(vals) > 0 and isinstance(vals[0], torch.Tensor):
                         raw_batch[k] = torch.stack(vals)
-                    elif (
-                        isinstance(vals, (list, tuple))
-                        and len(vals) > 0
-                        and isinstance(vals[0], (int, float, bool))
-                    ):
+                    elif isinstance(vals, (list, tuple)) and len(vals) > 0 and isinstance(vals[0], (int, float, bool)):
                         raw_batch[k] = torch.tensor(vals)
                     elif isinstance(vals, (int, float, bool)):
                         raw_batch[k] = torch.tensor([vals])
@@ -308,9 +288,7 @@ def build_calibration_loader(
             texts = raw[col][:n_samples]
             source = f"glue/{ds}_train"
         elif ds in LM_DATASETS:
-            raw = load_dataset(
-                "Salesforce/wikitext", "wikitext-2-raw-v1", split=f"train[:{n_samples}]"
-            )
+            raw = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split=f"train[:{n_samples}]")
             texts = [t for t in raw["text"] if len(t.strip()) > 20][:n_samples]
             source = "wikitext2_train"
         else:

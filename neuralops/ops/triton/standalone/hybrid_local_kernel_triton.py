@@ -14,8 +14,10 @@ High-throughput Triton JIT kernels for sliding-window local attention and two-br
 from __future__ import annotations
 
 import math
+
 import torch
-from neuralops.ops.triton._common import HAS_TRITON, triton, tl
+
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
 __all__ = [
     "hybrid_local_attn_triton",
@@ -25,15 +27,35 @@ __all__ = [
 ]
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _hybrid_local_attn_fwd_kernel(
-        Q, K, V, Out,
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_on, stride_od,
-        H, N, RADIUS: tl.constexpr,
-        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_D: tl.constexpr,
+        Q,
+        K,
+        V,
+        Out,
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
+        H,
+        N,
+        RADIUS: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_D: tl.constexpr,
         IS_CAUSAL: tl.constexpr,
     ):
         pid_m = tl.program_id(0)
@@ -91,13 +113,33 @@ if HAS_TRITON and tl is not None:
 
     @triton.jit
     def _hybrid_heterogeneous_fwd_kernel(
-        Q, K, V, Out,
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_on, stride_od,
-        H, N, NUM_DENSE_HEADS: tl.constexpr, RADIUS: tl.constexpr,
-        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_D: tl.constexpr,
+        Q,
+        K,
+        V,
+        Out,
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_on,
+        stride_od,
+        H,
+        N,
+        NUM_DENSE_HEADS: tl.constexpr,
+        RADIUS: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_D: tl.constexpr,
         IS_CAUSAL: tl.constexpr,
     ):
         """
@@ -130,7 +172,9 @@ if HAS_TRITON and tl is not None:
             num_k_blocks = tl.cdiv(end_col - start_col, BLOCK_N)
             for j in range(num_k_blocks):
                 offs_n = start_col + j * BLOCK_N + tl.arange(0, BLOCK_N)
-                k_ptrs = K + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
+                k_ptrs = (
+                    K + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
+                )
                 k = tl.load(k_ptrs, mask=offs_n[None, :] < N, other=0.0)
 
                 scores = tl.dot(q, k) * (1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32)))
@@ -148,13 +192,17 @@ if HAS_TRITON and tl is not None:
                 l_i = l_i * alpha + tl.sum(p, 1)
                 acc = acc * alpha[:, None]
 
-                v_ptrs = V + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+                v_ptrs = (
+                    V + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+                )
                 v = tl.load(v_ptrs, mask=offs_n[:, None] < N, other=0.0)
                 acc += tl.dot(p.to(v.dtype), v)
                 m_i = m_curr
 
             out = acc / tl.maximum(l_i[:, None], 1e-6)
-            out_ptrs = Out + i_b * stride_ob + i_h * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+            out_ptrs = (
+                Out + i_b * stride_ob + i_h * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+            )
             tl.store(out_ptrs, out, mask=offs_m[:, None] < N)
         else:
             acc_lin = tl.zeros([BLOCK_M, BLOCK_D], dtype=tl.float32)
@@ -165,7 +213,9 @@ if HAS_TRITON and tl is not None:
             num_k_blocks_lin = tl.cdiv(end_col_lin, BLOCK_N)
             for j in range(num_k_blocks_lin):
                 offs_n = j * BLOCK_N + tl.arange(0, BLOCK_N)
-                k_ptrs = K + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
+                k_ptrs = (
+                    K + i_b * stride_kb + i_h * stride_kh + offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd
+                )
                 k = tl.load(k_ptrs, mask=offs_n[None, :] < N, other=0.0)
 
                 scores_lin = tl.dot(q, k) * (1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32)))
@@ -176,17 +226,25 @@ if HAS_TRITON and tl is not None:
                     mask_valid = (offs_m[:, None] < N) & (offs_n[None, :] < N)
                     scores_lin = tl.where(mask_valid, scores_lin, 0.0)
 
-                v_ptrs = V + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+                v_ptrs = (
+                    V + i_b * stride_vb + i_h * stride_vh + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
+                )
                 v = tl.load(v_ptrs, mask=offs_n[:, None] < N, other=0.0)
                 acc_lin += tl.dot(scores_lin.to(v.dtype), v)
 
-            out_ptrs = Out + i_b * stride_ob + i_h * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+            out_ptrs = (
+                Out + i_b * stride_ob + i_h * stride_oh + offs_m[:, None] * stride_on + offs_d[None, :] * stride_od
+            )
             tl.store(out_ptrs, acc_lin, mask=offs_m[:, None] < N)
 
     @triton.jit
     def _hybrid_two_branch_blend_kernel(
-        B0, B1, Alpha, Out,
-        TOTAL, D: tl.constexpr,
+        B0,
+        B1,
+        Alpha,
+        Out,
+        TOTAL,
+        D: tl.constexpr,
         BLOCK_SIZE: tl.constexpr,
     ):
         pid = tl.program_id(0)
@@ -222,13 +280,32 @@ def hybrid_local_attn_triton(
     grid = (triton.cdiv(N, BLOCK_M), B * H)
 
     _hybrid_local_attn_fwd_kernel[grid](
-        q, k, v, out,
-        q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-        k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-        out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-        H, N, RADIUS=radius,
-        BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_D=BLOCK_D,
+        q,
+        k,
+        v,
+        out,
+        q.stride(0),
+        q.stride(1),
+        q.stride(2),
+        q.stride(3),
+        k.stride(0),
+        k.stride(1),
+        k.stride(2),
+        k.stride(3),
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        out.stride(0),
+        out.stride(1),
+        out.stride(2),
+        out.stride(3),
+        H,
+        N,
+        RADIUS=radius,
+        BLOCK_M=BLOCK_M,
+        BLOCK_N=BLOCK_N,
+        BLOCK_D=BLOCK_D,
         IS_CAUSAL=is_causal,
         num_warps=4,
         num_stages=2,
@@ -252,18 +329,29 @@ def hybrid_two_branch_blend_triton(
     grid = (triton.cdiv(total, BLOCK_SIZE),)
 
     _hybrid_two_branch_blend_kernel[grid](
-        b0.contiguous(), b1.contiguous(), alpha.contiguous(), out,
-        TOTAL=total, D=D, BLOCK_SIZE=BLOCK_SIZE,
+        b0.contiguous(),
+        b1.contiguous(),
+        alpha.contiguous(),
+        out,
+        TOTAL=total,
+        D=D,
+        BLOCK_SIZE=BLOCK_SIZE,
         num_warps=4,
     )
     return out
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _hybrid_three_branch_blend_kernel(
-        B0, B1, B2, Alpha, Out,
-        TOTAL, D: tl.constexpr,
+        B0,
+        B1,
+        B2,
+        Alpha,
+        Out,
+        TOTAL,
+        D: tl.constexpr,
         BLOCK_SIZE: tl.constexpr,
     ):
         pid = tl.program_id(0)
@@ -299,8 +387,14 @@ def hybrid_three_branch_blend_triton(
     grid = (triton.cdiv(total, BLOCK_SIZE),)
 
     _hybrid_three_branch_blend_kernel[grid](
-        b0.contiguous(), b1.contiguous(), b2.contiguous(), alpha.contiguous(), out,
-        TOTAL=total, D=D, BLOCK_SIZE=BLOCK_SIZE,
+        b0.contiguous(),
+        b1.contiguous(),
+        b2.contiguous(),
+        alpha.contiguous(),
+        out,
+        TOTAL=total,
+        D=D,
+        BLOCK_SIZE=BLOCK_SIZE,
         num_warps=4,
     )
     return out
@@ -327,13 +421,33 @@ def hybrid_heterogeneous_branch_triton(
     grid = (triton.cdiv(N, BLOCK_M), B * H)
 
     _hybrid_heterogeneous_fwd_kernel[grid](
-        q, k, v, out,
-        q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-        k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-        out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-        H, N, NUM_DENSE_HEADS=num_dense_heads, RADIUS=radius,
-        BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_D=BLOCK_D,
+        q,
+        k,
+        v,
+        out,
+        q.stride(0),
+        q.stride(1),
+        q.stride(2),
+        q.stride(3),
+        k.stride(0),
+        k.stride(1),
+        k.stride(2),
+        k.stride(3),
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        out.stride(0),
+        out.stride(1),
+        out.stride(2),
+        out.stride(3),
+        H,
+        N,
+        NUM_DENSE_HEADS=num_dense_heads,
+        RADIUS=radius,
+        BLOCK_M=BLOCK_M,
+        BLOCK_N=BLOCK_N,
+        BLOCK_D=BLOCK_D,
         IS_CAUSAL=is_causal,
         num_warps=4,
         num_stages=2,

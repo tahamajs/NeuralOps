@@ -12,7 +12,6 @@ Enforces structured and unstructured sparsity using cubic polynomial warmup sche
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,15 +22,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
-from neuralops.core.pruning_utils import (
-    apply_24_structured_mask,
-    apply_block_mask,
-    recalibrate_layernorms,
-)
+from neuralops.core.pruning_utils import apply_24_structured_mask, apply_block_mask, recalibrate_layernorms
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
-
 
 logger = logging.getLogger(__name__)
 
@@ -94,12 +89,8 @@ class BonsaiPrunedLoRALinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_r, in_features, dtype=weight_dtype, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty(out_features, self.lora_r, dtype=weight_dtype, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_r, in_features, dtype=weight_dtype, device=device))
+            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_r, dtype=weight_dtype, device=device))
             with torch.no_grad():
                 tmp_A = self.lora_A.data.float()
                 nn.init.kaiming_uniform_(tmp_A, a=math.sqrt(5))
@@ -125,7 +116,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
         if self.training and self.current_step < self.target_steps:
             with torch.no_grad():
                 t_ratio = float(self.current_step + 1) / float(self.target_steps)
-                current_sp = self.target_sp * (t_ratio ** 3)
+                current_sp = self.target_sp * (t_ratio**3)
 
                 if self.structured_24 and current_sp > 0.05:
                     _, active_mask = apply_24_structured_mask(self.weight, dim=1)
@@ -148,11 +139,20 @@ class BonsaiPrunedLoRALinear(nn.Module):
         if x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 w_sparse = self.weight * active_mask
                 out = fused_svd_lora_sparse_attn_triton(
                     x_flat,
-                    w_down=self.lora_A if self.lora_A is not None else torch.zeros((1, self.in_features), device=x.device, dtype=x.dtype),
-                    w_up=self.lora_B if self.lora_B is not None else torch.zeros((self.out_features, 1), device=x.device, dtype=x.dtype),
+                    w_down=(
+                        self.lora_A
+                        if self.lora_A is not None
+                        else torch.zeros((1, self.in_features), device=x.device, dtype=x.dtype)
+                    ),
+                    w_up=(
+                        self.lora_B
+                        if self.lora_B is not None
+                        else torch.zeros((self.out_features, 1), device=x.device, dtype=x.dtype)
+                    ),
                     lora_scale=self.scaling,
                     sparse_w=w_sparse,
                     bias=self.bias,
@@ -250,24 +250,12 @@ class BonsaiPruner(BaseCompressor):
         if conf is not None:
             sparsity = _cfg_get(conf, "sparsity", _cfg_get(conf, "bonsai_sparsity", sparsity))
             steps = _cfg_get(conf, "steps", _cfg_get(conf, "bonsai_steps", steps))
-            recovery_steps = _cfg_get(
-                conf, "recovery_steps", _cfg_get(conf, "bonsai_recovery_steps", recovery_steps)
-            )
-            recovery_lr = _cfg_get(
-                conf, "recovery_lr", _cfg_get(conf, "bonsai_recovery_lr", recovery_lr)
-            )
-            structured_24 = _cfg_get(
-                conf, "structured_24", _cfg_get(conf, "bonsai_structured_24", structured_24)
-            )
-            block_size = _cfg_get(
-                conf, "block_size", _cfg_get(conf, "bonsai_block_size", block_size)
-            )
-            protect_cls = _cfg_get(
-                conf, "protect_cls", _cfg_get(conf, "bonsai_protect_cls", protect_cls)
-            )
-            recalibrate_ln = _cfg_get(
-                conf, "recalibrate_ln", _cfg_get(conf, "bonsai_recalibrate_ln", recalibrate_ln)
-            )
+            recovery_steps = _cfg_get(conf, "recovery_steps", _cfg_get(conf, "bonsai_recovery_steps", recovery_steps))
+            recovery_lr = _cfg_get(conf, "recovery_lr", _cfg_get(conf, "bonsai_recovery_lr", recovery_lr))
+            structured_24 = _cfg_get(conf, "structured_24", _cfg_get(conf, "bonsai_structured_24", structured_24))
+            block_size = _cfg_get(conf, "block_size", _cfg_get(conf, "bonsai_block_size", block_size))
+            protect_cls = _cfg_get(conf, "protect_cls", _cfg_get(conf, "bonsai_protect_cls", protect_cls))
+            recalibrate_ln = _cfg_get(conf, "recalibrate_ln", _cfg_get(conf, "bonsai_recalibrate_ln", recalibrate_ln))
             skip_attention_qkv = _cfg_get(
                 conf,
                 "skip_attention_qkv",
@@ -275,25 +263,19 @@ class BonsaiPruner(BaseCompressor):
             )
             use_lora = _cfg_get(conf, "use_lora", _cfg_get(conf, "bonsai_use_lora", use_lora))
             lora_r = _cfg_get(conf, "lora_r", _cfg_get(conf, "bonsai_lora_r", lora_r))
-            lora_alpha = _cfg_get(
-                conf, "lora_alpha", _cfg_get(conf, "bonsai_lora_alpha", lora_alpha)
-            )
+            lora_alpha = _cfg_get(conf, "lora_alpha", _cfg_get(conf, "bonsai_lora_alpha", lora_alpha))
             adaptive_sparsity = _cfg_get(
                 conf,
                 "adaptive_sparsity",
                 _cfg_get(conf, "bonsai_adaptive_sparsity", adaptive_sparsity),
             )
-            max_error = _cfg_get(
-                conf, "max_error", _cfg_get(conf, "bonsai_max_error", max_error)
-            )
+            max_error = _cfg_get(conf, "max_error", _cfg_get(conf, "bonsai_max_error", max_error))
             fallback_to_original = _cfg_get(
                 conf,
                 "fallback_to_original",
                 _cfg_get(conf, "bonsai_fallback_to_original", fallback_to_original),
             )
-            target_steps = _cfg_get(
-                conf, "target_steps", _cfg_get(conf, "bonsai_target_steps", target_steps)
-            )
+            target_steps = _cfg_get(conf, "target_steps", _cfg_get(conf, "bonsai_target_steps", target_steps))
 
         self.sparsity = float(sparsity)
         self.steps = max(1, int(steps))
@@ -321,9 +303,7 @@ class BonsaiPruner(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
 
         self.min_numel = 256
@@ -403,11 +383,7 @@ class BonsaiPruner(BaseCompressor):
 
         for name, module in list(self.model.named_modules()):
             cls_name = module.__class__.__name__
-            is_linear_like = (
-                isinstance(module, nn.Linear)
-                or "conv1d" in cls_name.lower()
-                or hasattr(module, "nf")
-            )
+            is_linear_like = isinstance(module, nn.Linear) or "conv1d" in cls_name.lower() or hasattr(module, "nf")
             if not is_linear_like or isinstance(module, BonsaiPrunedLoRALinear):
                 continue
 
@@ -450,18 +426,10 @@ class BonsaiPruner(BaseCompressor):
             pruned_layer.weight.requires_grad = True
 
             if hasattr(module, "base_layer"):
-                if (
-                    hasattr(module, "lora_A")
-                    and module.lora_A is not None
-                    and pruned_layer.lora_A is not None
-                ):
+                if hasattr(module, "lora_A") and module.lora_A is not None and pruned_layer.lora_A is not None:
                     src_A = getattr(module.lora_A, "weight", module.lora_A)
                     pruned_layer.lora_A.data.copy_(src_A.data)
-                if (
-                    hasattr(module, "lora_B")
-                    and module.lora_B is not None
-                    and pruned_layer.lora_B is not None
-                ):
+                if hasattr(module, "lora_B") and module.lora_B is not None and pruned_layer.lora_B is not None:
                     src_B = getattr(module.lora_B, "weight", module.lora_B)
                     pruned_layer.lora_B.data.copy_(src_B.data)
 

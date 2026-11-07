@@ -66,6 +66,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
     }
 
     from neuralops.core.registry import ATTENTION_REGISTRY
+
     registered_attn_classes = tuple(ATTENTION_REGISTRY.values())
     cataloged_attn_names: list[str] = []
 
@@ -130,7 +131,9 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 "num_kv_heads": num_kv_heads,
                 "rank": rank,
                 "layer_idx": getattr(effective_sub, "layer_idx", getattr(sub, "layer_idx", None)),
-                "is_nested_encoder": getattr(effective_sub, "is_nested_encoder", getattr(sub, "is_nested_encoder", None)),
+                "is_nested_encoder": getattr(
+                    effective_sub, "is_nested_encoder", getattr(sub, "is_nested_encoder", None)
+                ),
                 "is_decoder": getattr(effective_sub, "is_decoder", getattr(sub, "is_decoder", None)),
                 "is_t5": getattr(sub, "is_t5", getattr(effective_sub, "is_t5", False)),
                 "is_wrapped": is_wrapper,
@@ -188,13 +191,12 @@ def save_surgical_checkpoint(
         json.dump(manifest, f, indent=2)
 
     state_dict = model.state_dict()
-    clean_state_dict = {
-        k: v for k, v in state_dict.items() if ".source_attn." not in k
-    }
+    clean_state_dict = {k: v for k, v in state_dict.items() if ".source_attn." not in k}
 
     saved_safetensors = False
     try:
         from safetensors.torch import save_file
+
         clean_state = {k: v.contiguous().clone() for k, v in clean_state_dict.items()}
         save_file(clean_state, str(path / "model.safetensors"))
         saved_safetensors = True
@@ -241,8 +243,11 @@ def load_surgical_checkpoint(
             cls = getattr(mod, cls_name)
         except (ImportError, AttributeError, ModuleNotFoundError):
             from neuralops.core.registry import ATTENTION_REGISTRY
+
             target_key = info.get("target_attention", cls_name.lower())
-            cls = ATTENTION_REGISTRY.get(target_key, unwrap=True) or ATTENTION_REGISTRY.get(cls_name.lower(), unwrap=True)
+            cls = ATTENTION_REGISTRY.get(target_key, unwrap=True) or ATTENTION_REGISTRY.get(
+                cls_name.lower(), unwrap=True
+            )
             if cls is None:
                 raise ImportError(f"Could not import or resolve class '{cls_name}' from '{import_path}'")
         assert callable(cls), f"Class {cls_name} is not callable"
@@ -264,6 +269,7 @@ def load_surgical_checkpoint(
                 num_kv_heads = info.get("num_kv_heads", None)
                 rank = info.get("rank", 32)
                 from transformers import BertConfig
+
                 cfg = BertConfig(
                     hidden_size=embed_dim,
                     num_attention_heads=num_heads,
@@ -304,6 +310,7 @@ def load_surgical_checkpoint(
 
             if info.get("is_wrapped", False) or info.get("wrapper_class_name") == "UniversalAttentionWrapper":
                 from neuralops.utils.replace_attention import UniversalAttentionWrapper
+
                 wrapped_sub = UniversalAttentionWrapper(
                     new_sub,
                     layer_name=info.get("layer_name", module_path),
@@ -342,6 +349,7 @@ def load_surgical_checkpoint(
     if st_file.exists():
         try:
             from safetensors.torch import load_file
+
             state_dict = load_file(str(st_file), device=str(target_device or "cpu"))
         except (ImportError, RuntimeError, OSError) as e:
             logger.warning("Failed to load safetensors (%s), falling back to .pt: %s", st_file, e, exc_info=True)

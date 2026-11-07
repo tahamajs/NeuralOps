@@ -80,9 +80,7 @@ class ResultsManager:
         logger.addHandler(ch)
         if self.log_to_file:
             fh = logging.FileHandler(self.log_dir / "run.log")
-            fh.setFormatter(
-                logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-            )
+            fh.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
             logger.addHandler(fh)
         return logger
 
@@ -128,11 +126,7 @@ class ResultsManager:
             if hasattr(obj, "to_dict") and callable(obj.to_dict):
                 return obj.to_dict()
             if hasattr(obj, "__dict__"):
-                return {
-                    k: _make_serializable(v)
-                    for k, v in obj.__dict__.items()
-                    if not k.startswith("_")
-                }
+                return {k: _make_serializable(v) for k, v in obj.__dict__.items() if not k.startswith("_")}
             if isinstance(obj, dict):
                 return {str(k): _make_serializable(v) for k, v in obj.items()}
             if isinstance(obj, (list, tuple, set)):
@@ -174,12 +168,18 @@ class ResultsManager:
 
         try:
             from neuralops.core.results_ledger import log_experiment_result
+
             m_dict = {}
             for k, v in (summary.get("final_metrics") or {}).items():
                 if isinstance(v, (int, float)) and math.isfinite(v):
                     m_dict[k] = float(v)
 
-            mod_name = self.config.get("module_name") or self.config.get("attention") or self.config.get("compressor") or self.experiment_name
+            mod_name = (
+                self.config.get("module_name")
+                or self.config.get("attention")
+                or self.config.get("compressor")
+                or self.experiment_name
+            )
             cat = "attention" if any(k in str(mod_name).lower() for k in ("attn", "attention")) else "end_to_end"
 
             log_experiment_result(

@@ -140,7 +140,11 @@ def execute_plan(
             ) from exc
 
         # 5. Run validation gates (model before vs model after)
-        val_profile = plan.validation_spec.get("profile", "structural") if isinstance(plan.validation_spec, dict) else getattr(plan.validation_spec, "profile", "structural")
+        val_profile = (
+            plan.validation_spec.get("profile", "structural")
+            if isinstance(plan.validation_spec, dict)
+            else getattr(plan.validation_spec, "profile", "structural")
+        )
         stage_val_ctx = dict(stage.config)
         stage_val_ctx.setdefault("baseline_parameters", params_before)
         val_result = run_validation_gates(

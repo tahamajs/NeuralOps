@@ -163,7 +163,7 @@ import torch
 
 def flush_l2_cache(device="cuda:0", flush_size_bytes=64 * 1024 * 1024):
     """Evict all resident cache lines from the 36 MB L2 cache of the RTX 4070.
-    
+
     A 64 MB uint8 buffer (1.78x L2 size) is zeroed to ensure complete LRU eviction.
     """
     if not torch.cuda.is_available() or not str(device).startswith("cuda"):
@@ -180,29 +180,29 @@ def profile_cold_cache(fn, warmup=10, repeat=30, device="cuda:0"):
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize(device)
-    
+
     # 2. Timing loop with inter-trial cache flushing
     latencies_ms = []
     start_evt = torch.cuda.Event(enable_timing=True)
     end_evt = torch.cuda.Event(enable_timing=True)
-    
+
     for _ in range(repeat):
         flush_l2_cache(device=device)  # Flush 64 MB buffer
         torch.cuda.synchronize(device)
-        
+
         start_evt.record()
         fn()
         end_evt.record()
         torch.cuda.synchronize(device)
-        
+
         latencies_ms.append(start_evt.elapsed_time(end_evt))
-        
+
     # 3. Compute 10% trimmed mean to eliminate OS scheduling outliers
     latencies_ms.sort()
     trim = max(1, int(len(latencies_ms) * 0.10))
     trimmed = latencies_ms[trim:-trim]
     mean_latency = sum(trimmed) / len(trimmed)
-    
+
     return mean_latency
 ```
 

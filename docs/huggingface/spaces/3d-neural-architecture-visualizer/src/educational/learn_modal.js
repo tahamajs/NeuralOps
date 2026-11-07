@@ -161,7 +161,7 @@ export function initLearnModal() {
                 <h3 style="font-size: 18px; color: var(--text-primary); margin: 0;">${topic.title}</h3>
             </div>
             <p style="font-size: 12px; color: var(--cyan); font-weight: 500; margin-bottom: 12px;">${topic.summary}</p>
-            
+
             <div class="latex-formula-card" style="margin-bottom: 14px; background: rgba(14,31,50,0.8); border: 1px solid rgba(133,198,235,0.2); border-radius: 8px; padding: 10px;">
                 <div style="font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Canonical Mathematical Invariant</div>
                 <div class="learn-math" style="font-size: 13px; text-align: center; color: #38bdf8;">$$ ${topic.formula} $$</div>

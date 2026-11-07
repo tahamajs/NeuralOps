@@ -16,9 +16,10 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import logging
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+
 import torch
 
 logger = logging.getLogger("NeuralOps.Surgery.HFCacheBridge")
@@ -27,12 +28,16 @@ from neuralops.core.exceptions import IntegrationNotImplementedError
 
 try:
     from transformers.cache_utils import Cache, DynamicCache
+
     _HF_CACHE_BASE = DynamicCache
 except (ImportError, AttributeError):
+
     class Cache:
         pass
+
     class DynamicCache:
         pass
+
     _HF_CACHE_BASE = object
 
 
@@ -139,11 +144,14 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         # Check if this update represents a recurrent state matrix
         is_recurrent = (
             self.is_recurrent_layer(layer_idx)
-            or (cache_kwargs is not None and (
-                cache_kwargs.get("is_recurrent", False)
-                or cache_kwargs.get("recurrent", False)
-                or cache_kwargs.get("layer_type") in ("recurrent", "linear", "linear_attn", "gla", "retnet", "rwkv")
-            ))
+            or (
+                cache_kwargs is not None
+                and (
+                    cache_kwargs.get("is_recurrent", False)
+                    or cache_kwargs.get("recurrent", False)
+                    or cache_kwargs.get("layer_type") in ("recurrent", "linear", "linear_attn", "gla", "retnet", "rwkv")
+                )
+            )
             or value_states is None
             or (value_states is key_states and key_states.ndim == 4)
         )
@@ -153,7 +161,12 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
                 cached = self.key_cache[layer_idx]
                 if cached.ndim == 4 and cached.shape == key_states.shape and key_states.shape[-2] > 1:
                     is_recurrent = True
-            elif key_states.shape[-2] == key_states.shape[-1] and key_states.shape[-2] >= 8 and seen_before_update > 0 and key_states.shape[-2] != 1:
+            elif (
+                key_states.shape[-2] == key_states.shape[-1]
+                and key_states.shape[-2] >= 8
+                and seen_before_update > 0
+                and key_states.shape[-2] != 1
+            ):
                 is_recurrent = True
 
         effective_val = value_states if value_states is not None else key_states
@@ -336,9 +349,7 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
             self.key_cache[index] = key.index_select(0, beam_idx.to(key.device))
             self.value_cache[index] = value.index_select(0, beam_idx.to(value.device))
         self.recurrent_state_cache = {
-            index: self._map_batch_state(
-                state, lambda tensor: tensor.index_select(0, beam_idx.to(tensor.device))
-            )
+            index: self._map_batch_state(state, lambda tensor: tensor.index_select(0, beam_idx.to(tensor.device)))
             for index, state in self.recurrent_state_cache.items()
         }
         self.sliding_window_cache = {
@@ -380,9 +391,7 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
             self.key_cache[index] = key.index_select(0, indices.to(key.device))
             self.value_cache[index] = value.index_select(0, indices.to(value.device))
         self.recurrent_state_cache = {
-            index: self._map_batch_state(
-                state, lambda tensor: tensor.index_select(0, indices.to(tensor.device))
-            )
+            index: self._map_batch_state(state, lambda tensor: tensor.index_select(0, indices.to(tensor.device)))
             for index, state in self.recurrent_state_cache.items()
         }
         self.sliding_window_cache = {
@@ -482,10 +491,7 @@ class NeuralOpsHybridHFCache(_HF_CACHE_BASE):
         self,
     ) -> Tuple[Tuple[Optional[torch.Tensor], Optional[torch.Tensor]], ...]:
         """Return the conventional tuple cache for legacy model implementations."""
-        return tuple(
-            self[index]
-            for index in range(len(self))
-        )
+        return tuple(self[index] for index in range(len(self)))
 
     @staticmethod
     def convert_recurrent_state(
@@ -706,9 +712,7 @@ class SGLangRadixStateAdapter:
             # Find common prefix between chunk and tokens[idx:]
             match_len = 0
             while (
-                match_len < len(chunk)
-                and idx + match_len < len(tokens)
-                and chunk[match_len] == tokens[idx + match_len]
+                match_len < len(chunk) and idx + match_len < len(tokens) and chunk[match_len] == tokens[idx + match_len]
             ):
                 match_len += 1
 
@@ -780,9 +784,7 @@ class SGLangRadixStateAdapter:
             chunk = child.token_chunk
             match_len = 0
             while (
-                match_len < len(chunk)
-                and idx + match_len < len(tokens)
-                and chunk[match_len] == tokens[idx + match_len]
+                match_len < len(chunk) and idx + match_len < len(tokens) and chunk[match_len] == tokens[idx + match_len]
             ):
                 match_len += 1
 
@@ -800,9 +802,7 @@ class SGLangRadixStateAdapter:
 
         if deepest_node_with_state is not None and deepest_node_with_state.prefix_state is not None:
             # Clone states for return
-            res_state = {
-                k: v.clone() for k, v in deepest_node_with_state.prefix_state.items()
-            }
+            res_state = {k: v.clone() for k, v in deepest_node_with_state.prefix_state.items()}
             return matched_state_len, res_state, deepest_node_with_state
 
         return 0, None, None
@@ -1019,10 +1019,7 @@ class PagedLinearAttention(torch.nn.Module):
         state: Optional[torch.Tensor] = None,
         decay: float = 1.0,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        from neuralops.ops.triton.paged_linear_attn import (
-            paged_linear_attention,
-            paged_linear_attention_decode_step,
-        )
+        from neuralops.ops.triton.paged_linear_attn import paged_linear_attention, paged_linear_attention_decode_step
 
         b, t, _ = hidden_states.shape
         q = self.q_proj(hidden_states).view(b, t, self.num_heads, self.head_dim)

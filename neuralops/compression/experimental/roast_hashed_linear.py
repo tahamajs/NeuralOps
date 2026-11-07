@@ -12,7 +12,6 @@ Compresses linear layers through block-strided hash indexing and tiled parameter
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -75,12 +75,8 @@ class ROASTLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-        tile_idx_i = (
-            torch.arange(self.tiles_out, device=device).unsqueeze(1).expand(-1, self.tiles_in)
-        )
-        tile_idx_j = (
-            torch.arange(self.tiles_in, device=device).unsqueeze(0).expand(self.tiles_out, -1)
-        )
+        tile_idx_i = torch.arange(self.tiles_out, device=device).unsqueeze(1).expand(-1, self.tiles_in)
+        tile_idx_j = torch.arange(self.tiles_in, device=device).unsqueeze(0).expand(self.tiles_out, -1)
         h = (tile_idx_i.long() * 0x9E3779B1) ^ (tile_idx_j.long() * 0x85EBCA77)
         h = h ^ (h >> 16)
         h = h * 0x7FEB352D
@@ -96,12 +92,8 @@ class ROASTLinear(nn.Module):
         self.register_buffer("row_scales", torch.ones(out_features, device=device, dtype=dtype), persistent=True)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
             self.register_parameter("lora_A", None)
@@ -135,9 +127,12 @@ class ROASTLinear(nn.Module):
         if x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import fused_roast_hashed_gather_gemm_triton
+
                 flat_h_idx = self.tile_hash_idx.view(-1).to(device=x.device)
                 signs = torch.ones_like(flat_h_idx, dtype=x.dtype, device=x.device)
-                out = fused_roast_hashed_gather_gemm_triton(x, self.weight_table.to(x.dtype), flat_h_idx, signs, bias=self.bias)
+                out = fused_roast_hashed_gather_gemm_triton(
+                    x, self.weight_table.to(x.dtype), flat_h_idx, signs, bias=self.bias
+                )
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
                     lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
                     out = out + lora_out.to(out.dtype)
@@ -242,9 +237,7 @@ class ROASTLinear(nn.Module):
                 )
 
             flat_idx = roast.tile_hash_idx.view(-1).to(device=roast.weight_table.device)
-            flat_means = tile_means.view(-1).to(
-                device=roast.weight_table.device, dtype=roast.weight_table.dtype
-            )
+            flat_means = tile_means.view(-1).to(device=roast.weight_table.device, dtype=roast.weight_table.dtype)
             roast.weight_table.data.scatter_(0, flat_idx, flat_means)
 
             W_recon_unscaled = roast.weight.detach().float()
@@ -304,9 +297,7 @@ class ROASTCompressor(BaseCompressor):
         )
         self.skip_attention_qkv = (
             bool(
-                skip_attention_qkv
-                if skip_attention_qkv is not None
-                else _cfg_get(cfg_obj, "skip_attention_qkv", True)
+                skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, "skip_attention_qkv", True)
             )
             and not self.target_attention_only
         )
@@ -314,9 +305,7 @@ class ROASTCompressor(BaseCompressor):
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.target_modules = target_modules
-        self.max_error = float(
-            max_error if max_error is not None else _cfg_get(cfg_obj, "max_error", 2.0)
-        )
+        self.max_error = float(max_error if max_error is not None else _cfg_get(cfg_obj, "max_error", 2.0))
         self.fallback_to_original = bool(
             fallback_to_original
             if fallback_to_original is not None
@@ -332,14 +321,10 @@ class ROASTCompressor(BaseCompressor):
                 self.target_device = torch.device(device)
             except Exception:
                 self.target_device = (
-                    next(model.parameters()).device
-                    if list(model.parameters())
-                    else torch.device("cpu")
+                    next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
                 )
         else:
-            self.target_device = (
-                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
-            )
+            self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
 
         self.visited_modules: set[int] = set()
         self.compressed_layers: list[str] = []
@@ -468,9 +453,7 @@ class ROASTCompressor(BaseCompressor):
                     raw_w = base_mod.weight.data
                     cls_name = base_mod.__class__.__name__
                     is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_mod, "nf")
-                    W_orig = (
-                        raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
-                    )
+                    W_orig = raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
 
                     new_layer = ROASTLinear.from_linear(
                         module,
@@ -485,6 +468,7 @@ class ROASTCompressor(BaseCompressor):
                     self.layer_errors[name] = float(err)
 
                     from neuralops.core.pruning_utils import adaptive_max_error
+
                     fam = getattr(getattr(self.model, "config", None), "model_type", None)
                     d_out, d_in = W_orig.shape
                     eff_max_err = max(self.max_error, adaptive_max_error(None, d_in, d_out, family=fam))
@@ -525,9 +509,7 @@ class ROASTCompressor(BaseCompressor):
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
-        avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         stats = self.get_compression_stats()
         stats.update(
             {
@@ -567,19 +549,13 @@ def roast_factory(
     """ROAST compressor factory function returning (compressed_model, stats) when requested."""
     n_buckets = kwargs.pop("n_buckets", _cfg_get(comp_config, "n_buckets", 1024))
     tile_size = kwargs.pop("tile_size", _cfg_get(comp_config, "tile_size", 32))
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
-    skip_attention_qkv = kwargs.pop(
-        "skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False)
-    )
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False))
     use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
 
     compressor = ROASTCompressor(
         model,

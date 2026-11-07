@@ -42,17 +42,21 @@ try:
     import lm_eval
     import lm_eval.api.model
     import lm_eval.api.registry
+
     BaseLM = lm_eval.api.model.LM
     register_model = lm_eval.api.registry.register_model
     HAS_LM_EVAL = True
 except (ImportError, AttributeError, ModuleNotFoundError):
     try:
         from lm_eval.base import LM as BaseLM
+
         HAS_LM_EVAL = True
         register_model = lambda *names: lambda cls: cls
     except (ImportError, AttributeError, ModuleNotFoundError):
+
         class BaseLM:
             """Baselm definition."""
+
         register_model = lambda *names: lambda cls: cls
         HAS_LM_EVAL = False
 
@@ -169,7 +173,9 @@ class NeuralOpsLMWrapper(BaseLM):
         """Execute device routine."""
         return self._device
 
-    def tok_encode(self, string: str, left_truncate_len: Optional[int] = None, add_special_tokens: bool = False) -> List[int]:
+    def tok_encode(
+        self, string: str, left_truncate_len: Optional[int] = None, add_special_tokens: bool = False
+    ) -> List[int]:
         """Execute tok encode routine."""
         enc = self.tokenizer.encode(string, add_special_tokens=add_special_tokens)
         if left_truncate_len:
@@ -200,7 +206,7 @@ class NeuralOpsLMWrapper(BaseLM):
             cont_tokens = self.tok_encode(continuation)
             full_tokens = ctx_tokens + cont_tokens
             if len(full_tokens) > self.max_length:
-                full_tokens = full_tokens[-self.max_length:]
+                full_tokens = full_tokens[-self.max_length :]
                 ctx_len = max(1, len(full_tokens) - len(cont_tokens))
             else:
                 ctx_len = len(ctx_tokens)
@@ -216,8 +222,8 @@ class NeuralOpsLMWrapper(BaseLM):
                 shift_logits = logits[:-1, :]
                 shift_targets = inp[0, 1:]
 
-                cont_logits = shift_logits[ctx_len - 1:]
-                cont_targets = shift_targets[ctx_len - 1:]
+                cont_logits = shift_logits[ctx_len - 1 :]
+                cont_targets = shift_targets[ctx_len - 1 :]
 
                 log_probs = F.log_softmax(cont_logits, dim=-1)
                 selected_log_probs = log_probs.gather(dim=-1, index=cont_targets.unsqueeze(-1)).squeeze(-1)
@@ -295,7 +301,7 @@ class NeuralOpsLMWrapper(BaseLM):
                     do_sample=gen_kwargs.get("do_sample", False),
                     temperature=gen_kwargs.get("temperature", 1.0),
                 )
-                generated_tokens = gen_out[0][inputs.input_ids.shape[1]:]
+                generated_tokens = gen_out[0][inputs.input_ids.shape[1] :]
                 gen_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
             for stop in until:
@@ -389,6 +395,7 @@ def run_evaluation(
     else:
         try:
             from lm_eval import simple_evaluate
+
             eval_results = simple_evaluate(
                 model=lm,
                 tasks=tasks,
@@ -426,7 +433,9 @@ def main() -> None:
     parser.add_argument("--max-length", type=int, default=2048, help="Max sequence length")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of evaluation examples per task")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--output", type=str, default=None, help="Path to save output JSON (or CSV if ending with .csv)")
+    parser.add_argument(
+        "--output", type=str, default=None, help="Path to save output JSON (or CSV if ending with .csv)"
+    )
     parser.add_argument("--output-csv", type=str, default=None, help="Path to save output CSV summary")
     args = parser.parse_args()
 

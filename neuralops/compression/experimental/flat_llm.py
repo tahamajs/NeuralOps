@@ -12,7 +12,6 @@ Evaluates layer-wise activation magnitudes to identify and prune redundant hidde
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -22,11 +21,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
-from neuralops.core.pruning_utils import (
-    adaptive_max_error,
-    apply_24_structured_mask,
-    get_calibration_tensors,
-)
+from neuralops.core.common import _cfg_get
+from neuralops.core.pruning_utils import adaptive_max_error, apply_24_structured_mask, get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -207,13 +203,9 @@ class FLATLLMCompressor(BaseCompressor):
         self.calibration_texts = calibration_texts
         self.target_modules = target_modules
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
-        self.num_calibration_batches = max(
-            1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches))
-        )
+        self.num_calibration_batches = max(1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches)))
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -379,11 +371,7 @@ class FLATLLMCompressor(BaseCompressor):
         total_orig_storage = 0
         total_comp_storage = 0
 
-        targets = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        targets = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not targets:
             logger.warning("FLAT-LLM: no compressible layers found.")
@@ -483,9 +471,7 @@ class FLATLLMCompressor(BaseCompressor):
                     original_out_features=d_out,
                     kept_idx=kept_idx.cpu(),
                     W_kept=W_kept.to(dtype=dtype, device=device),
-                    bias_kept=(
-                        bias_kept.to(dtype=dtype, device=device) if bias_kept is not None else None
-                    ),
+                    bias_kept=(bias_kept.to(dtype=dtype, device=device) if bias_kept is not None else None),
                 )
 
             if hasattr(module, "base_layer"):
@@ -513,11 +499,7 @@ class FLATLLMCompressor(BaseCompressor):
                         self.model(dummy)
                     except Exception:
                         first_linear = next(
-                            (
-                                m
-                                for m in self.model.modules()
-                                if isinstance(m, (nn.Linear, PrunedChannelLinear))
-                            ),
+                            (m for m in self.model.modules() if isinstance(m, (nn.Linear, PrunedChannelLinear))),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
@@ -541,8 +523,7 @@ class FLATLLMCompressor(BaseCompressor):
             stats = {}
 
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )

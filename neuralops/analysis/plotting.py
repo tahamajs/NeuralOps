@@ -102,9 +102,7 @@ def plot_lr_schedule(history, metrics, config, output_dir, opts) -> Any:
 
 def plot_training_time(history, metrics, config, output_dir, opts) -> Any:
     """Plot training time."""
-    times = [
-        h.get("elapsed", i * 0.01) for i, h in enumerate(history) if "elapsed" in h or "step" in h
-    ]
+    times = [h.get("elapsed", i * 0.01) for i, h in enumerate(history) if "elapsed" in h or "step" in h]
     if not times:
         return []
     fig, ax = plt.subplots(figsize=opts.get("figsize", [10, 4]))
@@ -285,9 +283,7 @@ def plot_attention_heatmap(history, metrics, config, output_dir, opts) -> Any:
     return [str(path)]
 
 
-def create_comprehensive_plots(
-    df: pd.DataFrame, output_dir: str, figsize: tuple[int, int] = (18, 16)
-) -> None:
+def create_comprehensive_plots(df: pd.DataFrame, output_dir: str, figsize: tuple[int, int] = (18, 16)) -> None:
     """Build and return comprehensive plots."""
     os.makedirs(output_dir, exist_ok=True)
     set_style()
@@ -398,9 +394,7 @@ def create_comprehensive_plots(
         ax.text(0.5, 0.5, "No task type", ha="center", va="center", transform=ax.transAxes)
     ax = axes[2, 1]
     if "compression_ratio" in df.columns:
-        pivot = df.pivot_table(
-            index="model", columns="rank", values="compression_ratio", aggfunc="mean"
-        )
+        pivot = df.pivot_table(index="model", columns="rank", values="compression_ratio", aggfunc="mean")
         im = ax.imshow(pivot.values, cmap="YlOrRd", aspect="auto")
         ax.set_xticks(range(len(pivot.columns)))
         ax.set_xticklabels(pivot.columns)
@@ -421,9 +415,7 @@ def create_comprehensive_plots(
         best_df = pd.DataFrame(best)
         ax.barh(best_df["task"], best_df["accuracy"], color="skyblue", edgecolor="navy")
         ax.set_title("Best Configuration per Dataset")
-        for i, (acc, model, rank) in enumerate(
-            zip(best_df["accuracy"], best_df["model"], best_df["rank"])
-        ):
+        for i, (acc, model, rank) in enumerate(zip(best_df["accuracy"], best_df["model"], best_df["rank"])):
             ax.text(acc + 0.005, i, f"{model} r={int(rank)}", va="center", fontsize=8)
     else:
         ax.text(0.5, 0.5, "No best config", ha="center", va="center", transform=ax.transAxes)

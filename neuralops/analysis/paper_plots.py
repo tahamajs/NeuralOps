@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -25,23 +26,25 @@ logger = logging.getLogger("NeuralOps.PaperPlots")
 
 def _apply_publication_theme(plt: Any) -> None:
     """Configures matplotlib with publication-grade typography and palette."""
-    plt.rcParams.update({
-        "font.family": "serif",
-        "font.serif": ["DejaVu Serif", "Times New Roman", "Computer Modern Roman"],
-        "font.size": 11,
-        "axes.labelsize": 12,
-        "axes.titlesize": 13,
-        "xtick.labelsize": 10,
-        "ytick.labelsize": 10,
-        "legend.fontsize": 10,
-        "figure.titlesize": 14,
-        "lines.linewidth": 1.8,
-        "axes.grid": True,
-        "grid.alpha": 0.3,
-        "grid.linestyle": "--",
-        "savefig.dpi": 300,
-        "savefig.bbox": "tight",
-    })
+    plt.rcParams.update(
+        {
+            "font.family": "serif",
+            "font.serif": ["DejaVu Serif", "Times New Roman", "Computer Modern Roman"],
+            "font.size": 11,
+            "axes.labelsize": 12,
+            "axes.titlesize": 13,
+            "xtick.labelsize": 10,
+            "ytick.labelsize": 10,
+            "legend.fontsize": 10,
+            "figure.titlesize": 14,
+            "lines.linewidth": 1.8,
+            "axes.grid": True,
+            "grid.alpha": 0.3,
+            "grid.linestyle": "--",
+            "savefig.dpi": 300,
+            "savefig.bbox": "tight",
+        }
+    )
 
 
 def plot_singular_value_spectrum(
@@ -61,6 +64,7 @@ def plot_singular_value_spectrum(
         Matplotlib Figure object.
     """
     import matplotlib.pyplot as plt
+
     _apply_publication_theme(plt)
 
     fig, ax = plt.subplots(figsize=(6.5, 4.2))
@@ -98,6 +102,7 @@ def plot_singular_value_spectrum(
 
     try:
         import matplotlib
+
         cmap = matplotlib.colormaps.get_cmap("viridis").resampled(len(layers_sv))
     except Exception:
         cmap = plt.get_cmap("viridis", len(layers_sv))
@@ -143,6 +148,7 @@ def plot_attention_entropy_heatmap(
         Matplotlib Figure object.
     """
     import matplotlib.pyplot as plt
+
     _apply_publication_theme(plt)
 
     if isinstance(attention_matrix, torch.Tensor):
@@ -191,6 +197,7 @@ def plot_pareto_frontier(
         Matplotlib Figure object.
     """
     import matplotlib.pyplot as plt
+
     _apply_publication_theme(plt)
 
     fig, ax = plt.subplots(figsize=(6.5, 4.5))
@@ -287,6 +294,7 @@ def generate_all_paper_plots(
         List of generated file paths.
     """
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -354,6 +362,7 @@ class PaperPlotGenerator:
 
     def plot_singular_spectrum(self, model: nn.Module, filename: str = "figure_singular_spectrum") -> Tuple[Path, Path]:
         import matplotlib.pyplot as plt
+
         self.output_dir.mkdir(parents=True, exist_ok=True)
         p_svg = self.output_dir / f"{filename}.svg"
         p_pdf = self.output_dir / f"{filename}.pdf"
@@ -362,8 +371,11 @@ class PaperPlotGenerator:
         plt.close(fig)
         return p_svg, p_pdf
 
-    def plot_attention_entropy(self, attention_matrix: torch.Tensor, filename: str = "figure_attention_entropy") -> Tuple[Path, Path]:
+    def plot_attention_entropy(
+        self, attention_matrix: torch.Tensor, filename: str = "figure_attention_entropy"
+    ) -> Tuple[Path, Path]:
         import matplotlib.pyplot as plt
+
         self.output_dir.mkdir(parents=True, exist_ok=True)
         p_svg = self.output_dir / f"{filename}.svg"
         p_pdf = self.output_dir / f"{filename}.pdf"
@@ -374,6 +386,7 @@ class PaperPlotGenerator:
 
     def plot_pareto(self, points: List[Dict[str, Any]], filename: str = "figure_pareto_frontier") -> Tuple[Path, Path]:
         import matplotlib.pyplot as plt
+
         self.output_dir.mkdir(parents=True, exist_ok=True)
         p_svg = self.output_dir / f"{filename}.svg"
         p_pdf = self.output_dir / f"{filename}.pdf"

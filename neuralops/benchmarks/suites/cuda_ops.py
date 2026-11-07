@@ -125,21 +125,23 @@ class CudaOpsBenchmark(AbstractBaseBenchmark):
 
         except Exception as e:
             logger.warning("Execution error in CUDA kernel %s: %s", kernel_name, e)
-            self.results_table.append({
-                "step": step,
-                "mechanism_or_kernel": kernel_name,
-                "batch_size": 2,
-                "seq_len": 16,
-                "dtype": "fp32",
-                "latency_ms": 0.0,
-                "latency_p50_ms": 0.0,
-                "latency_p90_ms": 0.0,
-                "latency_p99_ms": 0.0,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "backend_tier": "failed",
-                "status": f"FAILED_RUNTIME: {e}",
-            })
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": kernel_name,
+                    "batch_size": 2,
+                    "seq_len": 16,
+                    "dtype": "fp32",
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "tflops": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "backend_tier": "failed",
+                    "status": f"FAILED_RUNTIME: {e}",
+                }
+            )
             self.tracker.log_metric("cuda_latency_ms", 0.0, step=step)
             return {"cuda_latency_ms": 0.0}
 

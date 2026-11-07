@@ -127,12 +127,15 @@ class AccuracyGate(Gate):
                 acc = float(eval_fn(active_model))
                 base_acc = float(eval_fn(base_model)) if base_model is not None else None
             elif use_parallel and dataset is not None:
+
                 def _acc_metric(m: nn.Module, d: Any) -> float:
                     return _evaluate_accuracy(m, d)
 
                 res = bench.run(active_model, dataset, _acc_metric)
                 acc = float(res.metric_value)
-                base_acc = float(bench.run(base_model, dataset, _acc_metric).metric_value) if base_model is not None else None
+                base_acc = (
+                    float(bench.run(base_model, dataset, _acc_metric).metric_value) if base_model is not None else None
+                )
             else:
                 acc = _evaluate_accuracy(active_model, dataset)
                 base_acc = _evaluate_accuracy(base_model, dataset) if base_model is not None else None

@@ -20,7 +20,6 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import AutoConfig, AutoModelForSequenceClassification
 
-
 try:
     from lra_datasets import IMDbByteDataset, ListOpsDataset
 except ImportError:
@@ -34,9 +33,7 @@ except ImportError:
         from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
     except ImportError:
         try:
-            from neuralops.core.replace_attention import (
-                replace_attention_in_model as apply_module_to_model,
-            )
+            from neuralops.core.replace_attention import replace_attention_in_model as apply_module_to_model
         except ImportError:
             apply_module_to_model = None
 
@@ -144,12 +141,8 @@ def _setup_datasets(task: str, current_seq_len: int, cfg: dict):
                     "labels": self.labels[idx],
                 }
 
-        train_ds = SyntheticDataset(
-            2000, current_seq_len, cfg["vocab_size"], cfg["num_labels"], seed=42
-        )
-        test_ds = SyntheticDataset(
-            500, current_seq_len, cfg["vocab_size"], cfg["num_labels"], seed=100
-        )
+        train_ds = SyntheticDataset(2000, current_seq_len, cfg["vocab_size"], cfg["num_labels"], seed=42)
+        test_ds = SyntheticDataset(500, current_seq_len, cfg["vocab_size"], cfg["num_labels"], seed=100)
 
     return train_ds, test_ds
 
@@ -273,13 +266,9 @@ def train_task(
     train_loader = DataLoader(train_ds, batch_size=current_batch_size, shuffle=True, num_workers=0)
 
     total_steps = (
-        num_epochs * len(train_loader)
-        if max_steps is None
-        else min(max_steps, num_epochs * len(train_loader))
+        num_epochs * len(train_loader) if max_steps is None else min(max_steps, num_epochs * len(train_loader))
     )
-    actual_warmup_steps = (
-        warmup_steps if warmup_steps is not None else max(1, int(total_steps * warmup_ratio))
-    )
+    actual_warmup_steps = warmup_steps if warmup_steps is not None else max(1, int(total_steps * warmup_ratio))
 
     model, optimizer, scheduler = _setup_model_and_optimizer(
         module_name=module_name,
@@ -326,11 +315,7 @@ def train_task(
             max_steps=max_steps,
         )
 
-        if (
-            (epoch + 1) % 5 == 0
-            or (epoch + 1) == num_epochs
-            or (max_steps is not None and global_step >= max_steps)
-        ):
+        if (epoch + 1) % 5 == 0 or (epoch + 1) == num_epochs or (max_steps is not None and global_step >= max_steps):
             acc = evaluate(model, test_ds, current_batch_size)
             print(
                 f"[{task}/{module_name}] Epoch {epoch + 1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f} | Acc: {acc:.2f}% (Best: {max(best_acc, acc):.2f}%)",
@@ -375,18 +360,14 @@ if __name__ == "__main__":
     parser.add_argument("--module", required=True)
     parser.add_argument("--output_dir", required=True)
     parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
-    parser.add_argument(
-        "--max_steps", type=int, default=None, help="Maximum training steps per run"
-    )
+    parser.add_argument("--max_steps", type=int, default=None, help="Maximum training steps per run")
     parser.add_argument("--batch_size", type=int, default=8, help="Batch size override")
     parser.add_argument("--seq_len", type=int, default=2048, help="Sequence length override")
     parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate")
     parser.add_argument("--hidden_size", type=int, default=256, help="Hidden dimension")
     parser.add_argument("--num_layers", type=int, default=6, help="Number of transformer layers")
     parser.add_argument("--num_heads", type=int, default=8, help="Number of attention heads")
-    parser.add_argument(
-        "--intermediate_size", type=int, default=1024, help="Intermediate FFN dimension"
-    )
+    parser.add_argument("--intermediate_size", type=int, default=1024, help="Intermediate FFN dimension")
     parser.add_argument(
         "--gradient_checkpointing",
         action="store_true",

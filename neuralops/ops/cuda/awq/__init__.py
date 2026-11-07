@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Optional
 
 import torch
+
 from neuralops.ops.cuda.awq.autograd import AWQFunction
 from neuralops.ops.triton.quantize_awq import _compute_awq_scales
 
@@ -26,9 +27,7 @@ def awq_compress(
     alpha: float = 0.5,
 ) -> torch.Tensor:
     """AWQ compression using CUDA C++ kernel."""
-    effective_scale = _compute_awq_scales(
-        W, group_size=group_size, bits=bits, act_scales=act_scales, alpha=alpha
-    )
+    effective_scale = _compute_awq_scales(W, group_size=group_size, bits=bits, act_scales=act_scales, alpha=alpha)
 
     W_fp32 = W.contiguous().to(torch.float32)
     scales_fp32 = effective_scale.contiguous().to(torch.float32)

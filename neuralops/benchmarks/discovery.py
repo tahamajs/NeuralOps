@@ -65,7 +65,7 @@ def inspect_module_capabilities(
     elif "causal" in sig or "is_causal" in sig:
         causal = True
     else:
-        causal = (module_type == "compressor")
+        causal = module_type == "compressor"
 
     if "supports_gqa" in mod_overrides:
         gqa = mod_overrides["supports_gqa"]
@@ -120,25 +120,29 @@ def discover_all_modules() -> list[ModuleMetadata]:
                 data = json.load(fp)
             discovered: list[ModuleMetadata] = []
             for item in data.get("attentions", []):
-                discovered.append(ModuleMetadata(
-                    name=item["name"],
-                    type="attention",
-                    module_type="attention",
-                    supports_causal=item.get("supports_causal", True),
-                    supports_gqa=item.get("supports_gqa", False),
-                    supports_rope=item.get("supports_rope", False),
-                    requires_cuda=item.get("requires_cuda", False),
-                ))
+                discovered.append(
+                    ModuleMetadata(
+                        name=item["name"],
+                        type="attention",
+                        module_type="attention",
+                        supports_causal=item.get("supports_causal", True),
+                        supports_gqa=item.get("supports_gqa", False),
+                        supports_rope=item.get("supports_rope", False),
+                        requires_cuda=item.get("requires_cuda", False),
+                    )
+                )
             for item in data.get("compressors", []):
-                discovered.append(ModuleMetadata(
-                    name=item["name"],
-                    type="compressor",
-                    module_type="compressor",
-                    supports_causal=item.get("supports_causal", True),
-                    supports_gqa=item.get("supports_gqa", False),
-                    supports_rope=item.get("supports_rope", False),
-                    requires_cuda=item.get("requires_cuda", False),
-                ))
+                discovered.append(
+                    ModuleMetadata(
+                        name=item["name"],
+                        type="compressor",
+                        module_type="compressor",
+                        supports_causal=item.get("supports_causal", True),
+                        supports_gqa=item.get("supports_gqa", False),
+                        supports_rope=item.get("supports_rope", False),
+                        requires_cuda=item.get("requires_cuda", False),
+                    )
+                )
             if len(discovered) == 203:
                 return discovered
         except Exception:
@@ -146,6 +150,7 @@ def discover_all_modules() -> list[ModuleMetadata]:
             pass
 
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
     overrides = _load_overrides()
     discovered: list[ModuleMetadata] = []
 

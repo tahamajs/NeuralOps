@@ -17,9 +17,11 @@ import numpy as np
 
 try:
     import scipy.stats as _sp_stats
+
     pearsonr = _sp_stats.pearsonr
     spearmanr = _sp_stats.spearmanr
 except ImportError:
+
     def pearsonr(x: Any, y: Any) -> tuple[float, float]:
         x_arr, y_arr = np.asarray(x, dtype=float), np.asarray(y, dtype=float)
         mx, my = float(np.mean(x_arr)), float(np.mean(y_arr))
@@ -33,6 +35,7 @@ except ImportError:
         rx = np.argsort(np.argsort(x_arr)).astype(float)
         ry = np.argsort(np.argsort(y_arr)).astype(float)
         return pearsonr(rx, ry)
+
 
 # Pure-numpy replacements for sklearn.metrics — avoids OpenMP/TLS conflicts on
 # CentOS 6 (kernel 2.6.32) when torch and sklearn are loaded in the same process.
@@ -176,9 +179,7 @@ def compute_pearson_spearman(predictions, labels) -> Any:
 
 def compute_precision_recall(predictions, labels, average="weighted") -> Any:
     """Compute and return precision recall."""
-    p, r, _, _ = precision_recall_fscore_support(
-        labels, predictions, average=average, zero_division=0
-    )
+    p, r, _, _ = precision_recall_fscore_support(labels, predictions, average=average, zero_division=0)
     return {"precision": p, "recall": r}
 
 

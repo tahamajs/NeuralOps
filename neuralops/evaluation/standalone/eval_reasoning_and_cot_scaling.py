@@ -5,30 +5,29 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Eval reasoning and cot scaling module.
-"""
+"""Eval reasoning and cot scaling module."""
 
 
 def main() -> None:
     """Run this standalone evaluation experiment."""
 
     import gc
+    import json
+    import math
     import os
     import time
-    import math
-    import json
+
     import torch
-    from transformers import GPT2LMHeadModel, AutoTokenizer
+    from transformers import AutoTokenizer, GPT2LMHeadModel
+
     from neuralops.utils.replace_attention import replace_attention
 
     if not torch.cuda.is_available():
         raise RuntimeError("This reasoning and scaling experiment requires CUDA.")
 
-
     def print_log(msg):
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
-
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Reasoning & Long-Context Evaluation Suite running on: {torch.cuda.get_device_name(0)}")
@@ -36,7 +35,6 @@ def main() -> None:
     model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     tokenizer.pad_token = tokenizer.eos_token
-
 
     def build_model(attention_type=None, max_pos=4096):
         """Load GPT-2 base and surgically adapt position embeddings and attention."""
@@ -71,7 +69,6 @@ def main() -> None:
             replace_attention(model, attention_key=attention_type)
 
         return model.to(device).eval()
-
 
     reasoning_prompt = (
         "Problem: In a sequence of reasoning steps, let x_0 = 3. At each step t >= 1, x_t = 2 * x_{t-1} + 1. "
@@ -194,7 +191,6 @@ def main() -> None:
         json.dump(benchmark_report, f, indent=2)
 
     print_log(f"Reasoning & Long-Context benchmark complete! Written to {out_path}")
-
 
 
 if __name__ == "__main__":

@@ -18,24 +18,15 @@ import logging
 from typing import Any, Optional
 
 from neuralops.core.exceptions import IntegrationNotImplementedError
-from neuralops.integrations.radix_prefix_cache import (
-    RadixPrefixNode,
-    SGLangRadixAdapter,
-)
-from neuralops.integrations.sglang.radix_recurrent import (
-    RadixRecurrentNode,
-    RadixRecurrentTree,
-)
+from neuralops.integrations.radix_prefix_cache import RadixPrefixNode, SGLangRadixAdapter
+from neuralops.integrations.sglang.radix_recurrent import RadixRecurrentNode, RadixRecurrentTree
 
 logger = logging.getLogger("NeuralOps.SGLang")
 
 
 def sglang_is_available() -> bool:
     """Return True if SGLang or sgl_kernel is importable in current environment."""
-    return (
-        importlib.util.find_spec("sglang") is not None
-        or importlib.util.find_spec("sgl_kernel") is not None
-    )
+    return importlib.util.find_spec("sglang") is not None or importlib.util.find_spec("sgl_kernel") is not None
 
 
 def register_neuralops_sglang_plugin(
@@ -64,9 +55,7 @@ def register_neuralops_sglang_plugin(
 
         return register(config_class=config_class, arch_names=arch_names, **kwargs)
     except Exception as exc:
-        raise IntegrationNotImplementedError(
-            f"Failed to register NeuralOps plugin in SGLang runtime: {exc}"
-        ) from exc
+        raise IntegrationNotImplementedError(f"Failed to register NeuralOps plugin in SGLang runtime: {exc}") from exc
 
 
 def get_sglang_radix_adapter(

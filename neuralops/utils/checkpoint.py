@@ -45,9 +45,7 @@ class CheckpointManager:
         logging.info(f"Checkpoint saved: {checkpoint_path}")
         return checkpoint_path
 
-    def load_checkpoint(
-        self, checkpoint_name: str = "checkpoint.json"
-    ) -> tuple[int, list[dict], dict | None]:
+    def load_checkpoint(self, checkpoint_name: str = "checkpoint.json") -> tuple[int, list[dict], dict | None]:
         """Load checkpoint from disk or config."""
         checkpoint_path = self.checkpoint_dir / checkpoint_name
         if not checkpoint_path.exists():

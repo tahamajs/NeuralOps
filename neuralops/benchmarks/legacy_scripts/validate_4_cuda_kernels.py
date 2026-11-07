@@ -25,15 +25,12 @@ from __future__ import annotations
 import logging
 import sys
 from typing import Any
+
 import torch
 
-from neuralops.ops.cuda._fallback import (
-    force_kernel_backend,
-    get_last_dispatch_backend,
-    get_last_dispatch_error,
-)
+from neuralops.ops.cuda._fallback import force_kernel_backend, get_last_dispatch_backend, get_last_dispatch_error
 from neuralops.ops.cuda.gla_scan.gla_autograd import gla_scan, gla_scan_pytorch_ref
-from neuralops.ops.cuda.hgrn2_scan.hgrn2_autograd import hgrn2_scan, hgrn2_fused_bwd_scan_pytorch_ref
+from neuralops.ops.cuda.hgrn2_scan.hgrn2_autograd import hgrn2_fused_bwd_scan_pytorch_ref, hgrn2_scan
 from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan, selective_scan_pytorch_ref
 from neuralops.ops.cuda.sliding_window.sliding_autograd import sliding_window_attn, sliding_window_pytorch_ref
 
@@ -108,7 +105,9 @@ def main() -> int:
             "bwd_diff": bwd_diff,
             "message": f"{fwd_msg} | bwd: {bwd_msg}",
         }
-        logger.info(f"  [{'PASS' if status_ok else 'FAIL'}] gla_scan (backend='{backend}', fwd_diff={fwd_diff:.2e}, bwd_diff={bwd_diff:.2e})")
+        logger.info(
+            f"  [{'PASS' if status_ok else 'FAIL'}] gla_scan (backend='{backend}', fwd_diff={fwd_diff:.2e}, bwd_diff={bwd_diff:.2e})"
+        )
     except Exception as exc:
         err = get_last_dispatch_error("gla_scan")
         logger.error(f"  [FAIL] gla_scan failed: {exc} (last_error={err})")
@@ -150,11 +149,17 @@ def main() -> int:
             "bwd_diff": bwd_diff,
             "message": f"{fwd_msg} | bwd: {bwd_msg}",
         }
-        logger.info(f"  [{'PASS' if status_ok else 'FAIL'}] hgrn2_scan (backend='{backend}', fwd_diff={fwd_diff:.2e}, bwd_diff={bwd_diff:.2e})")
+        logger.info(
+            f"  [{'PASS' if status_ok else 'FAIL'}] hgrn2_scan (backend='{backend}', fwd_diff={fwd_diff:.2e}, bwd_diff={bwd_diff:.2e})"
+        )
     except Exception as exc:
         err = get_last_dispatch_error("hgrn2_scan") or get_last_dispatch_error("hgrn2_fused_bwd_scan")
         logger.error(f"  [FAIL] hgrn2_scan failed: {exc} (last_error={err})")
-        results["hgrn2_scan"] = {"passed": False, "backend": get_last_dispatch_backend("hgrn2_scan"), "message": str(exc)}
+        results["hgrn2_scan"] = {
+            "passed": False,
+            "backend": get_last_dispatch_backend("hgrn2_scan"),
+            "message": str(exc),
+        }
 
     # =========================================================================
     # 3. Selective Scan
@@ -202,11 +207,17 @@ def main() -> int:
             "bwd_diff": diff_u,
             "message": f"out: {msg_y} | state: {msg_s} | bwd: {msg_u}",
         }
-        logger.info(f"  [{'PASS' if status_ok else 'FAIL'}] selective_scan (backend='{backend}', out_diff={diff_y:.2e}, state_diff={diff_s:.2e})")
+        logger.info(
+            f"  [{'PASS' if status_ok else 'FAIL'}] selective_scan (backend='{backend}', out_diff={diff_y:.2e}, state_diff={diff_s:.2e})"
+        )
     except Exception as exc:
         err = get_last_dispatch_error("selective_scan")
         logger.error(f"  [FAIL] selective_scan failed: {exc} (last_error={err})")
-        results["selective_scan"] = {"passed": False, "backend": get_last_dispatch_backend("selective_scan"), "message": str(exc)}
+        results["selective_scan"] = {
+            "passed": False,
+            "backend": get_last_dispatch_backend("selective_scan"),
+            "message": str(exc),
+        }
 
     # =========================================================================
     # 4. Sliding Window Attention
@@ -253,11 +264,17 @@ def main() -> int:
             "bwd_diff": bwd_diff,
             "message": f"{fwd_msg} | bwd: {bwd_msg}",
         }
-        logger.info(f"  [{'PASS' if status_ok else 'FAIL'}] sliding_window (backend='{backend}', fwd_diff={fwd_diff:.2e}, bwd_diff={bwd_diff:.2e})")
+        logger.info(
+            f"  [{'PASS' if status_ok else 'FAIL'}] sliding_window (backend='{backend}', fwd_diff={fwd_diff:.2e}, bwd_diff={bwd_diff:.2e})"
+        )
     except Exception as exc:
         err = get_last_dispatch_error("sliding_window")
         logger.error(f"  [FAIL] sliding_window failed: {exc} (last_error={err})")
-        results["sliding_window"] = {"passed": False, "backend": get_last_dispatch_backend("sliding_window"), "message": str(exc)}
+        results["sliding_window"] = {
+            "passed": False,
+            "backend": get_last_dispatch_backend("sliding_window"),
+            "message": str(exc),
+        }
 
     # =========================================================================
     # Summary Table
@@ -272,7 +289,9 @@ def main() -> int:
         fwd_d = item.get("fwd_diff", float("nan"))
         bwd_d = item.get("bwd_diff", float("nan"))
         status_label = "PASSED (NATIVE CUDA)" if ok else "FAILED"
-        logger.info(f"  * {name:<18}: {status_label:<20} | backend={b_name:<6} | fwd_diff={fwd_d:.2e} | bwd_diff={bwd_d:.2e}")
+        logger.info(
+            f"  * {name:<18}: {status_label:<20} | backend={b_name:<6} | fwd_diff={fwd_d:.2e} | bwd_diff={bwd_d:.2e}"
+        )
 
     logger.info("=" * 70)
 

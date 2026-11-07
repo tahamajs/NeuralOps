@@ -72,6 +72,7 @@ def alibi_attention_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.linear_attn import alibi_attention_triton
+
         return alibi_attention_triton
     except (ImportError, AttributeError):
         return None
@@ -85,6 +86,7 @@ def alibi_attention(
     is_causal: bool = False,
 ) -> torch.Tensor:
     """3-Level Dispatched ALiBi Attention."""
+
     def cuda_fn(q, k, v, slopes, is_causal=False, **kwargs):
         mod = _get_module()
         return mod.alibi_attention_fwd(

@@ -52,10 +52,10 @@ def audit_manuscript_claims(tex_path: Path, audit_paths: list[Path]):
     content = tex_path.read_text()
     # Extract numbers with decimal points
     numbers = set(re.findall(r"\b\d+\.\d+\b", content))
-    
+
     audit_text = "\n".join([p.read_text() for p in audit_paths])
     untraced = [num for num in numbers if num not in audit_text]
-    
+
     if untraced:
         raise ValueError(f"Found {len(untraced)} untraced numbers in manuscript: {untraced[:5]}")
     print(f"All {len(numbers)} numbers successfully verified against audit corpus.")

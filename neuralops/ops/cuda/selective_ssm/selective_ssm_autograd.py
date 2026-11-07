@@ -12,23 +12,33 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
+
 import torch
+
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
+
 def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "selective_ssm_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "selective_ssm.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "selective_ssm_binding.cpp", "r", encoding="utf-8") as f:
+            cpp_src = f.read()
+        with open(curr_dir / "selective_ssm.cu", "r", encoding="utf-8") as f:
+            cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_selective_ssm", cpp_src, cuda_src, ["selective_ssm_fwd"])
     return _MODULE
 
-def selective_ssm_ref(x: torch.Tensor, dt: torch.Tensor, A: torch.Tensor, B_vec: torch.Tensor, C_vec: torch.Tensor) -> torch.Tensor:
+
+def selective_ssm_ref(
+    x: torch.Tensor, dt: torch.Tensor, A: torch.Tensor, B_vec: torch.Tensor, C_vec: torch.Tensor
+) -> torch.Tensor:
     B, N, D = x.shape
     out = torch.empty_like(x)
     h = torch.zeros(B, D, device=x.device, dtype=torch.float32)
@@ -45,11 +55,28 @@ def selective_ssm_ref(x: torch.Tensor, dt: torch.Tensor, A: torch.Tensor, B_vec:
         out[:, t, :] = (h * C_f[:, t, :]).to(x.dtype)
     return out
 
-def _selective_ssm_fwd_dispatch(x: torch.Tensor, dt: torch.Tensor, A: torch.Tensor, B_vec: torch.Tensor, C_vec: torch.Tensor) -> torch.Tensor:
+
+def _selective_ssm_fwd_dispatch(
+    x: torch.Tensor, dt: torch.Tensor, A: torch.Tensor, B_vec: torch.Tensor, C_vec: torch.Tensor
+) -> torch.Tensor:
     def cuda_fn(x, dt, A, B_vec, C_vec, **kwargs):
         mod = _get_module()
-        return mod.selective_ssm_fwd(x.contiguous(), dt.contiguous(), A.contiguous(), B_vec.contiguous(), C_vec.contiguous())
-    return dispatch(cuda_fn, selective_ssm_ref, selective_ssm_ref, x, dt=dt, A=A, B_vec=B_vec, C_vec=C_vec, kernel_name="selective_ssm")
+        return mod.selective_ssm_fwd(
+            x.contiguous(), dt.contiguous(), A.contiguous(), B_vec.contiguous(), C_vec.contiguous()
+        )
+
+    return dispatch(
+        cuda_fn,
+        selective_ssm_ref,
+        selective_ssm_ref,
+        x,
+        dt=dt,
+        A=A,
+        B_vec=B_vec,
+        C_vec=C_vec,
+        kernel_name="selective_ssm",
+    )
+
 
 class _SelectiveSSMFunction(torch.autograd.Function):
     @staticmethod
@@ -74,7 +101,10 @@ class _SelectiveSSMFunction(torch.autograd.Function):
         grads = torch.autograd.grad(out_p, [x_p, dt_p, A_p, B_p, C_p], dout, allow_unused=True)
         return grads[0], grads[1], grads[2], grads[3], grads[4]
 
-def selective_ssm(x: torch.Tensor, dt: torch.Tensor, A: torch.Tensor, B_vec: torch.Tensor, C_vec: torch.Tensor) -> torch.Tensor:
+
+def selective_ssm(
+    x: torch.Tensor, dt: torch.Tensor, A: torch.Tensor, B_vec: torch.Tensor, C_vec: torch.Tensor
+) -> torch.Tensor:
     if any(t.requires_grad for t in (x, dt, A, B_vec, C_vec) if isinstance(t, torch.Tensor)):
         return _SelectiveSSMFunction.apply(x, dt, A, B_vec, C_vec)
     return _selective_ssm_fwd_dispatch(x, dt, A, B_vec, C_vec)

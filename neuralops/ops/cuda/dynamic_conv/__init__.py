@@ -11,10 +11,7 @@ Dynamic Depthwise Convolution Attention CUDA operator.
 
 from __future__ import annotations
 
-from neuralops.ops.cuda.dynamic_conv.autograd import (
-    DynamicConvAttentionFunction,
-    dynamic_conv_attention_forward,
-)
+from neuralops.ops.cuda.dynamic_conv.autograd import DynamicConvAttentionFunction, dynamic_conv_attention_forward
 
 __all__ = [
     "DynamicConvAttentionFunction",

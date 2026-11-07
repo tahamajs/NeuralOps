@@ -7,8 +7,8 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Root entry point for the serving-engine comparison benchmark."""
 
-
 import warnings
+
 warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
 
 from __future__ import annotations
@@ -22,7 +22,5 @@ if _REPO_ROOT not in sys.path:
 
 from scripts.benchmark_serving import main
 
-
 if __name__ == "__main__":
     main()
-

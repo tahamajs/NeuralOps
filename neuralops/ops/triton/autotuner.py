@@ -19,10 +19,7 @@ from typing import Any, Callable
 
 import torch
 
-from neuralops.ops.triton.hardware_profile import (
-    HardwareProfile,
-    get_device_hardware_profile,
-)
+from neuralops.ops.triton.hardware_profile import HardwareProfile, get_device_hardware_profile
 
 logger = logging.getLogger("TritonAutotuner")
 
@@ -269,11 +266,14 @@ def select_optimal_triton_config(
 
 def neuralops_autotune(kernel_family: str):
     """Decorator or dispatcher hook that injects calibrated configs into Triton launches."""
+
     def decorator(fn):
         def wrapper(*args, **kwargs):
             return fn(*args, **kwargs)
+
         wrapper.__name__ = getattr(fn, "__name__", "autotuned_kernel")
         return wrapper
+
     return decorator
 
 

@@ -13,8 +13,8 @@ Lossless self-speculative decoding algorithms to accelerate autoregressive token
 
 from __future__ import annotations
 
-import time
 import math
+import time
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Tuple, Union
 
@@ -238,7 +238,7 @@ class SelfSpeculativeDecoder:
         gen_tokens = curr_ids.shape[-1] - prompt_len
         tokens_sec = gen_tokens / elapsed
         acc_rate = total_accepted_tokens / max(total_draft_tokens, 1)
-        speedup = (gen_tokens / max(total_target_passes, 1))
+        speedup = gen_tokens / max(total_target_passes, 1)
 
         stats = SpeculativeDecodeStats(
             total_tokens_generated=gen_tokens,
@@ -297,7 +297,9 @@ def gamma_sweep_harness(
         dev = device or (p.device if p is not None else "cpu")
         input_ids = torch.randint(0, 1000, (1, 8), device=dev)
     decoder = SelfSpeculativeDecoder(target_model=target_model, draft_model=draft_model)
-    return decoder.run_gamma_sweep(input_ids=input_ids, gamma_values=gamma_values, max_new_tokens=max_new_tokens, **kwargs)
+    return decoder.run_gamma_sweep(
+        input_ids=input_ids, gamma_values=gamma_values, max_new_tokens=max_new_tokens, **kwargs
+    )
 
 
 __all__ = ["SpeculativeDecodeStats", "SelfSpeculativeDecoder", "gamma_sweep_harness"]

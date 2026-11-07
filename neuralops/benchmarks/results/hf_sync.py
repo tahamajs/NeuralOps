@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from neuralops.benchmarks.results.schema import BenchmarkResult
@@ -125,6 +125,7 @@ Every JSON artifact inside `runs/` contains complete environment metadata, hyper
             client = hf_client
             if client is None:
                 from huggingface_hub import HfApi
+
                 client = HfApi(token=self.token)
 
             try:

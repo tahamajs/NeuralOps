@@ -40,13 +40,9 @@ class DummyConfig:
         self.num_attention_heads = heads
         self.num_heads = heads
         self.n_heads = heads
-        self.num_key_value_heads = int(
-            num_key_value_heads if num_key_value_heads is not None else heads
-        )
+        self.num_key_value_heads = int(num_key_value_heads if num_key_value_heads is not None else heads)
         self.head_dim = max(1, self.hidden_size // max(1, heads))
-        self.intermediate_size = int(
-            intermediate_size if intermediate_size is not None else self.hidden_size * 4
-        )
+        self.intermediate_size = int(intermediate_size if intermediate_size is not None else self.hidden_size * 4)
         self.max_position_embeddings = int(max_position_embeddings)
         self.vocab_size = int(vocab_size)
         for k, v in kwargs.items():

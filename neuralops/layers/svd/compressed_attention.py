@@ -13,10 +13,6 @@ Truncated singular value decomposition attention reducing projection parameters 
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -25,12 +21,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
+
 logger = logging.getLogger(__name__)
 
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 
@@ -49,6 +47,7 @@ class CompressedAttentionLayer(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
@@ -69,12 +68,8 @@ class CompressedAttentionLayer(BaseAttention):
         cfg = config if config is not None else original_layer
         super().__init__(cfg, rank)
         self.adapter = ModelAdapter(cfg)
-        self.hidden_size: int = self.adapter.hidden_size or kwargs.get(
-            "hidden_size", kwargs.get("d_model", 768)
-        )
-        self.num_heads: int = self.adapter.num_heads or kwargs.get(
-            "num_heads", kwargs.get("num_attention_heads", 12)
-        )
+        self.hidden_size: int = self.adapter.hidden_size or kwargs.get("hidden_size", kwargs.get("d_model", 768))
+        self.num_heads: int = self.adapter.num_heads or kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
         self.num_kv_heads: int = self.adapter.num_key_value_heads or kwargs.get(
             "num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads)
         )
@@ -114,22 +109,14 @@ class CompressedAttentionLayer(BaseAttention):
 
         qkv_out_dim = self.all_head_size + 2 * self.kv_head_size
 
-        self.Vh_qkv = nn.Parameter(
-            torch.randn(self.rank_qkv, self.hidden_size) * 0.02, requires_grad=False
-        )
+        self.Vh_qkv = nn.Parameter(torch.randn(self.rank_qkv, self.hidden_size) * 0.02, requires_grad=False)
         self.S_qkv_sqrt = nn.Parameter(torch.ones(self.rank_qkv), requires_grad=False)
-        self.U_qkv = nn.Parameter(
-            torch.randn(qkv_out_dim, self.rank_qkv) * 0.02, requires_grad=False
-        )
+        self.U_qkv = nn.Parameter(torch.randn(qkv_out_dim, self.rank_qkv) * 0.02, requires_grad=False)
         self.bias_qkv = nn.Parameter(torch.zeros(qkv_out_dim), requires_grad=False)
 
-        self.Vh_out = nn.Parameter(
-            torch.randn(self.rank_out, self.all_head_size) * 0.02, requires_grad=False
-        )
+        self.Vh_out = nn.Parameter(torch.randn(self.rank_out, self.all_head_size) * 0.02, requires_grad=False)
         self.S_out_sqrt = nn.Parameter(torch.ones(self.rank_out), requires_grad=False)
-        self.U_out = nn.Parameter(
-            torch.randn(self.hidden_size, self.rank_out) * 0.02, requires_grad=False
-        )
+        self.U_out = nn.Parameter(torch.randn(self.hidden_size, self.rank_out) * 0.02, requires_grad=False)
         self.bias_out = nn.Parameter(torch.zeros(self.hidden_size), requires_grad=False)
 
         if self.lora_rank > 0:
@@ -144,19 +131,13 @@ class CompressedAttentionLayer(BaseAttention):
             self.register_parameter("lora_A_out", None)
             self.register_parameter("lora_B_out", None)
 
-        dropout_p = (
-            getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", 0.1))
-            if cfg
-            else 0.1
-        )
+        dropout_p = getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", 0.1)) if cfg else 0.1
         self.dropout = nn.Dropout(dropout_p)
         self.rotary_emb = getattr(pretrained_attn, "rotary_emb", None)
 
         src = pretrained_attn or (
             original_layer
-            if hasattr(original_layer, "q_lin")
-            or hasattr(original_layer, "query")
-            or hasattr(original_layer, "c_attn")
+            if hasattr(original_layer, "q_lin") or hasattr(original_layer, "query") or hasattr(original_layer, "c_attn")
             else None
         )
         if src is not None:
@@ -165,16 +146,12 @@ class CompressedAttentionLayer(BaseAttention):
     @property
     def qkv_weight(self) -> torch.Tensor:
         """Reconstruct the effective base QKV weight from SVD factors."""
-        return (self.U_qkv * self.S_qkv_sqrt.view(1, -1)) @ (
-            self.Vh_qkv * self.S_qkv_sqrt.view(-1, 1)
-        )
+        return (self.U_qkv * self.S_qkv_sqrt.view(1, -1)) @ (self.Vh_qkv * self.S_qkv_sqrt.view(-1, 1))
 
     @property
     def out_weight(self) -> torch.Tensor:
         """Reconstruct the effective base Out weight from SVD factors."""
-        return (self.U_out * self.S_out_sqrt.view(1, -1)) @ (
-            self.Vh_out * self.S_out_sqrt.view(-1, 1)
-        )
+        return (self.U_out * self.S_out_sqrt.view(1, -1)) @ (self.Vh_out * self.S_out_sqrt.view(-1, 1))
 
     def reset_lora_parameters(self) -> None:
         if self.lora_rank > 0:
@@ -203,9 +180,7 @@ class CompressedAttentionLayer(BaseAttention):
                 if w is not None:
                     extracted[proj] = (w, b)
             except Exception as e:
-                logger.debug(
-                    f"UniversalAdapter failed for {proj}: {e}"
-                )
+                logger.debug(f"UniversalAdapter failed for {proj}: {e}")
 
         if hasattr(src, "c_attn") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
@@ -228,11 +203,7 @@ class CompressedAttentionLayer(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
-            if (
-                w_o.dim() == 2
-                and w_o.shape[0] != self.hidden_size
-                and w_o.shape[1] == self.hidden_size
-            ):
+            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
                 w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -343,36 +314,20 @@ class CompressedAttentionLayer(BaseAttention):
             sqrt_s = torch.sqrt(torch.clamp(S[:r_qkv], min=1e-12))
 
             qkv_out_dim = self.all_head_size + 2 * self.kv_head_size
-            self.U_qkv.data[: min(qkv_out_dim, U.size(0)), :r_qkv].copy_(
-                U[: min(qkv_out_dim, U.size(0)), :r_qkv]
-            )
+            self.U_qkv.data[: min(qkv_out_dim, U.size(0)), :r_qkv].copy_(U[: min(qkv_out_dim, U.size(0)), :r_qkv])
             self.S_qkv_sqrt.data[:r_qkv].copy_(sqrt_s)
             self.Vh_qkv.data[:r_qkv, : min(self.hidden_size, Vh.size(1))].copy_(
                 Vh[:r_qkv, : min(self.hidden_size, Vh.size(1))]
             )
 
-            b_q = (
-                extracted["q"][1]
-                if extracted["q"][1] is not None
-                else torch.zeros(w_q.size(0), device=w_q.device)
-            )
-            b_k = (
-                extracted["k"][1]
-                if extracted["k"][1] is not None
-                else torch.zeros(w_k.size(0), device=w_k.device)
-            )
-            b_v = (
-                extracted["v"][1]
-                if extracted["v"][1] is not None
-                else torch.zeros(w_v.size(0), device=w_v.device)
-            )
+            b_q = extracted["q"][1] if extracted["q"][1] is not None else torch.zeros(w_q.size(0), device=w_q.device)
+            b_k = extracted["k"][1] if extracted["k"][1] is not None else torch.zeros(w_k.size(0), device=w_k.device)
+            b_v = extracted["v"][1] if extracted["v"][1] is not None else torch.zeros(w_v.size(0), device=w_v.device)
             b_q_val = b_q.data if isinstance(b_q, nn.Parameter) else b_q
             b_k_val = b_k.data if isinstance(b_k, nn.Parameter) else b_k
             b_v_val = b_v.data if isinstance(b_v, nn.Parameter) else b_v
             b_qkv = torch.cat([b_q_val, b_k_val, b_v_val], dim=0)
-            self.bias_qkv.data[: min(qkv_out_dim, b_qkv.size(0))].copy_(
-                b_qkv[: min(qkv_out_dim, b_qkv.size(0))]
-            )
+            self.bias_qkv.data[: min(qkv_out_dim, b_qkv.size(0))].copy_(b_qkv[: min(qkv_out_dim, b_qkv.size(0))])
 
             if extracted["o"][0] is not None:
                 w_o = _orient(extracted["o"][0].float(), self.all_head_size)
@@ -443,6 +398,7 @@ class CompressedAttentionLayer(BaseAttention):
         if hidden_states.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 qkv = fused_svd_lora_sparse_attn_triton(
                     hidden_states,
                     w_down=qkv_w_down,
@@ -456,16 +412,16 @@ class CompressedAttentionLayer(BaseAttention):
                 v_proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv_sqrt
                 qkv = torch.matmul(v_proj, qkv_w_up.t()) + self.bias_qkv
                 if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
-                    qkv = qkv + (F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling)
+                    qkv = qkv + (
+                        F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling
+                    )
         else:
             v_proj = torch.matmul(hidden_states, self.Vh_qkv.t()) * self.S_qkv_sqrt
             qkv = torch.matmul(v_proj, qkv_w_up.t()) + self.bias_qkv
             if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
                 qkv = qkv + (F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv) * self.lora_scaling)
 
-        q, k, v = torch.split(
-            qkv, [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1
-        )
+        q, k, v = torch.split(qkv, [self.all_head_size, self.kv_head_size, self.kv_head_size], dim=-1)
 
         q = q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
@@ -513,11 +469,7 @@ class CompressedAttentionLayer(BaseAttention):
                         scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
             if self.is_decoder and (mask is None or mask.dim() != 4):
-                causal_tril = (
-                    torch.tril(torch.ones((N, N), device=device, dtype=torch.bool))
-                    .unsqueeze(0)
-                    .unsqueeze(0)
-                )
+                causal_tril = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
                 scores = scores.masked_fill(~causal_tril, -10000.0)
 
             probs = F.softmax(scores, dim=-1, dtype=torch.float32).to(dtype)
@@ -534,6 +486,7 @@ class CompressedAttentionLayer(BaseAttention):
             if attn_out.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                     out = fused_svd_lora_sparse_attn_triton(
                         attn_out,
                         w_down=out_w_down,
@@ -613,11 +566,7 @@ def inject_compressed_attention(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -629,9 +578,7 @@ def inject_compressed_attention(
             res = inject_compressed_attention(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -657,11 +604,7 @@ def inject_compressed_attention(
             src_attn = layer.attn
 
     try:
-        h_sz = (
-            getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
-            if model_config
-            else 768
-        )
+        h_sz = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
         default_rank = min(256, h_sz // 2)
         rank_qkv = (
             getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", default_rank))

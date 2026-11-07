@@ -21,6 +21,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.benchmarks.registry import register_benchmark
 from neuralops.distributed.megatron_hooks import ColumnParallelLinear, RowParallelLinear
 
@@ -143,9 +144,7 @@ def benchmark_megatron_tp_sp(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for benchmark_megatron_tp_sp, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for benchmark_megatron_tp_sp, but CUDA is not available.")
 
     dtype = torch.float16 if dev.type == "cuda" else torch.float32
 
@@ -248,4 +247,3 @@ def run_benchmark(**kwargs: Any) -> dict[str, Any]:
 # Canonical Aliases for Multi-Agent Implementation Plan contract compliance
 run_megatron_tp_sp_benchmark = benchmark_megatron_tp_sp
 CoreModule = benchmark_megatron_tp_sp
-

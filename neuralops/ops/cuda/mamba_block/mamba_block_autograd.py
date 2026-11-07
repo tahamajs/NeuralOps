@@ -12,21 +12,29 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
+
 import torch
+
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
+
 def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "mamba_block_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "mamba_block.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "mamba_block_binding.cpp", "r", encoding="utf-8") as f:
+            cpp_src = f.read()
+        with open(curr_dir / "mamba_block.cu", "r", encoding="utf-8") as f:
+            cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_mamba_block", cpp_src, cuda_src, ["mamba_step_fwd"])
     return _MODULE
+
 
 def mamba_block_ref(
     u: torch.Tensor,
@@ -42,6 +50,7 @@ def mamba_block_ref(
     next_state = dA * prev_state.float() + dB * u.float().unsqueeze(-1)
     out = (next_state * C_mat.float().unsqueeze(1)).sum(dim=-1)
     return out.to(u.dtype), next_state.to(prev_state.dtype)
+
 
 def _mamba_block_fwd_dispatch(
     u: torch.Tensor,
@@ -75,6 +84,7 @@ def _mamba_block_fwd_dispatch(
         prev_state,
         kernel_name="mamba_block",
     )
+
 
 class _MambaBlockFunction(torch.autograd.Function):
     @staticmethod
@@ -117,6 +127,7 @@ class _MambaBlockFunction(torch.autograd.Function):
         )
         grad_map = dict(zip(diff_inputs, grads))
         return tuple(grad_map.get(inp, None) for inp in inputs)
+
 
 def mamba_block(
     u: torch.Tensor,

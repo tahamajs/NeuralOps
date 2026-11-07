@@ -21,8 +21,8 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 from typing import Any, Dict, List, Union
 
 
@@ -89,10 +89,7 @@ class RunArtifactManager:
             except Exception:
                 manifest_data = {"artifacts": []}
 
-        existing_entries = [
-            e for e in manifest_data.get("artifacts", [])
-            if e.get("filename") != entry["filename"]
-        ]
+        existing_entries = [e for e in manifest_data.get("artifacts", []) if e.get("filename") != entry["filename"]]
         existing_entries.append(entry)
         manifest_data["artifacts"] = existing_entries
 

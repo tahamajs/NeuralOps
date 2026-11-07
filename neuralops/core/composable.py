@@ -35,56 +35,68 @@ _CUSTOM_ENGINES: dict[str, Any] = {}
 
 def register_composable_projection(name: str, fn_or_cls: Any = None) -> Any:
     """Register a custom projection layer or factory for Stage 1 (P)."""
+
     def _decorator(obj: Any) -> Any:
         _CUSTOM_PROJECTIONS[name.lower()] = obj
         return obj
+
     return _decorator(fn_or_cls) if fn_or_cls is not None else _decorator
 
 
 def register_composable_kernel(name: str, fn_or_cls: Any = None) -> Any:
     """Register a custom non-linear feature map or kernel for Stage 2 (phi)."""
+
     def _decorator(obj: Any) -> Any:
         _CUSTOM_KERNELS[name.lower()] = obj
         return obj
+
     return _decorator(fn_or_cls) if fn_or_cls is not None else _decorator
 
 
 def register_composable_mask(name: str, fn_or_cls: Any = None) -> Any:
     """Register a custom attention mask or decay for Stage 3 (M)."""
+
     def _decorator(obj: Any) -> Any:
         _CUSTOM_MASKS[name.lower()] = obj
         return obj
+
     return _decorator(fn_or_cls) if fn_or_cls is not None else _decorator
 
 
 def register_composable_engine(name: str, fn_or_cls: Any = None) -> Any:
     """Register a custom Triton or PyTorch execution engine for Stage 4 (E)."""
+
     def _decorator(obj: Any) -> Any:
         _CUSTOM_ENGINES[name.lower()] = obj
         return obj
+
     return _decorator(fn_or_cls) if fn_or_cls is not None else _decorator
 
 
 class BaseProjection(nn.Module):
     """Abstract base class for input projections."""
+
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         raise NotImplementedError
 
 
 class BaseFeatureMap(nn.Module):
     """Abstract base class for positional or non-linear feature maps."""
+
     def forward(self, q: torch.Tensor, k: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         raise NotImplementedError
 
 
 class BaseMask(nn.Module):
     """Abstract base class for attention score masks."""
+
     def forward(self, scores: torch.Tensor, is_causal: bool = True) -> torch.Tensor:
         raise NotImplementedError
 
 
 class BaseExecutionEngine(nn.Module):
     """Abstract base class for attention execution engines."""
+
     def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any) -> torch.Tensor:
         raise NotImplementedError
 
@@ -153,15 +165,18 @@ class ComposableAttention(nn.Module):
         self.dropout = nn.Dropout(dropout) if dropout > 0.0 else nn.Identity()
 
         if "alibi" in self.positional_type:
+
             def _get_slopes(n: int) -> list[float]:
                 def get_slopes_power_of_2(n_p2: int) -> list[float]:
                     start = 2 ** (-(2 ** -(math.log2(n_p2) - 3)))
                     ratio = start
-                    return [start * (ratio ** i) for i in range(n_p2)]
+                    return [start * (ratio**i) for i in range(n_p2)]
+
                 if math.log2(n).is_integer():
                     return get_slopes_power_of_2(n)
                 closest = 2 ** math.floor(math.log2(n))
                 return get_slopes_power_of_2(closest) + _get_slopes(2 * closest)[0::2][: n - closest]
+
             slopes = torch.tensor(_get_slopes(num_heads), dtype=torch.float32).view(1, num_heads, 1, 1)
             self.register_buffer("alibi_slopes", slopes, persistent=False)
         else:
@@ -201,10 +216,12 @@ class ComposableAttention(nn.Module):
             emb = torch.cat((freqs, freqs), dim=-1)
             cos = emb.cos().view(1, 1, L, d).to(q.dtype)
             sin = emb.sin().view(1, 1, L, d).to(q.dtype)
+
             def _rotate_half(x: torch.Tensor) -> torch.Tensor:
                 x1 = x[..., : x.shape[-1] // 2]
                 x2 = x[..., x.shape[-1] // 2 :]
                 return torch.cat((-x2, x1), dim=-1)
+
             q = (q * cos) + (_rotate_half(q) * sin)
             k = (k * cos) + (_rotate_half(k) * sin)
         return q, k
@@ -269,8 +286,11 @@ class ComposableAttention(nn.Module):
             if q.is_cuda:
                 try:
                     from neuralops.core.triton_kernels.gla_scan import kda_hla_chunk_scan_triton
+
                     log_dec = torch.zeros((B, H, N), device=q.device, dtype=torch.float32)
-                    context = kda_hla_chunk_scan_triton(q_k.float(), k_k.float(), v.float(), log_dec).to(hidden_states.dtype)
+                    context = kda_hla_chunk_scan_triton(q_k.float(), k_k.float(), v.float(), log_dec).to(
+                        hidden_states.dtype
+                    )
                     out = self.out_proj(context.transpose(1, 2).contiguous().view(B, N, D))
                     return out
                 except Exception as exc:
@@ -280,8 +300,11 @@ class ComposableAttention(nn.Module):
             if q.is_cuda:
                 try:
                     from neuralops.core.triton_kernels.gdn_scan import gdn_scan_triton
+
                     beta = torch.sigmoid(self.beta).view(1, H, 1).expand(B, H, N).contiguous()
-                    context = gdn_scan_triton(q_k.to(torch.float16), k_k.to(torch.float16), v.to(torch.float16), beta.to(torch.float16))
+                    context = gdn_scan_triton(
+                        q_k.to(torch.float16), k_k.to(torch.float16), v.to(torch.float16), beta.to(torch.float16)
+                    )
                     out = self.out_proj(context.transpose(1, 2).contiguous().view(B, N, D))
                     return out
                 except Exception as exc:
@@ -290,6 +313,7 @@ class ComposableAttention(nn.Module):
         if "sliding_window" in self.mask_type and q.is_cuda and self.sink_tokens == 0:
             try:
                 from neuralops.core.triton_kernels.sliding_window import sliding_window_triton
+
                 context = sliding_window_triton(q_k, k_k, v, window_size=self.window_size)
                 out = self.out_proj(context.transpose(1, 2).contiguous().view(B, N, D))
                 return out
@@ -333,7 +357,9 @@ class ComposableAttention(nn.Module):
 
     def describe(self) -> dict[str, Any]:
         """Return a structured breakdown of the 4 algebraic stages and complexity."""
-        is_subquadratic = any(k in self.engine for k in ("chunked_scan", "recurrent", "delta_rule", "gdn", "linear")) or ("sliding_window" in self.mask_type and self.sink_tokens == 0)
+        is_subquadratic = any(
+            k in self.engine for k in ("chunked_scan", "recurrent", "delta_rule", "gdn", "linear")
+        ) or ("sliding_window" in self.mask_type and self.sink_tokens == 0)
         complexity = f"O(T * d * {self.rank if self.rank > 0 else 'd'})" if is_subquadratic else "O(T^2 * d)"
         active_triton = []
         if "chunked_scan" in self.engine:
@@ -362,7 +388,8 @@ class ComposableAttention(nn.Module):
                 "sink_tokens": self.sink_tokens,
             },
             "computational_complexity": complexity,
-            "active_triton_kernels": active_triton or ["torch.nn.functional.scaled_dot_product_attention (PyTorch SDPA)"],
+            "active_triton_kernels": active_triton
+            or ["torch.nn.functional.scaled_dot_product_attention (PyTorch SDPA)"],
         }
 
     def summary(self) -> str:

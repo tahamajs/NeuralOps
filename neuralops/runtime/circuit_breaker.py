@@ -15,10 +15,11 @@ with automatic 20ms cooldown recovery and zero memory leakage across stress iter
 
 from __future__ import annotations
 
-from enum import Enum
 import logging
 import time
+from enum import Enum
 from typing import Any, Callable, Dict, Optional
+
 import torch
 
 logger = logging.getLogger(__name__)
@@ -33,9 +34,9 @@ __all__ = [
 class CircuitState(str, Enum):
     """Circuit Breaker operational states."""
 
-    NORMAL = "Normal"        # Level 1 active (CUDA C++ / Peak Performance)
-    DEGRADED = "Degraded"    # Level 2 active (Triton JIT / Dynamic Tiling)
-    TRIPPED = "Tripped"      # Level 3 active (Safe Vectorized PyTorch Reference)
+    NORMAL = "Normal"  # Level 1 active (CUDA C++ / Peak Performance)
+    DEGRADED = "Degraded"  # Level 2 active (Triton JIT / Dynamic Tiling)
+    TRIPPED = "Tripped"  # Level 3 active (Safe Vectorized PyTorch Reference)
 
 
 class CircuitBreakerFSM:

@@ -96,8 +96,8 @@ def cmd_ui(args: argparse.Namespace) -> int:
 
     auth_creds = None
     if auth:
-        import os
         import getpass
+        import os
 
         if ":" in auth:
             raise ValueError(
@@ -116,6 +116,7 @@ def cmd_ui(args: argparse.Namespace) -> int:
     tunnel = None
     if share:
         from neuralops.ui.tunnel import CloudflareTunnel
+
         tunnel = CloudflareTunnel(port=port, host=host)
         try:
             tunnel_url = tunnel.start()
@@ -126,6 +127,7 @@ def cmd_ui(args: argparse.Namespace) -> int:
 
     if static_path:
         from neuralops.ui.static_builder import build_static_site
+
         print(f"Building static HTML distribution bundle into {static_path} ...")
         try:
             summary = build_static_site(static_path)
@@ -142,6 +144,7 @@ def cmd_ui(args: argparse.Namespace) -> int:
     print(f"Starting NeuralOps Web UI server on {url} ...")
 
     if not no_browser and not share:
+
         def _open_browser() -> None:
             try:
                 webbrowser.open(url)
@@ -153,6 +156,7 @@ def cmd_ui(args: argparse.Namespace) -> int:
         timer.start()
 
     from neuralops.ui.server import create_app
+
     app = create_app(auth_credentials=auth_creds)
 
     try:

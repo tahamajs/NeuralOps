@@ -98,16 +98,11 @@ class ModularAttention(BaseAttention):
         )
         self.num_heads = int(resolved_heads)
 
-        resolved_head_dim = (
-            head_dim
-            or getattr(config, "head_dim", None)
-            or (self.dim // max(1, self.num_heads))
-        )
+        resolved_head_dim = head_dim or getattr(config, "head_dim", None) or (self.dim // max(1, self.num_heads))
         self.head_dim = int(resolved_head_dim)
 
-        resolved_kv_heads = (
-            num_key_value_heads
-            or getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads))
+        resolved_kv_heads = num_key_value_heads or getattr(
+            config, "num_key_value_heads", getattr(config, "num_kv_heads", self.num_heads)
         )
         self.num_key_value_heads = int(resolved_kv_heads)
         self.num_key_value_groups = self.num_heads // max(1, self.num_key_value_heads)

@@ -12,10 +12,12 @@ Implements suite runner functionality for NeuralOps.
 """
 
 from __future__ import annotations
-from typing import Callable, Any
+
 import csv
 import os
 import time
+from typing import Any, Callable
+
 import torch
 import torch.nn.functional as F
 
@@ -84,7 +86,7 @@ def benchmark_scaling_sweep(
     """Runs sequence length scaling sweep on standard SDPA attention."""
     seq_lens = [128, 256, 512, 1024] if seq_lens is None else seq_lens
     results = []
-    scale = 1.0 / (head_dim ** 0.5)
+    scale = 1.0 / (head_dim**0.5)
 
     for N in seq_lens:
         q = torch.randn(batch_size, num_heads, N, head_dim)
@@ -98,11 +100,13 @@ def benchmark_scaling_sweep(
 
         ms = benchmark_attention_speed(run_sdpa, warmup=2, repeat=5)
         tokens_per_sec = (batch_size * N) / (ms / 1000.0) if ms > 0 else 0.0
-        results.append({
-            "seq_len": N,
-            "latency_ms": round(ms, 4),
-            "tokens_per_sec": round(tokens_per_sec, 2),
-        })
+        results.append(
+            {
+                "seq_len": N,
+                "latency_ms": round(ms, 4),
+                "tokens_per_sec": round(tokens_per_sec, 2),
+            }
+        )
 
     return results
 

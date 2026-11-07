@@ -12,12 +12,6 @@ Multi-query attention sharing a single key-value head across all query heads to 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    LoRALinear,
-)
 
 import logging
 import math
@@ -28,10 +22,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import LoRALinear
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.utils.rope import _rotate_half, apply_rotary_pos_emb
 from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.utils.rope import _rotate_half, apply_rotary_pos_emb
 
 logger = logging.getLogger(__name__)
 
@@ -149,8 +145,18 @@ class MultiQueryAttention(BaseAttention):
         else:
             model_type = str(_cfg_get(config, "model_type", "")).lower()
             _dec_pfx = (
-                "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
             )
             is_dec = bool(_cfg_get(config, "is_decoder", False))
             is_dec = is_dec or bool(_cfg_get(config, "causal", False))
@@ -181,23 +187,35 @@ class MultiQueryAttention(BaseAttention):
         self.freeze_base = self.lora_rank > 0
 
         self.q_proj = LoRALinear(
-            self.hidden_size, self.all_head_size,
-            bias=bias, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.hidden_size,
+            self.all_head_size,
+            bias=bias,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.hidden_size, self.kv_head_size,
-            bias=bias, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=bias,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.hidden_size, self.kv_head_size,
-            bias=bias, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=bias,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.hidden_size,
-            bias=bias, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.hidden_size,
+            bias=bias,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -308,11 +326,7 @@ class MultiQueryAttention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = _unpack_weight_bias(s.value)
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             extracted["o"] = _unpack_weight_bias(src.output.dense)
 
         named_map = {
@@ -332,8 +346,7 @@ class MultiQueryAttention(BaseAttention):
 
         cls_name = src.__class__.__name__
         has_out_proj = any(
-            hasattr(src, a)
-            for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
+            hasattr(src, a) for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
         )
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
@@ -378,9 +391,7 @@ class MultiQueryAttention(BaseAttention):
 
             if src_heads > target_heads and src_heads % target_heads == 0:
                 group_size = src_heads // target_heads
-                w_pooled = w_reshaped.view(
-                    target_heads, group_size, head_dim, -1
-                ).mean(dim=1)
+                w_pooled = w_reshaped.view(target_heads, group_size, head_dim, -1).mean(dim=1)
             elif src_heads > target_heads:
                 idx = torch.linspace(0, src_heads - 1, target_heads).long()
                 w_pooled = w_reshaped.index_select(0, idx.to(w.device))
@@ -413,24 +424,18 @@ class MultiQueryAttention(BaseAttention):
                 if key in ("k", "v"):
                     w = _pool_kv_heads(w, self.num_kv_heads, self.head_dim)
                     if b is not None:
-                        b = _pool_kv_heads(
-                            b.unsqueeze(-1), self.num_kv_heads, self.head_dim
-                        ).squeeze(-1)
+                        b = _pool_kv_heads(b.unsqueeze(-1), self.num_kv_heads, self.head_dim).squeeze(-1)
 
                 out_d = min(target.weight.shape[0], w.shape[0])
                 in_d = min(target.weight.shape[1], w.shape[1])
 
                 target.weight.data.zero_()
-                target.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
-                )
+                target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
 
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
                     target.bias.data.zero_()
-                    target.bias.data[:mb].copy_(
-                        b[:mb].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
                 elif target.bias is not None:
                     target.bias.data.zero_()
 
@@ -442,9 +447,7 @@ class MultiQueryAttention(BaseAttention):
             self.rotary_emb = src.rotary_emb
 
     @staticmethod
-    def _read_cache(past_key_value: Any, layer_idx: int) -> tuple[
-        torch.Tensor | None, torch.Tensor | None, int
-    ]:
+    def _read_cache(past_key_value: Any, layer_idx: int) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
         if past_key_value is None:
             return None, None, 0
 
@@ -479,9 +482,7 @@ class MultiQueryAttention(BaseAttention):
         return None, None, 0
 
     @staticmethod
-    def _write_cache(
-        k: torch.Tensor, v: torch.Tensor, past_key_value: Any, layer_idx: int
-    ) -> Any:
+    def _write_cache(k: torch.Tensor, v: torch.Tensor, past_key_value: Any, layer_idx: int) -> Any:
         if past_key_value is not None and hasattr(past_key_value, "key_cache"):
             if layer_idx < len(past_key_value.key_cache):
                 past_key_value.key_cache[layer_idx] = k
@@ -524,18 +525,8 @@ class MultiQueryAttention(BaseAttention):
         N_k_new = kv_input.shape[1]
 
         q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        k_new = (
-            self.k_proj(kv_input)
-            .view(B, N_k_new, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v_new = (
-            self.v_proj(kv_input)
-            .view(B, N_k_new, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k_new = self.k_proj(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v_new = self.v_proj(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -546,11 +537,7 @@ class MultiQueryAttention(BaseAttention):
         elif self.rotary_emb is not None and not is_cross:
             position_ids = kwargs.get("position_ids")
             if position_ids is None:
-                position_ids = (
-                    torch.arange(N_q, device=device, dtype=torch.long)
-                    .unsqueeze(0)
-                    .expand(B, -1)
-                )
+                position_ids = torch.arange(N_q, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
             try:
                 cos, sin = self.rotary_emb(k_new, position_ids=position_ids)
             except TypeError:
@@ -590,11 +577,7 @@ class MultiQueryAttention(BaseAttention):
         if eff_mask is None:
             eff_mask = kwargs.get("mask")
 
-        use_sdpa = (
-            head_mask is None
-            and not output_attentions
-            and eff_mask is None
-        )
+        use_sdpa = head_mask is None and not output_attentions and eff_mask is None
         attn_weights: torch.Tensor | None = None
 
         if use_sdpa:
@@ -604,6 +587,7 @@ class MultiQueryAttention(BaseAttention):
                 # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM & warp KV broadcast
                 try:
                     from neuralops.ops.cuda.flash_gqa import flash_gqa
+
                     context = flash_gqa(q, k, v, is_causal=is_causal, scale=scale_val).to(dtype)
                     dispatched = True
                 except Exception as e_cuda:
@@ -613,6 +597,7 @@ class MultiQueryAttention(BaseAttention):
                 # Level 2: Triton JIT autotuned online softmax kernel with in-register head broadcast
                 try:
                     from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+
                     context = fused_weighted_gqa_online_softmax_triton(
                         q, k, v, head_weights=None, is_causal=is_causal, scale=scale_val
                     ).to(dtype)
@@ -627,14 +612,24 @@ class MultiQueryAttention(BaseAttention):
                     if self.kv_repeat > 1:
                         # Zero-copy view expansion to eliminate physical tensor replication loops
                         _b, _h_kv, _s_kv, _d = k.shape
-                        _ks_exp = k[:, :, None, :, :].expand(_b, _h_kv, self.kv_repeat, _s_kv, _d).reshape(_b, _h_kv * self.kv_repeat, _s_kv, _d)
-                        _vs_exp = v[:, :, None, :, :].expand(_b, _h_kv, self.kv_repeat, _s_kv, _d).reshape(_b, _h_kv * self.kv_repeat, _s_kv, _d)
+                        _ks_exp = (
+                            k[:, :, None, :, :]
+                            .expand(_b, _h_kv, self.kv_repeat, _s_kv, _d)
+                            .reshape(_b, _h_kv * self.kv_repeat, _s_kv, _d)
+                        )
+                        _vs_exp = (
+                            v[:, :, None, :, :]
+                            .expand(_b, _h_kv, self.kv_repeat, _s_kv, _d)
+                            .reshape(_b, _h_kv * self.kv_repeat, _s_kv, _d)
+                        )
                     else:
                         _ks_exp, _vs_exp = k, v
                     _ks = maybe_half(_ks_exp)
                     _vs = maybe_half(_vs_exp)
                     context = F.scaled_dot_product_attention(
-                        _qs, _ks, _vs,
+                        _qs,
+                        _ks,
+                        _vs,
                         attn_mask=None,
                         dropout_p=self.dropout_p if self.training else 0.0,
                         is_causal=is_causal,
@@ -652,6 +647,7 @@ class MultiQueryAttention(BaseAttention):
 
             try:
                 from neuralops.ops.triton.gqa import fused_mqa_bias_scale_triton
+
                 scores = fused_mqa_bias_scale_triton(raw_scores, scale, is_causal=is_causal, past_len=past_len)
             except Exception:
                 scores = raw_scores * scale
@@ -714,6 +710,7 @@ class MultiQueryAttention(BaseAttention):
     def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             return p.numel() * p.element_size() if isinstance(p, (nn.Parameter, torch.Tensor)) else 0
+
         out: dict[str, int] = {}
         for name, m in (("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)):
             out[name] = sum(_sz(p) for p in m.parameters())

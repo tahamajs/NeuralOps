@@ -13,11 +13,6 @@ Clusters query tokens into semantic centroids to approximate full pairwise self-
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -27,9 +22,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -50,6 +46,7 @@ class ClusterAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
@@ -73,9 +70,7 @@ class ClusterAttention(BaseAttention):
         super().__init__(config, rank)
 
         hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
-        num_heads = (
-            kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
-        )
+        num_heads = kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
         num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
 
         if not num_heads and source_attn is not None:
@@ -102,29 +97,13 @@ class ClusterAttention(BaseAttention):
                     getattr(source_attn, "all_head_size", None),
                 ),
             )
-            if (
-                cand is None
-                and hasattr(source_attn, "query")
-                and hasattr(source_attn.query, "in_features")
-            ):
+            if cand is None and hasattr(source_attn, "query") and hasattr(source_attn.query, "in_features"):
                 cand = source_attn.query.in_features
-            if (
-                cand is None
-                and hasattr(source_attn, "q_proj")
-                and hasattr(source_attn.q_proj, "in_features")
-            ):
+            if cand is None and hasattr(source_attn, "q_proj") and hasattr(source_attn.q_proj, "in_features"):
                 cand = source_attn.q_proj.in_features
-            if (
-                cand is None
-                and hasattr(source_attn, "q_lin")
-                and hasattr(source_attn.q_lin, "in_features")
-            ):
+            if cand is None and hasattr(source_attn, "q_lin") and hasattr(source_attn.q_lin, "in_features"):
                 cand = source_attn.q_lin.in_features
-            if (
-                cand is None
-                and hasattr(source_attn, "c_attn")
-                and hasattr(source_attn.c_attn, "in_features")
-            ):
+            if cand is None and hasattr(source_attn, "c_attn") and hasattr(source_attn.c_attn, "in_features"):
                 cand = source_attn.c_attn.in_features
             hidden_size = cand
         if not hidden_size and config is not None:
@@ -219,8 +198,7 @@ class ClusterAttention(BaseAttention):
             else False
         )
         if hasattr(config, "architectures") and any(
-            "GPT" in str(a) or "CausalLM" in str(a)
-            for a in (getattr(config, "architectures", []) or [])
+            "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
         ):
             is_dec = True
         if source_attn is not None:
@@ -306,9 +284,7 @@ class ClusterAttention(BaseAttention):
             else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
-        self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
-        )
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         if source_attn is not None:
             self.copy_weights(source_attn, **kwargs)
@@ -334,9 +310,7 @@ class ClusterAttention(BaseAttention):
         if (
             hasattr(src, "c_attn")
             and src.c_attn is not None
-            and (
-                extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
-            )
+            and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None)
         ):
             c_attn_mod = src.c_attn
             if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
@@ -460,18 +434,12 @@ class ClusterAttention(BaseAttention):
                     "XLMRobertaSelfAttention",
                 )
                 or (cls_name.endswith("SelfAttention") and not has_out_proj)
-                or (
-                    ("roberta" in cls_name.lower() or "bert" in cls_name.lower())
-                    and not has_out_proj
-                )
+                or (("roberta" in cls_name.lower() or "bert" in cls_name.lower()) and not has_out_proj)
             )
         ):
             is_nested = True
         if hasattr(src, "config"):
-            if (
-                getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta")
-                and not has_out_proj
-            ):
+            if getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta") and not has_out_proj:
                 is_nested = True
         if kwargs.get("is_nested_encoder") is not None:
             is_nested = kwargs["is_nested_encoder"]
@@ -481,9 +449,7 @@ class ClusterAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(
-                f"ClusterAttention missing required weights for projections: {missing}"
-            )
+            raise RuntimeError(f"ClusterAttention missing required weights for projections: {missing}")
 
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
@@ -582,18 +548,15 @@ class ClusterAttention(BaseAttention):
         Q_f = Q.float()
 
         from neuralops.ops.triton.sparse_attn import (
-            fused_kmeans_centroid_assign_triton,
             fused_kmeans_centroid_assign_pytorch,
+            fused_kmeans_centroid_assign_triton,
         )
+
         for _ in range(iters):
             try:
-                centroids, cluster_ids, counts = fused_kmeans_centroid_assign_triton(
-                    Q, centroids, valid_mask
-                )
+                centroids, cluster_ids, counts = fused_kmeans_centroid_assign_triton(Q, centroids, valid_mask)
             except Exception:
-                centroids, cluster_ids, counts = fused_kmeans_centroid_assign_pytorch(
-                    Q, centroids, valid_mask
-                )
+                centroids, cluster_ids, counts = fused_kmeans_centroid_assign_pytorch(Q, centroids, valid_mask)
 
         return centroids, cluster_ids, counts
 
@@ -626,11 +589,7 @@ class ClusterAttention(BaseAttention):
         K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
-        pos_emb = (
-            position_embeddings
-            if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
@@ -682,7 +641,9 @@ class ClusterAttention(BaseAttention):
                 or getattr(_cfg, "causal", False)
                 or any(model_type.startswith(p) for p in _decoder_prefixes)
             )
-        is_decoder = bool(self.is_decoder or is_dec_cfg or kwargs.get("is_causal", False) or kwargs.get("causal", False))
+        is_decoder = bool(
+            self.is_decoder or is_dec_cfg or kwargs.get("is_causal", False) or kwargs.get("causal", False)
+        )
 
         if is_cross_attention or is_decoder:
             scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
@@ -700,9 +661,7 @@ class ClusterAttention(BaseAttention):
 
             if is_decoder:
                 causal_tril = (
-                    torch.tril(torch.ones((L, N_k), device=device, dtype=torch.bool))
-                    .unsqueeze(0)
-                    .unsqueeze(0)
+                    torch.tril(torch.ones((L, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
                 )
                 scores = scores.masked_fill(~causal_tril, -10000.0)
 
@@ -742,9 +701,7 @@ class ClusterAttention(BaseAttention):
             scores_cent = torch.matmul(centroids, K.transpose(-2, -1).contiguous()) * scale
             scores_cent = scores_cent.clamp(min=-10000.0, max=10000.0)
             scores_cent = scores_cent.masked_fill(~key_valid_4d, -10000.0)
-            attn_cent = torch.nan_to_num(F.softmax(scores_cent.float(), dim=-1), nan=0.0).to(
-                dtype
-            )
+            attn_cent = torch.nan_to_num(F.softmax(scores_cent.float(), dim=-1), nan=0.0).to(dtype)
             attn_cent = self.dropout(attn_cent)
 
             V_cent = torch.matmul(attn_cent, V)
@@ -755,9 +712,7 @@ class ClusterAttention(BaseAttention):
             scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
             scores_assign = scores_assign.clamp(min=-10000.0, max=10000.0)
             temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
-            attn_assign = torch.nan_to_num(
-                F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0
-            ).to(dtype)
+            attn_assign = torch.nan_to_num(F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0).to(dtype)
             assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1e-6)
             attn_assign = attn_assign / assign_denom
             attn_assign = torch.nan_to_num(attn_assign, nan=0.0)
@@ -772,14 +727,14 @@ class ClusterAttention(BaseAttention):
                     else torch.arange(L, device=device)
                 )
                 if is_decoder:
-                    band_mask = (idx.unsqueeze(1) >= idx.unsqueeze(0)) & ((idx.unsqueeze(1) - idx.unsqueeze(0)) <= self.window_size)
+                    band_mask = (idx.unsqueeze(1) >= idx.unsqueeze(0)) & (
+                        (idx.unsqueeze(1) - idx.unsqueeze(0)) <= self.window_size
+                    )
                 else:
                     band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
                 band_mask_4d = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
                 scores_loc = scores_loc.masked_fill(~band_mask_4d, -10000.0)
-                attn_loc = torch.nan_to_num(F.softmax(scores_loc.float(), dim=-1), nan=0.0).to(
-                    dtype
-                )
+                attn_loc = torch.nan_to_num(F.softmax(scores_loc.float(), dim=-1), nan=0.0).to(dtype)
                 attn_loc = self.dropout(attn_loc)
                 local_context = torch.matmul(attn_loc, V)
                 alpha = torch.sigmoid(self.local_residual)
@@ -845,11 +800,7 @@ def inject_cluster(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

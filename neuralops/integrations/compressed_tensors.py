@@ -12,10 +12,12 @@ can load the emitted artifacts.
 """
 
 from __future__ import annotations
+
 import json
 import logging
 import os
 from typing import Any, Dict, Optional, Union
+
 import torch
 import torch.nn as nn
 
@@ -23,6 +25,7 @@ logger = logging.getLogger("NeuralOps.CompressedTensorsExporter")
 
 try:
     import safetensors.torch
+
     HAS_SAFETENSORS = True
 except ImportError:
     HAS_SAFETENSORS = False
@@ -101,7 +104,9 @@ class CompressedTensorsExporter:
         safetensors_path = os.path.join(path, "model.safetensors")
         if HAS_SAFETENSORS:
             try:
-                clean_tensors = {k: v.detach().cpu() for k, v in serialized_tensors.items() if isinstance(v, torch.Tensor)}
+                clean_tensors = {
+                    k: v.detach().cpu() for k, v in serialized_tensors.items() if isinstance(v, torch.Tensor)
+                }
                 safetensors.torch.save_file(clean_tensors, safetensors_path)
                 artifacts["model.safetensors"] = safetensors_path
             except Exception as e:

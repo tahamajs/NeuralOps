@@ -97,21 +97,23 @@ class RooflineBenchmark(AbstractBaseBenchmark):
 
         except Exception as e:
             logger.warning("Roofline calculation error: %s", e)
-            self.results_table.append({
-                "step": step,
-                "mechanism_or_kernel": f"roofline_{attention_type}",
-                "batch_size": batch_size,
-                "seq_len": seq_len,
-                "dtype": "fp32",
-                "latency_ms": 0.0,
-                "latency_p50_ms": 0.0,
-                "latency_p90_ms": 0.0,
-                "latency_p99_ms": 0.0,
-                "tflops": 0.0,
-                "arithmetic_intensity": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": f"FAILED_RUNTIME: {e}",
-            })
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": f"roofline_{attention_type}",
+                    "batch_size": batch_size,
+                    "seq_len": seq_len,
+                    "dtype": "fp32",
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "tflops": 0.0,
+                    "arithmetic_intensity": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": f"FAILED_RUNTIME: {e}",
+                }
+            )
             self.tracker.log_metric("achieved_tflops", 0.0, step=step)
             return {"achieved_tflops": 0.0, "arithmetic_intensity": 0.0}
 

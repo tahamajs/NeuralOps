@@ -90,11 +90,11 @@ class MGIECompressor(BaseCompressor):
 
 The compressor takes **no additional hyperparameters** — the entropy‑driven logic is fully automatic.
 
-**`_compress_layer(W)`**:  
-1. Computes `U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)`.  
-2. Normalises `p = S / S.sum()` and computes `entropy = -torch.sum(p * torch.log(p + 1e-8))`.  
-3. Calculates `max_rank = min(W.shape)` and `rank = max(1, int(entropy * max_rank / (torch.log(torch.tensor(max_rank)) + 1e-8)))`.  
-4. Caps `rank = min(rank, max_rank)`.  
+**`_compress_layer(W)`**:
+1. Computes `U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)`.
+2. Normalises `p = S / S.sum()` and computes `entropy = -torch.sum(p * torch.log(p + 1e-8))`.
+3. Calculates `max_rank = min(W.shape)` and `rank = max(1, int(entropy * max_rank / (torch.log(torch.tensor(max_rank)) + 1e-8)))`.
+4. Caps `rank = min(rank, max_rank)`.
 5. Returns `U[:, :rank] @ torch.diag(S[:rank]) @ Vt[:rank, :]`.
 
 **`compress()`**: Iterates over all `nn.Linear` modules and replaces each weight with the output of `_compress_layer`.
@@ -158,4 +158,3 @@ The empirical evaluation of `mgie_svd` across standard sequence lengths and lang
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

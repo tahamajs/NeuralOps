@@ -185,7 +185,7 @@ def aasvd_anchored_forward_kernel(
 
     # Accumulate projected subspace in SRAM
     acc_r = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
-    
+
     for k in range(0, d_in, BLOCK_K):
         offs_k = k + tl.arange(0, BLOCK_K)
 
@@ -236,4 +236,3 @@ The empirical evaluation of `aa_svd_compressor` across standard sequence lengths
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

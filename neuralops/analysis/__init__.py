@@ -13,6 +13,12 @@ from .flops_utils import _compute_flops_estimate
 from .layerwise_analyzer import LayerwiseAnalyzer, estimate_intrinsic_dimension
 from .metrics import MetricsTracker, aggregate_results, compute_metrics
 from .model_comparison import ModelComparison, quick_compare
+from .paper_plots import (
+    generate_all_paper_plots,
+    plot_attention_entropy_heatmap,
+    plot_pareto_frontier,
+    plot_singular_value_spectrum,
+)
 from .plotting import (
     create_comprehensive_plots,
     plot_accuracy_curve,
@@ -43,12 +49,6 @@ from .utils import (
     filter_results,
     get_best_configurations,
     statistical_tests,
-)
-from .paper_plots import (
-    plot_singular_value_spectrum,
-    plot_attention_entropy_heatmap,
-    plot_pareto_frontier,
-    generate_all_paper_plots,
 )
 
 __all__ = [
@@ -119,21 +119,22 @@ __all__ += [
     "run_full_statistical_analysis",
 ]
 
-from neuralops.analysis import comparison
-from neuralops.analysis import module_analysis
-from neuralops.analysis import generate_all_modules_analysis
-from neuralops.analysis import generate_sweep_publication_artifacts
-from neuralops.analysis import layerwise_analyzer
-from neuralops.analysis import metrics
-from neuralops.analysis import model_comparison
-from neuralops.analysis import plotting
-from neuralops.analysis import report_generator
-from neuralops.analysis import utils
-
-from neuralops.analysis import paper_export
-from neuralops.analysis import results_ledger
-from neuralops.analysis import roofline
-from neuralops.analysis import inspector
+from neuralops.analysis import (
+    comparison,
+    generate_all_modules_analysis,
+    generate_sweep_publication_artifacts,
+    inspector,
+    layerwise_analyzer,
+    metrics,
+    model_comparison,
+    module_analysis,
+    paper_export,
+    plotting,
+    report_generator,
+    results_ledger,
+    roofline,
+    utils,
+)
 
 __all__ += [
     "paper_export",

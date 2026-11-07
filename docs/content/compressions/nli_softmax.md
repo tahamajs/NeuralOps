@@ -1,6 +1,6 @@
 # NLI Softmax Approximation
 
-**Standalone autograd function**  
+**Standalone autograd function**
 *An attempt at a computationally cheaper, quantisation‑friendly softmax by replacing the gradient with a simplified sigmoid‑based expression, while still using the exact softmax in the forward pass.*
 
 ---
@@ -71,18 +71,18 @@ The sigmoid derivative `σ(x)(1-σ(x))` is often used as a cheap approximation f
 
 Inherits from `torch.autograd.Function`. Overrides `forward` and `backward`.
 
-Specifically, regarding \textbf{`forward(ctx, x)`}, 
+Specifically, regarding \textbf{`forward(ctx, x)`},
 
-  1. Clamps `x` to `[-3,3]` (unused).  
-  2. Computes `y = F.softmax(x, dim=-1)`.  
-  3. Saves the original input `x` for backward.  
+  1. Clamps `x` to `[-3,3]` (unused).
+  2. Computes `y = F.softmax(x, dim=-1)`.
+  3. Saves the original input `x` for backward.
   4. Returns `y`.
 
-Specifically, regarding \textbf{`backward(ctx, grad_output)`}, 
+Specifically, regarding \textbf{`backward(ctx, grad_output)`},
 
-  1. Retrieves `x`.  
-  2. Computes `sig = torch.sigmoid(x)`.  
-  3. Computes `grad_input = grad_output * sig * (1 - sig)`.  
+  1. Retrieves `x`.
+  2. Computes `sig = torch.sigmoid(x)`.
+  3. Computes `grad_input = grad_output * sig * (1 - sig)`.
   4. Returns `grad_input`.
 
 ### `nli_softmax(x)` function
@@ -161,4 +161,3 @@ The empirical evaluation of `nli_softmax` across standard sequence lengths and l
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

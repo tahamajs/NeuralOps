@@ -58,19 +58,31 @@ class LayerParallelExecutor:
             nn.ModuleList or list container if found, otherwise None (non-layer-stackable model).
         """
         # 1. model.model.layers (LLaMA, Qwen, Mistral)
-        if hasattr(model, "model") and hasattr(model.model, "layers") and isinstance(model.model.layers, (nn.ModuleList, list)):
+        if (
+            hasattr(model, "model")
+            and hasattr(model.model, "layers")
+            and isinstance(model.model.layers, (nn.ModuleList, list))
+        ):
             return model.model.layers
         if hasattr(model, "layers") and isinstance(model.layers, (nn.ModuleList, list)):
             return model.layers
 
         # 2. model.transformer.h (GPT-2, Bloom)
-        if hasattr(model, "transformer") and hasattr(model.transformer, "h") and isinstance(model.transformer.h, (nn.ModuleList, list)):
+        if (
+            hasattr(model, "transformer")
+            and hasattr(model.transformer, "h")
+            and isinstance(model.transformer.h, (nn.ModuleList, list))
+        ):
             return model.transformer.h
         if hasattr(model, "h") and isinstance(model.h, (nn.ModuleList, list)):
             return model.h
 
         # 3. model.encoder.layer (BERT, RoBERTa)
-        if hasattr(model, "encoder") and hasattr(model.encoder, "layer") and isinstance(model.encoder.layer, (nn.ModuleList, list)):
+        if (
+            hasattr(model, "encoder")
+            and hasattr(model.encoder, "layer")
+            and isinstance(model.encoder.layer, (nn.ModuleList, list))
+        ):
             return model.encoder.layer
         if (
             hasattr(model, "bert")
@@ -81,7 +93,11 @@ class LayerParallelExecutor:
             return model.bert.encoder.layer
 
         # 4. model.transformer.layer (DistilBERT)
-        if hasattr(model, "transformer") and hasattr(model.transformer, "layer") and isinstance(model.transformer.layer, (nn.ModuleList, list)):
+        if (
+            hasattr(model, "transformer")
+            and hasattr(model.transformer, "layer")
+            and isinstance(model.transformer.layer, (nn.ModuleList, list))
+        ):
             return model.transformer.layer
         if (
             hasattr(model, "distilbert")
@@ -118,7 +134,9 @@ class LayerParallelExecutor:
         """
         layers = self.find_layer_list(model)
         if layers is None:
-            logger.warning("find_layer_list returned None (non-layer-stackable model). Falling back to single-GPU transformation.")
+            logger.warning(
+                "find_layer_list returned None (non-layer-stackable model). Falling back to single-GPU transformation."
+            )
             if op_fn is not None:
                 return op_fn(model)
             return model
@@ -192,7 +210,9 @@ class LayerParallelExecutor:
 
         layers = self.find_layer_list(model)
         if layers is None:
-            logger.warning("find_layer_list returned None (non-layer-stackable model). Falling back to single-device transplant.")
+            logger.warning(
+                "find_layer_list returned None (non-layer-stackable model). Falling back to single-device transplant."
+            )
             return replace_attention(model, attention=target_attention, **kwargs)
 
         num_layers = len(layers)
@@ -281,7 +301,9 @@ class LayerParallelExecutor:
 
         layers = self.find_layer_list(model)
         if layers is None:
-            logger.warning("find_layer_list returned None (non-layer-stackable model). Falling back to single-device compress.")
+            logger.warning(
+                "find_layer_list returned None (non-layer-stackable model). Falling back to single-device compress."
+            )
             return compress(model, method=method, **kwargs)
 
         num_layers = len(layers)

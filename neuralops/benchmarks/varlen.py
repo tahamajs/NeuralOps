@@ -30,4 +30,14 @@ def run_benchmark(device: str = "cuda", lengths: tuple[int, ...] = (128, 256, 51
     started = time.perf_counter()
     padded_out = padded @ padded.transpose(-1, -2)
     padded_ms = (time.perf_counter() - started) * 1000.0
-    return {"module": "varlen_attention", "category": "varlen", "device": str(target), "ragged_ms": ragged_ms, "padded_ms": padded_ms, "padding_overhead_pct": (padded.numel() / sum(x.numel() for x in ragged) - 1.0) * 100.0, "status": "PASS" if all(torch.isfinite(x).all() for x in ragged_out) and torch.isfinite(padded_out).all() else "FAIL"}
+    return {
+        "module": "varlen_attention",
+        "category": "varlen",
+        "device": str(target),
+        "ragged_ms": ragged_ms,
+        "padded_ms": padded_ms,
+        "padding_overhead_pct": (padded.numel() / sum(x.numel() for x in ragged) - 1.0) * 100.0,
+        "status": (
+            "PASS" if all(torch.isfinite(x).all() for x in ragged_out) and torch.isfinite(padded_out).all() else "FAIL"
+        ),
+    }

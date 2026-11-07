@@ -62,18 +62,18 @@ export function updateNodePulses(now = performance.now()) {
         } else {
             // Sine flash curve
             const pulseFactor = Math.sin(progress * Math.PI);
-            
+
             if (mesh.userData._pulseType === 'svd_collapse') {
                 // SVD collapse animation: color shifts to neon and scale physically squashes
                 mesh.material.emissiveIntensity = (mesh.userData._pulseBaseIntensity || 0) + pulseFactor * 2.5;
                 const neonColor = new THREE.Color(0x00ffff).lerp(new THREE.Color(0xff00ff), progress);
                 if (mesh.material.emissive) mesh.material.emissive.copy(neonColor);
-                
+
                 // Squash matrix along X axis to represent low-rank mathematical projection
                 const squashFactor = 1.0 - (pulseFactor * 0.6); // 60% compression visually
                 mesh.scale.set(
-                    mesh.userData._originalScale.x * squashFactor, 
-                    mesh.userData._originalScale.y, 
+                    mesh.userData._originalScale.x * squashFactor,
+                    mesh.userData._originalScale.y,
                     mesh.userData._originalScale.z
                 );
             } else {

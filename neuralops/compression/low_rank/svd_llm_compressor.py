@@ -100,19 +100,11 @@ class SVDLLMLinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A_u = nn.Parameter(
-                torch.empty(lora_rank, self.rank, device=device, dtype=dtype)
-            )
-            self.lora_B_u = nn.Parameter(
-                torch.empty(out_features, lora_rank, device=device, dtype=dtype)
-            )
+            self.lora_A_u = nn.Parameter(torch.empty(lora_rank, self.rank, device=device, dtype=dtype))
+            self.lora_B_u = nn.Parameter(torch.empty(out_features, lora_rank, device=device, dtype=dtype))
 
-            self.lora_A_v = nn.Parameter(
-                torch.empty(lora_rank, in_features, device=device, dtype=dtype)
-            )
-            self.lora_B_v = nn.Parameter(
-                torch.empty(self.rank, lora_rank, device=device, dtype=dtype)
-            )
+            self.lora_A_v = nn.Parameter(torch.empty(lora_rank, in_features, device=device, dtype=dtype))
+            self.lora_B_v = nn.Parameter(torch.empty(self.rank, lora_rank, device=device, dtype=dtype))
 
             self.reset_lora_parameters()
         else:
@@ -138,9 +130,7 @@ class SVDLLMLinear(nn.Module):
                 nn.init.kaiming_uniform_(self.lora_A_v, a=math.sqrt(5))
                 nn.init.normal_(self.lora_B_v, mean=0.0, std=1e-4)
 
-    def set_factors(
-        self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None
-    ) -> None:
+    def set_factors(self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         with torch.no_grad():
             r = min(self.rank, W_u.size(1), W_v.size(0))
             self.W_u.data.zero_()
@@ -188,10 +178,12 @@ class SVDLLMLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda and (self.lora_rank == 0 or self.lora_A_v is None):
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 return fused_down_up_gemm_bias_triton(x, self.W_v, self.W_u.t().contiguous(), bias=self.bias)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
@@ -199,10 +191,7 @@ class SVDLLMLinear(nn.Module):
 
         latent = F.linear(x, self.W_v)
         if self.lora_rank > 0 and self.lora_A_v is not None and self.lora_B_v is not None:
-            lora_v = (
-                F.linear(F.linear(x.to(self.lora_A_v.dtype), self.lora_A_v), self.lora_B_v)
-                * self.scaling
-            )
+            lora_v = F.linear(F.linear(x.to(self.lora_A_v.dtype), self.lora_A_v), self.lora_B_v) * self.scaling
             latent = latent + lora_v.to(latent.dtype)
 
         out = F.linear(latent, self.W_u)
@@ -323,9 +312,7 @@ class SVDLLMCompressor(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLLMLinear):
             return False
-        if any(
-            name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
-        ):
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]):
             return False
 
         target_mod = getattr(module, "base_layer", module)
@@ -506,18 +493,14 @@ class SVDLLMCompressor(BaseCompressor):
             C_clipped = eigvecs @ torch.diag(eigvals_clipped) @ eigvecs.t()
             C_clipped = 0.5 * (C_clipped + C_clipped.t())
         except Exception as e:
-            logger.debug(
-                "Eigenvalue clipping in _robust_cholesky encountered exception: %s", e
-            )
+            logger.debug("Eigenvalue clipping in _robust_cholesky encountered exception: %s", e)
             C_clipped = C_sym + eps_floor * torch.eye(n, device=device, dtype=dtype)
 
         # 2. Attempt Cholesky factorization with adaptive damping
         for exp in [-6, -5, -4, -3, -2, -1, 0]:
             eps = max(10**exp * mean_diag, 10**exp)
             try:
-                S = torch.linalg.cholesky(
-                    C_clipped + eps * torch.eye(n, device=device, dtype=dtype)
-                )
+                S = torch.linalg.cholesky(C_clipped + eps * torch.eye(n, device=device, dtype=dtype))
                 return S
             except Exception:
                 continue
@@ -533,9 +516,7 @@ class SVDLLMCompressor(BaseCompressor):
             # SVD-based square root S_svd satisfies S_svd @ S_svd.T = U @ diag(s) @ U.T = C
             return U @ torch.diag(sqrt_s)
         except Exception as e:
-            logger.warning(
-                "SVD square root fallback failed in _robust_cholesky: %s; using identity", e
-            )
+            logger.warning("SVD square root fallback failed in _robust_cholesky: %s; using identity", e)
             return torch.eye(n, device=device, dtype=dtype)
 
     def _cholesky_whiten_and_decompose(
@@ -589,22 +570,15 @@ class SVDLLMCompressor(BaseCompressor):
 
         return W_u, W_v, error
 
-    def _compute_recovery_loss(
-        self, batch_ids: torch.Tensor, batch_mask: torch.Tensor
-    ) -> torch.Tensor | None:
+    def _compute_recovery_loss(self, batch_ids: torch.Tensor, batch_mask: torch.Tensor) -> torch.Tensor | None:
         """
         Compute recovery training loss across both CausalLM and Sequence Classification architectures.
         - CausalLM (GPT-2, LLaMA): cross-entropy autoregressive loss with labels=batch_ids.
         - Sequence Classification (DistilBERT, RoBERTa): unsupervised entropy minimization over predicted logits.
         """
         try:
-            if (
-                hasattr(self.model, "lm_head")
-                or "causallm" in self.model.__class__.__name__.lower()
-            ):
-                outputs = self.model(
-                    input_ids=batch_ids, attention_mask=batch_mask, labels=batch_ids
-                )
+            if hasattr(self.model, "lm_head") or "causallm" in self.model.__class__.__name__.lower():
+                outputs = self.model(input_ids=batch_ids, attention_mask=batch_mask, labels=batch_ids)
                 loss = outputs.loss if hasattr(outputs, "loss") else None
                 if loss is None and isinstance(outputs, tuple):
                     loss = outputs[0]
@@ -650,12 +624,8 @@ class SVDLLMCompressor(BaseCompressor):
             max_length=512,
             return_tensors="pt",
         )
-        dataset = torch.utils.data.TensorDataset(
-            encodings["input_ids"], encodings["attention_mask"]
-        )
-        loader = torch.utils.data.DataLoader(
-            dataset, batch_size=min(self.batch_size, len(dataset)), shuffle=True
-        )
+        dataset = torch.utils.data.TensorDataset(encodings["input_ids"], encodings["attention_mask"])
+        loader = torch.utils.data.DataLoader(dataset, batch_size=min(self.batch_size, len(dataset)), shuffle=True)
 
         for stage, stage_name in [
             ("stage1", "Stage 1 (Update W_u)"),
@@ -670,9 +640,7 @@ class SVDLLMCompressor(BaseCompressor):
             if not trainable_params:
                 continue
 
-            optimizer = torch.optim.AdamW(
-                trainable_params, lr=self.learning_rate, weight_decay=self.weight_decay
-            )
+            optimizer = torch.optim.AdamW(trainable_params, lr=self.learning_rate, weight_decay=self.weight_decay)
             step = 0
             self.model.train()
 
@@ -720,10 +688,7 @@ class SVDLLMCompressor(BaseCompressor):
             cls_name = layer.__class__.__name__.lower()
             target_cls = target_mod.__class__.__name__.lower()
             is_conv1d = (
-                "conv1d" in cls_name
-                or "conv1d" in target_cls
-                or hasattr(layer, "nf")
-                or hasattr(target_mod, "nf")
+                "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
             )
 
             weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))

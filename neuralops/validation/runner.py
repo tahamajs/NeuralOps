@@ -18,9 +18,9 @@ from typing import Any, Dict, List, Optional, Union
 import torch.nn as nn
 
 from neuralops.validation.base import Gate, GateResult, GateSeverity
+from neuralops.validation.errors import RuntimeValidationError
 from neuralops.validation.profiles import ValidationProfile, get_gates_for_profile
 from neuralops.validation.result import ValidationResult
-from neuralops.validation.errors import RuntimeValidationError
 
 logger = logging.getLogger("NeuralOps.Validation.Runner")
 

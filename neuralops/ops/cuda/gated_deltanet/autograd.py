@@ -69,15 +69,22 @@ def gated_deltanet_pytorch_ref(
 
 def _gated_deltanet_dispatch(q, k, v, beta, g=None) -> torch.Tensor:
     """3-Level Dispatched Gated DeltaNet."""
+
     def cuda_fn(q, k, v, beta, g=None, **kwargs):
         mod = _get_module()
-        return mod.gated_deltanet_fwd(q.contiguous(), k.contiguous(), v.contiguous(), beta.contiguous(), g.contiguous() if g is not None else None)
+        return mod.gated_deltanet_fwd(
+            q.contiguous(), k.contiguous(), v.contiguous(), beta.contiguous(), g.contiguous() if g is not None else None
+        )
 
     return dispatch(
         cuda_fn,
         None,
         gated_deltanet_pytorch_ref,
-        q, k, v, beta, g,
+        q,
+        k,
+        v,
+        beta,
+        g,
         kernel_name="gated_deltanet",
     )
 

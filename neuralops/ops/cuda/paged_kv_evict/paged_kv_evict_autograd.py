@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -21,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -38,23 +41,31 @@ def _get_module():
         )
     return _MODULE
 
+
 def paged_kv_compact_pytorch_ref(k_in, v_in, keep_indices):
     return [k_in[keep_indices], v_in[keep_indices]]
+
+
 def paged_kv_compact_triton_ref(k_in, v_in, keep_indices):
     return paged_kv_compact_pytorch_ref(k_in, v_in, keep_indices)
 
+
 paged_kv_evict_pytorch_ref = paged_kv_compact_pytorch_ref
 paged_kv_evict_ref = paged_kv_compact_pytorch_ref
+
 
 def paged_kv_evict(k_in: torch.Tensor, v_in: torch.Tensor, keep_indices: torch.Tensor) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = mod.paged_kv_compact_fwd
         return fn(*args, **kwargs)
+
     return dispatch(
         cuda_fn,
         paged_kv_compact_triton_ref,
         paged_kv_compact_pytorch_ref,
-        k_in, v_in, keep_indices,
+        k_in,
+        v_in,
+        keep_indices,
         kernel_name="paged_kv_evict",
     )

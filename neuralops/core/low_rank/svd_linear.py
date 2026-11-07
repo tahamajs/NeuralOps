@@ -93,12 +93,8 @@ class SVDLinear(nn.Module):
             self.V.requires_grad = False
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.in_features, **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty(self.out_features, self.lora_rank, **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -145,13 +141,9 @@ class SVDLinear(nn.Module):
             self.U.data.zero_()
             self.S.data.zero_()
             self.V.data.zero_()
-            self.U.data[: min(self.out_features, U.size(0)), :r].copy_(
-                U[: self.out_features, :r].to(self.U.dtype)
-            )
+            self.U.data[: min(self.out_features, U.size(0)), :r].copy_(U[: self.out_features, :r].to(self.U.dtype))
             self.S.data[:r].copy_(S[:r].to(self.S.dtype))
-            self.V.data[:r, : min(self.in_features, Vt.size(1))].copy_(
-                Vt[:r, : self.in_features].to(self.V.dtype)
-            )
+            self.V.data[:r, : min(self.in_features, Vt.size(1))].copy_(Vt[:r, : self.in_features].to(self.V.dtype))
 
             if bias is not None and self.bias is not None:
                 min_b = min(self.out_features, bias.size(0))
@@ -198,11 +190,7 @@ class SVDLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        if (
-            x.is_cuda
-            and not (self.use_rms_norm and self.norm_weight is not None)
-            and self.rank <= 128
-        ):
+        if x.is_cuda and not (self.use_rms_norm and self.norm_weight is not None) and self.rank <= 128:
             b = self.bias.to(target_dtype) if self.bias is not None else None
             V_eff = self.S.view(-1, 1) * self.V if self.S is not None else self.V
             dispatched = False
@@ -211,12 +199,14 @@ class SVDLinear(nn.Module):
             # Level 1: Native CUDA C++ fused SVD projection
             try:
                 from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
+
                 # X: [*, in_features], U_proj: V^T [in_features, rank], S: [rank], V_proj: U^T [rank, out_features]
                 out = fused_svd_projection(x, self.V.t(), S=self.S, V_T=self.U.t(), bias=b)
                 dispatched = True
             except Exception:
                 try:
                     from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+
                     out = fused_lowrank_gated_gemm(x, V_eff, self.U, bias=b)
                     dispatched = True
                 except Exception:
@@ -225,9 +215,8 @@ class SVDLinear(nn.Module):
             # Level 2: Triton JIT kernel
             if not dispatched and self.use_triton:
                 try:
-                    from neuralops.ops.triton.fused_svd_projection_triton import (
-                        fused_svd_projection_triton,
-                    )
+                    from neuralops.ops.triton.fused_svd_projection_triton import fused_svd_projection_triton
+
                     out = fused_svd_projection_triton(x, self.V.t(), S=self.S, V_T=self.U.t(), bias=b)
                     dispatched = True
                 except Exception:
@@ -256,10 +245,13 @@ class SVDLinear(nn.Module):
             out = F.linear(Vx, self.U.to(target_dtype), b)
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(
-                F.linear(x, self.lora_A.to(target_dtype)),
-                self.lora_B.to(target_dtype),
-            ) * self.lora_scaling
+            lora_out = (
+                F.linear(
+                    F.linear(x, self.lora_A.to(target_dtype)),
+                    self.lora_B.to(target_dtype),
+                )
+                * self.lora_scaling
+            )
             out = out + lora_out
 
         return out.to(target_dtype)

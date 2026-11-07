@@ -16,11 +16,11 @@ from neuralops.ops.cuda._fallback import (
     dispatch,
     force_kernel_backend,
     get_dispatch_stats,
-    reset_dispatch_stats,
     get_last_dispatch_backend,
     get_last_dispatch_error,
     is_kernel_available,
     register_kernel,
+    reset_dispatch_stats,
 )
 
 __all__ = [

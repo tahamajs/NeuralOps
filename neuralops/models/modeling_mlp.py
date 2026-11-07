@@ -14,6 +14,7 @@ Feed-forward neural network blocks supporting SwiGLU, GeLU, and standard gated M
 from __future__ import annotations
 
 import logging
+
 import torch
 import torch.nn as nn
 from transformers.activations import ACT2FN
@@ -47,9 +48,15 @@ class NeuralOpsSwiGLU(nn.Module):
         assert callable(self.act_fn), f"{type(self).__name__}.act_fn is not callable"
         gate = self.gate_proj(x)
         up = self.up_proj(x)
-        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16) and hasattr(self, "act_fn") and getattr(self.act_fn, "__name__", "") == "silu":
+        if (
+            x.is_cuda
+            and x.dtype in (torch.float16, torch.bfloat16)
+            and hasattr(self, "act_fn")
+            and getattr(self.act_fn, "__name__", "") == "silu"
+        ):
             try:
                 from neuralops.ops.triton.elementwise import swiglu_triton
+
                 act = swiglu_triton(gate, up)
                 return self.down_proj(act)
             except (RuntimeError, ImportError, TypeError, ValueError, AttributeError) as e:

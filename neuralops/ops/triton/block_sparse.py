@@ -12,7 +12,9 @@ Computes block-sparse attention patterns with butterfly sparsity routing and aut
 """
 
 from __future__ import annotations
+
 import math
+
 import torch
 
 __all__ = ["butterfly_mask", "block_sparse_attention"]
@@ -79,7 +81,6 @@ def block_sparse_attention(
     if mask is None:
         mask = butterfly_mask(N, block_size, q.device)
 
-
     if torch.is_grad_enabled() or q.requires_grad or k.requires_grad or v.requires_grad:
         return _BlockSparseAutograd.apply(q, k, v, mask)
     return _block_sparse_attention_fwd(q, k, v, mask)
@@ -111,17 +112,31 @@ def fused_moba_block_router_combine_pytorch(
     return block_scores, top_idx
 
 
-from neuralops.ops.triton._common import HAS_TRITON, triton, tl
-
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _fused_moba_block_router_kernel(
-        Q_mean_ptr, K_mean_ptr, Scores_ptr,
-        stride_qb, stride_qh, stride_qn, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_sb, stride_sh, stride_sn, stride_sk,
-        H, nb, D, scale,
+        Q_mean_ptr,
+        K_mean_ptr,
+        Scores_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qn,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_sb,
+        stride_sh,
+        stride_sn,
+        stride_sk,
+        H,
+        nb,
+        D,
+        scale,
         IS_CAUSAL: tl.constexpr,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
@@ -142,8 +157,12 @@ if HAS_TRITON and tl is not None:
         mask_n = offs_n < nb
         mask_d = offs_d < D
 
-        q_ptrs = Q_mean_ptr + i_b * stride_qb + i_h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
-        k_ptrs = K_mean_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        q_ptrs = (
+            Q_mean_ptr + i_b * stride_qb + i_h * stride_qh + offs_m[:, None] * stride_qn + offs_d[None, :] * stride_qd
+        )
+        k_ptrs = (
+            K_mean_ptr + i_b * stride_kb + i_h * stride_kh + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
+        )
 
         q = tl.load(q_ptrs, mask=mask_m[:, None] & mask_d[None, :], other=0.0).to(tl.float32)
         k = tl.load(k_ptrs, mask=mask_n[:, None] & mask_d[None, :], other=0.0).to(tl.float32)
@@ -158,7 +177,9 @@ if HAS_TRITON and tl is not None:
             first_col_mask = offs_n[None, :] == 0
             acc = tl.where(first_col_mask, acc + 1e4, acc)
 
-        s_ptrs = Scores_ptr + i_b * stride_sb + i_h * stride_sh + offs_m[:, None] * stride_sn + offs_n[None, :] * stride_sk
+        s_ptrs = (
+            Scores_ptr + i_b * stride_sb + i_h * stride_sh + offs_m[:, None] * stride_sn + offs_n[None, :] * stride_sk
+        )
         tl.store(s_ptrs, acc, mask=mask_m[:, None] & mask_n[None, :])
 
 
@@ -171,7 +192,7 @@ def fused_moba_block_router_combine_triton(
     is_causal: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Fused MoBA block router calculation in GPU SRAM."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and Qb.is_cuda:
         try:
@@ -185,11 +206,25 @@ def fused_moba_block_router_combine_triton(
             BLOCK_D = triton.next_power_of_2(D)
             grid = (triton.cdiv(nb, BLOCK_M), triton.cdiv(nb, BLOCK_N), B * H)
             _fused_moba_block_router_kernel[grid](
-                Q_mean, K_mean, scores,
-                Q_mean.stride(0), Q_mean.stride(1), Q_mean.stride(2), Q_mean.stride(3),
-                K_mean.stride(0), K_mean.stride(1), K_mean.stride(2), K_mean.stride(3),
-                scores.stride(0), scores.stride(1), scores.stride(2), scores.stride(3),
-                H, nb, D, scale,
+                Q_mean,
+                K_mean,
+                scores,
+                Q_mean.stride(0),
+                Q_mean.stride(1),
+                Q_mean.stride(2),
+                Q_mean.stride(3),
+                K_mean.stride(0),
+                K_mean.stride(1),
+                K_mean.stride(2),
+                K_mean.stride(3),
+                scores.stride(0),
+                scores.stride(1),
+                scores.stride(2),
+                scores.stride(3),
+                H,
+                nb,
+                D,
+                scale,
                 IS_CAUSAL=is_causal,
                 BLOCK_M=BLOCK_M,
                 BLOCK_N=BLOCK_N,
@@ -204,11 +239,14 @@ def fused_moba_block_router_combine_triton(
     return fused_moba_block_router_combine_pytorch(Qb, Kb, Vb, scale, top_k, is_causal)
 
 
-from neuralops.ops.triton._common import HAS_TRITON, triton, tl
 from typing import Optional
+
 import torch.nn.functional as F
 
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
+
 if HAS_TRITON and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({}, num_stages=2, num_warps=2),
@@ -262,7 +300,9 @@ if HAS_TRITON and tl is not None:
         offs_d = tl.arange(0, D)
         mask_m = offs_m < L
 
-        q_ptrs = q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :] * stride_qd
+        q_ptrs = (
+            q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :] * stride_qd
+        )
         q_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0).to(tl.float32)
 
         m_i = tl.full([BLOCK_M], float("-inf"), dtype=tl.float32)
@@ -285,8 +325,20 @@ if HAS_TRITON and tl is not None:
                 offs_n = kv_block_id * BLOCK_SIZE + tl.arange(0, BLOCK_N)
                 mask_n = offs_n < L
 
-                k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_n[:, None] * stride_kl + offs_d[None, :] * stride_kd
-                v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_n[:, None] * stride_vl + offs_d[None, :] * stride_vd
+                k_ptrs = (
+                    k_ptr
+                    + pid_b * stride_kb
+                    + pid_h * stride_kh
+                    + offs_n[:, None] * stride_kl
+                    + offs_d[None, :] * stride_kd
+                )
+                v_ptrs = (
+                    v_ptr
+                    + pid_b * stride_vb
+                    + pid_h * stride_vh
+                    + offs_n[:, None] * stride_vl
+                    + offs_d[None, :] * stride_vd
+                )
 
                 k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
                 v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
@@ -308,7 +360,9 @@ if HAS_TRITON and tl is not None:
         safe_l_i = tl.maximum(l_i[:, None], 1e-5)
         out_tile = acc / safe_l_i
 
-        o_ptrs = o_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_m[:, None] * stride_ol + offs_d[None, :] * stride_od
+        o_ptrs = (
+            o_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_m[:, None] * stride_ol + offs_d[None, :] * stride_od
+        )
         tl.store(o_ptrs, out_tile.to(q_ptr.dtype.element_ty), mask=mask_m[:, None])
 
 
@@ -455,7 +509,7 @@ def fused_dsa_sparse_attn_pytorch_ref(
         Output tensor matching q shape
     """
     _orig_shape = q.shape
-    is_3d = (q.ndim == 3)
+    is_3d = q.ndim == 3
     if is_3d:
         B, L, D = q.shape
         H = 8
@@ -484,7 +538,7 @@ def fused_dsa_sparse_attn_pytorch_ref(
         max_k = max(len(idx) for idx in active_list)
         active_indices = torch.full((B_size, max_k), -1, dtype=torch.long, device=block_mask.device)
         for b in range(B_size):
-            active_indices[b, :len(active_list[b])] = active_list[b]
+            active_indices[b, : len(active_list[b])] = active_list[b]
     else:
         active_indices = block_mask
 
@@ -524,7 +578,7 @@ def fused_dsa_sparse_attn_triton(
         Output tensor matching q shape
     """
     _orig_shape = q.shape
-    is_3d = (q.ndim == 3)
+    is_3d = q.ndim == 3
     if is_3d:
         B, L, D = q.shape
         H = 8
@@ -543,9 +597,7 @@ def fused_dsa_sparse_attn_triton(
         sm_scale = 1.0 / math.sqrt(d)
 
     if not HAS_TRITON or not q.is_cuda:
-        return fused_dsa_sparse_attn_pytorch_ref(
-            q, k, v, block_mask, block_size=block_size, sm_scale=sm_scale
-        )
+        return fused_dsa_sparse_attn_pytorch_ref(q, k, v, block_mask, block_size=block_size, sm_scale=sm_scale)
 
     num_blocks = (L + block_size - 1) // block_size
 
@@ -558,7 +610,7 @@ def fused_dsa_sparse_attn_triton(
         max_k = max(len(idx) for idx in active_list)
         active_indices = torch.full((B_size, max_k), -1, dtype=torch.long, device=block_mask.device)
         for b in range(B_size):
-            active_indices[b, :len(active_list[b])] = active_list[b]
+            active_indices[b, : len(active_list[b])] = active_list[b]
     else:
         active_indices = block_mask
 
@@ -567,6 +619,7 @@ def fused_dsa_sparse_attn_triton(
 
     try:
         from neuralops.ops.triton.dynamic_sparse_attention import triton_dynamic_sparse_attention
+
         out_4d = triton_dynamic_sparse_attention(
             q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
         )
@@ -576,9 +629,7 @@ def fused_dsa_sparse_attn_triton(
                 q_4d, k_4d, v_4d, active_block_indices, block_size=block_size, sm_scale=sm_scale
             )
         except Exception:
-            return fused_dsa_sparse_attn_pytorch_ref(
-                q, k, v, block_mask, block_size=block_size, sm_scale=sm_scale
-            )
+            return fused_dsa_sparse_attn_pytorch_ref(q, k, v, block_mask, block_size=block_size, sm_scale=sm_scale)
 
     if is_3d:
         return out_4d.permute(0, 2, 1, 3).contiguous().view(B, L, D)

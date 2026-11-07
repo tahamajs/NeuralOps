@@ -12,7 +12,6 @@ Decomposes weight matrices into select columns and rows via statistical leverage
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -144,12 +144,8 @@ class CURLinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_r, in_features, dtype=dtype, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros(out_features, self.lora_r, dtype=dtype, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_r, in_features, dtype=dtype, device=device))
+            self.lora_B = nn.Parameter(torch.zeros(out_features, self.lora_r, dtype=dtype, device=device))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
             self.register_parameter("lora_A", None)
@@ -168,15 +164,20 @@ class CURLinear(nn.Module):
         F.linear automatically handles arbitrary leading dimensions natively.
         """
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.cur_linear import triton_cur_linear
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
                 out = triton_cur_linear(x, self.R, self.U, self.C, bias=base_bias)
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-                    lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias) * self.scaling
+                    lora_out = (
+                        fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias)
+                        * self.scaling
+                    )
                     return out + lora_out
                 return out
             except Exception:
@@ -220,9 +221,16 @@ class CURLinear(nn.Module):
         r = max(1, min(rank, out_features, in_features))
 
         cur_layer = cls(
-            in_features=in_features, out_features=out_features, rank=r,
-            bias=bias is not None, method=method, lora_r=lora_r, lora_alpha=lora_alpha,
-            freeze_skeletons=freeze_skeletons, dtype=W.dtype, device=W.device,
+            in_features=in_features,
+            out_features=out_features,
+            rank=r,
+            bias=bias is not None,
+            method=method,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            freeze_skeletons=freeze_skeletons,
+            dtype=W.dtype,
+            device=W.device,
         )
 
         W_float = W.float()
@@ -271,6 +279,7 @@ class CURCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     def __init__(
         self,
         model: nn.Module | None = None,
@@ -305,10 +314,16 @@ class CURCompressor(BaseCompressor):
         self.lora_r = int(_cfg_get(cfg, "cur_lora_r", _cfg_get(cfg, "lora_r", lora_r)))
         self.lora_alpha = float(_cfg_get(cfg, "cur_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha)))
         self.freeze_skeletons = bool(_cfg_get(cfg, "freeze_skeletons", freeze_skeletons))
-        self.target_attention_only = bool(_cfg_get(cfg, "cur_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only)))
+        self.target_attention_only = bool(
+            _cfg_get(cfg, "cur_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+        )
         self.cfg = cfg
         self.target_names = target_names or _cfg_get(cfg, "cur_target_names", _cfg_get(cfg, "target_layers", None))
-        self.exclude_names = exclude_names or _cfg_get(cfg, "cur_exclude_names", ["lm_head", "classifier", "head", "score", "pooler", "embedding", "router", "gate"])
+        self.exclude_names = exclude_names or _cfg_get(
+            cfg,
+            "cur_exclude_names",
+            ["lm_head", "classifier", "head", "score", "pooler", "embedding", "router", "gate"],
+        )
 
         c_max_error = _cfg_get(cfg, "cur_max_error", _cfg_get(cfg, "max_error", max_error))
         if c_max_error is None or c_max_error == 0.20:
@@ -330,7 +345,9 @@ class CURCompressor(BaseCompressor):
 
         is_linear = isinstance(module, nn.Linear) or "linear" in cls_name
         is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-        is_lora = has_base and (isinstance(module.base_layer, nn.Linear) or "conv1d" in base_cls or hasattr(module.base_layer, "nf"))
+        is_lora = has_base and (
+            isinstance(module.base_layer, nn.Linear) or "conv1d" in base_cls or hasattr(module.base_layer, "nf")
+        )
 
         if not (is_linear or is_conv1d or is_lora):
             return False
@@ -348,7 +365,25 @@ class CURCompressor(BaseCompressor):
                 return False
             if "output.dense" in name_lower and "attention" not in name_lower:
                 return False
-            attn_patterns = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj", "query", "key", "value", "in_proj_qkv", "out_proj"]
+            attn_patterns = [
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "out_lin",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+                "in_proj_qkv",
+                "out_proj",
+            ]
             if not any(p in name_lower for p in attn_patterns):
                 return False
 
@@ -374,7 +409,11 @@ class CURCompressor(BaseCompressor):
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
                 if self.target_attention_only:
-                    is_lin_like = isinstance(module, nn.Linear) or "conv1d" in module.__class__.__name__.lower() or hasattr(module, "base_layer")
+                    is_lin_like = (
+                        isinstance(module, nn.Linear)
+                        or "conv1d" in module.__class__.__name__.lower()
+                        or hasattr(module, "base_layer")
+                    )
                     if is_lin_like:
                         for p in module.parameters():
                             p.requires_grad = False
@@ -386,12 +425,14 @@ class CURCompressor(BaseCompressor):
             has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
             if not hasattr(target_mod, "weight") or target_mod.weight is None:
-                for p in module.parameters(): p.requires_grad = False
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
             weight_id = id(target_mod.weight)
             if weight_id in visited_weight_ids:
-                for p in module.parameters(): p.requires_grad = False
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
             raw_w = target_mod.weight.data
@@ -400,7 +441,8 @@ class CURCompressor(BaseCompressor):
             max_rank = min(out_f, in_f)
 
             if max_rank < self.min_rank:
-                for p in module.parameters(): p.requires_grad = False
+                for p in module.parameters():
+                    p.requires_grad = False
                 continue
 
             target_r = min(self.rank, max_rank)
@@ -426,9 +468,15 @@ class CURCompressor(BaseCompressor):
 
             try:
                 candidate = CURLinear.from_linear(
-                    target_mod, rank=cur_r, method=self.method, deterministic=self.deterministic,
-                    lora_r=effective_lora_r, lora_alpha=self.lora_alpha, freeze_skeletons=self.freeze_skeletons,
-                    col_scores=col_scores, row_scores=row_scores,
+                    target_mod,
+                    rank=cur_r,
+                    method=self.method,
+                    deterministic=self.deterministic,
+                    lora_r=effective_lora_r,
+                    lora_alpha=self.lora_alpha,
+                    freeze_skeletons=self.freeze_skeletons,
+                    col_scores=col_scores,
+                    row_scores=row_scores,
                 )
                 recon_w = candidate.get_weight().float()
                 err = (torch.norm(orig_w - recon_w, p="fro") / norm_orig).item()
@@ -439,10 +487,13 @@ class CURCompressor(BaseCompressor):
                 logger.warning("CURCompressor: Failed CUR decomposition on %s at rank %d: %s", name, cur_r, ex)
 
             if best_err > self.max_error:
-                logger.warning("CURCompressor: Layer %s error %.4f exceeded max_error %.4f", name, best_err, self.max_error)
+                logger.warning(
+                    "CURCompressor: Layer %s error %.4f exceeded max_error %.4f", name, best_err, self.max_error
+                )
                 if self.fallback_to_original:
                     self.fallback_layers.append(name)
-                    for p in module.parameters(): p.requires_grad = False
+                    for p in module.parameters():
+                        p.requires_grad = False
                     continue
 
             if best_cur_layer is not None:
@@ -450,9 +501,19 @@ class CURCompressor(BaseCompressor):
                 if has_lora:
                     src_lA = getattr(module.lora_A, "weight", module.lora_A)
                     src_lB = getattr(module.lora_B, "weight", module.lora_B)
-                    if hasattr(new_layer, "lora_A") and new_layer.lora_A is not None and hasattr(src_lA, "data") and src_lA.shape == new_layer.lora_A.shape:
+                    if (
+                        hasattr(new_layer, "lora_A")
+                        and new_layer.lora_A is not None
+                        and hasattr(src_lA, "data")
+                        and src_lA.shape == new_layer.lora_A.shape
+                    ):
                         new_layer.lora_A.data.copy_(src_lA.data)
-                    if hasattr(new_layer, "lora_B") and new_layer.lora_B is not None and hasattr(src_lB, "data") and src_lB.shape == new_layer.lora_B.shape:
+                    if (
+                        hasattr(new_layer, "lora_B")
+                        and new_layer.lora_B is not None
+                        and hasattr(src_lB, "data")
+                        and src_lB.shape == new_layer.lora_B.shape
+                    ):
                         new_layer.lora_B.data.copy_(src_lB.data)
 
                 if hasattr(module, "base_layer"):
@@ -465,7 +526,8 @@ class CURCompressor(BaseCompressor):
                     new_module = new_layer
                     if name == "":
                         self.model = new_module
-                    else: replace_module(self.model, name, new_module)
+                    else:
+                        replace_module(self.model, name, new_module)
 
                 self.compressed_layers.append(name)
                 self.layer_errors[name] = float(best_err)
@@ -478,31 +540,38 @@ class CURCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        effective_param_ratio = total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
+        effective_param_ratio = (
+            total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
+        )
 
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "compressed_layer_count": len(self.compressed_layers),
-            "fallback_layers": self.fallback_layers,
-            "fallback_layer_count": len(self.fallback_layers),
-            "layer_errors": self.layer_errors,
-            "layer_ranks": self.layer_ranks,
-            "avg_reconstruction_error": avg_err,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "cur_method": self.method,
-            "cur_rank": self.rank,
-            "min_rank": self.min_rank,
-            "deterministic": self.deterministic,
-            "lora_r": self.lora_r,
-            "target_attention_only": self.target_attention_only,
-            "effective_parameter_ratio": round(effective_param_ratio, 4),
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "compressed_layer_count": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "avg_reconstruction_error": avg_err,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "cur_method": self.method,
+                "cur_rank": self.rank,
+                "min_rank": self.min_rank,
+                "deterministic": self.deterministic,
+                "lora_r": self.lora_r,
+                "target_attention_only": self.target_attention_only,
+                "effective_parameter_ratio": round(effective_param_ratio, 4),
+            }
+        )
         return self.model, stats
 
 
 def cur_compressor_factory(
-    model: nn.Module, comp_config: Any | None = None, rank: int | None = None, **kwargs: Any,
+    model: nn.Module,
+    comp_config: Any | None = None,
+    rank: int | None = None,
+    **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     effective_rank = kwargs.pop("rank", rank or _cfg_get(comp_config, "cur_rank", _cfg_get(comp_config, "rank", 64)))
     compressor = CURCompressor(model, rank=effective_rank, cfg=comp_config, **kwargs)

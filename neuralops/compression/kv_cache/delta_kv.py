@@ -12,8 +12,6 @@ Exploits temporal and cross-token similarity by quantizing token-to-token residu
 """
 
 from __future__ import annotations
-from neuralops.core.common import _is_conv1d
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -22,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get, _is_conv1d
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -85,6 +84,7 @@ class DeltaKVStore:
             if self.ref_k.is_cuda and self.ref_k.shape[-1] in (16, 32, 64, 128, 256):
                 try:
                     from neuralops.ops.triton.paged_attention import paged_kv_evict_compact_triton
+
                     k_flat = self.ref_k.reshape(-1, self.ref_k.shape[-1])
                     v_flat = self.ref_v.reshape(-1, self.ref_v.shape[-1])
                     scores = torch.norm(k_flat.float(), dim=-1)
@@ -182,6 +182,7 @@ class DeltaKVCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -201,12 +202,8 @@ class DeltaKVCompressor(BaseCompressor):
         self.cfg = cfg
 
         self.rank = int(_cfg_get(cfg, "delta_kv_rank", _cfg_get(cfg, "rank", rank)))
-        self.sparsity = float(
-            _cfg_get(cfg, "delta_kv_sparsity", _cfg_get(cfg, "sparsity", sparsity))
-        )
-        self.max_error = float(
-            _cfg_get(cfg, "delta_kv_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        self.sparsity = float(_cfg_get(cfg, "delta_kv_sparsity", _cfg_get(cfg, "sparsity", sparsity)))
+        self.max_error = float(_cfg_get(cfg, "delta_kv_max_error", _cfg_get(cfg, "max_error", max_error)))
         self.target_attention_only = bool(
             _cfg_get(
                 cfg,
@@ -306,9 +303,7 @@ class DeltaKVCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention")
-            )
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 if _debug:
                     logger.info(f"  [skip] {name}: target_attention_only filter")
@@ -337,9 +332,7 @@ class DeltaKVCompressor(BaseCompressor):
         total_comp_params = 0
 
         target_list = [
-            (name, module)
-            for name, module in self.model.named_modules()
-            if self._is_target_module(name, module)
+            (name, module) for name, module in self.model.named_modules() if self._is_target_module(name, module)
         ]
         if not target_list:
             logger.warning("DeltaKV: no compressible layers found. Running diagnostic...")
@@ -414,9 +407,7 @@ class DeltaKVCompressor(BaseCompressor):
                     continue
 
                 if is_conv1d:
-                    target_mod.weight.data.copy_(
-                        W_compressed.t().contiguous().to(dtype=target_mod.weight.dtype)
-                    )
+                    target_mod.weight.data.copy_(W_compressed.t().contiguous().to(dtype=target_mod.weight.dtype))
                 else:
                     target_mod.weight.data.copy_(W_compressed.to(dtype=target_mod.weight.dtype))
 
@@ -458,11 +449,7 @@ class DeltaKVCompressor(BaseCompressor):
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
-        avg_err = (
-            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
-        )
+        avg_err = sum(self.layer_errors.values()) / max(1, len(self.layer_errors)) if self.layer_errors else 0.0
 
         try:
             stats = self.get_compression_stats()
@@ -517,8 +504,7 @@ class DeltaKVCompressor(BaseCompressor):
 
         self.model._delta_kv_compressed = True
         logger.info(
-            "DeltaKV: %d compressed, %d fallback, %d skipped. "
-            "Avg err %.4f, effective_param_ratio %.2fx.",
+            "DeltaKV: %d compressed, %d fallback, %d skipped. " "Avg err %.4f, effective_param_ratio %.2fx.",
             len(self.compressed_layers),
             len(self.fallback_layers),
             len(self.skipped_layers),

@@ -21,11 +21,19 @@ Underlying implementations are factored into:
 from __future__ import annotations
 
 import logging
+
 import torch
 
+from neuralops.evaluation.eval_data import _generate_synthetic_batch, build_calibration_loader, get_dataset_batch
+from neuralops.evaluation.eval_patcher import apply_module_to_model, build_model_instance, get_base_model_cached
+from neuralops.evaluation.eval_pipeline import (
+    evaluate_single_combination,
+    evaluate_single_combination_opt,
+    probe_optimal_batch_size,
+)
+from neuralops.evaluation.eval_reporter import format_summary, log_result_summary, save_benchmark_artifacts
 from neuralops.evaluation.eval_types import (
     ACTIVATION_AWARE_MODULES,
-    BenchmarkResult,
     COMPUTE_OPTIMIZERS,
     DEPRECATED_MODULES,
     GLUE_DATASETS,
@@ -33,37 +41,13 @@ from neuralops.evaluation.eval_types import (
     LM_DATASETS,
     MODEL_TOKENIZER_MAPPING,
     TRACK_MODULES,
+    BenchmarkResult,
 )
-
 from neuralops.evaluation.eval_utils import (
     DEFAULT_MAX_CACHE_SIZE,
     _evict_if_needed,
     _extract_logits_and_loss,
     _filter_batch,
-)
-
-from neuralops.evaluation.eval_data import (
-    _generate_synthetic_batch,
-    build_calibration_loader,
-    get_dataset_batch,
-)
-
-from neuralops.evaluation.eval_patcher import (
-    apply_module_to_model,
-    build_model_instance,
-    get_base_model_cached,
-)
-
-from neuralops.evaluation.eval_reporter import (
-    format_summary,
-    log_result_summary,
-    save_benchmark_artifacts,
-)
-
-from neuralops.evaluation.eval_pipeline import (
-    evaluate_single_combination,
-    evaluate_single_combination_opt,
-    probe_optimal_batch_size,
 )
 
 logger = logging.getLogger("EvalEngine")

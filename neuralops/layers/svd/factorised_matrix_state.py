@@ -11,16 +11,12 @@ Factorised Matrix State Attention Module
 Maintains an associative matrix memory state updated via low-rank factorized bidirectional updates.
 """
 
-from neuralops.core.common import repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -107,13 +103,9 @@ class FactorisedMatrixState(BaseAttention):
         self.d_model: int = int(d_model)
         self.num_heads: int = int(num_heads)
         self.num_kv_heads: int = (
-            getattr(config, "num_key_value_heads", self.num_heads)
-            if config is not None
-            else self.num_heads
+            getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
         )
-        self.head_dim: int = getattr(config, "head_dim", None) or (
-            self.d_model // max(1, self.num_heads)
-        )
+        self.head_dim: int = getattr(config, "head_dim", None) or (self.d_model // max(1, self.num_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -122,11 +114,7 @@ class FactorisedMatrixState(BaseAttention):
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
+            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
         )
         self.layer_idx: int = int(resolved_layer_id)
 
@@ -143,9 +131,7 @@ class FactorisedMatrixState(BaseAttention):
             )
         elif comp_config is not None:
             self.lora_rank: int = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
-            self.lora_alpha: float = getattr(
-                comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
-            )
+            self.lora_alpha: float = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
         else:
             self.lora_rank: int = kwargs.get("lora_rank", 16)
             self.lora_alpha: float = kwargs.get("lora_alpha", 32.0)
@@ -175,10 +161,7 @@ class FactorisedMatrixState(BaseAttention):
         if (
             any(_mt.startswith(p) for p in _decoder_prefixes)
             or hasattr(config, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -293,11 +276,7 @@ class FactorisedMatrixState(BaseAttention):
             return
 
         cls_name = old_attn.__class__.__name__
-        has_out_lin = (
-            hasattr(old_attn, "out_lin")
-            or hasattr(old_attn, "c_proj")
-            or hasattr(old_attn, "o_proj")
-        )
+        has_out_lin = hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj")
         is_nested = False
         if (
             (
@@ -417,11 +396,7 @@ class FactorisedMatrixState(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -434,11 +409,7 @@ class FactorisedMatrixState(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"FactorisedMatrixState copy_weights: missing mandatory projections {missing_after} "
@@ -465,18 +436,13 @@ class FactorisedMatrixState(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
 
                 if b is not None and target_mod.bias is not None:
@@ -515,6 +481,7 @@ class FactorisedMatrixState(BaseAttention):
         suitable = False
         if HAS_TRITON_FMS and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse:
             from neuralops.ops.triton._types import check_triton_suitability
+
             suitable, _ = check_triton_suitability(q, "fms_scan", head_dim=d, seq_len=L, supports_backward=True)
 
         if suitable:
@@ -586,9 +553,7 @@ class FactorisedMatrixState(BaseAttention):
                 num_intra = torch.matmul(scores_c, vc)
                 denom_intra = scores_c.sum(dim=-1, keepdim=True)
 
-                decay_from_prev = torch.exp(
-                    (idx_c + 1).view(1, 1, curr_c, 1) * log_decay
-                )
+                decay_from_prev = torch.exp((idx_c + 1).view(1, 1, curr_c, 1) * log_decay)
 
                 num_inter = torch.einsum("bhcd,bhde->bhce", qc, S)
                 num_inter = num_inter * decay_from_prev
@@ -735,11 +700,7 @@ def inject_factorised_matrix_state(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -751,9 +712,7 @@ def inject_factorised_matrix_state(
             res = inject_factorised_matrix_state(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,

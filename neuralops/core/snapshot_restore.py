@@ -33,9 +33,7 @@ class ModelStateSnapshot:
         self.original_submodules: dict[str, nn.Module] = {}
         for name, sub in model.named_modules():
             lname = name.lower()
-            if (
-                lname.endswith((".attention", ".attn", ".self", ".self_attn"))
-            ):
+            if lname.endswith((".attention", ".attn", ".self", ".self_attn")):
                 self.swapped_layer_paths.append(name)
                 self.original_submodules[name] = sub
 

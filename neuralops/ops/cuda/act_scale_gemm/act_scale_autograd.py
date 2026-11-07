@@ -50,12 +50,14 @@ def act_scale_quant_gemm_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.fused_norm_linear import triton_fused_act_scale_quant_gemm_pytorch_ref
+
     return triton_fused_act_scale_quant_gemm_pytorch_ref(x, s_inv, w, bias=bias)
 
 
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.fused_norm_linear import triton_fused_act_scale_quant_gemm
+
         return triton_fused_act_scale_quant_gemm
     except ImportError:
         return None

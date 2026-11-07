@@ -124,22 +124,22 @@ Extract top-$r$ left singular vectors: $U_r = U[:, :r]$ of shape $(d_{\text{out}
 ### 4.1 Parameter Formulas
 Let $M = d_{\text{out}}$ and $N = d_{\text{in}}$.
 
-Specifically, regarding \textbf{Dense Baseline Parameters}, 
+Specifically, regarding \textbf{Dense Baseline Parameters},
 
 \[
 P_{\text{dense}} = M \cdot N + M \quad (\text{including bias})
 \]
-Specifically, regarding \textbf{SVD Factorized Parameters}, 
+Specifically, regarding \textbf{SVD Factorized Parameters},
 
 \[
 P_{\text{SVD}} = M \cdot r + r + r \cdot N + M = r(M + N + 1) + M
 \]
-Specifically, regarding \textbf{Absolute Parameter Reduction}, 
+Specifically, regarding \textbf{Absolute Parameter Reduction},
 
 \[
 \Delta P = M \cdot N - r(M + N + 1)
 \]
-Specifically, regarding \textbf{Compression Ratio $\mathcal{C}_R$}, 
+Specifically, regarding \textbf{Compression Ratio $\mathcal{C}_R$},
 
 \[
 \mathcal{C}_R = \frac{M \cdot N}{r(M + N + 1)} \approx \frac{M \cdot N}{r(M + N)}
@@ -147,7 +147,7 @@ Specifically, regarding \textbf{Compression Ratio $\mathcal{C}_R$},
 
 ### 4.2 FLOP Analysis per Token
 For a single token vector $x \in \mathbb{R}^{1 \times N}$:
-Specifically, regarding \textbf{Dense Linear FLOPs}, $2 M N$ Furthermore, regarding \textbf{SVD Linear FLOPs}, 
+Specifically, regarding \textbf{Dense Linear FLOPs}, $2 M N$ Furthermore, regarding \textbf{SVD Linear FLOPs},
 
   1. $x V_r^T$: $2 N r$ FLOPs
   2. $\cdot S_r$: $r$ FLOPs
@@ -227,15 +227,15 @@ def fused_svd_linear_kernel(
     acc_r = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_R), dtype=tl.float32)
     for k in range(0, d_in, BLOCK_SIZE_K):
         offs_k = k + tl.arange(0, BLOCK_SIZE_K)
-        
+
         # Load X block (BLOCK_SIZE_M x BLOCK_SIZE_K)
         x_ptrs = X_ptr + (offs_m[:, None] * stride_xn + offs_k[None, :] * stride_xb)
         x_tile = tl.load(x_ptrs, mask=(offs_m[:, None] < B_N) & (offs_k[None, :] < d_in), other=0.0)
-        
+
         # Load Vh block (BLOCK_SIZE_R x BLOCK_SIZE_K) -> transpose for Vh^T
         vh_ptrs = Vh_ptr + (offs_r[:, None] * stride_vhr + offs_k[None, :] * stride_vhn)
         vh_tile = tl.load(vh_ptrs, mask=(offs_r[:, None] < rank) & (offs_k[None, :] < d_in), other=0.0)
-        
+
         acc_r += tl.dot(x_tile, tl.trans(vh_tile))
 
     # Stage 2: Scale intermediate representation with singular value vector S in SRAM
@@ -244,11 +244,11 @@ def fused_svd_linear_kernel(
 
     # Stage 3: Second GEMM tile output accumulation
     acc_out = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=tl.float32)
-    
+
     # Load U block (BLOCK_SIZE_N x BLOCK_SIZE_R) -> transpose for U^T
     u_ptrs = U_ptr + (offs_n[:, None] * stride_ud + offs_r[None, :] * stride_ur)
     u_tile = tl.load(u_ptrs, mask=(offs_n[:, None] < d_out) & (offs_r[None, :] < rank), other=0.0)
-    
+
     acc_out = tl.dot(acc_r_scaled.to(tl.float16), tl.trans(u_tile))
 
     # Add bias if present
@@ -300,4 +300,3 @@ The empirical evaluation of `svd_linear` across standard sequence lengths and la
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

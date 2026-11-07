@@ -57,6 +57,7 @@ def _act_scale_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, 
 
 def _kernel_inputs(name: str) -> TensorFactory:
     """Return an input factory using the archived CUDA harness contracts."""
+
     def factory(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, Any]]:
         import torch
 
@@ -79,6 +80,7 @@ def _kernel_inputs(name: str) -> TensorFactory:
                 torch.randint(0, 1024, (2048,), device=device, dtype=torch.long),
             ), {}
         raise KeyError(name)
+
     return factory
 
 
@@ -104,10 +106,15 @@ def _attention_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str, 
             LOG.info("%s: seq_len %d rounded up to %d (contract: multiple of %d)", module_name, seq_len, adjusted, mult)
             seq_len = adjusted
 
-    return (torch.randn(
-        spec["batch"], seq_len, spec["hidden"],
-        device=spec["device"], dtype=spec["dtype"],
-    ),), {}
+    return (
+        torch.randn(
+            spec["batch"],
+            seq_len,
+            spec["hidden"],
+            device=spec["device"],
+            dtype=spec["dtype"],
+        ),
+    ), {}
 
 
 def _attention_operation(
@@ -121,8 +128,9 @@ def _attention_operation(
 
     def invoke(x: Any) -> Any:
         import torch
-        from neuralops.core.registry import create_attention
+
         from neuralops.core.cuda_kernels import _fallback as fallback
+        from neuralops.core.registry import create_attention
 
         # Seed before construction so both paths share deterministic weights.
         torch.manual_seed(42)
@@ -164,8 +172,11 @@ def _compressor_inputs(spec: dict[str, Any]) -> tuple[tuple[Any, ...], dict[str,
 
     return (
         torch.randn(
-            spec.get("batch", 2), spec.get("sequence", 16), spec.get("hidden", 128),
-            device=spec["device"], dtype=torch.float32,
+            spec.get("batch", 2),
+            spec.get("sequence", 16),
+            spec.get("hidden", 128),
+            device=spec["device"],
+            dtype=torch.float32,
         ),
     ), {}
 
@@ -182,6 +193,7 @@ class MockAttentionBlock(nn.Module):
 
     def forward(self, h: torch.Tensor) -> torch.Tensor:
         import torch.nn.functional as F
+
         return self.o_proj(F.gelu(self.q_proj(h) + self.k_proj(h) + self.v_proj(h)))
 
 
@@ -198,6 +210,7 @@ class MockKVBlock(nn.Module):
 
     def forward(self, h: torch.Tensor) -> torch.Tensor:
         import torch.nn.functional as F
+
         self.cache["k"] = self.k_proj(h)
         self.cache["v"] = self.v_proj(h)
         return self.o_proj(F.gelu(self.q_proj(h) + self.cache["k"] + self.cache["v"]))
@@ -207,11 +220,22 @@ def _make_mock_for_compressor(compressor_name: str, hidden_size: int = 128) -> n
     """Factory creating specialized mock modules tailored to compressor requirements."""
     name_lower = compressor_name.lower()
     kv_compressors = {
-        "cachenotes", "delta_kv", "hybridkv", "kvtc", "zerokv",
-        "aatc_xkv", "kv_compressor", "snapkv", "streaming_llm", "h2o",
+        "cachenotes",
+        "delta_kv",
+        "hybridkv",
+        "kvtc",
+        "zerokv",
+        "aatc_xkv",
+        "kv_compressor",
+        "snapkv",
+        "streaming_llm",
+        "h2o",
     }
     attn_compressors = {
-        "heavy_hitter", "rotational_slicegpt", "slicegpt", "head_pruner",
+        "heavy_hitter",
+        "rotational_slicegpt",
+        "slicegpt",
+        "head_pruner",
     }
     if any(k in name_lower for k in kv_compressors):
         return MockKVBlock(hidden_size)
@@ -228,8 +252,10 @@ def _compressor_operation(name: str, *, compressed: bool, state: dict[str, Any])
     """Run a registered compressor against a real model-level contract."""
     import copy
     import inspect
+
     import torch
     import torch.nn as nn
+
     from neuralops.core.registry import create_compressor
 
     def invoke(x: Any) -> Any:
@@ -243,13 +269,18 @@ def _compressor_operation(name: str, *, compressed: bool, state: dict[str, Any])
             rank = min(32, max(4, x.shape[-1] // 2))
             try:
                 engine = create_compressor(
-                    name, model=candidate, rank=rank,
-                    calibration_data=x.float(), calib_data=x.float(),
+                    name,
+                    model=candidate,
+                    rank=rank,
+                    calibration_data=x.float(),
+                    calib_data=x.float(),
                     skip_should_compress_filter=True,
                 )
             except TypeError:
                 engine = create_compressor(
-                    name, model=candidate, rank=rank,
+                    name,
+                    model=candidate,
+                    rank=rank,
                     skip_should_compress_filter=True,
                 )
             compressed_model = engine if isinstance(engine, nn.Module) else None
@@ -280,14 +311,17 @@ def _compressor_operation(name: str, *, compressed: bool, state: dict[str, Any])
     return invoke
 
 
-
 def _register_registry_modules() -> dict[str, OpConfig]:
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
     result: dict[str, OpConfig] = {}
     attention_specs = {
-        "batch": 4, "sequence": 512, "hidden": 768,
-        "heads": 12, "dtype": "float16", "device": "cuda",
+        "batch": 4,
+        "sequence": 512,
+        "hidden": 768,
+        "heads": 12,
+        "dtype": "float16",
+        "device": "cuda",
     }
     for name in ATTENTION_REGISTRY.keys():
         attention_state: dict[str, Any] = {}
@@ -310,18 +344,18 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             category="compressor",
             func=_compressor_operation(name, compressed=True, state=fast_state),
             tensor_specs={
-                "device": "cuda", "batch": 2, "sequence": 16, "hidden": 128,
+                "device": "cuda",
+                "batch": 2,
+                "sequence": 16,
+                "hidden": 128,
             },
             ref_func=_compressor_operation(name, compressed=False, state=reference_state),
             input_factory=_compressor_inputs,
         )
 
-
     try:
-        from neuralops.core.cuda_kernels.act_scale_gemm import (
-            act_scale_quant_gemm,
-            act_scale_quant_gemm_pytorch_ref,
-        )
+        from neuralops.core.cuda_kernels.act_scale_gemm import act_scale_quant_gemm, act_scale_quant_gemm_pytorch_ref
+
         result["cuda:act_scale_gemm"] = OpConfig(
             name="act_scale_gemm",
             category="cuda",
@@ -332,19 +366,27 @@ def _register_registry_modules() -> dict[str, OpConfig]:
         )
     except Exception as exc:
         result["cuda:act_scale_gemm"] = OpConfig(
-            name="act_scale_gemm", category="cuda", func=None,
-            tensor_specs={}, ref_func=None,
+            name="act_scale_gemm",
+            category="cuda",
+            func=None,
+            tensor_specs={},
+            ref_func=None,
             unavailable_reason=f"CUDA operator import failed: {exc}",
         )
 
     cuda_specs = {"device": "cuda", "dtype": "float16"}
     try:
         from neuralops.core.cuda_kernels import (
-            causal_conv1d, causal_conv1d_pytorch_ref,
-            rmsnorm, rmsnorm_pytorch_ref,
-            swiglu, swiglu_pytorch_ref,
-            fused_cross_entropy, fused_cross_entropy_pytorch_ref,
+            causal_conv1d,
+            causal_conv1d_pytorch_ref,
+            fused_cross_entropy,
+            fused_cross_entropy_pytorch_ref,
+            rmsnorm,
+            rmsnorm_pytorch_ref,
+            swiglu,
+            swiglu_pytorch_ref,
         )
+
         for name, fast, ref in (
             ("causal_conv1d", causal_conv1d, causal_conv1d_pytorch_ref),
             ("rmsnorm", rmsnorm, rmsnorm_pytorch_ref),
@@ -352,18 +394,27 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             ("fused_cross_entropy", fused_cross_entropy, fused_cross_entropy_pytorch_ref),
         ):
             result[f"cuda:{name}"] = OpConfig(
-                name=name, category="cuda", func=fast, tensor_specs=cuda_specs,
-                ref_func=ref, input_factory=_kernel_inputs(name),
+                name=name,
+                category="cuda",
+                func=fast,
+                tensor_specs=cuda_specs,
+                ref_func=ref,
+                input_factory=_kernel_inputs(name),
             )
     except Exception as exc:
         for name in ("causal_conv1d", "rmsnorm", "swiglu", "fused_cross_entropy"):
             result[f"cuda:{name}"] = OpConfig(
-                name=name, category="cuda", func=None, tensor_specs={}, ref_func=None,
+                name=name,
+                category="cuda",
+                func=None,
+                tensor_specs={},
+                ref_func=None,
                 unavailable_reason=f"Kernel import failed: {exc}",
             )
 
     try:
         from neuralops.core.triton_kernels import fused_norm_linear, fused_norm_linear_pytorch
+
         result["triton:fused_norm_linear"] = OpConfig(
             name="fused_norm_linear",
             category="triton",
@@ -391,8 +442,12 @@ def _register_registry_modules() -> dict[str, OpConfig]:
             category="attention",
             func=_attention_operation(name, force_pytorch=False, state=state),
             tensor_specs={
-                "batch": 4, "sequence": 128, "hidden": 768,
-                "heads": 12, "dtype": "float16", "device": "cuda",
+                "batch": 4,
+                "sequence": 128,
+                "hidden": 768,
+                "heads": 12,
+                "dtype": "float16",
+                "device": "cuda",
             },
             ref_func=_attention_operation(name, force_pytorch=True, state=state),
             input_factory=_attention_inputs,
@@ -424,6 +479,7 @@ def resolve_op_name(name: str) -> str:
 
     # Check DEPRECATED_ALIASES
     from neuralops.core.registry import DEPRECATED_ALIASES
+
     target = DEPRECATED_ALIASES.get(raw, raw)
 
     # Candidate keys to probe

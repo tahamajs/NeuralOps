@@ -166,4 +166,3 @@ Historical numbers must be labeled historical. Planned numbers must be labeled p
 [ ] README/manifest/docs match measured evidence
 [ ] Unrelated user changes preserved
 ```
-

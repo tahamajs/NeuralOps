@@ -20,10 +20,10 @@ import argparse
 import csv
 import json
 import logging
-from pathlib import Path
 import sqlite3
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 # Ensure neuralops is on sys.path
@@ -140,7 +140,7 @@ def run_single_kd_session(
     loss_history: list[float] = []
 
     start_time = time.perf_counter()
-    has_cuda = (device.type == "cuda")
+    has_cuda = device.type == "cuda"
 
     if has_cuda:
         torch.cuda.reset_peak_memory_stats(device)
@@ -206,7 +206,11 @@ def run_single_kd_session(
     duration = time.perf_counter() - start_time
     throughput = total_tokens / max(duration, 1e-6)
     peak_vram = torch.cuda.max_memory_allocated(device) / (1024 * 1024) if has_cuda else 0.0
-    loss_reduction = round((initial_loss - final_loss) / max(abs(initial_loss), 1e-6) * 100.0, 2) if (initial_loss and final_loss) else 0.0
+    loss_reduction = (
+        round((initial_loss - final_loss) / max(abs(initial_loss), 1e-6) * 100.0, 2)
+        if (initial_loss and final_loss)
+        else 0.0
+    )
 
     return {
         "module_name": module_name,
@@ -227,8 +231,12 @@ def run_single_kd_session(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Exhaustive Per-Module 2-Minute KD Benchmark")
     parser.add_argument("--device", default="cuda:0" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--max-duration", type=float, default=120.0, help="Max duration per module in seconds (default: 120s = 2 min)")
-    parser.add_argument("--output-csv", type=Path, default=_REPO_ROOT / "results" / "csv" / "kd_per_module_benchmark.csv")
+    parser.add_argument(
+        "--max-duration", type=float, default=120.0, help="Max duration per module in seconds (default: 120s = 2 min)"
+    )
+    parser.add_argument(
+        "--output-csv", type=Path, default=_REPO_ROOT / "results" / "csv" / "kd_per_module_benchmark.csv"
+    )
     parser.add_argument("--output-sqlite", type=Path, default=_REPO_ROOT / "results" / "master_ledger.sqlite")
     parser.add_argument("--category", choices=["attention", "compressor", "all"], default="all")
     parser.add_argument("--limit", type=int, default=None, help="Optional limit for smoke testing")
@@ -273,15 +281,21 @@ def main() -> None:
         ATTENTION_REGISTRY._load_all()
         attn_keys = sorted(list(ATTENTION_REGISTRY._dict.keys()))
         if args.limit:
-            attn_keys = attn_keys[:args.limit]
+            attn_keys = attn_keys[: args.limit]
         logger.info("Starting Knowledge Distillation runs for %d attention mechanisms...", len(attn_keys))
 
         for idx, name in enumerate(attn_keys, 1):
-            logger.info("[%d/%d] Training Attention KD: %s (up to %.0fs)...", idx, len(attn_keys), name, args.max_duration)
+            logger.info(
+                "[%d/%d] Training Attention KD: %s (up to %.0fs)...", idx, len(attn_keys), name, args.max_duration
+            )
             try:
                 attn_layer = create_attention(name, embed_dim=128, num_heads=4)
                 rec = run_single_kd_session(
-                    name, "attention", attn_layer, teacher_model, device,
+                    name,
+                    "attention",
+                    attn_layer,
+                    teacher_model,
+                    device,
                     max_duration_sec=args.max_duration,
                     batch_size=args.batch_size,
                     seq_len=args.seq_len,
@@ -307,23 +321,32 @@ def main() -> None:
                     "param_count": 0,
                 }
             results.append(rec)
-            logger.info("  -> Status: %s | Steps: %d | Loss: %.4f -> %.4f (%.1f%%) | Throughput: %.1f tok/s",
-                        rec["status"], rec["steps_completed"], rec["initial_loss"], rec["final_loss"],
-                        rec["loss_reduction"], rec["throughput_tok_s"])
+            logger.info(
+                "  -> Status: %s | Steps: %d | Loss: %.4f -> %.4f (%.1f%%) | Throughput: %.1f tok/s",
+                rec["status"],
+                rec["steps_completed"],
+                rec["initial_loss"],
+                rec["final_loss"],
+                rec["loss_reduction"],
+                rec["throughput_tok_s"],
+            )
 
     # 2. Compressor Engines
     if args.category in ("compressor", "all"):
         COMPRESSOR_REGISTRY._load_all()
         comp_keys = sorted(list(COMPRESSOR_REGISTRY._dict.keys()))
         if args.limit:
-            comp_keys = comp_keys[:args.limit]
+            comp_keys = comp_keys[: args.limit]
         logger.info("Starting Knowledge Distillation runs for %d compression engines...", len(comp_keys))
 
         for idx, name in enumerate(comp_keys, 1):
-            logger.info("[%d/%d] Training Compressor KD: %s (up to %.0fs)...", idx, len(comp_keys), name, args.max_duration)
+            logger.info(
+                "[%d/%d] Training Compressor KD: %s (up to %.0fs)...", idx, len(comp_keys), name, args.max_duration
+            )
             try:
                 cls = COMPRESSOR_REGISTRY.get(name)
                 from transformers import BertConfig, BertModel
+
                 cfg = BertConfig(num_hidden_layers=1, hidden_size=64, num_attention_heads=2, intermediate_size=128)
                 base_model = BertModel(cfg)
                 if hasattr(cls, "compress"):
@@ -335,12 +358,18 @@ def main() -> None:
                         res = cls(base_model, rank=8, fallback_to_original=False)
                     except TypeError:
                         res = cls(model=base_model, rank=8)
-                    comp_model = res[0] if isinstance(res, tuple) else (res.compress()[0] if hasattr(res, "compress") else res)
+                    comp_model = (
+                        res[0] if isinstance(res, tuple) else (res.compress()[0] if hasattr(res, "compress") else res)
+                    )
                 else:
                     raise RuntimeError(f"Compressor {name} is not callable")
 
                 rec = run_single_kd_session(
-                    name, "compressor", comp_model, teacher_model, device,
+                    name,
+                    "compressor",
+                    comp_model,
+                    teacher_model,
+                    device,
                     max_duration_sec=args.max_duration,
                     batch_size=args.batch_size,
                     seq_len=args.compressor_seq_len,
@@ -366,14 +395,30 @@ def main() -> None:
                     "param_count": 0,
                 }
             results.append(rec)
-            logger.info("  -> Status: %s | Steps: %d | Loss: %.4f -> %.4f (%.1f%%) | Throughput: %.1f tok/s",
-                        rec["status"], rec["steps_completed"], rec["initial_loss"], rec["final_loss"],
-                        rec["loss_reduction"], rec["throughput_tok_s"])
+            logger.info(
+                "  -> Status: %s | Steps: %d | Loss: %.4f -> %.4f (%.1f%%) | Throughput: %.1f tok/s",
+                rec["status"],
+                rec["steps_completed"],
+                rec["initial_loss"],
+                rec["final_loss"],
+                rec["loss_reduction"],
+                rec["throughput_tok_s"],
+            )
 
     # Persist results to CSV
     fieldnames = [
-        "module_name", "module_type", "status", "steps_completed", "duration_sec",
-        "initial_loss", "final_loss", "loss_reduction", "throughput_tok_s", "peak_vram_mb", "param_count", "error"
+        "module_name",
+        "module_type",
+        "status",
+        "steps_completed",
+        "duration_sec",
+        "initial_loss",
+        "final_loss",
+        "loss_reduction",
+        "throughput_tok_s",
+        "peak_vram_mb",
+        "param_count",
+        "error",
     ]
     with open(args.output_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -387,7 +432,8 @@ def main() -> None:
         conn = sqlite3.connect(args.output_sqlite)
         cursor = conn.cursor()
         cursor.execute("PRAGMA journal_mode=WAL;")
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS per_module_kd_benchmarks (
                 module_name TEXT,
                 module_type TEXT,
@@ -404,19 +450,32 @@ def main() -> None:
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (module_name, module_type)
             )
-        """)
+        """
+        )
         for r in results:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR REPLACE INTO per_module_kd_benchmarks (
                     module_name, module_type, status, steps_completed, duration_sec,
                     initial_loss, final_loss, loss_reduction, throughput_tok_s,
                     peak_vram_mb, param_count, error
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                r["module_name"], r["module_type"], r["status"], r["steps_completed"], r["duration_sec"],
-                r["initial_loss"], r["final_loss"], r["loss_reduction"], r["throughput_tok_s"],
-                r["peak_vram_mb"], r["param_count"], r["error"]
-            ))
+            """,
+                (
+                    r["module_name"],
+                    r["module_type"],
+                    r["status"],
+                    r["steps_completed"],
+                    r["duration_sec"],
+                    r["initial_loss"],
+                    r["final_loss"],
+                    r["loss_reduction"],
+                    r["throughput_tok_s"],
+                    r["peak_vram_mb"],
+                    r["param_count"],
+                    r["error"],
+                ),
+            )
         conn.commit()
         conn.close()
         logger.info("Atomically recorded %d entries into SQLite master ledger at %s", len(results), args.output_sqlite)
@@ -437,7 +496,9 @@ def main() -> None:
         f.write("| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |\n")
         for r in results:
             status_icon = "✅" if r["status"] == "PASS" else "❌"
-            f.write(f"| `{r['module_name']}` | `{r['module_type']}` | {status_icon} `{r['status']}` | {r['steps_completed']} | {r['duration_sec']}s | `{r['initial_loss']:.4f} -> {r['final_loss']:.4f}` ({r['loss_reduction']}%) | {r['throughput_tok_s']} | {r['peak_vram_mb']} MB |\n")
+            f.write(
+                f"| `{r['module_name']}` | `{r['module_type']}` | {status_icon} `{r['status']}` | {r['steps_completed']} | {r['duration_sec']}s | `{r['initial_loss']:.4f} -> {r['final_loss']:.4f}` ({r['loss_reduction']}%) | {r['throughput_tok_s']} | {r['peak_vram_mb']} MB |\n"
+            )
     logger.info("Generated markdown report at %s", report_md)
 
 

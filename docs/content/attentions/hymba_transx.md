@@ -85,7 +85,7 @@ Input: hidden_states [B, L, D], Meta-Tokens [N_meta, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### Computational Workload and Theoretical Scaling
-Let $B$ denote batch size, $L$ sequence length, $N_{\text{meta}}$ the cardinality of prepended meta-tokens, $D$ model dimension, $D_{\text{inner}}$ the expanded state dimension within the SSM recurrence, and $d_{\text{state}}$ the hidden recurrent state size. The computational profile of Hymba TransX reflects a dual-path hybrid architecture operating over an augmented context horizon $L_{\text{aug}} = N_{\text{meta}} + L$. 
+Let $B$ denote batch size, $L$ sequence length, $N_{\text{meta}}$ the cardinality of prepended meta-tokens, $D$ model dimension, $D_{\text{inner}}$ the expanded state dimension within the SSM recurrence, and $d_{\text{state}}$ the hidden recurrent state size. The computational profile of Hymba TransX reflects a dual-path hybrid architecture operating over an augmented context horizon $L_{\text{aug}} = N_{\text{meta}} + L$.
 
 In the initial transformation stage, applying UnifiedRoPE across representations incurs $4 B (N_{\text{meta}} + L) D$ floating-point operations to perform pairwise 2D planar coordinate rotations across feature subspaces. Following positional injection, execution branches into concurrent state-space and attention channels. The SimpleSSM linear recurrence evaluates continuous-time state transitions incurring $6 B (N_{\text{meta}} + L) D D_{\text{inner}} + 4 B (N_{\text{meta}} + L) D_{\text{inner}} d_{\text{state}}$ FLOPs, maintaining strict $\mathcal{O}(L_{\text{aug}})$ computational scaling in sequence length. Concurrently, the exact associative Multi-Head Attention (MHA) branch evaluates query-key-value transformations and dense affinity softmax aggregation, consuming $8 B (N_{\text{meta}} + L) D^2 + 4 B (N_{\text{meta}} + L)^2 D$ FLOPs. Finally, the element-wise gated fusion and linear output projection contribute $2 B (N_{\text{meta}} + L) D$ FLOPs. By offloading broad temporal tracking to the SSM branch and restricting the quadratic attention budget to specialized local or pruned attention windows, the hybrid system bounds end-to-end memory bandwidth demands while sustaining exact associative recall.
 
@@ -135,4 +135,3 @@ The empirical evaluation of `hymba_transx` across standard sequence lengths and 
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

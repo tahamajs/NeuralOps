@@ -7,13 +7,13 @@
  */
 
 import * as THREE from 'three';
-import { 
-    materials, 
-    edgeMatDense, 
-    edgeMatSvd, 
-    edgeMatMoe, 
-    edgeMatMla, 
-    getOrCreateCustomMaterial, 
+import {
+    materials,
+    edgeMatDense,
+    edgeMatSvd,
+    edgeMatMoe,
+    edgeMatMla,
+    getOrCreateCustomMaterial,
     getOrCreateCustomEdgeMaterial,
     getLayerDepthMaterial,
     getLayerDepthEdgeMaterial

@@ -10,25 +10,14 @@ NeuralOps Trainer Subpackage.
 """
 
 from .base_trainer import BaseTrainer, Trainer
-from .callbacks import (
-    GradientNormCallback,
-    MemoryCallback,
-    PreemptionCallback,
-    SVDAttentionCallback,
-    TimeCallback,
-)
+from .callbacks import GradientNormCallback, MemoryCallback, PreemptionCallback, SVDAttentionCallback, TimeCallback
 from .custom_loop_trainer import CustomLoopTrainer
 
 try:
     from .hf_trainer import HuggingFaceTrainer  # requires datasets + transformers.Trainer
 except (ImportError, RuntimeError):
     HuggingFaceTrainer = None  # type: ignore[assignment,misc]
-from .neuralops_trainer import NeuralOpsTrainer
-from .hyperopt import (
-    HyperparameterOptimizer,
-    PrunedHyperparameterOptimizer,
-    quick_optimize,
-)
+from .hyperopt import HyperparameterOptimizer, PrunedHyperparameterOptimizer, quick_optimize
 from .metrics import (
     aggregate_results,
     compute_accuracy,
@@ -37,14 +26,11 @@ from .metrics import (
     compute_pearson_spearman,
     get_task_metrics,
 )
-from .optimizers import (
-    OPTIMIZER_REGISTRY,
-    RiemannianStiefelOptimizer,
-    project_stiefel_gradient,
-    stiefel_qr_retraction,
-)
+from .neuralops_trainer import NeuralOpsTrainer
+from .optimizers import OPTIMIZER_REGISTRY, RiemannianStiefelOptimizer, project_stiefel_gradient, stiefel_qr_retraction
 from .registry import TrainerRegistry
 from .results_manager import ResultsManager
+from .smart_gpu_trainer import AsyncDataPrefetcher, AutoMaxGPUTrainer, GPUMemoryManager
 from .trainer_factory import TRAINER_FACTORY_REGISTRY, get_trainer
 from .utils import (
     benchmark_model,
@@ -54,11 +40,6 @@ from .utils import (
     plot_training_curves,
     save_training_history,
     train_model,
-)
-from .smart_gpu_trainer import (
-    AsyncDataPrefetcher,
-    AutoMaxGPUTrainer,
-    GPUMemoryManager,
 )
 
 __all__ = [
@@ -103,8 +84,6 @@ __all__ = [
 ]
 
 from .foundation_pretrainer import InfiniteContextFoundationPretrainer
-
-
 from .optimizers import (  # noqa: E402
     create_adabelief,
     create_adam,
@@ -117,14 +96,7 @@ from .optimizers import (  # noqa: E402
     create_riemannian_stiefel,
     create_sgd,
 )
-
-from .schedulers import (  # noqa: E402
-    create_cosine,
-    create_linear,
-    create_onecycle,
-    create_poly,
-    create_rop,
-)
+from .schedulers import create_cosine, create_linear, create_onecycle, create_poly, create_rop  # noqa: E402
 
 __all__ += [
     "create_muon",
@@ -144,14 +116,7 @@ __all__ += [
     "create_poly",
 ]
 
-from .losses import (  # noqa: E402
-    ContrastiveLoss,
-    CrossEntropyLoss,
-    DiceLoss,
-    FocalLoss,
-    LabelSmoothingLoss,
-    PolyLoss,
-)
+from .losses import ContrastiveLoss, CrossEntropyLoss, DiceLoss, FocalLoss, LabelSmoothingLoss, PolyLoss  # noqa: E402
 
 __all__ += [
     "CrossEntropyLoss",
@@ -163,34 +128,22 @@ __all__ += [
 ]
 
 from .distillation.multi_level_kd import (
-    LogitDistillationLoss,
-    SpikyFeatureMap,
-    HedgehogFeatureMapKDLoss,
-    MiniLMValueRelationKDLoss,
     BlockwiseOperatorCloningLoss,
+    HedgehogFeatureMapKDLoss,
     LinearCKALoss,
+    LogitDistillationLoss,
+    MiniLMValueRelationKDLoss,
     SmoothMaxOverLayersCKASteeringLoss,
+    SpikyFeatureMap,
 )
+from .peft_recovery.svd_adapters import DoRALinear, PiSSALinear, inject_pissa_adapters
+from .regularizers.attention_stability import GateSaturationPenalty, LearnableAttentionSink, SpectralJacobianRegularizer
+from .rl_alignment.preference_and_onpolicy import DynamicRoutingAndRankRL, ORPOLoss, SimPOLoss
 from .surgery_schedules.mohawk import (
-    AttentionHomotopyScheduler,
     AlphaBlendingAttentionWrapper,
-    MOHAWKTrainer,
+    AttentionHomotopyScheduler,
     HNCContinuationTrainer,
-)
-from .peft_recovery.svd_adapters import (
-    PiSSALinear,
-    DoRALinear,
-    inject_pissa_adapters,
-)
-from .rl_alignment.preference_and_onpolicy import (
-    SimPOLoss,
-    ORPOLoss,
-    DynamicRoutingAndRankRL,
-)
-from .regularizers.attention_stability import (
-    LearnableAttentionSink,
-    GateSaturationPenalty,
-    SpectralJacobianRegularizer,
+    MOHAWKTrainer,
 )
 from .ttt.test_time_trainer import TTTLinearAttentionLayer
 
@@ -218,22 +171,24 @@ __all__ += [
     "TTTLinearAttentionLayer",
 ]
 
-from neuralops.trainer import methods
-from neuralops.trainer import optimizers
-from neuralops.trainer import base_trainer
-from neuralops.trainer import callbacks
-from neuralops.trainer import custom_loop_trainer
-from neuralops.trainer import hf_trainer
-from neuralops.trainer import hyperopt
-from neuralops.trainer import losses
-from neuralops.trainer import metrics
-from neuralops.trainer import registry
-from neuralops.trainer import results_manager
-from neuralops.trainer import rl_trainer
-from neuralops.trainer import schedulers
-from neuralops.trainer import train_lra
-from neuralops.trainer import trainer
-from neuralops.trainer import trainer_factory
-from neuralops.trainer import trainer_svd
-from neuralops.trainer import unsloth_trainer
-from neuralops.trainer import utils
+from neuralops.trainer import (
+    base_trainer,
+    callbacks,
+    custom_loop_trainer,
+    hf_trainer,
+    hyperopt,
+    losses,
+    methods,
+    metrics,
+    optimizers,
+    registry,
+    results_manager,
+    rl_trainer,
+    schedulers,
+    train_lra,
+    trainer,
+    trainer_factory,
+    trainer_svd,
+    unsloth_trainer,
+    utils,
+)

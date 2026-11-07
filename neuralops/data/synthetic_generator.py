@@ -26,12 +26,16 @@ def generate_zipfian_tokens(
     ranks = torch.arange(1, vocab_size + 1, dtype=torch.float64)
     probabilities = ranks.reciprocal()
     probabilities /= probabilities.sum()
-    return torch.multinomial(
-        probabilities,
-        num_samples * seq_len,
-        replacement=True,
-        generator=generator,
-    ).reshape(num_samples, seq_len).long()
+    return (
+        torch.multinomial(
+            probabilities,
+            num_samples * seq_len,
+            replacement=True,
+            generator=generator,
+        )
+        .reshape(num_samples, seq_len)
+        .long()
+    )
 
 
 class SyntheticClassificationDataset(Dataset):

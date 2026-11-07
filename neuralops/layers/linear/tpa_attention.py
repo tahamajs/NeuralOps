@@ -13,11 +13,6 @@ Tensor product attention factorizing query-key interactions into compact rank-de
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -26,8 +21,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+
 try:
     from torch.nn.attention import SDPBackend, sdpa_kernel
+
     _HAS_SDPA_KERNEL = True
 except ImportError:
     _HAS_SDPA_KERNEL = False
@@ -36,8 +34,8 @@ from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -64,10 +62,7 @@ def _cp_decompose_qk(
     head_dim = rank_a * rank_b
 
     if rank_a * rank_b != W_f.shape[0] // H:
-        raise ValueError(
-            f"rank_a * rank_b ({rank_a} * {rank_b}) must equal head_dim "
-            f"({W_f.shape[0] // H})"
-        )
+        raise ValueError(f"rank_a * rank_b ({rank_a} * {rank_b}) must equal head_dim " f"({W_f.shape[0] // H})")
 
     W_r = W_f.view(H, rank_a, rank_b, in_dim)
 
@@ -105,9 +100,7 @@ def _cp_decompose_qk(
     return A_out, B_out, final_err
 
 
-def _svd_factorize(
-    W: torch.Tensor, target_rank: int
-) -> tuple[torch.Tensor, torch.Tensor]:
+def _svd_factorize(W: torch.Tensor, target_rank: int) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Truncated SVD: W ≈ U_r · Σ_r · V_r^T
     Returns (U_r * sqrt(Σ_r), sqrt(Σ_r) * V_r^T) for numerical stability.
@@ -235,19 +228,20 @@ class TPAttention(BaseAttention):
                 self.rank_b = self.head_dim // self.rank_a
                 logger.info(
                     "Auto-adjusted rank_b to %d to match head_dim=%d",
-                    self.rank_b, self.head_dim,
+                    self.rank_b,
+                    self.head_dim,
                 )
             elif self.head_dim % self.rank_b == 0:
                 self.rank_a = self.head_dim // self.rank_b
                 logger.info(
                     "Auto-adjusted rank_a to %d to match head_dim=%d",
-                    self.rank_a, self.head_dim,
+                    self.rank_a,
+                    self.head_dim,
                 )
             else:
                 self._use_tensor_product = False
                 logger.warning(
-                    "Cannot find (rank_a, rank_b) with rank_a*rank_b=%d. "
-                    "Falling back to standard projection.",
+                    "Cannot find (rank_a, rank_b) with rank_a*rank_b=%d. " "Falling back to standard projection.",
                     self.head_dim,
                 )
         else:
@@ -263,14 +257,22 @@ class TPAttention(BaseAttention):
         self.effective_qk_dim = self.head_dim
 
         self.lora_rank = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
-        self.lora_alpha = float(
-            kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
-        )
+        self.lora_alpha = float(kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)))
 
         _mt = str(_cfg_get(config, "model_type", "") or "").lower() if config is not None else ""
         _dec_prefixes = (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
         )
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
@@ -294,57 +296,81 @@ class TPAttention(BaseAttention):
 
         if self._use_tensor_product:
             self.q_proj1 = LoRALinear(
-                self.dim, self.num_heads * self.rank_a,
-                bias=False, lora_rank=0, freeze_base=True, dtype=target_dtype,
+                self.dim,
+                self.num_heads * self.rank_a,
+                bias=False,
+                lora_rank=0,
+                freeze_base=True,
+                dtype=target_dtype,
             )
             self.q_proj2 = LoRALinear(
-                self.dim, self.num_heads * self.rank_b,
-                bias=False, lora_rank=0, freeze_base=True, dtype=target_dtype,
+                self.dim,
+                self.num_heads * self.rank_b,
+                bias=False,
+                lora_rank=0,
+                freeze_base=True,
+                dtype=target_dtype,
             )
             self.k_proj1 = LoRALinear(
-                self.dim, self.num_kv_heads * self.rank_a,
-                bias=False, lora_rank=0, freeze_base=True, dtype=target_dtype,
+                self.dim,
+                self.num_kv_heads * self.rank_a,
+                bias=False,
+                lora_rank=0,
+                freeze_base=True,
+                dtype=target_dtype,
             )
             self.k_proj2 = LoRALinear(
-                self.dim, self.num_kv_heads * self.rank_b,
-                bias=False, lora_rank=0, freeze_base=True, dtype=target_dtype,
+                self.dim,
+                self.num_kv_heads * self.rank_b,
+                bias=False,
+                lora_rank=0,
+                freeze_base=True,
+                dtype=target_dtype,
             )
         else:
             self.q_proj1 = LoRALinear(
-                self.dim, self.q_head_size,
-                bias=False, lora_rank=0, freeze_base=True, dtype=target_dtype,
+                self.dim,
+                self.q_head_size,
+                bias=False,
+                lora_rank=0,
+                freeze_base=True,
+                dtype=target_dtype,
             )
             self.q_proj2 = None
             self.k_proj1 = LoRALinear(
-                self.dim, self.kv_head_size,
-                bias=False, lora_rank=0, freeze_base=True, dtype=target_dtype,
+                self.dim,
+                self.kv_head_size,
+                bias=False,
+                lora_rank=0,
+                freeze_base=True,
+                dtype=target_dtype,
             )
             self.k_proj2 = None
 
         self.v_proj = LoRALinear(
-            self.dim, self.kv_head_size,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
         self.out_proj = LoRALinear(
-            self.q_head_size, self.dim,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.q_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
 
         if self.lora_rank > 0 and self._use_tensor_product:
-            self.q_lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.dim, dtype=target_dtype)
-            )
-            self.q_lora_B = nn.Parameter(
-                torch.randn(self.q_head_size, self.lora_rank, dtype=target_dtype) * 1e-4
-            )
-            self.k_lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.dim, dtype=target_dtype)
-            )
-            self.k_lora_B = nn.Parameter(
-                torch.randn(self.kv_head_size, self.lora_rank, dtype=target_dtype) * 1e-4
-            )
+            self.q_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.dim, dtype=target_dtype))
+            self.q_lora_B = nn.Parameter(torch.randn(self.q_head_size, self.lora_rank, dtype=target_dtype) * 1e-4)
+            self.k_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.dim, dtype=target_dtype))
+            self.k_lora_B = nn.Parameter(torch.randn(self.kv_head_size, self.lora_rank, dtype=target_dtype) * 1e-4)
             nn.init.kaiming_uniform_(self.q_lora_A, a=math.sqrt(5))
             nn.init.kaiming_uniform_(self.k_lora_A, a=math.sqrt(5))
         else:
@@ -353,10 +379,7 @@ class TPAttention(BaseAttention):
             self.register_parameter("k_lora_A", None)
             self.register_parameter("k_lora_B", None)
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
@@ -377,8 +400,7 @@ class TPAttention(BaseAttention):
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             has_no_out = not any(
-                hasattr(old_attn, a)
-                for a in ("dense", "out_proj", "o_proj", "c_proj", "out_lin", "proj")
+                hasattr(old_attn, a) for a in ("dense", "out_proj", "o_proj", "c_proj", "out_lin", "proj")
             )
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(old_attn, "query") and has_no_out
@@ -390,10 +412,7 @@ class TPAttention(BaseAttention):
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight.detach()
-                    b_o = (
-                        old_attn.output.dense.bias.detach()
-                        if old_attn.output.dense.bias is not None else None
-                    )
+                    b_o = old_attn.output.dense.bias.detach() if old_attn.output.dense.bias is not None else None
             else:
                 src = old_attn
 
@@ -475,7 +494,8 @@ class TPAttention(BaseAttention):
             if missing:
                 logger.warning(
                     "TPAttention: failed to extract %s from %s",
-                    missing, type(old_attn).__name__,
+                    missing,
+                    type(old_attn).__name__,
                 )
                 return
 
@@ -491,8 +511,7 @@ class TPAttention(BaseAttention):
             if hasattr(old_attn, "is_decoder"):
                 self.is_decoder = bool(old_attn.is_decoder)
             elif hasattr(old_attn, "c_attn") or any(
-                x in old_attn.__class__.__name__.lower()
-                for x in ("gpt", "qwen", "llama", "decoder")
+                x in old_attn.__class__.__name__.lower() for x in ("gpt", "qwen", "llama", "decoder")
             ):
                 self.is_decoder = True
 
@@ -507,12 +526,18 @@ class TPAttention(BaseAttention):
 
             try:
                 A, B, err = _cp_decompose_qk(
-                    W_f, num_h, self.rank_a, self.rank_b,
+                    W_f,
+                    num_h,
+                    self.rank_a,
+                    self.rank_b,
                     n_iter=self.cp_iterations,
                 )
                 logger.info(
                     "TPAttention[%s]: CP error = %.4f (rank_a=%d, rank_b=%d)",
-                    name, err, self.rank_a, self.rank_b,
+                    name,
+                    err,
+                    self.rank_a,
+                    self.rank_b,
                 )
 
                 if err <= self.max_cp_error and not (torch.isnan(A).any() or torch.isnan(B).any()):
@@ -520,17 +545,15 @@ class TPAttention(BaseAttention):
                     proj2.weight.data.zero_()
                     r_a_rows = num_h * self.rank_a
                     r_b_rows = num_h * self.rank_b
-                    proj1.weight.data[:r_a_rows, :in_dim].copy_(
-                        A[:r_a_rows, :in_dim].to(proj1.weight.dtype)
-                    )
-                    proj2.weight.data[:r_b_rows, :in_dim].copy_(
-                        B[:r_b_rows, :in_dim].to(proj2.weight.dtype)
-                    )
+                    proj1.weight.data[:r_a_rows, :in_dim].copy_(A[:r_a_rows, :in_dim].to(proj1.weight.dtype))
+                    proj2.weight.data[:r_b_rows, :in_dim].copy_(B[:r_b_rows, :in_dim].to(proj2.weight.dtype))
                     logger.info("TPAttention[%s]: CP accepted", name)
                 else:
                     logger.warning(
                         "TPAttention[%s]: CP error %.4f > %.4f; using SVD fallback",
-                        name, err, self.max_cp_error,
+                        name,
+                        err,
+                        self.max_cp_error,
                     )
                     self._svd_fallback(proj1, proj2, W_f, num_h, name)
             except Exception as e:
@@ -612,6 +635,7 @@ class TPAttention(BaseAttention):
                 if q1.is_cuda and q2.is_cuda:
                     try:
                         from neuralops.ops.triton.low_rank import fused_kronecker_batched_gemm_triton
+
                         out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(-2, -1)
                     except Exception:
                         out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(-2, -1)
@@ -619,9 +643,7 @@ class TPAttention(BaseAttention):
                     out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(-2, -1)
                 if self.q_lora_A is not None:
                     lora = F.linear(F.linear(x, self.q_lora_A), self.q_lora_B)
-                    out_q = out_q + lora.view(B, L, H, hd) * (
-                        self.lora_alpha / max(1, self.lora_rank)
-                    )
+                    out_q = out_q + lora.view(B, L, H, hd) * (self.lora_alpha / max(1, self.lora_rank))
                 return out_q
             else:
                 return self.q_proj1(x).view(B, L, H, hd)
@@ -633,6 +655,7 @@ class TPAttention(BaseAttention):
                 if k1.is_cuda and k2.is_cuda:
                     try:
                         from neuralops.ops.triton.low_rank import fused_kronecker_batched_gemm_triton
+
                         out_k = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).flatten(-2, -1)
                     except Exception:
                         out_k = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).flatten(-2, -1)
@@ -640,9 +663,7 @@ class TPAttention(BaseAttention):
                     out_k = (k1.unsqueeze(-1) * k2.unsqueeze(-2)).flatten(-2, -1)
                 if self.k_lora_A is not None:
                     lora = F.linear(F.linear(x, self.k_lora_A), self.k_lora_B)
-                    out_k = out_k + lora.view(B, L, H_kv, hd) * (
-                        self.lora_alpha / max(1, self.lora_rank)
-                    )
+                    out_k = out_k + lora.view(B, L, H_kv, hd) * (self.lora_alpha / max(1, self.lora_rank))
                 return out_k
             else:
                 return self.k_proj1(x).view(B, L, H_kv, hd)
@@ -651,6 +672,7 @@ class TPAttention(BaseAttention):
         if use_ckpt:
             try:
                 from torch.utils.checkpoint import checkpoint
+
                 Q = checkpoint(_compute_q, hidden_states, use_reentrant=False)
                 K = checkpoint(_compute_k, hidden_states, use_reentrant=False)
             except Exception:
@@ -712,9 +734,9 @@ class TPAttention(BaseAttention):
                 sdpa_is_causal = True
             else:
                 if is_causal and sdpa_mask is not None:
-                    causal_bool = torch.tril(
-                        torch.ones(L, N_k, device=Q.device, dtype=torch.bool)
-                    ).unsqueeze(0).unsqueeze(0)
+                    causal_bool = (
+                        torch.tril(torch.ones(L, N_k, device=Q.device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+                    )
                     cm = sdpa_mask
                     if cm.dim() == 2:
                         cm = cm.unsqueeze(1).unsqueeze(2)
@@ -732,21 +754,27 @@ class TPAttention(BaseAttention):
                 if _HAS_SDPA_KERNEL:
                     with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]):
                         context = F.scaled_dot_product_attention(
-                            query=Q, key=K, value=v,
+                            query=Q,
+                            key=K,
+                            value=v,
                             attn_mask=sdpa_mask,
                             dropout_p=self.dropout.p if self.training else 0.0,
                             is_causal=sdpa_is_causal,
                         )
                 else:
                     context = F.scaled_dot_product_attention(
-                        query=Q, key=K, value=v,
+                        query=Q,
+                        key=K,
+                        value=v,
                         attn_mask=sdpa_mask,
                         dropout_p=self.dropout.p if self.training else 0.0,
                         is_causal=sdpa_is_causal,
                     )
             except (RuntimeError, TypeError):
                 context = F.scaled_dot_product_attention(
-                    query=Q, key=K, value=v,
+                    query=Q,
+                    key=K,
+                    value=v,
                     attn_mask=sdpa_mask,
                     dropout_p=self.dropout.p if self.training else 0.0,
                     is_causal=sdpa_is_causal,
@@ -834,11 +862,7 @@ def inject_tpa(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -848,8 +872,13 @@ def inject_tpa(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_tpa(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 n_inj += 1
@@ -891,12 +920,8 @@ def inject_tpa(
             _cfg_get(comp_config, "tpa_rank_b", rank_a),
         )
         lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 0))
-        max_cp_error = kwargs.pop(
-            "max_cp_error", _cfg_get(comp_config, "tpa_max_cp_error", 0.05)
-        )
-        cp_iterations = kwargs.pop(
-            "cp_iterations", _cfg_get(comp_config, "tpa_cp_iterations", 50)
-        )
+        max_cp_error = kwargs.pop("max_cp_error", _cfg_get(comp_config, "tpa_max_cp_error", 0.05))
+        cp_iterations = kwargs.pop("cp_iterations", _cfg_get(comp_config, "tpa_cp_iterations", 50))
 
         new_attn = TPAttention(
             config=cfg,

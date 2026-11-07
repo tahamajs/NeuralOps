@@ -14,11 +14,7 @@ SpeculativeDecodeStats, and speculative decoding verification routines.
 
 from __future__ import annotations
 
-from neuralops.inference.speculative_decoding import (
-    SelfSpeculativeDecoder,
-    SpeculativeDecodeStats,
-    gamma_sweep_harness,
-)
+from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder, SpeculativeDecodeStats, gamma_sweep_harness
 
 # Canonical alias
 SpeculativeDecoder = SelfSpeculativeDecoder

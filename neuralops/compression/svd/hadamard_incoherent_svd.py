@@ -72,7 +72,7 @@ class HadamardIncoherentSVDCompressor(BaseCompressor):
                 r = min(self.rank, len(S))
 
                 U_r = U[:, :r] * torch.sqrt(S[:r])
-                Vh_r = (torch.sqrt(S[:r])[:, None] * Vh[:r, :])
+                Vh_r = torch.sqrt(S[:r])[:, None] * Vh[:r, :]
 
                 Vh_orig = fast_hadamard_transform(Vh_r, block_size=self.hadamard_block_size)
 

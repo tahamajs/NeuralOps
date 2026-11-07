@@ -14,14 +14,9 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from neuralops.integrations.vllm_backend.backend import (
-    NeuralOpsAttentionBackend,
-    NeuralOpsImpl,
-)
-from neuralops.integrations.vllm_backend.kv_cache_spec import (
-    NeuralOpsRecurrentSpec,
-)
 from neuralops.integrations.vllm.state_table import PagedStateTable
+from neuralops.integrations.vllm_backend.backend import NeuralOpsAttentionBackend, NeuralOpsImpl
+from neuralops.integrations.vllm_backend.kv_cache_spec import NeuralOpsRecurrentSpec
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +57,8 @@ def register(backend_name: Optional[str] = None) -> bool:
     # 2. Try legacy selector registry API with AttentionBackendEnum.CUSTOM
     try:
         from vllm.attention.selector import (  # type: ignore[import-not-found]
-            AttentionBackendEnum,
             _ATTENTION_BACKEND_REGISTRY,
+            AttentionBackendEnum,
         )
 
         custom_enum = getattr(AttentionBackendEnum, "CUSTOM", None)

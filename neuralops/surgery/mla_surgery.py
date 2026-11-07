@@ -211,9 +211,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
             Fraction of KV cache memory reduced (e.g. 0.859375).
         """
         if standard_mha_bytes_per_token <= 0:
-            raise ValueError(
-                f"standard_mha_bytes_per_token must be positive, got {standard_mha_bytes_per_token}"
-            )
+            raise ValueError(f"standard_mha_bytes_per_token must be positive, got {standard_mha_bytes_per_token}")
         mla_bytes = self.get_mla_cache_bytes_per_token(bytes_per_elem=bytes_per_elem)
         return 1.0 - (mla_bytes / float(standard_mha_bytes_per_token))
 
@@ -263,9 +261,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
         """
         state_c_bytes = self.latent_kv_dim * self.q_latent_dim * bytes_per_elem
         state_c_kb = state_c_bytes / 1000.0
-        standard_state_bytes = (
-            standard_linear_state_dim[0] * standard_linear_state_dim[1] * bytes_per_elem
-        )
+        standard_state_bytes = standard_linear_state_dim[0] * standard_linear_state_dim[1] * bytes_per_elem
         standard_state_kb = standard_state_bytes / 1000.0
         reduction_ratio = 1.0 - (state_c_bytes / float(max(1, standard_state_bytes)))
         return {
@@ -308,9 +304,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
             Dictionary with uncompressed bytes, compressed latent bytes, recurrent state bytes, and savings percentage.
         """
         uncompressed_kv_bytes = 2 * batch_size * seq_len * uncompressed_kv_dim * bytes_per_elem
-        compressed_kv_bytes = (
-            batch_size * seq_len * (self.latent_kv_dim + self.decoupled_rope_dim) * bytes_per_elem
-        )
+        compressed_kv_bytes = batch_size * seq_len * (self.latent_kv_dim + self.decoupled_rope_dim) * bytes_per_elem
         state_c_bytes = batch_size * self.latent_kv_dim * self.q_latent_dim * 4
         state_r_bytes = batch_size * self.decoupled_rope_dim * self.decoupled_rope_dim * 4
         recurrent_state_bytes = state_c_bytes + state_r_bytes
@@ -571,7 +565,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
             ).view(1, length, 1)
             kc_decayed = kc_chunk * end_decay  # [B, L, d_c]
             delta_sc = torch.matmul(kc_decayed.transpose(-2, -1), qc_chunk)  # [B, d_c, d_q]
-            s_c = (self.decay ** length) * s_c + delta_sc
+            s_c = (self.decay**length) * s_c + delta_sc
 
             # 3. Decoupled RoPE Stream: Inter-chunk contribution from historical state z_{prev}^R
             out_inter_r = torch.matmul(qr_chunk, z_r.transpose(-2, -1))  # [B, L, d_r]
@@ -914,9 +908,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
                     min_dim = min(w_uk_f32.shape[0], w_q.shape[0])
                     w_q_tilde = torch.matmul(w_uk_f32[:min_dim, :].t(), w_q[:min_dim, :])
 
-                self.q_content_proj = nn.Linear(
-                    self.q_content_proj.in_features, self.latent_kv_dim, bias=False
-                )
+                self.q_content_proj = nn.Linear(self.q_content_proj.in_features, self.latent_kv_dim, bias=False)
                 self.q_content_proj.weight.data.copy_(
                     w_q_tilde.to(device=self.q_content_proj.weight.device, dtype=self.q_content_proj.weight.dtype)
                 )
@@ -1124,7 +1116,13 @@ class DeepSeekMLASurgeryBridge(nn.Module):
             w_q = w_q if w_q is not None else teacher.get("w_q", teacher.get("q_proj.weight", teacher.get("q.weight")))
             w_k = w_k if w_k is not None else teacher.get("w_k", teacher.get("k_proj.weight", teacher.get("k.weight")))
             w_v = w_v if w_v is not None else teacher.get("w_v", teacher.get("v_proj.weight", teacher.get("v.weight")))
-            w_o = w_o if w_o is not None else teacher.get("w_o", teacher.get("o_proj.weight", teacher.get("out_proj.weight", teacher.get("o.weight"))))
+            w_o = (
+                w_o
+                if w_o is not None
+                else teacher.get(
+                    "w_o", teacher.get("o_proj.weight", teacher.get("out_proj.weight", teacher.get("o.weight")))
+                )
+            )
         elif isinstance(teacher, torch.Tensor):
             w_kv_tensor = teacher
 
@@ -1156,7 +1154,7 @@ class DeepSeekMLASurgeryBridge(nn.Module):
         d_c = min(latent_kv_dim, rank)
 
         # Spectral energy calculation
-        total_spectral_energy = float(torch.sum(s ** 2).item())
+        total_spectral_energy = float(torch.sum(s**2).item())
         truncated_spectral_energy = float(torch.sum(s[:d_c] ** 2).item())
         spectral_energy_ratio = truncated_spectral_energy / max(1e-12, total_spectral_energy)
 

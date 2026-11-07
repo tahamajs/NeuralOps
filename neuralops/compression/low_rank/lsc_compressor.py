@@ -12,7 +12,6 @@ Projects weight matrices into spectral and discrete Fourier domains, truncating 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -144,11 +144,7 @@ class LSCPrunedLoRALinear(nn.Module):
         lora_alpha: float = 1.0,
     ) -> LSCPrunedLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
-        bias = (
-            base_layer.bias.detach()
-            if hasattr(base_layer, "bias") and base_layer.bias is not None
-            else None
-        )
+        bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
         in_features = getattr(base_layer, "in_features", weight.shape[1])
         out_features = getattr(base_layer, "out_features", weight.shape[0])
 
@@ -200,6 +196,7 @@ class LSCPrunedLoRALinear(nn.Module):
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t())
             except Exception:
                 lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
@@ -216,6 +213,7 @@ class LSCCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -238,9 +236,7 @@ class LSCCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "lsc_rank", _cfg_get(cfg, "rank", rank))
-            energy_ratio = _cfg_get(
-                cfg, "lsc_energy_ratio", _cfg_get(cfg, "energy_ratio", energy_ratio)
-            )
+            energy_ratio = _cfg_get(cfg, "lsc_energy_ratio", _cfg_get(cfg, "energy_ratio", energy_ratio))
             max_error = _cfg_get(cfg, "lsc_max_error", _cfg_get(cfg, "max_error", max_error))
             fallback_to_original = _cfg_get(
                 cfg,
@@ -319,9 +315,7 @@ class LSCCompressor(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_lower = base_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(base_mod, "nf")
         if not is_linear_like:
             if _debug:
                 logger.info(f"  [skip] {name}: not linear-like")
@@ -396,9 +390,7 @@ class LSCCompressor(BaseCompressor):
                     total_comp_params += p.numel()
 
         target_list = [
-            (name, module)
-            for name, module in self.model.named_modules()
-            if self._is_target_module(name, module)
+            (name, module) for name, module in self.model.named_modules() if self._is_target_module(name, module)
         ]
         if not target_list:
             logger.warning("LSC: no compressible layers found. Running diagnostic...")
@@ -489,11 +481,7 @@ class LSCCompressor(BaseCompressor):
                         name,
                         eff_max_err,
                         self.max_error,
-                        (
-                            "Keeping original."
-                            if self.fallback_to_original
-                            else "Proceeding with filtered weights."
-                        ),
+                        ("Keeping original." if self.fallback_to_original else "Proceeding with filtered weights."),
                     )
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
@@ -567,8 +555,7 @@ class LSCCompressor(BaseCompressor):
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -633,8 +620,7 @@ class LSCCompressor(BaseCompressor):
             self.max_error,
         )
         logger.info(
-            "LSC: %d compressed, %d fallback, %d skipped. "
-            "Avg err %.4f, effective_param_ratio %.2fx.",
+            "LSC: %d compressed, %d fallback, %d skipped. " "Avg err %.4f, effective_param_ratio %.2fx.",
             len(self.compressed_layers),
             len(self.fallback_layers),
             len(self.skipped_layers),
@@ -654,14 +640,10 @@ def lsc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         _cfg_get(comp_config, "energy_ratio", kwargs.pop("energy_ratio", None)),
     )
     max_error = _cfg_get(comp_config, "max_error", kwargs.pop("max_error", 1.0))
-    fallback_to_original = _cfg_get(
-        comp_config, "fallback_to_original", kwargs.pop("fallback_to_original", True)
-    )
+    fallback_to_original = _cfg_get(comp_config, "fallback_to_original", kwargs.pop("fallback_to_original", True))
     lora_r = _cfg_get(comp_config, "lora_r", kwargs.pop("lora_r", 0))
     lora_alpha = _cfg_get(comp_config, "lora_alpha", kwargs.pop("lora_alpha", 1.0))
-    target_attention_only = _cfg_get(
-        comp_config, "target_attention_only", kwargs.pop("target_attention_only", False)
-    )
+    target_attention_only = _cfg_get(comp_config, "target_attention_only", kwargs.pop("target_attention_only", False))
     skip_filter = _cfg_get(
         comp_config,
         "skip_should_compress_filter",

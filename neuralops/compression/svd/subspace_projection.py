@@ -12,7 +12,6 @@ Compresses linear operators via low-rank subspace projection and factorized matr
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -96,12 +96,8 @@ class SubspaceLinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
             self.register_parameter("lora_A", None)
@@ -125,13 +121,23 @@ class SubspaceLinear(nn.Module):
             b = self.bias if self.bias.dtype == x_flat.dtype else self.bias.to(x_flat.dtype)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x_flat, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 out = fused_down_up_gemm_bias_triton(x_flat, A, B.t().contiguous(), bias=b)
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-                    lora_out = fused_down_up_gemm_bias_triton(x_flat, self.lora_A.to(x_flat.dtype), self.lora_B.t().to(x_flat.dtype).contiguous(), bias=None) * self.scaling
+                    lora_out = (
+                        fused_down_up_gemm_bias_triton(
+                            x_flat,
+                            self.lora_A.to(x_flat.dtype),
+                            self.lora_B.t().to(x_flat.dtype).contiguous(),
+                            bias=None,
+                        )
+                        * self.scaling
+                    )
                     out = out + lora_out
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
@@ -185,12 +191,8 @@ class SubspaceLinear(nn.Module):
             and _get_lora_param(linear.lora_B) is not None
         )
         existing_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
-        effective_lora_r = (
-            int(existing_r) if (has_existing_lora and existing_r > 0) else int(lora_r)
-        )
-        effective_lora_alpha = float(
-            getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
-        )
+        effective_lora_r = int(existing_r) if (has_existing_lora and existing_r > 0) else int(lora_r)
+        effective_lora_alpha = float(getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha)))
 
         subspace_layer = cls(
             in_features=in_f,
@@ -214,11 +216,7 @@ class SubspaceLinear(nn.Module):
             if bias is not None and subspace_layer.bias is not None:
                 subspace_layer.bias.data.copy_(bias.to(dtype=W.dtype, device=W.device))
 
-        if (
-            has_existing_lora
-            and subspace_layer.lora_A is not None
-            and subspace_layer.lora_B is not None
-        ):
+        if has_existing_lora and subspace_layer.lora_A is not None and subspace_layer.lora_B is not None:
             try:
                 src_A = _get_lora_param(linear.lora_A)
                 src_B = _get_lora_param(linear.lora_B)
@@ -288,16 +286,12 @@ class SubspaceProjectionCompressor(BaseCompressor):
             tl = None
         self.target_layers = tl
 
-        self.target_attention_only = bool(
-            target_attention_only or _cfg_get(cfg_obj, "target_attention_only", False)
-        )
+        self.target_attention_only = bool(target_attention_only or _cfg_get(cfg_obj, "target_attention_only", False))
         self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.max_error = float(_cfg_get(cfg_obj, "max_error", max_error))
-        self.fallback_to_original = bool(
-            _cfg_get(cfg_obj, "fallback_to_original", fallback_to_original)
-        )
+        self.fallback_to_original = bool(_cfg_get(cfg_obj, "fallback_to_original", fallback_to_original))
 
         self.compressed_layers: list[dict[str, Any]] = []
         self.fallback_layers: list[str] = []
@@ -344,9 +338,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
 
@@ -474,8 +466,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
             )
 
             comp_bytes = (
-                new_layer.A.numel() * new_layer.A.element_size()
-                + new_layer.B.numel() * new_layer.B.element_size()
+                new_layer.A.numel() * new_layer.A.element_size() + new_layer.B.numel() * new_layer.B.element_size()
             )
             if new_layer.bias is not None:
                 comp_bytes += new_layer.bias.numel() * new_layer.bias.element_size()
@@ -515,15 +506,9 @@ class SubspaceProjectionCompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        avg_err = (
-            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
-        )
+        avg_err = sum(self.layer_errors.values()) / max(1, len(self.layer_errors)) if self.layer_errors else 0.0
         storage_ratio = total_orig_bytes / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
-        effective_ratio = (
-            total_comp_bytes / max(1, total_orig_bytes) if total_orig_bytes > 0 else 1.0
-        )
+        effective_ratio = total_comp_bytes / max(1, total_orig_bytes) if total_orig_bytes > 0 else 1.0
 
         try:
             stats = self.get_compression_stats()
@@ -579,9 +564,7 @@ def subspace_projection_factory(
     return_tuple: bool = False,
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
-    effective_rank = rank or _cfg_get(
-        comp_config, "subspace_rank", _cfg_get(comp_config, "rank", 64)
-    )
+    effective_rank = rank or _cfg_get(comp_config, "subspace_rank", _cfg_get(comp_config, "rank", 64))
     method = _cfg_get(comp_config, "subspace_method", "svd")
     target_attention_only = kwargs.pop(
         "target_attention_only",

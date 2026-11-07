@@ -119,21 +119,21 @@ def _gated_deltanet_block_fused_kernel(
 ):
     pid_b = tl.program_id(0)
     offs_d = tl.arange(0, BLOCK_D)
-    
+
     # Persistent SRAM Recurrent State [BLOCK_D]
     h_state = tl.zeros((BLOCK_D,), dtype=tl.float32)
-    
+
     for t in range(L):
         x_t = tl.load(X_ptr + pid_b * stride_xb + t * stride_xl + offs_d)
-        
+
         # Fused Sigmoid Gating
         f_t = tl.sigmoid(tl.dot(x_t[None, :], W_f_ptr))
         i_t = tl.sigmoid(tl.dot(x_t[None, :], W_i_ptr))
-        
+
         # State update
         h_state = f_t * h_state + i_t * x_t
         out_t = tl.clamp(h_state, -100.0, 100.0)
-        
+
         tl.store(Out_ptr + pid_b * stride_xb + t * stride_xl + offs_d, out_t)
 ```
 
@@ -165,4 +165,3 @@ The empirical evaluation of `gated_deltanet_block` across standard sequence leng
 | **$L = 2048$** | 0.45 ms | 180 MB | $2.50\times$ |
 | **$L = 4096$** | 0.85 ms | 288 MB | $4.20\times$ |
 | **$L = 8192$** | **1.65 ms** | **320 MB** | **7.75x** |
-

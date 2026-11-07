@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 from torch.optim.optimizer import Optimizer
@@ -48,11 +49,7 @@ def compute_empirical_diagonal_fisher(
     Returns:
         Mapping of parameter name to diagonal empirical Fisher tensor matching parameter shape.
     """
-    target_device = (
-        torch.device(device)
-        if device is not None
-        else next(model.parameters()).device
-    )
+    target_device = torch.device(device) if device is not None else next(model.parameters()).device
     was_training = model.training
     model.eval()
 
@@ -70,16 +67,10 @@ def compute_empirical_diagonal_fisher(
         model.zero_grad(set_to_none=True)
 
         if isinstance(batch, dict):
-            batch_inputs = {
-                k: v.to(target_device) if isinstance(v, torch.Tensor) else v
-                for k, v in batch.items()
-            }
+            batch_inputs = {k: v.to(target_device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
             outputs = model(**batch_inputs)
         elif isinstance(batch, (tuple, list)):
-            batch_inputs = [
-                v.to(target_device) if isinstance(v, torch.Tensor) else v
-                for v in batch
-            ]
+            batch_inputs = [v.to(target_device) if isinstance(v, torch.Tensor) else v for v in batch]
             outputs = model(*batch_inputs)
         elif isinstance(batch, torch.Tensor):
             outputs = model(batch.to(target_device))
@@ -206,11 +197,7 @@ class FisherMicroHealer:
     ) -> None:
         self.model = model
         self.damping = damping
-        self.device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters()).device
-        )
+        self.device = torch.device(device) if device is not None else next(model.parameters()).device
         self.fisher_diag: Dict[str, torch.Tensor] = {}
 
     def compute_empirical_fisher(

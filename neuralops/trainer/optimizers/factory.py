@@ -19,13 +19,8 @@ import torch.optim as optim
 
 from neuralops.core.registry import Registry
 from neuralops.trainer.optimizers.lion import Lion, create_lion_optimizer
-from neuralops.trainer.optimizers.muon import (
-    Muon,
-    create_muon_adamw_optimizer,
-)
-from neuralops.trainer.optimizers.riemannian import (
-    RiemannianStiefelOptimizer,
-)
+from neuralops.trainer.optimizers.muon import Muon, create_muon_adamw_optimizer
+from neuralops.trainer.optimizers.riemannian import RiemannianStiefelOptimizer
 
 OPTIMIZER_REGISTRY = Registry("optimizer")
 
@@ -40,7 +35,6 @@ def create_lion(
 ) -> Lion:
     """Build and return Lion optimizer."""
     return create_lion_optimizer(params, lr=lr, betas=betas, weight_decay=weight_decay, **kwargs)
-
 
 
 @OPTIMIZER_REGISTRY.register("muon")
@@ -64,9 +58,7 @@ def create_muon_adamw_reg(
     **kwargs: Any,
 ) -> Any:
     """Build and return MuonAdamW hybrid optimizer."""
-    return create_muon_adamw_optimizer(
-        params, lr_muon=lr, lr_adam=lr_adam, weight_decay=weight_decay, **kwargs
-    )
+    return create_muon_adamw_optimizer(params, lr_muon=lr, lr_adam=lr_adam, weight_decay=weight_decay, **kwargs)
 
 
 @OPTIMIZER_REGISTRY.register("riemannian_stiefel")
@@ -116,9 +108,7 @@ def create_adam(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwar
 
 
 @OPTIMIZER_REGISTRY.register("adabelief")
-def create_adabelief(
-    params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any
-) -> Any:
+def create_adabelief(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -> Any:
     """Build and return AdaBelief."""
     from adabelief_pytorch import AdaBelief
 

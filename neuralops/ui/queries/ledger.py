@@ -12,9 +12,9 @@ from __future__ import annotations
 
 import csv
 import io
-from pathlib import Path
 import sqlite3
 import subprocess
+from pathlib import Path
 from typing import Any
 
 import neuralops
@@ -33,9 +33,7 @@ def get_db_path() -> Path:
     repo_root = Path(__file__).resolve().parents[3]
     db_path = repo_root / "results" / "master_ledger.sqlite"
     if not db_path.is_file():
-        raise FileNotFoundError(
-            f"Master ledger SQLite database not found at expected path: {db_path}"
-        )
+        raise FileNotFoundError(f"Master ledger SQLite database not found at expected path: {db_path}")
     return db_path
 
 
@@ -52,9 +50,7 @@ def list_tables() -> list[str]:
     conn = _get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name ASC"
-        )
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name ASC")
         return [row["name"] for row in cursor.fetchall()]
     finally:
         conn.close()

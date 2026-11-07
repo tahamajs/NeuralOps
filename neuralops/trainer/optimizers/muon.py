@@ -65,9 +65,7 @@ class Muon(Optimizer):
         params = list(params)
         for p in params:
             if p.ndim != 2:
-                raise ValueError(
-                    f"Muon only supports 2-D matrix parameters, got param shape {p.shape}"
-                )
+                raise ValueError(f"Muon only supports 2-D matrix parameters, got param shape {p.shape}")
         super().__init__(params, defaults)
 
     @torch.no_grad()

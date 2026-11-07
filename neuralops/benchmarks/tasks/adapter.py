@@ -16,28 +16,16 @@ from __future__ import annotations
 import logging
 import time
 from typing import Any, Callable, Dict, Optional, Type
+
 import torch
 import torch.nn as nn
 from tqdm import tqdm
 
-from neuralops.benchmarks.core.evaluation import (
-    measure_latency_and_throughput,
-    measure_peak_memory_mb,
-)
-from neuralops.benchmarks.core.model_loader import (
-    apply_attention_module,
-    apply_compressor,
-    cleanup_model,
-)
-from neuralops.benchmarks.data.loader import (
-    load_universal_dataset,
-    make_universal_dataloader,
-)
+from neuralops.benchmarks.core.evaluation import measure_latency_and_throughput, measure_peak_memory_mb
+from neuralops.benchmarks.core.model_loader import apply_attention_module, apply_compressor, cleanup_model
+from neuralops.benchmarks.data.loader import load_universal_dataset, make_universal_dataloader
 from neuralops.benchmarks.metrics.evaluator import compute_task_metrics
-from neuralops.benchmarks.models.loader import (
-    inspect_model_metadata,
-    load_universal_model,
-)
+from neuralops.benchmarks.models.loader import inspect_model_metadata, load_universal_model
 
 LOG = logging.getLogger(__name__)
 
@@ -46,9 +34,11 @@ TASK_ADAPTER_REGISTRY: Dict[str, Type["TaskAdapter"]] = {}
 
 def register_task(task_name: str) -> Callable[[Type["TaskAdapter"]], Type["TaskAdapter"]]:
     """Decorator to register a task adapter."""
+
     def decorator(cls: Type["TaskAdapter"]) -> Type["TaskAdapter"]:
         TASK_ADAPTER_REGISTRY[task_name.lower()] = cls
         return cls
+
     return decorator
 
 
@@ -225,10 +215,12 @@ class TaskAdapter:
         if not self.eval_only and self.epochs > 0 and training_type != "none":
             t_start = time.perf_counter()
             from neuralops.benchmarks.core.training import train_with_training_type
+
             teacher_model = None
             if training_type in ("kd", "distillation"):
                 teacher_name = self.extra_kwargs.get("kd_teacher", self.model_name)
                 from neuralops.benchmarks.models.loader import load_universal_model
+
                 teacher_model, _, _ = load_universal_model(
                     model_name=teacher_name,
                     task=self.task,

@@ -7,12 +7,11 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Root entry point for benchmark regression comparison."""
 
-
 import warnings
+
 warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
 
 from neuralops.benchmarks.regression_gate import main
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

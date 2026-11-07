@@ -13,9 +13,9 @@ Implements summarizer functionality for NeuralOps.
 
 from __future__ import annotations
 
-from collections import defaultdict
 import json
 import logging
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -68,13 +68,15 @@ class SummaryGenerator:
 
         rows = []
         for mod, accs in grouped.items():
-            rows.append({
-                "module": mod,
-                "runs": len(accs),
-                "best_accuracy": max(accs),
-                "worst_accuracy": min(accs),
-                "avg_accuracy": sum(accs) / len(accs),
-            })
+            rows.append(
+                {
+                    "module": mod,
+                    "runs": len(accs),
+                    "best_accuracy": max(accs),
+                    "worst_accuracy": min(accs),
+                    "avg_accuracy": sum(accs) / len(accs),
+                }
+            )
         rows.sort(key=lambda x: x["best_accuracy"], reverse=True)
 
         lines = [
@@ -83,7 +85,9 @@ class SummaryGenerator:
             "|---|---|---|---|---|",
         ]
         for r in rows:
-            lines.append(f"| `{r['module']}` | {r['runs']} | {r['best_accuracy']:.4f} | {r['worst_accuracy']:.4f} | {r['avg_accuracy']:.4f} |")
+            lines.append(
+                f"| `{r['module']}` | {r['runs']} | {r['best_accuracy']:.4f} | {r['worst_accuracy']:.4f} | {r['avg_accuracy']:.4f} |"
+            )
 
         p.write_text("\n".join(lines), encoding="utf-8")
         return p
@@ -161,7 +165,9 @@ class SummaryGenerator:
             "|---|---|---|---|---|",
         ]
         for f in failures:
-            lines.append(f"| `{f.get('run_id')[:8]}` | `{f.get('module')}` | `{f.get('model')}` | `{f.get('dataset')}` | **{f.get('status')}** |")
+            lines.append(
+                f"| `{f.get('run_id')[:8]}` | `{f.get('module')}` | `{f.get('model')}` | `{f.get('dataset')}` | **{f.get('status')}** |"
+            )
 
         p.write_text("\n".join(lines), encoding="utf-8")
         return p
@@ -202,7 +208,9 @@ class SummaryGenerator:
         for r in sorted_records:
             acc = r.get("accuracy")
             acc_str = f"{acc:.4f}" if isinstance(acc, (int, float)) else "-"
-            lines.append(f"| {r.get('timestamp')} | `{r.get('module')}` | `{r.get('model')}` | `{r.get('dataset')}` | {r.get('status')} | {acc_str} |")
+            lines.append(
+                f"| {r.get('timestamp')} | `{r.get('module')}` | `{r.get('model')}` | `{r.get('dataset')}` | {r.get('status')} | {acc_str} |"
+            )
 
         p.write_text("\n".join(lines), encoding="utf-8")
         return p

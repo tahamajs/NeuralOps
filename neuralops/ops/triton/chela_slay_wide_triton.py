@@ -23,6 +23,7 @@ import torch.nn.functional as F
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except (ImportError, ModuleNotFoundError):
     HAS_TRITON = False
@@ -35,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 if HAS_TRITON and triton is not None and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_C": 32}, num_warps=4, num_stages=2),
@@ -158,7 +160,7 @@ def _chela_slay_wide_pytorch_ref(
 
     if pad_len > 0:
         valid_mask = torch.ones(num_chunks, chunk_size, device=q.device, dtype=torch.float32)
-        valid_mask[-1, chunk_size - pad_len:] = 0.0
+        valid_mask[-1, chunk_size - pad_len :] = 0.0
         v_m = valid_mask.view(1, 1, num_chunks, chunk_size, 1)
         q_c = q_c * v_m
         k_c = k_c * v_m

@@ -20,9 +20,9 @@ from __future__ import annotations
 
 import argparse
 import math
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -35,7 +35,9 @@ import neuralops
 class TransformerEncoderBlock(nn.Module):
     """Production transformer encoder block with self-attention and MLP."""
 
-    def __init__(self, hidden_dim: int = 1024, num_heads: int = 16, intermediate_dim: int = 4096, dropout: float = 0.1) -> None:
+    def __init__(
+        self, hidden_dim: int = 1024, num_heads: int = 16, intermediate_dim: int = 4096, dropout: float = 0.1
+    ) -> None:
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
@@ -90,10 +92,9 @@ class HeavyTransformerModel(nn.Module):
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, hidden_dim)
         self.pos_embedding = nn.Parameter(torch.randn(1, 1024, hidden_dim) * 0.02)
-        self.layers = nn.ModuleList([
-            TransformerEncoderBlock(hidden_dim, num_heads, intermediate_dim)
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [TransformerEncoderBlock(hidden_dim, num_heads, intermediate_dim) for _ in range(num_layers)]
+        )
         self.norm = nn.LayerNorm(hidden_dim)
         self.classifier = nn.Linear(hidden_dim, num_classes)
 
@@ -107,7 +108,9 @@ class HeavyTransformerModel(nn.Module):
         return logits, features
 
 
-def get_wsd_lr(step: int, total_steps: int, base_lr: float, warmup_ratio: float = 0.1, stable_ratio: float = 0.7) -> float:
+def get_wsd_lr(
+    step: int, total_steps: int, base_lr: float, warmup_ratio: float = 0.1, stable_ratio: float = 0.7
+) -> float:
     """Warmup-Stable-Decay (WSD) learning rate schedule."""
     warmup_steps = max(1, int(total_steps * warmup_ratio))
     stable_steps = int(total_steps * stable_ratio)
@@ -194,7 +197,7 @@ def run_heavy_stress_training(
                 loss_kd = kd_criterion(
                     F.log_softmax(student_logits / 2.0, dim=-1),
                     F.softmax(teacher_logits / 2.0, dim=-1),
-                ) * (2.0 ** 2)
+                ) * (2.0**2)
                 loss_feat = mse_criterion(student_feat, teacher_feat)
                 total_loss = (0.5 * loss_ce + 0.4 * loss_kd + 0.1 * loss_feat) / accum_steps
         else:
@@ -205,7 +208,7 @@ def run_heavy_stress_training(
             loss_kd = kd_criterion(
                 F.log_softmax(student_logits / 2.0, dim=-1),
                 F.softmax(teacher_logits / 2.0, dim=-1),
-            ) * (2.0 ** 2)
+            ) * (2.0**2)
             loss_feat = mse_criterion(student_feat, teacher_feat)
             total_loss = (0.5 * loss_ce + 0.4 * loss_kd + 0.1 * loss_feat) / accum_steps
 

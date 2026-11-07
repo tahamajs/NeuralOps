@@ -12,8 +12,10 @@ Plugin entrypoint dynamically registering NeuralOps custom models and attention 
 """
 
 from __future__ import annotations
+
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Type
+
 import torch
 import torch.nn as nn
 
@@ -22,6 +24,7 @@ logger = logging.getLogger("NeuralOps.vLLMPlugin")
 try:
     import vllm
     from vllm.model_executor.layers.linear import LinearMethodBase
+
     HAS_VLLM = True
     HAS_VLLM_LINEAR = True
 except (ImportError, Exception):

@@ -48,7 +48,11 @@ class NeuralOpsStateCache:
         """Stores or in-place updates recurrent state matrix for layer_idx in O(1)."""
         if layer_idx in self.recurrent_states:
             cached = self.recurrent_states[layer_idx]
-            if cached.shape == new_state.shape and cached.dtype == new_state.dtype and cached.device == new_state.device:
+            if (
+                cached.shape == new_state.shape
+                and cached.dtype == new_state.dtype
+                and cached.device == new_state.device
+            ):
                 cached.copy_(new_state)
             else:
                 self.recurrent_states[layer_idx] = new_state.detach().clone()
@@ -58,7 +62,11 @@ class NeuralOpsStateCache:
         if state_z is not None:
             if layer_idx in self.recurrent_z_states:
                 cached_z = self.recurrent_z_states[layer_idx]
-                if cached_z.shape == state_z.shape and cached_z.dtype == state_z.dtype and cached_z.device == state_z.device:
+                if (
+                    cached_z.shape == state_z.shape
+                    and cached_z.dtype == state_z.dtype
+                    and cached_z.device == state_z.device
+                ):
                     cached_z.copy_(state_z)
                 else:
                     self.recurrent_z_states[layer_idx] = state_z.detach().clone()
@@ -165,12 +173,8 @@ class NeuralOpsStateCache:
         v_recent = v_buffer[..., recent_start : recent_start + first_count, :]
         if first_count < recent_count:
             remaining = recent_count - first_count
-            k_recent = torch.cat(
-                (k_recent, k_buffer[..., sink_capacity : sink_capacity + remaining, :]), dim=-2
-            )
-            v_recent = torch.cat(
-                (v_recent, v_buffer[..., sink_capacity : sink_capacity + remaining, :]), dim=-2
-            )
+            k_recent = torch.cat((k_recent, k_buffer[..., sink_capacity : sink_capacity + remaining, :]), dim=-2)
+            v_recent = torch.cat((v_recent, v_buffer[..., sink_capacity : sink_capacity + remaining, :]), dim=-2)
         return (
             torch.cat((k_buffer[..., :sink_count, :], k_recent), dim=-2),
             torch.cat((v_buffer[..., :sink_count, :], v_recent), dim=-2),
@@ -215,11 +219,7 @@ class NeuralOpsStateCache:
         return max(len(self.recurrent_states), len(self.window_kv_states), 1)
 
     def __getitem__(self, layer_idx: int) -> Any:
-        window = (
-            self._ordered_window_kv(layer_idx)
-            if layer_idx in self.window_kv_states
-            else None
-        )
+        window = self._ordered_window_kv(layer_idx) if layer_idx in self.window_kv_states else None
         return (self.recurrent_states.get(layer_idx, None), window)
 
 
@@ -256,23 +256,17 @@ def benchmark_autoregressive_decoding(
         q = torch.randn(batch_size, num_heads, 1, head_dim, device=device, dtype=dtype)
         k_cache = torch.randn(batch_size, num_heads, T, head_dim, device=device, dtype=dtype)
         v_cache = torch.randn_like(k_cache)
-        recurrent_state = torch.randn(
-            batch_size, num_heads, head_dim, head_dim, device=device, dtype=dtype
-        )
+        recurrent_state = torch.randn(batch_size, num_heads, head_dim, head_dim, device=device, dtype=dtype)
         recurrent_key = torch.randn(batch_size, num_heads, 1, head_dim, device=device, dtype=dtype)
         recurrent_value = torch.randn(batch_size, num_heads, 1, head_dim, device=device, dtype=dtype)
-        recurrent_normalizer = torch.randn(
-            batch_size, num_heads, 1, head_dim, device=device, dtype=dtype
-        )
+        recurrent_normalizer = torch.randn(batch_size, num_heads, 1, head_dim, device=device, dtype=dtype)
 
         def standard_decode_step() -> torch.Tensor:
             scores = torch.matmul(q, k_cache.transpose(-2, -1)) / (head_dim**0.5)
             return torch.matmul(torch.softmax(scores.float(), dim=-1).to(dtype), v_cache)
 
         def recurrent_decode_step() -> torch.Tensor:
-            updated_state = recurrent_state + torch.matmul(
-                recurrent_key.transpose(-2, -1), recurrent_value
-            )
+            updated_state = recurrent_state + torch.matmul(recurrent_key.transpose(-2, -1), recurrent_value)
             updated_normalizer = recurrent_normalizer + recurrent_key
             numerator = torch.matmul(q, updated_state)
             denominator = torch.matmul(q, updated_normalizer.transpose(-2, -1)).clamp_min(1e-6)
@@ -294,15 +288,17 @@ def benchmark_autoregressive_decoding(
         std_latency_ms = measure_ms(standard_decode_step)
         neuralops_latency_ms = measure_ms(recurrent_decode_step)
 
-        records.append({
-            "seq_len": T,
-            "standard_kv_cache_mb": round(standard_kv_mb, 3),
-            "neuralops_state_cache_mb": round(recurrent_mb, 3),
-            "memory_reduction_ratio": round(standard_kv_mb / max(recurrent_mb, 1e-6), 2),
-            "standard_latency_ms": round(std_latency_ms, 6),
-            "neuralops_latency_ms": round(neuralops_latency_ms, 6),
-            "speedup_x": round(std_latency_ms / neuralops_latency_ms, 2),
-        })
+        records.append(
+            {
+                "seq_len": T,
+                "standard_kv_cache_mb": round(standard_kv_mb, 3),
+                "neuralops_state_cache_mb": round(recurrent_mb, 3),
+                "memory_reduction_ratio": round(standard_kv_mb / max(recurrent_mb, 1e-6), 2),
+                "standard_latency_ms": round(std_latency_ms, 6),
+                "neuralops_latency_ms": round(neuralops_latency_ms, 6),
+                "speedup_x": round(std_latency_ms / neuralops_latency_ms, 2),
+            }
+        )
 
     return {
         "batch_size": batch_size,

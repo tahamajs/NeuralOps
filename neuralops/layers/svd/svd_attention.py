@@ -11,11 +11,6 @@ SVD-Compressed Sequence Attention
 Low-rank factorized sequence attention reducing computational complexity via intermediate projection ranks.
 """
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -26,19 +21,17 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import apply_attention_mask, get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register("svd_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register(
-    "svd_seq", is_alias=True, supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("svd_seq", is_alias=True, supports_causal=True, supports_gqa=True)
 class SVDLinearAttention(BaseAttention):
     r"""Low-Rank SVD-Compressed Sequence Attention Mechanism.
     Hardened for production use across diverse transformer architectures.
@@ -214,9 +207,7 @@ class SVDLinearAttention(BaseAttention):
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                hasattr(old_attn, "query") and not hasattr(old_attn, "dense") and not hasattr(old_attn, "out_proj")
             ):
                 self.is_nested_encoder = True
 
@@ -224,8 +215,7 @@ class SVDLinearAttention(BaseAttention):
                 self.is_nested_encoder = True
                 src = old_attn
                 while hasattr(src, "self") and not any(
-                    hasattr(src, attr)
-                    for attr in ["query", "key", "value", "q_proj", "k_proj", "v_proj"]
+                    hasattr(src, attr) for attr in ["query", "key", "value", "q_proj", "k_proj", "v_proj"]
                 ):
                     src = src.self
                 if hasattr(old_attn.output, "dense"):
@@ -241,10 +231,7 @@ class SVDLinearAttention(BaseAttention):
                 if (
                     ("Conv1D" in p_cls)
                     or hasattr(src.c_attn, "nf")
-                    or (
-                        c_attn_w.shape[0] == self.hidden_size
-                        and c_attn_w.shape[1] != self.hidden_size
-                    )
+                    or (c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size)
                 ):
                     c_attn_w = c_attn_w.t().contiguous()
 
@@ -339,8 +326,7 @@ class SVDLinearAttention(BaseAttention):
                     continue
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
                     raise RuntimeError(
-                        f"SVD-Sequence: {name} weight has near-zero "
-                        f"Frobenius norm. This will destroy the model."
+                        f"SVD-Sequence: {name} weight has near-zero " f"Frobenius norm. This will destroy the model."
                     )
 
             if w_q.shape == self.query.weight.shape:
@@ -367,9 +353,7 @@ class SVDLinearAttention(BaseAttention):
                         target_proj.bias.copy_(b)
                 elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
                     rep = w.shape[0] // self.kv_head_size
-                    w_grouped = w.view(self.num_kv_heads, rep, self.head_dim, -1)[:, 0].reshape(
-                        self.kv_head_size, -1
-                    )
+                    w_grouped = w.view(self.num_kv_heads, rep, self.head_dim, -1)[:, 0].reshape(self.kv_head_size, -1)
                     target_proj.weight.copy_(w_grouped)
                     if b is not None and target_proj.bias is not None:
                         b_grouped = b.view(self.num_kv_heads, rep, self.head_dim)[:, 0].reshape(-1)
@@ -463,18 +447,8 @@ class SVDLinearAttention(BaseAttention):
             .transpose(1, 2)
             .contiguous()
         )
-        K = (
-            self.key(kv_input)
-            .view(batch_size, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.value(kv_input)
-            .view(batch_size, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.key(kv_input).view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = self.value(kv_input).view(batch_size, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -489,9 +463,7 @@ class SVDLinearAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = self.is_decoder and not is_cross
 
-        use_full_attention = (
-            self.rank is None or kv_len <= (self.rank or 0) + 8
-        )
+        use_full_attention = self.rank is None or kv_len <= (self.rank or 0) + 8
 
         if use_full_attention:
             _use_sdpa = head_mask is None and output_attentions is False
@@ -504,9 +476,7 @@ class SVDLinearAttention(BaseAttention):
 
                     _attn_mask = None
                     if eff_mask is not None and eff_mask.dim() == 2:
-                        _attn_mask = eff_mask.bool().view(
-                            eff_mask.shape[0], 1, 1, eff_mask.shape[1]
-                        )
+                        _attn_mask = eff_mask.bool().view(eff_mask.shape[0], 1, 1, eff_mask.shape[1])
                     elif eff_mask is not None and eff_mask.dim() == 4:
                         _attn_mask = eff_mask.bool() if eff_mask.dtype == torch.bool else eff_mask
 
@@ -524,9 +494,7 @@ class SVDLinearAttention(BaseAttention):
                     _use_sdpa = False
 
             if not _use_sdpa:
-                scores = torch.matmul(
-                    Q.float(), K.float().transpose(-2, -1).contiguous()
-                ) / math.sqrt(self.head_dim)
+                scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) / math.sqrt(self.head_dim)
                 if is_causal and seq_len > 1:
                     causal_mask = (
                         torch.triu(
@@ -583,16 +551,10 @@ class SVDLinearAttention(BaseAttention):
             self._last_u_r = U_r.detach()
 
             U_r_t = U_r.unsqueeze(1)
-            K_proj = torch.matmul(
-                U_r_t.transpose(-2, -1).contiguous(), K
-            )
-            V_proj = torch.matmul(
-                U_r_t.transpose(-2, -1).contiguous(), V
-            )
+            K_proj = torch.matmul(U_r_t.transpose(-2, -1).contiguous(), K)
+            V_proj = torch.matmul(U_r_t.transpose(-2, -1).contiguous(), V)
 
-            scores = torch.matmul(
-                Q.float(), K_proj.float().transpose(-2, -1).contiguous()
-            ) / math.sqrt(self.head_dim)
+            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1).contiguous()) / math.sqrt(self.head_dim)
 
             if is_causal and seq_len > 1 and actual_r == kv_len:
                 causal_mask = (
@@ -706,11 +668,7 @@ def inject_svd_linear_attention(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -722,9 +680,7 @@ def inject_svd_linear_attention(
             res = inject_svd_linear_attention(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -754,11 +710,7 @@ def inject_svd_linear_attention(
 
     rank = kwargs.pop("rank", None)
     lora_rank = kwargs.pop("lora_rank", None)
-    r = (
-        rank
-        if rank is not None
-        else _cfg_get(comp_config, "rank", _cfg_get(comp_config, "svd_rank", 64))
-    )
+    r = rank if rank is not None else _cfg_get(comp_config, "rank", _cfg_get(comp_config, "svd_rank", 64))
     lr = lora_rank if lora_rank is not None else _cfg_get(comp_config, "lora_rank", 16)
     dropout = _cfg_get(comp_config, "dropout", 0.1)
 

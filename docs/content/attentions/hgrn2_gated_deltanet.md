@@ -70,7 +70,7 @@ Input: X_0 [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($N$ Total Layers, $R$ Hybrid Ratio):
-Specifically, regarding \textbf{Number of HGRN-2 Layers}, $N \cdot \frac{R}{R+1}$ layers Furthermore, regarding \textbf{Number of MHA Layers}, $N \cdot \frac{1}{R+1}$ layers Concurrently, regarding \textbf{Total FLOPs}, 
+Specifically, regarding \textbf{Number of HGRN-2 Layers}, $N \cdot \frac{R}{R+1}$ layers Furthermore, regarding \textbf{Number of MHA Layers}, $N \cdot \frac{1}{R+1}$ layers Concurrently, regarding \textbf{Total FLOPs},
 
 \[
 \text{Total FLOPs} = N \cdot \left( \frac{R}{R+1} \cdot 12 B L D^2 + \frac{1}{R+1} \cdot (16 B L D^2 + 4 B L^2 D) \right)
@@ -125,4 +125,3 @@ The empirical evaluation of `hgrn2_gated_deltanet` across standard sequence leng
 | **$L = 2048$** | 0.45 ms | 180 MB | $2.50\times$ |
 | **$L = 4096$** | 0.85 ms | 288 MB | $4.20\times$ |
 | **$L = 8192$** | **1.65 ms** | **320 MB** | **7.75x** |
-

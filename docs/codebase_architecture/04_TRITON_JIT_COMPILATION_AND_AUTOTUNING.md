@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 04
 # Triton JIT Kernel Suite: 26 Modules & 62 Unified Operators
 
-**Assigned Subagent**: `Agent 04: Triton JIT Kernel & Autotuning Specialist`  
+**Assigned Subagent**: `Agent 04: Triton JIT Kernel & Autotuning Specialist`
 **Target Codebase Paths**:
 - `neuralops/core/triton_kernels/`
 - `neuralops/kernels/triton/`

@@ -5,30 +5,29 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Eval cot jitter 128steps module.
-"""
+"""Eval cot jitter 128steps module."""
 
 
 def main() -> None:
     """Run this standalone evaluation experiment."""
 
     import gc
+    import json
     import os
     import time
-    import json
+
     import numpy as np
     import torch
-    from transformers import GPT2LMHeadModel, AutoTokenizer
+    from transformers import AutoTokenizer, GPT2LMHeadModel
+
     from neuralops.utils.replace_attention import replace_attention
 
     if not torch.cuda.is_available():
         raise RuntimeError("This token-latency experiment requires a CUDA-capable device.")
 
-
     def print_log(msg):
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
-
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Token Latency Jitter & 128-step CoT Suite running on: {torch.cuda.get_device_name(0)}")
@@ -135,7 +134,6 @@ def main() -> None:
         json.dump(results, f, indent=2)
 
     print_log(f"Jitter benchmark finished! Written to {out_file}")
-
 
 
 if __name__ == "__main__":

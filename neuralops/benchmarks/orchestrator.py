@@ -13,16 +13,16 @@ Implements orchestrator functionality for NeuralOps.
 
 from __future__ import annotations
 
-from collections.abc import Generator
 import json
 import logging
-from pathlib import Path
 import signal
 import subprocess
 import sys
 import time
-from typing import Any
 import uuid
+from collections.abc import Generator
+from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from tqdm import tqdm
@@ -99,10 +99,27 @@ class BenchmarkOrchestrator:
         **kwargs: Any,
     ) -> None:
         shortcut_keys = {
-            "delta", "all_delta", "gated", "all_gated", "svd", "all_svd",
-            "ssm", "all_ssm", "linear", "all_linear", "sparse", "all_sparse",
-            "hybrid", "all_hybrid", "all_attn", "all_attention", "all_comp",
-            "all_compressors", "all_modules", "fail_delta", "errors_only",
+            "delta",
+            "all_delta",
+            "gated",
+            "all_gated",
+            "svd",
+            "all_svd",
+            "ssm",
+            "all_ssm",
+            "linear",
+            "all_linear",
+            "sparse",
+            "all_sparse",
+            "hybrid",
+            "all_hybrid",
+            "all_attn",
+            "all_attention",
+            "all_comp",
+            "all_compressors",
+            "all_modules",
+            "fail_delta",
+            "errors_only",
         }
         config_kwargs = {k: v for k, v in kwargs.items() if k not in shortcut_keys}
         self.config = config or BenchmarkConfig(**config_kwargs)
@@ -174,12 +191,15 @@ class BenchmarkOrchestrator:
             return self._get_family("hybrid")
         if getattr(self, "all_attn", False) or getattr(self, "all_attention", False):
             from neuralops.core.registry import ATTENTION_REGISTRY
+
             return sorted(ATTENTION_REGISTRY.keys())
         if getattr(self, "all_comp", False) or getattr(self, "all_compressors", False):
             from neuralops.core.registry import COMPRESSOR_REGISTRY
+
             return sorted(COMPRESSOR_REGISTRY.keys())
         if getattr(self, "all_modules", False):
             from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
             return sorted(list(set(list(ATTENTION_REGISTRY.keys()) + list(COMPRESSOR_REGISTRY.keys()))))
         if getattr(self, "fail_delta", False):
             return self._get_fail_delta_modules()
@@ -192,9 +212,11 @@ class BenchmarkOrchestrator:
                 return sorted(all_mods.keys())
             elif mods in ("all-attention", "attention", "all-attn"):
                 from neuralops.core.registry import ATTENTION_REGISTRY
+
                 return sorted(ATTENTION_REGISTRY.keys())
             elif mods in ("all-compressors", "compressors", "all-comp"):
                 from neuralops.core.registry import COMPRESSOR_REGISTRY
+
                 return sorted(COMPRESSOR_REGISTRY.keys())
             elif mods in ("delta", "delta-modules", "all-delta"):
                 return self._get_family("delta")
@@ -221,11 +243,13 @@ class BenchmarkOrchestrator:
         elif mods is not None:
             return list(mods)
         from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
         return sorted(list(set(list(ATTENTION_REGISTRY.keys()) + list(COMPRESSOR_REGISTRY.keys()))))
 
     def _get_family(self, family: str) -> list[str]:
         """Return all attention modules matching the family prefix."""
         from neuralops.core.registry import ATTENTION_REGISTRY
+
         if family == "delta":
             delta_candidates = [
                 "gated_delta_net",
@@ -242,7 +266,18 @@ class BenchmarkOrchestrator:
             "svd": ["svd", "asvd", "res_svd", "minimal_svd", "swift_svd"],
             "ssm": ["mamba", "ssm", "selective", "hippo", "s4"],
             "linear": ["linear", "cosformer", "performer", "rpc", "gla", "recurrent", "retention", "rwkv"],
-            "sparse": ["sparse", "nsa", "bigbird", "longformer", "local", "sliding", "reformer", "routing", "cluster", "sinkhorn"],
+            "sparse": [
+                "sparse",
+                "nsa",
+                "bigbird",
+                "longformer",
+                "local",
+                "sliding",
+                "reformer",
+                "routing",
+                "cluster",
+                "sinkhorn",
+            ],
             "hybrid": ["hybrid", "split_head", "tri_branch", "samba", "moe", "ensemble"],
         }
         pats = patterns.get(family, [])
@@ -251,6 +286,7 @@ class BenchmarkOrchestrator:
     def _get_compressor_family(self, family: str) -> list[str]:
         """Return compressor modules matching the family."""
         from neuralops.core.registry import COMPRESSOR_REGISTRY
+
         patterns = {
             "svd": ["svd", "asvd", "residual_svd", "fwsvd", "saes"],
             "quantizer": ["quantizer", "int4", "int8", "faq", "uniql"],
@@ -262,14 +298,30 @@ class BenchmarkOrchestrator:
     def _get_fail_delta_modules(self) -> list[str]:
         """Return the 25 FAIL_DELTA modules from the audit report."""
         return [
-            "aatc_xkv_compressor", "faq_quantizer", "fwsvd_compressor",
-            "hashed_net_compressor", "huffman_coder", "hybridkv_compressor",
-            "kronecker_tt_lora", "liftr", "lillama_compressor",
-            "lsc_compressor", "mgie_budget", "residual_svd_compressor",
-            "roast_hashed_linear", "rotational_slicegpt_int4",
-            "rpca_compressor", "saes_svd_v2", "salr", "slicegpt",
-            "soka_compressor", "subspace_projection", "svd_linear",
-            "swift_svd_act", "tomoe_compressor", "tt_compressor",
+            "aatc_xkv_compressor",
+            "faq_quantizer",
+            "fwsvd_compressor",
+            "hashed_net_compressor",
+            "huffman_coder",
+            "hybridkv_compressor",
+            "kronecker_tt_lora",
+            "liftr",
+            "lillama_compressor",
+            "lsc_compressor",
+            "mgie_budget",
+            "residual_svd_compressor",
+            "roast_hashed_linear",
+            "rotational_slicegpt_int4",
+            "rpca_compressor",
+            "saes_svd_v2",
+            "salr",
+            "slicegpt",
+            "soka_compressor",
+            "subspace_projection",
+            "svd_linear",
+            "swift_svd_act",
+            "tomoe_compressor",
+            "tt_compressor",
             "uniql_compressor",
         ]
 

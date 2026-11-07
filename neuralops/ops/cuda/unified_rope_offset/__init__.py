@@ -10,9 +10,9 @@ Unified RoPE Offset Hardware Operators.
 """
 
 from neuralops.ops.cuda.unified_rope_offset.unified_rope_offset_autograd import (
+    fused_unified_rope_offset_pytorch,
     unified_rope_offset,
     unified_rope_offset_pytorch_ref,
-    fused_unified_rope_offset_pytorch,
 )
 
 __all__ = ["unified_rope_offset", "unified_rope_offset_pytorch_ref", "fused_unified_rope_offset_pytorch"]

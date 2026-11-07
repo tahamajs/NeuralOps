@@ -12,7 +12,6 @@ Pairs 2:4 semi-structured sparse weight kernels with low-rank orthogonal correct
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,12 +22,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
-from neuralops.core.pruning_utils import (
-    apply_24_structured_mask,
-    get_calibration_tensors,
-    recalibrate_layernorms,
-)
+from neuralops.core.pruning_utils import apply_24_structured_mask, get_calibration_tensors, recalibrate_layernorms
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -172,23 +168,15 @@ class ARMORLinear(nn.Module):
             layer.sparse_weight.data.copy_(w_data)
             layer.sparse_mask.copy_(mask_dev)
             layer.lora_A.data.copy_(lora_A[:actual_rank].to(dtype=raw_w.dtype, device=raw_w.device))
-            layer.lora_B.data.copy_(
-                lora_B[:, :actual_rank].to(dtype=raw_w.dtype, device=raw_w.device)
-            )
-            if (
-                getattr(linear, "bias", None) is not None
-                and linear.bias is not None
-                and layer.bias is not None
-            ):
+            layer.lora_B.data.copy_(lora_B[:, :actual_rank].to(dtype=raw_w.dtype, device=raw_w.device))
+            if getattr(linear, "bias", None) is not None and linear.bias is not None and layer.bias is not None:
                 layer.bias.data.copy_(linear.bias.data)
         return layer
 
     @property
     def weight(self) -> torch.Tensor:
         with torch.no_grad():
-            base = (self.sparse_weight.float() * self.sparse_mask.float()).to(
-                self.sparse_weight.dtype
-            )
+            base = (self.sparse_weight.float() * self.sparse_mask.float()).to(self.sparse_weight.dtype)
             if self.lora_A is not None and self.lora_B is not None and self.rank > 0:
                 lora_w = torch.matmul(self.lora_B.float(), self.lora_A.float()) * self.scaling
                 return base + lora_w.to(base.dtype)
@@ -201,6 +189,7 @@ class ARMORLinear(nn.Module):
         if x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 w_eff = self.sparse_weight * self.sparse_mask
                 out = fused_svd_lora_sparse_attn_triton(
                     x_flat,
@@ -267,9 +256,7 @@ class ARMORPruner(BaseCompressor):
         self.stats: dict[str, Any] = getattr(self, "stats", {})
         conf = cfg or kwargs.get("comp_config")
 
-        self.block_size = int(
-            _cfg_get(conf, "armor_block_size", _cfg_get(conf, "block_size", block_size))
-        )
+        self.block_size = int(_cfg_get(conf, "armor_block_size", _cfg_get(conf, "block_size", block_size)))
         self.rank = max(1, int(_cfg_get(conf, "armor_rank", _cfg_get(conf, "rank", rank))))
         self.sparsity = max(
             0.0,
@@ -298,9 +285,7 @@ class ARMORPruner(BaseCompressor):
             if lora_alpha is not None
             else None
         )
-        self.max_error = float(
-            _cfg_get(conf, "armor_max_error", _cfg_get(conf, "max_error", max_error))
-        )
+        self.max_error = float(_cfg_get(conf, "armor_max_error", _cfg_get(conf, "max_error", max_error)))
         self.fallback_to_original = bool(
             _cfg_get(
                 conf,
@@ -335,9 +320,7 @@ class ARMORPruner(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.comp_config = conf
         self._compressed_params: int = 0
@@ -366,18 +349,12 @@ class ARMORPruner(BaseCompressor):
         if num_kv_heads >= num_heads:
             return False
         name_lower = name.lower()
-        return any(
-            p in name_lower
-            for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn")
-        )
+        return any(p in name_lower for p in ("q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"))
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, ARMORLinear):
             return False
-        if any(
-            name.endswith(sfx)
-            for sfx in (".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear")
-        ):
+        if any(name.endswith(sfx) for sfx in (".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear")):
             return False
 
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -393,10 +370,7 @@ class ARMORPruner(BaseCompressor):
             isinstance(module, nn.Linear)
             or isinstance(target_mod, nn.Linear)
             or is_conv1d
-            or (
-                Conv1D is not None
-                and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
-            )
+            or (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
             or "loralinear" in cls_name
             or hasattr(module, "base_layer")
         )
@@ -506,17 +480,13 @@ class ARMORPruner(BaseCompressor):
                         try:
                             if isinstance(batch, dict):
                                 b_dev = {
-                                    k: (v.to(self.target_device) if torch.is_tensor(v) else v)
-                                    for k, v in batch.items()
+                                    k: (v.to(self.target_device) if torch.is_tensor(v) else v) for k, v in batch.items()
                                 }
                                 self.model(**b_dev)
                             elif torch.is_tensor(batch):
                                 self.model(batch.to(self.target_device))
                             elif isinstance(batch, (list, tuple)):
-                                b_dev = [
-                                    (v.to(self.target_device) if torch.is_tensor(v) else v)
-                                    for v in batch
-                                ]
+                                b_dev = [(v.to(self.target_device) if torch.is_tensor(v) else v) for v in batch]
                                 self.model(*b_dev)
                         except Exception as b_err:
                             logger.debug("ARMOR calibration batch failed: %s", b_err)
@@ -564,11 +534,7 @@ class ARMORPruner(BaseCompressor):
         total_correction = 0
         total_orig = 0
 
-        targets = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        targets = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not targets:
             logger.warning("ARMORPruner: No compressible target modules found.")
@@ -581,9 +547,7 @@ class ARMORPruner(BaseCompressor):
             target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
             target_cls = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in target_cls
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
-                module, "base_layer"
-            )
+            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
             weight_tensor = getattr(target_mod, "weight", None)
             if weight_tensor is None:
@@ -697,9 +661,7 @@ class ARMORPruner(BaseCompressor):
                 else:
                     with torch.no_grad():
                         if is_conv1d:
-                            weight_tensor.data.copy_(
-                                W_recon.t().contiguous().to(dtype=dtype, device=device)
-                            )
+                            weight_tensor.data.copy_(W_recon.t().contiguous().to(dtype=dtype, device=device))
                         else:
                             weight_tensor.data.copy_(W_recon.to(dtype=dtype, device=device))
 
@@ -711,9 +673,7 @@ class ARMORPruner(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
 
-        if self.recalibrate_ln and (
-            self.calibration_loader is not None or self.calibration_texts is not None
-        ):
+        if self.recalibrate_ln and (self.calibration_loader is not None or self.calibration_texts is not None):
             try:
                 recalibrate_layernorms(
                     self.model,
@@ -731,9 +691,7 @@ class ARMORPruner(BaseCompressor):
             with torch.no_grad():
                 first_param = next(self.model.parameters(), torch.tensor(0.0))
                 dev = first_param.device
-                p_dtype = (
-                    first_param.dtype if first_param.dtype.is_floating_point else torch.float32
-                )
+                p_dtype = first_param.dtype if first_param.dtype.is_floating_point else torch.float32
                 cfg = getattr(self.model, "config", None)
                 hidden_size = getattr(cfg, "hidden_size", None)
                 try:
@@ -747,11 +705,7 @@ class ARMORPruner(BaseCompressor):
                         dummy_embeds = torch.randn(1, 8, hidden_size, dtype=p_dtype, device=dev)
                     else:
                         first_linear = next(
-                            (
-                                m
-                                for m in self.model.modules()
-                                if isinstance(m, (nn.Linear, ARMORLinear))
-                            ),
+                            (m for m in self.model.modules() if isinstance(m, (nn.Linear, ARMORLinear))),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
@@ -771,9 +725,7 @@ class ARMORPruner(BaseCompressor):
         except Exception:
             stats = {}
 
-        avg_err = (
-            sum(self.layer_errors.values()) / len(self.layer_errors) if self.layer_errors else 0.0
-        )
+        avg_err = sum(self.layer_errors.values()) / len(self.layer_errors) if self.layer_errors else 0.0
         avg_actual_sparsity = (
             sum(self.layer_actual_sparsities.values()) / max(1, len(self.layer_actual_sparsities))
             if self.layer_actual_sparsities
@@ -781,14 +733,10 @@ class ARMORPruner(BaseCompressor):
         )
 
         effective_param_ratio = (
-            float((total_base_sparse_effective + total_correction) / max(1, total_orig))
-            if total_orig > 0
-            else 1.0
+            float((total_base_sparse_effective + total_correction) / max(1, total_orig)) if total_orig > 0 else 1.0
         )
         storage_param_ratio = (
-            float((total_base_sparse_storage + total_correction) / max(1, total_orig))
-            if total_orig > 0
-            else 1.0
+            float((total_base_sparse_storage + total_correction) / max(1, total_orig)) if total_orig > 0 else 1.0
         )
 
         stats.update(
@@ -813,12 +761,8 @@ class ARMORPruner(BaseCompressor):
                 "correction_params": total_correction,
                 "effective_parameter_ratio": effective_param_ratio,
                 "storage_parameter_ratio": storage_param_ratio,
-                "effective_compression_rate": (
-                    1.0 / effective_param_ratio if effective_param_ratio > 0 else 1.0
-                ),
-                "storage_compression_rate": (
-                    1.0 / storage_param_ratio if storage_param_ratio > 0 else 1.0
-                ),
+                "effective_compression_rate": (1.0 / effective_param_ratio if effective_param_ratio > 0 else 1.0),
+                "storage_compression_rate": (1.0 / storage_param_ratio if storage_param_ratio > 0 else 1.0),
                 "rank": self.rank,
                 "structured_24": self.structured_24,
                 "decouple": self.decouple,

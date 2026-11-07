@@ -12,20 +12,14 @@ SVD-compressed attention with Lagrangian spectral-entropy optimization for globa
 """
 
 try:
-    from neuralops.trainer.metrics import get_task_metrics as compute_metrics
-    from neuralops.data.preprocessing import preprocess_function
     from neuralops.data.glue_loader import get_num_labels_and_is_regression, load_glue_local
+    from neuralops.data.preprocessing import preprocess_function
+    from neuralops.trainer.metrics import get_task_metrics as compute_metrics
 except ImportError:
     compute_metrics = None
     preprocess_function = None
     get_num_labels_and_is_regression = None
     load_glue_local = None
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 import argparse
 import logging
 import math
@@ -40,10 +34,11 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import apply_attention_mask
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
-
+from neuralops.core.utils.gqa import repeat_kv
 
 try:
     from transformers import (
@@ -170,9 +165,7 @@ class SVDCompressedAttention(BaseAttention):
     ) -> None:
         model_config = config or kwargs.get("model_config")
         super().__init__(model_config)
-        self.hidden_size: int = int(
-            _cfg_get(model_config, "hidden_size", kwargs.get("hidden_size", 768))
-        )
+        self.hidden_size: int = int(_cfg_get(model_config, "hidden_size", kwargs.get("hidden_size", 768)))
         self.num_heads: int = int(
             _cfg_get(
                 model_config,
@@ -355,12 +348,8 @@ class SVDCompressedAttention(BaseAttention):
 
             U, s, VT = torch.linalg.svd(W, full_matrices=False)
             sqrt_s = torch.sqrt(torch.clamp(s[:r], min=1e-12))
-            down_weight = (sqrt_s.unsqueeze(1) * VT[:r, :]).to(
-                device=down.weight.device, dtype=down.weight.dtype
-            )
-            up_weight = (U[:, :r] * sqrt_s.unsqueeze(0)).to(
-                device=up.weight.device, dtype=up.weight.dtype
-            )
+            down_weight = (sqrt_s.unsqueeze(1) * VT[:r, :]).to(device=down.weight.device, dtype=down.weight.dtype)
+            up_weight = (U[:, :r] * sqrt_s.unsqueeze(0)).to(device=up.weight.device, dtype=up.weight.dtype)
 
             down.weight.data.zero_()
             up.weight.data.zero_()
@@ -502,38 +491,22 @@ class SVDCompressedAttention(BaseAttention):
                 self._set_factorised_weights(w_k, b_k, self.k_down, self.k_up, self.ranks["k"])
             else:
                 rep = max(1, w_k.shape[0] // self.kv_head_size)
-                w_k_pooled = (
-                    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
-                    .mean(dim=1)
-                    .view(self.kv_head_size, -1)
-                )
+                w_k_pooled = w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
                 b_k_pooled = (
-                    b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
-                    if b_k is not None
-                    else None
+                    b_k.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1) if b_k is not None else None
                 )
-                self._set_factorised_weights(
-                    w_k_pooled, b_k_pooled, self.k_down, self.k_up, self.ranks["k"]
-                )
+                self._set_factorised_weights(w_k_pooled, b_k_pooled, self.k_down, self.k_up, self.ranks["k"])
 
             if w_v.shape[0] == self.kv_head_size:
                 w_v = _orient(w_v, self.kv_head_size, self.hidden_size)
                 self._set_factorised_weights(w_v, b_v, self.v_down, self.v_up, self.ranks["v"])
             else:
                 rep = max(1, w_v.shape[0] // self.kv_head_size)
-                w_v_pooled = (
-                    w_v.view(self.num_kv_heads, rep, self.head_dim, -1)
-                    .mean(dim=1)
-                    .view(self.kv_head_size, -1)
-                )
+                w_v_pooled = w_v.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
                 b_v_pooled = (
-                    b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
-                    if b_v is not None
-                    else None
+                    b_v.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1) if b_v is not None else None
                 )
-                self._set_factorised_weights(
-                    w_v_pooled, b_v_pooled, self.v_down, self.v_up, self.ranks["v"]
-                )
+                self._set_factorised_weights(w_v_pooled, b_v_pooled, self.v_down, self.v_up, self.ranks["v"])
 
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
@@ -587,6 +560,7 @@ class SVDCompressedAttention(BaseAttention):
                 x = x.to(self.q_down.weight.device)
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 return fused_svd_lora_sparse_attn_triton(
                     x,
                     w_down=self.q_down.weight,
@@ -612,6 +586,7 @@ class SVDCompressedAttention(BaseAttention):
                 x = x.to(self.k_down.weight.device)
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 return fused_svd_lora_sparse_attn_triton(
                     x,
                     w_down=self.k_down.weight,
@@ -637,6 +612,7 @@ class SVDCompressedAttention(BaseAttention):
                 x = x.to(self.v_down.weight.device)
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 return fused_svd_lora_sparse_attn_triton(
                     x,
                     w_down=self.v_down.weight,
@@ -662,6 +638,7 @@ class SVDCompressedAttention(BaseAttention):
                 x = x.to(self.o_down.weight.device)
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 return fused_svd_lora_sparse_attn_triton(
                     x,
                     w_down=self.o_down.weight,
@@ -682,24 +659,9 @@ class SVDCompressedAttention(BaseAttention):
                 out = out + F.linear(x, self.o_sparse_weight)
             return out
 
-        Q = (
-            proj_q(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        K = (
-            proj_k(kv_input)
-            .view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            proj_v(kv_input)
-            .view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q = proj_q(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = proj_k(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = proj_v(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -747,12 +709,7 @@ class SVDCompressedAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             attn_weights = attn_weights * head_mask
 
-        context = (
-            torch.matmul(attn_weights, V)
-            .transpose(1, 2)
-            .contiguous()
-            .view(B, N, self.all_head_size)
-        )
+        context = torch.matmul(attn_weights, V).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
@@ -836,9 +793,7 @@ GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
 
 def main() -> None:
     r"""Run full training workflow for SVDCompressedAttention on GLUE."""
-    parser = argparse.ArgumentParser(
-        description="Train DistilBERT with Importance‑Aware SVD‑Compressed Attention"
-    )
+    parser = argparse.ArgumentParser(description="Train DistilBERT with Importance‑Aware SVD‑Compressed Attention")
     parser.add_argument("--task", type=str, default="sst2")
     parser.add_argument("--model", type=str, default="distilbert-base-uncased")
     parser.add_argument("--output_dir", type=str, default="./svd_compressed_output")
@@ -876,9 +831,7 @@ def main() -> None:
     sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
 
     tokenized = raw_datasets.map(
-        lambda ex: preprocess_function(
-            ex, tokenizer, sent1_key, sent2_key, args.max_len, is_regression
-        ),
+        lambda ex: preprocess_function(ex, tokenizer, sent1_key, sent2_key, args.max_len, is_regression),
         batched=True,
         remove_columns=raw_datasets["train"].column_names,
     )
@@ -887,9 +840,7 @@ def main() -> None:
     log.info(f"Train size: {len(train_dataset)}, Eval size: {len(eval_dataset)}")
 
     config = AutoConfig.from_pretrained(args.model, local_files_only=True)
-    model = AutoModelForSequenceClassification.from_pretrained(
-        args.model, config=config, local_files_only=True
-    )
+    model = AutoModelForSequenceClassification.from_pretrained(args.model, config=config, local_files_only=True)
 
     all_weights, all_names = gather_all_attention_weights(model)
     original_total_params = sum(w.size for w in all_weights)
@@ -988,11 +939,7 @@ def inject_svd_compressed(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -1051,9 +998,7 @@ def inject_svd_compressed(
                     return None
                 if hasattr(cand, "inner") and isinstance(cand.inner, SVDCompressedAttention):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(
-                    cand._wrapped_attention, SVDCompressedAttention
-                ):
+                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, SVDCompressedAttention):
                     return None
 
         if src_attn is not None:

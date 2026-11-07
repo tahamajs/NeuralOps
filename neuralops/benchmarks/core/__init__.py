@@ -11,32 +11,11 @@ NeuralOps Benchmarks Core Subpackage.
 
 from __future__ import annotations
 
-from neuralops.benchmarks.core.arguments import (
-    add_common_args,
-    add_compression_args,
-    add_dataset_args,
-    add_model_args,
-)
-from neuralops.benchmarks.core.data_loader import (
-    load_glue_dataset,
-    load_wikitext_dataset,
-    make_dataloader,
-)
-from neuralops.benchmarks.core.kd import (
-    KDLoss,
-    build_teacher_cache,
-    kd_train_step,
-)
-from neuralops.benchmarks.core.model_loader import (
-    apply_compression,
-    inject_attention_module,
-    load_model_and_tokenizer,
-)
-from neuralops.benchmarks.core.stats import (
-    bootstrap_ci,
-    fdr_correction,
-    paired_ttest,
-)
+from neuralops.benchmarks.core.arguments import add_common_args, add_compression_args, add_dataset_args, add_model_args
+from neuralops.benchmarks.core.data_loader import load_glue_dataset, load_wikitext_dataset, make_dataloader
+from neuralops.benchmarks.core.kd import KDLoss, build_teacher_cache, kd_train_step
+from neuralops.benchmarks.core.model_loader import apply_compression, inject_attention_module, load_model_and_tokenizer
+from neuralops.benchmarks.core.stats import bootstrap_ci, fdr_correction, paired_ttest
 
 __all__ = [
     "add_common_args",
@@ -57,10 +36,4 @@ __all__ = [
     "fdr_correction",
 ]
 
-from neuralops.benchmarks.core import arguments
-from neuralops.benchmarks.core import data_loader
-from neuralops.benchmarks.core import evaluation
-from neuralops.benchmarks.core import kd
-from neuralops.benchmarks.core import model_loader
-from neuralops.benchmarks.core import stats
-from neuralops.benchmarks.core import training
+from neuralops.benchmarks.core import arguments, data_loader, evaluation, kd, model_loader, stats, training

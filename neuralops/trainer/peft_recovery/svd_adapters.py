@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 from typing import Any, List, Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -77,6 +78,7 @@ class PiSSALinear(nn.Module):
         res = F.linear(x, self.weight_residual, self.bias)
         try:
             from neuralops.core.triton_kernels.low_rank import fused_down_up_gemm_bias_triton
+
             adapter = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t()) * self.scaling
         except Exception:
             adapter = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling

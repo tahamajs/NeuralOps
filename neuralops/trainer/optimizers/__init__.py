@@ -25,26 +25,13 @@ from neuralops.trainer.optimizers.factory import (
     create_riemannian_stiefel,
     create_sgd,
 )
-from neuralops.trainer.optimizers.lion import (
-    Lion,
-    create_lion_optimizer,
-)
-from neuralops.trainer.optimizers.muon import (
-    Muon,
-    MuonAdamW,
-    create_muon_adamw_optimizer,
-    zeropower_via_newtonschulz5,
-)
-from neuralops.trainer.optimizers.riemannian import (
-    RiemannianStiefelOptimizer,
-)
+from neuralops.trainer.optimizers.lion import Lion, create_lion_optimizer
+from neuralops.trainer.optimizers.muon import Muon, MuonAdamW, create_muon_adamw_optimizer, zeropower_via_newtonschulz5
+from neuralops.trainer.optimizers.riemannian import RiemannianStiefelOptimizer
+
 StiefelOptimizer = RiemannianStiefelOptimizer
 RiemannianAdam = RiemannianStiefelOptimizer
-from neuralops.trainer.optimizers.stiefel import (
-    is_stiefel_parameter,
-    project_stiefel_gradient,
-    stiefel_qr_retraction,
-)
+from neuralops.trainer.optimizers.stiefel import is_stiefel_parameter, project_stiefel_gradient, stiefel_qr_retraction
 
 __all__ = [
     "OPTIMIZER_REGISTRY",
@@ -71,8 +58,4 @@ __all__ = [
     "create_lars",
 ]
 
-from neuralops.trainer.optimizers import factory
-from neuralops.trainer.optimizers import muon
-from neuralops.trainer.optimizers import riemannian
-from neuralops.trainer.optimizers import stiefel
-
+from neuralops.trainer.optimizers import factory, muon, riemannian, stiefel

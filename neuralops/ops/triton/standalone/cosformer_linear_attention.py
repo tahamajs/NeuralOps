@@ -18,7 +18,8 @@ from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
-from neuralops.ops.triton._base import triton, tl, HAS_TRITON
+
+from neuralops.ops.triton._base import HAS_TRITON, tl, triton
 
 
 @triton.jit
@@ -93,8 +94,12 @@ def _cosformer_fwd_kernel(
         offs_n = n_idx * BLOCK_N + tl.arange(0, BLOCK_N)
         mask_n = offs_n < L
 
-        k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_n[:, None] * stride_kl + offs_d[None, :] * stride_kd
-        v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_n[:, None] * stride_vl + offs_d[None, :] * stride_vd
+        k_ptrs = (
+            k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_n[:, None] * stride_kl + offs_d[None, :] * stride_kd
+        )
+        v_ptrs = (
+            v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_n[:, None] * stride_vl + offs_d[None, :] * stride_vd
+        )
 
         raw_k = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
         v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)
@@ -164,8 +169,7 @@ def triton_cosformer_linear_attention(
             k_cos_sum = k_cos.sum(dim=-2, keepdim=True)
             k_sin_sum = k_sin.sum(dim=-2, keepdim=True)
             denom = (
-                torch.matmul(q_cos, k_cos_sum.transpose(-1, -2))
-                + torch.matmul(q_sin, k_sin_sum.transpose(-1, -2))
+                torch.matmul(q_cos, k_cos_sum.transpose(-1, -2)) + torch.matmul(q_sin, k_sin_sum.transpose(-1, -2))
             ).clamp_min(1e-5)
             return (num / denom).to(q.dtype)
 

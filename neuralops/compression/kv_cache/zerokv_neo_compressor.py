@@ -12,7 +12,6 @@ Preserves attention sinks and heavy-hitter token representations while evicting 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -171,9 +171,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 "zerokv_heavy_ratio",
                 _cfg_get(cfg, "heavy_hitter_ratio", heavy_hitter_ratio),
             )
-            max_error = _cfg_get(
-                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error)
-            )
+            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error))
             max_retries = _cfg_get(cfg, "max_retries", max_retries)
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
@@ -201,9 +199,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
         self.layer_errors: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
-        if any(
-            k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]
-        ):
+        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
             return False
 
         base_layer = getattr(module, "base_layer", module)
@@ -322,12 +318,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 continue
 
             if is_conv1d:
-                W_assigned = (
-                    (W * best_mask.unsqueeze(1))
-                    .t()
-                    .contiguous()
-                    .to(dtype=orig_dtype, device=orig_device)
-                )
+                W_assigned = (W * best_mask.unsqueeze(1)).t().contiguous().to(dtype=orig_dtype, device=orig_device)
             else:
                 W_assigned = (W * best_mask.unsqueeze(1)).to(dtype=orig_dtype, device=orig_device)
 
@@ -365,9 +356,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
             else:
                 pass
             if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
-                b_pruned = (base_layer.bias.data.float() * best_mask).to(
-                    dtype=orig_dtype, device=orig_device
-                )
+                b_pruned = (base_layer.bias.data.float() * best_mask).to(dtype=orig_dtype, device=orig_device)
                 base_layer.bias.data.copy_(b_pruned)
 
             self.compressed_layers.append(
@@ -480,9 +469,7 @@ def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any)
             ),
         ),
     )
-    target_attn = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", True)
-    )
+    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", True))
     compressor = ZeroKVNeoCompressor(
         model,
         keep_ratio=keep_ratio,

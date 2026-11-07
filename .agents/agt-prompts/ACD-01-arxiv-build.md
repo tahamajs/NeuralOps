@@ -100,4 +100,3 @@ Exact problems (audit AC-C02, AC-H02, AC-M06, 2026-11-07):
 - If an undefined citation cannot be resolved to a real reference — STOP for that item and report it; do not invent a bib entry.
 - If a test that passed before now fails — STOP, do not improvise, report exactly what is blocked.
 ```
-

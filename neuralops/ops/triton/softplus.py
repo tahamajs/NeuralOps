@@ -38,6 +38,7 @@ elif HAS_TRITON:
         return tl.math.log1p(tl.math.exp2(1.44269504 * (dt)))
 
 else:
+
     def softplus(dt):
         return F.softplus(dt)
 
@@ -56,7 +57,9 @@ if HAS_TRITON and tl is not None:
         tl.store(Y_ptr + offs, y_f.to(Y_ptr.dtype.element_ty), mask=mask)
 
     @triton.jit
-    def _softplus_bwd_kernel(X_ptr, DY_ptr, DX_ptr, N, BETA: tl.constexpr, THRESHOLD: tl.constexpr, BLOCK_SIZE: tl.constexpr):
+    def _softplus_bwd_kernel(
+        X_ptr, DY_ptr, DX_ptr, N, BETA: tl.constexpr, THRESHOLD: tl.constexpr, BLOCK_SIZE: tl.constexpr
+    ):
         pid = tl.program_id(0)
         offs = pid * BLOCK_SIZE + tl.arange(0, BLOCK_SIZE)
         mask = offs < N
@@ -83,7 +86,9 @@ class _SoftplusAutograd(torch.autograd.Function):
                 N = x.numel()
                 BLOCK_SIZE = 4096
                 grid = (triton.cdiv(N, BLOCK_SIZE),)
-                _softplus_fwd_kernel[grid](x, out, N, BETA=float(beta), THRESHOLD=float(threshold), BLOCK_SIZE=BLOCK_SIZE, num_warps=8)
+                _softplus_fwd_kernel[grid](
+                    x, out, N, BETA=float(beta), THRESHOLD=float(threshold), BLOCK_SIZE=BLOCK_SIZE, num_warps=8
+                )
                 return out
             except Exception:
                 pass
@@ -101,7 +106,9 @@ class _SoftplusAutograd(torch.autograd.Function):
                 N = x.numel()
                 BLOCK_SIZE = 4096
                 grid = (triton.cdiv(N, BLOCK_SIZE),)
-                _softplus_bwd_kernel[grid](x, grad_output, dx, N, BETA=beta, THRESHOLD=threshold, BLOCK_SIZE=BLOCK_SIZE, num_warps=8)
+                _softplus_bwd_kernel[grid](
+                    x, grad_output, dx, N, BETA=beta, THRESHOLD=threshold, BLOCK_SIZE=BLOCK_SIZE, num_warps=8
+                )
                 return dx, None, None
             except Exception:
                 pass
@@ -125,7 +132,9 @@ def softplus_fn(x: torch.Tensor, beta: float = 1.0, threshold: float = 20.0) -> 
             N = x.numel()
             BLOCK_SIZE = 4096
             grid = (triton.cdiv(N, BLOCK_SIZE),)
-            _softplus_fwd_kernel[grid](x, out, N, BETA=float(beta), THRESHOLD=float(threshold), BLOCK_SIZE=BLOCK_SIZE, num_warps=4)
+            _softplus_fwd_kernel[grid](
+                x, out, N, BETA=float(beta), THRESHOLD=float(threshold), BLOCK_SIZE=BLOCK_SIZE, num_warps=4
+            )
             return out
         except Exception:
             pass

@@ -15,19 +15,18 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+
 import torch
 import torch.nn as nn
 
 logger = logging.getLogger(__name__)
 
-from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-import neuralops.layers  # noqa: F401
 import neuralops.compression  # noqa: F401
-
+import neuralops.layers  # noqa: F401
+from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.models.configuration import NeuralOpsConfig
-from neuralops.models.modeling_norm import build_norm_layer
 from neuralops.models.modeling_mlp import build_mlp
-
+from neuralops.models.modeling_norm import build_norm_layer
 
 __all__ = ["NeuralOpsBlock"]
 
@@ -40,19 +39,13 @@ class NeuralOpsBlock(nn.Module):
         self.layer_idx = layer_idx
         self.hidden_size = config.hidden_size
 
-        self.input_layernorm = build_norm_layer(
-            config.norm_type, config.hidden_size, eps=config.rms_norm_eps
-        )
-        self.post_attention_layernorm = build_norm_layer(
-            config.norm_type, config.hidden_size, eps=config.rms_norm_eps
-        )
+        self.input_layernorm = build_norm_layer(config.norm_type, config.hidden_size, eps=config.rms_norm_eps)
+        self.post_attention_layernorm = build_norm_layer(config.norm_type, config.hidden_size, eps=config.rms_norm_eps)
 
         attn_spec = config.get_layer_attn_spec(layer_idx)
         attn_type = attn_spec["type"]
         if attn_type not in ATTENTION_REGISTRY:
-            raise KeyError(
-                f"Attention mechanism '{attn_type}' not found in ATTENTION_REGISTRY."
-            )
+            raise KeyError(f"Attention mechanism '{attn_type}' not found in ATTENTION_REGISTRY.")
         attn_cls = ATTENTION_REGISTRY[attn_type]
 
         attn_kwargs = {k: v for k, v in attn_spec.items() if k != "type"}
@@ -78,10 +71,7 @@ class NeuralOpsBlock(nn.Module):
         if comp_spec is not None:
             comp_type = comp_spec["type"]
             if comp_type not in COMPRESSOR_REGISTRY:
-                raise KeyError(
-                    f"Compression engine '{comp_type}' is not registered "
-                    f"for layer {layer_idx}."
-                )
+                raise KeyError(f"Compression engine '{comp_type}' is not registered " f"for layer {layer_idx}.")
             comp_cls = COMPRESSOR_REGISTRY[comp_type]
             comp_kwargs = {k: v for k, v in comp_spec.items() if k != "type"}
             try:
@@ -103,7 +93,9 @@ class NeuralOpsBlock(nn.Module):
     ) -> tuple[torch.Tensor, Any | None, Any | None]:
         assert callable(self.input_layernorm), f"{type(self).__name__}.input_layernorm is not callable"
         assert callable(self.self_attn), f"{type(self).__name__}.self_attn is not callable"
-        assert callable(self.post_attention_layernorm), f"{type(self).__name__}.post_attention_layernorm is not callable"
+        assert callable(
+            self.post_attention_layernorm
+        ), f"{type(self).__name__}.post_attention_layernorm is not callable"
         assert callable(self.mlp), f"{type(self).__name__}.mlp is not callable"
 
         residual = hidden_states

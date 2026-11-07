@@ -69,6 +69,7 @@ def causal_conv1d_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.state_update import causal_conv1d_step
+
         return causal_conv1d_step
     except (ImportError, AttributeError):
         return None
@@ -81,6 +82,7 @@ def causal_conv1d(
     silu_activation: bool = False,
 ) -> torch.Tensor:
     """3-Level Dispatched Causal 1D Convolution."""
+
     def cuda_fn(x, weight, bias=None, silu_activation=False, **kwargs):
         mod = _get_module()
         return mod.causal_conv1d_fwd(

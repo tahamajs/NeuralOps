@@ -19,11 +19,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import torch
 
-from neuralops.core.hardware import (
-    HardwareBackend,
-    HardwareTopology,
-    probe_hardware,
-)
+from neuralops.core.hardware import HardwareBackend, HardwareTopology, probe_hardware
 
 logger = logging.getLogger("neuralops.core.backend.dispatch")
 
@@ -47,6 +43,7 @@ def available_backends() -> list[str]:
         backends.insert(0, "rocm" if is_rocm else "cuda")
         try:
             import triton  # noqa: F401
+
             backends.insert(0, "triton")
         except ImportError:
             pass
@@ -69,6 +66,7 @@ def get_available_backend(device: Optional[torch.device | str] = None) -> Backen
         if topo.supports_triton_jit:
             try:
                 import triton  # noqa: F401
+
                 return BackendDevice.TRITON
             except ImportError:
                 pass
@@ -77,6 +75,7 @@ def get_available_backend(device: Optional[torch.device | str] = None) -> Backen
         if topo.supports_triton_jit:
             try:
                 import triton  # noqa: F401
+
                 return BackendDevice.TRITON
             except ImportError:
                 pass
@@ -99,6 +98,7 @@ def get_backend(tensor: Optional[torch.Tensor] = None) -> str:
             if topo.supports_triton_jit:
                 try:
                     import triton  # noqa: F401
+
                     return "triton"
                 except ImportError:
                     pass
@@ -113,7 +113,9 @@ def get_backend(tensor: Optional[torch.Tensor] = None) -> str:
     return backends[0] if backends else "cpu"
 
 
-def chunk_gla_cpu(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, g: Optional[torch.Tensor] = None, scale: Optional[float] = None) -> torch.Tensor:
+def chunk_gla_cpu(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, g: Optional[torch.Tensor] = None, scale: Optional[float] = None
+) -> torch.Tensor:
     """Universal pure PyTorch CPU/MPS implementation of chunked/recurrent GLA."""
     if scale is not None:
         q = q * scale
@@ -150,17 +152,23 @@ def dispatch(op_name: str, *args: Any, backend: Optional[str] = None, **kwargs: 
         if backend in ("triton", "cuda", "rocm"):
             try:
                 from neuralops.attentions.linear.gla_attention import _chunked_gla_forward
+
                 return _chunked_gla_forward(*args, **kwargs)
             except Exception as e:
-                logger.warning("[chunk_gla] Triton/CUDA accelerated path failed (%s). Falling back to Universal CPU/MPS.", e)
+                logger.warning(
+                    "[chunk_gla] Triton/CUDA accelerated path failed (%s). Falling back to Universal CPU/MPS.", e
+                )
         return chunk_gla_cpu(*args, **kwargs)
 
     elif op_name == "fused_linear_cross_entropy":
         try:
             from neuralops.core.fused import fused_linear_cross_entropy
+
             return fused_linear_cross_entropy(*args, **kwargs)
         except Exception as e:
-            logger.warning("[fused_linear_cross_entropy] Accelerated path failed (%s). Falling back to PyTorch reference.", e)
+            logger.warning(
+                "[fused_linear_cross_entropy] Accelerated path failed (%s). Falling back to PyTorch reference.", e
+            )
             logits = torch.matmul(args[0], args[1].t()) if len(args) >= 2 else kwargs.get("logits")
             target = args[2] if len(args) >= 3 else kwargs.get("target")
             return torch.nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), target.view(-1))
@@ -168,9 +176,12 @@ def dispatch(op_name: str, *args: Any, backend: Optional[str] = None, **kwargs: 
     elif op_name == "fused_linear_kl_divergence":
         try:
             from neuralops.core.fused import fused_linear_kl_divergence
+
             return fused_linear_kl_divergence(*args, **kwargs)
         except Exception as e:
-            logger.warning("[fused_linear_kl_divergence] Accelerated path failed (%s). Falling back to PyTorch reference.", e)
+            logger.warning(
+                "[fused_linear_kl_divergence] Accelerated path failed (%s). Falling back to PyTorch reference.", e
+            )
             p = args[0] if len(args) >= 1 else kwargs.get("p")
             q = args[1] if len(args) >= 2 else kwargs.get("q")
             return torch.nn.functional.kl_div(p.log(), q, reduction="batchmean")

@@ -12,11 +12,6 @@ Combines CUR-matrix factorized linear projections with token-wise orthogonal map
 """
 
 from __future__ import annotations
-from neuralops.core.common import softpick
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -28,9 +23,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import softpick
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -150,9 +147,7 @@ class FactorisedLinear_CUR(nn.Module):
                     self.down.weight.data.zero_()
                     self.down.weight.data[:rank, :in_dim].copy_(R.to(dtype=self.down.weight.dtype))
                     self.up.weight.data.zero_()
-                    self.up.weight.data[:out_dim, :rank].copy_(
-                        C_Uint.to(dtype=self.up.weight.dtype)
-                    )
+                    self.up.weight.data[:out_dim, :rank].copy_(C_Uint.to(dtype=self.up.weight.dtype))
             except Exception as e:
                 logger.warning(f"CUR decomposition failed, using Kaiming init: {e}")
                 nn.init.kaiming_uniform_(self.down.weight, a=math.sqrt(5))
@@ -263,6 +258,7 @@ class PHANTOMAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -292,9 +288,7 @@ class PHANTOMAttention(BaseAttention):
         model_config = config or kwargs.get("model_config")
         self.hidden_size: int = getattr(model_config, "hidden_size", kwargs.get("hidden_size", 768))
         self.dim: int = self.hidden_size
-        self.num_heads: int = getattr(
-            model_config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
-        )
+        self.num_heads: int = getattr(model_config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         self.num_kv_heads: int = getattr(
             model_config,
             "num_key_value_heads",
@@ -515,11 +509,7 @@ class PHANTOMAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -532,11 +522,7 @@ class PHANTOMAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning(
                 f"PHANTOMAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
@@ -567,10 +553,7 @@ class PHANTOMAttention(BaseAttention):
                         target_mod.in_features,
                     ):
                         w = w.t().contiguous()
-                    elif (
-                        w.shape[0] < target_mod.out_features
-                        and target_mod.out_features % w.shape[0] == 0
-                    ):
+                    elif w.shape[0] < target_mod.out_features and target_mod.out_features % w.shape[0] == 0:
                         repeats = target_mod.out_features // w.shape[0]
                         w = w.repeat(repeats, 1)
                     else:
@@ -611,7 +594,12 @@ class PHANTOMAttention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
-        is_causal = bool(kwargs.get("is_causal", False) or kwargs.get("causal", False) or getattr(self, "is_decoder", False) or getattr(self, "is_causal", False))
+        is_causal = bool(
+            kwargs.get("is_causal", False)
+            or kwargs.get("causal", False)
+            or getattr(self, "is_decoder", False)
+            or getattr(self, "is_causal", False)
+        )
 
         Q = self.q_proj(hidden_states).view(B, N, H, D).permute(0, 2, 1, 3)
         K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
@@ -670,9 +658,7 @@ class PHANTOMAttention(BaseAttention):
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 context = context * head_mask.view(1, self.num_heads, 1, 1).to(context.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                context = context * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(
-                    context.dtype
-                )
+                context = context * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(context.dtype)
             elif head_mask.dim() == 4:
                 context = context * head_mask.to(context.dtype)
 
@@ -721,11 +707,7 @@ def inject_phantom(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -771,9 +753,7 @@ def inject_phantom(
                 return None
             if hasattr(src_attn, "inner") and isinstance(src_attn.inner, PHANTOMAttention):
                 return None
-            if hasattr(src_attn, "_wrapped_attention") and isinstance(
-                src_attn._wrapped_attention, PHANTOMAttention
-            ):
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(src_attn._wrapped_attention, PHANTOMAttention):
                 return None
 
         if target is not None:
@@ -787,9 +767,7 @@ def inject_phantom(
                     return None
                 if hasattr(cand, "inner") and isinstance(cand.inner, PHANTOMAttention):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(
-                    cand._wrapped_attention, PHANTOMAttention
-                ):
+                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, PHANTOMAttention):
                     return None
 
         if src_attn is not None:

@@ -12,6 +12,7 @@ Backward compatibility shim for neuralops.benchmarks.run_long_context_sweep.
 from __future__ import annotations
 
 import warnings
+
 from neuralops.benchmarks.run_long_context_sweep import *  # noqa: F401, F403
 
 warnings.warn(

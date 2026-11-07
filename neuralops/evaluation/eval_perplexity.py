@@ -257,9 +257,7 @@ def evaluate_module_ppl(
 
     if not is_baseline:
         logger.info("Building calibration dataset for %s...", module_name)
-        calib_loader = build_calibration_loader(
-            ds_train, tokenizer, num_samples=500, batch_size=4, max_length=128
-        )
+        calib_loader = build_calibration_loader(ds_train, tokenizer, num_samples=500, batch_size=4, max_length=128)
         first_batch = calib_loader[0]["input_ids"].to(device_str)
 
         if module_name in ATTENTION_REGISTRY:
@@ -267,9 +265,7 @@ def evaluate_module_ppl(
         elif module_name in COMPRESSOR_REGISTRY:
             mod_type = "compressor"
         else:
-            raise ValueError(
-                f"Module '{module_name}' not found in ATTENTION_REGISTRY or COMPRESSOR_REGISTRY"
-            )
+            raise ValueError(f"Module '{module_name}' not found in ATTENTION_REGISTRY or COMPRESSOR_REGISTRY")
 
         logger.info("Applying %s (%s) with rank=%d...", module_name, mod_type, rank)
         model, comp_stats = apply_module_to_model(
@@ -358,9 +354,7 @@ if __name__ == "__main__":
         help="Attention or compressor module name (or 'full')",
     )
     parser.add_argument("--output_dir", type=str, required=True, help="Output directory")
-    parser.add_argument(
-        "--dataset_name", type=str, default="wikitext-2-raw-v1", help="Dataset name"
-    )
+    parser.add_argument("--dataset_name", type=str, default="wikitext-2-raw-v1", help="Dataset name")
     parser.add_argument("--split", type=str, default="test", help="Dataset split")
     parser.add_argument("--rank", type=int, default=64, help="Target rank")
     parser.add_argument("--seq_len", type=int, default=1024, help="Sliding window context size")

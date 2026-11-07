@@ -56,12 +56,14 @@ def flash_decoding_attention_pytorch_ref(
         weights = torch.softmax(scores, dim=-1)
         return torch.matmul(weights, v)
     from neuralops.ops.triton.flash_decoding import flash_decoding_pytorch
+
     return flash_decoding_pytorch(q, k, v, chunk_size=chunk_size)
 
 
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.flash_decoding import flash_decoding_attention
+
         return flash_decoding_attention
     except ImportError:
         return None
@@ -78,9 +80,7 @@ def flash_decoding_attention(
 
     def cuda_fn(q, k, v, chunk_size=128, **kwargs):
         mod = _get_module()
-        return mod.flash_decoding_attention_fwd(
-            q.contiguous(), k.contiguous(), v.contiguous()
-        )
+        return mod.flash_decoding_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous())
 
     triton_fn = _get_triton_impl()
     if q.shape[-1] > 256:

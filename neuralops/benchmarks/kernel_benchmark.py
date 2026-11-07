@@ -12,8 +12,10 @@ Implements kernel benchmark functionality for NeuralOps.
 """
 
 from __future__ import annotations
-from typing import Callable, Any
+
 import time
+from typing import Any, Callable
+
 import torch
 
 __all__ = ["benchmark_kernel", "run_attention_kernel_benchmarks"]
@@ -49,7 +51,7 @@ def run_attention_kernel_benchmarks(
     q = torch.randn(batch_size, num_heads, seq_len, head_dim)
     k = torch.randn(batch_size, num_heads, seq_len, head_dim)
     v = torch.randn(batch_size, num_heads, seq_len, head_dim)
-    scale = 1.0 / (head_dim ** 0.5)
+    scale = 1.0 / (head_dim**0.5)
 
     def naive_sdpa():
         s = torch.matmul(q, k.transpose(-2, -1)) * scale

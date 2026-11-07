@@ -26,6 +26,7 @@ import torch
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except (ImportError, ModuleNotFoundError):
     HAS_TRITON = False
@@ -38,6 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 if HAS_TRITON and triton is not None and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({}, num_warps=4, num_stages=2),

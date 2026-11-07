@@ -75,8 +75,7 @@ def cosformer_linear_attention_pytorch_ref(
         k_cos_sum = k_cos.sum(dim=-2, keepdim=True)
         k_sin_sum = k_sin.sum(dim=-2, keepdim=True)
         denom = (
-            torch.matmul(q_cos, k_cos_sum.transpose(-1, -2))
-            + torch.matmul(q_sin, k_sin_sum.transpose(-1, -2))
+            torch.matmul(q_cos, k_cos_sum.transpose(-1, -2)) + torch.matmul(q_sin, k_sin_sum.transpose(-1, -2))
         ).clamp_min(1e-5)
         return (num / denom).to(q.dtype)
     else:
@@ -124,9 +123,8 @@ def cosformer_linear_attention_pytorch_ref(
 
 def _get_triton_impl():
     try:
-        from neuralops.ops.triton.cosformer_triton_kernel import (
-            triton_cosformer_linear_attention,
-        )
+        from neuralops.ops.triton.cosformer_triton_kernel import triton_cosformer_linear_attention
+
         return triton_cosformer_linear_attention
     except ImportError:
         return None
@@ -143,9 +141,7 @@ def cosformer_linear_attention(
 
     def cuda_fn(q, k, v, is_causal=False):
         mod = _get_module()
-        return mod.cosformer_linear_attention_fwd(
-            q.contiguous(), k.contiguous(), v.contiguous(), is_causal
-        )
+        return mod.cosformer_linear_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous(), is_causal)
 
     triton_fn = _get_triton_impl()
     D = q.shape[-1]

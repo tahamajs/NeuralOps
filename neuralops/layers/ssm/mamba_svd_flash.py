@@ -13,11 +13,6 @@ Fuses bidirectional selective state-space dynamics with flash attention kernels 
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -29,9 +24,10 @@ import torch.nn.functional as F
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -129,13 +125,7 @@ class MambaSVDFlash(BaseAttention):
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        dim = (
-            kwargs.get("d_model")
-            or kwargs.get("hidden_size")
-            or kwargs.get("dim")
-            or d_model
-            or hidden_size
-        )
+        dim = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim") or d_model or hidden_size
         if dim is None:
             if config is not None:
                 if isinstance(config, int):
@@ -185,24 +175,16 @@ class MambaSVDFlash(BaseAttention):
             )
         elif comp_config is not None:
             self.lora_rank = int(getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-            self.lora_alpha = float(
-                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
-            )
+            self.lora_alpha = float(getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         else:
             self.lora_rank = int(kwargs.get("lora_rank", 16))
             self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
         self.freeze_base = self.lora_rank > 0
 
-        model_type = (
-            str(getattr(config_obj, "model_type", "") or "").lower()
-            if config_obj is not None
-            else ""
-        )
+        model_type = str(getattr(config_obj, "model_type", "") or "").lower() if config_obj is not None else ""
         is_dec = False
         if config_obj is not None:
-            is_dec = bool(
-                getattr(config_obj, "is_decoder", False) or getattr(config_obj, "is_causal", False)
-            )
+            is_dec = bool(getattr(config_obj, "is_decoder", False) or getattr(config_obj, "is_causal", False))
         if any(
             model_type.startswith(p)
             for p in (
@@ -266,11 +248,7 @@ class MambaSVDFlash(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
 
-        bd = int(
-            getattr(comp_config, "bottleneck_dim", bottleneck_dim)
-            if comp_config
-            else bottleneck_dim
-        )
+        bd = int(getattr(comp_config, "bottleneck_dim", bottleneck_dim) if comp_config else bottleneck_dim)
         self.ssm_fwd = SVDS6StateSpace(self.d_model, rank=min(16, self.rank), bottleneck_dim=bd)
 
         if not self.is_decoder:
@@ -342,9 +320,7 @@ class MambaSVDFlash(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         self.source_attn = source_attn
-        self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
-        )
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -430,9 +406,7 @@ class MambaSVDFlash(BaseAttention):
                 raise RuntimeError(f"norm too small: {torch.linalg.norm(old_attn.weight.float()).item()}")
 
         cls_name = old_attn.__class__.__name__
-        has_out_proj = any(
-            hasattr(old_attn, a) for a in ("out_proj", "out_lin", "c_proj", "dense", "o_proj")
-        )
+        has_out_proj = any(hasattr(old_attn, a) for a in ("out_proj", "out_lin", "c_proj", "dense", "o_proj"))
         is_nested = False
         if (
             (
@@ -537,11 +511,7 @@ class MambaSVDFlash(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 adapter = UniversalAdapter()
@@ -552,11 +522,7 @@ class MambaSVDFlash(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning("MambaSVDFlash: missing projections %s from %s", missing_after, cls_name)
 
@@ -584,17 +550,12 @@ class MambaSVDFlash(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-                if (
-                    w.shape != target.weight.shape
-                    and w.t().contiguous().shape == target.weight.shape
-                ):
+                if w.shape != target.weight.shape and w.t().contiguous().shape == target.weight.shape:
                     w = w.t().contiguous()
 
                 out_d = min(target.weight.size(0), w.size(0))
                 in_d = min(target.weight.size(1), w.size(1))
-                target.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
-                )
+                target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
                     target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
@@ -737,9 +698,12 @@ class MambaSVDFlash(BaseAttention):
 
         if x.is_cuda and mask is None and h0 is None and not reverse and r <= 64:
             try:
-                from neuralops.ops.triton.selective_scan import selective_scan_fn
                 from neuralops.ops.triton._types import check_triton_suitability
-                suitable, _ = check_triton_suitability(x, "selective_scan", head_dim=None, seq_len=L, supports_backward=True)
+                from neuralops.ops.triton.selective_scan import selective_scan_fn
+
+                suitable, _ = check_triton_suitability(
+                    x, "selective_scan", head_dim=None, seq_len=L, supports_backward=True
+                )
                 if suitable:
                     delta = Sigma.mean(dim=-1, keepdim=True).expand(-1, -1, D).contiguous()
                     A = -torch.ones(D, r, device=device, dtype=torch.float32)
@@ -893,32 +857,15 @@ class MambaSVDFlash(BaseAttention):
                 w = torch.sigmoid(self.bidirectional_mix).view(1, self.num_heads, 1, 1)
                 ssm_fwd_h = ssm_fwd.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
                 ssm_bwd_h = ssm_bwd.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
-                ssm_out = (
-                    (w * ssm_fwd_h + (1 - w) * ssm_bwd_h).transpose(1, 2).contiguous().view(B, L, D)
-                )
+                ssm_out = (w * ssm_fwd_h + (1 - w) * ssm_bwd_h).transpose(1, 2).contiguous().view(B, L, D)
                 ssm_h_next = None
             else:
                 ssm_out = ssm_fwd
                 ssm_h_next = None
 
-        Q = (
-            self.q_proj(hidden_states)
-            .view(B, L, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        K = (
-            self.k_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V_a = (
-            self.v_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V_a = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -933,9 +880,7 @@ class MambaSVDFlash(BaseAttention):
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
         elif getattr(self, "rotary_emb", None) is not None:
             if position_ids is None:
-                position_ids = (
-                    torch.arange(past_len, past_len + L, device=device).unsqueeze(0).expand(B, -1)
-                )
+                position_ids = torch.arange(past_len, past_len + L, device=device).unsqueeze(0).expand(B, -1)
             cos = sin = None
             for call in (
                 lambda: self.rotary_emb(K, seq_len=L),
@@ -965,12 +910,7 @@ class MambaSVDFlash(BaseAttention):
         attn_out: torch.Tensor | None = None
         probs: torch.Tensor | None = None
 
-        can_sdpa = (
-            head_mask is None
-            and not output_attentions
-            and bool(mask_bool.all().item())
-            and past_len == 0
-        )
+        can_sdpa = head_mask is None and not output_attentions and bool(mask_bool.all().item()) and past_len == 0
         if can_sdpa:
             try:
                 _qs = maybe_half(Q)
@@ -984,12 +924,7 @@ class MambaSVDFlash(BaseAttention):
                     is_causal=_is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                attn_out = (
-                    _sdpa_out.to(dtype_in)
-                    .transpose(1, 2)
-                    .contiguous()
-                    .view(B, L, self.all_head_size)
-                )
+                attn_out = _sdpa_out.to(dtype_in).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                 attn_out = torch.nan_to_num(attn_out, nan=0.0)
             except Exception:
                 attn_out = None
@@ -1016,9 +951,7 @@ class MambaSVDFlash(BaseAttention):
             if head_mask is not None:
                 probs = self._apply_head_mask(head_mask, probs)
 
-            attn_out = (
-                torch.matmul(probs, V_a).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-            )
+            attn_out = torch.matmul(probs, V_a).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
             attn_out = torch.nan_to_num(attn_out, nan=0.0)
 
         gamma = torch.sigmoid(self.gating(hidden_states))
@@ -1031,11 +964,7 @@ class MambaSVDFlash(BaseAttention):
         out = Y if self.is_nested_encoder else self.out_proj(Y)
 
         present_key_value = {
-            "ssm_h": (
-                ssm_h_next
-                if ssm_h_next is not None
-                else torch.zeros(B, D, device=device, dtype=dtype_in)
-            ),
+            "ssm_h": (ssm_h_next if ssm_h_next is not None else torch.zeros(B, D, device=device, dtype=dtype_in)),
             "attn_k": present_attn_k,
             "attn_v": present_attn_v,
             "seq_len": past_len + L,
@@ -1167,13 +1096,10 @@ def inject_mamba_svd_flash(
     if src_attn is None and hasattr(target, "forward"):
         src_attn = target
 
-    if src_attn is not None and (
-        isinstance(src_attn, MambaSVDFlash) or "MambaSVDFlash" in src_attn.__class__.__name__
-    ):
+    if src_attn is not None and (isinstance(src_attn, MambaSVDFlash) or "MambaSVDFlash" in src_attn.__class__.__name__):
         return None
     if src_attn is not None and (
-        "DeltaNet" in src_attn.__class__.__name__
-        or "LinearAttention" in src_attn.__class__.__name__
+        "DeltaNet" in src_attn.__class__.__name__ or "LinearAttention" in src_attn.__class__.__name__
     ):
         return None
 

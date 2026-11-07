@@ -148,9 +148,7 @@ def create_causal_mask(seq_len: int, device: torch.device | None = None) -> torc
     return mask
 
 
-def create_band_mask(
-    seq_len: int, window_size: int, device: torch.device | None = None
-) -> torch.Tensor:
+def create_band_mask(seq_len: int, window_size: int, device: torch.device | None = None) -> torch.Tensor:
     r"""Create a sliding window band attention mask [SeqLen, SeqLen] where positions |i - j| <= window_size are True."""
     idx = torch.arange(seq_len, device=device)
     diff = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()

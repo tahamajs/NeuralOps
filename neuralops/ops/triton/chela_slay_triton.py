@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 _INTERPRET_MODE = os.environ.get("TRITON_INTERPRET") == "1"
 
 if HAS_TRITON and triton is not None and tl is not None:
+
     @triton.jit
     def _chela_slay_chunk_kernel(
         Q_ptr,
@@ -231,7 +232,7 @@ def _chela_slay_pytorch(
 
     if pad_len > 0:
         valid_mask = torch.ones(num_chunks, chunk_size, device=q.device, dtype=torch.float32)
-        valid_mask[-1, chunk_size - pad_len:] = 0.0
+        valid_mask[-1, chunk_size - pad_len :] = 0.0
         v_m = valid_mask.view(1, 1, num_chunks, chunk_size, 1)
         q_c = q_c * v_m
         k_c = k_c * v_m

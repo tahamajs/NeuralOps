@@ -131,7 +131,7 @@ class BaseAttention(nn.Module):
         Returns:
             (out, next_state) where out is [B, 1, D] (or [B, D] if 2D input was passed).
         """
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -168,7 +168,6 @@ class BaseAttention(nn.Module):
             return out, state
 
         return out, next_cache
-
 
     def copy_weights(self, old_attn: Any) -> None:
         """Universal fallback: copy pretrained weights from old attention layer."""

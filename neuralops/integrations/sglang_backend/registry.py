@@ -33,10 +33,7 @@ def register(
     and recurrent attention mechanisms (GLA, GDN, DeltaNet, etc.).
     """
     try:
-        from sglang.srt.configs.linear_attn_model_registry import (
-            LinearAttnModelSpec,
-            register_linear_attn_model,
-        )
+        from sglang.srt.configs.linear_attn_model_registry import LinearAttnModelSpec, register_linear_attn_model
     except ImportError as e:
         logger.warning("SGLang is not installed; linear attention registration skipped: %s", e)
         return False
@@ -44,10 +41,13 @@ def register(
     if config_class is None:
         try:
             from transformers import GPT2Config
+
             target_config: type = GPT2Config
         except ImportError:
+
             class DummyConfig:
                 pass
+
             target_config = DummyConfig
     else:
         target_config = config_class
@@ -58,9 +58,7 @@ def register(
         "LlamaForCausalLM",
     ]
 
-    backend_qualname = (
-        "neuralops.integrations.sglang_backend.backend.NeuralOpsLinearAttnBackend"
-    )
+    backend_qualname = "neuralops.integrations.sglang_backend.backend.NeuralOpsLinearAttnBackend"
 
     spec = LinearAttnModelSpec(
         config_class=target_config,

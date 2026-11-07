@@ -16,28 +16,23 @@ from __future__ import annotations
 import logging
 import math
 import os
-from typing import Any
 import warnings
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.layers.sparse.expert_choice_moe import ExpertChoiceMoE
-from neuralops.layers.ssm.simple_ssm import SimpleSSM
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.cache_utils import _read_cache, _write_cache, read_cache, write_cache
 from neuralops.core.common import LoRALinear
-from neuralops.core.utils.gqa import repeat_kv
-from neuralops.core.model_utils import (
-    _detect_decoder,
-    _detect_return_format,
-    detect_decoder,
-    detect_return_format,
-)
+from neuralops.core.model_utils import _detect_decoder, _detect_return_format, detect_decoder, detect_return_format
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.utils.rope import apply_rotary_pos_emb
+from neuralops.layers.sparse.expert_choice_moe import ExpertChoiceMoE
+from neuralops.layers.ssm.simple_ssm import SimpleSSM
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +113,7 @@ class SVDMambaSub(nn.Module):
         return out, present_state
 
 
-@ATTENTION_REGISTRY.register(
-    "jamba", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("jamba", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class Jamba2Block(BaseAttention):
     """Jamba2Block neural operator.
 
@@ -130,6 +123,7 @@ class Jamba2Block(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -150,12 +144,7 @@ class Jamba2Block(BaseAttention):
         self.config = config
 
         d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim") or d_model
-        n_heads = (
-            kwargs.get("n_heads")
-            or kwargs.get("num_heads")
-            or kwargs.get("num_attention_heads")
-            or n_heads
-        )
+        n_heads = kwargs.get("n_heads") or kwargs.get("num_heads") or kwargs.get("num_attention_heads") or n_heads
 
         if d_model is None and config is not None:
             d_model = getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
@@ -441,9 +430,7 @@ class Jamba2Block(BaseAttention):
 
                 out_d = min(target.weight.size(0), w.size(0))
                 in_d = min(target.weight.size(1), w.size(1))
-                target.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
-                )
+                target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
 
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
@@ -545,9 +532,7 @@ class Jamba2Block(BaseAttention):
                 m_out = checkpoint(_run_mamba, x_norm1, attention_mask, past_mamba, use_reentrant=False)
                 present_mamba = _present_cell[0]
             else:
-                m_out, present_mamba = self.mamba(
-                    x_norm1, attention_mask=attention_mask, past_state=past_mamba
-                )
+                m_out, present_mamba = self.mamba(x_norm1, attention_mask=attention_mask, past_state=past_mamba)
 
             mamba_out = m_out.to(target_dtype) * self.lora_mamba_scale
 
@@ -604,11 +589,7 @@ class Jamba2Block(BaseAttention):
                 dropout_p = self.dropout.p if self.training else 0.0
 
                 q_sdpa, k_sdpa, v_sdpa = q, k_exp, v_exp
-                if (
-                    hidden_states.device.type == "cuda"
-                    and torch.cuda.is_bf16_supported()
-                    and q.dtype == torch.float32
-                ):
+                if hidden_states.device.type == "cuda" and torch.cuda.is_bf16_supported() and q.dtype == torch.float32:
                     q_sdpa = q.to(torch.bfloat16)
                     k_sdpa = k_exp.to(torch.bfloat16)
                     v_sdpa = v_exp.to(torch.bfloat16)
@@ -624,9 +605,7 @@ class Jamba2Block(BaseAttention):
                     )
                     use_sdpa = True
                 elif self.is_decoder:
-                    if attention_mask.dim() == 2 and (
-                        attention_mask.bool().all() or (attention_mask > 0).all()
-                    ):
+                    if attention_mask.dim() == 2 and (attention_mask.bool().all() or (attention_mask > 0).all()):
                         _sdpa_out = F.scaled_dot_product_attention(
                             q_sdpa,
                             k_sdpa,
@@ -637,9 +616,7 @@ class Jamba2Block(BaseAttention):
                         )
                         use_sdpa = True
                     elif attention_mask.dim() == 2:
-                        valid = get_token_valid_mask(
-                            attention_mask, B, k_exp.shape[-2], hidden_states.device
-                        )
+                        valid = get_token_valid_mask(attention_mask, B, k_exp.shape[-2], hidden_states.device)
                         if valid is not None:
                             combined_mask = valid.unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, L, L)
                             if is_causal:
@@ -683,9 +660,7 @@ class Jamba2Block(BaseAttention):
                 scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
-                    valid = get_token_valid_mask(
-                        attention_mask, B, k_exp.shape[-2], hidden_states.device
-                    )
+                    valid = get_token_valid_mask(attention_mask, B, k_exp.shape[-2], hidden_states.device)
                     if valid is not None:
                         scores = scores.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
                 elif attention_mask.dim() == 3:
@@ -732,6 +707,7 @@ class Jamba2Block(BaseAttention):
         if mamba_out.is_cuda and attn_delta.is_cuda:
             try:
                 from neuralops.ops.triton.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
+
                 alpha_hybrid = torch.tensor(0.5, device=mamba_out.device, dtype=mamba_out.dtype)
                 fused_ma = fused_jamba_hybrid_ssm_attn_gate_triton(mamba_out, attn_delta, alpha_hybrid)
                 final_delta = fused_ma * 2.0 + moe_out
@@ -740,9 +716,7 @@ class Jamba2Block(BaseAttention):
         else:
             final_delta = mamba_out + attn_delta + moe_out
 
-        return self._format_output(
-            final_delta, attn_weights, present_key_value, output_attentions=output_attentions
-        )
+        return self._format_output(final_delta, attn_weights, present_key_value, output_attentions=output_attentions)
 
 
 def inject_jamba(

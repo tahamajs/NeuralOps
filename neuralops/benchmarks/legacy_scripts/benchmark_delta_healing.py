@@ -23,18 +23,26 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import transformers
 from datasets import Dataset
 
-import numpy as np
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.evaluation.eval_patcher import apply_module_to_model
 
 
-def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int = 256, stride: int = 128, max_eval_tokens: int = 15000, device: str = "cuda") -> float:
+def compute_perplexity(
+    model: nn.Module,
+    tokenizer,
+    test_dataset,
+    seq_len: int = 256,
+    stride: int = 128,
+    max_eval_tokens: int = 15000,
+    device: str = "cuda",
+) -> float:
     """Canonical evaluation wrapper computing exact causal LM perplexity matching historical delta_sweep."""
     model.eval()
     sample_texts = []
@@ -98,6 +106,8 @@ def eval_ppl(model: nn.Module, tokenizer, test_dataset, args) -> float:
         max_eval_tokens=max_eval_tokens,
         device=device,
     )
+
+
 from neuralops.trainer.distillation.multi_level_kd import (
     BlockwiseOperatorCloningLoss,
     HedgehogFeatureMapKDLoss,
@@ -112,14 +122,18 @@ logger = logging.getLogger("DeltaHealing")
 
 
 def get_eval_dataset() -> Dataset:
-    return Dataset.from_dict({"text": [
-        "The quick brown fox jumps over the lazy dog. Scientific reasoning requires rigorous mathematical proof and empirical testing.",
-        "Machine learning models, particularly autoregressive transformers, rely on scaled dot-product self-attention mechanisms to capture long-range token dependencies.",
-        "In physics, quantum electrodynamics describes how light and matter interact with remarkable precision across microscopic spatial scales.",
-        "Adaptive attention methods modify sequence representation through dynamic spans, token pruning, and head squeezing.",
-        "High performance deep learning systems benefit from hardware acceleration using custom CUDA kernels and Triton compiler infrastructure.",
-        "Knowledge distillation optimizes student networks by matching teacher representations across logits, hidden states, and attention relation matrices."
-    ]})
+    return Dataset.from_dict(
+        {
+            "text": [
+                "The quick brown fox jumps over the lazy dog. Scientific reasoning requires rigorous mathematical proof and empirical testing.",
+                "Machine learning models, particularly autoregressive transformers, rely on scaled dot-product self-attention mechanisms to capture long-range token dependencies.",
+                "In physics, quantum electrodynamics describes how light and matter interact with remarkable precision across microscopic spatial scales.",
+                "Adaptive attention methods modify sequence representation through dynamic spans, token pruning, and head squeezing.",
+                "High performance deep learning systems benefit from hardware acceleration using custom CUDA kernels and Triton compiler infrastructure.",
+                "Knowledge distillation optimizes student networks by matching teacher representations across logits, hidden states, and attention relation matrices.",
+            ]
+        }
+    )
 
 
 def run_delta_healing(

@@ -11,10 +11,7 @@ TensorRT-LLM Plugin Module for NeuralOps Attention.
 
 from __future__ import annotations
 
-from neuralops.integrations.tensorrt_llm_plugin.plugin import (
-    neuralops_attention,
-    python_plugin,
-)
+from neuralops.integrations.tensorrt_llm_plugin.plugin import neuralops_attention, python_plugin
 
 __all__ = [
     "neuralops_attention",

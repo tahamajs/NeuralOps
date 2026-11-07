@@ -147,7 +147,7 @@ Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 2 B L D r + 2 B L L_{\
 
 
 ### Memory Footprint & Parameter Count
-Specifically, regarding \textbf{Parameter Count}, $4 D^2 + D + 2 D r$ floats. Furthermore, regarding \textbf{KV Cache Memory Footprint}, 
+Specifically, regarding \textbf{Parameter Count}, $4 D^2 + D + 2 D r$ floats. Furthermore, regarding \textbf{KV Cache Memory Footprint},
 
   \[
   \text{KV Cache Size} = 2 \cdot B \cdot H \cdot L_{\text{span}} \cdot d \cdot b = 2 B L_{\text{span}} D \cdot b \text{ bytes}
@@ -219,4 +219,3 @@ The empirical evaluation of `span_expanded_attention` across standard sequence l
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

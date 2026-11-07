@@ -12,6 +12,7 @@ Canonical alias and execution runner for benchmark_torch_compile_131_attentions.
 """
 
 import sys
+
 from neuralops.benchmarks.benchmark_torch_compile_131_attentions import *
 from neuralops.benchmarks.benchmark_torch_compile_131_attentions import main
 

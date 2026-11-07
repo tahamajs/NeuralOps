@@ -7,6 +7,7 @@
 """Tests for honest registry counts and canonical key uniqueness (F-18)."""
 
 from collections import defaultdict
+
 import pytest
 
 from neuralops.core.exceptions import RegistryError
@@ -26,6 +27,7 @@ def test_distinct_attention_class_count():
 def test_gptq_awq_smoothquant_have_canonical_keys():
     """Verify real compression engines (GPTQ, AWQ, SmoothQuant, etc.) have canonical keys."""
     import inspect
+
     from neuralops.core.registry import COMPRESSOR_REGISTRY, get_compressor
 
     COMPRESSOR_REGISTRY._load_all()
@@ -49,7 +51,6 @@ def test_compressor_registry_count_is_72_or_documented_new_count():
     COMPRESSOR_REGISTRY._load_all()
     canonical_count = len(COMPRESSOR_REGISTRY.canonical_keys())
     assert canonical_count == 82, f"Expected 82 canonical compressors, got {canonical_count}"
-
 
 
 def test_no_class_has_two_canonical_keys():
@@ -93,3 +94,44 @@ def test_register_duplicate_canonical_key_raises():
     reg.register("alias_b", is_alias=True)(ModelB)
     with pytest.raises(RegistryError, match="collides with an existing alias"):
         reg.register("alias_b")(ModelA)
+
+
+def test_registry_names_match_expected() -> None:
+    """Verify set equality between registered keys and hardcoded expected catalog."""
+    import json
+    from pathlib import Path
+
+    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
+    json_path = Path(__file__).resolve().parent / "data" / "expected_registry_names.json"
+    assert json_path.exists(), f"expected_registry_names.json not found at {json_path}"
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        expected = json.load(f)
+
+    expected_attns = set(expected["attentions"])
+    expected_comps = set(expected["compressors"])
+
+    ATTENTION_REGISTRY._load_all()
+    COMPRESSOR_REGISTRY._load_all()
+
+    actual_attns = set(ATTENTION_REGISTRY.keys())
+    actual_comps = set(COMPRESSOR_REGISTRY.keys())
+
+    missing_attns = expected_attns - actual_attns
+    extra_attns = actual_attns - expected_attns
+    assert not missing_attns, f"Missing expected attention keys: {missing_attns}"
+    assert not extra_attns, f"Unexpected extra attention keys: {extra_attns}"
+    assert actual_attns == expected_attns
+
+    missing_comps = expected_comps - actual_comps
+    extra_comps = actual_comps - expected_comps
+    assert not missing_comps, f"Missing expected compressor keys: {missing_comps}"
+    assert not extra_comps, f"Unexpected extra compressor keys: {extra_comps}"
+    assert actual_comps == expected_comps
+
+    if hasattr(ATTENTION_REGISTRY, "load_errors"):
+        assert len(ATTENTION_REGISTRY.load_errors()) == 0, f"Attention load errors: {ATTENTION_REGISTRY.load_errors()}"
+    if hasattr(COMPRESSOR_REGISTRY, "load_errors"):
+        assert len(COMPRESSOR_REGISTRY.load_errors()) == 0, f"Compressor load errors: {COMPRESSOR_REGISTRY.load_errors()}"
+

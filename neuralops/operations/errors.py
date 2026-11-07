@@ -52,4 +52,3 @@ class PreconditionFailedError(OperationError):
 
     def __init__(self, message: str, operation_name: Optional[str] = None):
         super().__init__(message, error_code=E_COMP_PRECONDITION_UNSATISFIED, operation_name=operation_name)
-

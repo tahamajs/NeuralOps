@@ -29,7 +29,7 @@
 
 The era of quadratic computational waste in Deep Learning is coming to an end. Standard Self-Attention costs $\mathcal{O}(N^2)$ compute and memory, locking researchers out of long-context frontiers and burning millions in redundant training runs.
 
-**Hooshaai (هوشا / هوش‌های مصنوعی پیشرفته)** builds the bridge between theoretical subquadratic recurrences and real silicon hardware. 
+**Hooshaai (هوشا / هوش‌های مصنوعی پیشرفته)** builds the bridge between theoretical subquadratic recurrences and real silicon hardware.
 
 Instead of discarding pre-trained LLM weights or spending millions pre-training linear models from scratch, our flagship library **NeuralOps** enables:
 1. 🧠 **Instant In-Place Neural Surgery**: Transform standard Softmax Transformers into subquadratic linear state-space models in **milliseconds**.
@@ -76,14 +76,14 @@ graph TD
     A["Hooshaai NeuralOps Ecosystem (v1.7.0)"] --> B["131 Attention Mechanisms<br/>(14 Architectural Families)"]
     A --> C["72 Compression Engines<br/>(8 Algorithmic Paradigms)"]
     A --> D["3-Level Fallback Dispatch<br/>(Zero-Overhead Dispatch Cache)"]
-    
+
     B --> E["203 Unified Mathematical Modules"]
     C --> E
-    
+
     D --> F["Level 1: Native CUDA C++ / HIP<br/>(112 Packages, 114 Kernels)"]
     D --> G["Level 2: Triton JIT Kernels<br/>(26 Modules, 62 Unified Operators)"]
     D --> H["Level 3: Vectorized PyTorch Reference<br/>(Universal CPU / MPS Fallback)"]
-    
+
     E --> I["Hooshaai Model Zoo<br/>(14 Pre-Trained Hub Checkpoints)"]
     E --> J["Master Relational Ledger<br/>(Hooshaai/neuralops-results)"]
 ```
@@ -124,7 +124,7 @@ The **Hooshaai** organization maintains 14 production-grade, pre-trained, and po
 
 ## 📊 Empirical Results Ledger (`Hooshaai/neuralops-results`)
 
-All empirical benchmark sweeps, kernel latency metrics, memory telemetry, and distillation trajectories are permanently archived in our Hugging Face benchmark repository:  
+All empirical benchmark sweeps, kernel latency metrics, memory telemetry, and distillation trajectories are permanently archived in our Hugging Face benchmark repository:
 👉 **[🤗 Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)**
 
 ### Instant Loading via Hugging Face `datasets`:
@@ -171,11 +171,11 @@ Comprehensive scientific monographs and published conference preprints:
 * **Downloads**: [📥 High-Res Slides PDF (172 MB)](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Thesis_Defense_Slides_810101504.pdf) • [📥 Web-Optimized Slides PDF (45 MB)](https://tahamajs.github.io/NeuralOps/slides/master_defense_2026.pdf)
 
 ### 3. Conference Submissions & Research Preprints
-* **NeurIPS 2026**: *NeuralOps: Subquadratic Sequence Modeling via Low-Rank Activation Whitening and 3-Level Fallback Dispatch*  
+* **NeurIPS 2026**: *NeuralOps: Subquadratic Sequence Modeling via Low-Rank Activation Whitening and 3-Level Fallback Dispatch*
   👉 [📥 Download NeurIPS 2026 Paper PDF (64 MB)](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_NeurIPS2026_Paper.pdf)
-* **ICLR 2027**: *Deep In-Place Attention Surgery and 6-Pillar Subspace Distillation for Linear Sequence Transformers*  
+* **ICLR 2027**: *Deep In-Place Attention Surgery and 6-Pillar Subspace Distillation for Linear Sequence Transformers*
   👉 [📥 Download ICLR 2027 Paper PDF (64 MB)](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_ICLR2027_Paper.pdf)
-* **MLSys 2027**: *High-Throughput Serving and Hardware-Aware Kernel Microarchitecture for Hybrid Recurrent LLMs*  
+* **MLSys 2027**: *High-Throughput Serving and Hardware-Aware Kernel Microarchitecture for Hybrid Recurrent LLMs*
   👉 [📥 Download MLSys 2027 Paper PDF (68 MB)](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_MLSys2027_Paper.pdf)
 
 ---
@@ -240,8 +240,8 @@ compressed_model = neuralops.compress(model, method="fwsvd", rank=32)
 
 <div align="center">
 
-**Hooshaai Research Laboratory**  
-*In-Place Neural Surgery & Subquadratic Attention Systems*  
+**Hooshaai Research Laboratory**
+*In-Place Neural Surgery & Subquadratic Attention Systems*
 GitHub: [tahamajs/NeuralOps](https://github.com/tahamajs/NeuralOps) • Hugging Face: [@Hooshaai](https://huggingface.co/Hooshaai) • Email: [tahamaj4@gmail.com](mailto:tahamaj4@gmail.com)
 
 </div>

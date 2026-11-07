@@ -12,16 +12,16 @@ Central benchmark runner orchestrating config, storage, tracking, and suite exec
 from __future__ import annotations
 
 import csv
-from datetime import datetime, timezone
 import json
 import logging
 import os
-from pathlib import Path
 import platform
 import socket
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import torch
@@ -42,25 +42,15 @@ def _get_git_provenance() -> Dict[str, Any]:
     is_dirty = False
     try:
         commit_sha = (
-            subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
-            )
-            .decode("utf-8")
-            .strip()
+            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
         )
         branch = (
-            subprocess.check_output(
-                ["git", "rev-parse", "--abbrev-ref", "HEAD"], stderr=subprocess.DEVNULL
-            )
+            subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], stderr=subprocess.DEVNULL)
             .decode("utf-8")
             .strip()
         )
         status = (
-            subprocess.check_output(
-                ["git", "status", "--porcelain"], stderr=subprocess.DEVNULL
-            )
-            .decode("utf-8")
-            .strip()
+            subprocess.check_output(["git", "status", "--porcelain"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
         )
         is_dirty = len(status) > 0
     except Exception:
@@ -82,9 +72,7 @@ def _get_host_environment(device_str: str) -> Dict[str, Any]:
             device_name = torch.cuda.get_device_name(0)
             cc_major, cc_minor = torch.cuda.get_device_capability(0)
             compute_cap = f"{cc_major}.{cc_minor}"
-            vram_mb = round(
-                torch.cuda.get_device_properties(0).total_memory / (1024.0 * 1024.0), 2
-            )
+            vram_mb = round(torch.cuda.get_device_properties(0).total_memory / (1024.0 * 1024.0), 2)
         except Exception:
             pass
 
@@ -119,9 +107,7 @@ class BenchmarkRunner:
         )
 
         # 1. Save resolved config snapshot
-        self.paths.config_resolved_yaml.write_text(
-            self.config.model_dump_yaml(), encoding="utf-8"
-        )
+        self.paths.config_resolved_yaml.write_text(self.config.model_dump_yaml(), encoding="utf-8")
 
         # 2. Initialize tracking engine rooted in isolated per-run directory
         self.tracker = ExperimentTracker(

@@ -64,7 +64,7 @@ def get_active_process_and_logs():
         cmd = [
             "powershell",
             "-Command",
-            '(Get-CimInstance Win32_Process -Filter "name = \'python.exe\'").CommandLine',
+            "(Get-CimInstance Win32_Process -Filter \"name = 'python.exe'\").CommandLine",
         ]
         cmd_list = cmd if isinstance(cmd, list) else cmd.split()
         res = subprocess.run(cmd_list, shell=False, capture_output=True, text=True, timeout=4)
@@ -93,11 +93,7 @@ def get_active_process_and_logs():
         ]:
             if os.path.exists(qf):
                 with open(qf, "r", encoding="utf-8", errors="ignore") as f:
-                    lines = [
-                        l.strip()
-                        for l in f.readlines()[-30:]
-                        if l.strip() and not l.startswith("**")
-                    ]
+                    lines = [l.strip() for l in f.readlines()[-30:] if l.strip() and not l.startswith("**")]
                     if lines:
                         queue_logs = "\n".join(lines)
                         break
@@ -124,9 +120,7 @@ def get_live_progress_and_trajectory(target_module=None, target_model=None):
         )
 
     candidate_files.extend(glob.glob(os.path.join(results_dir, "bench_*.log")))
-    candidate_files.extend(
-        glob.glob(os.path.join(results_dir, "**", "console.log"), recursive=True)
-    )
+    candidate_files.extend(glob.glob(os.path.join(results_dir, "**", "console.log"), recursive=True))
 
     logs = sorted(list(set(candidate_files)), key=os.path.getmtime)
 
@@ -228,9 +222,7 @@ def get_raw_log_tail(source="active", target_module=None, lines_count=200):
         try:
             with open(target_file, "r", encoding="utf-8", errors="ignore") as fp:
                 all_lines = fp.readlines()
-                clean = [
-                    l.rstrip("\r\n") for l in all_lines[-lines_count:] if not l.startswith("**")
-                ]
+                clean = [l.rstrip("\r\n") for l in all_lines[-lines_count:] if not l.startswith("**")]
                 return {"file": target_file.replace("\\", "/"), "lines": clean, "count": len(clean)}
         except Exception as e:
             return {"file": target_file, "lines": [f"Error reading log: {e}"], "count": 1}
@@ -247,9 +239,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.action == "logs":
-        tail_data = get_raw_log_tail(
-            source=args.source, target_module=args.module, lines_count=args.lines
-        )
+        tail_data = get_raw_log_tail(source=args.source, target_module=args.module, lines_count=args.lines)
         print(json.dumps(tail_data))
     elif args.action == "telemetry":
         print(json.dumps(get_telemetry()))

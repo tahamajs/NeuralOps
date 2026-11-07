@@ -17,17 +17,14 @@ import inspect
 import logging
 import re
 from typing import Any, Callable, Dict, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge, DualStreamLatentState
-from neuralops.surgery.moa_router import (
-    HybridMoARouter,
-    compute_attention_entropy,
-    profile_layer_sensitivity,
-)
+from neuralops.surgery.moa_router import HybridMoARouter, compute_attention_entropy, profile_layer_sensitivity
 from neuralops.surgery.scanner import AttentionTargetSpec, UniversalArchitectureScanner
 
 MoARouter = HybridMoARouter
@@ -47,6 +44,7 @@ def register_neuralops_with_huggingface() -> None:
     """
     try:
         import transformers.modeling_utils as hf_utils
+
         if not hasattr(hf_utils, "ALL_ATTENTION_FUNCTIONS"):
             return
         all_attn_fn = hf_utils.ALL_ATTENTION_FUNCTIONS
@@ -109,14 +107,10 @@ def register_neuralops_with_huggingface() -> None:
                     if out.shape == (B, H_q, T, D_h):
                         out = out.transpose(1, 2)
                     elif out.shape != (B, T, H_q, D_h):
-                        raise ValueError(
-                            f"NeuralOps attention returned incompatible shape {tuple(out.shape)}"
-                        )
+                        raise ValueError(f"NeuralOps attention returned incompatible shape {tuple(out.shape)}")
                     out = out.contiguous()
                 elif out.shape != (B, T, H_q * D_h):
-                    raise ValueError(
-                        f"NeuralOps attention returned incompatible shape {tuple(out.shape)}"
-                    )
+                    raise ValueError(f"NeuralOps attention returned incompatible shape {tuple(out.shape)}")
                 out = out.view(B, T, H_q, D_h)
             else:
                 assert callable(F.scaled_dot_product_attention), "F.scaled_dot_product_attention is not callable"
@@ -173,6 +167,7 @@ class SidecarGateBranch(nn.Module):
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.core.triton_kernels.elementwise import dynconv1d_fwd_triton
+
                 w = self.conv1d.weight.squeeze(1)
                 b = self.conv1d.bias
                 x_conv = dynconv1d_fwd_triton(x, w, b)
@@ -206,15 +201,9 @@ def transfer_pretrained_qkv_weights(
 
     W_q, b_q, W_k, b_k, W_v, b_v, W_o, b_o = spec.extracted_qkv
 
-    target_q = getattr(
-        new_module, "q_proj", getattr(new_module, "query", getattr(new_module, "q", None))
-    )
-    target_k = getattr(
-        new_module, "k_proj", getattr(new_module, "key", getattr(new_module, "k", None))
-    )
-    target_v = getattr(
-        new_module, "v_proj", getattr(new_module, "value", getattr(new_module, "v", None))
-    )
+    target_q = getattr(new_module, "q_proj", getattr(new_module, "query", getattr(new_module, "q", None)))
+    target_k = getattr(new_module, "k_proj", getattr(new_module, "key", getattr(new_module, "k", None)))
+    target_v = getattr(new_module, "v_proj", getattr(new_module, "value", getattr(new_module, "v", None)))
     target_o = getattr(
         new_module,
         "out_proj",
@@ -399,9 +388,7 @@ def transfer_pretrained_qkv_weights(
     if target_fused is not None and (target_q is None or target_k is None or target_v is None):
         W_fused = torch.cat([W_q, W_k, W_v], dim=0)
         b_fused = (
-            torch.cat([b_q, b_k, b_v], dim=0)
-            if (b_q is not None and b_k is not None and b_v is not None)
-            else None
+            torch.cat([b_q, b_k, b_v], dim=0) if (b_q is not None and b_k is not None and b_v is not None) else None
         )
         _copy_param("qkv", target_fused, W_fused, b_fused)
     else:
@@ -476,7 +463,21 @@ class UniversalAttentionBridge(nn.Module):
         if hasattr(orig_module, "peft_config"):
             self.peft_config = orig_module.peft_config
 
-        for proj_attr in ("q_proj", "k_proj", "v_proj", "o_proj", "q", "k", "v", "o", "query", "key", "value", "c_attn", "c_proj"):
+        for proj_attr in (
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "q",
+            "k",
+            "v",
+            "o",
+            "query",
+            "key",
+            "value",
+            "c_attn",
+            "c_proj",
+        ):
             proj = getattr(orig_module, proj_attr, None)
             if proj is not None and hasattr(proj, "lora_A") and hasattr(proj, "lora_B"):
                 self.lora_adapters[f"{proj_attr}_lora_A"] = proj.lora_A
@@ -505,11 +506,7 @@ class UniversalAttentionBridge(nn.Module):
             else:
                 transfer_pretrained_qkv_weights(spec, self.new_attention)
 
-        self.sidecar = (
-            SidecarGateBranch(d_model=self.embed_dim, num_heads=self.num_heads)
-            if attach_sidecar
-            else None
-        )
+        self.sidecar = SidecarGateBranch(d_model=self.embed_dim, num_heads=self.num_heads) if attach_sidecar else None
 
         self.teacher_branch: Optional[nn.Module] = None
         self.alpha: float = 1.0
@@ -573,13 +570,9 @@ class UniversalAttentionBridge(nn.Module):
             if hasattr(self.orig_module, "kv_a_proj_with_mqa"):
                 hs = args[0] if len(args) > 0 else kwargs.get("hidden_states")
                 if hs is not None:
-                    c_kv, k_rope = self.new_attention.separate_mla_projections(
-                        self.orig_module.kv_a_proj_with_mqa(hs)
-                    )
+                    c_kv, k_rope = self.new_attention.separate_mla_projections(self.orig_module.kv_a_proj_with_mqa(hs))
                     if hasattr(self.orig_module, "q_a_proj"):
-                        q_content, q_rope = self.new_attention.separate_query_projections(
-                            self.orig_module.q_a_proj(hs)
-                        )
+                        q_content, q_rope = self.new_attention.separate_query_projections(self.orig_module.q_a_proj(hs))
                     else:
                         q_content = c_kv
                         q_rope = k_rope
@@ -597,9 +590,7 @@ class UniversalAttentionBridge(nn.Module):
                 hs = args[0] if len(args) > 0 else kwargs.get("hidden_states")
                 if hs is not None:
                     is_decode = kwargs.get("is_decode", False) or (past_state is not None and hs.shape[1] == 1)
-                    out, new_state = self.new_attention(
-                        hs, past_state=past_state, is_decode=is_decode
-                    )
+                    out, new_state = self.new_attention(hs, past_state=past_state, is_decode=is_decode)
                     if hf_cache is not None and hasattr(hf_cache, "update_recurrent_state"):
                         hf_cache.update_recurrent_state(layer_i, new_state, num_tokens=hs.shape[1])
                         return out, None, hf_cache

@@ -8,4 +8,5 @@
 """
 Compatibility alias for neuralops.compression.quantization.astro_quantizer.
 """
+
 from neuralops.compression.quantization.astro_quantizer import *  # noqa: F401, F403

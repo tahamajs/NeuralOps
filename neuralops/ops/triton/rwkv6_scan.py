@@ -18,12 +18,7 @@ import logging
 
 import torch
 
-from neuralops.ops.triton._types import (
-    HAS_TRITON,
-    check_triton_suitability,
-    tl,
-    triton,
-)
+from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability, tl, triton
 
 logger = logging.getLogger(__name__)
 
@@ -34,16 +29,41 @@ __all__ = [
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _fused_rwkv6_scan_fwd_kernel(
-        R_ptr, K_ptr, V_ptr, W_ptr, U_ptr, Out_ptr,
-        B, H, T, D,
-        stride_rb, stride_rh, stride_rt, stride_rd,
-        stride_kb, stride_kh, stride_kt, stride_kd,
-        stride_vb, stride_vh, stride_vt, stride_vd,
-        stride_wb, stride_wh, stride_wt, stride_wd,
-        stride_uh, stride_ud,
-        stride_ob, stride_oh, stride_ot, stride_od,
+        R_ptr,
+        K_ptr,
+        V_ptr,
+        W_ptr,
+        U_ptr,
+        Out_ptr,
+        B,
+        H,
+        T,
+        D,
+        stride_rb,
+        stride_rh,
+        stride_rt,
+        stride_rd,
+        stride_kb,
+        stride_kh,
+        stride_kt,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vt,
+        stride_vd,
+        stride_wb,
+        stride_wh,
+        stride_wt,
+        stride_wd,
+        stride_uh,
+        stride_ud,
+        stride_ob,
+        stride_oh,
+        stride_ot,
+        stride_od,
         BLOCK_D: tl.constexpr,
     ):
         """Fused RWKV-6 recurrent forward scan in SRAM."""
@@ -81,7 +101,9 @@ if HAS_TRITON and tl is not None:
 
             # State recurrence
             s = s * decay + k * v
+
 else:
+
     def _fused_rwkv6_scan_fwd_kernel(*args, **kwargs):
         pass
 

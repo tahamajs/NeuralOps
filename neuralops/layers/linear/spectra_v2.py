@@ -12,12 +12,6 @@ High-efficiency multi-head attention wrapper utilizing PyTorch scaled dot-produc
 """
 
 from __future__ import annotations
-from neuralops.core.common import _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -29,10 +23,11 @@ import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import apply_attention_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -168,10 +163,7 @@ class SpectraV2Attention(BaseAttention):
 
         cls_name = src.__class__.__name__
         has_out_proj = (
-            hasattr(src, "out_proj")
-            or hasattr(src, "dense")
-            or hasattr(src, "c_proj")
-            or hasattr(src, "out_lin")
+            hasattr(src, "out_proj") or hasattr(src, "dense") or hasattr(src, "c_proj") or hasattr(src, "out_lin")
         )
         is_nested = False
         if (
@@ -245,9 +237,7 @@ class SpectraV2Attention(BaseAttention):
             extracted["q"] = _unpack_weight_bias(src.query)
             extracted["k"] = _unpack_weight_bias(getattr(src, "key", None))
             extracted["v"] = _unpack_weight_bias(getattr(src, "value", None))
-            extracted["o"] = _unpack_weight_bias(
-                getattr(src, "dense", getattr(src, "out_proj", None))
-            )
+            extracted["o"] = _unpack_weight_bias(getattr(src, "dense", getattr(src, "out_proj", None)))
 
         if hasattr(src, "self") and hasattr(src.self, "query") and extracted["q"][0] is None:
             s = src.self
@@ -265,11 +255,7 @@ class SpectraV2Attention(BaseAttention):
                 getattr(src, "o_proj", getattr(src, "dense", getattr(src, "out_proj", None)))
             )
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -299,9 +285,7 @@ class SpectraV2Attention(BaseAttention):
                             nn.init.zeros_(target_mod.bias)
                         continue
                     else:
-                        logger.warning(
-                            "Attention module copy_weights warning. Proceeding with initialized weights."
-                        )
+                        logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
                         continue
 
                 src_norm = torch.linalg.norm(w.float()).item()
@@ -310,16 +294,10 @@ class SpectraV2Attention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif (
-                    w.shape[0] < target_mod.weight.shape[0]
-                    and target_mod.weight.shape[0] % w.shape[0] == 0
-                ):
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
-                elif (
-                    w.shape[0] > target_mod.weight.shape[0]
-                    and w.shape[0] % target_mod.weight.shape[0] == 0
-                ):
+                elif w.shape[0] > target_mod.weight.shape[0] and w.shape[0] % target_mod.weight.shape[0] == 0:
                     repeats = w.shape[0] // target_mod.weight.shape[0]
                     w_grouped = w.view(target_mod.weight.shape[0], repeats, w.shape[1]).mean(dim=1)
                     target_mod.weight.copy_(w_grouped)
@@ -332,16 +310,10 @@ class SpectraV2Attention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (
-                        b.shape[0] < target_mod.bias.shape[0]
-                        and target_mod.bias.shape[0] % b.shape[0] == 0
-                    ):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
-                    elif (
-                        b.shape[0] > target_mod.bias.shape[0]
-                        and b.shape[0] % target_mod.bias.shape[0] == 0
-                    ):
+                    elif b.shape[0] > target_mod.bias.shape[0] and b.shape[0] % target_mod.bias.shape[0] == 0:
                         repeats = b.shape[0] // target_mod.bias.shape[0]
                         b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(dim=1)
                         target_mod.bias.copy_(b_grouped)
@@ -425,9 +397,7 @@ class SpectraV2Attention(BaseAttention):
                 attn_mask_for_sdpa = None
                 if eff_mask is not None and not _is_causal:
                     if eff_mask.dim() == 2:
-                        attn_mask_for_sdpa = eff_mask.bool().view(
-                            eff_mask.shape[0], 1, 1, eff_mask.shape[1]
-                        )
+                        attn_mask_for_sdpa = eff_mask.bool().view(eff_mask.shape[0], 1, 1, eff_mask.shape[1])
                     elif eff_mask.dim() == 4:
                         attn_mask_for_sdpa = eff_mask.bool()
 
@@ -446,9 +416,7 @@ class SpectraV2Attention(BaseAttention):
                     hm = head_mask.view(-1, self.num_heads)
                     if hm.shape[0] == 1:
                         hm = hm.expand(_sdpa_out.shape[0], -1)
-                    _sdpa_out = _sdpa_out * hm.view(_sdpa_out.shape[0], self.num_heads, 1, 1).to(
-                        _sdpa_out.dtype
-                    )
+                    _sdpa_out = _sdpa_out * hm.view(_sdpa_out.shape[0], self.num_heads, 1, 1).to(_sdpa_out.dtype)
 
                 _sdpa_out = _sdpa_out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
                 _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
@@ -465,6 +433,7 @@ class SpectraV2Attention(BaseAttention):
                 if context.is_cuda and hasattr(self.out_proj, "weight"):
                     try:
                         from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                         output = self.out_proj(context)
                     except Exception:
                         output = self.out_proj(context)
@@ -495,22 +464,15 @@ class SpectraV2Attention(BaseAttention):
 
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(
+                attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(attn_weights.dtype)
+            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
+                attn_weights = attn_weights * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(
                     attn_weights.dtype
                 )
-            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                attn_weights = attn_weights * head_mask.view(
-                    head_mask.size(0), self.num_heads, 1, 1
-                ).to(attn_weights.dtype)
             elif head_mask.dim() == 4:
                 attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
-        context = (
-            torch.matmul(attn_weights, V)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-            .view(B, N, self.all_head_size)
-        )
+        context = torch.matmul(attn_weights, V).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             if context.shape[-1] != hidden_states.shape[-1]:
@@ -564,11 +526,7 @@ def inject_spectra_v2(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif (
-            hasattr(target, "bert")
-            and hasattr(target.bert, "encoder")
-            and hasattr(target.bert.encoder, "layer")
-        ):
+        elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
             layer_list = target.bert.encoder.layer
         elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
             layer_list = target.layers
@@ -595,9 +553,7 @@ def inject_spectra_v2(
 
     src_attn = old_attn
     if src_attn is None and target is not None:
-        src_attn = getattr(
-            target, "attention", getattr(target, "self", getattr(target, "attn", None))
-        )
+        src_attn = getattr(target, "attention", getattr(target, "self", getattr(target, "attn", None)))
 
     hidden_size = (
         kwargs.get("hidden_size")

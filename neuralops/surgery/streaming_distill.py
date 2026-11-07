@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -299,8 +300,8 @@ class StreamingCKALoss(nn.Module):
             return torch.tensor(0.0, device=self.G_xy.device, dtype=torch.float32, requires_grad=True)
 
         norm_xy = torch.sum(self.G_xy * self.G_xy)
-        norm_xx = torch.sqrt(torch.clamp(torch.sum(self.G_xx * self.G_xx), min=self.eps ** 2))
-        norm_yy = torch.sqrt(torch.clamp(torch.sum(self.G_yy * self.G_yy), min=self.eps ** 2))
+        norm_xx = torch.sqrt(torch.clamp(torch.sum(self.G_xx * self.G_xx), min=self.eps**2))
+        norm_yy = torch.sqrt(torch.clamp(torch.sum(self.G_yy * self.G_yy), min=self.eps**2))
 
         # Clamp denominator with eps = 1e-8 (Phase 025)
         denom = torch.clamp(norm_xx * norm_yy, min=self.eps)
@@ -389,9 +390,7 @@ class StreamingCKALoss(nn.Module):
         x_flat = teacher_act.reshape(-1, d_teacher).detach().to(torch.float64)
 
         if y_flat.size(0) != x_flat.size(0):
-            raise ValueError(
-                f"Student tokens ({y_flat.size(0)}) and teacher tokens ({x_flat.size(0)}) must match."
-            )
+            raise ValueError(f"Student tokens ({y_flat.size(0)}) and teacher tokens ({x_flat.size(0)}) must match.")
 
         # Centered features
         mu_y = y_flat.mean(dim=0, keepdim=True)
@@ -414,11 +413,11 @@ class StreamingCKALoss(nn.Module):
 
         # Frobenius norms: ||G_yy||_F = sqrt(tr(G_yy^2)), ||G_xx||_F = sqrt(tr(G_xx^2))
         norm_xy_sq = torch.sum(G_xy * G_xy)
-        norm_xx = torch.sqrt(torch.clamp(torch.sum(G_xx * G_xx), min=epsilon ** 2))
-        norm_yy = torch.sqrt(torch.clamp(torch.sum(G_yy * G_yy), min=epsilon ** 2))
+        norm_xx = torch.sqrt(torch.clamp(torch.sum(G_xx * G_xx), min=epsilon**2))
+        norm_yy = torch.sqrt(torch.clamp(torch.sum(G_yy * G_yy), min=epsilon**2))
 
         denom = torch.clamp(norm_xx * norm_yy, min=epsilon)
-        denom_cube = torch.clamp(norm_xx * (norm_yy ** 3), min=epsilon)
+        denom_cube = torch.clamp(norm_xx * (norm_yy**3), min=epsilon)
 
         # X_c @ G_xy^T: [N, D_teacher] @ [D_teacher, D_student] -> [N, D_student]
         # Y_c @ G_yy:   [N, D_student] @ [D_student, D_student] -> [N, D_student]
@@ -426,7 +425,7 @@ class StreamingCKALoss(nn.Module):
         Y_G_yy = torch.matmul(Y_c, G_yy)
 
         if prompt_formula:
-            norm_xy = torch.sqrt(torch.clamp(norm_xy_sq, min=epsilon ** 2))
+            norm_xy = torch.sqrt(torch.clamp(norm_xy_sq, min=epsilon**2))
             term1 = X_G_xy_T / (norm_xy * denom)
             term2 = (norm_xy * Y_G_yy) / denom_cube
         else:
@@ -592,10 +591,9 @@ class MultiLayerCKACoordinator(nn.Module):
             else {s_idx: 1.0 for s_idx in self.layer_mapping}
         )
 
-        self.cka_losses = nn.ModuleDict({
-            str(s_idx): StreamingCKALoss(hidden_dim=hidden_dim, eps=eps, exact=exact)
-            for s_idx in self.layer_mapping
-        })
+        self.cka_losses = nn.ModuleDict(
+            {str(s_idx): StreamingCKALoss(hidden_dim=hidden_dim, eps=eps, exact=exact) for s_idx in self.layer_mapping}
+        )
 
     def reset(self) -> None:
         """Resets all streaming CKA loss accumulators."""
@@ -617,10 +615,7 @@ class MultiLayerCKACoordinator(nn.Module):
 
     def compute_per_layer(self) -> Dict[int, torch.Tensor]:
         """Computes CKA loss for each individual layer pair."""
-        return {
-            s_idx: self.cka_losses[str(s_idx)].compute()
-            for s_idx in self.layer_mapping
-        }
+        return {s_idx: self.cka_losses[str(s_idx)].compute() for s_idx in self.layer_mapping}
 
     def compute(self) -> torch.Tensor:
         """Computes weighted aggregate CKA loss across all layer alignment pairs."""
@@ -629,10 +624,7 @@ class MultiLayerCKACoordinator(nn.Module):
 
         per_layer = self.compute_per_layer()
         total_weight = sum(self.layer_weights[s_idx] for s_idx in self.layer_mapping)
-        weighted_loss = sum(
-            self.layer_weights[s_idx] * per_layer[s_idx]
-            for s_idx in self.layer_mapping
-        )
+        weighted_loss = sum(self.layer_weights[s_idx] * per_layer[s_idx] for s_idx in self.layer_mapping)
         return weighted_loss / max(1e-8, total_weight)
 
     def forward(
@@ -710,6 +702,7 @@ class CheckpointedTeacherBridge(nn.Module):
         Fully compatible with PyTorch 2.x torch.compile and autograd engine.
         """
         with torch.no_grad():
+
             def custom_forward(*inputs: torch.Tensor) -> torch.Tensor:
                 mask = inputs[1] if len(inputs) > 1 else None
                 if mask is not None:
@@ -746,7 +739,11 @@ class CheckpointedTeacherBridge(nn.Module):
         Executes teacher forward pass under non-reentrant activation checkpointing
         and ensures intermediate layer activations are immediately detached.
         """
-        if len(args) > 0 and isinstance(args[0], torch.Tensor) and not isinstance(self.teacher, (nn.Linear, nn.Embedding)):
+        if (
+            len(args) > 0
+            and isinstance(args[0], torch.Tensor)
+            and not isinstance(self.teacher, (nn.Linear, nn.Embedding))
+        ):
             return self.forward_layer(self.teacher, *args, **kwargs)
         with torch.no_grad():
             res = self.teacher(*args, **kwargs)
@@ -797,9 +794,7 @@ class ProgressiveActivationManager:
         """Retrieves or creates layer-specific streaming CKA accumulator."""
         if layer_idx not in self.layer_ckas:
             if self.hidden_dim is None:
-                raise ValueError(
-                    f"hidden_dim must be specified to initialize StreamingCKALoss for layer {layer_idx}"
-                )
+                raise ValueError(f"hidden_dim must be specified to initialize StreamingCKALoss for layer {layer_idx}")
             self.layer_ckas[layer_idx] = StreamingCKALoss(self.hidden_dim, eps=self.eps, exact=True)
         return self.layer_ckas[layer_idx]
 
@@ -903,10 +898,12 @@ class ProgressiveActivationManager:
         """
         self.remove_hooks()
         for idx, layer in enumerate(teacher_layers):
+
             def make_t_hook(layer_i: int):
                 def hook(module: nn.Module, inp: Any, out: Any) -> None:
                     rep = self._extract_tensor(out)
                     self.record_teacher_activation(layer_i, rep)
+
                 return hook
 
             handle = layer.register_forward_hook(make_t_hook(idx))
@@ -914,10 +911,12 @@ class ProgressiveActivationManager:
 
         if student_layers is not None:
             for idx, layer in enumerate(student_layers):
+
                 def make_s_hook(layer_i: int):
                     def hook(module: nn.Module, inp: Any, out: Any) -> None:
                         rep = self._extract_tensor(out)
                         self.record_student_activation(layer_i, rep)
+
                     return hook
 
                 handle = layer.register_forward_hook(make_s_hook(idx))
@@ -1270,10 +1269,10 @@ ShadowTwinDistiller = MicroChunkedShadowTwinDistiller
 # ==============================================================================
 try:
     from neuralops.core._attention_surgery import (
+        _heal_replaced_model_impl,
         calibrate_attention_subspace,
         calibrate_surgically_replaced_model,
         heal_replaced_model,
-        _heal_replaced_model_impl,
     )
 except ImportError:
     calibrate_attention_subspace = None  # type: ignore[assignment]

@@ -123,20 +123,20 @@ def _gated_deltanet_chunk_kernel(
     BLOCK_D: tl.constexpr
 ):
     pid_b = tl.program_id(0)
-    
+
     s_state = tl.zeros((D, D), dtype=tl.float32)
     for t in range(L):
         q = tl.load(Q_ptr + pid_b * stride_qb + t * stride_ql + tl.arange(0, D))
         k = tl.load(K_ptr + pid_b * stride_qb + t * stride_ql + tl.arange(0, D))
         v = tl.load(V_ptr + pid_b * stride_qb + t * stride_ql + tl.arange(0, D))
         f_t = tl.load(F_ptr + pid_b * stride_qb + t * stride_ql + tl.arange(0, D))
-        
+
         # Apply Forget Gate
         s_state = f_t[:, None] * s_state
         # Delta Rule update
         s_state += v[:, None] * k[None, :]
         o_t = tl.sum(s_state * q[:, None], axis=0)
-        
+
         tl.store(Out_ptr + pid_b * stride_qb + t * stride_ql + tl.arange(0, D), o_t)
 ```
 
@@ -168,4 +168,3 @@ The empirical evaluation of `gated_delta_net` across standard sequence lengths a
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

@@ -93,21 +93,22 @@ def hybrid_local_attn(
     is_causal: bool = False,
 ) -> torch.Tensor:
     """3-Tier Dispatched Hybrid Local Attention."""
+
     def cuda_fn(q, k, v, radius=32, is_causal=False):
         mod = _get_module()
         if mod is None:
             return None
-        return mod.hybrid_local_attn_fwd(
-            q.contiguous(), k.contiguous(), v.contiguous(), int(radius), bool(is_causal)
-        )
+        return mod.hybrid_local_attn_fwd(q.contiguous(), k.contiguous(), v.contiguous(), int(radius), bool(is_causal))
 
     def triton_fn(q, k, v, radius=32, is_causal=False):
         try:
             from neuralops.ops.triton._types import check_triton_suitability
+
             suitable, _ = check_triton_suitability(q, "hybrid_local_attn")
             if not suitable:
                 return None
             from neuralops.ops.triton.standalone.hybrid_local_kernel_triton import hybrid_local_attn_triton
+
             return hybrid_local_attn_triton(q, k, v, radius=radius, is_causal=is_causal)
         except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
             logger.warning("Failed in Triton hybrid_local_attn: %s", exc)
@@ -137,21 +138,22 @@ def hybrid_two_branch_blend(
     alpha: torch.Tensor,
 ) -> torch.Tensor:
     """3-Tier Dispatched Two Branch Gated Blend."""
+
     def cuda_fn(b0, b1, alpha):
         mod = _get_module()
         if mod is None:
             return None
-        return mod.hybrid_two_branch_blend_fwd(
-            b0.contiguous(), b1.contiguous(), alpha.contiguous()
-        )
+        return mod.hybrid_two_branch_blend_fwd(b0.contiguous(), b1.contiguous(), alpha.contiguous())
 
     def triton_fn(b0, b1, alpha):
         try:
             from neuralops.ops.triton._types import check_triton_suitability
+
             suitable, _ = check_triton_suitability(b0, "hybrid_two_branch_blend")
             if not suitable:
                 return None
             from neuralops.ops.triton.standalone.hybrid_local_kernel_triton import hybrid_two_branch_blend_triton
+
             return hybrid_two_branch_blend_triton(b0, b1, alpha)
         except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
             logger.warning("Failed in Triton hybrid_two_branch_blend: %s", exc)
@@ -191,17 +193,17 @@ def hybrid_three_branch_blend(
     alpha: torch.Tensor,
 ) -> torch.Tensor:
     """3-Tier Dispatched Three Branch Gated Blend."""
+
     def cuda_fn(b0, b1, b2, alpha):
         mod = _get_module()
         if mod is None:
             return None
-        return mod.hybrid_three_branch_blend_fwd(
-            b0.contiguous(), b1.contiguous(), b2.contiguous(), alpha.contiguous()
-        )
+        return mod.hybrid_three_branch_blend_fwd(b0.contiguous(), b1.contiguous(), b2.contiguous(), alpha.contiguous())
 
     def triton_fn(b0, b1, b2, alpha):
         try:
             from neuralops.ops.triton.standalone.hybrid_local_kernel_triton import hybrid_three_branch_blend_triton
+
             return hybrid_three_branch_blend_triton(b0, b1, b2, alpha)
         except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
             logger.warning("Failed in Triton hybrid_three_branch_blend: %s", exc, exc_info=True)
@@ -232,8 +234,11 @@ def hybrid_heterogeneous_branch_ref(
     out = torch.empty_like(q)
     if num_dense_heads > 0:
         out[:, :num_dense_heads] = hybrid_local_attn_ref(
-            q[:, :num_dense_heads], k[:, :num_dense_heads], v[:, :num_dense_heads],
-            radius=radius, is_causal=is_causal,
+            q[:, :num_dense_heads],
+            k[:, :num_dense_heads],
+            v[:, :num_dense_heads],
+            radius=radius,
+            is_causal=is_causal,
         )
     if num_dense_heads < H:
         scale = 1.0 / math.sqrt(D)
@@ -257,18 +262,19 @@ def hybrid_heterogeneous_branch(
     is_causal: bool = True,
 ) -> torch.Tensor:
     """Dispatches heterogeneous branch kernel in a single grid launch."""
+
     def cuda_fn(q, k, v, num_dense_heads=1, radius=32, is_causal=True):
         mod = _get_module()
         if mod is None:
             return None
         return mod.hybrid_heterogeneous_branch_fwd(
-            q.contiguous(), k.contiguous(), v.contiguous(),
-            int(num_dense_heads), int(radius), bool(is_causal)
+            q.contiguous(), k.contiguous(), v.contiguous(), int(num_dense_heads), int(radius), bool(is_causal)
         )
 
     def triton_fn(q, k, v, num_dense_heads=1, radius=32, is_causal=True):
         try:
             from neuralops.ops.triton.standalone.hybrid_local_kernel_triton import hybrid_heterogeneous_branch_triton
+
             return hybrid_heterogeneous_branch_triton(
                 q, k, v, num_dense_heads=int(num_dense_heads), radius=int(radius), is_causal=bool(is_causal)
             )
@@ -288,4 +294,3 @@ def hybrid_heterogeneous_branch(
         is_causal=is_causal,
         kernel_name="hybrid_heterogeneous_branch",
     )
-

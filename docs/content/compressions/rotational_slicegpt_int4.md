@@ -25,7 +25,7 @@ This invariance allows us to safely manipulate the transformed matrices \(\tilde
 The explicit goal of multiplying by \(Q\) is rotational outlier suppression. In standard Transformers, variance is highly skewed towards a few select channels. Multiplying by an orthogonal matrix spreads this activation energy uniformly across the transformed feature space. Consequently, the heavy-tailed distribution of the activations is reshaped into a more concentrated, Gaussian-like distribution, making it vastly more suitable for subsequent low-bit quantization grids.
 
 ## 5. Slicing Projection & Dimensionality Reduction
-Once the feature space is smoothed via rotation, the algorithm exploits the remaining variance discrepancies by isolating the top-\(r\) orthogonal channels. We define a slicing projection operator \(P_r \in \mathbb{R}^{D_{in} \times r}\) that acts as a binary selection mask. 
+Once the feature space is smoothed via rotation, the algorithm exploits the remaining variance discrepancies by isolating the top-\(r\) orthogonal channels. We define a slicing projection operator \(P_r \in \mathbb{R}^{D_{in} \times r}\) that acts as a binary selection mask.
 
 The sliced weight matrix is formally defined as:
 \[
@@ -78,4 +78,3 @@ The empirical evaluation of `rotational_slicegpt_int4` across standard sequence 
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

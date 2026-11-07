@@ -70,7 +70,7 @@ Eager loading of all 203 operator classes at import time would introduce substan
   ```python
   @ATTENTION_REGISTRY.register("linear_attention", supports_causal=True, supports_gqa=False)
   class LinearAttention(BaseAttention): ...
-  
+
   @COMPRESSOR_REGISTRY.register("hnc_svd", hardware_accelerated=True)
   class HNCSVDCompressor(BaseCompressor): ...
   ```

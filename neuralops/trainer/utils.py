@@ -29,11 +29,11 @@ except ImportError:
     psutil = None
 import torch
 import torch.nn as nn
-from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from neuralops.core.memory import cleanup_gpu_memory
+from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
 from neuralops.utils.helpers import count_parameters  # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -78,10 +78,7 @@ def clip_grad_norm_factorized(
             if p.grad is None or not p.requires_grad:
                 continue
             name_lower = name.lower()
-            if any(
-                key in name_lower
-                for key in ["head", "classifier", "decoder", "embed", "bias", "norm"]
-            ):
+            if any(key in name_lower for key in ["head", "classifier", "decoder", "embed", "bias", "norm"]):
                 dense_params.append(p)
             elif any(
                 key in name_lower
@@ -138,23 +135,15 @@ def clip_grad_norm_factorized(
 
     if u_params:
         norm_u = torch.nn.utils.clip_grad_norm_(u_params, max_norm=u_limit, norm_type=norm_type)
-        group_norms.append(
-            norm_u if isinstance(norm_u, torch.Tensor) else torch.tensor(float(norm_u))
-        )
+        group_norms.append(norm_u if isinstance(norm_u, torch.Tensor) else torch.tensor(float(norm_u)))
 
     if v_params:
         norm_v = torch.nn.utils.clip_grad_norm_(v_params, max_norm=v_limit, norm_type=norm_type)
-        group_norms.append(
-            norm_v if isinstance(norm_v, torch.Tensor) else torch.tensor(float(norm_v))
-        )
+        group_norms.append(norm_v if isinstance(norm_v, torch.Tensor) else torch.tensor(float(norm_v)))
 
     if dense_params:
-        norm_dense = torch.nn.utils.clip_grad_norm_(
-            dense_params, max_norm=dense_limit, norm_type=norm_type
-        )
-        group_norms.append(
-            norm_dense if isinstance(norm_dense, torch.Tensor) else torch.tensor(float(norm_dense))
-        )
+        norm_dense = torch.nn.utils.clip_grad_norm_(dense_params, max_norm=dense_limit, norm_type=norm_type)
+        group_norms.append(norm_dense if isinstance(norm_dense, torch.Tensor) else torch.tensor(float(norm_dense)))
 
     if not group_norms:
         return torch.tensor(0.0)
@@ -190,9 +179,7 @@ def train_model(
         if (device.type == "cuda" and torch.cuda.is_bf16_supported())
         else (torch.float16 if device.type == "cuda" else torch.float32)
     )
-    scaler = torch.cuda.amp.GradScaler(
-        enabled=(use_amp and device.type == "cuda" and amp_dtype == torch.float16)
-    )
+    scaler = torch.cuda.amp.GradScaler(enabled=(use_amp and device.type == "cuda" and amp_dtype == torch.float16))
 
     optimizer_kwargs = {
         "lr": getattr(config, "learning_rate", 2e-5),
@@ -214,9 +201,7 @@ def train_model(
         pbar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}", leave=True)
 
         for step, batch in enumerate(pbar):
-            is_sync_step = ((step + 1) % gradient_accumulation_steps == 0) or (
-                step + 1 == len(train_loader)
-            )
+            is_sync_step = ((step + 1) % gradient_accumulation_steps == 0) or (step + 1 == len(train_loader))
 
             sync_context = (
                 contextlib.nullcontext()
@@ -286,9 +271,7 @@ def train_model(
                     optimizer.step()
                 optimizer.zero_grad(set_to_none=True)
 
-            if (step + 1) % max(1, getattr(config, "logging_steps", 10)) == 0 or step == len(
-                train_loader
-            ) - 1:
+            if (step + 1) % max(1, getattr(config, "logging_steps", 10)) == 0 or step == len(train_loader) - 1:
                 pbar.set_postfix({"loss": f"{curr_loss:.4f}"})
 
             del outputs, logits, loss
@@ -389,9 +372,7 @@ def benchmark_model(
     total_time = time.time() - start_time
     memory_after = psutil.Process().memory_info().rss / 1024 / 1024 if psutil is not None else 0.0
     num_samples = (
-        len(data_loader.dataset)
-        if hasattr(data_loader, "dataset")
-        else len(batch_times) * data_loader.batch_size
+        len(data_loader.dataset) if hasattr(data_loader, "dataset") else len(batch_times) * data_loader.batch_size
     )
 
     return {
@@ -405,9 +386,7 @@ def benchmark_model(
     }
 
 
-def compute_metrics(
-    eval_pred: tuple[np.ndarray, np.ndarray], task: str = "classification"
-) -> dict[str, float]:
+def compute_metrics(eval_pred: tuple[np.ndarray, np.ndarray], task: str = "classification") -> dict[str, float]:
     """Compute and return metrics."""
     logits, labels = eval_pred
     preds = np.argmax(logits, axis=-1)

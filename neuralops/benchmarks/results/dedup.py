@@ -13,9 +13,9 @@ Implements dedup functionality for NeuralOps.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -74,7 +74,10 @@ class Deduplicator:
                 dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
                 age_days = (datetime.now(timezone.utc) - dt).total_seconds() / 86400.0
                 if age_days > self.rerun_after_days:
-                    return False, f"existing run is {age_days:.1f} days old (> {self.rerun_after_days}d), allowing rerun"
+                    return (
+                        False,
+                        f"existing run is {age_days:.1f} days old (> {self.rerun_after_days}d), allowing rerun",
+                    )
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass

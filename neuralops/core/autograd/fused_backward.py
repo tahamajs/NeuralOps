@@ -12,7 +12,9 @@ Fused PyTorch autograd backward pass reference implementation for linear and ker
 """
 
 from __future__ import annotations
+
 import math
+
 import torch
 
 __all__ = ["fused_attention_backward"]

@@ -12,16 +12,13 @@ Low-precision FP8 FlashAttention-3 implementation maximizing tensor core through
 """
 
 from __future__ import annotations
-from neuralops.core.common import repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
 from typing import Any
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +42,7 @@ def _flush_denormals(t: torch.Tensor) -> torch.Tensor:
     if t.is_floating_point():
         return torch.where(t.abs() < _FTZ_THRESHOLD, torch.zeros_like(t), t)
     return t
+
 
 try:
     from flash_attn_interface import flash_attn_func
@@ -92,6 +90,7 @@ class FlashAttention3FP8(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         if config is None:
+
             class DummyConfig:
                 pass
 
@@ -136,9 +135,7 @@ class FlashAttention3FP8(BaseAttention):
                 )
             else:
                 config.hidden_size = kwargs.get("hidden_size", kwargs.get("d_model", d_model))
-                config.num_attention_heads = kwargs.get(
-                    "num_heads", kwargs.get("num_attention_heads", n_heads)
-                )
+                config.num_attention_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", n_heads))
 
         super().__init__(config, rank)
         self.num_heads: int = (
@@ -208,11 +205,7 @@ class FlashAttention3FP8(BaseAttention):
                     hopper_capable = cc[0] >= 9
                 except Exception:
                     hopper_capable = False
-            if (
-                not hopper_capable
-                or not FLASH_ATTN_AVAILABLE
-                or not hasattr(torch, "float8_e4m3fn")
-            ):
+            if not hopper_capable or not FLASH_ATTN_AVAILABLE or not hasattr(torch, "float8_e4m3fn"):
                 logger.info(
                     "FlashAttention3FP8: Hopper architecture (SM 9.0+), FlashAttention, or torch.float8_e4m3fn "
                     "not available; disabling FP8 and falling back to native SDPA."
@@ -222,11 +215,7 @@ class FlashAttention3FP8(BaseAttention):
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
+            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
         )
         self.layer_idx: int = int(resolved_layer_id)
 
@@ -267,8 +256,7 @@ class FlashAttention3FP8(BaseAttention):
             else False
         )
         if hasattr(config, "architectures") and any(
-            "GPT" in str(a) or "CausalLM" in str(a)
-            for a in (getattr(config, "architectures", []) or [])
+            "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -292,11 +280,7 @@ class FlashAttention3FP8(BaseAttention):
                 or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
             ):
                 is_nested = True
-            elif (
-                hasattr(source_attn, "out_lin")
-                or hasattr(source_attn, "c_proj")
-                or hasattr(source_attn, "o_proj")
-            ):
+            elif hasattr(source_attn, "out_lin") or hasattr(source_attn, "c_proj") or hasattr(source_attn, "o_proj"):
                 is_nested = False
         if is_nested is None:
             is_nested = False
@@ -338,11 +322,7 @@ class FlashAttention3FP8(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         self.rotary_emb = None
@@ -554,11 +534,7 @@ class FlashAttention3FP8(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -571,11 +547,7 @@ class FlashAttention3FP8(BaseAttention):
             except Exception as e:
                 logger.debug(f"UniversalAdapter fallback warning: {e}")
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"FlashAttention3FP8 copy_weights: missing mandatory projections {missing_after} "
@@ -602,18 +574,13 @@ class FlashAttention3FP8(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
 
                 if b is not None and target_mod.bias is not None:
@@ -659,18 +626,8 @@ class FlashAttention3FP8(BaseAttention):
         kv_len = kv_input.shape[1]
 
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
-        k = (
-            self.k_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         if position_embeddings is not None and not is_cross_attention:
             if isinstance(position_embeddings, tuple):
@@ -756,23 +713,24 @@ class FlashAttention3FP8(BaseAttention):
                         else:
                             hm = head_mask
                         out_tensor_h = out_tensor_h * hm
-                        out = (
-                            out_tensor_h.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-                        )
+                        out = out_tensor_h.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                     else:
                         out = out_tensor.contiguous().view(B, L, self.all_head_size)
                 except (RuntimeError, NotImplementedError, ValueError) as e:
                     from neuralops.utils.logging_config import warn_once
+
                     warn_once(
                         "fa3_fp8_execution_fallback",
-                        f"FlashAttention-3 FP8 execution failed: {e}; falling back to native SDPA."
+                        f"FlashAttention-3 FP8 execution failed: {e}; falling back to native SDPA.",
                     )
             elif not is_hopper and hasattr(torch.cuda, "get_device_capability"):
                 try:
                     from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
+
                     major, minor = torch.cuda.get_device_capability(device)
                     if not FORCE_PYTORCH_FALLBACK and (major > 8 or (major == 8 and minor >= 9)):
                         from neuralops.ops.triton.low_rank import fp8_tensorcore_matmul_triton
+
                         scale = 1.0 / math.sqrt(Dh)
                         scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
                         if causal_flag:
@@ -906,11 +864,7 @@ def inject_flash3_fp8(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -922,9 +876,7 @@ def inject_flash3_fp8(
             res = inject_flash3_fp8(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,

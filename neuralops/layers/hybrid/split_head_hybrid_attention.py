@@ -11,13 +11,6 @@ Adaptive Enhanced Global-Local Integrated Sparse Attention
 Partitions attention heads across local dense, global sparse, and linear low-rank operations.
 """
 
-from neuralops.core.common import temperature_softmax
-from neuralops.core.common import _detect_decoder
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from dataclasses import dataclass
@@ -28,8 +21,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
-from neuralops.core.attention_utils import repeat_kv
+from neuralops.core.attention_utils import apply_rotary_pos_emb, repeat_kv
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _detect_decoder, temperature_softmax
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -111,12 +105,8 @@ class FactorisedLinear(nn.Module):
                 dtype=dtype,
             )
             if self.lora_rank > 0:
-                self.lora_A = nn.Parameter(
-                    torch.empty(self.lora_rank, in_dim, device=device, dtype=dtype)
-                )
-                self.lora_B = nn.Parameter(
-                    torch.randn(out_dim, self.lora_rank, device=device, dtype=dtype) * 1e-4
-                )
+                self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_dim, device=device, dtype=dtype))
+                self.lora_B = nn.Parameter(torch.randn(out_dim, self.lora_rank, device=device, dtype=dtype) * 1e-4)
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
                 nn.init.normal_(self.lora_B, mean=0.0, std=1e-4)
             else:
@@ -130,11 +120,7 @@ class FactorisedLinear(nn.Module):
             out_dim = int(out_features_or_bias) if out_features_or_bias is not None else in_dim
             self.in_features = in_dim
             self.out_features = out_dim
-            self.rank = (
-                int(rank)
-                if rank is not None
-                else min(self.max_rank, max(self.min_rank, min(in_dim, out_dim)))
-            )
+            self.rank = int(rank) if rank is not None else min(self.max_rank, max(self.min_rank, min(in_dim, out_dim)))
 
             self.down = nn.Linear(in_dim, self.rank, bias=False)
             self.up = nn.Linear(self.rank, out_dim, bias=bias)
@@ -175,9 +161,7 @@ class FactorisedLinear(nn.Module):
                 if bias is not None:
                     bias = bias.view(self.out_features, rep).mean(dim=1)
             elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
-                padded = torch.zeros(
-                    self.out_features, self.in_features, device=W.device, dtype=W.dtype
-                )
+                padded = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
                 r = min(self.out_features, W.shape[0])
                 c = min(self.in_features, W.shape[1])
                 padded[:r, :c] = W[:r, :c]
@@ -265,9 +249,17 @@ def local_window_attention(
     B, H, N, D = Q.shape
     N_k = K.shape[2]
     radius = window // 2
-    if Q.is_cuda and past_len == 0 and N == N_k and token_valid is None and abs(softpick_temperature - 1.0) < 1e-3 and D <= 256:
+    if (
+        Q.is_cuda
+        and past_len == 0
+        and N == N_k
+        and token_valid is None
+        and abs(softpick_temperature - 1.0) < 1e-3
+        and D <= 256
+    ):
         try:
             from neuralops.ops.cuda.hybrid_local_kernel import hybrid_local_attn
+
             return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder)
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -293,12 +285,7 @@ def local_window_attention(
     scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
 
     any_valid = (
-        mask
-        & (
-            token_valid[:, None, None, :]
-            if token_valid is not None
-            else torch.ones_like(mask, dtype=torch.bool)
-        )
+        mask & (token_valid[:, None, None, :] if token_valid is not None else torch.ones_like(mask, dtype=torch.bool))
     ).any(dim=-1, keepdim=True)
     attn = temperature_softmax(scores, dim=-1, temperature=softpick_temperature)
     attn = attn * any_valid.to(attn.dtype)
@@ -408,6 +395,7 @@ class SplitHeadHybridAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -443,11 +431,7 @@ class SplitHeadHybridAttention(BaseAttention):
             "num_heads",
             kwargs.get(
                 "num_attention_heads",
-                (
-                    getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 4))
-                    if cfg is not None
-                    else 4
-                ),
+                (getattr(cfg, "num_attention_heads", getattr(cfg, "num_heads", 4)) if cfg is not None else 4),
             ),
         )
         self.head_dim: int = kwargs.get(
@@ -479,8 +463,7 @@ class SplitHeadHybridAttention(BaseAttention):
         )
         if self.num_heads % max(1, self.num_kv_heads) != 0:
             raise ValueError(
-                f"num_heads ({self.num_heads}) must be divisible by "
-                f"num_kv_heads ({self.num_kv_heads})."
+                f"num_heads ({self.num_heads}) must be divisible by " f"num_kv_heads ({self.num_kv_heads})."
             )
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.rank: int = int(kwargs.pop("rank", 192))
@@ -538,9 +521,7 @@ class SplitHeadHybridAttention(BaseAttention):
         for h in range(self.num_global_heads):
             dim = max(self.head_dim, self.cfg.rff_features)
             q_mat, _ = torch.linalg.qr(torch.randn(dim, dim))
-            rff_init[h] = q_mat[: self.head_dim, : self.cfg.rff_features] / math.sqrt(
-                self.cfg.rff_features
-            )
+            rff_init[h] = q_mat[: self.head_dim, : self.cfg.rff_features] / math.sqrt(self.cfg.rff_features)
         if self.cfg.rff_trainable:
             self.rff_proj = nn.Parameter(rff_init)
         else:
@@ -639,11 +620,7 @@ class SplitHeadHybridAttention(BaseAttention):
 
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
             w_o = old_attn.c_proj.weight.data
-            if (
-                w_o.dim() == 2
-                and w_o.shape[0] != self.hidden_size
-                and w_o.shape[1] == self.hidden_size
-            ):
+            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
                 w_o = w_o.t().contiguous()
             b_o = getattr(old_attn.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -657,11 +634,7 @@ class SplitHeadHybridAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(old_attn, "output")
-            and hasattr(old_attn.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") and extracted["o"][0] is None:
             dense = old_attn.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -697,11 +670,7 @@ class SplitHeadHybridAttention(BaseAttention):
                 "proj",
             )
         )
-        if (
-            hasattr(old_attn, "out_lin")
-            or hasattr(old_attn, "c_proj")
-            or hasattr(old_attn, "o_proj")
-        ):
+        if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
             self.is_nested_encoder = False
         elif (
             hasattr(old_attn, "self")
@@ -731,8 +700,7 @@ class SplitHeadHybridAttention(BaseAttention):
                 norm = torch.linalg.norm(w.float()).item()
                 if norm < 1e-4:
                     logger.warning(
-                        "AegisAttention: extracted weight for '%s' has near-zero "
-                        "Frobenius norm (%.2e).",
+                        "AegisAttention: extracted weight for '%s' has near-zero " "Frobenius norm (%.2e).",
                         proj_key,
                         norm,
                     )
@@ -740,8 +708,7 @@ class SplitHeadHybridAttention(BaseAttention):
             norm_o = torch.linalg.norm(extracted["o"][0].float()).item()
             if norm_o < 1e-4:
                 logger.warning(
-                    "AegisAttention: extracted weight for output projection has "
-                    "near-zero Frobenius norm (%.2e).",
+                    "AegisAttention: extracted weight for output projection has " "near-zero Frobenius norm (%.2e).",
                     norm_o,
                 )
 
@@ -877,11 +844,7 @@ class SplitHeadHybridAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
 
-        use_sdpa = (
-            self.cfg.use_sdpa_fast_path
-            and N_kv <= max(self.cfg.local_window, 32)
-            and not output_attentions
-        )
+        use_sdpa = self.cfg.use_sdpa_fast_path and N_kv <= max(self.cfg.local_window, 32) and not output_attentions
 
         if use_sdpa:
             q_sdp = maybe_half(Q)
@@ -892,9 +855,7 @@ class SplitHeadHybridAttention(BaseAttention):
             if eff_mask is not None and eff_mask.dim() == 4:
                 attn_bias_sdp = eff_mask.to(q_sdp.dtype)
             elif eff_mask is not None and eff_mask.dim() == 2:
-                attn_bias_sdp = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(
-                    q_sdp.dtype
-                )
+                attn_bias_sdp = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(q_sdp.dtype)
             is_causal_sdp = self.is_decoder and not is_cross and N > 1
 
             out = F.scaled_dot_product_attention(
@@ -961,21 +922,20 @@ class SplitHeadHybridAttention(BaseAttention):
             if self.blend_logits is not None:
                 global_mean = ctx_global.mean(dim=1, keepdim=True)
                 clamped_logits = torch.clamp(self.blend_logits, -10.0, 10.0)
-                gate_local = torch.sigmoid(
-                    clamped_logits.view(1, Hl, 1, 1) + self.gate_bias
-                )
+                gate_local = torch.sigmoid(clamped_logits.view(1, Hl, 1, 1) + self.gate_bias)
                 if ctx_local.is_cuda:
                     try:
                         from neuralops.ops.cuda.hybrid_local_kernel import hybrid_two_branch_blend
-                        ctx_local = hybrid_two_branch_blend(ctx_local, global_mean.expand_as(ctx_local).to(ctx_local.dtype), gate_local.expand_as(ctx_local).to(ctx_local.dtype))
-                    except Exception:
-                        ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
-                            ctx_local.dtype
+
+                        ctx_local = hybrid_two_branch_blend(
+                            ctx_local,
+                            global_mean.expand_as(ctx_local).to(ctx_local.dtype),
+                            gate_local.expand_as(ctx_local).to(ctx_local.dtype),
                         )
+                    except Exception:
+                        ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(ctx_local.dtype)
                 else:
-                    ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
-                        ctx_local.dtype
-                    )
+                    ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(ctx_local.dtype)
             context = torch.cat([ctx_local, ctx_global], dim=1)
 
             out = context.transpose(1, 2).contiguous().view(B, N, H * D)
@@ -1005,7 +965,11 @@ class SplitHeadHybridAttention(BaseAttention):
         if self.is_nested_encoder:
             output = out
         else:
-            proj_dtype = self.out_proj.down.weight.dtype if hasattr(self.out_proj, "down") else (self.q_proj.down.weight.dtype if hasattr(self.q_proj, "down") else out.dtype)
+            proj_dtype = (
+                self.out_proj.down.weight.dtype
+                if hasattr(self.out_proj, "down")
+                else (self.q_proj.down.weight.dtype if hasattr(self.q_proj, "down") else out.dtype)
+            )
             output = self.out_proj(out.to(proj_dtype))
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -1060,11 +1024,7 @@ def inject_split_head_hybrid(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

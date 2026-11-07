@@ -12,11 +12,6 @@ Optimized multi-head attention architecture integrating input-aware orthogonal p
 """
 
 from __future__ import annotations
-from neuralops.core.common import temperature_softmax
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -29,10 +24,11 @@ import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, temperature_softmax
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -120,9 +116,7 @@ class FactorisedLinear(nn.Module):
         with torch.no_grad():
             W = weight.float()
             if W.shape[0] != self.out_features or W.shape[1] != self.in_features:
-                padded = torch.zeros(
-                    self.out_features, self.in_features, device=W.device, dtype=W.dtype
-                )
+                padded = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
                 r = min(self.out_features, W.shape[0])
                 c = min(self.in_features, W.shape[1])
                 padded[:r, :c] = W[:r, :c]
@@ -184,6 +178,7 @@ class FactorisedLinear(nn.Module):
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+
                 base_out = fused_lowrank_gated_gemm(
                     x, self.down.weight, self.up.weight.t().contiguous(), bias=self.up.bias
                 )
@@ -196,8 +191,10 @@ class FactorisedLinear(nn.Module):
                 pass
             try:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
+
                 if not FORCE_PYTORCH_FALLBACK:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                     base_out = fused_down_up_gemm_bias_triton(
                         x, self.down.weight.t().contiguous(), self.up.weight.t().contiguous(), self.up.bias
                     )
@@ -226,6 +223,7 @@ class ORIONAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -291,9 +289,7 @@ class ORIONAttention(BaseAttention):
                             ),
                         ),
                     )
-                    hidden_size = (
-                        getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-                    )
+                    hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
                 if num_heads is None:
                     num_heads = getattr(
                         source_attn,
@@ -314,9 +310,7 @@ class ORIONAttention(BaseAttention):
         self.num_kv_heads = max(1, int(num_kv_heads))
         self.hidden_size = int(hidden_size)
         if self.hidden_size % self.num_heads != 0:
-            raise ValueError(
-                f"hidden_size {self.hidden_size} must be divisible by num_heads {self.num_heads}"
-            )
+            raise ValueError(f"hidden_size {self.hidden_size} must be divisible by num_heads {self.num_heads}")
         self.head_dim = self.hidden_size // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
@@ -345,15 +339,9 @@ class ORIONAttention(BaseAttention):
             else False
         )
         if (
-            any(
-                model_type.startswith(p)
-                for p in ("gpt", "qwen", "llama", "mistral", "falcon", "bloom", "opt")
-            )
+            any(model_type.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "falcon", "bloom", "opt"))
             or hasattr(cfg, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(cfg, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(cfg, "architectures", []) or []))
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -437,9 +425,9 @@ class ORIONAttention(BaseAttention):
             dtype=target_dtype,
         )
 
-        rff_init = torch.randn(
-            max(1, self.num_kernel_heads), self.head_dim, orion_cfg.rff_features
-        ) * (1.0 / math.sqrt(self.head_dim))
+        rff_init = torch.randn(max(1, self.num_kernel_heads), self.head_dim, orion_cfg.rff_features) * (
+            1.0 / math.sqrt(self.head_dim)
+        )
         self.register_buffer("rff_proj", rff_init, persistent=False)
         self.dropout = nn.Dropout(orion_cfg.dropout)
 
@@ -602,11 +590,7 @@ class ORIONAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -619,11 +603,7 @@ class ORIONAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning(
                 "ORIONAttention.copy_weights: missing projections %s from %s",
@@ -825,9 +805,7 @@ class ORIONAttention(BaseAttention):
             scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2).bool(), -1e4)
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        attn_w = temperature_softmax(scores, dim=-1, temperature=self.cfg.softpick_temperature).to(
-            V.dtype
-        )
+        attn_w = temperature_softmax(scores, dim=-1, temperature=self.cfg.softpick_temperature).to(V.dtype)
         attn_w = self.dropout(attn_w)
         return torch.matmul(attn_w, V)
 
@@ -861,24 +839,9 @@ class ORIONAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv = kv_input.shape[1]
 
-        Q_all = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        K_all = (
-            self.k_proj(kv_input)
-            .view(B, N_kv, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V_all = (
-            self.v_proj(kv_input)
-            .view(B, N_kv, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q_all = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K_all = self.k_proj(kv_input).view(B, N_kv, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V_all = self.v_proj(kv_input).view(B, N_kv, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
@@ -962,7 +925,7 @@ class ORIONAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Exact O(1) single-step autoregressive recurrent update for ORIONAttention."""
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -1053,11 +1016,7 @@ def inject_orion(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

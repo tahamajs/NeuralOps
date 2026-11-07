@@ -13,18 +13,18 @@ Supports self-contained, publication-ready run artifacts with detailed environme
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
 import hashlib
 import json
 import os
-from pathlib import Path
 import platform
 import subprocess
 import sys
-from enum import Enum
-from typing import Any, Dict, List, Optional
 import uuid
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 class BenchmarkStatus(str, Enum):
@@ -33,6 +33,7 @@ class BenchmarkStatus(str, Enum):
     Prevents ad-hoc strings ('PASS', 'PASSED', 'FAIL') and enforces
     strict fail-closed reporting across all modules, kernels, and suites.
     """
+
     PLANNED = "planned"
     RUNNING = "running"
     SUCCESS = "success"
@@ -82,7 +83,6 @@ class BenchmarkStatus(str, Enum):
             "running": cls.RUNNING,
         }
         return mapping.get(val_str, cls.FAILED)
-
 
 
 def _get_git_commit() -> str:
@@ -156,6 +156,7 @@ def _get_git_diff() -> str:
 @dataclass
 class RunMetadata:
     """Execution identity, duration tracking, and version control details."""
+
     run_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     run_name: str = "benchmark_run"
     timestamp_start: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -176,6 +177,7 @@ class RunMetadata:
 @dataclass
 class ModuleMetadata:
     """Metadata describing candidate attention or compression module."""
+
     name: str = "baseline"
     type: str = "baseline"
     class_name: str = "BaselineModule"
@@ -202,6 +204,7 @@ class ModuleMetadata:
 @dataclass
 class ModelMetadata:
     """Metadata describing evaluated target model architecture."""
+
     name: str = "distilbert-base-uncased"
     family: str = "distilbert"
     num_params: int = 0
@@ -221,6 +224,7 @@ class ModelMetadata:
 @dataclass
 class DatasetMetadata:
     """Metadata describing evaluation dataset task and formatting."""
+
     name: str = "sst2"
     split: str = "train+validation"
     num_train: int = 0
@@ -239,6 +243,7 @@ class DatasetMetadata:
 @dataclass
 class EnvironmentMetadata:
     """Comprehensive system, hardware, and library versions snapshot."""
+
     python_version: str = field(default_factory=lambda: platform.python_version())
     python_executable: str = field(default_factory=lambda: sys.executable)
     platform: str = field(default_factory=lambda: platform.system())
@@ -269,10 +274,12 @@ class EnvironmentMetadata:
     def capture(cls) -> EnvironmentMetadata:
         """Capture active environment state."""
         import importlib.metadata
+
         env = cls()
         env.git_commit = _get_git_commit()
         try:
             import torch
+
             env.torch_version = torch.__version__
             if torch.cuda.is_available():
                 env.gpu_model = torch.cuda.get_device_name(0)
@@ -305,7 +312,8 @@ class EnvironmentMetadata:
                 pass
 
         env.env_vars_used = {
-            k: v for k, v in os.environ.items()
+            k: v
+            for k, v in os.environ.items()
             if any(p in k for p in ("HF_", "CUDA_", "TORCH_", "NEURALOPS_")) and "KEY" not in k and "TOKEN" not in k
         }
         return env
@@ -314,6 +322,7 @@ class EnvironmentMetadata:
 @dataclass
 class HardwareUsage:
     """Hardware resource and power consumption measurements."""
+
     peak_vram_mb: float = 0.0
     avg_vram_mb: float = 0.0
     peak_ram_mb: float = 0.0
@@ -325,6 +334,7 @@ class HardwareUsage:
 @dataclass
 class BaselineComparison:
     """Comparative analysis against dense baseline."""
+
     baseline_accuracy: Optional[float] = None
     baseline_f1: Optional[float] = None
     baseline_loss: Optional[float] = None
@@ -339,6 +349,7 @@ class BaselineComparison:
 @dataclass
 class ReproducibilityInfo:
     """Deterministic configuration and exact CLI command to replicate run."""
+
     random_seed: int = 42
     cublas_workspace_config: str = ":4096:8"
     torch_deterministic: bool = False
@@ -353,6 +364,7 @@ class ReproducibilityInfo:
 @dataclass
 class ArtifactPaths:
     """Pointers to run artifacts on disk."""
+
     log_file: str = ""
     jsonl_file: str = ""
     json_file: str = ""
@@ -364,6 +376,7 @@ class ArtifactPaths:
 @dataclass
 class PushInfo:
     """Tracking metadata for external repository publishing."""
+
     pushed_to_git: bool = False
     pushed_to_hf: bool = False
     git_remote_url: str = ""
@@ -378,6 +391,7 @@ class BenchmarkResult:
 
     Complies with 15 required sections while preserving backward compatibility.
     """
+
     run_metadata: RunMetadata = field(default_factory=RunMetadata)
 
     module: Dict[str, Any] = field(default_factory=dict)
@@ -533,15 +547,30 @@ class BenchmarkResult:
 
     def compute_run_key(self) -> str:
         """Compute unique deterministic run key for deduplication."""
-        mod = self.module.get("name", "none") if isinstance(self.module, dict) else (getattr(self.module, "name", str(self.module)) if self.module else (self.transplanted_attention or "none"))
-        mdl = self.model.get("name", "none") if isinstance(self.model, dict) else (getattr(self.model, "name", str(self.model)) if self.model else (self.model_name or "none"))
-        ds = self.dataset.get("name", "none") if isinstance(self.dataset, dict) else (getattr(self.dataset, "name", str(self.dataset)) if self.dataset else (self.benchmark_suite or "none"))
+        mod = (
+            self.module.get("name", "none")
+            if isinstance(self.module, dict)
+            else (
+                getattr(self.module, "name", str(self.module))
+                if self.module
+                else (self.transplanted_attention or "none")
+            )
+        )
+        mdl = (
+            self.model.get("name", "none")
+            if isinstance(self.model, dict)
+            else (getattr(self.model, "name", str(self.model)) if self.model else (self.model_name or "none"))
+        )
+        ds = (
+            self.dataset.get("name", "none")
+            if isinstance(self.dataset, dict)
+            else (
+                getattr(self.dataset, "name", str(self.dataset)) if self.dataset else (self.benchmark_suite or "none")
+            )
+        )
         rk = self.config.get("rank", 0) if isinstance(self.config, dict) else 0
 
-        clean_cfg = {
-            k: v for k, v in self.config.items()
-            if k not in {"output_dir", "run_id", "session_id"}
-        }
+        clean_cfg = {k: v for k, v in self.config.items() if k not in {"output_dir", "run_id", "session_id"}}
         cfg_str = json.dumps(clean_cfg, sort_keys=True, default=str)
         cfg_hash = hashlib.sha256(cfg_str.encode("utf-8")).hexdigest()[:12]
         return f"{mod}__{mdl}__{ds}__rank{rk}__{cfg_hash}"
@@ -568,34 +597,66 @@ class BenchmarkResult:
         data_copy = dict(data)
         run_meta_dict = data_copy.pop("run_metadata", {})
         if isinstance(run_meta_dict, dict) and run_meta_dict:
-            run_metadata = RunMetadata(**{k: v for k, v in run_meta_dict.items() if k in RunMetadata.__dataclass_fields__})
+            run_metadata = RunMetadata(
+                **{k: v for k, v in run_meta_dict.items() if k in RunMetadata.__dataclass_fields__}
+            )
         else:
             run_metadata = RunMetadata(
                 run_id=data_copy.get("run_id", str(uuid.uuid4())),
                 run_name=data_copy.get("run_name", "benchmark_run"),
-                timestamp_start=data_copy.get("timestamp_start", data_copy.get("timestamp", datetime.now(timezone.utc).isoformat())),
-                timestamp_end=data_copy.get("timestamp_end", data_copy.get("timestamp", datetime.now(timezone.utc).isoformat())),
+                timestamp_start=data_copy.get(
+                    "timestamp_start", data_copy.get("timestamp", datetime.now(timezone.utc).isoformat())
+                ),
+                timestamp_end=data_copy.get(
+                    "timestamp_end", data_copy.get("timestamp", datetime.now(timezone.utc).isoformat())
+                ),
                 git_commit=data_copy.get("git_commit", "unknown"),
                 git_dirty=data_copy.get("git_dirty", False),
             )
 
         env_dict = data_copy.pop("environment", {})
-        environment = EnvironmentMetadata(**{k: v for k, v in env_dict.items() if k in EnvironmentMetadata.__dataclass_fields__}) if isinstance(env_dict, dict) and env_dict else EnvironmentMetadata()
+        environment = (
+            EnvironmentMetadata(**{k: v for k, v in env_dict.items() if k in EnvironmentMetadata.__dataclass_fields__})
+            if isinstance(env_dict, dict) and env_dict
+            else EnvironmentMetadata()
+        )
 
         hw_dict = data_copy.pop("hardware_usage", {})
-        hardware_usage = HardwareUsage(**{k: v for k, v in hw_dict.items() if k in HardwareUsage.__dataclass_fields__}) if isinstance(hw_dict, dict) and hw_dict else HardwareUsage()
+        hardware_usage = (
+            HardwareUsage(**{k: v for k, v in hw_dict.items() if k in HardwareUsage.__dataclass_fields__})
+            if isinstance(hw_dict, dict) and hw_dict
+            else HardwareUsage()
+        )
 
         base_dict = data_copy.pop("baseline_comparison", {})
-        baseline_comp = BaselineComparison(**{k: v for k, v in base_dict.items() if k in BaselineComparison.__dataclass_fields__}) if isinstance(base_dict, dict) and base_dict else BaselineComparison()
+        baseline_comp = (
+            BaselineComparison(**{k: v for k, v in base_dict.items() if k in BaselineComparison.__dataclass_fields__})
+            if isinstance(base_dict, dict) and base_dict
+            else BaselineComparison()
+        )
 
         repro_dict = data_copy.pop("reproducibility", {})
-        reproducibility = ReproducibilityInfo(**{k: v for k, v in repro_dict.items() if k in ReproducibilityInfo.__dataclass_fields__}) if isinstance(repro_dict, dict) and repro_dict else ReproducibilityInfo()
+        reproducibility = (
+            ReproducibilityInfo(
+                **{k: v for k, v in repro_dict.items() if k in ReproducibilityInfo.__dataclass_fields__}
+            )
+            if isinstance(repro_dict, dict) and repro_dict
+            else ReproducibilityInfo()
+        )
 
         art_dict = data_copy.pop("artifacts", {})
-        artifacts = ArtifactPaths(**{k: v for k, v in art_dict.items() if k in ArtifactPaths.__dataclass_fields__}) if isinstance(art_dict, dict) and art_dict else ArtifactPaths()
+        artifacts = (
+            ArtifactPaths(**{k: v for k, v in art_dict.items() if k in ArtifactPaths.__dataclass_fields__})
+            if isinstance(art_dict, dict) and art_dict
+            else ArtifactPaths()
+        )
 
         push_dict = data_copy.pop("push_info", {})
-        push_info = PushInfo(**{k: v for k, v in push_dict.items() if k in PushInfo.__dataclass_fields__}) if isinstance(push_dict, dict) and push_dict else PushInfo()
+        push_info = (
+            PushInfo(**{k: v for k, v in push_dict.items() if k in PushInfo.__dataclass_fields__})
+            if isinstance(push_dict, dict) and push_dict
+            else PushInfo()
+        )
 
         # Handle normalized metadata dictionary
         meta = data_copy.get("metadata", {})
@@ -625,7 +686,8 @@ class BenchmarkResult:
             reproducibility=reproducibility,
             artifacts=artifacts,
             push_info=push_info,
-            training_type=data_copy.get("training_type") or data_copy.get("config", {}).get("training_type", "finetune"),
+            training_type=data_copy.get("training_type")
+            or data_copy.get("config", {}).get("training_type", "finetune"),
             kd_config=data_copy.get("kd_config", {}),
             recovery_config=data_copy.get("recovery_config", {}),
             baseline_metrics=data_copy.get("baseline_metrics", {}),

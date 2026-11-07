@@ -34,12 +34,14 @@ from __future__ import annotations
 
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 try:
     from neuralops.core.triton_kernels.fused_kd import fused_linear_kl_loss
+
     _HAS_FUSED_KD = True
 except Exception:
     _HAS_FUSED_KD = False
@@ -87,7 +89,13 @@ class LogitDistillationLoss(nn.Module):
     ) -> torch.Tensor:
         tau = self.temperature
 
-        if self.use_fused_linear_kd and student_hidden is not None and student_w is not None and teacher_hidden is not None and teacher_w is not None:
+        if (
+            self.use_fused_linear_kd
+            and student_hidden is not None
+            and student_w is not None
+            and teacher_hidden is not None
+            and teacher_w is not None
+        ):
             return fused_linear_kl_loss(student_hidden, student_w, teacher_hidden, teacher_w, temperature=tau)
 
         s_logits = student_logits.float() / tau
@@ -96,12 +104,12 @@ class LogitDistillationLoss(nn.Module):
         if self.mode == "forward_kl":
             s_log = F.log_softmax(s_logits, dim=-1)
             t_prob = F.softmax(t_logits, dim=-1)
-            return F.kl_div(s_log, t_prob, reduction="batchmean") * (tau ** 2)
+            return F.kl_div(s_log, t_prob, reduction="batchmean") * (tau**2)
 
         elif self.mode == "reverse_kl":
             s_prob = F.softmax(s_logits, dim=-1)
             t_log = F.log_softmax(t_logits, dim=-1)
-            return F.kl_div(t_log, s_prob, reduction="batchmean") * (tau ** 2)
+            return F.kl_div(t_log, s_prob, reduction="batchmean") * (tau**2)
 
         elif self.mode == "beta_jsd":
             s_prob = F.softmax(s_logits, dim=-1)
@@ -111,7 +119,7 @@ class LogitDistillationLoss(nn.Module):
             m_log = torch.log(m_prob.clamp(min=1e-8))
             kl_sm = F.kl_div(m_log, s_prob, reduction="batchmean")
             kl_tm = F.kl_div(m_log, t_prob, reduction="batchmean")
-            return ((1.0 - beta) * kl_sm + beta * kl_tm) * (tau ** 2)
+            return ((1.0 - beta) * kl_sm + beta * kl_tm) * (tau**2)
 
         elif self.mode == "decoupled_kd":
             if labels is None:
@@ -135,7 +143,7 @@ class LogitDistillationLoss(nn.Module):
             t_nt = (t_prob * mask) / (1.0 - p_t).clamp(min=1e-7)
             nckd = F.kl_div(torch.log(s_nt.clamp(min=1e-8)), t_nt, reduction="batchmean")
 
-            return (self.alpha_tckd * tckd + self.beta_nckd * nckd) * (tau ** 2)
+            return (self.alpha_tckd * tckd + self.beta_nckd * nckd) * (tau**2)
 
         elif self.mode == "topk_sparse_kd":
             K = min(self.top_k, t_logits.size(-1) - 1)
@@ -144,7 +152,7 @@ class LogitDistillationLoss(nn.Module):
 
             t_prob = F.softmax(t_topk_vals, dim=-1)
             s_log = F.log_softmax(s_topk_vals, dim=-1)
-            return F.kl_div(s_log, t_prob, reduction="batchmean") * (tau ** 2)
+            return F.kl_div(s_log, t_prob, reduction="batchmean") * (tau**2)
 
         else:
             raise ValueError(f"Unknown distillation mode '{self.mode}'")
@@ -300,6 +308,7 @@ class BlockwiseOperatorCloningLoss(nn.Module):
 
 def _get_streaming_cka_loss_cls() -> Any:
     from neuralops.surgery.streaming_distill import StreamingCKALoss
+
     return StreamingCKALoss
 
 
@@ -332,13 +341,17 @@ class LinearCKALoss(nn.Module):
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         dim_x = x.size(-1)
         dim_y = y.size(-1)
-        if self.use_streaming or (
-            x.dim() >= 2 and x.size(1) > self.chunk_size and x.numel() > 65536
-        ):
+        if self.use_streaming or (x.dim() >= 2 and x.size(1) > self.chunk_size and x.numel() > 65536):
             if (
                 self._streaming_cka_engine is None
-                or getattr(self._streaming_cka_engine, "hidden_dim_x", getattr(self._streaming_cka_engine, "hidden_dim", None)) != dim_x
-                or getattr(self._streaming_cka_engine, "hidden_dim_y", getattr(self._streaming_cka_engine, "hidden_dim", None)) != dim_y
+                or getattr(
+                    self._streaming_cka_engine, "hidden_dim_x", getattr(self._streaming_cka_engine, "hidden_dim", None)
+                )
+                != dim_x
+                or getattr(
+                    self._streaming_cka_engine, "hidden_dim_y", getattr(self._streaming_cka_engine, "hidden_dim", None)
+                )
+                != dim_y
                 or self._streaming_cka_engine.G_xy.device != x.device
             ):
                 streaming_cls = _get_streaming_cka_loss_cls()
@@ -359,9 +372,9 @@ class LinearCKALoss(nn.Module):
         YtY = torch.matmul(Y.t(), Y)
         XtY = torch.matmul(X.t(), Y)
 
-        hsic_xy = (XtY ** 2).sum()
-        hsic_xx = torch.sqrt((XtX ** 2).sum()).clamp(min=self.eps)
-        hsic_yy = torch.sqrt((YtY ** 2).sum()).clamp(min=self.eps)
+        hsic_xy = (XtY**2).sum()
+        hsic_xx = torch.sqrt((XtX**2).sum()).clamp(min=self.eps)
+        hsic_yy = torch.sqrt((YtY**2).sum()).clamp(min=self.eps)
 
         denom = (hsic_xx * hsic_yy).clamp(min=self.eps)
         cka = hsic_xy / denom
@@ -445,11 +458,7 @@ class MultiLevelKDTrainer:
         self.device = (
             torch.device(device)
             if device is not None
-            else (
-                next(student.parameters()).device
-                if list(student.parameters())
-                else torch.device("cpu")
-            )
+            else (next(student.parameters()).device if list(student.parameters()) else torch.device("cpu"))
         )
         self.teacher = teacher.to(self.device)
         self.student = student.to(self.device)
@@ -487,16 +496,14 @@ class MultiLevelKDTrainer:
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor, ...]]]:
         """Extracts logits and intermediate hidden states from arbitrary forward output."""
         if isinstance(inputs, dict):
-            batch_inputs = {
-                k: v.to(self.device) if isinstance(v, torch.Tensor) else v
-                for k, v in inputs.items()
-            }
-            outputs = model(**batch_inputs, output_hidden_states=True) if "output_hidden_states" in getattr(model, "forward", {}).__code__.co_varnames else model(**batch_inputs)
+            batch_inputs = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
+            outputs = (
+                model(**batch_inputs, output_hidden_states=True)
+                if "output_hidden_states" in getattr(model, "forward", {}).__code__.co_varnames
+                else model(**batch_inputs)
+            )
         elif isinstance(inputs, (tuple, list)):
-            batch_inputs = [
-                v.to(self.device) if isinstance(v, torch.Tensor) else v
-                for v in inputs
-            ]
+            batch_inputs = [v.to(self.device) if isinstance(v, torch.Tensor) else v for v in inputs]
             outputs = model(*batch_inputs)
         elif isinstance(inputs, torch.Tensor):
             tensor_input = inputs.to(self.device)
@@ -574,7 +581,9 @@ class MultiLevelKDTrainer:
                 frob_loss = torch.linalg.vector_norm(s_last - t_last) / max(1, s_last.numel())
             elif s_last.size(-1) != t_last.size(-1):
                 min_d = min(s_last.size(-1), t_last.size(-1))
-                frob_loss = torch.linalg.vector_norm(s_last[..., :min_d] - t_last[..., :min_d]) / max(1, min_d * s_last.size(0) * s_last.size(1))
+                frob_loss = torch.linalg.vector_norm(s_last[..., :min_d] - t_last[..., :min_d]) / max(
+                    1, min_d * s_last.size(0) * s_last.size(1)
+                )
             else:
                 frob_loss = F.mse_loss(s_last, t_last)
             total_loss = total_loss + self.lambda_frob * frob_loss
@@ -619,17 +628,22 @@ def distill(
     dev = (
         torch.device(device)
         if device is not None
-        else (
-            torch.device("cuda")
-            if torch.cuda.is_available()
-            else torch.device("cpu")
-        )
+        else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
     )
     kd_kwargs = {
-        k: v for k, v in kwargs.items() if k in {
-            "lambda_mse", "lambda_rel", "lambda_cka", "lambda_frob",
-            "lambda_stab", "lambda_feat", "use_streaming_cka",
-            "chunk_size", "memory_mode"
+        k: v
+        for k, v in kwargs.items()
+        if k
+        in {
+            "lambda_mse",
+            "lambda_rel",
+            "lambda_cka",
+            "lambda_frob",
+            "lambda_stab",
+            "lambda_feat",
+            "use_streaming_cka",
+            "chunk_size",
+            "memory_mode",
         }
     }
     trainer = MultiLevelKDTrainer(
@@ -683,6 +697,7 @@ StreamingCKALoss = None
 def __getattr__(name: str) -> Any:
     if name == "StreamingCKALoss":
         from neuralops.surgery.streaming_distill import StreamingCKALoss as _Impl
+
         return _Impl
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 

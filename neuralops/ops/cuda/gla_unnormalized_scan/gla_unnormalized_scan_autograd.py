@@ -12,9 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
-from typing import Any
+
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -22,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -39,7 +41,10 @@ def _get_module():
         )
     return _MODULE
 
-def gla_unnormalized_scan_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+
+def gla_unnormalized_scan_pytorch_ref(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
+) -> torch.Tensor:
     B, H, N, D = q.shape
     g = decay.unsqueeze(-1).expand(B, H, N, D) if decay.dim() == 3 else decay
     s = torch.zeros(B, H, D, device=q.device, dtype=torch.float32)
@@ -57,19 +62,29 @@ def gla_unnormalized_scan_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch
         ys.append((q_val * s).to(q.dtype))
     return torch.stack(ys, dim=2)
 
-def gla_unnormalized_scan_triton_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+
+def gla_unnormalized_scan_triton_ref(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
+) -> torch.Tensor:
     return gla_unnormalized_scan_pytorch_ref(q, k, v, decay)
 
-def _gla_unnormalized_scan_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+
+def _gla_unnormalized_scan_dispatch(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
+) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = mod.gla_unnormalized_scan_fwd
         return fn(*args, **kwargs)
+
     return dispatch(
         cuda_fn,
         gla_unnormalized_scan_triton_ref,
         gla_unnormalized_scan_pytorch_ref,
-        q, k, v, decay,
+        q,
+        k,
+        v,
+        decay,
         kernel_name="gla_unnormalized_scan",
     )
 
@@ -106,6 +121,7 @@ class _Gla_unnormalized_scanFunction(torch.autograd.Function):
             else:
                 res.append(None)
         return tuple(res)
+
 
 def gla_unnormalized_scan(q, k, v, decay):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (q, k, v, decay)):

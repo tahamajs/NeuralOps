@@ -13,11 +13,6 @@ Approximates full attention matrices using the Nyström low-rank matrix decompos
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -27,9 +22,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +45,7 @@ class NystromAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -83,9 +80,7 @@ class NystromAttention(BaseAttention):
                         getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
                     ),
                 )
-                hidden_size = (
-                    getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-                )
+                hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
             else:
                 hidden_size = 768
 
@@ -158,16 +153,23 @@ class NystromAttention(BaseAttention):
         )
         _mt = (model_type or "").lower()
         _decoder_prefixes = (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
         )
         if (
             any(_mt.startswith(p) for p in _decoder_prefixes)
             or hasattr(config, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -197,31 +199,39 @@ class NystromAttention(BaseAttention):
         self.freeze_base = self.lora_rank > 0
 
         self.query = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.key = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.value = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         if source_attn is not None:
@@ -230,30 +240,39 @@ class NystromAttention(BaseAttention):
     @property
     def q_proj(self):
         return self.query
+
     @property
     def k_proj(self):
         return self.key
+
     @property
     def v_proj(self):
         return self.value
+
     @property
     def q_lin(self):
         return self.query
+
     @property
     def k_lin(self):
         return self.key
+
     @property
     def v_lin(self):
         return self.value
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
@@ -264,13 +283,19 @@ class NystromAttention(BaseAttention):
 
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out = (
-            hasattr(src, "dense") or hasattr(src, "out_proj") or hasattr(src, "out_lin")
-            or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+            hasattr(src, "dense")
+            or hasattr(src, "out_proj")
+            or hasattr(src, "out_lin")
+            or hasattr(src, "c_proj")
+            or hasattr(src, "o_proj")
         )
         is_nested = False
         if cls_name in [
-            "BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention",
-            "ElectraSelfAttention", "DebertaSelfAttention",
+            "BertSelfAttention",
+            "RobertaSelfAttention",
+            "XLMRobertaSelfAttention",
+            "ElectraSelfAttention",
+            "DebertaSelfAttention",
         ] or (hasattr(src, "query") and not has_out):
             is_nested = True
         if hasattr(src, "self") and hasattr(src, "output"):
@@ -278,7 +303,10 @@ class NystromAttention(BaseAttention):
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -290,7 +318,8 @@ class NystromAttention(BaseAttention):
                 is_conv1d = (
                     "Conv1D" in c_attn_mod.__class__.__name__
                     or "Conv1D" in base_c.__class__.__name__
-                    or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf")
+                    or hasattr(c_attn_mod, "nf")
+                    or hasattr(base_c, "nf")
                     or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
                 )
                 if is_conv1d:
@@ -299,8 +328,11 @@ class NystromAttention(BaseAttention):
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
                 extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size:2*split_size, :], c_b[split_size:2*split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2*split_size:, :], c_b[2*split_size:] if c_b is not None else None)
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -311,7 +343,8 @@ class NystromAttention(BaseAttention):
                     is_conv1d = (
                         "Conv1D" in c_proj_mod.__class__.__name__
                         or "Conv1D" in base_o.__class__.__name__
-                        or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf")
+                        or hasattr(c_proj_mod, "nf")
+                        or hasattr(base_o, "nf")
                         or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
                     )
                     if is_conv1d:
@@ -353,13 +386,11 @@ class NystromAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -431,14 +462,18 @@ class NystromAttention(BaseAttention):
         try:
             if valid_mask.all():
                 return F.scaled_dot_product_attention(
-                    Q, K, V,
+                    Q,
+                    K,
+                    V,
                     is_causal=False,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 ).to(dtype)
             else:
                 attn_mask = valid_mask.unsqueeze(1).unsqueeze(2)
                 return F.scaled_dot_product_attention(
-                    Q, K, V,
+                    Q,
+                    K,
+                    V,
                     attn_mask=attn_mask,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 ).to(dtype)
@@ -509,9 +544,7 @@ class NystromAttention(BaseAttention):
             scores_intra = torch.matmul(Q_c.float(), K_c.float().transpose(-2, -1)) * scale
             causal = torch.tril(torch.ones(C_len, C_len, device=device, dtype=torch.bool))
             scores_intra = scores_intra.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
-            scores_intra = scores_intra.masked_fill(
-                ~mask_c.unsqueeze(1).unsqueeze(2), -1e4
-            )
+            scores_intra = scores_intra.masked_fill(~mask_c.unsqueeze(1).unsqueeze(2), -1e4)
             attn_intra = F.softmax(scores_intra, dim=-1).to(dtype)
             attn_intra = torch.nan_to_num(attn_intra, nan=0.0)
             out_intra = torch.matmul(attn_intra, V_c)
@@ -526,26 +559,14 @@ class NystromAttention(BaseAttention):
 
             m_prev = min(m, start)
             K_flat = K_prev.reshape(B * H, start, d).transpose(1, 2).contiguous()
-            K_landmarks = (
-                F.adaptive_avg_pool1d(K_flat, m_prev)
-                .transpose(1, 2)
-                .contiguous()
-                .reshape(B, H, m_prev, d)
-            )
+            K_landmarks = F.adaptive_avg_pool1d(K_flat, m_prev).transpose(1, 2).contiguous().reshape(B, H, m_prev, d)
 
             scores1 = torch.matmul(Q_c.float(), K_landmarks.float().transpose(-2, -1)) * scale
             F1 = F.softmax(scores1, dim=-1).to(dtype)
 
             Q_flat = Q_c.reshape(B * H, C_len, d).transpose(1, 2).contiguous()
-            Q_landmarks = (
-                F.adaptive_avg_pool1d(Q_flat, m_prev)
-                .transpose(1, 2)
-                .contiguous()
-                .reshape(B, H, m_prev, d)
-            )
-            scores2 = torch.matmul(
-                Q_landmarks.float(), K_landmarks.float().transpose(-2, -1)
-            ) * scale
+            Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m_prev).transpose(1, 2).contiguous().reshape(B, H, m_prev, d)
+            scores2 = torch.matmul(Q_landmarks.float(), K_landmarks.float().transpose(-2, -1)) * scale
             F2 = F.softmax(scores2, dim=-1).to(dtype)
 
             scores3 = torch.matmul(Q_landmarks.float(), K_prev.float().transpose(-2, -1)) * scale
@@ -604,9 +625,7 @@ class NystromAttention(BaseAttention):
         )
 
         if is_causal:
-            context = self._chunked_causal_nystrom(
-                Q, K, V, valid_mask, chunk_size=256
-            )
+            context = self._chunked_causal_nystrom(Q, K, V, valid_mask, chunk_size=256)
             context = self.dropout(context)
 
         elif max(64, 2 * self.num_landmarks) >= N:
@@ -619,28 +638,21 @@ class NystromAttention(BaseAttention):
 
             scale = 1.0 / math.sqrt(d)
 
-            scores1 = torch.matmul(
-                Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()
-            ) * scale
+            scores1 = torch.matmul(Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
             F1 = F.softmax(scores1, dim=-1).to(dtype)
 
-            scores2 = torch.matmul(
-                Q_landmarks.float(), K_landmarks.float().transpose(-2, -1).contiguous()
-            ) * scale
+            scores2 = torch.matmul(Q_landmarks.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
             F2 = F.softmax(scores2, dim=-1).to(dtype)
 
-            scores3 = torch.matmul(
-                Q_landmarks.float(), K.float().transpose(-2, -1).contiguous()
-            ) * scale
-            scores3 = scores3.masked_fill(
-                ~valid_mask.unsqueeze(1).unsqueeze(2), -1e4
-            )
+            scores3 = torch.matmul(Q_landmarks.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            scores3 = scores3.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
             F3 = F.softmax(scores3, dim=-1).to(dtype)
 
             F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)
 
             try:
                 from neuralops.ops.triton.low_rank import fused_nystrom_landmark_pinv_step_pytorch
+
                 context = fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V)
             except Exception:
                 step1 = torch.matmul(F3, V)
@@ -702,11 +714,7 @@ def inject_nystrom(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -784,5 +792,6 @@ def inject_nystrom(
         return new_attn
     except Exception as e:
         import logging
+
         logging.getLogger(__name__).error(f"NystromAttention injection failed: {e}")
         return None

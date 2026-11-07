@@ -12,14 +12,14 @@ This page provides direct access to the complete, unabridged academic manuscript
 - **Institution**: Department of Computer Engineering, College of Engineering, University of Tehran
 - **Date**: Fall 2026
 - **Format**: 317 Pages, Full Persian Monograph with English Abstract, Complete Color Figures, Mathematical Proofs, and Empirical Verification Ledgers.
-- **Direct Download**: 
+- **Direct Download**:
   👉 [📥 Download Master's Thesis PDF (205 MB)](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Master_Thesis_810101504.pdf)
 
 ### 2. Thesis Oral Defense Slide Deck (50 Slides)
 - **Title**: Architectural Synthesis, Microarchitectural Profiling, and In-Place Surgery for Subquadratic Attention Models
 - **Format**: 50 Widescreen 16:9 Presentation Slides with High-Resolution Architectural Diagrams, Roofline Trajectories, and Live Telemetry Captures.
 - **Direct Download**:
-  👉 [📥 Download Thesis Defense Slides PDF (172 MB)](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Thesis_Defense_Slides_810101504.pdf)  
+  👉 [📥 Download Thesis Defense Slides PDF (172 MB)](https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Thesis_Defense_Slides_810101504.pdf)
   👉 [📥 Alternative Web-Optimized Defense Slides PDF (45 MB)](https://tahamajs.github.io/NeuralOps/slides/master_defense_2026.pdf)
 
 ---

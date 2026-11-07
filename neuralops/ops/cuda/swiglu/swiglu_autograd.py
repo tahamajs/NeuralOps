@@ -58,6 +58,7 @@ def swiglu_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.elementwise import swiglu_triton
+
         return swiglu_triton
     except (ImportError, AttributeError):
         return None
@@ -68,6 +69,7 @@ def swiglu(
     gate: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """3-Level Dispatched Fused SwiGLU."""
+
     def cuda_fn(x, gate=None, **kwargs):
         mod = _get_module()
         return mod.swiglu_fwd(

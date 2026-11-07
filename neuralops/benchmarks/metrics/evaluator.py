@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 from typing import Any, Callable, Dict, List, Optional, Type
+
 import numpy as np
 import torch
 
@@ -23,14 +24,17 @@ METRIC_REGISTRY: Dict[str, Type["Metric"]] = {}
 
 def register_metric(name: str) -> Callable[[Type["Metric"]], Type["Metric"]]:
     """Decorator to register a custom evaluation metric."""
+
     def decorator(cls: Type["Metric"]) -> Type["Metric"]:
         METRIC_REGISTRY[name.lower()] = cls
         return cls
+
     return decorator
 
 
 class Metric:
     """Base class for evaluation metrics."""
+
     def compute(self, preds: Any, targets: Any) -> Dict[str, float]:
         raise NotImplementedError
 
@@ -39,6 +43,7 @@ class Metric:
 class ClassificationMetrics(Metric):
     def compute(self, preds: Any, targets: Any) -> Dict[str, float]:
         from neuralops.trainer.metrics import accuracy_score, f1_score, precision_recall_fscore_support
+
         y_pred = np.array(preds)
         y_true = np.array(targets)
         p, r, _, _ = precision_recall_fscore_support(y_true, y_pred, average="weighted", zero_division=0)

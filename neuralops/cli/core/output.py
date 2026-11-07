@@ -22,6 +22,7 @@ from typing import Any
 try:
     from rich.console import Console
     from rich.table import Table
+
     HAS_RICH = True
     console = Console()
     err_console = Console(stderr=True)

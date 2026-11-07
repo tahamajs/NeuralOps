@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, List, Optional, Union
+
 import torch
 import torch.nn as nn
 
@@ -81,11 +82,13 @@ def oneshot(
     attn = recipe_dict.get("attention")
     if attn:
         from neuralops.api import replace_attention
+
         model = replace_attention(model, attention=attn, rank=recipe_dict.get("rank"))
 
     comp = recipe_dict.get("compressor")
     if comp:
         from neuralops.api import compress
+
         model = compress(
             model,
             method=comp,
@@ -96,6 +99,7 @@ def oneshot(
     peft = recipe_dict.get("peft_recovery")
     if peft and "pissa" in str(peft).lower():
         from neuralops.trainer.peft_recovery.svd_adapters import inject_pissa_adapters
+
         inject_pissa_adapters(model, rank=recipe_dict.get("rank", 16))
 
     return model

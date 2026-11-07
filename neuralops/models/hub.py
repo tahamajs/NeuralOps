@@ -18,6 +18,7 @@ import os
 import re
 from pathlib import Path
 from typing import Any
+
 import torch
 
 logger = logging.getLogger(__name__)
@@ -94,11 +95,13 @@ def generate_model_card(
         "",
     ]
     if metrics:
-        card.extend([
-            "## Evaluation Metrics",
-            "| Metric | Value |",
-            "|---|---|",
-        ])
+        card.extend(
+            [
+                "## Evaluation Metrics",
+                "| Metric | Value |",
+                "|---|---|",
+            ]
+        )
         for k, v in metrics.items():
             card.append(f"| {k} | {v} |")
         card.append("")
@@ -120,6 +123,7 @@ def push_model_to_hub(
         raise ValueError("HF_TOKEN must be provided as parameter or environment variable.")
 
     import tempfile
+
     with tempfile.TemporaryDirectory() as tmp_dir:
         model.save_pretrained(tmp_dir)
         if tokenizer is not None:
@@ -133,6 +137,7 @@ def push_model_to_hub(
             raise ValueError(f"Aborting push to hub. Secrets detected: {leaks}")
 
         from huggingface_hub import HfApi
+
         api = HfApi(token=hf_token)
         api.create_repo(repo_id=repo_id, private=private, exist_ok=True)
         api.upload_folder(
@@ -147,6 +152,7 @@ def push_model_to_hub(
 def load_model_from_hub(repo_id: str, **kwargs: Any) -> Any:
     """Load a NeuralOps model directly from HuggingFace Hub."""
     from neuralops.models.modeling import NeuralOpsForCausalLM
+
     return NeuralOpsForCausalLM.from_pretrained(repo_id, **kwargs)
 
 
@@ -154,6 +160,7 @@ def list_org_models(org: str = "neuralops-hub") -> list[str]:
     """List all available models in the specified organization."""
     try:
         from huggingface_hub import HfApi
+
         api = HfApi()
         models = api.list_models(author=org)
         return [m.id for m in models]

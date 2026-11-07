@@ -12,20 +12,28 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
+
 import torch
+
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
+
 def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "hstu_attention_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "hstu_attention.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "hstu_attention_binding.cpp", "r", encoding="utf-8") as f:
+            cpp_src = f.read()
+        with open(curr_dir / "hstu_attention.cu", "r", encoding="utf-8") as f:
+            cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_hstu_attention", cpp_src, cuda_src, ["hstu_fwd"])
     return _MODULE
+
 
 def hstu_attention_ref(u: torch.Tensor, v: torch.Tensor, decay: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     """Pure PyTorch reference implementation with FP32 accumulator precision."""
@@ -41,8 +49,10 @@ def hstu_attention_ref(u: torch.Tensor, v: torch.Tensor, decay: torch.Tensor, ep
         out[:, t, :] = (u_f[:, t, :] * (s / norm)).to(u.dtype)
     return out
 
+
 def hstu_attention(u: torch.Tensor, v: torch.Tensor, decay: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     def cuda_fn(u, v, decay, eps=1e-6, **kwargs):
         mod = _get_module()
         return mod.hstu_fwd(u.contiguous(), v.contiguous(), decay.contiguous(), float(eps))
+
     return dispatch(cuda_fn, hstu_attention_ref, hstu_attention_ref, u, v, decay, eps=eps, kernel_name="hstu_attention")

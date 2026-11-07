@@ -13,7 +13,7 @@ Direct interface to GPU hardware capability profiling, SRAM limits, and architec
 
 from __future__ import annotations
 
-from neuralops.core.triton_kernels.hardware_profile import *  # noqa: F403
 import neuralops.core.triton_kernels.hardware_profile as _mod
+from neuralops.core.triton_kernels.hardware_profile import *  # noqa: F403
 
 __all__ = [name for name in dir(_mod) if not name.startswith("_")]

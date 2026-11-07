@@ -12,7 +12,9 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from typing import Any
+
 """
 Recurrent HGRN2 Step Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -63,6 +65,7 @@ def recurrent_hgrn2_step_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.state_update import fused_recurrent_hgrn2_step
+
         return fused_recurrent_hgrn2_step
     except (ImportError, AttributeError):
         return None
@@ -75,12 +78,11 @@ def _recurrent_hgrn2_step_dispatch(
     h_prev: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """3-Level Dispatched Recurrent HGRN2 Step."""
+
     def cuda_fn(x, g, a, h, **kwargs):
         mod = _get_module()
         h_copy = h.clone()
-        res = mod.recurrent_hgrn2_step_fwd(
-            x.contiguous(), g.contiguous(), a.contiguous(), h_copy
-        )
+        res = mod.recurrent_hgrn2_step_fwd(x.contiguous(), g.contiguous(), a.contiguous(), h_copy)
         return res[0], res[1]
 
     triton_fn = _get_triton_impl()
@@ -129,6 +131,7 @@ class _Recurrent_hgrn2_stepFunction(torch.autograd.Function):
             else:
                 res.append(None)
         return tuple(res)
+
 
 def recurrent_hgrn2_step(x, g, alpha, prev_state):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, g, alpha, prev_state)):

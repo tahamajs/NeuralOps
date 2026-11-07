@@ -28,6 +28,7 @@ logger = logging.getLogger("NeuralOps.TensorRTLLM")
 
 try:
     import tensorrt as trt
+
     HAS_TRT = True
 except ImportError:
     trt = None
@@ -37,6 +38,7 @@ try:
     import tensorrt_llm
     from tensorrt_llm.builder import Builder
     from tensorrt_llm.network import net_guard
+
     HAS_TRT_LLM = True
     HAS_TENSORRT_LLM = True
 except ImportError:

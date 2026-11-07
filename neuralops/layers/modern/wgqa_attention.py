@@ -12,13 +12,6 @@ Weighted grouped-query attention applying learned per-group importance scalers a
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -30,9 +23,11 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _read_past_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -185,48 +180,63 @@ class WeightedGroupedQueryAttention(BaseAttention):
     @property
     def W_q(self):
         return self.q_proj
+
     @property
     def W_k(self):
         return self.k_proj
+
     @property
     def W_v(self):
         return self.v_proj
+
     @property
     def out(self):
         return self.out_proj
+
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
+
     @property
     def k_weights(self):
         return self.lora_k_weights
+
     @property
     def v_weights(self):
         return self.lora_v_weights
@@ -263,7 +273,10 @@ class WeightedGroupedQueryAttention(BaseAttention):
 
     def copy_weights(self, src: Any) -> None:
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         for proj in ["q", "k", "v", "o"]:
@@ -296,8 +309,11 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     weight = weight.t().contiguous()
                 split = weight.shape[0] // 3
                 extracted["q"] = (weight[:split, :], bias_data[:split] if bias_data is not None else None)
-                extracted["k"] = (weight[split:2*split, :], bias_data[split:2*split] if bias_data is not None else None)
-                extracted["v"] = (weight[2*split:, :], bias_data[2*split:] if bias_data is not None else None)
+                extracted["k"] = (
+                    weight[split : 2 * split, :],
+                    bias_data[split : 2 * split] if bias_data is not None else None,
+                )
+                extracted["v"] = (weight[2 * split :, :], bias_data[2 * split :] if bias_data is not None else None)
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             p_mod = src.c_proj
@@ -350,8 +366,13 @@ class WeightedGroupedQueryAttention(BaseAttention):
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out = any(hasattr(src, a) for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
         is_nested = False
-        if cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention",
-                       "ElectraSelfAttention", "DebertaSelfAttention") or (hasattr(src, "query") and not has_out):
+        if cls_name in (
+            "BertSelfAttention",
+            "RobertaSelfAttention",
+            "XLMRobertaSelfAttention",
+            "ElectraSelfAttention",
+            "DebertaSelfAttention",
+        ) or (hasattr(src, "query") and not has_out):
             is_nested = True
         if hasattr(src, "self") and hasattr(src, "output"):
             is_nested = True
@@ -374,7 +395,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 w_q = _orient(w_q, self.hidden_size)
                 od, id_ = self.q_proj.weight.shape
                 so, si = w_q.shape
-                self.q_proj.weight.data[:min(od,so), :min(id_,si)].copy_(w_q[:min(od,so), :min(id_,si)])
+                self.q_proj.weight.data[: min(od, so), : min(id_, si)].copy_(w_q[: min(od, so), : min(id_, si)])
                 if b_q is not None and self.q_proj.bias is not None:
                     bv = b_q.data if isinstance(b_q, nn.Parameter) else b_q
                     n = min(len(self.q_proj.bias), len(bv))
@@ -386,7 +407,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 if w_k.shape[0] == self.kv_head_size:
                     od, id_ = self.k_proj.weight.shape
                     so, si = w_k.shape
-                    self.k_proj.weight.data[:min(od,so), :min(id_,si)].copy_(w_k[:min(od,so), :min(id_,si)])
+                    self.k_proj.weight.data[: min(od, so), : min(id_, si)].copy_(w_k[: min(od, so), : min(id_, si)])
                     if b_k is not None and self.k_proj.bias is not None:
                         bv = b_k.data if isinstance(b_k, nn.Parameter) else b_k
                         n = min(len(self.k_proj.bias), len(bv))
@@ -396,7 +417,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     w_k_p = w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
                     od, id_ = self.k_proj.weight.shape
                     so, si = w_k_p.shape
-                    self.k_proj.weight.data[:min(od,so), :min(id_,si)].copy_(w_k_p[:min(od,so), :min(id_,si)])
+                    self.k_proj.weight.data[: min(od, so), : min(id_, si)].copy_(w_k_p[: min(od, so), : min(id_, si)])
                     if b_k is not None and self.k_proj.bias is not None:
                         bv = b_k.data if isinstance(b_k, nn.Parameter) else b_k
                         b_k_p = bv.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
@@ -409,7 +430,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 if w_v.shape[0] == self.kv_head_size:
                     od, id_ = self.v_proj.weight.shape
                     so, si = w_v.shape
-                    self.v_proj.weight.data[:min(od,so), :min(id_,si)].copy_(w_v[:min(od,so), :min(id_,si)])
+                    self.v_proj.weight.data[: min(od, so), : min(id_, si)].copy_(w_v[: min(od, so), : min(id_, si)])
                     if b_v is not None and self.v_proj.bias is not None:
                         bv = b_v.data if isinstance(b_v, nn.Parameter) else b_v
                         n = min(len(self.v_proj.bias), len(bv))
@@ -419,7 +440,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     w_v_p = w_v.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1).view(self.kv_head_size, -1)
                     od, id_ = self.v_proj.weight.shape
                     so, si = w_v_p.shape
-                    self.v_proj.weight.data[:min(od,so), :min(id_,si)].copy_(w_v_p[:min(od,so), :min(id_,si)])
+                    self.v_proj.weight.data[: min(od, so), : min(id_, si)].copy_(w_v_p[: min(od, so), : min(id_, si)])
                     if b_v is not None and self.v_proj.bias is not None:
                         bv = b_v.data if isinstance(b_v, nn.Parameter) else b_v
                         b_v_p = bv.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
@@ -431,7 +452,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 w_o = _orient(w_o, self.all_head_size)
                 od, id_ = self.out_proj.weight.shape
                 so, si = w_o.shape
-                self.out_proj.weight.data[:min(od,so), :min(id_,si)].copy_(w_o[:min(od,so), :min(id_,si)])
+                self.out_proj.weight.data[: min(od, so), : min(id_, si)].copy_(w_o[: min(od, so), : min(id_, si)])
                 if b_o is not None and self.out_proj.bias is not None:
                     bv = b_o.data if isinstance(b_o, nn.Parameter) else b_o
                     n = min(len(self.out_proj.bias), len(bv))
@@ -452,13 +473,16 @@ class WeightedGroupedQueryAttention(BaseAttention):
             "v": ["v_proj", "v_lin", "value", "W_v"],
             "o": ["o_proj", "out_proj", "out_lin", "dense", "out", "c_proj"],
         }
-        for proj_key, target in [("q", self.q_proj), ("k", self.k_proj),
-                                  ("v", self.v_proj), ("o", self.out_proj)]:
+        for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
             for name in source_submodules[proj_key]:
                 if hasattr(src, name):
                     sub = getattr(src, name)
-                    if (hasattr(sub, "lora_A") and hasattr(sub, "lora_B")
-                        and sub.lora_A is not None and sub.lora_B is not None):
+                    if (
+                        hasattr(sub, "lora_A")
+                        and hasattr(sub, "lora_B")
+                        and sub.lora_A is not None
+                        and sub.lora_B is not None
+                    ):
                         src_lA = getattr(sub.lora_A, "weight", sub.lora_A)
                         src_lB = getattr(sub.lora_B, "weight", sub.lora_B)
                         if hasattr(src_lA, "data") and target.lora_A is not None:
@@ -509,17 +533,27 @@ class WeightedGroupedQueryAttention(BaseAttention):
         if not hasattr(self, "lora_v_weights") or self.lora_v_weights is None:
             self.lora_v_weights = nn.Parameter(torch.zeros(self.num_kv_heads, 1, device=device, dtype=dtype))
 
-        scale_k = (F.softmax(self.lora_k_weights.float(), dim=0) * self.num_kv_heads).view(1, self.num_kv_heads, 1, 1).to(dtype)
-        scale_v = (F.softmax(self.lora_v_weights.float(), dim=0) * self.num_kv_heads).view(1, self.num_kv_heads, 1, 1).to(dtype)
+        scale_k = (
+            (F.softmax(self.lora_k_weights.float(), dim=0) * self.num_kv_heads)
+            .view(1, self.num_kv_heads, 1, 1)
+            .to(dtype)
+        )
+        scale_v = (
+            (F.softmax(self.lora_v_weights.float(), dim=0) * self.num_kv_heads)
+            .view(1, self.num_kv_heads, 1, 1)
+            .to(dtype)
+        )
 
         K_new = K_new * scale_k
         V_new = V_new * scale_v
 
         if not is_cross_attention:
             position_embeddings = kwargs.get("position_embeddings")
-            if (position_embeddings is not None
+            if (
+                position_embeddings is not None
                 and isinstance(position_embeddings, (tuple, list))
-                and len(position_embeddings) >= 2):
+                and len(position_embeddings) >= 2
+            ):
                 cos, sin = position_embeddings[0], position_embeddings[1]
                 Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin, kwargs.get("position_ids"))
             elif getattr(self, "rotary_emb", None) is not None:
@@ -578,6 +612,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
                     try:
                         from neuralops.ops.cuda.flash_gqa import flash_gqa
+
                         context = flash_gqa(Q, K, V, is_causal=_is_causal, scale=scale)
                         dispatched = True
                     except Exception as e_cuda:
@@ -587,6 +622,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     # Level 2: Triton JIT autotuned online softmax kernel
                     try:
                         from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+
                         context = fused_weighted_gqa_online_softmax_triton(
                             Q, K, V, head_weights=None, is_causal=_is_causal, scale=scale
                         )
@@ -597,7 +633,9 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 if not dispatched:
                     # Level 3: PyTorch scaled_dot_product_attention fallback
                     context = F.scaled_dot_product_attention(
-                        Q, K_full, V_full,
+                        Q,
+                        K_full,
+                        V_full,
                         attn_mask=sdpa_mask,
                         is_causal=_is_causal,
                         dropout_p=self.dropout.p if self.training else 0.0,
@@ -694,8 +732,7 @@ def inject_wgqa(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (hasattr(target, "bert") and hasattr(target.bert, "encoder")
-          and hasattr(target.bert.encoder, "layer")):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -705,8 +742,12 @@ def inject_wgqa(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_wgqa(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
             )
             if res is not None:
                 n_inj += 1
@@ -754,9 +795,21 @@ def inject_wgqa(
         or _cfg_get(model_config, "dim")
         or getattr(old_attn, "hidden_size", None)
         or getattr(old_attn, "embed_dim", None)
-        or (old_attn.q_proj.in_features if hasattr(old_attn, "q_proj") and hasattr(old_attn.q_proj, "in_features") else None)
-        or (old_attn.q_lin.in_features if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "in_features") else None)
-        or (old_attn.query.in_features if hasattr(old_attn, "query") and hasattr(old_attn.query, "in_features") else None)
+        or (
+            old_attn.q_proj.in_features
+            if hasattr(old_attn, "q_proj") and hasattr(old_attn.q_proj, "in_features")
+            else None
+        )
+        or (
+            old_attn.q_lin.in_features
+            if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "in_features")
+            else None
+        )
+        or (
+            old_attn.query.in_features
+            if hasattr(old_attn, "query") and hasattr(old_attn.query, "in_features")
+            else None
+        )
         or 768
     )
     num_heads = (
@@ -770,6 +823,7 @@ def inject_wgqa(
 
     if model_config is None:
         import types
+
         model_config = types.SimpleNamespace(
             hidden_size=hidden_size,
             num_attention_heads=num_heads,

@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
@@ -82,7 +83,7 @@ class NeedleInAHaystackEvaluator:
     def _generate_passkey(self) -> str:
         """Execute generate passkey routine."""
         low = 10 ** (self.passkey_digits - 1)
-        high = (10 ** self.passkey_digits) - 1
+        high = (10**self.passkey_digits) - 1
         return str(random.randint(low, high))
 
     def evaluate(self, num_trials_per_cell: int = 1) -> Dict[str, Any]:
@@ -117,12 +118,7 @@ class NeedleInAHaystackEvaluator:
                     haystack_tokens = (pool * repeats)[:target_haystack_len]
 
                     insert_idx = int(len(haystack_tokens) * depth)
-                    full_tokens = (
-                        haystack_tokens[:insert_idx]
-                        + needle_tokens
-                        + haystack_tokens[insert_idx:]
-                        + q_tokens
-                    )
+                    full_tokens = haystack_tokens[:insert_idx] + needle_tokens + haystack_tokens[insert_idx:] + q_tokens
                     max_pos = getattr(getattr(self.model, "config", None), "max_position_embeddings", 1024)
                     max_allowed = max_pos - (self.passkey_digits + 4)
                     if len(full_tokens) > max_allowed:
@@ -144,13 +140,15 @@ class NeedleInAHaystackEvaluator:
                     if is_correct:
                         cell_successes += 1
 
-                    results_records.append({
-                        "context_length": ctx_len,
-                        "depth": depth,
-                        "passkey": passkey,
-                        "prediction": pred_text.strip(),
-                        "correct": is_correct,
-                    })
+                    results_records.append(
+                        {
+                            "context_length": ctx_len,
+                            "depth": depth,
+                            "passkey": passkey,
+                            "prediction": pred_text.strip(),
+                            "correct": is_correct,
+                        }
+                    )
 
                 acc = cell_successes / max(num_trials_per_cell, 1)
                 grid_accuracy[i, j] = acc
@@ -267,6 +265,7 @@ def main() -> None:
             sys.path.insert(0, p)
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
     from neuralops.evaluation.eval_patcher import apply_module_to_model
 
     logger.info("Loading model and tokenizer: %s", args.model)

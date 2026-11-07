@@ -84,8 +84,8 @@ def compute_function_matching_loss(
             y_pred = out
 
         batch_size = y_pred.shape[0] if y_pred.ndim > 0 else 1
-        diff = (y_pred.float() - y_anchor.float())
-        loss_batch = 0.5 * torch.sum(diff ** 2)
+        diff = y_pred.float() - y_anchor.float()
+        loss_batch = 0.5 * torch.sum(diff**2)
         total_loss = total_loss + loss_batch
         total_samples += batch_size
 
@@ -122,9 +122,7 @@ def hvp_gauss_newton(
             clean_grads.append(torch.zeros_like(p))
             clean_v.append(vi)
 
-    grad_dot_v = torch.sum(
-        torch.stack([torch.sum(g * vi) for g, vi in zip(clean_grads, clean_v)])
-    )
+    grad_dot_v = torch.sum(torch.stack([torch.sum(g * vi) for g, vi in zip(clean_grads, clean_v)]))
 
     hvps = torch.autograd.grad(
         grad_dot_v,
@@ -144,13 +142,13 @@ def estimate_top_eigenvalue(
 ) -> Tuple[float, List[torch.Tensor]]:
     """Estimate top eigenvalue lambda_1 = lambda_max(G) via matrix-free power iteration."""
     v = [torch.randn_like(p) for p in params]
-    norm_v = math.sqrt(sum(torch.sum(vi ** 2).item() for vi in v)) + eps
+    norm_v = math.sqrt(sum(torch.sum(vi**2).item() for vi in v)) + eps
     v = [vi / norm_v for vi in v]
 
     eigenvalue = 1.0
     for _ in range(num_iters):
         Gv = loss_fn_or_hvp(v)
-        norm_Gv = math.sqrt(sum(torch.sum(gvi ** 2).item() for gvi in Gv)) + eps
+        norm_Gv = math.sqrt(sum(torch.sum(gvi**2).item() for gvi in Gv)) + eps
         eigenvalue = norm_Gv
         v = [gvi / norm_Gv for gvi in Gv]
 
@@ -182,7 +180,7 @@ def find_flat_subspace_lobpcg(
         for prev in V:
             dot = sum(torch.sum(vi * pi).item() for vi, pi in zip(vec, prev))
             vec = [vi - dot * pi for vi, pi in zip(vec, prev)]
-        norm = math.sqrt(sum(torch.sum(vi ** 2).item() for vi in vec)) + 1e-9
+        norm = math.sqrt(sum(torch.sum(vi**2).item() for vi in vec)) + 1e-9
         V.append([vi / norm for vi in vec])
 
     P_prev: Optional[List[List[torch.Tensor]]] = None
@@ -223,7 +221,7 @@ def find_flat_subspace_lobpcg(
             idx = 0
             for p in params:
                 numel = p.numel()
-                q_vec.append(q_col[idx:idx + numel].view(p.shape))
+                q_vec.append(q_col[idx : idx + numel].view(p.shape))
                 idx += numel
             Gq = loss_fn_or_hvp(q_vec)
             Gq_col = torch.cat([g.flatten() for g in Gq])
@@ -246,7 +244,7 @@ def find_flat_subspace_lobpcg(
             offset = 0
             for p in params:
                 numel = p.numel()
-                vec.append(c[offset:offset + numel].view(p.shape))
+                vec.append(c[offset : offset + numel].view(p.shape))
                 offset += numel
             new_V.append(vec)
 
@@ -282,7 +280,7 @@ def compute_spectral_tail_potential_and_gradient(
     r = min(rank, m - 1)
 
     sigma_1 = S[0].item()
-    denom_sq = (sigma_1 ** 2) + eps
+    denom_sq = (sigma_1**2) + eps
     denom_lin = sigma_1 + eps
 
     tail_S = S[r:]
@@ -291,17 +289,17 @@ def compute_spectral_tail_potential_and_gradient(
     if sigma_tilde is None or sigma_tilde <= 0.0:
         sigma_tilde = float(torch.median(tail_S).item()) + 1e-4
 
-    loss_l2 = -torch.sum(tail_S ** 2) / denom_sq
+    loss_l2 = -torch.sum(tail_S**2) / denom_sq
     loss_nuc = -gamma_nuc * torch.sum(tail_S) / denom_lin
-    bump_exponent = -(tail_S ** 2) / (2.0 * (sigma_tilde ** 2))
+    bump_exponent = -(tail_S**2) / (2.0 * (sigma_tilde**2))
     loss_bump = gamma_bump * torch.mean(torch.exp(bump_exponent))
 
     phi_val = loss_l2 + loss_nuc + loss_bump
 
     g_i = (
-        - (2.0 * tail_S) / denom_sq
+        -(2.0 * tail_S) / denom_sq
         - (gamma_nuc / denom_lin)
-        - (gamma_bump / m_tail) * (tail_S / (sigma_tilde ** 2)) * torch.exp(bump_exponent)
+        - (gamma_bump / m_tail) * (tail_S / (sigma_tilde**2)) * torch.exp(bump_exponent)
     )
 
     U_tail = U[:, r:]
@@ -310,7 +308,7 @@ def compute_spectral_tail_potential_and_gradient(
 
     stats = {
         "sigma_1": sigma_1,
-        "tail_energy_ratio": float((torch.sum(tail_S ** 2) / (torch.sum(S ** 2) + eps)).item()),
+        "tail_energy_ratio": float((torch.sum(tail_S**2) / (torch.sum(S**2) + eps)).item()),
         "max_tail_sigma": float(tail_S[0].item()) if m_tail > 0 else 0.0,
         "median_tail_sigma": float(torch.median(tail_S).item()) if m_tail > 0 else 0.0,
         "sigma_tilde": float(sigma_tilde),
@@ -501,9 +499,7 @@ class HessianNullSpaceSVDContinuation:
             U, S, Vh = torch.linalg.svd(W_white, full_matrices=False)
             U_r = U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)
             V_white_r = torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]
-            V_unwhitened = torch.linalg.solve_triangular(
-                L.t(), V_white_r.t(), upper=True
-            ).t()
+            V_unwhitened = torch.linalg.solve_triangular(L.t(), V_white_r.t(), upper=True).t()
             A_r = U_r.to(device=orig_device, dtype=orig_dtype)
             B_r = V_unwhitened.to(device=orig_device, dtype=orig_dtype)
         except Exception:
@@ -565,7 +561,7 @@ class HessianNullSpaceSVDContinuation:
             for _ in range(15):
                 opt_local.zero_grad()
                 diff_act = torch.matmul(torch.matmul(U_param, V_param) - w_0, px.t())
-                loss_act = 0.5 * torch.mean(diff_act ** 2)
+                loss_act = 0.5 * torch.mean(diff_act**2)
                 loss_act.backward()
                 opt_local.step()
             W_hat = torch.matmul(U_param.data, V_param.data)
@@ -592,9 +588,11 @@ class HessianNullSpaceSVDContinuation:
                 batches = [probe_inputs.to(self.device)]
             else:
                 batches = [
-                    {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in b.items()}
-                    if isinstance(b, Mapping)
-                    else (b.to(self.device) if isinstance(b, torch.Tensor) else b)
+                    (
+                        {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in b.items()}
+                        if isinstance(b, Mapping)
+                        else (b.to(self.device) if isinstance(b, torch.Tensor) else b)
+                    )
                     for b in probe_inputs
                 ]
 
@@ -650,8 +648,10 @@ class HessianNullSpaceSVDContinuation:
         cached_inputs = {name: [] for name in target_layers}
         hooks = []
         for name, mod in target_layers.items():
+
             def _hook(m, inp, out, layer_name=name):
                 cached_inputs[layer_name].append(inp[0].detach())
+
             hooks.append(mod.register_forward_hook(_hook))
 
         with torch.no_grad():
@@ -700,8 +700,10 @@ class HessianNullSpaceSVDContinuation:
                     relin_inputs = {name: [] for name in target_layers}
                     r_hooks = []
                     for name, mod in target_layers.items():
+
                         def _rhook(m, inp, out, layer_name=name):
                             relin_inputs[layer_name].append(inp[0].detach())
+
                         r_hooks.append(mod.register_forward_hook(_rhook))
                     for b in batches:
                         if isinstance(b, (dict, Mapping)):
@@ -787,7 +789,7 @@ class HessianNullSpaceSVDContinuation:
         for name, mod in target_layers.items():
             S_steered = torch.linalg.svdvals(mod.weight.data.float())
             r_cur = max(1, min(self.target_rank, len(S_steered) - 1))
-            t_ratio = (S_steered[r_cur:] ** 2).sum().item() / max((S_steered ** 2).sum().item(), 1e-12)
+            t_ratio = (S_steered[r_cur:] ** 2).sum().item() / max((S_steered**2).sum().item(), 1e-12)
             steered_tail_energies[name] = t_ratio
 
         low_rank_factors = {}
@@ -820,7 +822,9 @@ class HessianNullSpaceSVDContinuation:
                 except Exception:
                     U, S, Vh = torch.linalg.svd(W_steered, full_matrices=False)
                     A_r = nn.Parameter((U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).to(self.device, dtype=torch.float32))
-                    B_r = nn.Parameter((torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).to(self.device, dtype=torch.float32))
+                    B_r = nn.Parameter(
+                        (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).to(self.device, dtype=torch.float32)
+                    )
             else:
                 U, S, Vh = torch.linalg.svd(W_steered, full_matrices=False)
                 A_r = nn.Parameter((U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).to(self.device, dtype=torch.float32))
@@ -855,9 +859,7 @@ class HessianNullSpaceSVDContinuation:
                 m_post = self.stage_d_steps
                 base_lr = 3e-3
                 post_opt = torch.optim.Adam(optimizer_factors, lr=base_lr, betas=(0.9, 0.99))
-                scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                    post_opt, T_max=m_post, eta_min=1e-5
-                )
+                scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(post_opt, T_max=m_post, eta_min=1e-5)
                 for step_d in range(m_post):
                     post_opt.zero_grad()
                     for name, (A_r, B_r, mod, is_conv1d) in low_rank_factors.items():
@@ -891,7 +893,6 @@ class HessianNullSpaceSVDContinuation:
             "mean_steered_tail_ratio": sum(steered_tail_energies.values()) / max(len(steered_tail_energies), 1),
             "step_history": step_history,
             "low_rank_factors": {
-                name: (A_r.data.clone(), B_r.data.clone())
-                for name, (A_r, B_r, *_) in low_rank_factors.items()
+                name: (A_r.data.clone(), B_r.data.clone()) for name, (A_r, B_r, *_) in low_rank_factors.items()
             },
         }

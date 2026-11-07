@@ -95,12 +95,8 @@ class FactorizedLinear(nn.Module):
         self.lin2 = self.up
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.in_features, **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty(self.out_features, self.lora_rank, **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -210,9 +206,7 @@ class FactorizedLinear(nn.Module):
             self.up.weight.data.zero_()
             self.up.weight.data[:, :r] = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
             self.down.weight.data.zero_()
-            self.down.weight.data[:r, :] = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(
-                self.down.weight.dtype
-            )
+            self.down.weight.data[:r, :] = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
 
             if bias is not None and self.up.bias is not None:
                 min_b = min(self.up.bias.numel(), bias.numel())
@@ -243,10 +237,13 @@ class FactorizedLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(
-                F.linear(x, self.lora_A.to(dtype=x.dtype)),
-                self.lora_B.to(dtype=x.dtype),
-            ) * self.lora_scaling
+            lora_out = (
+                F.linear(
+                    F.linear(x, self.lora_A.to(dtype=x.dtype)),
+                    self.lora_B.to(dtype=x.dtype),
+                )
+                * self.lora_scaling
+            )
             out = out + lora_out
         return out
 

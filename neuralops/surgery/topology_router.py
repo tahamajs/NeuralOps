@@ -16,6 +16,7 @@ from __future__ import annotations
 import inspect
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -131,9 +132,7 @@ def sanitize_kv_for_padding_mask(
         raise ValueError(f"Expected key/value tensors with rank 3 or 4, got rank {k.ndim}")
 
     seq_len = k.shape[-2]
-    keep_mask = extract_binary_token_mask(
-        attention_mask, seq_len=seq_len, device=k.device, dtype=k.dtype
-    )
+    keep_mask = extract_binary_token_mask(attention_mask, seq_len=seq_len, device=k.device, dtype=k.dtype)
     if keep_mask is None:
         return k, v
 
@@ -160,9 +159,7 @@ def sanitize_output_for_padding_mask(
     if attention_mask is None:
         return out
     seq_len = out.shape[-2]
-    keep_mask = extract_binary_token_mask(
-        attention_mask, seq_len=seq_len, device=out.device, dtype=out.dtype
-    )
+    keep_mask = extract_binary_token_mask(attention_mask, seq_len=seq_len, device=out.device, dtype=out.dtype)
     if keep_mask is None:
         return out
     if out.ndim == 4:
@@ -285,8 +282,7 @@ class AsymmetricCrossAttentionRouter(nn.Module):
             if sdpa_mask.ndim == 2:
                 if sdpa_mask.shape != (B, T_kv):
                     raise ValueError(
-                        f"2D cross-attention mask must have shape {(B, T_kv)}, "
-                        f"got {tuple(sdpa_mask.shape)}"
+                        f"2D cross-attention mask must have shape {(B, T_kv)}, " f"got {tuple(sdpa_mask.shape)}"
                     )
                 if sdpa_mask.dtype != torch.bool and not torch.is_floating_point(sdpa_mask):
                     sdpa_mask = sdpa_mask > 0
@@ -473,9 +469,7 @@ class TopologyRouter(nn.Module):
             accum_out = None
             for idx, name in enumerate(self.branch_names):
                 mod = self.branches[name]
-                out_branch = _call_branch_module(
-                    mod, hidden_states, *args, attention_mask=attention_mask, **kwargs
-                )
+                out_branch = _call_branch_module(mod, hidden_states, *args, attention_mask=attention_mask, **kwargs)
                 if isinstance(out_branch, tuple):
                     branch_tensor = out_branch[0]
                 else:
@@ -489,9 +483,7 @@ class TopologyRouter(nn.Module):
                     accum_out = accum_out + weighted
 
             if accum_out.shape != expected_shape:
-                raise ValueError(
-                    f"TopologyRouter shape mismatch: expected {expected_shape}, got {accum_out.shape}"
-                )
+                raise ValueError(f"TopologyRouter shape mismatch: expected {expected_shape}, got {accum_out.shape}")
             return accum_out
 
         # Discrete branch selection
@@ -500,9 +492,7 @@ class TopologyRouter(nn.Module):
             target_name = self.default_branch
 
         selected_module = self.branches[target_name]
-        out = _call_branch_module(
-            selected_module, hidden_states, *args, attention_mask=attention_mask, **kwargs
-        )
+        out = _call_branch_module(selected_module, hidden_states, *args, attention_mask=attention_mask, **kwargs)
 
         # Enforce shape consistency
         if isinstance(out, tuple):

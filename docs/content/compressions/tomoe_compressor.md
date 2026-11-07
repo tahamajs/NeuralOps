@@ -1,6 +1,6 @@
 # ToMoE: Converting Dense MLP into Mixture of Experts via Dynamic Structural Pruning
 
-**Registered as `tomoe`**  
+**Registered as `tomoe`**
 *Transforms selected linear layers (typically feed‑forward blocks) into a Mixture of Experts (MoE) by clustering output neurons based on weight similarity and adding a learned router, enabling sparse conditional computation and potential inference efficiency.*
 
 ---
@@ -197,4 +197,3 @@ The empirical evaluation of `tomoe_compressor` across standard sequence lengths 
 | **$L = 2048$** | 0.62 ms | 240 MB | $2.50\times$ |
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
-

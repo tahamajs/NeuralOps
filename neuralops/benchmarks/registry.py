@@ -14,9 +14,9 @@ mappings for the 12 operational benchmark modes.
 
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-import logging
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
@@ -30,6 +30,7 @@ class BenchmarkSpec:
 
     Adheres strictly to the Unified Benchmark CLI & Integrity Specification.
     """
+
     canonical_name: str
     category: str
     target_name: str
@@ -64,18 +65,18 @@ CANONICAL_BENCHMARK_DATASETS: list[str] = [
 
 # The 12 canonical operational modes formalized in UNIFIED_BENCHMARK_SPECIFICATION
 OPERATIONAL_BENCHMARK_MODES: list[str] = [
-    "checkpoint",              # Mode 1: Checkpoint evaluation
-    "sweep-attentions",        # Mode 2: Sequential attention sweep (131 keys)
-    "sweep-compressors",       # Mode 3: Sequential compression sweep (72 keys)
-    "flash-compute",           # Mode 4: Flash compute saturation (% peak TFLOPS)
-    "serving-poisson",         # Mode 5: Poisson cloud serving simulation
-    "ruler-niah",              # Mode 6: Extended context needle-in-a-haystack
-    "perplexity",              # Mode 7: Autoregressive perplexity quality
-    "lm-eval",                 # Mode 8: Multi-choice reasoning & accuracy
-    "ridge-healing",           # Mode 9: Closed-form calibration healing
-    "distributed-mfu",         # Mode 10: Multi-rank distributed MFU
-    "multi-seed",              # Mode 11: Statistical multi-seed invariance
-    "chaos-stress",            # Mode 12: Hardware dynamic range & chaos stress
+    "checkpoint",  # Mode 1: Checkpoint evaluation
+    "sweep-attentions",  # Mode 2: Sequential attention sweep (131 keys)
+    "sweep-compressors",  # Mode 3: Sequential compression sweep (72 keys)
+    "flash-compute",  # Mode 4: Flash compute saturation (% peak TFLOPS)
+    "serving-poisson",  # Mode 5: Poisson cloud serving simulation
+    "ruler-niah",  # Mode 6: Extended context needle-in-a-haystack
+    "perplexity",  # Mode 7: Autoregressive perplexity quality
+    "lm-eval",  # Mode 8: Multi-choice reasoning & accuracy
+    "ridge-healing",  # Mode 9: Closed-form calibration healing
+    "distributed-mfu",  # Mode 10: Multi-rank distributed MFU
+    "multi-seed",  # Mode 11: Statistical multi-seed invariance
+    "chaos-stress",  # Mode 12: Hardware dynamic range & chaos stress
 ]
 
 
@@ -200,10 +201,10 @@ class BenchmarkRegistry:
         Registers all 131 attention mechanisms, 72 compressor engines, and verified ops
         under strict canonical names ('attention:<name>', 'compressor:<name>', 'cuda:<name>', 'triton:<name>').
         """
-        from neuralops.benchmarks.discovery import discover_all_modules
-        from neuralops.benchmarks.ops_registry import OPS_REGISTRY
         from neuralops.benchmarks.adapters.cuda_adapter import CANONICAL_CUDA_MODULES
         from neuralops.benchmarks.adapters.triton_adapter import CANONICAL_TRITON_MODULES
+        from neuralops.benchmarks.discovery import discover_all_modules
+        from neuralops.benchmarks.ops_registry import OPS_REGISTRY
 
         count = 0
         modules = discover_all_modules()

@@ -21,6 +21,7 @@ from __future__ import annotations
 import logging
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -75,9 +76,9 @@ class DoRAProjectionWrapper(nn.Module):
         """Fuses DoRA adapter back into standard nn.Linear layer."""
         with torch.no_grad():
             w_eff = self.compute_effective_weight()
-            merged_layer = nn.Linear(
-                self.in_features, self.out_features, bias=(self.bias is not None)
-            ).to(w_eff.device, dtype=w_eff.dtype)
+            merged_layer = nn.Linear(self.in_features, self.out_features, bias=(self.bias is not None)).to(
+                w_eff.device, dtype=w_eff.dtype
+            )
             merged_layer.weight.data.copy_(w_eff)
             if self.bias is not None:
                 merged_layer.bias.data.copy_(self.bias)
@@ -105,7 +106,13 @@ class DoRAHealingHealer:
         self.rank = rank
         self.lora_alpha = lora_alpha
         self.target_substrings = target_substrings or [
-            "q_proj", "k_proj", "v_proj", "out_proj", "o_proj", "in_proj", "proj"
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "out_proj",
+            "o_proj",
+            "in_proj",
+            "proj",
         ]
         self.injected_wrappers: Dict[str, DoRAProjectionWrapper] = {}
 
@@ -115,12 +122,8 @@ class DoRAHealingHealer:
         for name, module in list(self.model.named_modules()):
             for child_name, child in list(module.named_children()):
                 full_child_name = f"{name}.{child_name}" if name else child_name
-                if isinstance(child, nn.Linear) and any(
-                    sub in full_child_name for sub in self.target_substrings
-                ):
-                    wrapper = DoRAProjectionWrapper(
-                        child, rank=self.rank, lora_alpha=self.lora_alpha
-                    )
+                if isinstance(child, nn.Linear) and any(sub in full_child_name for sub in self.target_substrings):
+                    wrapper = DoRAProjectionWrapper(child, rank=self.rank, lora_alpha=self.lora_alpha)
                     setattr(module, child_name, wrapper)
                     self.injected_wrappers[full_child_name] = wrapper
                     injected += 1

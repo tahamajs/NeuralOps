@@ -29,7 +29,9 @@ from neuralops.recipe.errors import (
 
 IDENTIFIER_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
 OPERATION_TYPE_RE = re.compile(r"^[a-z]+(\.[a-z0-9_-]+)+$")
-SEMVER_RE = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$")
+SEMVER_RE = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+)
 GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -58,30 +60,50 @@ class Metadata:
     @classmethod
     def from_dict(cls, data: Dict[str, Any], path: str = "metadata") -> Metadata:
         if not isinstance(data, dict):
-            raise RecipeSchemaError(f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path)
+            raise RecipeSchemaError(
+                f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path
+            )
 
-        allowed = {"name", "version", "description", "author", "created_at", "tags", "license", "production_ready", "references"}
+        allowed = {
+            "name",
+            "version",
+            "description",
+            "author",
+            "created_at",
+            "tags",
+            "license",
+            "production_ready",
+            "references",
+        }
         _validate_unknown_fields(data, allowed, path)
 
         for req in ("name", "version", "description"):
             if req not in data:
-                raise RecipeSchemaError(f"Missing required field '{req}' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.{req}")
+                raise RecipeSchemaError(
+                    f"Missing required field '{req}' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.{req}"
+                )
 
         name = data["name"]
         if not isinstance(name, str):
             raise RecipeSchemaError(f"Field '{path}.name' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.name")
         if not IDENTIFIER_RE.match(name):
-            raise RecipeSchemaError(f"Identifier '{name}' violates DNS-style naming", E_SCHEMA_INVALID_IDENTIFIER, f"{path}.name")
+            raise RecipeSchemaError(
+                f"Identifier '{name}' violates DNS-style naming", E_SCHEMA_INVALID_IDENTIFIER, f"{path}.name"
+            )
 
         ver = data["version"]
         if not isinstance(ver, str):
             raise RecipeSchemaError(f"Field '{path}.version' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.version")
         if not SEMVER_RE.match(ver):
-            raise RecipeSchemaError(f"Version '{ver}' violates SemVer 2.0.0", E_SCHEMA_INVALID_SEMVER, f"{path}.version")
+            raise RecipeSchemaError(
+                f"Version '{ver}' violates SemVer 2.0.0", E_SCHEMA_INVALID_SEMVER, f"{path}.version"
+            )
 
         desc = data["description"]
         if not isinstance(desc, str):
-            raise RecipeSchemaError(f"Field '{path}.description' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.description")
+            raise RecipeSchemaError(
+                f"Field '{path}.description' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.description"
+            )
 
         tags = data.get("tags", [])
         if not isinstance(tags, list):
@@ -112,14 +134,18 @@ class ModelSpec:
     @classmethod
     def from_dict(cls, data: Dict[str, Any], path: str = "model") -> ModelSpec:
         if not isinstance(data, dict):
-            raise RecipeSchemaError(f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path)
+            raise RecipeSchemaError(
+                f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path
+            )
 
         allowed = {"source", "dtype", "revision", "trust_remote_code", "device_map", "family"}
         _validate_unknown_fields(data, allowed, path)
 
         for req in ("source", "dtype"):
             if req not in data:
-                raise RecipeSchemaError(f"Missing required field '{req}' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.{req}")
+                raise RecipeSchemaError(
+                    f"Missing required field '{req}' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.{req}"
+                )
 
         source = data["source"]
         if not isinstance(source, str):
@@ -132,7 +158,9 @@ class ModelSpec:
         revision = data.get("revision")
         if revision is not None:
             if not isinstance(revision, str):
-                raise RecipeSchemaError(f"Field '{path}.revision' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.revision")
+                raise RecipeSchemaError(
+                    f"Field '{path}.revision' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.revision"
+                )
             if not GIT_SHA_RE.match(revision):
                 raise RecipeSchemaError(
                     f"Model revision '{revision}' must be a full 40-character commit SHA",
@@ -161,26 +189,36 @@ class Operation:
     @classmethod
     def from_dict(cls, data: Dict[str, Any], path: str = "operations[i]") -> Operation:
         if not isinstance(data, dict):
-            raise RecipeSchemaError(f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path)
+            raise RecipeSchemaError(
+                f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path
+            )
 
         allowed = {"type", "version", "config", "id", "depends_on"}
         _validate_unknown_fields(data, allowed, path)
 
         for req in ("type", "version", "config"):
             if req not in data:
-                raise RecipeSchemaError(f"Missing required field '{req}' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.{req}")
+                raise RecipeSchemaError(
+                    f"Missing required field '{req}' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.{req}"
+                )
 
         op_type = data["type"]
         if not isinstance(op_type, str):
             raise RecipeSchemaError(f"Field '{path}.type' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.type")
         if not OPERATION_TYPE_RE.match(op_type):
-            raise RecipeSchemaError(f"Operation type '{op_type}' must be dot-delimited namespace", E_SCHEMA_INVALID_IDENTIFIER, f"{path}.type")
+            raise RecipeSchemaError(
+                f"Operation type '{op_type}' must be dot-delimited namespace",
+                E_SCHEMA_INVALID_IDENTIFIER,
+                f"{path}.type",
+            )
 
         ver = data["version"]
         if not isinstance(ver, str):
             raise RecipeSchemaError(f"Field '{path}.version' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.version")
         if not SEMVER_RE.match(ver):
-            raise RecipeSchemaError(f"Operation version '{ver}' violates SemVer 2.0.0", E_SCHEMA_INVALID_SEMVER, f"{path}.version")
+            raise RecipeSchemaError(
+                f"Operation version '{ver}' violates SemVer 2.0.0", E_SCHEMA_INVALID_SEMVER, f"{path}.version"
+            )
 
         config = data["config"]
         if not isinstance(config, dict):
@@ -191,11 +229,15 @@ class Operation:
             if not isinstance(op_id, str):
                 raise RecipeSchemaError(f"Field '{path}.id' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.id")
             if not IDENTIFIER_RE.match(op_id):
-                raise RecipeSchemaError(f"Operation id '{op_id}' violates identifier format", E_SCHEMA_INVALID_IDENTIFIER, f"{path}.id")
+                raise RecipeSchemaError(
+                    f"Operation id '{op_id}' violates identifier format", E_SCHEMA_INVALID_IDENTIFIER, f"{path}.id"
+                )
 
         depends_on = data.get("depends_on", [])
         if not isinstance(depends_on, list):
-            raise RecipeSchemaError(f"Field '{path}.depends_on' must be a list", E_SCHEMA_WRONG_TYPE, f"{path}.depends_on")
+            raise RecipeSchemaError(
+                f"Field '{path}.depends_on' must be a list", E_SCHEMA_WRONG_TYPE, f"{path}.depends_on"
+            )
 
         return cls(
             type=op_type,
@@ -216,16 +258,30 @@ class ValidationSpec:
     @classmethod
     def from_dict(cls, data: Dict[str, Any], path: str = "validation") -> ValidationSpec:
         if not isinstance(data, dict):
-            raise RecipeSchemaError(f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path)
+            raise RecipeSchemaError(
+                f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path
+            )
 
         allowed = {"profile", "policy", "gates", "thresholds"}
         _validate_unknown_fields(data, allowed, path)
 
         if "profile" not in data:
-            raise RecipeSchemaError(f"Missing required field 'profile' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.profile")
+            raise RecipeSchemaError(
+                f"Missing required field 'profile' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.profile"
+            )
 
         profile = data["profile"]
-        valid_profiles = {"none", "quick", "structural", "standard", "numerical", "thorough", "behavioral", "empirical", "production"}
+        valid_profiles = {
+            "none",
+            "quick",
+            "structural",
+            "standard",
+            "numerical",
+            "thorough",
+            "behavioral",
+            "empirical",
+            "production",
+        }
         if profile not in valid_profiles:
             raise RecipeSchemaError(f"Invalid validation profile '{profile}'", E_SCHEMA_WRONG_TYPE, f"{path}.profile")
 
@@ -251,7 +307,9 @@ class ExecutionSpec:
     @classmethod
     def from_dict(cls, data: Dict[str, Any], path: str = "execution") -> ExecutionSpec:
         if not isinstance(data, dict):
-            raise RecipeSchemaError(f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path)
+            raise RecipeSchemaError(
+                f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path
+            )
 
         allowed = {"device", "seed", "rollback", "memory_budget_gb"}
         _validate_unknown_fields(data, allowed, path)
@@ -278,13 +336,17 @@ class ArtifactsSpec:
     @classmethod
     def from_dict(cls, data: Dict[str, Any], path: str = "artifacts") -> ArtifactsSpec:
         if not isinstance(data, dict):
-            raise RecipeSchemaError(f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path)
+            raise RecipeSchemaError(
+                f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path
+            )
 
         allowed = {"output_dir", "save_model", "save_report", "format"}
         _validate_unknown_fields(data, allowed, path)
 
         if "output_dir" not in data:
-            raise RecipeSchemaError(f"Missing required field 'output_dir' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.output_dir")
+            raise RecipeSchemaError(
+                f"Missing required field 'output_dir' in {path}", E_SCHEMA_MISSING_FIELD, f"{path}.output_dir"
+            )
 
         return cls(
             output_dir=data["output_dir"],
@@ -331,7 +393,9 @@ class Recipe:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> Recipe:
         if not isinstance(data, dict):
-            raise RecipeSchemaError(f"Top-level recipe must be a mapping, got {type(data).__name__}", E_SCHEMA_WRONG_TYPE)
+            raise RecipeSchemaError(
+                f"Top-level recipe must be a mapping, got {type(data).__name__}", E_SCHEMA_WRONG_TYPE
+            )
 
         allowed_root = {"apiVersion", "kind", "metadata", "model", "operations", "validation", "execution", "artifacts"}
         _validate_unknown_fields(data, allowed_root, "")
@@ -360,7 +424,9 @@ class Recipe:
         for i, op_data in enumerate(raw_ops):
             operations.append(Operation.from_dict(op_data, path=f"operations[{i}]"))
 
-        validation = ValidationSpec.from_dict(data["validation"]) if "validation" in data else ValidationSpec(profile="standard")
+        validation = (
+            ValidationSpec.from_dict(data["validation"]) if "validation" in data else ValidationSpec(profile="standard")
+        )
 
         # W15: Validation profile none requires production_ready: false
         if validation.profile == "none" and metadata.production_ready is not False:

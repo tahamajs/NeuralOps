@@ -1,7 +1,7 @@
 # Academic & Empirical Bad Results Audit Report
 
-**Date:** 2026-11-01  
-**Auditor / Author:** `taha <tahamaj4@gmail.com>`  
+**Date:** 2026-11-01
+**Auditor / Author:** `taha <tahamaj4@gmail.com>`
 **Scope:** Forensic inventory and cross-referencing of negative results, failure modes, timeouts, sub-1.0x kernel latencies, unverified states, and pseudo-Triton functions across `academic/`, `docs/`, `results/`, `README.md`, and `CHANGELOG.md`.
 
 ---

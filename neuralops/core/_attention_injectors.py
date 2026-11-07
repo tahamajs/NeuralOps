@@ -30,9 +30,9 @@ from neuralops.core._attention_surgery import (
 )
 from neuralops.core.adapters import get_adapter
 from neuralops.core.architecture import detect_architecture, get_attention_modules
+from neuralops.core.model_family import ModelAdapter, detect_family
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.model_family import ModelAdapter, detect_family
 from neuralops.utils.qwen_compat import QwenIncompatibleError
 
 logger = logging.getLogger(__name__)
@@ -76,11 +76,7 @@ def _prepare_layer_config(
 
     if hidden_size is None or num_heads is None:
         for _, child in old_attn.named_children():
-            if (
-                hasattr(child, "weight")
-                and isinstance(child.weight, torch.Tensor)
-                and child.weight.ndim == 2
-            ):
+            if hasattr(child, "weight") and isinstance(child.weight, torch.Tensor) and child.weight.ndim == 2:
                 if hidden_size is None:
                     hidden_size = child.weight.shape[1]
                 break
@@ -103,9 +99,7 @@ def _prepare_layer_config(
             head_dim = getattr(old_attn, "head_dim", hidden_size // max(1, num_heads))
 
     if config is None:
-        is_decoder_family_bool = bool(
-            is_dec or family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral")
-        )
+        is_decoder_family_bool = bool(is_dec or family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral"))
         config = SimpleNamespace(
             hidden_size=hidden_size,
             num_attention_heads=num_heads,
@@ -142,11 +136,7 @@ def _prepare_layer_config(
             )
             if existing_mod is None and hasattr(old_attn, "self"):
                 existing_mod = next(
-                    (
-                        getattr(old_attn.self, a)
-                        for a in alias_list
-                        if hasattr(old_attn.self, a)
-                    ),
+                    (getattr(old_attn.self, a) for a in alias_list if hasattr(old_attn.self, a)),
                     None,
                 )
 
@@ -252,8 +242,7 @@ def _instantiate_attention_layer(
                         pass
                     else:
                         raise QwenIncompatibleError(
-                            f"{attention_type}: {key}_projection_out={out_features}, "
-                            f"requires={expected[key]} (GQA)"
+                            f"{attention_type}: {key}_projection_out={out_features}, " f"requires={expected[key]} (GQA)"
                         )
 
     return new_attn
@@ -274,11 +263,7 @@ def _transplant_weights(
     if old_param is not None:
         new_attn.to(device=old_param.device, dtype=old_param.dtype)
 
-    if (
-        is_dec
-        or hasattr(old_attn, "c_attn")
-        or "gpt" in old_attn.__class__.__name__.lower()
-    ):
+    if is_dec or hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
         old_attn.is_decoder = True
         if hasattr(new_attn, "is_decoder"):
             new_attn.is_decoder = True
@@ -311,11 +296,7 @@ def _transplant_weights(
     if fused_mod is not None:
         sliced = _slice_fused_qkv_weights(
             fused_mod.weight.data,
-            (
-                fused_mod.bias.data
-                if hasattr(fused_mod, "bias") and fused_mod.bias is not None
-                else None
-            ),
+            (fused_mod.bias.data if hasattr(fused_mod, "bias") and fused_mod.bias is not None else None),
             num_heads=num_heads if num_heads is not None else 12,
             num_kv_heads=num_kv_heads or num_heads,
             head_dim=head_dim,
@@ -430,9 +411,8 @@ def _wrap_and_replace_layer(
         or layer_name.endswith(".attn")
     )
     from neuralops.utils.replace_attention import UniversalAttentionWrapper
-    wrapped_attn = UniversalAttentionWrapper(
-        new_attn, layer_name=layer_name, return_tuple=return_tuple
-    )
+
+    wrapped_attn = UniversalAttentionWrapper(new_attn, layer_name=layer_name, return_tuple=return_tuple)
     replace_module(model, layer_name, wrapped_attn)
 
 

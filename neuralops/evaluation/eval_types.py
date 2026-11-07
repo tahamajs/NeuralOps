@@ -18,7 +18,6 @@ import time
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
-
 MODEL_TOKENIZER_MAPPING: dict[str, str] = {
     "bert": "bert-base-uncased",
     "roberta": "roberta-base",

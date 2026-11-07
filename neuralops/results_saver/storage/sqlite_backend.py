@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -35,7 +35,8 @@ class SQLiteMasterLedger:
     def _init_schema(self) -> None:
         """Initialize master ledger schema and relational indexes."""
         cursor = self.conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS hardware_telemetry (
                 run_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 device_name TEXT,
@@ -44,8 +45,10 @@ class SQLiteMasterLedger:
                 driver_version TEXT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """)
-        cursor.execute("""
+        """
+        )
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS master_benchmark_results (
                 result_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 run_id INTEGER,
@@ -60,8 +63,10 @@ class SQLiteMasterLedger:
                 sha256_provenance TEXT,
                 FOREIGN KEY (run_id) REFERENCES hardware_telemetry (run_id)
             )
-        """)
-        cursor.execute("""
+        """
+        )
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS benchmark_runs (
                 run_id TEXT PRIMARY KEY,
                 benchmark_name TEXT NOT NULL,
@@ -83,8 +88,10 @@ class SQLiteMasterLedger:
                 passed_cells INTEGER DEFAULT 0,
                 failed_cells INTEGER DEFAULT 0
             )
-        """)
-        cursor.execute("""
+        """
+        )
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS benchmark_metrics (
                 metric_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 run_id TEXT NOT NULL,
@@ -101,11 +108,14 @@ class SQLiteMasterLedger:
                 extra_metadata TEXT,
                 FOREIGN KEY (run_id) REFERENCES benchmark_runs(run_id)
             )
-        """)
+        """
+        )
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_benchmark_runs_suite ON benchmark_runs(suite)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_benchmark_runs_timestamp ON benchmark_runs(timestamp_start_utc)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_benchmark_metrics_run ON benchmark_metrics(run_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_benchmark_metrics_mechanism ON benchmark_metrics(mechanism_or_kernel)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_benchmark_metrics_mechanism ON benchmark_metrics(mechanism_or_kernel)"
+        )
         self.conn.commit()
 
     def record_run(
@@ -137,7 +147,9 @@ class SQLiteMasterLedger:
         accuracy_pct: float,
     ) -> Tuple[int, str]:
         """Insert benchmark result with deterministic SHA-256 hash."""
-        raw_payload = f"{architecture_name}:{compression_method}:{batch_size}:{seq_len}:{latency_ms:.4f}:{accuracy_pct:.2f}"
+        raw_payload = (
+            f"{architecture_name}:{compression_method}:{batch_size}:{seq_len}:{latency_ms:.4f}:{accuracy_pct:.2f}"
+        )
         sha_hash = hashlib.sha256(raw_payload.encode("utf-8")).hexdigest()
 
         cursor = self.conn.cursor()
@@ -232,20 +244,22 @@ class SQLiteMasterLedger:
                 extra_str = json.dumps(extra)
             else:
                 extra_str = str(extra) if extra is not None else None
-            rows.append((
-                m["run_id"],
-                m.get("step", 0),
-                m["mechanism_or_kernel"],
-                m.get("batch_size"),
-                m.get("seq_len"),
-                m.get("dtype"),
-                m.get("latency_p50_ms"),
-                m.get("latency_p90_ms"),
-                m.get("latency_p99_ms"),
-                m.get("tflops"),
-                m.get("peak_vram_mb"),
-                extra_str,
-            ))
+            rows.append(
+                (
+                    m["run_id"],
+                    m.get("step", 0),
+                    m["mechanism_or_kernel"],
+                    m.get("batch_size"),
+                    m.get("seq_len"),
+                    m.get("dtype"),
+                    m.get("latency_p50_ms"),
+                    m.get("latency_p90_ms"),
+                    m.get("latency_p99_ms"),
+                    m.get("tflops"),
+                    m.get("peak_vram_mb"),
+                    extra_str,
+                )
+            )
         cursor.executemany(
             """
             INSERT INTO benchmark_metrics (

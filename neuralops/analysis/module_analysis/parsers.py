@@ -19,10 +19,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List
 
-from neuralops.analysis.module_analysis.constants import (
-    PAPERS_DIR,
-    PROJECT_ROOT,
-)
+from neuralops.analysis.module_analysis.constants import PAPERS_DIR, PROJECT_ROOT
 
 
 def load_all_csv_records() -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
@@ -59,9 +56,7 @@ def load_all_csv_records() -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
                 if "module_name" not in fns and "module" not in fns:
                     continue
                 for r in reader:
-                    norm_r = {
-                        k.strip().lower().replace(" ", "_"): v.strip() for k, v in r.items() if k
-                    }
+                    norm_r = {k.strip().lower().replace(" ", "_"): v.strip() for k, v in r.items() if k}
                     m = norm_r.get("module_name", "") or norm_r.get("module", "")
                     if not m or m in ("full", "baseline"):
                         continue

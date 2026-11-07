@@ -12,8 +12,10 @@ Profiles peak activation memory and execution time overhead across attention mec
 """
 
 from __future__ import annotations
-from typing import Callable, Any
+
 import time
+from typing import Any, Callable
+
 import torch
 import torch.nn as nn
 

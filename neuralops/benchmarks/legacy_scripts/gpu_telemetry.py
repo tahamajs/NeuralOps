@@ -42,32 +42,38 @@ def get_hardware_info() -> dict[str, Any]:
         total_vram_gb = props.total_memory / (1024**3)
         free_vram_gb = torch.cuda.mem_get_info()[0] / (1024**3)
         cap = (props.major, props.minor)
-        info.update({
-            "device_name": props.name,
-            "compute_capability": f"{cap[0]}.{cap[1]}",
-            "total_vram_gb": round(total_vram_gb, 2),
-            "free_vram_gb": round(free_vram_gb, 2),
-            "multi_processor_count": props.multi_processor_count,
-            "supports_bfloat16": cap[0] >= 8,
-            "supports_fp8": cap[0] >= 9,
-            "tensor_cores": cap[0] >= 7,
-        })
+        info.update(
+            {
+                "device_name": props.name,
+                "compute_capability": f"{cap[0]}.{cap[1]}",
+                "total_vram_gb": round(total_vram_gb, 2),
+                "free_vram_gb": round(free_vram_gb, 2),
+                "multi_processor_count": props.multi_processor_count,
+                "supports_bfloat16": cap[0] >= 8,
+                "supports_fp8": cap[0] >= 9,
+                "tensor_cores": cap[0] >= 7,
+            }
+        )
     elif info["mps_available"]:
-        info.update({
-            "device_name": "Apple Silicon (MPS)",
-            "compute_capability": "MPS",
-            "supports_bfloat16": True,
-            "supports_fp8": False,
-            "tensor_cores": False,
-        })
+        info.update(
+            {
+                "device_name": "Apple Silicon (MPS)",
+                "compute_capability": "MPS",
+                "supports_bfloat16": True,
+                "supports_fp8": False,
+                "tensor_cores": False,
+            }
+        )
     else:
-        info.update({
-            "device_name": "CPU",
-            "compute_capability": "CPU",
-            "supports_bfloat16": False,
-            "supports_fp8": False,
-            "tensor_cores": False,
-        })
+        info.update(
+            {
+                "device_name": "CPU",
+                "compute_capability": "CPU",
+                "supports_bfloat16": False,
+                "supports_fp8": False,
+                "tensor_cores": False,
+            }
+        )
     return info
 
 
@@ -87,6 +93,7 @@ def get_default_probe_module(dim: int = 768, num_heads: int = 12) -> nn.Module:
     """Build a representative attention module for realistic memory profiling."""
     try:
         from neuralops.layers.attention.cosformer_attention import CosformerLinearAttention
+
         return CosformerLinearAttention(dim=dim, num_heads=num_heads)
     except Exception:
         # Fallback to standard MultiheadAttention
@@ -134,7 +141,7 @@ class AutoVRAMSaturator:
             try:
                 # Synthetic input
                 x = torch.randn(b, seq_len, dim, device=self.device, requires_grad=True)
-                
+
                 # Execute realistic forward
                 if isinstance(model, nn.MultiheadAttention):
                     out, _ = model(x, x, x)
@@ -156,13 +163,15 @@ class AutoVRAMSaturator:
                     peak_mem_mb = 0.0
                     utilization = 0.0
 
-                measured_results.append({
-                    "batch_size": b,
-                    "seq_len": seq_len,
-                    "peak_mem_mb": round(peak_mem_mb, 2),
-                    "vram_utilization": round(utilization, 4),
-                    "status": "PASS",
-                })
+                measured_results.append(
+                    {
+                        "batch_size": b,
+                        "seq_len": seq_len,
+                        "peak_mem_mb": round(peak_mem_mb, 2),
+                        "vram_utilization": round(utilization, 4),
+                        "status": "PASS",
+                    }
+                )
 
                 if self.device.type == "cuda" and utilization > self.target_vram_utilization:
                     break
@@ -172,13 +181,15 @@ class AutoVRAMSaturator:
                 if "out of memory" in str(exc).lower():
                     if self.device.type == "cuda":
                         torch.cuda.empty_cache()
-                    measured_results.append({
-                        "batch_size": b,
-                        "seq_len": seq_len,
-                        "peak_mem_mb": -1,
-                        "vram_utilization": -1,
-                        "status": "OOM",
-                    })
+                    measured_results.append(
+                        {
+                            "batch_size": b,
+                            "seq_len": seq_len,
+                            "peak_mem_mb": -1,
+                            "vram_utilization": -1,
+                            "status": "OOM",
+                        }
+                    )
                     break
                 raise exc
 

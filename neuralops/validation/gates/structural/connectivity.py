@@ -64,9 +64,14 @@ class ConnectivityGate(Gate):
                 break
 
         passed = (total_modules == named_modules) and not orphan_found
-        msg = f"All {named_modules} modules properly rooted" if passed else (
-            f"Orphan module '{orphan_name}' detected in model graph" if orphan_found else
-            f"Module count mismatch: {total_modules} total vs {named_modules} named"
+        msg = (
+            f"All {named_modules} modules properly rooted"
+            if passed
+            else (
+                f"Orphan module '{orphan_name}' detected in model graph"
+                if orphan_found
+                else f"Module count mismatch: {total_modules} total vs {named_modules} named"
+            )
         )
 
         return GateResult(

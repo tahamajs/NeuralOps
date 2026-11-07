@@ -17,14 +17,7 @@ from .gelora import (
     estimate_intrinsic_dimension_pytorch,
 )
 from .llrd import apply_llrd, get_llrd_param_groups
-from .lora import (
-    DisLoRALinear,
-    DoRALinear,
-    LoRALinear,
-    apply_dislora,
-    apply_dora,
-    apply_lora,
-)
+from .lora import DisLoRALinear, DoRALinear, LoRALinear, apply_dislora, apply_dora, apply_lora
 from .mixout import MixoutLinear, apply_mixout
 from .rdrop_r3f import MethodTrainer, apply_r3f, apply_rdrop, r3f_forward, rdrop_loss
 from .registry import METHOD_REGISTRY, available_methods, get_method, register_method
@@ -57,10 +50,4 @@ __all__ = [
     "apply_r3f",
 ]
 
-from neuralops.trainer.methods import fisher
-from neuralops.trainer.methods import gelora
-from neuralops.trainer.methods import llrd
-from neuralops.trainer.methods import lora
-from neuralops.trainer.methods import mixout
-from neuralops.trainer.methods import rdrop_r3f
-from neuralops.trainer.methods import registry
+from neuralops.trainer.methods import fisher, gelora, llrd, lora, mixout, rdrop_r3f, registry

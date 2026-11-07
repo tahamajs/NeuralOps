@@ -42,10 +42,16 @@ def run_backward_stress_test(
     if device.type == "cuda":
         torch.cuda.set_device(device.index if device.index is not None else 0)
 
-    from neuralops.core.cuda_kernels.cross_attention.cross_attn_autograd import cross_attention, cross_attention_pytorch_ref
-    from neuralops.core.cuda_kernels.tt_contraction.tt_autograd import tt_contraction, tt_contraction_pytorch_ref
-    from neuralops.core.cuda_kernels.block_diag_gemm.block_diag_autograd import block_diag_matmul, block_diag_matmul_pytorch_ref
+    from neuralops.core.cuda_kernels.block_diag_gemm.block_diag_autograd import (
+        block_diag_matmul,
+        block_diag_matmul_pytorch_ref,
+    )
+    from neuralops.core.cuda_kernels.cross_attention.cross_attn_autograd import (
+        cross_attention,
+        cross_attention_pytorch_ref,
+    )
     from neuralops.core.cuda_kernels.samba_moe.samba_moe_autograd import samba_moe, samba_moe_ref
+    from neuralops.core.cuda_kernels.tt_contraction.tt_autograd import tt_contraction, tt_contraction_pytorch_ref
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
     print(f"=== Multi-Seed Stress Test on Backward Passes (Seeds {seeds}) on {device} ({gpu_name}) ===")
@@ -84,25 +90,31 @@ def run_backward_stress_test(
             has_nan_ca = any(torch.isnan(g).any().item() for g in [q_cuda.grad, k_cuda.grad, v_cuda.grad])
             has_inf_ca = any(torch.isinf(g).any().item() for g in [q_cuda.grad, k_cuda.grad, v_cuda.grad])
 
-            results.append({
-                "kernel": "cross_attention",
-                "seed": seed,
-                "fwd_max_diff": fwd_diff_ca,
-                "max_grad_diff": max_grad_ca,
-                "zero_nan": (not has_nan_ca) and (not has_inf_ca),
-                "status": "PASS" if max_grad_ca < 1e-4 and not has_nan_ca and not has_inf_ca else "FAIL",
-            })
-            print(f"  cross_attention | Fwd Diff: {fwd_diff_ca:.2e} | Max Grad Diff: {max_grad_ca:.2e} | Zero-NaN: {not has_nan_ca}")
+            results.append(
+                {
+                    "kernel": "cross_attention",
+                    "seed": seed,
+                    "fwd_max_diff": fwd_diff_ca,
+                    "max_grad_diff": max_grad_ca,
+                    "zero_nan": (not has_nan_ca) and (not has_inf_ca),
+                    "status": "PASS" if max_grad_ca < 1e-4 and not has_nan_ca and not has_inf_ca else "FAIL",
+                }
+            )
+            print(
+                f"  cross_attention | Fwd Diff: {fwd_diff_ca:.2e} | Max Grad Diff: {max_grad_ca:.2e} | Zero-NaN: {not has_nan_ca}"
+            )
         except Exception as exc:
             print(f"  cross_attention | EXCEPTION: {exc}")
-            results.append({
-                "kernel": "cross_attention",
-                "seed": seed,
-                "fwd_max_diff": float("inf"),
-                "max_grad_diff": float("inf"),
-                "zero_nan": False,
-                "status": f"FAIL ({exc})",
-            })
+            results.append(
+                {
+                    "kernel": "cross_attention",
+                    "seed": seed,
+                    "fwd_max_diff": float("inf"),
+                    "max_grad_diff": float("inf"),
+                    "zero_nan": False,
+                    "status": f"FAIL ({exc})",
+                }
+            )
 
         try:
             p_dims = (4, 4)
@@ -128,25 +140,31 @@ def run_backward_stress_test(
             has_nan_tt = any(torch.isnan(g).any().item() for g in [c0_cuda.grad, c1_cuda.grad])
             has_inf_tt = any(torch.isinf(g).any().item() for g in [c0_cuda.grad, c1_cuda.grad])
 
-            results.append({
-                "kernel": "tt_contraction",
-                "seed": seed,
-                "fwd_max_diff": fwd_diff_tt,
-                "max_grad_diff": max_grad_tt,
-                "zero_nan": (not has_nan_tt) and (not has_inf_tt),
-                "status": "PASS" if max_grad_tt < 1e-4 and not has_nan_tt and not has_inf_tt else "FAIL",
-            })
-            print(f"  tt_contraction  | Fwd Diff: {fwd_diff_tt:.2e} | Max Grad Diff: {max_grad_tt:.2e} | Zero-NaN: {not has_nan_tt}")
+            results.append(
+                {
+                    "kernel": "tt_contraction",
+                    "seed": seed,
+                    "fwd_max_diff": fwd_diff_tt,
+                    "max_grad_diff": max_grad_tt,
+                    "zero_nan": (not has_nan_tt) and (not has_inf_tt),
+                    "status": "PASS" if max_grad_tt < 1e-4 and not has_nan_tt and not has_inf_tt else "FAIL",
+                }
+            )
+            print(
+                f"  tt_contraction  | Fwd Diff: {fwd_diff_tt:.2e} | Max Grad Diff: {max_grad_tt:.2e} | Zero-NaN: {not has_nan_tt}"
+            )
         except Exception as exc:
             print(f"  tt_contraction  | EXCEPTION: {exc}")
-            results.append({
-                "kernel": "tt_contraction",
-                "seed": seed,
-                "fwd_max_diff": float("inf"),
-                "max_grad_diff": float("inf"),
-                "zero_nan": False,
-                "status": f"FAIL ({exc})",
-            })
+            results.append(
+                {
+                    "kernel": "tt_contraction",
+                    "seed": seed,
+                    "fwd_max_diff": float("inf"),
+                    "max_grad_diff": float("inf"),
+                    "zero_nan": False,
+                    "status": f"FAIL ({exc})",
+                }
+            )
 
         try:
             x_cuda = torch.randn(4, 64, device=device, dtype=torch.float32, requires_grad=True)
@@ -170,30 +188,38 @@ def run_backward_stress_test(
             has_nan_bd = any(torch.isnan(g).any().item() for g in [x_cuda.grad, w_cuda.grad])
             has_inf_bd = any(torch.isinf(g).any().item() for g in [x_cuda.grad, w_cuda.grad])
 
-            results.append({
-                "kernel": "block_diag_gemm",
-                "seed": seed,
-                "fwd_max_diff": fwd_diff_bd,
-                "max_grad_diff": max_grad_bd,
-                "zero_nan": (not has_nan_bd) and (not has_inf_bd),
-                "status": "PASS" if max_grad_bd < 1e-4 and not has_nan_bd and not has_inf_bd else "FAIL",
-            })
-            print(f"  block_diag_gemm | Fwd Diff: {fwd_diff_bd:.2e} | Max Grad Diff: {max_grad_bd:.2e} | Zero-NaN: {not has_nan_bd}")
+            results.append(
+                {
+                    "kernel": "block_diag_gemm",
+                    "seed": seed,
+                    "fwd_max_diff": fwd_diff_bd,
+                    "max_grad_diff": max_grad_bd,
+                    "zero_nan": (not has_nan_bd) and (not has_inf_bd),
+                    "status": "PASS" if max_grad_bd < 1e-4 and not has_nan_bd and not has_inf_bd else "FAIL",
+                }
+            )
+            print(
+                f"  block_diag_gemm | Fwd Diff: {fwd_diff_bd:.2e} | Max Grad Diff: {max_grad_bd:.2e} | Zero-NaN: {not has_nan_bd}"
+            )
         except Exception as exc:
             print(f"  block_diag_gemm | EXCEPTION: {exc}")
-            results.append({
-                "kernel": "block_diag_gemm",
-                "seed": seed,
-                "fwd_max_diff": float("inf"),
-                "max_grad_diff": float("inf"),
-                "zero_nan": False,
-                "status": f"FAIL ({exc})",
-            })
+            results.append(
+                {
+                    "kernel": "block_diag_gemm",
+                    "seed": seed,
+                    "fwd_max_diff": float("inf"),
+                    "max_grad_diff": float("inf"),
+                    "zero_nan": False,
+                    "status": f"FAIL ({exc})",
+                }
+            )
 
         try:
             e1_cuda = torch.randn(4, 32, 64, device=device, dtype=torch.float32, requires_grad=True)
             e2_cuda = torch.randn(4, 32, 64, device=device, dtype=torch.float32, requires_grad=True)
-            rw_cuda = torch.softmax(torch.randn(4, 32, 2, device=device, dtype=torch.float32), dim=-1).requires_grad_(True)
+            rw_cuda = torch.softmax(torch.randn(4, 32, 2, device=device, dtype=torch.float32), dim=-1).requires_grad_(
+                True
+            )
 
             e1_ref = e1_cuda.detach().clone().requires_grad_(True)
             e2_ref = e2_cuda.detach().clone().requires_grad_(True)
@@ -215,31 +241,39 @@ def run_backward_stress_test(
             has_nan_sm = any(torch.isnan(g).any().item() for g in [e1_cuda.grad, e2_cuda.grad, rw_cuda.grad])
             has_inf_sm = any(torch.isinf(g).any().item() for g in [e1_cuda.grad, e2_cuda.grad, rw_cuda.grad])
 
-            results.append({
-                "kernel": "samba_moe",
-                "seed": seed,
-                "fwd_max_diff": fwd_diff_sm,
-                "max_grad_diff": max_grad_sm,
-                "zero_nan": (not has_nan_sm) and (not has_inf_sm),
-                "status": "PASS" if max_grad_sm < 1e-4 and not has_nan_sm and not has_inf_sm else "FAIL",
-            })
-            print(f"  samba_moe       | Fwd Diff: {fwd_diff_sm:.2e} | Max Grad Diff: {max_grad_sm:.2e} | Zero-NaN: {not has_nan_sm}")
+            results.append(
+                {
+                    "kernel": "samba_moe",
+                    "seed": seed,
+                    "fwd_max_diff": fwd_diff_sm,
+                    "max_grad_diff": max_grad_sm,
+                    "zero_nan": (not has_nan_sm) and (not has_inf_sm),
+                    "status": "PASS" if max_grad_sm < 1e-4 and not has_nan_sm and not has_inf_sm else "FAIL",
+                }
+            )
+            print(
+                f"  samba_moe       | Fwd Diff: {fwd_diff_sm:.2e} | Max Grad Diff: {max_grad_sm:.2e} | Zero-NaN: {not has_nan_sm}"
+            )
         except Exception as exc:
             print(f"  samba_moe       | EXCEPTION: {exc}")
-            results.append({
-                "kernel": "samba_moe",
-                "seed": seed,
-                "fwd_max_diff": float("inf"),
-                "max_grad_diff": float("inf"),
-                "zero_nan": False,
-                "status": f"FAIL ({exc})",
-            })
+            results.append(
+                {
+                    "kernel": "samba_moe",
+                    "seed": seed,
+                    "fwd_max_diff": float("inf"),
+                    "max_grad_diff": float("inf"),
+                    "zero_nan": False,
+                    "status": f"FAIL ({exc})",
+                }
+            )
 
     if output_csv:
         csv_path = Path(output_csv)
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["kernel", "seed", "fwd_max_diff", "max_grad_diff", "zero_nan", "status"])
+            writer = csv.DictWriter(
+                f, fieldnames=["kernel", "seed", "fwd_max_diff", "max_grad_diff", "zero_nan", "status"]
+            )
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
@@ -257,9 +291,24 @@ def run_backward_stress_test(
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-Seed Backward Pass Stress Test")
-    parser.add_argument("--output", type=str, default="docs/benchmarks/paper_benchmarks_seeds_404_777_999.csv", help="Path to save CSV output")
-    parser.add_argument("--output-json", type=str, default="results/paper_benchmarks_seeds_404_777_999.json", help="Path to save JSON output")
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="docs/benchmarks/paper_benchmarks_seeds_404_777_999.csv",
+        help="Path to save CSV output",
+    )
+    parser.add_argument(
+        "--output-json",
+        type=str,
+        default="results/paper_benchmarks_seeds_404_777_999.json",
+        help="Path to save JSON output",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        help="Device to execute benchmark",
+    )
     parser.add_argument("--seeds", type=str, default="404,777,999", help="Comma-separated random seeds")
     parser.add_argument("--quick", action="store_true", help="Quick mode (single seed 404)")
     args = parser.parse_args()

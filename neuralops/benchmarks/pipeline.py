@@ -26,15 +26,8 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import torch
 import torch.nn as nn
 
-from neuralops.benchmarks.adapters.model import (
-    BaseModelAdapter,
-    UniversalModelAdapter,
-)
-from neuralops.benchmarks.registry import (
-    BENCHMARK_REGISTRY,
-    BaseBenchmark,
-    get_benchmark,
-)
+from neuralops.benchmarks.adapters.model import BaseModelAdapter, UniversalModelAdapter
+from neuralops.benchmarks.registry import BENCHMARK_REGISTRY, BaseBenchmark, get_benchmark
 from neuralops.benchmarks.results.saver import MultiFormatSaver
 from neuralops.benchmarks.results.schema import BenchmarkResult
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
@@ -163,9 +156,7 @@ class SweepController:
         if isinstance(target, BaseModelAdapter):
             self.base_adapter = target
         else:
-            self.base_adapter = UniversalModelAdapter.from_pretrained(
-                target, device=device
-            )
+            self.base_adapter = UniversalModelAdapter.from_pretrained(target, device=device)
         self.output_dir = output_dir or "results/sweep/"
         os.makedirs(self.output_dir, exist_ok=True)
         self.saver = saver or MultiFormatSaver(output_dir=self.output_dir)

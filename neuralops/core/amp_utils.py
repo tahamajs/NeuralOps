@@ -13,8 +13,9 @@ Hardware-aware mixed precision helpers detecting GPU capability and managing opt
 
 from __future__ import annotations
 
-from contextlib import nullcontext
 import logging
+from contextlib import nullcontext
+
 import torch
 
 logger = logging.getLogger(__name__)
@@ -28,22 +29,33 @@ def detect_amp_config(force_dtype=None):
         return _AMP_CONFIG
 
     if not torch.cuda.is_available():
-        cfg = dict(dtype=torch.float32, use_scaler=False, use_tf32=False,
-                   reason="CPU-only")
+        cfg = dict(dtype=torch.float32, use_scaler=False, use_tf32=False, reason="CPU-only")
     else:
         cap = torch.cuda.get_device_capability(0)
         major = cap[0]
         name = torch.cuda.get_device_name(0)
 
         if major >= 8:
-            cfg = dict(dtype=torch.bfloat16, use_scaler=False, use_tf32=True,
-                       reason=f"Ada/Ampere {name} (cap {cap}) → bfloat16")
+            cfg = dict(
+                dtype=torch.bfloat16,
+                use_scaler=False,
+                use_tf32=True,
+                reason=f"Ada/Ampere {name} (cap {cap}) → bfloat16",
+            )
         elif major >= 7:
-            cfg = dict(dtype=torch.float16, use_scaler=True, use_tf32=False,
-                       reason=f"Turing/Volta {name} (cap {cap}) → float16 + scaler")
+            cfg = dict(
+                dtype=torch.float16,
+                use_scaler=True,
+                use_tf32=False,
+                reason=f"Turing/Volta {name} (cap {cap}) → float16 + scaler",
+            )
         else:
-            cfg = dict(dtype=torch.float32, use_scaler=False, use_tf32=False,
-                       reason=f"Pascal/older {name} (cap {cap}) → float32 (FP16 unstable)")
+            cfg = dict(
+                dtype=torch.float32,
+                use_scaler=False,
+                use_tf32=False,
+                reason=f"Pascal/older {name} (cap {cap}) → float32 (FP16 unstable)",
+            )
 
     if force_dtype is None:
         _AMP_CONFIG = cfg

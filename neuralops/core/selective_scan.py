@@ -22,9 +22,7 @@ import torch.nn.functional as F
 logger = logging.getLogger(__name__)
 
 try:
-    from mamba_ssm.ops.selective_scan_interface import (
-        selective_scan_fn as _mamba_scan_fn,
-    )
+    from mamba_ssm.ops.selective_scan_interface import selective_scan_fn as _mamba_scan_fn
 
     HAS_MAMBA_CUDA = True
 except ImportError:
@@ -126,7 +124,6 @@ def selective_scan_chunked(
         delta_f = delta_f + delta_bias.float().view(1, -1, 1)
     if delta_softplus:
         delta_f = F.softplus(delta_f)
-
 
     dA = delta_f.unsqueeze(-1) * A_f.unsqueeze(0).unsqueeze(2)
     dA = dA.clamp(max=0.0)
@@ -237,17 +234,14 @@ def selective_scan(
             return _mamba_scan_fn(u, delta, A, B, C, D, z, delta_bias, delta_softplus)
         except Exception as e:
             logger.warning(
-                "mamba_ssm CUDA selective_scan failed (%s); "
-                "trying Level 1/2 NeuralOps fallback.",
+                "mamba_ssm CUDA selective_scan failed (%s); " "trying Level 1/2 NeuralOps fallback.",
                 e,
             )
 
     # Level 1 Native CUDA C++ / Level 2 Triton JIT / Level 3 PyTorch Fallback
     if u.is_cuda and z is None and delta_bias is None:
         try:
-            from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
-                selective_scan as _cuda_autograd_scan,
-            )
+            from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan as _cuda_autograd_scan
 
             out_tuple = _cuda_autograd_scan(u, delta, A, B, C, D)
             if isinstance(out_tuple, tuple):
@@ -260,9 +254,7 @@ def selective_scan(
             )
 
         try:
-            from neuralops.core.triton_kernels.selective_scan import (
-                selective_scan_fn as _triton_scan_fn,
-            )
+            from neuralops.core.triton_kernels.selective_scan import selective_scan_fn as _triton_scan_fn
 
             return _triton_scan_fn(u, delta, A, B, C, D=D, delta_softplus=delta_softplus)
         except Exception as exc:

@@ -21,14 +21,17 @@ Tests all 131 registered attention mechanisms across 8 strict mathematical and a
 
 import math
 from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
 
 from neuralops.core.registry import ATTENTION_REGISTRY
 
-
+ATTENTION_REGISTRY._load_all()
 ATTN_KEYS = sorted(ATTENTION_REGISTRY.keys())
+if len(ATTN_KEYS) < 116:
+    pytest.fail(f"Attention registry short: expected >= 116 names, got {len(ATTN_KEYS)}")
 
 
 def _instantiate_attn(attn_name: str, dim: int, num_heads: int, device: str = "cuda"):
@@ -75,8 +78,8 @@ def test_1_2_prime_and_boundary_sequence_lengths(attn_name):
             assert out.shape == (2, T, 64), f"{attn_name}: expected (2, {T}, 64), got {out.shape}"
             assert not torch.isnan(out).any(), f"{attn_name}: output has NaN at T={T}"
             assert not torch.isinf(out).any(), f"{attn_name}: output has Inf at T={T}"
-        except NotImplementedError:
-            pass
+        except NotImplementedError as exc:
+            pytest.fail(f"{attn_name} raised NotImplementedError: {exc}")
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
@@ -89,6 +92,7 @@ def test_1_3_strict_causal_non_leakage(attn_name):
 
     device = "cuda"
     mod = _instantiate_attn(attn_name, dim=64, num_heads=2, device=device)
+
     def _set_causal(m):
         if hasattr(m, "is_decoder"):
             m.is_decoder = True
@@ -96,6 +100,7 @@ def test_1_3_strict_causal_non_leakage(attn_name):
             m.is_causal = True
         for child in m.children():
             _set_causal(child)
+
     _set_causal(mod)
 
     B, T, D = 1, 16, 64
@@ -120,8 +125,8 @@ def test_1_3_strict_causal_non_leakage(attn_name):
         y2 = forward_causal(mod, x2)
         diff = (y1[:, :8, :] - y2[:, :8, :]).abs().max().item()
         assert diff < 1e-4, f"Causal leakage detected in {attn_name}! Past tokens changed by {diff:.6f}"
-    except NotImplementedError:
-        pass
+    except NotImplementedError as exc:
+        pytest.fail(f"{attn_name} raised NotImplementedError: {exc}")
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
@@ -148,8 +153,8 @@ def test_1_4_batch_independence_invariance(attn_name):
 
         max_diff = (out_a[0] - out_b[0]).abs().max().item()
         assert max_diff < 1e-4, f"Cross-batch contamination in {attn_name}! max_diff={max_diff:.6f}"
-    except NotImplementedError:
-        pass
+    except NotImplementedError as exc:
+        pytest.fail(f"{attn_name} raised NotImplementedError: {exc}")
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
@@ -171,8 +176,8 @@ def test_1_5_padding_mask_invariance(attn_name):
         assert not torch.isnan(out[:, :12, :]).any(), f"{attn_name}: NaNs produced in valid unmasked tokens!"
     except TypeError:
         pass
-    except NotImplementedError:
-        pass
+    except NotImplementedError as exc:
+        pytest.fail(f"{attn_name} raised NotImplementedError: {exc}")
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
@@ -194,8 +199,8 @@ def test_1_6_autograd_and_gradient_flow(attn_name):
         assert x.grad is not None, f"{attn_name}: x.grad is None!"
         assert not torch.isnan(x.grad).any(), f"{attn_name}: x.grad has NaN!"
         assert x.grad.abs().sum() > 0, f"{attn_name}: x.grad is all zeros!"
-    except NotImplementedError:
-        pass
+    except NotImplementedError as exc:
+        pytest.fail(f"{attn_name} raised NotImplementedError: {exc}")
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
@@ -214,8 +219,8 @@ def test_1_7_fp16_autocast_and_magnitude_stability(attn_name):
                 out = out[0]
             assert not torch.isnan(out).any(), f"{attn_name}: NaN under fp16 with large inputs!"
             assert not torch.isinf(out).any(), f"{attn_name}: Inf overflow under fp16!"
-        except NotImplementedError:
-            pass
+        except NotImplementedError as exc:
+            pytest.fail(f"{attn_name} raised NotImplementedError: {exc}")
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA required")
@@ -247,5 +252,5 @@ def test_1_8_autoregressive_step_operational_check(attn_name):
 
         y_concat = torch.cat(step_outputs, dim=1)
         assert y_concat.shape == (B, T, D)
-    except NotImplementedError:
-        pass
+    except NotImplementedError as exc:
+        pytest.fail(f"{attn_name} raised NotImplementedError: {exc}")

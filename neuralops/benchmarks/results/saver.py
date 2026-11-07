@@ -17,11 +17,12 @@ import csv
 import json
 import logging
 import os
-from pathlib import Path
 import sqlite3
 import threading
-from typing import Any, Dict, List, Optional
 import uuid
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 import pandas as pd
 
 from neuralops.benchmarks.results.schema import BenchmarkResult
@@ -58,7 +59,9 @@ def compute_result_path(result: BenchmarkResult, base_dir: Path | str = "results
     """
     mod_name = result.module.get("name", "baseline") if isinstance(result.module, dict) else str(result.module)
     mod_type = result.module.get("type", "attention") if isinstance(result.module, dict) else "attention"
-    mdl_name = result.model.get("name", "distilbert-base-uncased") if isinstance(result.model, dict) else str(result.model)
+    mdl_name = (
+        result.model.get("name", "distilbert-base-uncased") if isinstance(result.model, dict) else str(result.model)
+    )
     mdl_safe = mdl_name.replace("/", "_")
     ds_name = result.dataset.get("name", "sst2") if isinstance(result.dataset, dict) else str(result.dataset)
     rk = result.config.get("rank", 0) if isinstance(result.config, dict) else 0
@@ -137,7 +140,8 @@ def save_csv_index(result: BenchmarkResult, csv_path: Path | str) -> Path:
         "perplexity": (result.metrics or {}).get("post_ppl") or (result.metrics or {}).get("perplexity", ""),
         "kd_gain": (result.metrics or {}).get("kd_gain", ""),
         "recovery_pct": (result.metrics or {}).get("recovery_pct", ""),
-        "duration_s": (result.resources or {}).get("duration_s", "") or (result.resources or {}).get("train_duration_s", ""),
+        "duration_s": (result.resources or {}).get("duration_s", "")
+        or (result.resources or {}).get("train_duration_s", ""),
         "peak_vram_mb": (result.resources or {}).get("peak_vram_mb", ""),
         "checksum": getattr(result, "checksum", ""),
     }
@@ -240,7 +244,9 @@ def save_parquet_index(result: BenchmarkResult, parquet_path: Path | str) -> Pat
         "accuracy": float((result.metrics or {}).get("accuracy") or 0.0),
         "f1": float((result.metrics or {}).get("f1") or 0.0),
         "loss": float((result.metrics or {}).get("loss") or 0.0),
-        "duration_s": float((result.resources or {}).get("duration_s") or (result.resources or {}).get("train_duration_s") or 0.0),
+        "duration_s": float(
+            (result.resources or {}).get("duration_s") or (result.resources or {}).get("train_duration_s") or 0.0
+        ),
         "peak_vram_mb": float((result.resources or {}).get("peak_vram_mb") or 0.0),
     }
 
@@ -368,7 +374,9 @@ class MultiFormatSaver:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_bm_suite ON benchmark_runs (benchmark_suite)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_bm_status ON benchmark_runs (status)")
             # Multi-column indices per Phase 50
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_model_attn ON benchmark_runs (model_name, transplanted_attention)")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_model_attn ON benchmark_runs (model_name, transplanted_attention)"
+            )
             cur.execute("CREATE INDEX IF NOT EXISTS idx_suite_time ON benchmark_runs (benchmark_suite, timestamp)")
             conn.commit()
         finally:
@@ -458,7 +466,9 @@ class MultiFormatSaver:
 
     def _save_sqlite(self, result: BenchmarkResult) -> Path:
         """Persist structured record to master_ledger.db with mutex and connection timeout."""
-        env_json = json.dumps(result.environment.to_dict() if hasattr(result.environment, "to_dict") else result.environment, default=str)
+        env_json = json.dumps(
+            result.environment.to_dict() if hasattr(result.environment, "to_dict") else result.environment, default=str
+        )
         metrics_json = json.dumps(result.metrics or {}, default=str)
         metadata_json = json.dumps(result.metadata or {}, default=str)
         raw_result_str = json.dumps(result.to_dict(), default=str)

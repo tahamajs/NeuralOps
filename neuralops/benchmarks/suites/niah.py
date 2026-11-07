@@ -120,24 +120,26 @@ class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
 
         except Exception as e:
             logger.warning("NIAH iteration failed at ctx=%d, depth=%.2f: %s", ctx_len, depth, e)
-            self.results_table.append({
-                "step": step,
-                "mechanism_or_kernel": f"niah_ctx{ctx_len}_depth{int(depth * 100)}",
-                "batch_size": 1,
-                "seq_len": ctx_len,
-                "dtype": "fp32",
-                "depth_pct": depth,
-                "latency_ms": 0.0,
-                "latency_p50_ms": 0.0,
-                "latency_p90_ms": 0.0,
-                "latency_p99_ms": 0.0,
-                "retrieval_accuracy": 0.0,
-                "predicted_pos": -1,
-                "actual_pos": needle_pos,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": f"FAILED_RUNTIME: {e}",
-            })
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": f"niah_ctx{ctx_len}_depth{int(depth * 100)}",
+                    "batch_size": 1,
+                    "seq_len": ctx_len,
+                    "dtype": "fp32",
+                    "depth_pct": depth,
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "retrieval_accuracy": 0.0,
+                    "predicted_pos": -1,
+                    "actual_pos": needle_pos,
+                    "tflops": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": f"FAILED_RUNTIME: {e}",
+                }
+            )
             self.tracker.log_metric("niah_retrieval_accuracy", 0.0, step=step)
             self.tracker.log_metric("niah_latency_ms", 0.0, step=step)
             return {"accuracy": 0.0, "latency_ms": 0.0}

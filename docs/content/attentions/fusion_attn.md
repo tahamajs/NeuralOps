@@ -92,7 +92,7 @@ The module returns \(\mathbf{O}\) and `None` (for compatibility with interfaces 
 
 ## 3. Implementation Architecture & Execution Mechanics
 
-The `FullAttention` module is registered under the key `"full"` in the central `ATTENTION_REGISTRY`, subclassing `nn.Module` to establish native compatibility with the DistilBERT compression framework. 
+The `FullAttention` module is registered under the key `"full"` in the central `ATTENTION_REGISTRY`, subclassing `nn.Module` to establish native compatibility with the DistilBERT compression framework.
 
 During module initialization, the constructor ingests a configuration object defining the aggregate model dimension, attention head multiplicity, and dropout probability. It dynamically derives the per-head projection dimension $d_h = d_{\text{model}} / H$ alongside the total projected dimension $H \cdot d_h$, and instantiates parameterized affine transformations for query, key, value, and output projections equipped with learnable bias vectors. Concurrently, a stochastic dropout operator is registered to regularize the materialized attention distribution.
 
@@ -155,4 +155,3 @@ The empirical evaluation of `fusion_attn` across standard sequence lengths and l
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

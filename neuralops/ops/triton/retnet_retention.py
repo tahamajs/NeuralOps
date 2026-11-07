@@ -21,29 +21,38 @@ import torch
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
+
     class _MockTriton:
         @staticmethod
         def jit(fn):
             return fn
+
         @staticmethod
         def autotune(*args, **kwargs):
             return lambda fn: fn
+
         @staticmethod
         def cdiv(a, b):
             return (a + b - 1) // b
+
         class Config:
             def __init__(self, *args, **kwargs):
                 pass
+
     triton = _MockTriton()
+
     class _MockTl:
         constexpr = int
+
     tl = _MockTl()
 
 
 if HAS_TRITON:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 32}, num_warps=4, num_stages=2),
@@ -55,12 +64,30 @@ if HAS_TRITON:
     )
     @triton.jit
     def _retnet_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Gammas_ptr, Out_ptr,
-        stride_qb, stride_qh, stride_qm, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_ob, stride_oh, stride_om, stride_od,
-        B, H, L,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Gammas_ptr,
+        Out_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qm,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_ob,
+        stride_oh,
+        stride_om,
+        stride_od,
+        B,
+        H,
+        L,
         D: tl.constexpr,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
@@ -93,8 +120,12 @@ if HAS_TRITON:
             offs_n = start_n + tl.arange(0, BLOCK_N)
             mask_n = offs_n < L
 
-            k = tl.load(k_base + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd, mask=mask_n[:, None], other=0.0)
-            v = tl.load(v_base + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd, mask=mask_n[:, None], other=0.0)
+            k = tl.load(
+                k_base + offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd, mask=mask_n[:, None], other=0.0
+            )
+            v = tl.load(
+                v_base + offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd, mask=mask_n[:, None], other=0.0
+            )
 
             scores = tl.dot(q, tl.trans(k))
 
@@ -105,8 +136,14 @@ if HAS_TRITON:
             decayed_scores = scores * decay
             acc += tl.dot(decayed_scores.to(v.dtype), v)
 
-        tl.store(out_base + offs_m[:, None] * stride_om + offs_d[None, :] * stride_od, acc.to(Q_ptr.dtype.element_ty), mask=mask_m[:, None])
+        tl.store(
+            out_base + offs_m[:, None] * stride_om + offs_d[None, :] * stride_od,
+            acc.to(Q_ptr.dtype.element_ty),
+            mask=mask_m[:, None],
+        )
+
 else:
+
     def _retnet_fwd_kernel(*args, **kwargs):
         pass
 
@@ -140,7 +177,7 @@ class TritonRetNetRetentionFunction(torch.autograd.Function):
         gammas: torch.Tensor,
     ) -> torch.Tensor:
         orig_shape = q.shape
-        is_3d = (q.ndim == 3)
+        is_3d = q.ndim == 3
         if is_3d:
             B, L, D = q.shape
             H = 1
@@ -168,12 +205,30 @@ class TritonRetNetRetentionFunction(torch.autograd.Function):
         grid = lambda META: (triton.cdiv(L, META["BLOCK_M"]), B * H)
 
         _retnet_fwd_kernel[grid](
-            q_c, k_c, v_c, g_c, out_4d,
-            q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-            k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
-            v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
-            out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
-            B, H, L,
+            q_c,
+            k_c,
+            v_c,
+            g_c,
+            out_4d,
+            q_c.stride(0),
+            q_c.stride(1),
+            q_c.stride(2),
+            q_c.stride(3),
+            k_c.stride(0),
+            k_c.stride(1),
+            k_c.stride(2),
+            k_c.stride(3),
+            v_c.stride(0),
+            v_c.stride(1),
+            v_c.stride(2),
+            v_c.stride(3),
+            out_4d.stride(0),
+            out_4d.stride(1),
+            out_4d.stride(2),
+            out_4d.stride(3),
+            B,
+            H,
+            L,
             D=D,
         )
 
@@ -230,13 +285,11 @@ def triton_multi_scale_retention(
     gammas: torch.Tensor,
 ) -> torch.Tensor:
     """Dispatched RetNet Multi-Scale Retention with full Autograd backward support."""
-    if torch.is_grad_enabled() and any(
-        t.requires_grad for t in (q, k, v, gammas) if isinstance(t, torch.Tensor)
-    ):
+    if torch.is_grad_enabled() and any(t.requires_grad for t in (q, k, v, gammas) if isinstance(t, torch.Tensor)):
         return TritonRetNetRetentionFunction.apply(q, k, v, gammas)
 
     orig_shape = q.shape
-    is_3d = (q.ndim == 3)
+    is_3d = q.ndim == 3
     if is_3d:
         B, L, D = q.shape
         H = 1
@@ -261,12 +314,30 @@ def triton_multi_scale_retention(
 
     try:
         _retnet_fwd_kernel[grid](
-            q_c, k_c, v_c, g_c, out_4d,
-            q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-            k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
-            v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
-            out_4d.stride(0), out_4d.stride(1), out_4d.stride(2), out_4d.stride(3),
-            B, H, L,
+            q_c,
+            k_c,
+            v_c,
+            g_c,
+            out_4d,
+            q_c.stride(0),
+            q_c.stride(1),
+            q_c.stride(2),
+            q_c.stride(3),
+            k_c.stride(0),
+            k_c.stride(1),
+            k_c.stride(2),
+            k_c.stride(3),
+            v_c.stride(0),
+            v_c.stride(1),
+            v_c.stride(2),
+            v_c.stride(3),
+            out_4d.stride(0),
+            out_4d.stride(1),
+            out_4d.stride(2),
+            out_4d.stride(3),
+            B,
+            H,
+            L,
             D=D,
         )
         return out_4d.view(orig_shape)
@@ -274,7 +345,7 @@ def triton_multi_scale_retention(
         return triton_multi_scale_retention_pytorch_ref(q_4d, k_4d, v_4d, g_vec).view(orig_shape)
 
 
-from neuralops.ops.triton.retnet_scan import retnet_scan, retnet_scan_triton, retnet_scan_pytorch
+from neuralops.ops.triton.retnet_scan import retnet_scan, retnet_scan_pytorch, retnet_scan_triton
 
 triton_retnet_retention = triton_multi_scale_retention
 triton_retnet_retention_pytorch_ref = triton_multi_scale_retention_pytorch_ref

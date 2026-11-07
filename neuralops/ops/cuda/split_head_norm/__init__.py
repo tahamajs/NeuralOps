@@ -9,9 +9,6 @@
 Split-Head Normalization Hardware Operators.
 """
 
-from neuralops.ops.cuda.split_head_norm.split_head_norm_autograd import (
-    split_head_norm,
-    split_head_norm_pytorch_ref,
-)
+from neuralops.ops.cuda.split_head_norm.split_head_norm_autograd import split_head_norm, split_head_norm_pytorch_ref
 
 __all__ = ["split_head_norm", "split_head_norm_pytorch_ref"]

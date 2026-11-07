@@ -12,19 +12,14 @@ Advanced Optimization and Manifold Algorithms (Muon, Stiefel, Lion, WSD).
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
+
 import torch
 import torch.nn as nn
 
 from neuralops.trainer.optimizers.factory import OPTIMIZER_REGISTRY
 from neuralops.trainer.optimizers.lion import Lion, create_lion_optimizer
-from neuralops.trainer.optimizers.muon import (
-    Muon,
-    MuonAdamW,
-    create_muon_adamw_optimizer,
-)
-from neuralops.trainer.optimizers.riemannian import (
-    RiemannianStiefelOptimizer,
-)
+from neuralops.trainer.optimizers.muon import Muon, MuonAdamW, create_muon_adamw_optimizer
+from neuralops.trainer.optimizers.riemannian import RiemannianStiefelOptimizer
 
 
 def get_optimizer(
@@ -46,18 +41,12 @@ def get_optimizer(
     Returns:
         Configured torch.optim.Optimizer instance.
     """
-    params = (
-        model_or_params.parameters()
-        if isinstance(model_or_params, nn.Module)
-        else model_or_params
-    )
+    params = model_or_params.parameters() if isinstance(model_or_params, nn.Module) else model_or_params
 
     clean_name = name.lower().strip()
     if clean_name not in OPTIMIZER_REGISTRY:
         supported = list(OPTIMIZER_REGISTRY.keys())
-        raise ValueError(
-            f"Unknown optimizer '{name}'. Supported optimizers: {supported}"
-        )
+        raise ValueError(f"Unknown optimizer '{name}'. Supported optimizers: {supported}")
 
     builder = OPTIMIZER_REGISTRY[clean_name]
     return builder(params, lr=lr, weight_decay=weight_decay, **kwargs)

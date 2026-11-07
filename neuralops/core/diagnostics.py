@@ -77,12 +77,14 @@ def _get_registry_keys() -> list[str]:
     keys: list[str] = list(COMMON_ALIASES)
     try:
         from neuralops import ATTENTION_REGISTRY
+
         keys.extend(list(ATTENTION_REGISTRY.keys()))
     except Exception:
         # allowed-swallow: fallback registry keys
         pass
     try:
         from neuralops import COMPRESSOR_REGISTRY
+
         keys.extend(list(COMPRESSOR_REGISTRY.keys()))
     except Exception:
         # allowed-swallow: fallback registry keys
@@ -148,7 +150,9 @@ def diagnose_error(
         )
 
     # 4. Shape or Dimension Mismatch
-    elif "mismatch" in exc_msg.lower() and ("shape" in exc_msg.lower() or "size" in exc_msg.lower() or "dimension" in exc_msg.lower()):
+    elif "mismatch" in exc_msg.lower() and (
+        "shape" in exc_msg.lower() or "size" in exc_msg.lower() or "dimension" in exc_msg.lower()
+    ):
         diagnosis = f"Tensor shape or dimension mismatch: {exc_msg}"
         recommendation = (
             "Verify input tensor shapes against the operator contract. "
@@ -163,7 +167,4 @@ def diagnose_error(
     if not auto_format:
         return f"{diagnosis}\n{recommendation}"
 
-    return (
-        f"[bold red]DIAGNOSIS:[/] {diagnosis}\n"
-        f"[bold cyan]RECOMMENDATION:[/] {recommendation}"
-    )
+    return f"[bold red]DIAGNOSIS:[/] {diagnosis}\n" f"[bold cyan]RECOMMENDATION:[/] {recommendation}"

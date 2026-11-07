@@ -65,6 +65,7 @@ def layernorm_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.elementwise import layernorm_triton
+
         return layernorm_triton
     except (ImportError, AttributeError):
         return None
@@ -78,6 +79,7 @@ def layernorm(
     eps: float = 1e-6,
 ) -> torch.Tensor:
     """3-Level Dispatched Fused LayerNorm."""
+
     def cuda_fn(x, weight, bias=None, residual=None, eps=1e-6, **kwargs):
         mod = _get_module()
         return mod.layernorm_fwd(

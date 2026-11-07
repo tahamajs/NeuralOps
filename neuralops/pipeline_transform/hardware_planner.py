@@ -117,7 +117,9 @@ class ResourceEstimate:
         }
 
 
-def _resolve_hardware_profile(profile_arg: Optional[Union[str, HardwareProfile, Dict[str, Any]]]) -> Tuple[HardwareProfile, str, List[str]]:
+def _resolve_hardware_profile(
+    profile_arg: Optional[Union[str, HardwareProfile, Dict[str, Any]]],
+) -> Tuple[HardwareProfile, str, List[str]]:
     warnings: List[str] = []
     confidence = "medium"
 
@@ -142,7 +144,9 @@ def _resolve_hardware_profile(profile_arg: Optional[Union[str, HardwareProfile, 
                 return p, "high", warnings
 
         # Unknown profile string
-        warnings.append(f"Unknown hardware profile '{profile_arg}'; falling back to conservative defaults (confidence: low).")
+        warnings.append(
+            f"Unknown hardware profile '{profile_arg}'; falling back to conservative defaults (confidence: low)."
+        )
         fallback = HardwareProfile(
             name=f"Unknown GPU ({profile_arg})",
             vram_gb=16.0,
@@ -200,7 +204,12 @@ def estimate_resources(
             model_src = plan_or_recipe.model.source or ""
         elif isinstance(plan_or_recipe, dict):
             model_src = plan_or_recipe.get("model", {}).get("source", "")
-        elif isinstance(plan_or_recipe, ExecutionPlan) and hasattr(plan_or_recipe, "recipe") and plan_or_recipe.recipe and plan_or_recipe.recipe.model:
+        elif (
+            isinstance(plan_or_recipe, ExecutionPlan)
+            and hasattr(plan_or_recipe, "recipe")
+            and plan_or_recipe.recipe
+            and plan_or_recipe.recipe.model
+        ):
             model_src = plan_or_recipe.recipe.model.source or ""
 
         src_lower = model_src.lower()

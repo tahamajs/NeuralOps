@@ -135,15 +135,19 @@ class AdaptiveSVDLinear(nn.Module):
         if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+
                 base = fused_lowrank_gated_gemm(x, self.V, self.U, bias=self.bias)
                 if self.lora_A is not None and self.lora_B is not None:
-                    base = base + F.linear(F.linear(x, self.lora_A.to(x.dtype)), self.lora_B.to(x.dtype)) * getattr(self, "lora_scaling", 1.0)
+                    base = base + F.linear(F.linear(x, self.lora_A.to(x.dtype)), self.lora_B.to(x.dtype)) * getattr(
+                        self, "lora_scaling", 1.0
+                    )
                 return base.to(orig_dtype)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
         try:
             from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
             return fused_svd_lora_sparse_attn_triton(
                 x,
                 w_down=self.V,
@@ -389,9 +393,7 @@ class AdaptiveSVDAttention(BaseAttention):
     def v_lin_alias(self):
         return self.value
 
-    def _relative_position_bucket(
-        self, relative_position, bidirectional=True, num_buckets=32, max_distance=128
-    ):
+    def _relative_position_bucket(self, relative_position, bidirectional=True, num_buckets=32, max_distance=128):
         relative_buckets = 0
         if bidirectional:
             num_buckets //= 2
@@ -528,11 +530,7 @@ class AdaptiveSVDAttention(BaseAttention):
                     or "Conv1D" in base_o.__class__.__name__
                     or hasattr(o, "nf")
                     or hasattr(base_o, "nf")
-                    or (
-                        wo.dim() == 2
-                        and wo.shape[0] != self.hidden_size
-                        and wo.shape[1] == self.hidden_size
-                    )
+                    or (wo.dim() == 2 and wo.shape[0] != self.hidden_size and wo.shape[1] == self.hidden_size)
                     or (wo.dim() == 2 and wo.shape[0] < wo.shape[1])
                 )
                 if is_conv_o:
@@ -573,9 +571,7 @@ class AdaptiveSVDAttention(BaseAttention):
                             break
 
         cls_name = src.__class__.__name__
-        has_out_proj = any(
-            hasattr(src, a) for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj")
-        )
+        has_out_proj = any(hasattr(src, a) for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj"))
         is_nested = False
         if (
             (
@@ -611,9 +607,7 @@ class AdaptiveSVDAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(
-                f"AdaptiveSVDAttention.copy_weights: missing {missing} from {cls_name}."
-            )
+            raise RuntimeError(f"AdaptiveSVDAttention.copy_weights: missing {missing} from {cls_name}.")
 
         for k_ in ("q", "k", "v"):
             w = extracted[k_][0]

@@ -27,7 +27,7 @@ The 72 compression engines span 8 foundational algorithmic paradigms, totaling e
 
 > [!NOTE]
 > Summing across all 8 paradigms: $16 + 11 + 10 + 9 + 8 + 7 + 6 + 5 = \mathbf{72}$ canonical compression engines.
-> All empirical compression Pareto curves, WikiText-2 perplexity benchmarks, and GLUE retention matrices are available on Hugging Face:  
+> All empirical compression Pareto curves, WikiText-2 perplexity benchmarks, and GLUE retention matrices are available on Hugging Face:
 > 👉 **[https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)**
 
 ---

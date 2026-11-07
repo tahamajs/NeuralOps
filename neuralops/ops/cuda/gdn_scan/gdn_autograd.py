@@ -12,14 +12,17 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
+
 import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -38,6 +41,7 @@ def _get_module():
         )
     return _MODULE
 
+
 def chunked_delta_gate_scan_pytorch_ref(
     q: torch.Tensor,
     k: torch.Tensor,
@@ -46,14 +50,18 @@ def chunked_delta_gate_scan_pytorch_ref(
     beta: torch.Tensor,
 ) -> torch.Tensor:
     from neuralops.ops.triton.gdn_scan import triton_chunked_delta_gate_scan_pytorch_ref
+
     return triton_chunked_delta_gate_scan_pytorch_ref(q, k, v, alpha, beta)
+
 
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.gdn_scan import triton_chunked_delta_gate_scan
+
         return triton_chunked_delta_gate_scan
     except ImportError:
         return None
+
 
 def _chunked_delta_gate_scan_fwd_dispatch(
     q: torch.Tensor,
@@ -65,6 +73,7 @@ def _chunked_delta_gate_scan_fwd_dispatch(
     if q.shape[-1] > 64 or v.shape[-1] > 64:
         cuda_fn = None
     else:
+
         def cuda_fn(q, k, v, alpha, beta, **kwargs):
             mod = _get_module()
             return mod.chunked_delta_gate_scan_fwd(
@@ -84,6 +93,7 @@ def _chunked_delta_gate_scan_fwd_dispatch(
         beta,
         kernel_name="chunked_delta_gate_scan",
     )
+
 
 class _GDNScanFunction(torch.autograd.Function):
     @staticmethod
@@ -107,6 +117,7 @@ class _GDNScanFunction(torch.autograd.Function):
 
         grads = torch.autograd.grad(out_p, [q_p, k_p, v_p, alpha_p, beta_p], dout, allow_unused=True)
         return grads[0], grads[1], grads[2], grads[3], grads[4]
+
 
 def chunked_delta_gate_scan(
     q: torch.Tensor,

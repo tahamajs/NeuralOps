@@ -17,6 +17,7 @@ import json
 import math
 import os
 import sys
+
 import torch
 import torch.nn.functional as F
 
@@ -113,6 +114,7 @@ def time_fn(fn, device="cuda", warmup=10, iters=30):
         return s.elapsed_time(e) / iters
     else:
         import time
+
         t0 = time.perf_counter()
         for _ in range(iters):
             fn()
@@ -153,21 +155,15 @@ def run_bandwidth_benchmark(
     l2_cache_bytes = int(l2_cache_mb * 1024 * 1024)
     dram_peak_bytes = peak_bw_gbps * 1e9
 
-    from neuralops.core.cuda_kernels.fused_dropout_add.dropout_add_autograd import (
-        _get_module as get_fda,
-        fused_dropout_add_pytorch_ref,
-    )
-    from neuralops.core.cuda_kernels.fused_norm_linear.norm_linear_autograd import (
-        _get_module as get_fnl,
-        fused_norm_linear_pytorch_ref,
-    )
+    from neuralops.core.cuda_kernels.aegis_gate_norm.aegis_gate_norm_autograd import _get_module as get_agn
+    from neuralops.core.cuda_kernels.aegis_gate_norm.aegis_gate_norm_autograd import aegis_gate_norm_pytorch_ref
+    from neuralops.core.cuda_kernels.fused_dropout_add.dropout_add_autograd import _get_module as get_fda
+    from neuralops.core.cuda_kernels.fused_dropout_add.dropout_add_autograd import fused_dropout_add_pytorch_ref
+    from neuralops.core.cuda_kernels.fused_norm_linear.norm_linear_autograd import _get_module as get_fnl
+    from neuralops.core.cuda_kernels.fused_norm_linear.norm_linear_autograd import fused_norm_linear_pytorch_ref
+    from neuralops.core.cuda_kernels.rms_variance_match.rms_variance_match_autograd import _get_module as get_rvm
     from neuralops.core.cuda_kernels.rms_variance_match.rms_variance_match_autograd import (
-        _get_module as get_rvm,
         rms_variance_match_pytorch_ref,
-    )
-    from neuralops.core.cuda_kernels.aegis_gate_norm.aegis_gate_norm_autograd import (
-        _get_module as get_agn,
-        aegis_gate_norm_pytorch_ref,
     )
 
     mod_fda = get_fda()
@@ -178,7 +174,9 @@ def run_bandwidth_benchmark(
     dev_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
     print("=" * 140)
     print(f"Realistic LLM Training Batch Configurations Benchmark ({dev_name})")
-    print(f"Hardware Peak Memory Bandwidth: {peak_bw_gbps:.1f} GB/s | L2 Cache Size: {l2_cache_mb:.0f} MB | Precision: {dtype_str}")
+    print(
+        f"Hardware Peak Memory Bandwidth: {peak_bw_gbps:.1f} GB/s | L2 Cache Size: {l2_cache_mb:.0f} MB | Precision: {dtype_str}"
+    )
     print("=" * 140)
 
     results = []
@@ -192,82 +190,123 @@ def run_bandwidth_benchmark(
         bytes_fda = 3 * N * H * elem_bytes
         seed_val = int(torch.randint(0, 2**31, (1,), device="cpu").item())
 
-        t_fda_c = time_fn(lambda: mod_fda.fused_dropout_add_fwd(x, res, 0.1, False, seed_val), device=device, warmup=warmup, iters=repeat)
-        t_fda_p = time_fn(lambda: fused_dropout_add_pytorch_ref(x, res, 0.1, False), device=device, warmup=warmup, iters=repeat)
-        stats_fda = compute_bandwidth_stats(bytes_fda, t_fda_c, L2_cache_size_bytes=l2_cache_bytes, DRAM_peak_bw_bytes_per_sec=dram_peak_bytes)
+        t_fda_c = time_fn(
+            lambda: mod_fda.fused_dropout_add_fwd(x, res, 0.1, False, seed_val),
+            device=device,
+            warmup=warmup,
+            iters=repeat,
+        )
+        t_fda_p = time_fn(
+            lambda: fused_dropout_add_pytorch_ref(x, res, 0.1, False), device=device, warmup=warmup, iters=repeat
+        )
+        stats_fda = compute_bandwidth_stats(
+            bytes_fda, t_fda_c, L2_cache_size_bytes=l2_cache_bytes, DRAM_peak_bw_bytes_per_sec=dram_peak_bytes
+        )
 
-        results.append({
-            "kernel": "fused_dropout_add",
-            "cfg": f"B={B}, S={S}, H={H}",
-            "cuda_ms": t_fda_c,
-            "ref_ms": t_fda_p,
-            "speedup_str": format_speedup(t_fda_c, t_fda_p),
-            "speedup_raw": (t_fda_p / t_fda_c) if t_fda_c > 0 else 1.0,
-            "bw_gbps": stats_fda["achieved_bw_gbps"],
-            "sat_pct": stats_fda["saturation_pct"],
-            "regime": stats_fda["regime"],
-        })
+        results.append(
+            {
+                "kernel": "fused_dropout_add",
+                "cfg": f"B={B}, S={S}, H={H}",
+                "cuda_ms": t_fda_c,
+                "ref_ms": t_fda_p,
+                "speedup_str": format_speedup(t_fda_c, t_fda_p),
+                "speedup_raw": (t_fda_p / t_fda_c) if t_fda_c > 0 else 1.0,
+                "bw_gbps": stats_fda["achieved_bw_gbps"],
+                "sat_pct": stats_fda["saturation_pct"],
+                "regime": stats_fda["regime"],
+            }
+        )
 
         y = torch.randn(N, H, device=device, dtype=dtype)
         v = torch.randn(N, H, device=device, dtype=dtype)
         bytes_rvm = 3 * N * H * elem_bytes
 
-        t_rvm_c = time_fn(lambda: mod_rvm.rms_variance_match_fwd(y, v, 0.25, 4.0), device=device, warmup=warmup, iters=repeat)
-        t_rvm_p = time_fn(lambda: rms_variance_match_pytorch_ref(y, v, 0.25, 4.0), device=device, warmup=warmup, iters=repeat)
-        stats_rvm = compute_bandwidth_stats(bytes_rvm, t_rvm_c, L2_cache_size_bytes=l2_cache_bytes, DRAM_peak_bw_bytes_per_sec=dram_peak_bytes)
+        t_rvm_c = time_fn(
+            lambda: mod_rvm.rms_variance_match_fwd(y, v, 0.25, 4.0), device=device, warmup=warmup, iters=repeat
+        )
+        t_rvm_p = time_fn(
+            lambda: rms_variance_match_pytorch_ref(y, v, 0.25, 4.0), device=device, warmup=warmup, iters=repeat
+        )
+        stats_rvm = compute_bandwidth_stats(
+            bytes_rvm, t_rvm_c, L2_cache_size_bytes=l2_cache_bytes, DRAM_peak_bw_bytes_per_sec=dram_peak_bytes
+        )
 
-        results.append({
-            "kernel": "rms_variance_match",
-            "cfg": f"B={B}, S={S}, H={H}",
-            "cuda_ms": t_rvm_c,
-            "ref_ms": t_rvm_p,
-            "speedup_str": format_speedup(t_rvm_c, t_rvm_p),
-            "speedup_raw": (t_rvm_p / t_rvm_c) if t_rvm_c > 0 else 1.0,
-            "bw_gbps": stats_rvm["achieved_bw_gbps"],
-            "sat_pct": stats_rvm["saturation_pct"],
-            "regime": stats_rvm["regime"],
-        })
+        results.append(
+            {
+                "kernel": "rms_variance_match",
+                "cfg": f"B={B}, S={S}, H={H}",
+                "cuda_ms": t_rvm_c,
+                "ref_ms": t_rvm_p,
+                "speedup_str": format_speedup(t_rvm_c, t_rvm_p),
+                "speedup_raw": (t_rvm_p / t_rvm_c) if t_rvm_c > 0 else 1.0,
+                "bw_gbps": stats_rvm["achieved_bw_gbps"],
+                "sat_pct": stats_rvm["saturation_pct"],
+                "regime": stats_rvm["regime"],
+            }
+        )
 
         b0 = torch.randn(N, H, device=device, dtype=dtype)
         b1 = torch.randn(N, H, device=device, dtype=dtype)
         w_gate = torch.randn(N, 2, device=device, dtype=torch.float32)
         bytes_agn = (3 * N * H * elem_bytes) + (N * 2 * 4)
 
-        t_agn_c = time_fn(lambda: mod_agn.aegis_gate_norm_2branch_fwd(b0, b1, w_gate, 1e-5), device=device, warmup=warmup, iters=repeat)
-        t_agn_p = time_fn(lambda: aegis_gate_norm_pytorch_ref(b0, b1, w_gate, 1e-5), device=device, warmup=warmup, iters=repeat)
-        stats_agn = compute_bandwidth_stats(bytes_agn, t_agn_c, L2_cache_size_bytes=l2_cache_bytes, DRAM_peak_bw_bytes_per_sec=dram_peak_bytes)
+        t_agn_c = time_fn(
+            lambda: mod_agn.aegis_gate_norm_2branch_fwd(b0, b1, w_gate, 1e-5),
+            device=device,
+            warmup=warmup,
+            iters=repeat,
+        )
+        t_agn_p = time_fn(
+            lambda: aegis_gate_norm_pytorch_ref(b0, b1, w_gate, 1e-5), device=device, warmup=warmup, iters=repeat
+        )
+        stats_agn = compute_bandwidth_stats(
+            bytes_agn, t_agn_c, L2_cache_size_bytes=l2_cache_bytes, DRAM_peak_bw_bytes_per_sec=dram_peak_bytes
+        )
 
-        results.append({
-            "kernel": "aegis_gate_norm",
-            "cfg": f"B={B}, S={S}, H={H}",
-            "cuda_ms": t_agn_c,
-            "ref_ms": t_agn_p,
-            "speedup_str": format_speedup(t_agn_c, t_agn_p),
-            "speedup_raw": (t_agn_p / t_agn_c) if t_agn_c > 0 else 1.0,
-            "bw_gbps": stats_agn["achieved_bw_gbps"],
-            "sat_pct": stats_agn["saturation_pct"],
-            "regime": stats_agn["regime"],
-        })
+        results.append(
+            {
+                "kernel": "aegis_gate_norm",
+                "cfg": f"B={B}, S={S}, H={H}",
+                "cuda_ms": t_agn_c,
+                "ref_ms": t_agn_p,
+                "speedup_str": format_speedup(t_agn_c, t_agn_p),
+                "speedup_raw": (t_agn_p / t_agn_c) if t_agn_c > 0 else 1.0,
+                "bw_gbps": stats_agn["achieved_bw_gbps"],
+                "sat_pct": stats_agn["saturation_pct"],
+                "regime": stats_agn["regime"],
+            }
+        )
 
         w_lin = torch.randn(H, H, device=device, dtype=dtype)
         bytes_fnl = (2 * N * H + H * H) * elem_bytes
         empty_b = torch.empty(0, device=device, dtype=dtype)
 
-        t_fnl_c = time_fn(lambda: mod_fnl.fused_norm_linear_fwd(x, w_lin, empty_b, 1e-6)[0], device=device, warmup=warmup, iters=repeat)
-        t_fnl_p = time_fn(lambda: fused_norm_linear_pytorch_ref(x, w_lin, None, 1e-6), device=device, warmup=warmup, iters=repeat)
-        stats_fnl = compute_bandwidth_stats(bytes_fnl, t_fnl_c, L2_cache_size_bytes=l2_cache_bytes, DRAM_peak_bw_bytes_per_sec=dram_peak_bytes)
+        t_fnl_c = time_fn(
+            lambda: mod_fnl.fused_norm_linear_fwd(x, w_lin, empty_b, 1e-6)[0],
+            device=device,
+            warmup=warmup,
+            iters=repeat,
+        )
+        t_fnl_p = time_fn(
+            lambda: fused_norm_linear_pytorch_ref(x, w_lin, None, 1e-6), device=device, warmup=warmup, iters=repeat
+        )
+        stats_fnl = compute_bandwidth_stats(
+            bytes_fnl, t_fnl_c, L2_cache_size_bytes=l2_cache_bytes, DRAM_peak_bw_bytes_per_sec=dram_peak_bytes
+        )
 
-        results.append({
-            "kernel": "fused_norm_linear",
-            "cfg": f"B={B}, S={S}, H={H}",
-            "cuda_ms": t_fnl_c,
-            "ref_ms": t_fnl_p,
-            "speedup_str": format_speedup(t_fnl_c, t_fnl_p),
-            "speedup_raw": (t_fnl_p / t_fnl_c) if t_fnl_c > 0 else 1.0,
-            "bw_gbps": stats_fnl["achieved_bw_gbps"],
-            "sat_pct": stats_fnl["saturation_pct"],
-            "regime": stats_fnl["regime"],
-        })
+        results.append(
+            {
+                "kernel": "fused_norm_linear",
+                "cfg": f"B={B}, S={S}, H={H}",
+                "cuda_ms": t_fnl_c,
+                "ref_ms": t_fnl_p,
+                "speedup_str": format_speedup(t_fnl_c, t_fnl_p),
+                "speedup_raw": (t_fnl_p / t_fnl_c) if t_fnl_c > 0 else 1.0,
+                "bw_gbps": stats_fnl["achieved_bw_gbps"],
+                "sat_pct": stats_fnl["saturation_pct"],
+                "regime": stats_fnl["regime"],
+            }
+        )
 
         print(f"Config B={B}, S={S}, H={H} completed.")
 
@@ -282,7 +321,25 @@ def run_bandwidth_benchmark(
 
     print("\n" + "=" * 140)
     print(f"| {h_k:20} | {h_cfg:18} | {h_c:10} | {h_p:12} | {h_s:14} | {h_bw:18} | {h_sat:18} | {h_reg:12} |")
-    print("|" + "-" * 22 + "|" + "-" * 20 + "|" + "-" * 12 + "|" + "-" * 14 + "|" + "-" * 16 + "|" + "-" * 20 + "|" + "-" * 20 + "|" + "-" * 14 + "|")
+    print(
+        "|"
+        + "-" * 22
+        + "|"
+        + "-" * 20
+        + "|"
+        + "-" * 12
+        + "|"
+        + "-" * 14
+        + "|"
+        + "-" * 16
+        + "|"
+        + "-" * 20
+        + "|"
+        + "-" * 20
+        + "|"
+        + "-" * 14
+        + "|"
+    )
 
     for r in results:
         k = r["kernel"]
@@ -294,26 +351,41 @@ def run_bandwidth_benchmark(
         sat = r["sat_pct"]
         reg = r["regime"]
         sat_str = "N/A (L2-resident)" if math.isnan(sat) else f"{sat:10.1f}%"
-        print(f"| {k:20} | {cfg:18} | {c_ms:8.4f}ms | {p_ms:10.4f}ms | {spd_str:>14} | {bw:15.2f} GB/s | {sat_str:>18} | {reg:12} |")
+        print(
+            f"| {k:20} | {cfg:18} | {c_ms:8.4f}ms | {p_ms:10.4f}ms | {spd_str:>14} | {bw:15.2f} GB/s | {sat_str:>18} | {reg:12} |"
+        )
     print("=" * 140)
 
     if output_csv:
         os.makedirs(os.path.dirname(os.path.abspath(output_csv)), exist_ok=True)
         with open(output_csv, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(["Kernel", "Config", "CUDA (ms)", "PyTorch (ms)", "Speedup", "Bandwidth (GB/s)", "Saturation %", "Regime"])
+            writer.writerow(
+                [
+                    "Kernel",
+                    "Config",
+                    "CUDA (ms)",
+                    "PyTorch (ms)",
+                    "Speedup",
+                    "Bandwidth (GB/s)",
+                    "Saturation %",
+                    "Regime",
+                ]
+            )
             for r in results:
                 sat_val = "N/A (L2-resident)" if math.isnan(r["sat_pct"]) else f"{r['sat_pct']:.1f}%"
-                writer.writerow([
-                    r["kernel"],
-                    r["cfg"],
-                    f"{r['cuda_ms']:.4f}",
-                    f"{r['ref_ms']:.4f}",
-                    r["speedup_str"],
-                    f"{r['bw_gbps']:.2f}",
-                    sat_val,
-                    r["regime"],
-                ])
+                writer.writerow(
+                    [
+                        r["kernel"],
+                        r["cfg"],
+                        f"{r['cuda_ms']:.4f}",
+                        f"{r['ref_ms']:.4f}",
+                        r["speedup_str"],
+                        f"{r['bw_gbps']:.2f}",
+                        sat_val,
+                        r["regime"],
+                    ]
+                )
         print(f"\nSaved benchmark CSV results to {output_csv}")
 
     if output_json:
@@ -333,13 +405,30 @@ def run_bandwidth_benchmark(
 
 def main():
     parser = argparse.ArgumentParser(description="Realistic LLM Training Batch Configurations Benchmark")
-    parser.add_argument("--output", type=str, default="results/benchmark_4_kernels_corrected.csv", help="Path to save CSV output")
-    parser.add_argument("--output-json", type=str, default=None, help="Path to save JSON output (defaults to same stem as --output)")
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
-    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16", "fp16", "fp32", "bf16"], help="Data type precision")
+    parser.add_argument(
+        "--output", type=str, default="results/benchmark_4_kernels_corrected.csv", help="Path to save CSV output"
+    )
+    parser.add_argument(
+        "--output-json", type=str, default=None, help="Path to save JSON output (defaults to same stem as --output)"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        help="Device to execute benchmark",
+    )
+    parser.add_argument(
+        "--dtype",
+        type=str,
+        default="float16",
+        choices=["float16", "float32", "bfloat16", "fp16", "fp32", "bf16"],
+        help="Data type precision",
+    )
     parser.add_argument("--warmup", type=int, default=10, help="Number of warmup iterations")
     parser.add_argument("--repeat", type=int, default=30, help="Number of measurement repetitions")
-    parser.add_argument("--quick", action="store_true", help="Quick verification pass with fewer configs and iterations")
+    parser.add_argument(
+        "--quick", action="store_true", help="Quick verification pass with fewer configs and iterations"
+    )
     parser.add_argument("--peak-bw", type=float, default=DEFAULT_PEAK_BW_GBPS, help="Hardware Peak Bandwidth in GB/s")
     parser.add_argument("--l2-cache-mb", type=float, default=32.0, help="Hardware L2 Cache size in MB")
     args = parser.parse_args()

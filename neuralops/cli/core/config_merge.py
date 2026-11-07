@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from neuralops.benchmarks.config import BenchmarkConfig
+
 from .errors import ConfigurationError
 
 
@@ -86,6 +87,7 @@ def load_effective_config(args: argparse.Namespace) -> BenchmarkConfig:
             if p.suffix.lower() in (".yaml", ".yml"):
                 try:
                     import yaml
+
                     with open(p, "r", encoding="utf-8") as f:
                         file_data = yaml.safe_load(f) or {}
                 except ImportError as exc:

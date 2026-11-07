@@ -14,19 +14,19 @@ long-context NIAH retrieval, and hardware roofline profiling.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
 import gc
 import json
 import logging
 import math
 import os
-from pathlib import Path
 import subprocess
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 import uuid
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -170,7 +170,9 @@ class BenchmarkEvalResult:
         if self.niah_retrieval_accuracy is not None:
             lines.append(f"  NIAH Retrieval:     {self.niah_retrieval_accuracy * 100.0:.2f}%")
         if self.achieved_tflops > 0.0:
-            lines.append(f"  Achieved TFLOPS:    {self.achieved_tflops:.2f} TFLOPS ({self.roofline_bound or 'unknown'})")
+            lines.append(
+                f"  Achieved TFLOPS:    {self.achieved_tflops:.2f} TFLOPS ({self.roofline_bound or 'unknown'})"
+            )
         lines.append("==================================================")
         return "\n".join(lines)
 
@@ -183,15 +185,17 @@ class _FallbackEvalModel(nn.Module):
         self.vocab_size = vocab_size
         self.hidden_dim = hidden_dim
         self.embed = nn.Embedding(vocab_size, hidden_dim)
-        self.layers = nn.ModuleList([
-            nn.TransformerEncoderLayer(
-                d_model=hidden_dim,
-                nhead=8,
-                dim_feedforward=hidden_dim * 4,
-                batch_first=True,
-            )
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                nn.TransformerEncoderLayer(
+                    d_model=hidden_dim,
+                    nhead=8,
+                    dim_feedforward=hidden_dim * 4,
+                    batch_first=True,
+                )
+                for _ in range(num_layers)
+            ]
+        )
         self.head = nn.Linear(hidden_dim, vocab_size, bias=False)
 
     def forward(
@@ -279,7 +283,11 @@ class BenchmarkEvaluator:
 
         self._model: Optional[nn.Module] = None
         self._tokenizer: Optional[Any] = tokenizer
-        self.model_name = self.raw_model if isinstance(self.raw_model, str) else getattr(self.raw_model, "__class__", type("M", (), {})).__name__
+        self.model_name = (
+            self.raw_model
+            if isinstance(self.raw_model, str)
+            else getattr(self.raw_model, "__class__", type("M", (), {})).__name__
+        )
         self.model_family = self._infer_family(self.model_name)
 
     @staticmethod
@@ -565,6 +573,7 @@ class BenchmarkEvaluator:
         # Attempt 1: MultiDatasetLoader
         try:
             from torch.utils.data import DataLoader
+
             from neuralops.data.multidataset import MultiDatasetLoader
 
             loader = MultiDatasetLoader(

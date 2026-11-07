@@ -12,7 +12,6 @@ Formulates global layer rank allocation as a constrained optimization problem dr
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -22,6 +21,7 @@ import torch.nn as nn
 
 from neuralops.compression.svd.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -53,6 +53,7 @@ class EntropyBudgetCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     Entropy Budget Low-Rank SVD Compressor.
@@ -108,9 +109,7 @@ class EntropyBudgetCompressor(BaseCompressor):
         if self.rank is not None:
             self.rank = int(self.rank)
         self.eps = float(eps)
-        c_max_error = _cfg_get(
-            cfg, "entropy_budget_max_error", _cfg_get(cfg, "max_error", max_error)
-        )
+        c_max_error = _cfg_get(cfg, "entropy_budget_max_error", _cfg_get(cfg, "max_error", max_error))
         if c_max_error is None or c_max_error == 0.35:
             c_max_error = adaptive_max_error(self.rank or 64, 768, 768, "distilbert")
 
@@ -181,9 +180,7 @@ class EntropyBudgetCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention")
-            )
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 return False
 
@@ -235,10 +232,7 @@ class EntropyBudgetCompressor(BaseCompressor):
             with torch.no_grad():
                 for batch in self.calibration_loader:
                     if isinstance(batch, dict):
-                        batch = {
-                            k: v.to(device) if isinstance(v, torch.Tensor) else v
-                            for k, v in batch.items()
-                        }
+                        batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
                         self.model(**batch)
                     elif isinstance(batch, (list, tuple)):
                         batch = [v.to(device) if isinstance(v, torch.Tensor) else v for v in batch]
@@ -285,11 +279,7 @@ class EntropyBudgetCompressor(BaseCompressor):
                         p.requires_grad = False
                     self.skipped_layers.append(name)
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not target_layers:
             logger.warning("EntropyBudget: No compressible linear layers found.")
@@ -321,14 +311,10 @@ class EntropyBudgetCompressor(BaseCompressor):
             if name in covs and covs[name].shape == (in_f, in_f):
                 cov = covs[name].to(device=W.device, dtype=torch.float32)
                 try:
-                    eigvals, eigvecs = torch.linalg.eigh(
-                        cov + 1e-4 * torch.eye(in_f, device=W.device)
-                    )
+                    eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
                     eigvals_clamped = torch.clamp(eigvals, min=1e-4)
                     cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
-                    cov_inv_sqrt = (
-                        eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
-                    )
+                    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
                     M = W @ cov_sqrt
                 except Exception:
                     M = W
@@ -352,6 +338,7 @@ class EntropyBudgetCompressor(BaseCompressor):
             if S.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import triton_spectral_entropy_svd_gate
+
                     entropy_t, _ = triton_spectral_entropy_svd_gate(
                         S, V_r=None, U_r=None, effective_rank=None, threshold=self.eps
                     )
@@ -374,8 +361,7 @@ class EntropyBudgetCompressor(BaseCompressor):
 
         if self.rank is not None:
             allocated_ranks = {
-                name: int(max(1, min(int(self.rank), int(layer_decomp_info[name][4]))))
-                for name, _ in target_layers
+                name: int(max(1, min(int(self.rank), int(layer_decomp_info[name][4])))) for name, _ in target_layers
             }
         else:
             allocated_ranks = {name: layer_decomp_info[name][5] for name, _ in target_layers}
@@ -417,11 +403,7 @@ class EntropyBudgetCompressor(BaseCompressor):
 
             W_recon = torch.matmul(U_r.float(), V_r.float())
             norm_w = torch.norm(W, p="fro").item()
-            err = (
-                float(torch.norm(W - W_recon, p="fro").item() / max(norm_w, 1e-12))
-                if norm_w > 1e-12
-                else 0.0
-            )
+            err = float(torch.norm(W - W_recon, p="fro").item() / max(norm_w, 1e-12)) if norm_w > 1e-12 else 0.0
             self.layer_errors[name] = err
             self.layer_ranks[name] = r
 
@@ -496,8 +478,7 @@ class EntropyBudgetCompressor(BaseCompressor):
 
         effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )

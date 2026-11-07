@@ -1,6 +1,6 @@
 # Subspace Projection: Activation‑Aware Low‑Rank Compression via Randomized SVD
 
-**Registered as `subspace_projection`**  
+**Registered as `subspace_projection`**
 *Compresses linear layers using input activation covariance to whiten the weight matrix, then applies randomized SVD to efficiently find a low‑rank approximation aligned with data directions.*
 
 ---
@@ -118,7 +118,7 @@ Per linear layer of size `M × N` (d_out × d_in):
 
 Specifically, regarding \textbf{Covariance accumulation}, o( N_<sub>calibration_tokens</sub> · N² ) overall, but done once per layer via hooks. Furthermore, regarding \textbf{Cholesky}, o(N³) per layer, but N = d_in is typically ≤ 768, so very fast. Concurrently, regarding \textbf{Whitening (M = W @ L)}, o(M·N²) = O(M·N²). For 768×768, ~ 4.5×10⁸ FLOPS. In this setting, regarding \textbf{Randomized SVD},  Additionally, Sketch Y = M @ Ω: O(M·N·r). Moreover, Power iterations (2×): 2 · ( O(M·N·r) + O(M·r·N) ) = O(M·N·r) each pass. From an analytical standpoint, QR of Y: O(M·r²). In terms of operational dynamics, Form B = Q^T @ M: O(M·N·r). Specifically, SVD of B (size r × N): O(r·N·min(r,N)) = O(r·N·r) (since r ≤ N typically). Furthermore, Unwhitening: solve L^T, multiply: O(N³) but small.
 
-  Overall, the dominant cost is O(M·N·r) per iteration/pass. For M=N=768, r=128, this is ~ 7.5×10⁷ operations per matmul, much less than a full SVD.  
+  Overall, the dominant cost is O(M·N·r) per iteration/pass. For M=N=768, r=128, this is ~ 7.5×10⁷ operations per matmul, much less than a full SVD.
 **Total time** per layer: a few hundred milliseconds on GPU, significantly faster than full SVD for large M,N.
 
 
@@ -130,7 +130,7 @@ After compression, the weight matrix remains a dense `M × N` matrix. The forwar
 
 Specifically, regarding \textbf{During compression},  Furthermore, Covariance matrix C: N×N. Concurrently, Cholesky factor L: N×N. In this setting, Whitened weight M: M×N. Additionally, Sketch Y: M×r. Moreover, Q: M×r. From an analytical standpoint, B: r×N.
 
-  Overall memory is roughly the same as holding a few copies of the weight matrix, which is manageable.  
+  Overall memory is roughly the same as holding a few copies of the weight matrix, which is manageable.
 Specifically, regarding \textbf{After compression}, the parameter count remains unchanged (full dense weight). No reduction in model size on disk unless the weight is later replaced by the factor matrices.
 
 
@@ -254,4 +254,3 @@ The empirical evaluation of `optimal_subspace_projection` across standard sequen
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

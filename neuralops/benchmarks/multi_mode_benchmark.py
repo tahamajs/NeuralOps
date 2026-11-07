@@ -12,8 +12,9 @@ Multi-mode benchmark runner module.
 from __future__ import annotations
 
 from typing import Tuple
-from neuralops.benchmarks.harness import BenchmarkRunner, MultiModeBenchmarkRunner
+
 from neuralops.benchmarks.config import MultiModeConfig
+from neuralops.benchmarks.harness import BenchmarkRunner, MultiModeBenchmarkRunner
 
 SUPPORTED_MODES: Tuple[str, ...] = ("latency", "throughput", "memory", "quality", "scaling")
 

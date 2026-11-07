@@ -169,4 +169,3 @@ torch::Tensor adaptive_span_penalty_fwd(
     CUDA_KERNEL_LAUNCH_CHECK();
     return out;
 }
-

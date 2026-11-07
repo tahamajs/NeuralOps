@@ -37,9 +37,7 @@ class CloudflareTunnel:
         """
         bin_path = shutil.which("cloudflared")
         if not bin_path:
-            raise RuntimeError(
-                "cloudflared executable not found in PATH. Install cloudflared to use --share mode."
-            )
+            raise RuntimeError("cloudflared executable not found in PATH. Install cloudflared to use --share mode.")
 
         cmd = [
             bin_path,

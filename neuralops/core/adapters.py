@@ -92,17 +92,9 @@ class UniversalAdapter:
                 h_dim = getattr(tc, "head_dim", 256)
                 n_heads = getattr(tc, "num_attention_heads", getattr(old_attn, "num_heads", 8))
                 if w.shape[0] == n_heads * h_dim * 2:
-                    w = (
-                        w.view(n_heads, 2, h_dim, -1)[:, 0, :, :]
-                        .reshape(n_heads * h_dim, -1)
-                        .contiguous()
-                    )
+                    w = w.view(n_heads, 2, h_dim, -1)[:, 0, :, :].reshape(n_heads * h_dim, -1).contiguous()
                     if bias is not None:
-                        bias = (
-                            bias.view(n_heads, 2, h_dim)[:, 0, :]
-                            .reshape(n_heads * h_dim)
-                            .contiguous()
-                        )
+                        bias = bias.view(n_heads, 2, h_dim)[:, 0, :].reshape(n_heads * h_dim).contiguous()
             return w, bias
 
         for name in candidate_names:
@@ -136,9 +128,7 @@ class UniversalAdapter:
                 if proj == "q":
                     return w[:split_w, :], (b[:split_b] if b is not None else None)
                 elif proj == "k":
-                    return w[split_w : 2 * split_w, :], (
-                        b[split_b : 2 * split_b] if b is not None else None
-                    )
+                    return w[split_w : 2 * split_w, :], (b[split_b : 2 * split_b] if b is not None else None)
                 elif proj == "v":
                     return w[2 * split_w :, :], (b[2 * split_b :] if b is not None else None)
 
@@ -152,25 +142,15 @@ class UniversalAdapter:
                 if proj == "q":
                     return w[:q_dim, :], (b[:q_dim] if b is not None else None)
                 elif proj == "k":
-                    return w[q_dim : q_dim + k_dim, :], (
-                        b[q_dim : q_dim + k_dim] if b is not None else None
-                    )
+                    return w[q_dim : q_dim + k_dim, :], (b[q_dim : q_dim + k_dim] if b is not None else None)
                 elif proj == "v":
                     return w[q_dim + k_dim : q_dim + k_dim + v_dim, :], (
                         b[q_dim + k_dim : q_dim + k_dim + v_dim] if b is not None else None
                     )
 
         for obj in (target, old_attn):
-            if (
-                proj in ("q", "k", "v")
-                and hasattr(obj, "in_proj_weight")
-                and obj.in_proj_weight is not None
-            ):
-                w = (
-                    obj.in_proj_weight.data
-                    if hasattr(obj.in_proj_weight, "data")
-                    else obj.in_proj_weight
-                )
+            if proj in ("q", "k", "v") and hasattr(obj, "in_proj_weight") and obj.in_proj_weight is not None:
+                w = obj.in_proj_weight.data if hasattr(obj.in_proj_weight, "data") else obj.in_proj_weight
                 b = getattr(obj, "in_proj_bias", None)
                 b = b.data if (b is not None and hasattr(b, "data")) else b
                 split_w = w.size(0) // 3
@@ -182,9 +162,7 @@ class UniversalAdapter:
                         b[split_b : 2 * split_b].clone() if b is not None else None
                     )
                 elif proj == "v":
-                    return w[2 * split_w :, :].clone(), (
-                        b[2 * split_b :].clone() if b is not None else None
-                    )
+                    return w[2 * split_w :, :].clone(), (b[2 * split_b :].clone() if b is not None else None)
 
             if proj in ("q", "k", "v"):
                 attr_w = f"{proj}_proj_weight"
@@ -197,9 +175,7 @@ class UniversalAdapter:
 
         ordered_proj_map = {"q": 0, "k": 1, "v": 2}
         if proj in ordered_proj_map:
-            children_with_weight = [
-                (n, m) for n, m in target.named_children() if _extract(m) is not None
-            ]
+            children_with_weight = [(n, m) for n, m in target.named_children() if _extract(m) is not None]
             if len(children_with_weight) >= 3:
                 idx = ordered_proj_map[proj]
                 if idx < len(children_with_weight):
@@ -217,9 +193,7 @@ class UniversalAdapter:
                     zero_b = torch.zeros(d, dtype=mod.weight.dtype, device=mod.weight.device)
                     return eye_w, zero_b
 
-        raise ValueError(
-            f"Could not extract '{proj}' projection weights from {type(old_attn).__name__}"
-        )
+        raise ValueError(f"Could not extract '{proj}' projection weights from {type(old_attn).__name__}")
 
     @staticmethod
     def get_rotary_emb(old_attn: Any) -> Any | None:

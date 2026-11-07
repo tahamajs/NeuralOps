@@ -462,7 +462,7 @@ export async function bootstrapApp() {
 
         // 1. Try matching by parent_layer_index (numeric)
         if (!isNaN(numericIdx) && numericIdx !== 999) {
-            targetMeshes = interactableMeshes.filter(m => 
+            targetMeshes = interactableMeshes.filter(m =>
                 m.userData && (
                     m.userData.parent_layer_index === numericIdx ||
                     m.userData.parent_layer_idx === numericIdx ||

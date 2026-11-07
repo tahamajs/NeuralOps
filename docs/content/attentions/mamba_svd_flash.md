@@ -149,4 +149,3 @@ The empirical evaluation of `mamba_svd_flash` across standard sequence lengths a
 | **$L = 2048$** | 0.45 ms | 180 MB | $2.50\times$ |
 | **$L = 4096$** | 0.85 ms | 288 MB | $4.20\times$ |
 | **$L = 8192$** | **1.65 ms** | **320 MB** | **7.75x** |
-

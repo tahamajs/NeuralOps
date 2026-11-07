@@ -10,8 +10,7 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/SVD_linear_Attention/graphs/contributors
-"""Model loading and architecture adaptation subsystem package.
-"""
+"""Model loading and architecture adaptation subsystem package."""
 
 from neuralops.benchmarks.models.loader import (
     MODEL_ADAPTER_REGISTRY,

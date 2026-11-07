@@ -1,10 +1,10 @@
 # NeuralOps Final Full Regression, Documentation & Release Report
-**Release Version**: `v2.0.1-gpu-verified`  
-**Target Architecture**: NVIDIA Ada Lovelace / Ampere (Verified on RTX 3090 24GB, CUDA 11.3, GCC 8.2)  
-**Execution Node**: Sharif University HPC Center (`GPU-3090-1`)  
-**Commit SHA**: `872b724e375f9fb1f5fe4cc9ed2803e4152fa403`  
-**Tag SHA**: `99231dd35c224325c6752c3c5f24a56a19807e63`  
-**Attribution**: `taha <tahamaj4@gmail.com>`  
+**Release Version**: `v2.0.1-gpu-verified`
+**Target Architecture**: NVIDIA Ada Lovelace / Ampere (Verified on RTX 3090 24GB, CUDA 11.3, GCC 8.2)
+**Execution Node**: Sharif University HPC Center (`GPU-3090-1`)
+**Commit SHA**: `872b724e375f9fb1f5fe4cc9ed2803e4152fa403`
+**Tag SHA**: `99231dd35c224325c6752c3c5f24a56a19807e63`
+**Attribution**: `taha <tahamaj4@gmail.com>`
 
 ---
 

@@ -11,11 +11,11 @@ Abstract base benchmark interface and execution summary dataclass.
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, field
 import logging
 import math
 import time
+from abc import ABC, abstractmethod
+from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import torch

@@ -77,6 +77,7 @@ def _block_sparse_triton_wrapper(
 ) -> torch.Tensor | None:
     try:
         from neuralops.ops.triton.block_sparse import block_sparse_attention
+
         N = q.shape[2]
         dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N]
         return block_sparse_attention(q, k, v, dense_mask)
@@ -152,9 +153,15 @@ class _BlockSparseAttnAutograd(torch.autograd.Function):
         B, H, N, D = q.shape
         scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
         if block_mask.dim() == 4:
-            dense_mask = block_mask.repeat_interleave(block_size, dim=-2).repeat_interleave(block_size, dim=-1)[..., :N, :N].bool()
+            dense_mask = (
+                block_mask.repeat_interleave(block_size, dim=-2)
+                .repeat_interleave(block_size, dim=-1)[..., :N, :N]
+                .bool()
+            )
         elif block_mask.dim() == 2:
-            dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N].bool()
+            dense_mask = (
+                block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N].bool()
+            )
             dense_mask = dense_mask.unsqueeze(0).unsqueeze(0).expand(B, H, N, N)
         else:
             dense_mask = torch.ones(B, H, N, N, device=q.device, dtype=torch.bool)
@@ -228,7 +235,9 @@ def block_sparse_attn_bwd(
     B, H, N, D = q.shape
     scores = torch.matmul(q.float(), k.float().transpose(-1, -2)) * scale
     if block_mask.dim() == 4:
-        dense_mask = block_mask.repeat_interleave(block_size, dim=-2).repeat_interleave(block_size, dim=-1)[..., :N, :N].bool()
+        dense_mask = (
+            block_mask.repeat_interleave(block_size, dim=-2).repeat_interleave(block_size, dim=-1)[..., :N, :N].bool()
+        )
     elif block_mask.dim() == 2:
         dense_mask = block_mask.repeat_interleave(block_size, dim=0).repeat_interleave(block_size, dim=1)[:N, :N].bool()
         dense_mask = dense_mask.unsqueeze(0).unsqueeze(0).expand(B, H, N, N)

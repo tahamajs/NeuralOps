@@ -20,6 +20,7 @@ from __future__ import annotations
 import copy
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -123,9 +124,7 @@ class TTTOnlineAdapter:
                 loss = F.mse_loss(pred_x, target_x, reduction="mean")
             total_loss += loss.item()
 
-            grads = torch.autograd.grad(
-                loss, target_params, retain_graph=False, create_graph=False, allow_unused=True
-            )
+            grads = torch.autograd.grad(loss, target_params, retain_graph=False, create_graph=False, allow_unused=True)
 
             with torch.no_grad():
                 for p, g in zip(target_params, grads):

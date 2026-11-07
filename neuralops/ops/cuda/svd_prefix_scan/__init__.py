@@ -9,9 +9,6 @@
 SVD Prefix Scan Hardware Operators.
 """
 
-from neuralops.ops.cuda.svd_prefix_scan.svd_prefix_scan_autograd import (
-    svd_prefix_scan,
-    svd_prefix_scan_pytorch_ref,
-)
+from neuralops.ops.cuda.svd_prefix_scan.svd_prefix_scan_autograd import svd_prefix_scan, svd_prefix_scan_pytorch_ref
 
 __all__ = ["svd_prefix_scan", "svd_prefix_scan_pytorch_ref"]

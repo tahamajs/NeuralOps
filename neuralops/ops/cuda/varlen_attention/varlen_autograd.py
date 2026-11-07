@@ -80,6 +80,7 @@ def varlen_attention_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.varlen_attention import varlen_attention_triton
+
         return varlen_attention_triton
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed to initialize Triton implementation for varlen attention: %s", exc, exc_info=True)
@@ -97,6 +98,7 @@ def varlen_attention(
     is_causal: bool = False,
 ) -> torch.Tensor:
     """3-Level Dispatched Variable-Length Attention."""
+
     def cuda_fn(q, k, v, cu_q, cu_k, max_q, max_k, is_causal=False, **kwargs):
         mod = _get_module()
         return mod.varlen_attention_fwd(

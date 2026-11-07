@@ -40,6 +40,7 @@ def register_operation(
 
     Can be used as a function call or decorator on Operation classes.
     """
+
     def _decorator(target: Union[Operation, Type[Operation], Callable[..., Any]]) -> Any:
         instance: Operation
         if isinstance(target, type) and issubclass(target, Operation):

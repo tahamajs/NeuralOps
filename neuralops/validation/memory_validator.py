@@ -13,6 +13,7 @@ Tracks and profiles host RAM and GPU VRAM usage during model execution.
 
 import torch
 
+
 class MemoryTracker:
     def __init__(self):
         self.peak = 0
@@ -33,13 +34,13 @@ class MemoryTracker:
     def report(self):
         if torch.cuda.is_available():
             total = torch.cuda.get_device_properties(0).total_memory / 1e9
-            print(f'  Peak VRAM: {self.peak:.2f} GB / {total:.2f} GB ({self.peak/total*100:.1f}%)')
+            print(f"  Peak VRAM: {self.peak:.2f} GB / {total:.2f} GB ({self.peak/total*100:.1f}%)")
         else:
-            print('  Peak VRAM: N/A (CPU mode)')
+            print("  Peak VRAM: N/A (CPU mode)")
 
     def check_ok(self, threshold=0.9):
         if not torch.cuda.is_available():
             return True
         total = torch.cuda.get_device_properties(0).total_memory / 1e9
         if self.peak / total > threshold:
-            raise MemoryError(f'VRAM usage > {threshold*100}%')
+            raise MemoryError(f"VRAM usage > {threshold*100}%")

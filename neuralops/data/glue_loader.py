@@ -47,9 +47,7 @@ def load_glue_local(task: str, base_path: str | Path | None = None) -> Any:
     try:
         return datasets.load_dataset("glue", key)
     except Exception as exc:
-        raise RuntimeError(
-            f"GLUE task '{key}' is not cached at {task_path} and could not be downloaded"
-        ) from exc
+        raise RuntimeError(f"GLUE task '{key}' is not cached at {task_path} and could not be downloaded") from exc
 
 
 __all__ = ["GLUE_LOCAL_DIR", "GLUE_TASK_KEYS", "get_num_labels_and_is_regression", "load_glue_local"]

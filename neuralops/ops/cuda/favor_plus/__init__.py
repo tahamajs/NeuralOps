@@ -9,9 +9,6 @@
 FAVOR+ Random Feature Attention Hardware Operators.
 """
 
-from neuralops.ops.cuda.favor_plus.favor_plus_autograd import (
-    favor_plus,
-    favor_plus_pytorch_ref,
-)
+from neuralops.ops.cuda.favor_plus.favor_plus_autograd import favor_plus, favor_plus_pytorch_ref
 
 __all__ = ["favor_plus", "favor_plus_pytorch_ref"]

@@ -18,20 +18,9 @@ from typing import Any, Dict, List, Optional, Union
 import torch.nn as nn
 
 from neuralops.validation.base import Gate, GateResult, GateSeverity
-from neuralops.validation.gates.behavioral import (
-    OutputSimilarityGate,
-    PerplexityDeltaGate,
-)
-from neuralops.validation.gates.numerical import (
-    ForwardPassRunsGate,
-    NoNanInfGate,
-)
-from neuralops.validation.gates.structural import (
-    ConnectivityGate,
-    DtypesMatchGate,
-    ParameterCountGate,
-    ShapesMatchGate,
-)
+from neuralops.validation.gates.behavioral import OutputSimilarityGate, PerplexityDeltaGate
+from neuralops.validation.gates.numerical import ForwardPassRunsGate, NoNanInfGate
+from neuralops.validation.gates.structural import ConnectivityGate, DtypesMatchGate, ParameterCountGate, ShapesMatchGate
 
 
 class ValidationProfile(str, Enum):

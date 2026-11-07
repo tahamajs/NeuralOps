@@ -15,7 +15,7 @@ from pathlib import Path
 
 from neuralops.cli.core.config_merge import load_effective_config
 from neuralops.cli.core.devices import resolve_device
-from neuralops.cli.core.errors import ExitCode, ExecutionError
+from neuralops.cli.core.errors import ExecutionError, ExitCode
 from neuralops.cli.core.locks import create_run_directory, run_directory_lock
 from neuralops.cli.core.output import CliReporter
 
@@ -54,9 +54,29 @@ def handle_plan(args: argparse.Namespace) -> int:
     datasets_raw = effective_cfg.get("datasets") or effective_cfg.get("dataset")
     ranks_raw = effective_cfg.get("ranks") or effective_cfg.get("rank")
 
-    models_count = 10 if effective_cfg.get("all_models") else (len(models_raw.split(",")) if isinstance(models_raw, str) else (len(models_raw) if isinstance(models_raw, list) else 1))
-    datasets_count = 22 if effective_cfg.get("all_datasets") else (len(datasets_raw.split(",")) if isinstance(datasets_raw, str) else (len(datasets_raw) if isinstance(datasets_raw, list) else 1))
-    ranks_count = len(ranks_raw.split(",")) if isinstance(ranks_raw, str) else (len(ranks_raw) if isinstance(ranks_raw, list) else 1)
+    models_count = (
+        10
+        if effective_cfg.get("all_models")
+        else (
+            len(models_raw.split(","))
+            if isinstance(models_raw, str)
+            else (len(models_raw) if isinstance(models_raw, list) else 1)
+        )
+    )
+    datasets_count = (
+        22
+        if effective_cfg.get("all_datasets")
+        else (
+            len(datasets_raw.split(","))
+            if isinstance(datasets_raw, str)
+            else (len(datasets_raw) if isinstance(datasets_raw, list) else 1)
+        )
+    )
+    ranks_count = (
+        len(ranks_raw.split(","))
+        if isinstance(ranks_raw, str)
+        else (len(ranks_raw) if isinstance(ranks_raw, list) else 1)
+    )
 
     total_runs = mod_count * models_count * datasets_count * ranks_count
     est_seconds = total_runs * 180
@@ -101,6 +121,7 @@ def handle_resume(args: argparse.Namespace) -> int:
 
     with run_directory_lock(out_dir):
         from neuralops.benchmarks.api import Runner
+
         runner = Runner(output_dir=str(out_dir), resume=True)
         runner.resume()
     return int(ExitCode.SUCCESS)
@@ -116,6 +137,7 @@ def handle_run(args: argparse.Namespace) -> int:
 
     if getattr(args, "recipe_cmd", None) == "recipe":
         from neuralops.cli.core.commands.results import handle_recipe
+
         args.recipe_action = "benchmark"
         args.file = getattr(args, "recipe_file", None)
         return handle_recipe(args)
@@ -136,8 +158,20 @@ def handle_run(args: argparse.Namespace) -> int:
     )
 
     with run_directory_lock(out_dir):
-        if cfg.get("category") in ("cuda", "triton", "quantization", "moe", "serving", "rope", "sampling", "ssm", "varlen", "sweep"):
+        if cfg.get("category") in (
+            "cuda",
+            "triton",
+            "quantization",
+            "moe",
+            "serving",
+            "rope",
+            "sampling",
+            "ssm",
+            "varlen",
+            "sweep",
+        ):
             from neuralops.benchmarks.runner import run_catalog_benchmarks
+
             reporter.log(f"[+] Launching {cfg['category']} benchmark runner on {device_info.canonical_name}...")
             results = run_catalog_benchmarks(
                 category=cfg.get("category"),
@@ -174,11 +208,23 @@ def handle_run(args: argparse.Namespace) -> int:
             mods = [m.strip() for m in modules_arg.split(",")] if isinstance(modules_arg, str) else modules_arg
 
         ranks_val = cfg.get("ranks")
-        ranks = [int(r.strip()) for r in ranks_val.split(",")] if isinstance(ranks_val, str) else (ranks_val or cfg.get("rank"))
+        ranks = (
+            [int(r.strip()) for r in ranks_val.split(",")]
+            if isinstance(ranks_val, str)
+            else (ranks_val or cfg.get("rank"))
+        )
         models_val = cfg.get("models")
-        models = [m.strip() for m in models_val.split(",")] if isinstance(models_val, str) else (models_val or cfg.get("model"))
+        models = (
+            [m.strip() for m in models_val.split(",")]
+            if isinstance(models_val, str)
+            else (models_val or cfg.get("model"))
+        )
         datasets_val = cfg.get("datasets")
-        datasets = [d.strip() for d in datasets_val.split(",")] if isinstance(datasets_val, str) else (datasets_val or cfg.get("dataset"))
+        datasets = (
+            [d.strip() for d in datasets_val.split(",")]
+            if isinstance(datasets_val, str)
+            else (datasets_val or cfg.get("dataset"))
+        )
 
         from neuralops.benchmarks.api import Runner
 

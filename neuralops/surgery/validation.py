@@ -81,9 +81,7 @@ def validate_before_surgery(
             meta = SURGERY_REGISTRY[op.name]
             if model is not None and not any(c in model_name for c in meta.compat):
                 arch_passed = False
-                arch_details.append(
-                    f"Op '{op.name}' expects compat {meta.compat}, but model is '{model_name}'"
-                )
+                arch_details.append(f"Op '{op.name}' expects compat {meta.compat}, but model is '{model_name}'")
         else:
             # Op not yet registered
             arch_details.append(f"Op '{op.name}' unverified against SURGERY_REGISTRY")
@@ -128,6 +126,7 @@ def validate_before_surgery(
     if model is not None and hasattr(model, "forward"):
         try:
             import torch
+
             with torch.no_grad():
                 if calibration_data is not None:
                     if isinstance(calibration_data, torch.Tensor):
@@ -170,9 +169,14 @@ def validate_before_surgery(
     inf_count = 0
     if output_tensor is not None:
         import torch
+
         if hasattr(output_tensor, "logits") and isinstance(output_tensor.logits, torch.Tensor):
             t_check = output_tensor.logits
-        elif isinstance(output_tensor, (tuple, list)) and len(output_tensor) > 0 and isinstance(output_tensor[0], torch.Tensor):
+        elif (
+            isinstance(output_tensor, (tuple, list))
+            and len(output_tensor) > 0
+            and isinstance(output_tensor[0], torch.Tensor)
+        ):
             t_check = output_tensor[0]
         elif isinstance(output_tensor, torch.Tensor):
             t_check = output_tensor

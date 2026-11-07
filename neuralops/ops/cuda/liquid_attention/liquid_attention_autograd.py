@@ -12,13 +12,17 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
-from typing import Any
+
 from pathlib import Path
+from typing import Any
+
 import torch
+
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -31,6 +35,7 @@ def _get_module():
         _MODULE = load_cuda_module("cuda_liquid_attention", cpp_src, cuda_src, ["liquid_attention_fwd"])
     return _MODULE
 
+
 def liquid_attention_ref(
     x: torch.Tensor,
     delta: torch.Tensor,
@@ -42,7 +47,11 @@ def liquid_attention_ref(
     a_val = torch.abs(A.float())
     decay = torch.exp(-torch.clamp(dt * a_val, min=0.0))
 
-    h = prev_state.float().clone() if prev_state is not None else torch.zeros(B, D, device=x.device, dtype=torch.float32)
+    h = (
+        prev_state.float().clone()
+        if prev_state is not None
+        else torch.zeros(B, D, device=x.device, dtype=torch.float32)
+    )
     ys = []
     for t in range(L):
         in_t = x[:, t, :].float()
@@ -54,6 +63,7 @@ def liquid_attention_ref(
 
     out = torch.stack(ys, dim=1)
     return out, h.to(x.dtype)
+
 
 def _liquid_attention_dispatch(
     x: torch.Tensor,
@@ -115,6 +125,7 @@ class _Liquid_attentionFunction(torch.autograd.Function):
             else:
                 res.append(None)
         return tuple(res)
+
 
 def liquid_attention(x, delta, A):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, delta, A)):

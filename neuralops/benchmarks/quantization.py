@@ -53,4 +53,14 @@ def run_benchmark(device: str = "cuda", size: int = 512) -> dict[str, Any]:
     int4_ms = _measure(lambda: x @ int4, target)
     output = x @ int4
     error = float((output.float() - reference).norm() / (reference.norm() + 1e-8))
-    return {"module": "int4_weight_only_gemm", "category": "quantization", "device": str(target), "fp16_latency_ms": fp16_ms, "int4_latency_ms": int4_ms, "speedup": fp16_ms / int4_ms if int4_ms else 0.0, "relative_frobenius_error": error, "memory_reduction_pct": 75.0, "status": "PASS" if torch.isfinite(output).all() else "FAIL"}
+    return {
+        "module": "int4_weight_only_gemm",
+        "category": "quantization",
+        "device": str(target),
+        "fp16_latency_ms": fp16_ms,
+        "int4_latency_ms": int4_ms,
+        "speedup": fp16_ms / int4_ms if int4_ms else 0.0,
+        "relative_frobenius_error": error,
+        "memory_reduction_pct": 75.0,
+        "status": "PASS" if torch.isfinite(output).all() else "FAIL",
+    }

@@ -12,13 +12,6 @@ Extracts representative landmark tokens to compress long sequences into linear-t
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-from neuralops.core.common import FactorizedLoRALinear, _detect_decoder, softpick
-
-from neuralops.core.attention_utils import (
-    safe_mask_value as _safe_mask_value,
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -29,9 +22,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import apply_rotary_pos_emb
+from neuralops.core.attention_utils import safe_mask_value as _safe_mask_value
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import FactorizedLoRALinear, _detect_decoder, _read_past_kv, softpick
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +42,7 @@ class LandmarkLocalAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -86,28 +83,16 @@ class LandmarkLocalAttention(BaseAttention):
         self.supports_gqa = True
         self.layer_idx = int(layer_idx)
 
-        self.landmark_ratio = float(
-            getattr(comp_config, "landmark_ratio", 0.5) if comp_config else 0.5
-        )
-        self.landmark_chunk_size = int(
-            getattr(comp_config, "landmark_chunk_size", 64) if comp_config else 64
-        )
-        self.min_landmarks = int(
-            getattr(comp_config, "min_landmarks", 64) if comp_config else 64
-        )
+        self.landmark_ratio = float(getattr(comp_config, "landmark_ratio", 0.5) if comp_config else 0.5)
+        self.landmark_chunk_size = int(getattr(comp_config, "landmark_chunk_size", 64) if comp_config else 64)
+        self.min_landmarks = int(getattr(comp_config, "min_landmarks", 64) if comp_config else 64)
         self.num_landmarks = int(
-            getattr(comp_config, "num_landmarks", self.min_landmarks)
-            if comp_config else self.min_landmarks
+            getattr(comp_config, "num_landmarks", self.min_landmarks) if comp_config else self.min_landmarks
         )
-        self.feature_dim = int(
-            getattr(comp_config, "feature_dim", 128) if comp_config else 128
-        )
-        self.local_window_size = int(
-            getattr(comp_config, "local_window_size", 128) if comp_config else 128
-        )
+        self.feature_dim = int(getattr(comp_config, "feature_dim", 128) if comp_config else 128)
+        self.local_window_size = int(getattr(comp_config, "local_window_size", 128) if comp_config else 128)
         dropout_p = float(
-            getattr(comp_config, "dropout", getattr(config, "dropout", 0.1))
-            if config is not None else 0.1
+            getattr(comp_config, "dropout", getattr(config, "dropout", 0.1)) if config is not None else 0.1
         )
 
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
@@ -132,24 +117,36 @@ class LandmarkLocalAttention(BaseAttention):
 
         FF = FactorizedLoRALinear
         self.query = FF(
-            self.dim, self.all_head_size,
-            rank=self.proj_rank, lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha, bias=True,
+            self.dim,
+            self.all_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
         )
         self.key = FF(
-            self.dim, self.all_kv_head_size,
-            rank=self.proj_rank, lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha, bias=True,
+            self.dim,
+            self.all_kv_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
         )
         self.value = FF(
-            self.dim, self.all_kv_head_size,
-            rank=self.proj_rank, lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha, bias=True,
+            self.dim,
+            self.all_kv_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
         )
         self.out_proj = FF(
-            self.all_head_size, self.dim,
-            rank=self.proj_rank, lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha, bias=True,
+            self.all_head_size,
+            self.dim,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
         )
         self.q_proj = self.query
         self.k_proj = self.key
@@ -174,9 +171,7 @@ class LandmarkLocalAttention(BaseAttention):
             nn.Linear(64, 1),
         )
 
-        self.lora_W_corr = nn.Parameter(
-            torch.eye(self.head_dim).unsqueeze(0).repeat(self.num_heads, 1, 1)
-        )
+        self.lora_W_corr = nn.Parameter(torch.eye(self.head_dim).unsqueeze(0).repeat(self.num_heads, 1, 1))
         self.lora_local_gate = nn.Parameter(torch.full((self.num_heads,), -2.0))
         self.dropout = nn.Dropout(dropout_p)
 
@@ -184,9 +179,7 @@ class LandmarkLocalAttention(BaseAttention):
             self.copy_weights(source_attn)
 
     @staticmethod
-    def _detect_hidden_size(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any]
-    ) -> int:
+    def _detect_hidden_size(config: Any, src: nn.Module | None, kwargs: dict[str, Any]) -> int:
         for k in ("hidden_size", "d_model", "n_embd", "dim"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -208,9 +201,7 @@ class LandmarkLocalAttention(BaseAttention):
         return 768
 
     @staticmethod
-    def _detect_num_heads(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any], hidden_size: int
-    ) -> int:
+    def _detect_num_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any], hidden_size: int) -> int:
         for k in ("num_heads", "num_attention_heads", "n_heads", "n_head"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -228,9 +219,7 @@ class LandmarkLocalAttention(BaseAttention):
         return max(1, hidden_size // 64)
 
     @staticmethod
-    def _detect_num_kv_heads(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any], num_heads: int
-    ) -> int:
+    def _detect_num_kv_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any], num_heads: int) -> int:
         for k in ("num_key_value_heads", "num_kv_heads"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -278,14 +267,10 @@ class LandmarkLocalAttention(BaseAttention):
         W2 = self.rand_proj2.to(device=x.device, dtype=x.dtype)
 
         proj1 = torch.matmul(x, W1)
-        f1 = torch.cat([torch.cos(proj1), torch.sin(proj1)], dim=-1) / math.sqrt(
-            self.feature_dim
-        )
+        f1 = torch.cat([torch.cos(proj1), torch.sin(proj1)], dim=-1) / math.sqrt(self.feature_dim)
 
         proj2 = torch.matmul(x, W2)
-        f2 = torch.cat([torch.cos(proj2), torch.sin(proj2)], dim=-1) / math.sqrt(
-            self.feature_dim // 2
-        )
+        f2 = torch.cat([torch.cos(proj2), torch.sin(proj2)], dim=-1) / math.sqrt(self.feature_dim // 2)
 
         return torch.cat([f1, f2], dim=-1)
 
@@ -341,9 +326,7 @@ class LandmarkLocalAttention(BaseAttention):
             k_act = min(k_per_chunk, chunk_sz)
             _, local_idx = scores_c.topk(k_act, dim=-1)
 
-            offsets = torch.arange(
-                0, num_chunks * chunk_sz, chunk_sz, device=scores.device
-            ).view(1, 1, -1, 1)
+            offsets = torch.arange(0, num_chunks * chunk_sz, chunk_sz, device=scores.device).view(1, 1, -1, 1)
             global_idx = (local_idx + offsets).view(B, H, -1)
             global_idx = global_idx.clamp(min=0, max=max(0, N_k - 1))
 
@@ -374,14 +357,13 @@ class LandmarkLocalAttention(BaseAttention):
         B, H, N, d = q.shape
         N_k = k.shape[2]
         if N != N_k:
-            raise ValueError(
-                f"block_local_attention requires N_q == N_k, got {N} vs {N_k}"
-            )
+            raise ValueError(f"block_local_attention requires N_q == N_k, got {N} vs {N_k}")
 
         W = max(1, int(self.local_window_size))
         if q.is_cuda and not self.training and valid_mask is None:
             try:
                 from neuralops.ops.triton.sliding_window import fused_landmark_local_block_attn_triton
+
                 return fused_landmark_local_block_attn_triton(q, k, v, window_size=W, is_causal=self.is_decoder)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
@@ -406,12 +388,8 @@ class LandmarkLocalAttention(BaseAttention):
 
         attn_intra = torch.matmul(q_b, k_b.transpose(-1, -2)) * scale
         if self.is_decoder:
-            causal_mask = torch.tril(
-                torch.ones(W, W, device=q.device, dtype=torch.bool)
-            )
-            attn_intra = attn_intra.masked_fill(
-                ~causal_mask.view(1, 1, 1, W, W), -1e4
-            )
+            causal_mask = torch.tril(torch.ones(W, W, device=q.device, dtype=torch.bool))
+            attn_intra = attn_intra.masked_fill(~causal_mask.view(1, 1, 1, W, W), -1e4)
 
         k_b_shifted = F.pad(k_b[:, :, :-1, :, :], (0, 0, 0, 0, 1, 0))
         v_b_shifted = F.pad(v_b[:, :, :-1, :, :], (0, 0, 0, 0, 1, 0))
@@ -423,19 +401,11 @@ class LandmarkLocalAttention(BaseAttention):
         attn_combined = torch.cat([attn_inter, attn_intra], dim=-1)
 
         if valid_mask is not None:
-            v_mask_p = F.pad(
-                valid_mask.float(), (0, pad_len), value=0.0
-            ).bool()
-            v_mask_2w = torch.cat([v_mask_p, v_mask_p], dim=-1).view(
-                B, num_blocks, 1, 2 * W
-            )
-            attn_combined = attn_combined.masked_fill(
-                ~v_mask_2w.unsqueeze(1), -1e4
-            )
+            v_mask_p = F.pad(valid_mask.float(), (0, pad_len), value=0.0).bool()
+            v_mask_2w = torch.cat([v_mask_p, v_mask_p], dim=-1).view(B, num_blocks, 1, 2 * W)
+            attn_combined = attn_combined.masked_fill(~v_mask_2w.unsqueeze(1), -1e4)
 
-        attn_combined = torch.nan_to_num(
-            attn_combined, nan=-1e4, posinf=1e4, neginf=-1e4
-        )
+        attn_combined = torch.nan_to_num(attn_combined, nan=-1e4, posinf=1e4, neginf=-1e4)
         attn_weights = F.softmax(attn_combined, dim=-1).to(v.dtype)
         attn_weights = self.dropout(attn_weights)
 
@@ -479,9 +449,7 @@ class LandmarkLocalAttention(BaseAttention):
 
         if valid_mask is not None:
             kv_valid = valid_mask.to(device=device, dtype=torch.bool)
-            scores = scores.masked_fill(
-                ~kv_valid[:, None, None, :], mask_val
-            )
+            scores = scores.masked_fill(~kv_valid[:, None, None, :], mask_val)
 
         scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e4, neginf=mask_val)
         attn = F.softmax(scores.float(), dim=-1).to(q.dtype)
@@ -533,26 +501,35 @@ class LandmarkLocalAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
-            (hasattr(src, "self") and hasattr(src.self, "query")
-             and hasattr(src, "output") and hasattr(src.output, "dense"))
-            or (cls_name in [
-                "BertSelfAttention", "RobertaSelfAttention",
-                "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                "DebertaSelfAttention",
-            ] or (cls_name.endswith("SelfAttention")
-                  and "distil" not in cls_name.lower()))
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+            )
         ) and not has_out_lin:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None),
-            "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -576,12 +553,12 @@ class LandmarkLocalAttention(BaseAttention):
                     c_b[:split_size] if c_b is not None else None,
                 )
                 extracted["k"] = (
-                    c_w[split_size:2 * split_size, :],
-                    c_b[split_size:2 * split_size] if c_b is not None else None,
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
                 )
                 extracted["v"] = (
-                    c_w[2 * split_size:, :],
-                    c_b[2 * split_size:] if c_b is not None else None,
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
                 )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
@@ -637,13 +614,11 @@ class LandmarkLocalAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -652,10 +627,7 @@ class LandmarkLocalAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"LandmarkLocalAttention.copy_weights: missing mandatory projections "
@@ -723,7 +695,8 @@ class LandmarkLocalAttention(BaseAttention):
                     if w_norm < 1e-4:
                         logger.warning(
                             "LandmarkLocalAttention: weight '%s' has near-zero norm (%.2e).",
-                            name, w_norm,
+                            name,
+                            w_norm,
                         )
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
@@ -789,30 +762,15 @@ class LandmarkLocalAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         q = self.query(hidden_states).view(B, N, H, self.head_dim).transpose(1, 2).contiguous()
-        k_new = (
-            self.key(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v_new = (
-            self.value(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k_new = self.key(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v_new = self.value(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
 
-        pos_emb = (
-            position_embeddings if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         pos_ids = kwargs.get("position_ids")
         if pos_ids is None and past_len > 0:
-            pos_ids = torch.arange(
-                past_len, past_len + N, device=device
-            ).unsqueeze(0).expand(B, -1)
+            pos_ids = torch.arange(past_len, past_len + N, device=device).unsqueeze(0).expand(B, -1)
 
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
@@ -831,9 +789,7 @@ class LandmarkLocalAttention(BaseAttention):
             K, V = k_new, v_new
 
         present_kv: Any = None
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         if use_cache:
             present_kv = self._write_past_kv(K, V, past_key_value, self.layer_idx)
         else:
@@ -856,21 +812,16 @@ class LandmarkLocalAttention(BaseAttention):
             token_valid_kv = get_token_valid_mask(eff_mask, B, N_kv, device)
 
         K_land, V_land, land_idx = self.select_landmarks_chunked(
-            K_features, V_full, valid_mask=token_valid_kv,
+            K_features,
+            V_full,
+            valid_mask=token_valid_kv,
         )
-        V_land_adj = torch.einsum(
-            "bhld,hde->bhle", V_land, self.lora_W_corr.to(V_land.dtype)
-        )
+        V_land_adj = torch.einsum("bhld,hde->bhle", V_land, self.lora_W_corr.to(V_land.dtype))
 
-        attn_land = torch.matmul(
-            Q_features.float(), K_land.transpose(-2, -1).contiguous().float()
-        )
+        attn_land = torch.matmul(Q_features.float(), K_land.transpose(-2, -1).contiguous().float())
 
         if self.is_decoder:
-            q_abs = (
-                torch.arange(past_len, past_len + N, device=device)
-                .view(1, 1, N, 1)
-            )
+            q_abs = torch.arange(past_len, past_len + N, device=device).view(1, 1, N, 1)
             causal_land_mask = land_idx.unsqueeze(2) <= q_abs
             attn_land = attn_land.masked_fill(~causal_land_mask, -1e4)
 
@@ -879,13 +830,9 @@ class LandmarkLocalAttention(BaseAttention):
         context_leka = torch.matmul(attn_land.to(V_full.dtype), V_land_adj)
 
         if N == N_kv:
-            context_local = self.block_local_attention(
-                q, K_full, V_full, token_valid_kv
-            )
+            context_local = self.block_local_attention(q, K_full, V_full, token_valid_kv)
         else:
-            context_local = self._exact_decode_local(
-                q, K_full, V_full, past_len, token_valid_kv
-            )
+            context_local = self._exact_decode_local(q, K_full, V_full, past_len, token_valid_kv)
 
         gate_val = torch.sigmoid(self.lora_local_gate).view(1, H, 1, 1).to(V_full.dtype)
         context = (1.0 - gate_val) * context_local + gate_val * context_leka
@@ -901,9 +848,7 @@ class LandmarkLocalAttention(BaseAttention):
                 hm = head_mask
             context = context * hm.to(context.dtype)
 
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:

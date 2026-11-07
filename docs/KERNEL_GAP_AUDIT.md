@@ -1,8 +1,8 @@
 # Kernel Gap Audit — NeuralOps v1.9.0
 
-**Date:** 2026-10-31  
-**Repository state:** v1.9.0 at commit `49c7ae187c22a7ee8afe57893da89798938f527b`  
-**Coverage baseline:** 131 attentions, 72 compressors, 203 total  
+**Date:** 2026-10-31
+**Repository state:** v1.9.0 at commit `49c7ae187c22a7ee8afe57893da89798938f527b`
+**Coverage baseline:** 131 attentions, 72 compressors, 203 total
 **Current kernel coverage:** 7 with Triton, 45 with CUDA, 5 with both, 150 PyTorch-only
 
 ## Section 1 — Full catalog inventory

@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 09
 # Hardware Telemetry, Microbenchmarking & Roofline Engine
 
-**Assigned Subagent**: `Agent 09: Telemetry & Hardware Roofline Profiler`  
+**Assigned Subagent**: `Agent 09: Telemetry & Hardware Roofline Profiler`
 **Target Codebase Paths**:
 - `neuralops/runners/monitor/`
 - `neuralops/tracking/`

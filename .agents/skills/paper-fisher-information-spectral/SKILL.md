@@ -493,7 +493,7 @@ where $\mathbf{g} = \nabla_{\mathbf{s}} \log p_{\mathbf{W}}$ is the pre-activati
 where $\mathbf{\Sigma}_{\mathbf{x}} = \frac{1}{M} \mathbf{X} \mathbf{X}^\top$ is the empirical input activation covariance.
 
 \subsection{Cholesky Pullback Isometry}
-Direct truncation via the classical Eckart-Young-Mirsky theorem minimizes Euclidean weight distance $\|\mathbf{W} - \widehat{\mathbf{W}}\|_F^2$, ignoring the severe anisotropy of $\mathbf{\Sigma}_{\mathbf{x}}$ ($\kappa(\mathbf{\Sigma}_{\mathbf{x}}) \gg 10^5$). To restore global optimality, we apply Tikhonov regularization $\mathbf{\Sigma}_{\text{reg}} = \mathbf{\Sigma}_{\mathbf{x}} + \lambda \mathbf{I}$ and compute its Cholesky factor $\mathbf{\Sigma}_{\text{reg}} = \mathbf{L} \mathbf{L}^\top$. 
+Direct truncation via the classical Eckart-Young-Mirsky theorem minimizes Euclidean weight distance $\|\mathbf{W} - \widehat{\mathbf{W}}\|_F^2$, ignoring the severe anisotropy of $\mathbf{\Sigma}_{\mathbf{x}}$ ($\kappa(\mathbf{\Sigma}_{\mathbf{x}}) \gg 10^5$). To restore global optimality, we apply Tikhonov regularization $\mathbf{\Sigma}_{\text{reg}} = \mathbf{\Sigma}_{\mathbf{x}} + \lambda \mathbf{I}$ and compute its Cholesky factor $\mathbf{\Sigma}_{\text{reg}} = \mathbf{L} \mathbf{L}^\top$.
 
 Defining the whitened target $\mathbf{M} \triangleq \mathbf{L}^\top \mathbf{W}$, the Riemannian objective satisfies an isometric pullback:
 \begin{equation}

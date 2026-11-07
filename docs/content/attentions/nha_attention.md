@@ -149,7 +149,7 @@ Y = \text{Concat}(O_{\text{fused}, 1}, \dots, O_{\text{fused}, H}) W_O + b_O \in
 ### Computational Workload (FLOPs & MACs)
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ query heads, $d_k = D/H$ head dimension, and $\rho \in (0, 1)$ the heavy-hitter selection ratio.
 
-The computational demands decompose into dense projection operations, salience-based token ranking, and the dual-path hybrid attention core. Standard linear input and output projections ($W_Q, W_K, W_V, W_O$) incur $8 B N D^2$ FLOPs ($4 B N D^2$ MACs). Concurrently, identifying high-salience heavy hitters requires token-wise query norm computation and Top-K ranking, consuming $B H N d_k + B N \log(\rho N)$ FLOPs. 
+The computational demands decompose into dense projection operations, salience-based token ranking, and the dual-path hybrid attention core. Standard linear input and output projections ($W_Q, W_K, W_V, W_O$) incur $8 B N D^2$ FLOPs ($4 B N D^2$ MACs). Concurrently, identifying high-salience heavy hitters requires token-wise query norm computation and Top-K ranking, consuming $B H N d_k + B N \log(\rho N)$ FLOPs.
 
 Within the hybrid attention core, the full softmax path ($\mathcal{S}_{\text{top}}$) restricts pairwise quadratic matrix multiplications strictly to the $k = \lceil \rho N \rceil$ heavy-hitter tokens, requiring $4 B H (\rho N) N d_k = 4 \rho B N^2 D$ FLOPs. In parallel, the linear recurrent path ($\mathcal{S}_{\text{context}}$) executes ELU feature transformations in $2 B N D$ FLOPs, accumulates the global key-value state tensor ($KV_{\text{lin}}$) via outer products in $2 B H N d_k^2 = 2 B N D d_k$ FLOPs, and performs query contractions alongside scalar denominator normalization in $2 B N D d_k + 2 B N D$ FLOPs.
 
@@ -232,4 +232,3 @@ The empirical evaluation of `nha_attention` across standard sequence lengths and
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

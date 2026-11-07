@@ -12,8 +12,8 @@ import math
 from typing import Any, Optional
 
 import torch
-import torch.nn as nn
 import torch.distributed as dist
+import torch.nn as nn
 
 
 def compute_chunk_prefix_scan(
@@ -34,9 +34,7 @@ def compute_chunk_prefix_scan(
     if q.ndim != 4 or k.ndim != 4 or v.ndim != 4:
         raise ValueError("q, k, and v must have shape [batch, heads, time, features]")
     if q.shape != k.shape or q.shape[:3] != v.shape[:3]:
-        raise ValueError(
-            "q and k must have identical shapes; v must match their batch, head, and time axes"
-        )
+        raise ValueError("q and k must have identical shapes; v must match their batch, head, and time axes")
     if q.device != k.device or q.device != v.device:
         raise ValueError("q, k, and v must be on the same device")
     if q.dtype != k.dtype or q.dtype != v.dtype:
@@ -58,9 +56,7 @@ def compute_chunk_prefix_scan(
     if init_state is not None:
         expected_state = (B, H, D_k, D_v)
         if tuple(init_state.shape) != expected_state:
-            raise ValueError(
-                f"init_state must have shape {expected_state}, got {tuple(init_state.shape)}"
-            )
+            raise ValueError(f"init_state must have shape {expected_state}, got {tuple(init_state.shape)}")
         if init_state.device != q.device:
             raise ValueError("init_state must be on the same device as q")
 
@@ -119,9 +115,7 @@ class _ContextParallelScanFunction(torch.autograd.Function):
             kp = k_chunks[p]
             vp = v_chunks[p]
             gp = g_chunks[p]
-            out_p, next_state = compute_chunk_prefix_scan(
-                qp, kp, vp, gp, scale=scale, init_state=curr_state
-            )
+            out_p, next_state = compute_chunk_prefix_scan(qp, kp, vp, gp, scale=scale, init_state=curr_state)
             out_list.append(out_p)
             curr_state = next_state
 
@@ -154,11 +148,7 @@ class _ContextParallelScanFunction(torch.autograd.Function):
                 )
                 tape_outs.append(out_p)
 
-            active = [
-                (output, grad)
-                for output, grad in zip(tape_outs, grad_outputs)
-                if grad is not None
-            ]
+            active = [(output, grad) for output, grad in zip(tape_outs, grad_outputs) if grad is not None]
             variables = [*q_vars, *k_vars, *v_vars, *g_vars]
             if active:
                 gradients = torch.autograd.grad(
@@ -170,8 +160,7 @@ class _ContextParallelScanFunction(torch.autograd.Function):
             else:
                 gradients = (None,) * len(variables)
             gradients = tuple(
-                torch.zeros_like(variable) if grad is None else grad
-                for variable, grad in zip(variables, gradients)
+                torch.zeros_like(variable) if grad is None else grad for variable, grad in zip(variables, gradients)
             )
             dq = gradients[:W]
             dk = gradients[W : 2 * W]
@@ -274,18 +263,12 @@ def ring_attention_chunk_exchange(
     if world_size == 1:
         return k_chunk.clone(), v_chunk.clone()
     if not dist.is_initialized():
-        raise RuntimeError(
-            "ring exchange requires initialized torch.distributed when world_size > 1"
-        )
+        raise RuntimeError("ring exchange requires initialized torch.distributed when world_size > 1")
     actual_world_size = dist.get_world_size(group=group)
     if actual_world_size != world_size:
-        raise ValueError(
-            f"world_size={world_size} does not match process-group size {actual_world_size}"
-        )
+        raise ValueError(f"world_size={world_size} does not match process-group size {actual_world_size}")
     if dist.get_rank(group=group) != rank:
-        raise ValueError(
-            "rank must match the current process rank within the supplied process group"
-        )
+        raise ValueError("rank must match the current process rank within the supplied process group")
 
     def global_rank(group_rank: int) -> int:
         if group is None:
@@ -361,15 +344,10 @@ class RingLinearAttention(nn.Module):
 
         if self.ring_size > 1:
             if not dist.is_initialized():
-                raise RuntimeError(
-                    "RingLinearAttention requires initialized torch.distributed "
-                    "for ring_size > 1"
-                )
+                raise RuntimeError("RingLinearAttention requires initialized torch.distributed " "for ring_size > 1")
             if dist.get_world_size(group=group) != self.ring_size:
                 raise ValueError("ring_size does not match the process-group size")
-            has_trainable_parameters = any(
-                parameter.requires_grad for parameter in self.parameters()
-            )
+            has_trainable_parameters = any(parameter.requires_grad for parameter in self.parameters())
             if torch.is_grad_enabled() and has_trainable_parameters:
                 raise RuntimeError(
                     "multi-rank RingLinearAttention currently supports inference only; "

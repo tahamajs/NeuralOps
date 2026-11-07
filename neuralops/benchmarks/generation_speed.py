@@ -68,8 +68,10 @@ def main() -> int:
     parser.add_argument("--output", default=None)
     args = parser.parse_args()
     result = run_generation_benchmark(
-        model=args.model, device=args.device,
-        prompt_len=args.prompt_len, gen_len=args.gen_len,
+        model=args.model,
+        device=args.device,
+        prompt_len=args.prompt_len,
+        gen_len=args.gen_len,
     )
     payload = json.dumps(result, indent=2)
     print(payload)

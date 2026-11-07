@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+import csv
+import json
 import os
+import sqlite3
 import sys
 import time
-import json
-import sqlite3
-import csv
 from pathlib import Path
 from typing import Any
 
@@ -14,12 +14,14 @@ repo_root = Path(__file__).resolve().parents[2]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
+
 def persist_competitor_record(rec: dict, sqlite_path: Path, csv_path: Path):
     try:
         conn = sqlite3.connect(sqlite_path, timeout=30.0)
         cur = conn.cursor()
         cur.execute("PRAGMA journal_mode=WAL;")
-        cur.execute("""
+        cur.execute(
+            """
             CREATE TABLE IF NOT EXISTS competitor_benchmarks (
                 benchmark_name TEXT PRIMARY KEY,
                 metrics_json TEXT,
@@ -29,16 +31,23 @@ def persist_competitor_record(rec: dict, sqlite_path: Path, csv_path: Path):
                 status TEXT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """)
-        cur.execute("""
+        """
+        )
+        cur.execute(
+            """
             INSERT OR REPLACE INTO competitor_benchmarks (
                 benchmark_name, metrics_json, primary_throughput, primary_latency_ms, memory_mb, status
             ) VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            rec["benchmark_name"], json.dumps(rec.get("raw", {})),
-            rec.get("throughput", 0.0), rec.get("latency_ms", 0.0),
-            rec.get("memory_mb", 0.0), rec.get("status", "PASS")
-        ))
+        """,
+            (
+                rec["benchmark_name"],
+                json.dumps(rec.get("raw", {})),
+                rec.get("throughput", 0.0),
+                rec.get("latency_ms", 0.0),
+                rec.get("memory_mb", 0.0),
+                rec.get("status", "PASS"),
+            ),
+        )
         conn.commit()
         conn.close()
     except Exception as e:
@@ -52,15 +61,18 @@ def persist_competitor_record(rec: dict, sqlite_path: Path, csv_path: Path):
             writer = csv.DictWriter(f, fieldnames=fields)
             if not file_exists:
                 writer.writeheader()
-            writer.writerow({
-                "benchmark_name": rec["benchmark_name"],
-                "primary_throughput": rec.get("throughput", 0.0),
-                "primary_latency_ms": rec.get("latency_ms", 0.0),
-                "memory_mb": rec.get("memory_mb", 0.0),
-                "status": rec.get("status", "PASS")
-            })
+            writer.writerow(
+                {
+                    "benchmark_name": rec["benchmark_name"],
+                    "primary_throughput": rec.get("throughput", 0.0),
+                    "primary_latency_ms": rec.get("latency_ms", 0.0),
+                    "memory_mb": rec.get("memory_mb", 0.0),
+                    "status": rec.get("status", "PASS"),
+                }
+            )
     except Exception as e:
         print(f"Warning persisting competitor to CSV: {e}", flush=True)
+
 
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -94,10 +106,12 @@ def main():
             rec = {
                 "benchmark_name": name,
                 "raw": res,
-                "throughput": res.get("throughput_tok_s", res.get("tokens_per_sec", res.get("effective_bandwidth_gb_sec", 0.0))),
+                "throughput": res.get(
+                    "throughput_tok_s", res.get("tokens_per_sec", res.get("effective_bandwidth_gb_sec", 0.0))
+                ),
                 "latency_ms": res.get("latency_ms", res.get("gather_latency_ms", 0.0)),
                 "memory_mb": res.get("peak_memory_mb", res.get("total_param_mb", 0.0)),
-                "status": "PASS"
+                "status": "PASS",
             }
             persist_competitor_record(rec, sqlite_path, csv_path)
             tp = rec.get("throughput", 0.0)
@@ -110,12 +124,13 @@ def main():
                 "throughput": 0.0,
                 "latency_ms": 0.0,
                 "memory_mb": 0.0,
-                "status": f"ERROR: {e}"
+                "status": f"ERROR: {e}",
             }
             persist_competitor_record(rec, sqlite_path, csv_path)
             print(f"  -> [{name}] ERROR: {e}", flush=True)
 
     print("=== Competitor Benchmark Suite Completed Successfully! ===", flush=True)
+
 
 if __name__ == "__main__":
     main()

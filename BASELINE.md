@@ -134,7 +134,7 @@
 
 Usage: neuralops [OPTIONS] <command> [ARGS]...
 
-                    Model Surgery, Composition & Compression                    
+                    Model Surgery, Composition & Compression
 ┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Command              ┃ Description                                           ┃
 ```
@@ -146,7 +146,7 @@ Usage: neuralops [OPTIONS] <command> [ARGS]...
 │ Framework Version: 2.0.6                                                     │
 │ Universal Sub-Quadratic Attention, Continuous Batching, and SVD Compression  │
 ╰──────────────────────────────────────────────────────────────────────────────╯
-                   Hardware & Runtime Environment                   
+                   Hardware & Runtime Environment
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Property                  ┃ Value                                ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
@@ -156,7 +156,7 @@ Usage: neuralops [OPTIONS] <command> [ARGS]...
 │ CUDA Acceleration         │ Disabled (CPU only)                  │
 │ Host OS / Platform        │ Darwin 27.2.0 (arm64)                │
 └───────────────────────────┴──────────────────────────────────────┘
-                                Canonical Component Inventory                   
+                                Canonical Component Inventory
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━
 ┃ Operator Category              ┃  Canonical Count   ┃ Mathematical Architectur
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -164,12 +164,12 @@ Usage: neuralops [OPTIONS] <command> [ARGS]...
 │                                │                    │ Linear, GQA, SSM, TTT, S
 │ Compression Engines            │     72 engines     │ 7 algorithmic families (
 │                                │                    │ Quantization, Pruning, K
-│ Triton Kernel Modules          │   26 modules (62   │ Specialized JIT fusions 
-│                                │ unified operators) │ kernels across 4 tiers) 
+│ Triton Kernel Modules          │   26 modules (62   │ Specialized JIT fusions
+│                                │ unified operators) │ kernels across 4 tiers)
 │ CUDA Kernel Implementations    │   114 operators    │ Accelerated C++/CUDA ker
-│                                │                    │ extreme throughput      
+│                                │                    │ extreme throughput
 └────────────────────────────────┴────────────────────┴─────────────────────────
-Status: Production-grade runtime ready. Run neuralops list to view complete 
+Status: Production-grade runtime ready. Run neuralops list to view complete
 module inventory.
 ```
 
@@ -193,7 +193,7 @@ module inventory.
 
 Usage: neuralops [OPTIONS] <command> [ARGS]...
 
-                    Model Surgery, Composition & Compression                    
+                    Model Surgery, Composition & Compression
 ┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Command              ┃ Description                                           ┃
 ```

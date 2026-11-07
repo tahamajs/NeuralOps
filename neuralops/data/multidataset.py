@@ -190,15 +190,11 @@ class MultiDatasetLoader(IterableDataset):
         elif isinstance(weights, str):
             raw_weights = [float(w.strip()) for w in weights.split(",") if w.strip()]
             if len(raw_weights) != num_ds:
-                raise ValueError(
-                    f"Number of weights ({len(raw_weights)}) must match number of datasets ({num_ds})."
-                )
+                raise ValueError(f"Number of weights ({len(raw_weights)}) must match number of datasets ({num_ds}).")
         else:
             raw_weights = [float(w) for w in weights]
             if len(raw_weights) != num_ds:
-                raise ValueError(
-                    f"Number of weights ({len(raw_weights)}) must match number of datasets ({num_ds})."
-                )
+                raise ValueError(f"Number of weights ({len(raw_weights)}) must match number of datasets ({num_ds}).")
 
         weight_sum = sum(raw_weights)
         if weight_sum <= 0.0:
@@ -280,9 +276,7 @@ class MultiDatasetLoader(IterableDataset):
         num_streams = len(active_iterators)
 
         # Check if pure round-robin (no weights or equal weights)
-        is_uniform = weights is None or (
-            len(weights) == num_streams and max(weights) - min(weights) < 1e-7
-        )
+        is_uniform = weights is None or (len(weights) == num_streams and max(weights) - min(weights) < 1e-7)
 
         if is_uniform:
             # Round-robin interleaving

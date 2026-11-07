@@ -106,7 +106,7 @@ Sequence compression projections ($X W_K^{\text{comp}}, X W_V^{\text{comp}}$): $
 $$\text{FLOPs}_{\text{total}} = 8 B N D^2 + 4 B N D W + 12 B N D R + 2 B N D H$$
 
 ### 4.2 Memory Footprint & Bandwidth
-Specifically, regarding \textbf{Parameter Footprint}, 
+Specifically, regarding \textbf{Parameter Footprint},
 
   $$\Theta = 4 D^2 + (2 D R) + D H = 4 D^2 + 2 D R + D H$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Local logits matrix: $\mathcal{O}(B H N W)$ Concurrently, Compressed key-value matrices $\widetilde{K}, \widetilde{V}$: $\mathcal{O}(B H R d_h)$ In this setting, Global attention matrix: $\mathcal{O}(B H N R)$ Additionally, Total Memory: $\mathcal{O}(B N D + B H N W + B H N R)$
@@ -185,4 +185,3 @@ The empirical evaluation of `optimized_hybrid_attention` across standard sequenc
 | **$L = 2048$** | 0.55 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.04 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.05 ms** | **440 MB** | **6.24x** |
-

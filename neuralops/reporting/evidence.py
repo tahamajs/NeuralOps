@@ -172,29 +172,31 @@ def build_evidence(
         "stages_executed": len(stages_data),
     }
 
-    evidence = EvidenceRecord({
-        "recipe_hash": rec_hash,
-        "recipe_name": recipe_name,
-        "model_source": model_source,
-        "model": {
-            "source": model_source,
-            "revision": model_rev,
-            "final_parameter_count": final_params,
-        },
-        "environment": env,
-        "reproducibility": {
-            "seed": seed,
-            "deterministic": deterministic,
-            "language_version": language_version,
-            "op_versions": op_versions,
-        },
-        "stages": stages_data,
-        "validation": val_data,
-        "metrics": initial_metrics,
-        "total_time_seconds": total_time,
-        "status": status,
-        "success": success,
-    })
+    evidence = EvidenceRecord(
+        {
+            "recipe_hash": rec_hash,
+            "recipe_name": recipe_name,
+            "model_source": model_source,
+            "model": {
+                "source": model_source,
+                "revision": model_rev,
+                "final_parameter_count": final_params,
+            },
+            "environment": env,
+            "reproducibility": {
+                "seed": seed,
+                "deterministic": deterministic,
+                "language_version": language_version,
+                "op_versions": op_versions,
+            },
+            "stages": stages_data,
+            "validation": val_data,
+            "metrics": initial_metrics,
+            "total_time_seconds": total_time,
+            "status": status,
+            "success": success,
+        }
+    )
 
     return evidence
 

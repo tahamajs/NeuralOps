@@ -11,8 +11,10 @@ Speed and Throughput Validator
 Benchmarks training throughput, iteration speed, and execution latency across hardware.
 """
 
-import torch
 import time
+
+import torch
+
 
 class SpeedValidator:
     @staticmethod
@@ -35,6 +37,6 @@ class SpeedValidator:
         if torch.cuda.is_available():
             torch.cuda.synchronize()
         dt = (time.time() - t0) / iters
-        bs = batch['input_ids'].size(0)
-        print(f'  Speed: {dt*1000:.2f} ms/step, Throughput: {bs/dt:.1f} samples/sec')
+        bs = batch["input_ids"].size(0)
+        print(f"  Speed: {dt*1000:.2f} ms/step, Throughput: {bs/dt:.1f} samples/sec")
         return dt

@@ -21,9 +21,9 @@ from __future__ import annotations
 
 import argparse
 import math
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -143,7 +143,9 @@ class SmartGPUTrainer:
                 t_out = self.teacher(input_ids)
                 teacher_logits = t_out.logits if hasattr(t_out, "logits") else t_out
 
-        with torch.autocast(device_type=self.device.type, dtype=self.amp_dtype) if self.use_amp else torch.enable_grad():
+        with (
+            torch.autocast(device_type=self.device.type, dtype=self.amp_dtype) if self.use_amp else torch.enable_grad()
+        ):
             s_out = self.student(input_ids)
             student_logits = s_out.logits if hasattr(s_out, "logits") else s_out
             ce_loss = F.cross_entropy(student_logits, labels)
@@ -202,7 +204,9 @@ class SmartGPUTrainer:
 
     def train_loop(self, batch_size: int = 16, seq_len: int = 64, vocab_size: int = 100) -> list[dict[str, Any]]:
         """Run complete smart training loop and record telemetry."""
-        print(f"  Launching SmartGPUTrainer Loop ({self.total_steps} steps, accum={self.accum_steps}, device={self.device})...")
+        print(
+            f"  Launching SmartGPUTrainer Loop ({self.total_steps} steps, accum={self.accum_steps}, device={self.device})..."
+        )
         logs: list[dict[str, Any]] = []
 
         t0 = time.perf_counter()
@@ -223,7 +227,9 @@ class SmartGPUTrainer:
                 self.save_checkpoint(step + 1)
 
             if (step + 1) % 10 == 0 or step == self.total_steps - 1:
-                print(f"    Step [{step+1:3d}/{self.total_steps:3d}] | Loss: {step_metrics.get('total_loss', 0.0):.4f} | LR: {lr:.5e}")
+                print(
+                    f"    Step [{step+1:3d}/{self.total_steps:3d}] | Loss: {step_metrics.get('total_loss', 0.0):.4f} | LR: {lr:.5e}"
+                )
 
         total_time = time.perf_counter() - t0
         throughput = (self.total_steps * batch_size * seq_len) / max(1e-6, total_time)

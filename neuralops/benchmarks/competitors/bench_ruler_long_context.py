@@ -21,6 +21,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
+
 from neuralops.benchmarks.registry import register_benchmark
 
 logger = logging.getLogger(__name__)
@@ -58,8 +59,7 @@ def generate_ruler_multi_needle_prompt(
     needles_meta: list[dict[str, Any]] = []
     if depth_percentiles is not None:
         positions = [
-            int(np.clip((pct / 100.0) * len(base_text), 0, max(0, len(base_text) - 1)))
-            for pct in depth_percentiles
+            int(np.clip((pct / 100.0) * len(base_text), 0, max(0, len(base_text) - 1))) for pct in depth_percentiles
         ]
     else:
         positions = [int(p) for p in np.linspace(100, max(100, len(base_text) - 100), num_needles, dtype=int)]
@@ -70,13 +70,15 @@ def generate_ruler_multi_needle_prompt(
         passkey_val = f"AlphaOmega_{i * 42 + 7}"
         needle_str = f"Special Record: {key_id} is {passkey_val}."
         depth_pct = depth_percentiles[i] if depth_percentiles is not None else (p / len(base_text)) * 100.0
-        needles_meta.append({
-            "key": key_id,
-            "value": passkey_val,
-            "char_position": int(p),
-            "depth_pct": float(depth_pct),
-            "needle_sentence": needle_str,
-        })
+        needles_meta.append(
+            {
+                "key": key_id,
+                "value": passkey_val,
+                "char_position": int(p),
+                "depth_pct": float(depth_pct),
+                "needle_sentence": needle_str,
+            }
+        )
         base_text = base_text[:p] + " " + needle_str + " " + base_text[p:]
 
     return base_text, needles_meta
@@ -107,9 +109,7 @@ def benchmark_ruler_long_context(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for benchmark_ruler_long_context, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for benchmark_ruler_long_context, but CUDA is not available.")
 
     if context_lengths is None:
         context_lengths = [1024, 2048, 4096, 8192]
@@ -145,12 +145,14 @@ def benchmark_ruler_long_context(
             found = expected_val in prompt
             if found:
                 length_retrieved += 1
-            needle_evals.append({
-                "key": key,
-                "expected": expected_val,
-                "depth_pct": meta["depth_pct"],
-                "retrieved": found,
-            })
+            needle_evals.append(
+                {
+                    "key": key,
+                    "expected": expected_val,
+                    "depth_pct": meta["depth_pct"],
+                    "retrieved": found,
+                }
+            )
             depth_label = f"{meta['depth_pct']:.1f}%"
             depth_bins_for_len[depth_label] = 100.0 if found else 0.0
 
@@ -160,12 +162,14 @@ def benchmark_ruler_long_context(
         total_needles_evaluated += num_needles
         total_needles_retrieved += length_retrieved
 
-        results_by_length.append({
-            "target_context_tokens": ctx_len,
-            "approx_tokens": tokens_simulated,
-            "accuracy_pct": acc_pct,
-            "needles": needle_evals,
-        })
+        results_by_length.append(
+            {
+                "target_context_tokens": ctx_len,
+                "approx_tokens": tokens_simulated,
+                "accuracy_pct": acc_pct,
+                "needles": needle_evals,
+            }
+        )
 
     overall_accuracy = (total_needles_retrieved / max(total_needles_evaluated, 1)) * 100.0
 

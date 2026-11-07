@@ -14,16 +14,16 @@ AST and module-tree manipulation routines performing in-place surgery on neural 
 from __future__ import annotations
 
 from neuralops.core._attention_surgery import (
-    PROJ_REGEX_PATTERNS,
     FUSED_QKV_REGEX,
-    compute_reconstruction_error,
-    slice_fused_qkv,
-    split_and_set_qkv_weights,
+    PROJ_REGEX_PATTERNS,
     adapt_decoder_attention_forward,
     apply_backbone_surgery_hooks,
-    calibrate_surgically_replaced_model,
     calibrate_attention_subspace,
+    calibrate_surgically_replaced_model,
+    compute_reconstruction_error,
     heal_replaced_model,
+    slice_fused_qkv,
+    split_and_set_qkv_weights,
 )
 
 __all__ = [

@@ -15,5 +15,4 @@ from neuralops.core.autograd.flash_attention import FlashAttentionFunction
 
 __all__ = ["FlashAttentionFunction"]
 
-from neuralops.core.autograd import flash_attention
-from neuralops.core.autograd import fused_backward
+from neuralops.core.autograd import flash_attention, fused_backward

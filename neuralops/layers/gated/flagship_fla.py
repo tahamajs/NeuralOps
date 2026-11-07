@@ -14,14 +14,15 @@ Fast linear attention combining causal cumulative summation with hardware-effici
 from __future__ import annotations
 
 from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.attention_utils import apply_rotary_pos_emb, LoRALinear
 from neuralops.core.common import _cfg_get, repeat_kv
+from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.ops.triton.fused_norm_linear import fused_rmsnorm_gate
 
 
@@ -139,9 +140,7 @@ def gdn2_chunk_scan(
         bec = be_p[:, :, st:en]
         bwc = bw_p[:, :, st:en]
 
-        yc, S = torch.utils.checkpoint.checkpoint(
-            _run_chunk, S, qc, kc, vc, ac, bec, bwc, use_reentrant=False
-        )
+        yc, S = torch.utils.checkpoint.checkpoint(_run_chunk, S, qc, kc, vc, ac, bec, bwc, use_reentrant=False)
         outs.append(yc.to(dtype))
 
     y = torch.cat(outs, dim=2)
@@ -158,6 +157,7 @@ class GDN2Attention(BaseAttention):
     Formulation:
         S_t = S_{t-1} * alpha_t * (I - beta_erase_t * k_t k_t^T) + beta_write_t * k_t v_t^T
     """
+
     FAMILY: str = "gated"
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -231,10 +231,18 @@ class GDN2Attention(BaseAttention):
         if init_state is None and D <= 64 and q.is_cuda and not use_cache:
             try:
                 from fla.ops.gdn2 import chunk_gdn2
+
                 q_fl = q.transpose(1, 2).contiguous()
                 k_fl = k.transpose(1, 2).contiguous()
                 v_fl = v.transpose(1, 2).contiguous()
-                g_fl = torch.log(alpha.float().clamp(min=1e-4, max=1.0)).transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
+                g_fl = (
+                    torch.log(alpha.float().clamp(min=1e-4, max=1.0))
+                    .transpose(1, 2)
+                    .unsqueeze(-1)
+                    .expand(-1, -1, -1, D)
+                    .to(q.dtype)
+                    .contiguous()
+                )
                 b_fl = beta_erase.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
                 w_fl = beta_write.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, D).to(q.dtype).contiguous()
                 res = chunk_gdn2(q_fl, k_fl, v_fl, g_fl, b_fl, w_fl)
@@ -247,7 +255,12 @@ class GDN2Attention(BaseAttention):
                 pass
 
         y, next_state = gdn2_chunk_scan(
-            q, k, v, alpha, beta_erase, beta_write,
+            q,
+            k,
+            v,
+            alpha,
+            beta_erase,
+            beta_write,
             initial_state=init_state,
             chunk_size=self.chunk_size,
         )
@@ -266,7 +279,7 @@ class GDN2Attention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Exact O(1) single-step autoregressive recurrent update for GDN2Attention."""
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -296,7 +309,9 @@ class GDN2Attention(BaseAttention):
             state["kv_state"] = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
 
         S = state["kv_state"]
-        y_t, next_S = gdn2_recurrent_step(S, q.float(), k.float(), v.float(), alpha.float(), beta_erase.float(), beta_write.float())
+        y_t, next_S = gdn2_recurrent_step(
+            S, q.float(), k.float(), v.float(), alpha.float(), beta_erase.float(), beta_write.float()
+        )
         state["kv_state"] = next_S
         state["step_idx"] = step_idx + 1
 
@@ -337,6 +352,7 @@ class DeltaProductAttention(BaseAttention):
     Tracks state via sequence-accumulated Householder orthogonal reflections, ensuring
     strict isometry, bounded spectrum, and norm preservation along sequence dimensions.
     """
+
     FAMILY: str = "gated"
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -389,6 +405,7 @@ class DeltaProductAttention(BaseAttention):
         if init_state is None and D <= 64 and q.is_cuda and not use_cache:
             try:
                 from fla.ops import parallel_path_attn
+
                 q_fl = q.transpose(1, 2).contiguous()
                 k_fl = k.transpose(1, 2).contiguous()
                 v_fl = v.transpose(1, 2).contiguous()
@@ -477,7 +494,7 @@ class DeltaProductAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Exact O(1) single-step autoregressive recurrent update for DeltaProductAttention."""
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -542,6 +559,7 @@ class PreconditionedGDNAttention(BaseAttention):
         S_t = alpha_t * S_{t-1}(I - beta_t * k_tilde_t k_tilde_t^T) + beta_t * k_tilde_t v_t^T
     Directly aligns with NeuralOps Whitened Covariance Preconditioner.
     """
+
     FAMILY: str = "gated"
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -601,6 +619,7 @@ class PreconditionedGDNAttention(BaseAttention):
         if init_state is None and D <= 64 and q.is_cuda and not use_cache:
             try:
                 from fla.ops import chunk_gdn
+
                 q_fl = q.transpose(1, 2).contiguous()
                 k_fl = k_preconditioned.transpose(1, 2).contiguous()
                 v_fl = v.transpose(1, 2).contiguous()
@@ -686,7 +705,7 @@ class PreconditionedGDNAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Exact O(1) single-step autoregressive recurrent update for PreconditionedGDNAttention."""
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 

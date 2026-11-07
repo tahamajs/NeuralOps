@@ -23,8 +23,8 @@ from neuralops.pipeline_transform.dependencies import (
 from neuralops.pipeline_transform.errors import ConfigurationError, PlanningError
 from neuralops.pipeline_transform.executor import execute_plan
 from neuralops.pipeline_transform.hardware_planner import (
-    HardwareProfile,
     KNOWN_HARDWARE_PROFILES,
+    HardwareProfile,
     ResourceEstimate,
     estimate_resources,
 )

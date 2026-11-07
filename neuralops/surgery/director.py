@@ -39,14 +39,12 @@ import math
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.surgery.topology_router import (
-    BiDirectionalScanWrapper,
-    extract_binary_token_mask,
-)
+from neuralops.surgery.topology_router import BiDirectionalScanWrapper, extract_binary_token_mask
 
 logger = logging.getLogger("neuralops.surgery.director")
 
@@ -212,9 +210,7 @@ def sanitize_kv_for_padding_mask(
     keep_mask: Optional[torch.Tensor] = None
 
     if attention_mask is not None:
-        keep_mask = extract_binary_token_mask(
-            attention_mask, seq_len=seq_len, device=k.device, dtype=k.dtype
-        )
+        keep_mask = extract_binary_token_mask(attention_mask, seq_len=seq_len, device=k.device, dtype=k.dtype)
 
     if cu_seqlens is not None:
         total_valid = int(cu_seqlens[-1].item())
@@ -263,9 +259,7 @@ def sanitize_output_for_padding_mask(
     keep_mask: Optional[torch.Tensor] = None
 
     if attention_mask is not None:
-        keep_mask = extract_binary_token_mask(
-            attention_mask, seq_len=seq_len, device=out.device, dtype=out.dtype
-        )
+        keep_mask = extract_binary_token_mask(attention_mask, seq_len=seq_len, device=out.device, dtype=out.dtype)
 
     if cu_seqlens is not None:
         total_valid = int(cu_seqlens[-1].item())
@@ -383,7 +377,7 @@ def _decouple_rope_transform(
     # Mode 2: 1D Exponential Positional Decay (associativity-preserving)
     if decay_gamma is not None and 0.0 < decay_gamma < 1.0:
         t = torch.arange(seq_len, device=q.device, dtype=q.dtype)
-        gamma_decay = (decay_gamma ** t).view(*([1] * (q.ndim - 2)), seq_len, 1)
+        gamma_decay = (decay_gamma**t).view(*([1] * (q.ndim - 2)), seq_len, 1)
         q_out = q_out * gamma_decay
 
     return q_out, k_out
@@ -481,6 +475,7 @@ class GatheredParametersContext:
     def __enter__(self) -> None:
         try:
             from deepspeed import zero
+
             if hasattr(zero, "GatheredParameters"):
                 self._ctx = zero.GatheredParameters(self.module.parameters(), modifier_rank=0)
                 self._ctx.__enter__()
@@ -490,6 +485,7 @@ class GatheredParametersContext:
 
         try:
             from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+
             if isinstance(self.module, FSDP):
                 self._ctx = FSDP.summon_full_params(self.module)
                 self._ctx.__enter__()
@@ -542,7 +538,7 @@ def _detect_projection_layout(module_or_model: nn.Module) -> str:
 
 
 def _extract_linear_w_b(
-    mod: Union[nn.Module, nn.Parameter, torch.Tensor]
+    mod: Union[nn.Module, nn.Parameter, torch.Tensor],
 ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
     """Extracts standard (out_features, in_features) weight and optional bias."""
     if isinstance(mod, nn.Linear):
@@ -592,9 +588,7 @@ def extract_qkv_weights(
         raw_b = getattr(c_attn, "bias", None)
         if raw_w is None:
             raise ValueError(f"Cannot extract weight from {c_attn}")
-        if raw_w.ndim == 2 and (
-            raw_w.shape[0] < raw_w.shape[1] or "conv1d" in c_attn.__class__.__name__.lower()
-        ):
+        if raw_w.ndim == 2 and (raw_w.shape[0] < raw_w.shape[1] or "conv1d" in c_attn.__class__.__name__.lower()):
             W_attn = raw_w.t().contiguous()
         else:
             W_attn = raw_w
@@ -652,9 +646,7 @@ def extract_qkv_weights(
 
         total_out = W_qkv.shape[0]
         in_dim = W_qkv.shape[1]
-        n_heads = num_heads or getattr(
-            module_or_model, "num_heads", getattr(module_or_model, "n_head", 12)
-        )
+        n_heads = num_heads or getattr(module_or_model, "num_heads", getattr(module_or_model, "n_head", 12))
         n_kv = num_kv_heads or getattr(
             module_or_model,
             "num_key_value_heads",
@@ -719,6 +711,7 @@ def extract_qkv_weights(
 
     # 4. Search submodules for target attention blocks
     from neuralops.surgery.scanner import UniversalArchitectureScanner
+
     targets = UniversalArchitectureScanner.scan(module_or_model)
     if targets and targets[0].extracted_qkv is not None:
         return targets[0].extracted_qkv
@@ -797,16 +790,9 @@ def _inspect_positional_topology(model: nn.Module) -> Tuple[str, Dict[str, Any]]
         or any(arch in model_cls_name or arch in config_type for arch in ("bert", "roberta", "gpt2", "vit"))
     )
     if has_abs:
-        max_pos = (
-            getattr(cfg, "max_position_embeddings", None)
-            or getattr(cfg, "n_positions", None)
-            or 512
-        )
+        max_pos = getattr(cfg, "max_position_embeddings", None) or getattr(cfg, "n_positions", None) or 512
         emb_dim = (
-            getattr(cfg, "hidden_size", None)
-            or getattr(cfg, "n_embd", None)
-            or getattr(cfg, "d_model", None)
-            or 768
+            getattr(cfg, "hidden_size", None) or getattr(cfg, "n_embd", None) or getattr(cfg, "d_model", None) or 768
         )
         return "learned_absolute", {
             "max_position_embeddings": max_pos,
@@ -831,19 +817,11 @@ def profile_model_topology(model: nn.Module) -> ArchitectureProfile:
     """
     cfg = getattr(model, "config", None)
     num_layers = (
-        getattr(cfg, "num_hidden_layers", None)
-        or getattr(cfg, "num_layers", None)
-        or getattr(cfg, "n_layer", 12)
+        getattr(cfg, "num_hidden_layers", None) or getattr(cfg, "num_layers", None) or getattr(cfg, "n_layer", 12)
     )
-    hidden_dim = (
-        getattr(cfg, "hidden_size", None)
-        or getattr(cfg, "d_model", None)
-        or getattr(cfg, "n_embd", 768)
-    )
+    hidden_dim = getattr(cfg, "hidden_size", None) or getattr(cfg, "d_model", None) or getattr(cfg, "n_embd", 768)
     num_heads = (
-        getattr(cfg, "num_attention_heads", None)
-        or getattr(cfg, "num_heads", None)
-        or getattr(cfg, "n_head", 12)
+        getattr(cfg, "num_attention_heads", None) or getattr(cfg, "num_heads", None) or getattr(cfg, "n_head", 12)
     )
     num_kv_heads = (
         getattr(cfg, "num_key_value_heads", None)
@@ -878,10 +856,14 @@ def profile_model_topology(model: nn.Module) -> ArchitectureProfile:
     is_encoder_decoder = getattr(cfg, "is_encoder_decoder", False)
     if not is_encoder_decoder:
         is_encoder_decoder = (
-            hasattr(model, "encoder")
-            and hasattr(model, "decoder")
-            and ("t5" in model_cls_name or "t5" in config_type or any("encdec" in n.lower() for n in named_modules))
-        ) or "t5" in model_cls_name or "t5" in config_type
+            (
+                hasattr(model, "encoder")
+                and hasattr(model, "decoder")
+                and ("t5" in model_cls_name or "t5" in config_type or any("encdec" in n.lower() for n in named_modules))
+            )
+            or "t5" in model_cls_name
+            or "t5" in config_type
+        )
 
     # Detect Tied Embeddings (Law 8)
     has_tied = False
@@ -904,14 +886,20 @@ def profile_model_topology(model: nn.Module) -> ArchitectureProfile:
 
     # Detect Bidirectional Encoder vs Causal Decoder
     is_encoder = (
-        ("bert" in model_cls_name or "roberta" in model_cls_name or "bert" in config_type or "vit" in model_cls_name or "vit" in config_type)
-        and not is_encoder_decoder
-    )
+        "bert" in model_cls_name
+        or "roberta" in model_cls_name
+        or "bert" in config_type
+        or "vit" in model_cls_name
+        or "vit" in config_type
+    ) and not is_encoder_decoder
 
     # Detect MLA (Phase 044)
     is_mla = (
         getattr(cfg, "multi_head_latent_attention", False)
-        or any("kv_b_proj" in name or "q_b_proj" in name or "kv_a_proj_with_mqa" in name or "mla" in name for name in named_modules)
+        or any(
+            "kv_b_proj" in name or "q_b_proj" in name or "kv_a_proj_with_mqa" in name or "mla" in name
+            for name in named_modules
+        )
         or "deepseek" in model_cls_name
         or "deepseek" in config_type
     )
@@ -927,17 +915,31 @@ def profile_model_topology(model: nn.Module) -> ArchitectureProfile:
     # Detect 9 Canonical Families
     if is_quantized:
         family = "quantized"
-    elif jamba_attn_indices or "jamba" in model_cls_name or "jamba" in config_type or any("mamba" in name.lower() for name in named_modules):
+    elif (
+        jamba_attn_indices
+        or "jamba" in model_cls_name
+        or "jamba" in config_type
+        or any("mamba" in name.lower() for name in named_modules)
+    ):
         family = "jamba"
     elif is_mla:
         family = "deepseek_mla"
-    elif has_qk_norm or (softcapping_factor is not None and softcapping_factor > 0) or "gemma" in model_cls_name or "gemma" in config_type:
+    elif (
+        has_qk_norm
+        or (softcapping_factor is not None and softcapping_factor > 0)
+        or "gemma" in model_cls_name
+        or "gemma" in config_type
+    ):
         family = "gemma2"
     elif is_encoder_decoder:
         family = "t5"
     elif any("patch_embed" in name for name in named_modules) or "vit" in model_cls_name or "vit" in config_type:
         family = "vit"
-    elif any("query_key_value" in name or "c_attn" in name for name in named_modules) or "falcon" in model_cls_name or "gpt2" in model_cls_name:
+    elif (
+        any("query_key_value" in name or "c_attn" in name for name in named_modules)
+        or "falcon" in model_cls_name
+        or "gpt2" in model_cls_name
+    ):
         family = "gpt2" if ("gpt2" in model_cls_name or "gpt2" in config_type) else "falcon"
     elif is_encoder:
         family = "bert"
@@ -1285,9 +1287,7 @@ class CrossAttentionLinearBridge(nn.Module):
         k_enc, v_enc: [B, H, T_enc, D] or [B, T_enc, D].
         """
         self.prefill_count += 1
-        k_enc, v_enc = sanitize_kv_for_padding_mask(
-            k_enc, v_enc, attention_mask=attention_mask, cu_seqlens=cu_seqlens
-        )
+        k_enc, v_enc = sanitize_kv_for_padding_mask(k_enc, v_enc, attention_mask=attention_mask, cu_seqlens=cu_seqlens)
 
         k_phi = F.elu(k_enc.to(torch.float32)) + 1.0
         v_enc_f = v_enc.to(torch.float32)
@@ -1305,9 +1305,7 @@ class CrossAttentionLinearBridge(nn.Module):
         cu_seqlens: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """Alias for prefill_encoder computing S_cross once."""
-        return self.prefill_encoder(
-            k_enc, v_enc, attention_mask=attention_mask, cu_seqlens=cu_seqlens
-        )
+        return self.prefill_encoder(k_enc, v_enc, attention_mask=attention_mask, cu_seqlens=cu_seqlens)
 
     def decode_step(
         self,
@@ -1320,9 +1318,7 @@ class CrossAttentionLinearBridge(nn.Module):
         q_dec: [B, H, T_q, D] or [B, T_q, D].
         """
         if self.cached_s_cross is None:
-            raise RuntimeError(
-                "Static cross-attention matrix not initialized. Call prefill_encoder first."
-            )
+            raise RuntimeError("Static cross-attention matrix not initialized. Call prefill_encoder first.")
         self.decode_steps += q_dec.shape[-2]
         orig_dtype = q_dec.dtype
         q_phi = F.elu(q_dec.to(torch.float32)) + 1.0
@@ -1375,8 +1371,10 @@ class CrossAttentionLinearBridge(nn.Module):
     def get_cache_stats(self) -> Dict[str, Any]:
         """Returns cache telemetry including hit rate across decoding steps."""
         total_accesses = self.decode_steps
-        hit_rate = 1.0 if total_accesses > 0 and self.prefill_count == 1 else (
-            total_accesses / max(total_accesses + self.prefill_count - 1, 1)
+        hit_rate = (
+            1.0
+            if total_accesses > 0 and self.prefill_count == 1
+            else (total_accesses / max(total_accesses + self.prefill_count - 1, 1))
         )
         return {
             "prefill_count": self.prefill_count,
@@ -1453,6 +1451,7 @@ class UniversalSurgeryDirector:
         if self.profile.family == "deepseek_mla":
             try:
                 from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge
+
                 logger.info("UniversalSurgeryDirector: Routing DeepSeek MLA through DeepSeekMLASurgeryBridge.")
                 # If model is directly an MLA module or has layers
                 if hasattr(self.model, "layers"):
@@ -1472,11 +1471,13 @@ class UniversalSurgeryDirector:
 
         elif engine == "fx":
             from neuralops.surgery.fx_surgery import FXAttentionGraphRewriter
+
             rewriter = FXAttentionGraphRewriter(target_attention=target_attention, **kwargs)
             self.model = rewriter.rewrite(self.model)
 
         elif engine == "shell":
             from neuralops.surgery.scanner import UniversalArchitectureScanner
+
             scanner = UniversalArchitectureScanner()
             target_specs = scanner.scan(self.model)
 
@@ -1558,6 +1559,7 @@ class UniversalSurgeryDirector:
             else:
                 # Fallback to ModelSurgery
                 from neuralops.surgery.model_surgery import ModelSurgery
+
                 surgery = ModelSurgery(self.model)
                 self.model = surgery.replace_attention(
                     target_attention=target_attention,
@@ -1579,6 +1581,7 @@ class UniversalSurgeryDirector:
         if not self.profile.is_encoder and not self.profile.is_encoder_decoder:
             try:
                 from neuralops.surgery.hf_cache_bridge import wrap_model_for_generation
+
                 wrap_model_for_generation(self.model)
             except Exception as e:
                 logger.debug("Polymorphic generation cache bridge attachment skipped: %s", e)
@@ -1596,6 +1599,7 @@ class UniversalSurgeryDirector:
 
         try:
             from neuralops.models.protocols import SurgicalModel
+
             SurgicalModel.register(type(self.model))
         except Exception:
             pass
@@ -1685,10 +1689,7 @@ class UniversalSurgeryDirector:
 
         # Law 1: QK-Norm Preservation
         if self.profile.has_qk_norm:
-            has_qk = any(
-                getattr(mod, "has_qk_norm", False) or hasattr(mod, "q_norm")
-                for mod in self.model.modules()
-            )
+            has_qk = any(getattr(mod, "has_qk_norm", False) or hasattr(mod, "q_norm") for mod in self.model.modules())
             laws["Law_1_QK_Norm"] = bool(has_qk)
             if not has_qk:
                 violations.append("Law 1 Violation: QK-Norm missing on model configured with QK-Norm.")
@@ -1746,9 +1747,7 @@ class UniversalSurgeryDirector:
             tied = verify_tied_embeddings(self.model)
             laws["Law_8_Tied_Embeddings"] = bool(tied)
             if not tied:
-                violations.append(
-                    "Law 8 Violation: Input and output embeddings are un-tied after surgery!"
-                )
+                violations.append("Law 8 Violation: Input and output embeddings are un-tied after surgery!")
         else:
             laws["Law_8_Tied_Embeddings"] = True
 

@@ -21,11 +21,7 @@ import torch
 
 logger = logging.getLogger(__name__)
 
-from neuralops.ops.triton._types import (
-    HAS_TRITON,
-    check_triton_suitability,
-    state_update_pytorch_fallback,
-)
+from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability, state_update_pytorch_fallback
 
 if HAS_TRITON:
     import triton
@@ -86,12 +82,10 @@ if HAS_TRITON:
             h = tl.zeros((N_SZ,), dtype=tl.float32)
 
         for t in range(L_SZ):
-            u_val = tl.load(U_ptr + b_id * stride_ub + t * stride_ul + d_id * stride_ud).to(
+            u_val = tl.load(U_ptr + b_id * stride_ub + t * stride_ul + d_id * stride_ud).to(tl.float32)
+            delta_val = tl.load(Delta_ptr + b_id * stride_deltab + t * stride_deltal + d_id * stride_deltad).to(
                 tl.float32
             )
-            delta_val = tl.load(
-                Delta_ptr + b_id * stride_deltab + t * stride_deltal + d_id * stride_deltad
-            ).to(tl.float32)
 
             b_ptrs = B_ptr + b_id * stride_bb + t * stride_bl + offs_n * stride_bn
             c_ptrs = C_ptr + b_id * stride_cb + t * stride_cl + offs_n * stride_cn
@@ -138,9 +132,7 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
         d_tensor = D.contiguous() if has_d else torch.empty((1,), dtype=u.dtype, device=u.device)
 
         has_init = state is not None
-        init_state = (
-            state.contiguous() if has_init else torch.empty((1,), dtype=u.dtype, device=u.device)
-        )
+        init_state = state.contiguous() if has_init else torch.empty((1,), dtype=u.dtype, device=u.device)
 
         delta_c = (
             delta.expand(B_sz, L_sz, D_sz).contiguous()
@@ -194,9 +186,7 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
         return y, new_state
 
     @staticmethod
-    def backward(
-        ctx: Any, grad_y: Any, grad_state: Any
-    ) -> tuple[Any, ...]:
+    def backward(ctx: Any, grad_y: Any, grad_state: Any) -> tuple[Any, ...]:
         u, delta, A, B, C, D, state = ctx.saved_tensors
         u_req = u.detach().requires_grad_(True)
         delta_req = delta.detach().requires_grad_(True)
@@ -225,9 +215,7 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
                 diff_vars.append(state_req)
                 grad_outputs.append(grad_state)
 
-            grads = torch.autograd.grad(
-                out_y, diff_vars, grad_y, retain_graph=False, allow_unused=True
-            )
+            grads = torch.autograd.grad(out_y, diff_vars, grad_y, retain_graph=False, allow_unused=True)
 
         g_u = grads[0] if ctx.needs_input_grad[0] else None
         g_delta = grads[1] if ctx.needs_input_grad[1] else None
@@ -301,16 +289,38 @@ def bwd(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _triton_recurrent_linear_step_kernel(
-        Q_ptr, K_ptr, V_ptr, KV_ptr, Z_ptr, Out_ptr,
-        B, H, Dk: tl.constexpr, Dv: tl.constexpr,
-        stride_qb, stride_qh, stride_qd,
-        stride_kb, stride_kh, stride_kd,
-        stride_vb, stride_vh, stride_vd,
-        stride_kvb, stride_kvh, stride_kvk, stride_kvv,
-        stride_zb, stride_zh, stride_zk,
-        stride_ob, stride_oh, stride_ov,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        KV_ptr,
+        Z_ptr,
+        Out_ptr,
+        B,
+        H,
+        Dk: tl.constexpr,
+        Dv: tl.constexpr,
+        stride_qb,
+        stride_qh,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vd,
+        stride_kvb,
+        stride_kvh,
+        stride_kvk,
+        stride_kvv,
+        stride_zb,
+        stride_zh,
+        stride_zk,
+        stride_ob,
+        stride_oh,
+        stride_ov,
         eps,
     ):
         pid_b = tl.program_id(0)
@@ -327,7 +337,13 @@ if HAS_TRITON:
         k = tl.load(k_ptrs).to(tl.float32)
         v = tl.load(v_ptrs).to(tl.float32)
 
-        kv_ptrs = KV_ptr + pid_b * stride_kvb + pid_h * stride_kvh + offs_k[:, None] * stride_kvk + offs_v[None, :] * stride_kvv
+        kv_ptrs = (
+            KV_ptr
+            + pid_b * stride_kvb
+            + pid_h * stride_kvh
+            + offs_k[:, None] * stride_kvk
+            + offs_v[None, :] * stride_kvv
+        )
         kv = tl.load(kv_ptrs).to(tl.float32)
 
         kv_new = kv + k[:, None] * v[None, :]
@@ -345,18 +361,39 @@ if HAS_TRITON:
         out_ptrs = Out_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_v * stride_ov
         tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty))
 
-
     @triton.jit
     def _triton_recurrent_gla_step_kernel(
-        Q_ptr, K_ptr, V_ptr, Gk_ptr, KV_ptr, Out_ptr,
-        B, H, Dk: tl.constexpr, Dv: tl.constexpr,
-        stride_qb, stride_qh, stride_qd,
-        stride_kb, stride_kh, stride_kd,
-        stride_vb, stride_vh, stride_vd,
-        stride_gkb, stride_gkh, stride_gkd,
-        stride_kvb, stride_kvh, stride_kvk, stride_kvv,
-        stride_ob, stride_oh, stride_ov,
-        scale, IS_VECTOR_GATE: tl.constexpr,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Gk_ptr,
+        KV_ptr,
+        Out_ptr,
+        B,
+        H,
+        Dk: tl.constexpr,
+        Dv: tl.constexpr,
+        stride_qb,
+        stride_qh,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vd,
+        stride_gkb,
+        stride_gkh,
+        stride_gkd,
+        stride_kvb,
+        stride_kvh,
+        stride_kvk,
+        stride_kvv,
+        stride_ob,
+        stride_oh,
+        stride_ov,
+        scale,
+        IS_VECTOR_GATE: tl.constexpr,
     ):
         pid_b = tl.program_id(0)
         pid_h = tl.program_id(1)
@@ -375,7 +412,13 @@ if HAS_TRITON:
             g = tl.load(Gk_ptr + pid_b * stride_gkb + pid_h * stride_gkh).to(tl.float32)
             decay = tl.math.exp2(1.44269504 * (g))
 
-        kv_ptrs = KV_ptr + pid_b * stride_kvb + pid_h * stride_kvh + offs_k[:, None] * stride_kvk + offs_v[None, :] * stride_kvv
+        kv_ptrs = (
+            KV_ptr
+            + pid_b * stride_kvb
+            + pid_h * stride_kvh
+            + offs_k[:, None] * stride_kvk
+            + offs_v[None, :] * stride_kvv
+        )
         kv = tl.load(kv_ptrs).to(tl.float32)
 
         if IS_VECTOR_GATE:
@@ -415,14 +458,35 @@ def fused_recurrent_linear_step(
             out = torch.empty((B, H, Dv), dtype=q_t.dtype, device=q_t.device)
             grid = (B, H)
             _triton_recurrent_linear_step_kernel[grid](
-                q_t, k_t, v_t, kv_state, z_state, out,
-                B, H, Dk, Dv,
-                q_t.stride(0), q_t.stride(1), q_t.stride(2),
-                k_t.stride(0), k_t.stride(1), k_t.stride(2),
-                v_t.stride(0), v_t.stride(1), v_t.stride(2),
-                kv_state.stride(0), kv_state.stride(1), kv_state.stride(2), kv_state.stride(3),
-                z_state.stride(0), z_state.stride(1), z_state.stride(2),
-                out.stride(0), out.stride(1), out.stride(2),
+                q_t,
+                k_t,
+                v_t,
+                kv_state,
+                z_state,
+                out,
+                B,
+                H,
+                Dk,
+                Dv,
+                q_t.stride(0),
+                q_t.stride(1),
+                q_t.stride(2),
+                k_t.stride(0),
+                k_t.stride(1),
+                k_t.stride(2),
+                v_t.stride(0),
+                v_t.stride(1),
+                v_t.stride(2),
+                kv_state.stride(0),
+                kv_state.stride(1),
+                kv_state.stride(2),
+                kv_state.stride(3),
+                z_state.stride(0),
+                z_state.stride(1),
+                z_state.stride(2),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
                 eps,
             )
             return out, kv_state, z_state
@@ -465,15 +529,37 @@ def fused_recurrent_gla_step(
         out = torch.empty((B, H, Dv), dtype=q_t.dtype, device=q_t.device)
         grid = (B, H)
         _triton_recurrent_gla_step_kernel[grid](
-            q_t, k_t, v_t, gk_t, kv_state, out,
-            B, H, Dk, Dv,
-            q_t.stride(0), q_t.stride(1), q_t.stride(2),
-            k_t.stride(0), k_t.stride(1), k_t.stride(2),
-            v_t.stride(0), v_t.stride(1), v_t.stride(2),
-            gk_t.stride(0), gk_t.stride(1), (gk_t.stride(2) if is_vec else 0),
-            kv_state.stride(0), kv_state.stride(1), kv_state.stride(2), kv_state.stride(3),
-            out.stride(0), out.stride(1), out.stride(2),
-            scale, IS_VECTOR_GATE=is_vec,
+            q_t,
+            k_t,
+            v_t,
+            gk_t,
+            kv_state,
+            out,
+            B,
+            H,
+            Dk,
+            Dv,
+            q_t.stride(0),
+            q_t.stride(1),
+            q_t.stride(2),
+            k_t.stride(0),
+            k_t.stride(1),
+            k_t.stride(2),
+            v_t.stride(0),
+            v_t.stride(1),
+            v_t.stride(2),
+            gk_t.stride(0),
+            gk_t.stride(1),
+            (gk_t.stride(2) if is_vec else 0),
+            kv_state.stride(0),
+            kv_state.stride(1),
+            kv_state.stride(2),
+            kv_state.stride(3),
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            scale,
+            IS_VECTOR_GATE=is_vec,
         )
         return out, kv_state
 
@@ -633,13 +719,13 @@ def fused_recurrent_ssm_step(
 
 
 __all__ = [
-    'is_supported',
-    'fwd',
-    'bwd',
-    'fused_recurrent_linear_step',
-    'fused_recurrent_gla_step',
-    'fused_recurrent_gdn_step',
-    'fused_recurrent_hgrn2_step',
-    'causal_conv1d_step',
-    'fused_recurrent_ssm_step',
+    "is_supported",
+    "fwd",
+    "bwd",
+    "fused_recurrent_linear_step",
+    "fused_recurrent_gla_step",
+    "fused_recurrent_gdn_step",
+    "fused_recurrent_hgrn2_step",
+    "causal_conv1d_step",
+    "fused_recurrent_ssm_step",
 ]

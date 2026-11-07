@@ -156,4 +156,3 @@ Exact problems (audit AC-C01, AC-C03, AC-C04, AC-H05, AC-H06, AC-H07, AC-M03):
 - If pdflatex/bibtex is not installed on this host — STOP and report which host has it.
 - If a test that passed before now fails — STOP, do not improvise, report exactly what is blocked.
 ```
-

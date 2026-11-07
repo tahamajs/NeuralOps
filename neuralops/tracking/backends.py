@@ -11,12 +11,12 @@ Experiment Tracking Backends
 Provides adapters for logging metrics to Weights & Biases, MLflow, TensorBoard, and local files.
 """
 
-from abc import ABC, abstractmethod
-from datetime import datetime
-from enum import Enum
 import json
 import logging
 import os
+from abc import ABC, abstractmethod
+from datetime import datetime
+from enum import Enum
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -144,9 +144,7 @@ class TensorBoardTracker(BaseTracker):
 
             self.writer = SummaryWriter(log_dir=tb_dir)
         except (ImportError, ModuleNotFoundError) as e:
-            logger.warning(
-                "TensorBoard unavailable (%s); events will not be written to disk.", e
-            )
+            logger.warning("TensorBoard unavailable (%s); events will not be written to disk.", e)
             self.writer = None
 
     def log_metric(self, name: str, value: float, step: int | None = None) -> None:

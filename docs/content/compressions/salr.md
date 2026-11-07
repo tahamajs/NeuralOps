@@ -1,6 +1,6 @@
 # SALR: Unified Low‑Rank and Sparse Pruning
 
-**Registered as `salr`**  
+**Registered as `salr`**
 *Decomposes each linear layer’s weight via SVD into low‑rank factors and then randomly zeroes a fraction of the singular values, creating a hybrid low‑rank + sparse diagonal representation that reduces parameters while retaining structural flexibility.*
 
 ---
@@ -191,4 +191,3 @@ The empirical evaluation of `salr` across standard sequence lengths and language
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

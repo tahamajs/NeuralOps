@@ -51,4 +51,6 @@ class AdaptationDistillOperation(Operation):
         super().__init__(contract=CONTRACT)
 
     def apply(self, model: nn.Module, config: Dict[str, Any]) -> Tuple[nn.Module, Dict[str, Any]]:
-        raise IntegrationNotImplementedError("adaptation.distill requires GPU training loop and is deferred to Phase 2.")
+        raise IntegrationNotImplementedError(
+            "adaptation.distill requires GPU training loop and is deferred to Phase 2."
+        )

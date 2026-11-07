@@ -29,9 +29,7 @@ def run_calibration_forward(
 ) -> nn.Module:
     """Run a single forward pass on calibration texts; return model (in eval)."""
     model.eval()
-    inputs = tokenizer(
-        texts, return_tensors="pt", padding=True, truncation=True, max_length=max_length
-    )
+    inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=True, max_length=max_length)
     if device is None:
         device = next(model.parameters()).device
     inputs = {k: v.to(device) for k, v in inputs.items()}
@@ -67,8 +65,7 @@ def copy_attention_weights(
                 break
         if src is None:
             raise ValueError(
-                f"Cannot find source for '{target_attr}' in "
-                f"{src_module.__class__.__name__}. Tried: {src_attrs}"
+                f"Cannot find source for '{target_attr}' in " f"{src_module.__class__.__name__}. Tried: {src_attrs}"
             )
         dst = getattr(dst_module, target_attr)
         dst.weight.data.copy_(src.weight.data)
@@ -148,9 +145,7 @@ def activation_hooks(
             if collect_input:
                 data["input"] = input[0].detach()
             if collect_output:
-                data["output"] = (
-                    output.detach() if isinstance(output, torch.Tensor) else output[0].detach()
-                )
+                data["output"] = output.detach() if isinstance(output, torch.Tensor) else output[0].detach()
             activations[name] = data
 
         return hook
@@ -217,9 +212,7 @@ def detect_return_format(source_attn: nn.Module | None, is_nested_encoder: bool)
     if source_attn is None:
         return "llama"
     cls = source_attn.__class__.__name__.lower()
-    if any(k in cls for k in ("gpt2", "gptne", "gptj", "gptneo", "gpt_neo", "gpt_j")) or hasattr(
-        source_attn, "c_attn"
-    ):
+    if any(k in cls for k in ("gpt2", "gptne", "gptj", "gptneo", "gpt_neo", "gpt_j")) or hasattr(source_attn, "c_attn"):
         return "gpt2"
     return "llama"
 

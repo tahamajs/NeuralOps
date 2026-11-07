@@ -13,32 +13,26 @@ from __future__ import annotations
 
 from typing import Any
 
-from neuralops.ops.triton import (
-    gqa,
-    linear_attn,
-    low_rank,
-    sparse_attn,
-    state_update,
-)
-from neuralops.ops.triton.op_registry import (
-    compilable_linear_attn,
-    compilable_sparse_attn,
-    compilable_low_rank,
-    register_custom_op_meta_shape,
-)
+from neuralops.ops.triton import gqa, linear_attn, low_rank, sparse_attn, state_update
 from neuralops.ops.triton._common import (
-    HAS_TRITON,
     FORCE_PYTORCH_FALLBACK,
+    HAS_TRITON,
+    Autotuner,
+    autotune_kernel,
+    check_triton_suitability,
     gqa_pytorch_fallback,
     linear_attn_pytorch_fallback,
+    log_fallback_reason,
     low_rank_pytorch_fallback,
     sparse_attn_pytorch_fallback,
     state_update_pytorch_fallback,
     triton_dispatch,
-    Autotuner,
-    autotune_kernel,
-    check_triton_suitability,
-    log_fallback_reason,
+)
+from neuralops.ops.triton.op_registry import (
+    compilable_linear_attn,
+    compilable_low_rank,
+    compilable_sparse_attn,
+    register_custom_op_meta_shape,
 )
 
 try:
@@ -69,7 +63,7 @@ except Exception:
 
 try:
     from neuralops.ops.triton import gla_scan
-    from neuralops.ops.triton.gla_scan import gla_scan_triton, chunked_gla_scan
+    from neuralops.ops.triton.gla_scan import chunked_gla_scan, gla_scan_triton
 except Exception:
     gla_scan = None
     gla_scan_triton = None
@@ -84,27 +78,28 @@ except Exception:
 
 from neuralops.ops.triton.fused_ce import (
     FusedCrossEntropyLoss,
-    fused_cross_entropy,
-    fused_cross_entropy_pytorch,
     FusedLinearCrossEntropy,
     FusedLinearCrossEntropyFunction,
+    fused_cross_entropy,
+    fused_cross_entropy_pytorch,
     fused_linear_cross_entropy,
 )
 from neuralops.ops.triton.fused_kd import (
     FusedKDLoss,
-    fused_kd_loss,
-    fused_kd_loss_pytorch,
     FusedLinearKLDivergence,
     FusedLinearKLDivergenceFunction,
+    fused_kd_loss,
+    fused_kd_loss_pytorch,
     fused_linear_kl_divergence,
 )
 from neuralops.ops.triton.fused_norm_linear import (
     FusedRMSNormLinear,
     fused_norm_linear,
     fused_norm_linear_pytorch,
-    fused_rmsnorm_linear,
     fused_rmsnorm_gate,
+    fused_rmsnorm_linear,
 )
+
 fused_rmsnorm_gate_triton = fused_rmsnorm_gate
 TRITON_STANDALONE_KERNELS: list[str] = [
     "block_sparse_streaming_attn",
@@ -180,9 +175,9 @@ TRITON_EXTENDED_KERNELS: list[str] = [
     "fused_lowrank_residual_add",
 ]
 
-TRITON_KERNEL_CATALOG: list[str] = sorted(list(set(
-    TRITON_STANDALONE_KERNELS + TRITON_CORE_MODULES + TRITON_ROOT_MODULES + TRITON_EXTENDED_KERNELS
-)))
+TRITON_KERNEL_CATALOG: list[str] = sorted(
+    list(set(TRITON_STANDALONE_KERNELS + TRITON_CORE_MODULES + TRITON_ROOT_MODULES + TRITON_EXTENDED_KERNELS))
+)
 
 
 def list_triton_kernels(category: str | None = None) -> list[str]:
@@ -378,100 +373,86 @@ __all__ = [
     "chunked_gla_scan",
 ]
 
-from neuralops.ops.triton.low_rank import (
-    fused_lowrank_gemm,
-    triton_fused_lowrank_gated_gemm,
-    triton_fused_lowrank_gated_gemm_pytorch_ref,
-    triton_fused_lowrank_sparse_gemm,
-    triton_fused_lowrank_sparse_gemm_pytorch_ref,
-    triton_strided_tt_contraction,
-    triton_strided_tt_linear,
-    triton_strided_tt_contraction_pytorch_ref,
-    triton_fused_kronecker_matmul,
-    triton_fused_kronecker_matmul_pytorch_ref,
-    triton_spectral_entropy_svd_gate,
-    triton_spectral_entropy_svd_gate_pytorch_ref,
-)
-from neuralops.ops.triton.fused_norm_linear import (
-    triton_fused_hadamard_w4a16_gemm,
-    triton_fused_hadamard_w4a16_gemm_pytorch_ref,
-    triton_lut_codebook_dequant_gemm,
-    triton_lut_codebook_dequant_gemm_pytorch_ref,
-    triton_fused_act_scale_quant_gemm,
-    triton_fused_act_scale_quant_gemm_pytorch_ref,
-)
-from neuralops.ops.triton.gdn_scan import (
-    triton_chunked_delta_gate_scan,
-    triton_chunked_delta_gate_scan_pytorch_ref,
+from neuralops.ops.triton.block_sparse import (
+    fused_dsa_sparse_attn_pytorch_ref,
+    fused_dsa_sparse_attn_triton,
+    triton_block_sparse_streaming_attn,
+    triton_block_sparse_streaming_attn_pytorch_ref,
 )
 from neuralops.ops.triton.cosformer_triton_kernel import (
     triton_cosformer_linear_attention,
     triton_cosformer_linear_attention_pytorch_ref,
 )
-from neuralops.ops.triton.block_sparse import (
-    triton_block_sparse_streaming_attn,
-    triton_block_sparse_streaming_attn_pytorch_ref,
-    fused_dsa_sparse_attn_triton,
-    fused_dsa_sparse_attn_pytorch_ref,
+from neuralops.ops.triton.cur_linear import TritonCURLinearFunction, triton_cur_linear, triton_cur_linear_pytorch_ref
+from neuralops.ops.triton.differential_attention import (
+    TritonDifferentialAttentionFunction,
+    triton_differential_attention,
+    triton_differential_attention_pytorch_ref,
 )
-from neuralops.ops.triton.hgrn2_scan import (
-    triton_hgrn2_fused_bwd_scan,
-    triton_hgrn2_fused_bwd_scan_pytorch_ref,
+from neuralops.ops.triton.dynamic_sparse_attention import (
+    TritonDynamicSparseAttentionFunction,
+    triton_dynamic_sparse_attention,
+    triton_dynamic_sparse_attention_pytorch_ref,
 )
-from neuralops.ops.triton.linear_attn import (
-    triton_fused_latent_kv_cache_attention,
-    triton_fused_latent_kv_cache_attention_pytorch_ref,
+from neuralops.ops.triton.elementwise import (
+    fast_hadamard_transform,
+    fused_aegis_multibranch_gate_norm_triton,
+    fused_entropy_token_pruning_mask_triton,
+    fused_favor_plus_feature_map_triton,
+    fused_rms_variance_match_triton,
+    fused_split_head_hybrid_concat_norm_triton,
 )
 from neuralops.ops.triton.flash_decoding import (
     flash_decoding_attention,
     flash_decoding_stage1_kernel,
     flash_decoding_stage2_kernel,
 )
-from neuralops.ops.triton.paged_attention import (
-    paged_attention_kernel,
-    paged_recurrent_state_step_triton,
-    paged_kv_evict_compact_triton,
+from neuralops.ops.triton.fused_norm_linear import (
+    triton_fused_act_scale_quant_gemm,
+    triton_fused_act_scale_quant_gemm_pytorch_ref,
+    triton_fused_hadamard_w4a16_gemm,
+    triton_fused_hadamard_w4a16_gemm_pytorch_ref,
+    triton_lut_codebook_dequant_gemm,
+    triton_lut_codebook_dequant_gemm_pytorch_ref,
 )
-from neuralops.ops.triton.fused_rope import (
-    fused_rope_embedding_kernel,
-    fused_unified_rope_offset_triton,
-)
-from neuralops.ops.triton.elementwise import (
-    fast_hadamard_transform,
-    fused_rms_variance_match_triton,
-    fused_favor_plus_feature_map_triton,
-    fused_entropy_token_pruning_mask_triton,
-    fused_aegis_multibranch_gate_norm_triton,
-    fused_split_head_hybrid_concat_norm_triton,
-)
-from neuralops.ops.triton.differential_attention import (
-    triton_differential_attention,
-    triton_differential_attention_pytorch_ref,
-    TritonDifferentialAttentionFunction,
-)
+from neuralops.ops.triton.fused_rope import fused_rope_embedding_kernel, fused_unified_rope_offset_triton
+from neuralops.ops.triton.gdn_scan import triton_chunked_delta_gate_scan, triton_chunked_delta_gate_scan_pytorch_ref
+from neuralops.ops.triton.hgrn2_scan import triton_hgrn2_fused_bwd_scan, triton_hgrn2_fused_bwd_scan_pytorch_ref
 from neuralops.ops.triton.hydra_attention import (
+    TritonHydraAttentionFunction,
     triton_hydra_attention,
     triton_hydra_attention_pytorch_ref,
-    TritonHydraAttentionFunction,
+)
+from neuralops.ops.triton.linear_attn import (
+    triton_fused_latent_kv_cache_attention,
+    triton_fused_latent_kv_cache_attention_pytorch_ref,
+)
+from neuralops.ops.triton.low_rank import (
+    fused_lowrank_gemm,
+    triton_fused_kronecker_matmul,
+    triton_fused_kronecker_matmul_pytorch_ref,
+    triton_fused_lowrank_gated_gemm,
+    triton_fused_lowrank_gated_gemm_pytorch_ref,
+    triton_fused_lowrank_sparse_gemm,
+    triton_fused_lowrank_sparse_gemm_pytorch_ref,
+    triton_spectral_entropy_svd_gate,
+    triton_spectral_entropy_svd_gate_pytorch_ref,
+    triton_strided_tt_contraction,
+    triton_strided_tt_contraction_pytorch_ref,
+    triton_strided_tt_linear,
+)
+from neuralops.ops.triton.paged_attention import (
+    paged_attention_kernel,
+    paged_kv_evict_compact_triton,
+    paged_recurrent_state_step_triton,
 )
 from neuralops.ops.triton.retnet_retention import (
-    triton_multi_scale_retention,
-    triton_retnet_retention,
-    triton_multi_scale_retention_pytorch_ref,
-    triton_retnet_retention_pytorch_ref,
     TritonRetNetRetentionFunction,
+    triton_multi_scale_retention,
+    triton_multi_scale_retention_pytorch_ref,
+    triton_retnet_retention,
+    triton_retnet_retention_pytorch_ref,
 )
-from neuralops.ops.triton.dynamic_sparse_attention import (
-    triton_dynamic_sparse_attention,
-    triton_dynamic_sparse_attention_pytorch_ref,
-    TritonDynamicSparseAttentionFunction,
-)
-from neuralops.ops.triton.cur_linear import (
-    triton_cur_linear,
-    triton_cur_linear_pytorch_ref,
-    TritonCURLinearFunction,
-)
-
 
 try:
     from neuralops.ops.triton.gdn_scan import gdn_recurrent_step_triton
@@ -488,39 +469,43 @@ try:
 except Exception:
     select_optimal_triton_config = None
 
-from neuralops.ops.triton import _common
-from neuralops.ops.triton import _types
-from neuralops.ops.triton import autotuner
-from neuralops.ops.triton import block_sparse
-from neuralops.ops.triton import cosformer_triton_kernel
-from neuralops.ops.triton import elementwise
-from neuralops.ops.triton import flash_decoding
-from neuralops.ops.triton import fused_rope
-from neuralops.ops.triton import paged_attention
-from neuralops.ops.triton import selective_scan
-from neuralops.ops.triton import sliding_window
-from neuralops.ops.triton import softplus
-from neuralops.ops.triton import differential_attention
-from neuralops.ops.triton import hydra_attention
-from neuralops.ops.triton import retnet_retention
-from neuralops.ops.triton import retnet_scan
-from neuralops.ops.triton import delta_net_scan
-from neuralops.ops.triton import dynamic_sparse_attention
-from neuralops.ops.triton import cur_linear
-from neuralops.ops.triton import varlen_attention
-from neuralops.ops.triton import hardware_profile
-from neuralops.ops.triton import op_registry
+from neuralops.ops.triton import (
+    _common,
+    _types,
+    autotuner,
+    block_sparse,
+    cosformer_triton_kernel,
+    cur_linear,
+    delta_net_scan,
+    differential_attention,
+    dynamic_sparse_attention,
+    elementwise,
+    flash_decoding,
+    fused_rope,
+    hardware_profile,
+    hydra_attention,
+    op_registry,
+    paged_attention,
+    retnet_retention,
+    retnet_scan,
+    selective_scan,
+    sliding_window,
+    softplus,
+    varlen_attention,
+)
 
 
 def __getattr__(name: str) -> Any:
     """Resolve specialized Triton operators from the canonical standalone package or core."""
     if name in ("fast_linear_attention", "LinearAttentionTriton"):
         from neuralops.core import triton_linear_attn
+
         val = getattr(triton_linear_attn, name)
         globals()[name] = val
         return val
     if name == "triton_block_sparse_attention":
         from neuralops.core import triton_sparse_attn
+
         val = getattr(triton_sparse_attn, name)
         globals()[name] = val
         return val

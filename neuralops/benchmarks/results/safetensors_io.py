@@ -83,16 +83,20 @@ def save_surgerized_safetensors(
     has_torch = False
     try:
         import torch
+
         has_torch = True
     except ImportError:
         pass
 
     # Inspect whether inputs are torch tensors or numpy arrays
-    has_numpy_tensors = any(hasattr(v, "__array__") and not (has_torch and isinstance(v, torch.Tensor)) for v in clean_state.values())
+    has_numpy_tensors = any(
+        hasattr(v, "__array__") and not (has_torch and isinstance(v, torch.Tensor)) for v in clean_state.values()
+    )
 
     if has_numpy_tensors:
         try:
             from safetensors.numpy import save_file as np_save_file
+
             np_state: Dict[str, Any] = {}
             for k, v in clean_state.items():
                 if hasattr(v, "cpu"):
@@ -106,24 +110,22 @@ def save_surgerized_safetensors(
         except ImportError:
             pass
         except Exception as exc:
-            raise RuntimeError(
-                f"Failed to serialize numpy state to SafeTensors at {target}: {exc}"
-            ) from exc
+            raise RuntimeError(f"Failed to serialize numpy state to SafeTensors at {target}: {exc}") from exc
 
     try:
         from safetensors.torch import save_file as st_save_file
+
         st_save_file(clean_state, str(target), metadata=st_metadata if st_metadata else None)
         return target
     except ImportError:
         pass
     except Exception as exc:
-        raise RuntimeError(
-            f"Failed to serialize surgerized model weights to SafeTensors at {target}: {exc}"
-        ) from exc
+        raise RuntimeError(f"Failed to serialize surgerized model weights to SafeTensors at {target}: {exc}") from exc
 
     # Fallback to safetensors numpy / rust serialize_file if torch integration module not directly imported
     try:
         from safetensors.numpy import save_file as np_save_file
+
         # Convert torch tensors to numpy arrays
         np_state: Dict[str, Any] = {}
         for k, v in clean_state.items():
@@ -138,9 +140,7 @@ def save_surgerized_safetensors(
     except ImportError:
         pass
     except Exception as exc:
-        raise RuntimeError(
-            f"Failed to serialize numpy state to SafeTensors at {target}: {exc}"
-        ) from exc
+        raise RuntimeError(f"Failed to serialize numpy state to SafeTensors at {target}: {exc}") from exc
 
     raise RuntimeError(
         f"SafeTensors serialization failed: safetensors package is required to save {target}. "
@@ -188,7 +188,9 @@ def load_surgerized_safetensors(
 
         # Try designated framework
         try:
-            with safe_open(str(target), framework=framework_clean, device=device if framework_clean == "pt" else "cpu") as f:
+            with safe_open(
+                str(target), framework=framework_clean, device=device if framework_clean == "pt" else "cpu"
+            ) as f:
                 metadata = f.metadata() or {}
                 for k in f.keys():
                     tensors[k] = f.get_tensor(k)
@@ -214,6 +216,7 @@ def load_surgerized_safetensors(
     if framework_clean == "pt":
         try:
             from safetensors.torch import load_file
+
             tensors = load_file(str(target), device=device)
             return tensors, metadata
         except Exception:
@@ -221,6 +224,7 @@ def load_surgerized_safetensors(
 
     try:
         from safetensors.numpy import load_file as np_load_file
+
         tensors = np_load_file(str(target))
         return tensors, metadata
     except Exception as exc:

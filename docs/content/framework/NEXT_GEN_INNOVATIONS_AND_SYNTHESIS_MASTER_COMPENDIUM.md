@@ -116,16 +116,16 @@ flowchart TD
     subgraph MambaSVD_Flash ["MambaSVD-Flash Hybrid Module"]
         Input["Input Activations X ∈ ℝ^(B × L × D)"] --> Projection["Linear Projection Layer"]
         Projection --> EntropyGate{"Spectral Entropy Router S(X)"}
-        
+
         EntropyGate -- "Low Entropy (Structured State)" --> SVD_SSM["SVD-Truncated SSM Path"]
         SVD_SSM --> TruncatedSVD["A_t = U_r Σ_r V_r^T Truncation"]
         TruncatedSVD --> ChunkedScan["Chunked Parallel Scan Engine"]
         ChunkedScan --> StateUpdate["h_t = A_t h_(t-1) + B_t x_t"]
-        
+
         EntropyGate -- "High Entropy (Dense Attention)" --> FP8_Flash["Hopper FP8 FlashAttention-3"]
         FP8_Flash --> FP8Quant["WGMMA FP8 E4M3 Quantization"]
         FP8Quant --> HopperKernel["Fused Scaled Scaled Dot-Product Kernel"]
-        
+
         StateUpdate --> OutputFusion["Dynamic Output Aggregation"]
         HopperKernel --> OutputFusion
         OutputFusion --> FinalOutput["Layer Output Y ∈ ℝ^(B × L × D)"]
@@ -178,10 +178,10 @@ flowchart LR
         OrthoRot --> RotatedW["Rotated Weights W~ = W Q"]
         RotatedW --> Slicing["Orthogonal Slicing Projection P_r ∈ ℝ^(D_in × r)"]
         Slicing --> SlicedW["Sliced Matrix W_sliced = W~ P_r"]
-        
+
         Hessian["Activation Hessian H = 2 X X^T + λ I"] --> SparseGPT_Update["Second-Order Error Update Loop"]
         SlicedW --> SparseGPT_Update
-        
+
         SparseGPT_Update --> AstroQuant["Astro 4-Bit Codebook Quantizer C"]
         AstroQuant --> PackINT4["Packed INT4 Register Storage + FP16 Scales"]
     end
@@ -225,19 +225,19 @@ flowchart TD
     subgraph MoE_DeltaKV_Paged ["MoE-DeltaKV-Paged Attention System"]
         Query["Query Token Q_t"] --> Router["Top-k MoBA Block Router"]
         Router --> PageTable["Paged KV Virtual Memory Directory"]
-        
+
         PageTable --> ActivePages["Physical Memory Pages P_1, P_2, ..., P_k"]
-        
+
         subgraph DeltaKV_Engine ["Delta-KV State Reconstruction"]
             ActivePages --> DeltaK["Compressed Temporal Delta ΔK_t"]
             ActivePages --> DeltaV["Compressed Temporal Delta ΔV_t"]
-            
+
             DeltaK --> DequantSVD["Low-Rank SVD Reconstruction: U Σ V^T"]
             DeltaV --> DequantSVD
-            
+
             DequantSVD --> KV_Accumulator["K_t = K_(t-1) + ΔK_t,  V_t = V_(t-1) + ΔV_t"]
         end
-        
+
         KV_Accumulator --> BlockAttn["Paged Block-Sparse Attention Computation"]
         Query --> BlockAttn
         BlockAttn --> Output["Aggregated Attention Output O_t"]
@@ -281,25 +281,25 @@ O_i = \sum_{j \in \mathcal{P}_{active}} g_j \cdot \text{Softmax}\left( \frac{\ba
 flowchart TD
     subgraph Aegis_Spectron_FP8 ["Aegis-Spectron-FP8 Hardware Engine"]
         Input["Input Activation X ∈ ℝ^(B × L × D)"] --> SpectralEntropy["Spectron Spectral Entropy Calculator"]
-        
+
         SpectralEntropy --> EntropyValue["S(X) = - ∑ σ_i² log(σ_i²)"]
         EntropyValue --> LagrangianGate["Lagrangian Multiplier Branch Solver"]
-        
+
         LagrangianGate --> BranchWeights["Branch Weights: α_local, α_global, α_linear"]
-        
+
         BranchWeights -- α_local --> LocalBranch["Local Sliding-Window Attention"]
         BranchWeights -- α_global --> GlobalBranch["Global Low-Rank SVD Attention"]
         BranchWeights -- α_linear --> LinearBranch["Linear State Recurrence Path"]
-        
+
         Input --> FP8_Cast["FP8 Cast (E4M3 / E5M2 Formats)"]
         FP8_Cast --> LocalBranch
         FP8_Cast --> GlobalBranch
         FP8_Cast --> LinearBranch
-        
+
         LocalBranch --> WGMMA_Core["Hopper WGMMA FP8 Tensor Core Engine"]
         GlobalBranch --> WGMMA_Core
         LinearBranch --> WGMMA_Core
-        
+
         WGMMA_Core --> MultiBranchCombine["Y = α_local Y_local + α_global Y_global + α_linear Y_linear"]
         MultiBranchCombine --> Output["Output Tensor Y ∈ ℝ^(B × L × D)"]
     end
@@ -343,17 +343,17 @@ flowchart LR
     subgraph Kronecker_TT_LoRA ["Kronecker-TT-LoRA Fine-Tuning Topology"]
         Input["Input Activation X"] --> BasePath["Frozen Base Weight Path W_0"]
         Input --> AdapterPath["Kronecker-TT Low-Rank Adapter Path ΔW"]
-        
+
         subgraph Kronecker_TT_Decomp ["Decomposition Structure"]
             KronComp["Kronecker Product: (A_1 ⊗ A_2)"] --> TT_Cores["Tensor-Train Cores: 𝒯𝒯(G_1, G_2, G_3)"]
             TT_Cores --> CombinedDelta["ΔW = γ · (A_1 ⊗ A_2) · 𝒯𝒯(G_1, G_2, G_3)"]
         end
-        
+
         AdapterPath --> Kronecker_TT_Decomp
-        
+
         BasePath --> SumNode["Output Accumulator Y = W_0 X + ΔW X"]
         CombinedDelta --> SumNode
-        
+
         SumNode --> DynRankCtrl["Singular Value Entropy Rank Adapter"]
         DynRankCtrl -- "Reallocate Core Ranks" --> TT_Cores
     end
@@ -465,12 +465,12 @@ def _fused_low_rank_gemm_kernel(
     # Compute second GEMM phase: (Intermediate) @ B + C
     b_mask = (offs_r[:, None] < RANK_R) & (offs_n[None, :] < N)
     b_tile = tl.load(B_ptr + offs_r[:, None] * stride_br + offs_n[None, :] * stride_bn, mask=b_mask, other=0.0)
-    
+
     acc_final = tl.dot(acc_inter_fp16, b_tile)
 
     c_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
     c_tile = tl.load(C_ptr + offs_m[:, None] * stride_cm + offs_n[None, :] * stride_cn, mask=c_mask, other=0.0)
-    
+
     acc_final += c_tile
 
     y_ptr_offsets = Y_ptr + offs_m[:, None] * stride_ym + offs_n[None, :] * stride_yn
@@ -548,7 +548,7 @@ def _moe_block_sparse_router_kernel(
 
     # Load router gating outputs
     scores = tl.load(RouterScores_ptr + offs_token * NumExperts, mask=mask_token, other=0.0)
-    
+
     # Compute local top-k selection via register comparisons
     # Stores sorted token-to-block mapping indices into global memory
     tl.store(SortedIndices_ptr + offs_token, offs_token, mask=mask_token)
@@ -578,13 +578,13 @@ def _w4a16_gemm_unpack_kernel(
 
     offs_m = pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)
     offs_n = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
-    
+
     acc = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=tl.float32)
 
     # Iterate over packed K dimension (8 INT4 elements per 32-bit word)
     for k in range(0, tl.cdiv(K, BLOCK_SIZE_K)):
         offs_k_packed = k * (BLOCK_SIZE_K // 8) + tl.arange(0, BLOCK_SIZE_K // 8)
-        
+
         # Load 32-bit packed weight integers
         w_packed = tl.load(W_packed_ptr + offs_k_packed[:, None] * N + offs_n[None, :])
         scales = tl.load(Scales_ptr + offs_n[None, :])
@@ -597,7 +597,7 @@ def _w4a16_gemm_unpack_kernel(
 
             offs_k_single = k * BLOCK_SIZE_K + (bit_shift // 4)
             x_val = tl.load(X_ptr + offs_m[:, None] * K + offs_k_single)
-            
+
             acc += x_val * w_fp16
 
     tl.store(Out_ptr + offs_m[:, None] * N + offs_n[None, :], acc.to(tl.float16))

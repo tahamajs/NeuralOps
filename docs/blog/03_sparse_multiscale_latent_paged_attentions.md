@@ -4,7 +4,7 @@
 # ⚡ Part 3: Sparse, Multi-Scale, Latent & Paged Attention Architectures
 
 > **The Architectural Playbook for Long-Context LLMs: How Latent Bottlenecks, Virtual Memory Paging, Hardware-Aware Tiling, and Dynamic Sparsity Break the $O(N^2)$ Complexity Wall.**
-> 
+>
 > *Inspired by the intuitive, visually rich writing styles of Jay Alammar, Lilian Weng, and Sebastian Raschka.*
 
 ---
@@ -71,11 +71,11 @@ graph TD
 ```
 
 ### Title & Subtitle
-**Multi-Head Latent Attention (MLA): Low-Rank Latent Compression for Giant KV Caches**  
+**Multi-Head Latent Attention (MLA): Low-Rank Latent Compression for Giant KV Caches**
 *Compressing multi-head key and value activations into a compact shared latent vector to slash inference memory by up to 93% without compromising multi-head expressivity.*
 
 ### The Analogy
-Imagine a busy global diplomatic summit with 128 specialized interpreters (the query heads). In standard attention, every single interpreter keeps their own full 1,000-page encyclopedia of country dossiers (the Key and Value caches). The conference table is buried under 128,000 pages of paper! 
+Imagine a busy global diplomatic summit with 128 specialized interpreters (the query heads). In standard attention, every single interpreter keeps their own full 1,000-page encyclopedia of country dossiers (the Key and Value caches). The conference table is buried under 128,000 pages of paper!
 
 Multi-Head Latent Attention (MLA) assigns a single master scribe who compresses each briefing into a razor-sharp, 10-page executive summary (the latent vector $\mathbf{c}_{KV}$). When any interpreter needs specific data, they instantly unpack the summary in their head using their personal translation rules. The conference table stays completely clear, yet every interpreter retains 100% of their specialized reasoning ability.
 
@@ -137,7 +137,7 @@ $$\text{Decoded Context Output: } Y = \operatorname{Softmax}(S) \left(\mathbf{c}
 ```
    Multi-Head Attention (MHA)       Grouped-Query Attention (GQA)       Multi-Query Attention (MQA)
      [H_Q = 8, H_KV = 8]                 [H_Q = 8, H_KV = 2]                [H_Q = 8, H_KV = 1]
-   
+
    Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8             Q1 Q2 Q3 Q4   Q5 Q6 Q7 Q8            Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8
    │  │  │  │  │  │  │  │              └──┬──┘ └──┬──┘ └──┬──┘ └──┬──┘            └──────┬──────┘
    ▼  ▼  ▼  ▼  ▼  ▼  ▼  ▼                 │       │       │       │                      │
@@ -146,7 +146,7 @@ $$\text{Decoded Context Output: } Y = \operatorname{Softmax}(S) \left(\mathbf{c}
 ```
 
 ### Title & Subtitle
-**Grouped-Query Attention (GQA) & Multi-Query Attention (MQA): The Subspace Sharing Revolution**  
+**Grouped-Query Attention (GQA) & Multi-Query Attention (MQA): The Subspace Sharing Revolution**
 *Interpolating between dense multi-head expressivity and single-head key-value caching to deliver lightning-fast LLM generation.*
 
 ### The Analogy
@@ -219,11 +219,11 @@ $$Y = \operatorname{Concat}(O_1, \dots, O_{H_Q}) W_O \in \mathbb{R}^{B \times N 
 ```
 
 ### Title & Subtitle
-**FlashAttention-3: Asynchronous Hardware Overlap & FP8 Warpgroup Tiling**  
+**FlashAttention-3: Asynchronous Hardware Overlap & FP8 Warpgroup Tiling**
 *Shattering the GPU memory wall on modern Hopper architectures by fusing online softmax, Tensor Memory Accelerators (TMA), and warpgroup matrix-multiplies.*
 
 ### The Analogy
-Imagine a Michelin-starred commercial kitchen preparing thousands of dishes. In traditional attention, the head chef prepares a single ingredient, walks all the way down to the basement cold-storage vault (HBM) to retrieve sauce, walks back upstairs, boils it, walks back down to store it, and repeats this for every token. 
+Imagine a Michelin-starred commercial kitchen preparing thousands of dishes. In traditional attention, the head chef prepares a single ingredient, walks all the way down to the basement cold-storage vault (HBM) to retrieve sauce, walks back upstairs, boils it, walks back down to store it, and repeats this for every token.
 
 FlashAttention-1 and 2 installed a small preparation counter (SRAM) right next to the stove. FlashAttention-3 installs a motorized conveyor belt (Hardware TMA) operated by dedicated stock clerks (Producer Warps). While the stock clerks continuously pull cold ingredients from the basement, the master chefs (Consumer Warps) continuously sauté and flambé on the Tensor Cores without stopping for even a single microsecond of idle waiting.
 
@@ -244,13 +244,13 @@ sequenceDiagram
     actor TMA as Hardware TMA Engine
     actor SRAM as On-Chip Shared Memory
     actor TC as Tensor Cores (WGMMA)
-    
+
     rect rgb(15, 23, 42)
     Note over TMA,SRAM: Pipeline Stage 1
     TMA->>HBM: Request Tile K_0, V_0 (Async)
     HBM-->>SRAM: Direct DMA Transfer to SRAM Buffer 0
     end
-    
+
     rect rgb(30, 41, 59)
     Note over SRAM,TC: Pipeline Stage 2 (Overlap)
     par Simultaneous Compute & Fetch
@@ -310,7 +310,7 @@ $$\text{Final Normalization: } O_i = \operatorname{diag}\left( l_i^{(\text{final
 ```
 
 ### Title & Subtitle
-**PagedAttention: Virtual Memory Paging for Large Language Model Serving**  
+**PagedAttention: Virtual Memory Paging for Large Language Model Serving**
 *Eliminating 60%–80% memory waste from GPU memory fragmentation through operating-system style non-contiguous block tables.*
 
 ### The Analogy
@@ -366,7 +366,7 @@ $$O_t = \sum_{j=1}^t A_{t, j} V_{\text{block}}(\text{BlockTable}[\lfloor j / B_{
 
 ```
                                 Ring Attention Topology (8 GPUs)
-                                
+
                     ┌───────────────► GPU 0 [Q0, K0, V0] ──────────────┐
                     │                      │ (Pass K, V)               │
                     │                      ▼                           │
@@ -379,11 +379,11 @@ $$O_t = \sum_{j=1}^t A_{t, j} V_{\text{block}}(\text{BlockTable}[\lfloor j / B_{
 ```
 
 ### Title & Subtitle
-**Ring Attention: Infinite Context Scaling via Distributed Circular KV Shuffling**  
+**Ring Attention: Infinite Context Scaling via Distributed Circular KV Shuffling**
 *Breaking the single-GPU memory boundary by overlapping blockwise attention computation with peer-to-peer ring communication across clusters.*
 
 ### The Analogy
-Imagine 8 research scholars sitting in a circle around a round table, tasked with cross-referencing a massive 8-volume historical encyclopedia. The encyclopedia is so gigantic that each scholar can only fit 1 volume on their desk at a time. 
+Imagine 8 research scholars sitting in a circle around a round table, tasked with cross-referencing a massive 8-volume historical encyclopedia. The encyclopedia is so gigantic that each scholar can only fit 1 volume on their desk at a time.
 
 Instead of trying to photocopy the entire encyclopedia for everyone (which would collapse the desks under the weight), each scholar opens their personal notebook containing their specific questions. Scholar 0 cross-references Volume 0. Then, on a synchronized timer, every scholar passes their physical book to the neighbor on their right and receives a new volume from their left. They cross-reference the new volume, update their notes, and pass again. After 8 circular passes, all 8 scholars have cross-referenced their questions across all 8 volumes without any scholar ever holding more than 1 volume at a time!
 
@@ -440,7 +440,7 @@ $$T_{\text{compute}}\left( \frac{L}{D} \times \frac{L}{D} \right) \ge T_{\text{N
 
 ```
                        BigBird Tri-Partite Sparse Attention Pattern
-  
+
        Local Sliding Window              Global Anchor Tokens              Random Expander Graph
     ┌──┬──┬──┬──┬──┬──┬──┬──┐        ┌──┬──┬──┬──┬──┬──┬──┬──┐        ┌──┬──┬──┬──┬──┬──┬──┬──┐
     │██│██│  │  │  │  │  │  │        │██│██│██│██│██│██│██│██│        │  │  │  │██│  │  │  │  │
@@ -455,7 +455,7 @@ $$T_{\text{compute}}\left( \frac{L}{D} \times \frac{L}{D} \right) \ge T_{\text{N
 ```
 
 ### Title & Subtitle
-**BigBird & Longformer: The Tri-Partite Sparse Attention Blueprint**  
+**BigBird & Longformer: The Tri-Partite Sparse Attention Blueprint**
 *Taming quadratic complexity down to linear $O(N)$ through a strategic trifecta of sliding local windows, random routing, and global anchor tokens.*
 
 ### The Analogy
@@ -513,7 +513,7 @@ $$d_{\text{sparse}} = 2w + g + r \implies \text{Total FLOPs} = \mathcal{O}\left(
 
 ```
                                MoE-DeltaKV Hybrid Pipeline
-                               
+
    Incoming Query Block Q_i ───► Gating Router W_rg ───► Top-k Page Selection: Pages {2, 7}
                                                                │
      ┌─────────────────────────────────────────────────────────┴────────────────────────────┐
@@ -532,11 +532,11 @@ $$d_{\text{sparse}} = 2w + g + r \implies \text{Total FLOPs} = \mathcal{O}\left(
 ```
 
 ### Title & Subtitle
-**MoE-DeltaKV: Mixture-of-Block-Attention with Dynamic Delta-Compressed KV Caching**  
+**MoE-DeltaKV: Mixture-of-Block-Attention with Dynamic Delta-Compressed KV Caching**
 *Unifying top-k expert block routing with low-rank temporal difference compression to cut KV cache memory by 8x.*
 
 ### The Analogy
-Think of digital video compression (like MPEG-4 / H.264). A movie streaming service doesn't store 60 uncompressed, high-definition photographs for every single second of video. Instead, it stores one full master keyframe (an I-frame) every few seconds, and for all intermediate frames, it only records the tiny pixel changes (motion deltas / P-frames). 
+Think of digital video compression (like MPEG-4 / H.264). A movie streaming service doesn't store 60 uncompressed, high-definition photographs for every single second of video. Instead, it stores one full master keyframe (an I-frame) every few seconds, and for all intermediate frames, it only records the tiny pixel changes (motion deltas / P-frames).
 
 MoE-DeltaKV applies this exact video compression principle to transformer memory: instead of storing massive dense Key-Value vectors for thousands of tokens, it only stores compressed differences ($\Delta$) between adjacent tokens, factorizes those differences via truncated SVD and 4-bit quantization, and routes queries only to the most relevant memory pages!
 
@@ -596,7 +596,7 @@ $$O_i = \sum_{j \in \mathcal{P}_{\text{active}}} g_j \cdot \operatorname{Softmax
 
 ```
                          Infini-Attention Segment Recurrence Flow
-                         
+
    Segment t-1 Inputs                      Segment t Inputs                       Segment t+1 Inputs
    ┌────────────────────┐                 ┌────────────────────┐                 ┌────────────────────┐
    │ Local Sliding Win  │                 │ Local Sliding Win  │                 │ Local Sliding Win  │
@@ -616,7 +616,7 @@ $$O_i = \sum_{j \in \mathcal{P}_{\text{active}}} g_j \cdot \operatorname{Softmax
 ```
 
 ### Title & Subtitle
-**Infini-Attention: Bounded Memory for Infinite Sequences via Segment Recurrence**  
+**Infini-Attention: Bounded Memory for Infinite Sequences via Segment Recurrence**
 *Combining local sliding-window attention with an associative recurrent memory matrix to process million-token streams in constant GPU memory.*
 
 ### The Analogy
@@ -679,7 +679,7 @@ $$z_t = z_{t-1} + \sum_{i=1}^N \phi(K_{t, i})^\top \in \mathbb{R}^{B \times H \t
 
 ```
                               Native Sparse Attention (NSA) Pipeline
-  
+
   Input Tokens: L = 64k ──────────────────────────────────────────────────────────────────────────┐
                                                                                                  │
   Stage 1: Coarse-Grained Pooling (Stride = 32)                                                  │
@@ -700,7 +700,7 @@ $$z_t = z_{t-1} + \sum_{i=1}^N \phi(K_{t, i})^\top \in \mathbb{R}^{B \times H \t
 ```
 
 ### Title & Subtitle
-**Native Sparse Attention (NSA): Multi-Scale Coarse-to-Fine Dynamic Routing**  
+**Native Sparse Attention (NSA): Multi-Scale Coarse-to-Fine Dynamic Routing**
 *Combining local sliding windows with content-aware coarse-grained block selection and fine-grained token gathering for ultra-long context LLMs.*
 
 ### The Analogy

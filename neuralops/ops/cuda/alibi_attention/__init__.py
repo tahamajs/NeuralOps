@@ -9,10 +9,7 @@
 ALiBi Attention Hardware Operators.
 """
 
-from neuralops.ops.cuda.alibi_attention.alibi_autograd import (
-    alibi_attention,
-    alibi_attention_pytorch_ref,
-)
+from neuralops.ops.cuda.alibi_attention.alibi_autograd import alibi_attention, alibi_attention_pytorch_ref
 
 __all__ = [
     "alibi_attention",

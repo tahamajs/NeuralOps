@@ -4,7 +4,7 @@
 # 🌟 Part 4: SVD, Low-Rank & Structural Compression Engines
 
 > **The Definitive Visual Guide to Compressing Large Language Models: How Mathematical Factorization, Activation-Aware Projections, and Tensor Networks Break the Memory Bandwidth Bottleneck.**
-> 
+>
 > *Inspired by the visual and pedagogical clarity of Jay Alammar, Lilian Weng, and Sebastian Raschka.*
 
 ---
@@ -38,12 +38,12 @@ graph TD
 
     B --> B1["AASVD: Activation Subspace Projection"]
     B --> B2["ASVD: Hessian/Variance Scaled SVD"]
-    
+
     C --> C1["AdaSVD: Nuclear-Norm Budget Allocation"]
     C --> C2["RPCA: Low-Rank + Sparse Outlier Separation"]
 
     D --> D1["FastSVD & Randomized Gaussian SVD"]
-    
+
     E --> E1["Kronecker-LoRA: Kronecker x Tensor-Train"]
     E --> E2["TTLinear: Tensor-Train Multi-Core Grid"]
 
@@ -57,13 +57,13 @@ graph TD
 ## 1. AASVD: Anchored Activation-Aware Singular Value Decomposition
 
 ### Title & Subtitle
-**AASVD: Anchoring Low-Rank Factorization to the Empirical Activation Manifold**  
+**AASVD: Anchoring Low-Rank Factorization to the Empirical Activation Manifold**
 *Projecting weight matrices onto dynamic token activation subspaces before singular value truncation to eliminate zero-shot perplexity collapse.*
 
 ---
 
 ### The Analogy
-Imagine tailoring a bespoke astronaut flight suit. An amateur tailor fits the suit to a motionless plastic mannequin in an empty room (standard static SVD on weight matrix $W$). When the astronaut actually climbs into the cockpit and bends their knees, elbows, and shoulders, the rigid seams burst. 
+Imagine tailoring a bespoke astronaut flight suit. An amateur tailor fits the suit to a motionless plastic mannequin in an empty room (standard static SVD on weight matrix $W$). When the astronaut actually climbs into the cockpit and bends their knees, elbows, and shoulders, the rigid seams burst.
 
 **AASVD (Anchored Adaptive SVD)** attaches motion sensors to the astronaut in high-gravity simulation (dynamic input token activations $X$) to discover the exact axes of movement. It then cuts and anchors the suit’s fabric specifically along those high-strain stress lines. The suit uses 60% less material, yet provides complete, unrestricted movement where it matters most.
 
@@ -149,13 +149,13 @@ $$\text{Low-Rank Factorized Forward Pass: } Y = \underbrace{\left( X V_{\text{an
 ## 2. AdaSVD: Rank-Adaptive Dynamic Matrix Truncation
 
 ### Title & Subtitle
-**AdaSVD: Dynamic Nuclear-Norm Rank Allocation with Alternating Least-Squares Refinement**  
+**AdaSVD: Dynamic Nuclear-Norm Rank Allocation with Alternating Least-Squares Refinement**
 *Allocating variable rank budgets across transformer layers based on spectral energy distribution and polishing factors via iterative matrix refinement.*
 
 ---
 
 ### The Analogy
-Think of packing emergency expedition supplies across a convoy of cargo trucks. A naive convoy manager puts exactly 500 kg of cargo into every truck (rigid uniform rank $r=32$ across all layers). But the medical truck and water purification truck need 1,200 kg of equipment, while the sleeping tent truck only needs 200 kg. 
+Think of packing emergency expedition supplies across a convoy of cargo trucks. A naive convoy manager puts exactly 500 kg of cargo into every truck (rigid uniform rank $r=32$ across all layers). But the medical truck and water purification truck need 1,200 kg of equipment, while the sleeping tent truck only needs 200 kg.
 
 **AdaSVD** acts as the intelligent logistics coordinator: it weighs the structural complexity of every layer using its **Nuclear Norm** (total spectral energy). It assigns massive rank capacity ($r=96$) to the critical token-routing attention layers and strips redundant deeper MLP layers down to ultra-compact ranks ($r=12$), all while keeping the total convoy weight beneath a strict target.
 
@@ -235,13 +235,13 @@ $$\text{Singular Value Re-Projection: } S_{r_l}^{(t+1)} = \operatorname{diag}\le
 ## 3. ASVD: Activation-Weighted SVD with Gradient-Free Calibration
 
 ### Title & Subtitle
-**ASVD: Activation-Weighted SVD with Explicit Singular Scaling**  
+**ASVD: Activation-Weighted SVD with Explicit Singular Scaling**
 *Decoupling singular value vectors from orthogonal frames for rapid, gradient-free calibration on downstream domain distributions.*
 
 ---
 
 ### The Analogy
-Consider a state-of-the-art multi-speaker acoustic sound system. The wooden speaker cabinets and driver cones represent the fixed physical framework (orthogonal singular bases $U$ and $V$). When you move the sound system from a small carpeted bedroom to a giant echoey cathedral, you don't rebuild the wooden cabinets from scratch. 
+Consider a state-of-the-art multi-speaker acoustic sound system. The wooden speaker cabinets and driver cones represent the fixed physical framework (orthogonal singular bases $U$ and $V$). When you move the sound system from a small carpeted bedroom to a giant echoey cathedral, you don't rebuild the wooden cabinets from scratch.
 
 You simply adjust the **equalizer gain dials** (the explicit singular scale vector $S \in \mathbb{R}^r$). **ASVD** factors linear layers such that the heavy matrix frames remain fixed, while a lightweight vector of singular scales $S$ can be instantly tuned with a few calibration samples to adapt the model to new domains.
 
@@ -261,7 +261,7 @@ You simply adjust the **equalizer gain dials** (the explicit singular scale vect
 ---
 
 ### The Problem
-When compressing foundation models for specialized downstream tasks (medical QA, legal analysis, financial forecasting), standard low-rank adaptation requires fine-tuning all entries of the factorized projection matrices $A \in \mathbb{R}^{d_{\text{out}} \times r}$ and $B \in \mathbb{R}^{r \times d_{\text{in}}}$. 
+When compressing foundation models for specialized downstream tasks (medical QA, legal analysis, financial forecasting), standard low-rank adaptation requires fine-tuning all entries of the factorized projection matrices $A \in \mathbb{R}^{d_{\text{out}} \times r}$ and $B \in \mathbb{R}^{r \times d_{\text{in}}}$.
 1. Updating full low-rank matrices during post-training calibration requires substantial GPU memory for activation caching and backpropagation gradients.
 2. If the calibration dataset is tiny (e.g., 50 medical documents), fine-tuning millions of weights in $A$ and $B$ risks **severe catastrophic forgetting** and weight overfitting.
 
@@ -326,13 +326,13 @@ $$\text{Gradient-Free Update Objective: } \min_{S \in \mathbb{R}^r} \frac{1}{2K}
 ## 4. FastSVD & Randomized SVD Factorization
 
 ### Title & Subtitle
-**FastSVD & Randomized SVD: Sub-Cubic Matrix Factorization at Scale**  
+**FastSVD & Randomized SVD: Sub-Cubic Matrix Factorization at Scale**
 *Harnessing Gaussian random projections and power iterations to factorize multi-billion parameter LLMs in minutes instead of hours.*
 
 ---
 
 ### The Analogy
-Imagine taking a census of a 50-million-person nation to determine the primary occupational demographics. Conducting a full door-to-door survey takes two years and billions of dollars (exact full SVD $\mathcal{O}(M N^2)$). 
+Imagine taking a census of a 50-million-person nation to determine the primary occupational demographics. Conducting a full door-to-door survey takes two years and billions of dollars (exact full SVD $\mathcal{O}(M N^2)$).
 
 Instead, a top statistical bureau surveys **1,000 randomly selected citizens** across diverse zip codes with mathematical oversampling (Randomized SVD with Gaussian test matrix $\Omega$). Within 48 hours, they reconstruct the nation's dominant occupational breakdown with 99.9% statistical confidence at 1/10,000th the cost.
 
@@ -418,13 +418,13 @@ $$\text{Theoretical Probabilistic Error Bound (Halko et al.): } \mathbb{E}\left[
 ## 5. Kronecker-LoRA & Tensor-Train Compression (TTLinear)
 
 ### Title & Subtitle
-**Kronecker & Tensor-Train: Breaking the 2D Matrix Parameter Barrier**  
+**Kronecker & Tensor-Train: Breaking the 2D Matrix Parameter Barrier**
 *Factorizing massive projection layers into high-order multi-dimensional tensor networks and recursive Kronecker products to compress parameters by over 95%.*
 
 ---
 
 ### The Analogy
-Imagine storing a high-resolution 3D anatomical human model. If you store it as a giant, flat 2D spreadsheet of coordinates (2D matrix SVD), you need millions of rows and columns, hitting a linear storage ceiling. 
+Imagine storing a high-resolution 3D anatomical human model. If you store it as a giant, flat 2D spreadsheet of coordinates (2D matrix SVD), you need millions of rows and columns, hitting a linear storage ceiling.
 
 Instead, you use a **Tensor-Train**: you factorize the 3D volume along its natural anatomical axes—a connected chain of small 3D rings describing cross-sections of the torso, limbs, and organs. Each ring communicates only with its immediate neighbors through thin connecting ports (the TT-ranks). You preserve full 3D spatial fidelity while using 1/50th the memory of a flat 2D file!
 
@@ -456,7 +456,7 @@ graph LR
         G2 -->|Bond Index r2| G3["Core Tensor G^(3) (r2 x p3 x q3 x r3)"]
         G3 --> Output["Compressed Output Tensor y"]
     end
-    
+
     subgraph Kronecker-LoRA Hybrid Engine
         Base["Frozen Base Layer W0"] --> Sum((+))
         Kron["Kronecker Product (A1 ⊗ A2)"] --> Mod["⊙ Dynamic TT Modulation TT(G1, G2, G3)"]
@@ -506,13 +506,13 @@ $$\text{Spectral Entropy Monitor: } \mathcal{H}_{\text{sv}} = -\sum_{i=1}^r \hat
 ## 6. CUR Decomposition: Column-Row Subspace Sampling
 
 ### Title & Subtitle
-**CUR Decomposition: Interpretable Low-Rank Factorization via Leverage-Score Sampling**  
+**CUR Decomposition: Interpretable Low-Rank Factorization via Leverage-Score Sampling**
 *Preserving genuine weight channels by sampling actual columns and rows linked through a Moore-Penrose pseudo-inverse core.*
 
 ---
 
 ### The Analogy
-Imagine assembling an Olympic dream team. Standard SVD creates synthetic "amalgam" athletes—a hybrid composite containing 30% of a sprinter, 40% of a swimmer, and 30% of a gymnast (abstract singular vectors $U$ and $V$). 
+Imagine assembling an Olympic dream team. Standard SVD creates synthetic "amalgam" athletes—a hybrid composite containing 30% of a sprinter, 40% of a swimmer, and 30% of a gymnast (abstract singular vectors $U$ and $V$).
 
 **CUR Decomposition** refuses to create artificial hybrids. Instead, it visits the training field, identifies the **actual, best real individual athletes** (selecting real columns $C$ and real rows $R$ from matrix $W$ based on their performance leverage scores), and hires a head coach (the core matrix $U$) to orchestrate their plays. The resulting team is 100% genuine, highly interpretable, and retains all specialized physical skills!
 
@@ -592,15 +592,15 @@ $$\text{CUR Factorized Forward Pass: } Y = \underbrace{\left( \left( X R^T \righ
 ## 7. ADMM Low-Rank & Structured Constrained Optimization
 
 ### Title & Subtitle
-**ADMM Low-Rank: Decoupling Structured Sparsity and Rank Constraints**  
+**ADMM Low-Rank: Decoupling Structured Sparsity and Rank Constraints**
 *Unifying low-rank matrix factorization and structured magnitude pruning into an alternating direction constrained optimization framework.*
 
 ---
 
 ### The Analogy
-Imagine restoring a historic architectural landmark under strict city building regulations. Regulation A requires modern steel earthquake reinforcement (low-rank structural constraint). Regulation B mandates preserving historic brick archways with minimal physical footprint (structured sparsity constraint). 
+Imagine restoring a historic architectural landmark under strict city building regulations. Regulation A requires modern steel earthquake reinforcement (low-rank structural constraint). Regulation B mandates preserving historic brick archways with minimal physical footprint (structured sparsity constraint).
 
-Trying to satisfy both constraints in a single chaotic construction step causes building collapse. **ADMM (Alternating Direction Method of Multipliers)** breaks the project into a three-step round-robin: 
+Trying to satisfy both constraints in a single chaotic construction step causes building collapse. **ADMM (Alternating Direction Method of Multipliers)** breaks the project into a three-step round-robin:
 - Step 1 updates the architectural blueprints ($W$).
 - Step 2 enforces the earthquake reinforcement ($Z$).
 - Step 3 cleans the historic brick footprint ($Y$), while an inspector ($\Lambda$) updates penalty fines until all constraints converge into structural perfection.
@@ -685,7 +685,7 @@ $$\text{Dual Multiplier Updates: } U_z^{(t+1)} = U_z^{(t)} + \left( W^{(t+1)} - 
 ## 8. NMF Compressor: Non-Negative Matrix Factorization for LLMs
 
 ### Title & Subtitle
-**NMF Compressor: Purely Additive Low-Rank Representations Without Destructive Cancellation**  
+**NMF Compressor: Purely Additive Low-Rank Representations Without Destructive Cancellation**
 *Enforcing non-negativity constraints to eliminate signed signal cancellation and provide robust, parts-based factorizations for transformer layers.*
 
 ---
@@ -772,7 +772,7 @@ $$\text{Unshifted Linear Forward Pass: } Y = X \left( H W_{\text{comp}} \right)^
 ## 9. RPCA Compressor: Robust Principal Component Analysis (Low-Rank + Sparse)
 
 ### Title & Subtitle
-**RPCA Compressor: Decoupling Low-Rank Manifolds from Sparse Outlier Spikes**  
+**RPCA Compressor: Decoupling Low-Rank Manifolds from Sparse Outlier Spikes**
 *Isolating extreme outlier parameters into a dedicated sparse matrix to enable ultra-compact low-rank factorization of the smooth underlying weights.*
 
 ---
@@ -843,12 +843,12 @@ Below are the empirical benchmarks measured across structural compression scheme
 
 ---
 
-*Authored for the NeuralOps Research Community & SVD Linear Attention Framework.*  
+*Authored for the NeuralOps Research Community & SVD Linear Attention Framework.*
 *Next in Series: [Part 5: Quantization, Pruning & Cache Engines](file:///Users/tahamajs/Documents/uni/Project/Docs/blog/05_quantization_pruning_distillation_compressions.md)*omponents that eliminate destructive signal cancellation.
 
 ---
 
-*Authored for the NeuralOps Research Community & SVD Linear Attention Framework.*  
+*Authored for the NeuralOps Research Community & SVD Linear Attention Framework.*
 *Next in Series: [Part 5: Quantization, Pruning & Cache Engines](file:///Users/tahamajs/Documents/uni/Project/Docs/blog/05_quantization_pruning_distillation_compressions.md)*ion Augmented Lagrangian Proximal | Compounded error from sequential prune-then-factorize | 60% – 80% | **ADMM Training Loop** | Joint structured pruning and low-rank optimization |
 | **NMF** | Non-Negative Lee-Seung Multiplicative Updates | Destructive signed signal cancellation in INT4 | 50% – 70% | **Iterative Lee-Seung** | INT4 quantization resilience & ReLU/SwiGLU models |
 | **RPCA** | Principal Component Pursuit ($W = L + S$) | Outlier parameter distortion in low-rank bases | 60% – 75% | **None (PCP Calibration)** | Heavy-tailed models (LLaMA-3, Mistral, Qwen) |
@@ -878,5 +878,5 @@ Below are the empirical benchmarks measured across structural compression scheme
 
 ---
 
-*Authored for the NeuralOps Research Community & SVD Linear Attention Framework.*  
+*Authored for the NeuralOps Research Community & SVD Linear Attention Framework.*
 *Next in Series: [Part 5: Quantization, Pruning & Cache Engines](file:///Users/tahamajs/Documents/uni/Project/Docs/blog/05_quantization_pruning_distillation_compressions.md)*

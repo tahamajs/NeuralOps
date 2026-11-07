@@ -12,12 +12,6 @@ Fuses localized sliding-window attention with sequence-compressed low-rank globa
 """
 
 from __future__ import annotations
-from neuralops.core.common import _detect_decoder
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -27,9 +21,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _detect_decoder
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +40,7 @@ class OptimizedHybridAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -69,11 +66,7 @@ class OptimizedHybridAttention(BaseAttention):
         hidden_size = self._detect_hidden_size(config, source_attn, kwargs)
         num_heads = self._detect_num_heads(config, source_attn, kwargs, hidden_size)
         num_kv_heads = self._detect_num_kv_heads(config, source_attn, kwargs, num_heads)
-        head_dim = (
-            kwargs.get("head_dim")
-            or getattr(config, "head_dim", None)
-            or (hidden_size // max(1, num_heads))
-        )
+        head_dim = kwargs.get("head_dim") or getattr(config, "head_dim", None) or (hidden_size // max(1, num_heads))
 
         self.dim = int(hidden_size)
         self.hidden_size = self.dim
@@ -85,18 +78,14 @@ class OptimizedHybridAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        self.window_size = int(
-            getattr(config, "oha_window_size", window_size) if config else window_size
-        )
+        self.window_size = int(getattr(config, "oha_window_size", window_size) if config else window_size)
         self.window_radius = max(1, self.window_size // 2)
 
         cfg_cr = getattr(comp_config, "compression_rank", None) if comp_config else None
         self.compression_rank = int(cfg_cr if cfg_cr is not None else compression_rank)
         self.use_gate = bool(use_gate)
 
-        self.is_decoder = _detect_decoder(
-            config, is_decoder or kwargs.get("is_causal"), source_attn
-        )
+        self.is_decoder = _detect_decoder(config, is_decoder or kwargs.get("is_causal"), source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
@@ -161,11 +150,7 @@ class OptimizedHybridAttention(BaseAttention):
         else:
             self.register_parameter("gate", None)
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         if source_attn is not None:
@@ -342,11 +327,7 @@ class OptimizedHybridAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -359,11 +340,7 @@ class OptimizedHybridAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"OHA.copy_weights failed: missing mandatory projections "
@@ -389,10 +366,7 @@ class OptimizedHybridAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and w.t().contiguous().shape == target_mod.weight.shape
-                ):
+                if w.shape != target_mod.weight.shape and w.t().contiguous().shape == target_mod.weight.shape:
                     logger.debug(
                         "OHA.copy_weights: transposing '%s' from %s to %s",
                         proj_key,
@@ -412,9 +386,7 @@ class OptimizedHybridAttention(BaseAttention):
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
@@ -513,6 +485,7 @@ class OptimizedHybridAttention(BaseAttention):
         diff = idx.unsqueeze(1) - idx.unsqueeze(0)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
         if (
             HAS_TRITON
             and not FORCE_PYTORCH_FALLBACK
@@ -524,6 +497,7 @@ class OptimizedHybridAttention(BaseAttention):
         ):
             try:
                 from neuralops.ops.triton.sliding_window import sliding_window_triton
+
                 local_ctx = sliding_window_triton(Q, K, V, window_size=self.window_radius + 1)
                 local_probs = None
             except Exception:
@@ -551,9 +525,7 @@ class OptimizedHybridAttention(BaseAttention):
 
         slot_idx = torch.arange(R, device=device)
         chunk_starts = slot_idx * chunk_size
-        chunk_ends = torch.minimum(
-            (slot_idx + 1) * chunk_size - 1, torch.tensor(N - 1, device=device)
-        )
+        chunk_ends = torch.minimum((slot_idx + 1) * chunk_size - 1, torch.tensor(N - 1, device=device))
         slot_valid = chunk_starts < N
 
         comp_k_raw = self.compress_k(hidden_states)
@@ -588,9 +560,7 @@ class OptimizedHybridAttention(BaseAttention):
             query_pos = torch.arange(N, device=device).unsqueeze(1)
             chunk_ends_b = chunk_ends.unsqueeze(0)
             global_causal = (query_pos >= chunk_ends_b) & slot_valid.unsqueeze(0)
-            global_scores = global_scores.masked_fill(
-                ~global_causal.unsqueeze(0).unsqueeze(0), -1e4
-            )
+            global_scores = global_scores.masked_fill(~global_causal.unsqueeze(0).unsqueeze(0), -1e4)
 
         global_probs = F.softmax(global_scores, dim=-1).to(dtype)
         global_probs = torch.nan_to_num(global_probs, nan=0.0)
@@ -663,11 +633,7 @@ def inject_oha(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

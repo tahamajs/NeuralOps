@@ -31,7 +31,7 @@
 ```
 
 ### Title & Subtitle
-**Rotational SliceGPT-INT4: Orthogonal Basis Transformation Meets Structured Weight Slicing**  
+**Rotational SliceGPT-INT4: Orthogonal Basis Transformation Meets Structured Weight Slicing**
 *Rotating activation coordinate systems via orthogonal transformation matrices to concentrate signal energy, physically slicing away redundant channels, and quantizing the dense core to INT4.*
 
 ### The Analogy
@@ -61,7 +61,7 @@ flowchart LR
 ### The Math (Light)
 Given an activation matrix $X \in \mathbb{R}^{T \times d}$ and linear weight $W \in \mathbb{R}^{d \times d_{\text{out}}}$, we insert the identity $I = Q Q^T$:
 $$Y = X W = (X Q) (Q^T W) = \tilde{X} \tilde{W}$$
-We compute $Q$ from the eigenvalue decomposition of the activation covariance matrix $C = \frac{1}{T} X^T X = Q \Lambda Q^T$.  
+We compute $Q$ from the eigenvalue decomposition of the activation covariance matrix $C = \frac{1}{T} X^T X = Q \Lambda Q^T$.
 By selecting the top-$k$ principal components, we slice the rotated weight:
 $$\tilde{W}_{\text{sliced}} = (Q^T W)_{[:k, :]} \in \mathbb{R}^{k \times d_{\text{out}}}$$
 We then quantize $\tilde{W}_{\text{sliced}}$ into 4-bit signed integers with scaling factor $S$:
@@ -88,7 +88,7 @@ $$W_{\text{INT4}} = \text{clamp}\left( \left\lfloor \frac{\tilde{W}_{\text{slice
 ```
 
 ### Title & Subtitle
-**DeltaKV & CacheNotes: Dynamic Key-Value Differential Compression**  
+**DeltaKV & CacheNotes: Dynamic Key-Value Differential Compression**
 *Exploiting cross-token contextual redundancy in generative decoding by storing anchor keyframes, ultra-low-bit delta residuals, and hierarchical semantic notes.*
 
 ### The Analogy
@@ -153,7 +153,7 @@ Because $Q_{\tau} K_{\text{anchor}}^T$ can be pre-computed or shared across clus
 ```
 
 ### Title & Subtitle
-**ZeroKV-Neo: Zero-Footprint Persistent Memory with Dynamic Eviction & State Recurrence**  
+**ZeroKV-Neo: Zero-Footprint Persistent Memory with Dynamic Eviction & State Recurrence**
 *Achieving constant O(1) KV cache memory bounds during infinite-horizon generation by combining attention-sink preservation, dynamic mass eviction, and recurrent summary compression.*
 
 ### The Analogy
@@ -214,7 +214,7 @@ During attention, $h_{\text{neo}}$ is appended as a single virtual token at posi
 ```
 
 ### Title & Subtitle
-**FLAP: Fluctuation-Aware Structured Pruning without Retraining**  
+**FLAP: Fluctuation-Aware Structured Pruning without Retraining**
 *Eliminating entire transformer channels and heads by evaluating output variance fluctuations and absorbing static baseline biases into downstream layers.*
 
 ### The Analogy
@@ -244,8 +244,8 @@ flowchart LR
 ```
 
 ### The Math (Light)
-Given a linear projection $Y = X W + b$, where $X \in \mathbb{R}^{T \times d_{\text{in}}}$ and $W \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$, the contribution of channel $i$ is $X_{:, i} W_{i, :}$.  
-We express $X_{:, i}$ in terms of its mean and deviation: $X_{:, i} = \mu_i + \Delta X_{:, i}$, where $\mathbb{E}[\Delta X_{:, i}] = 0$ and $\text{Var}(\Delta X_{:, i}) = \sigma_i^2$.  
+Given a linear projection $Y = X W + b$, where $X \in \mathbb{R}^{T \times d_{\text{in}}}$ and $W \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$, the contribution of channel $i$ is $X_{:, i} W_{i, :}$.
+We express $X_{:, i}$ in terms of its mean and deviation: $X_{:, i} = \mu_i + \Delta X_{:, i}$, where $\mathbb{E}[\Delta X_{:, i}] = 0$ and $\text{Var}(\Delta X_{:, i}) = \sigma_i^2$.
 The layer output becomes:
 $$Y = \sum_{i \in \text{Retained}} X_{:, i} W_{i, :} + \underbrace{\sum_{j \in \text{Pruned}} \mu_j W_{j, :} + b}_{\text{Updated Bias } b^*} + \underbrace{\sum_{j \in \text{Pruned}} \Delta X_{:, j} W_{j, :}}_{\text{Reconstruction Error } \mathcal{E}}$$
 The Fluctuation-Aware Metric minimizes the error $\mathbb{E}[\|\mathcal{E}\|_2^2]$ by selecting channels to maximize:
@@ -275,7 +275,7 @@ $$I_i = \sigma_i \cdot \|W_{i, :}\|_2$$
 ```
 
 ### Title & Subtitle
-**ARMOR & Wanda: Pruning by Weights and Activations without Optimization**  
+**ARMOR & Wanda: Pruning by Weights and Activations without Optimization**
 *Evaluating weight importance through the element-wise product of static weight magnitudes and dynamic input activation norms for rapid, one-shot sparsification.*
 
 ### The Analogy
@@ -335,14 +335,14 @@ $$M_{ij} = \mathbf{1}\left( S_{ij} \ge \text{Quantile}_p\left( S_{i, :} \right) 
 ```
 
 ### Title & Subtitle
-**SparseGPT: One-Shot Inversion for 2:4 Hardware-Accelerated Sparsity**  
+**SparseGPT: One-Shot Inversion for 2:4 Hardware-Accelerated Sparsity**
 *Solving the layer-wise Optimal Brain Surgeon problem at scale using block Cholesky decomposition to achieve 2x Tensor Core throughput with zero retraining.*
 
 ### The Analogy
 Imagine a delicate game of giant Jenga. If you walk up to the tower and randomly kick out 50% of the wooden blocks, the entire tower will crash to the ground. However, if a structural engineer uses a precision laser to measure the exact load stress across every beam, carefully slides out 2 blocks from every row of 4, and instantly micro-adjusts the remaining 2 blocks by a fraction of a millimeter to redistribute the load, the tower remains standing at 100% stability while weighing half as much.
 
 ### The Problem
-While unstructured 50% sparsity saves theoretical operations, modern GPU architectures (NVIDIA Ampere, Ada Lovelace, Hopper, Blackwell) cannot accelerate arbitrary sparse matrices—they require dense, coalesced memory access. To bridge this gap, modern GPUs introduced **2:4 Semi-Structured Sparse Tensor Cores**, which double math throughput *if and only if* exactly 2 out of every 4 consecutive values in a weight row are zero.  
+While unstructured 50% sparsity saves theoretical operations, modern GPU architectures (NVIDIA Ampere, Ada Lovelace, Hopper, Blackwell) cannot accelerate arbitrary sparse matrices—they require dense, coalesced memory access. To bridge this gap, modern GPUs introduced **2:4 Semi-Structured Sparse Tensor Cores**, which double math throughput *if and only if* exactly 2 out of every 4 consecutive values in a weight row are zero.
 However, finding the optimal 2:4 pattern naively creates severe cumulative error, destroying complex LLM benchmark performance across deep layers.
 
 ### How It Works (The Intuition)
@@ -394,7 +394,7 @@ For 2:4 sparsity, SparseGPT groups columns into sets of 4, computes $\Delta E$ f
 ```
 
 ### Title & Subtitle
-**SmoothQuant & AWQ: Outlier Migration and Activation-Aware Weight Quantization**  
+**SmoothQuant & AWQ: Outlier Migration and Activation-Aware Weight Quantization**
 *Taming activation outliers by mathematically shifting dynamic range from activations to weights, and shielding salient weight channels for zero-degradation 4-bit inference.*
 
 ### The Analogy
@@ -459,7 +459,7 @@ where $\mathcal{Q}(W) = \text{clamp}\left( \left\lfloor \frac{W}{S} \right\rceil
 ```
 
 ### Title & Subtitle
-**Squeezing Heads Distillation: Structured Head Pruning with Cross-Layer Distillation**  
+**Squeezing Heads Distillation: Structured Head Pruning with Cross-Layer Distillation**
 *Pruning redundant multi-head attention mechanisms and compressing deep multi-head layers into compact student models via attention-map and hidden-state transfer.*
 
 ### The Analogy
@@ -527,7 +527,7 @@ $$\mathcal{L}_{\text{Hidden}} = \left\| H_{l_T}^T - W_{\text{proj}} H_{l_S}^S \r
 ```
 
 ### Title & Subtitle
-**CoOpQ: Coordinated Heterogeneous Quantization with Mixed-Format INT4/FP4 Matrix Engines**  
+**CoOpQ: Coordinated Heterogeneous Quantization with Mixed-Format INT4/FP4 Matrix Engines**
 *Co-optimizing distinct numerical data types across transformer sub-modules to achieve optimal dynamic range retention, maximum integer compute density, and sub-4-bit effective precision.*
 
 ### The Analogy
@@ -611,5 +611,5 @@ Below are the empirical metrics recorded across quantization and pruning schemes
 
 ---
 
-*Authored by the AEGIS Efficient Attention & Neural Compression Research Group.*  
+*Authored by the AEGIS Efficient Attention & Neural Compression Research Group.*
 *Next in the series: **Part 6: Long-Context Extrapolation, State Space Models & Hybrid Recurrence Engines**.*

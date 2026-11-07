@@ -13,10 +13,6 @@ Triton GPU-accelerated implementation of SVD-factorized chunked causal linear at
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -25,9 +21,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.ops.triton import triton_dispatch
 
 logger = logging.getLogger(__name__)
@@ -42,6 +39,7 @@ except ImportError:
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _triton_chunked_causal_linear_attn_fwd_kernel(
         Q_ptr,
@@ -124,9 +122,7 @@ if HAS_TRITON:
 
             scores_intra = tl.dot(phi_q.to(tl.float32), tl.trans(phi_k.to(tl.float32)))
             causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
-            scores_causal = tl.where(
-                causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0
-            )
+            scores_causal = tl.where(causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0)
 
             num_intra = tl.dot(scores_causal.to(tl.float32), v_tile.to(tl.float32))
             denom_intra = tl.sum(scores_causal, axis=1)
@@ -505,9 +501,7 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                         vc = v_f[:, :, start:end, :]
 
                         scores = torch.matmul(qc, kc.transpose(-1, -2))
-                        causal_mask = torch.tril(
-                            torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
-                        )
+                        causal_mask = torch.tril(torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool))
                         scores = scores.masked_fill(~causal_mask, 0.0)
                         intra_num = torch.matmul(scores, vc)
                         intra_denom = scores.sum(dim=-1, keepdim=True)
@@ -536,9 +530,7 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(
-        ctx: Any, grad_out: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
+    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
         q, k, v = ctx.saved_tensors
         is_causal = ctx.is_causal
         activation_mode = ctx.activation_mode
@@ -641,9 +633,7 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
                     vc = v_f[:, :, start:end, :]
 
                     scores = torch.matmul(qc, kc.transpose(-1, -2))
-                    causal_mask = torch.tril(
-                        torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool)
-                    )
+                    causal_mask = torch.tril(torch.ones(cur_len, cur_len, device=q.device, dtype=torch.bool))
                     scores = scores.masked_fill(~causal_mask, 0.0)
                     intra_num = torch.matmul(scores, vc)
                     intra_denom = scores.sum(dim=-1, keepdim=True)
@@ -733,11 +723,7 @@ class SVDLinearProjection(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         u = self.U.to(x.dtype) if self.U.dtype != x.dtype else self.U
         v = self.V.to(x.dtype) if self.V.dtype != x.dtype else self.V
-        b = (
-            self.bias.to(x.dtype)
-            if (self.bias is not None and self.bias.dtype != x.dtype)
-            else self.bias
-        )
+        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
         return triton_dispatch(self.triton_kernel, x, u, v, bias=b)
 
     @classmethod
@@ -766,9 +752,7 @@ class SVDLinearProjection(nn.Module):
         return proj
 
 
-@ATTENTION_REGISTRY.register(
-    "triton_svd_linear_attention", supports_causal=True, supports_bidirectional=True
-)
+@ATTENTION_REGISTRY.register("triton_svd_linear_attention", supports_causal=True, supports_bidirectional=True)
 class TritonSVDLinearAttention(BaseAttention):
     r"""
     Triton-Accelerated Linear Attention with Genuine SVD Low-Rank Projections,
@@ -793,9 +777,7 @@ class TritonSVDLinearAttention(BaseAttention):
         super().__init__()
         self.config = config
         self.is_decoder = bool(
-            is_decoder
-            or getattr(config, "is_decoder", False)
-            or getattr(config, "is_causal", False)
+            is_decoder or getattr(config, "is_decoder", False) or getattr(config, "is_causal", False)
         )
         self.activation_mode = activation_mode
         self.eps = eps
@@ -813,15 +795,9 @@ class TritonSVDLinearAttention(BaseAttention):
             or kwargs.get("hidden_size")
             or getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
         )
-        self.num_heads = (
-            num_heads
-            or kwargs.get("num_attention_heads")
-            or getattr(config, "num_attention_heads", 12)
-        )
+        self.num_heads = num_heads or kwargs.get("num_attention_heads") or getattr(config, "num_attention_heads", 12)
         self.num_kv_heads = (
-            num_kv_heads
-            or kwargs.get("num_kv_heads")
-            or getattr(config, "num_key_value_heads", self.num_heads)
+            num_kv_heads or kwargs.get("num_kv_heads") or getattr(config, "num_key_value_heads", self.num_heads)
         )
         self.head_dim = kwargs.get("head_dim") or (self.embed_dim // self.num_heads)
         self.rank = rank or 64
@@ -830,15 +806,9 @@ class TritonSVDLinearAttention(BaseAttention):
         self.kv_dim = self.num_kv_heads * self.head_dim
 
         if self.rank < self.embed_dim:
-            self.q_proj = SVDLinearProjection(
-                self.embed_dim, self.embed_dim, rank=self.rank, bias=True
-            )
-            self.k_proj = SVDLinearProjection(
-                self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True
-            )
-            self.v_proj = SVDLinearProjection(
-                self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True
-            )
+            self.q_proj = SVDLinearProjection(self.embed_dim, self.embed_dim, rank=self.rank, bias=True)
+            self.k_proj = SVDLinearProjection(self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True)
+            self.v_proj = SVDLinearProjection(self.embed_dim, self.kv_dim, rank=min(self.rank, self.kv_dim), bias=True)
         else:
             self.q_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=True)
             self.k_proj = nn.Linear(self.embed_dim, self.kv_dim, bias=True)
@@ -957,9 +927,7 @@ class TritonSVDLinearAttention(BaseAttention):
                                 self._copy_single_proj(target_mod, w, b_data)
                             break
 
-    def _copy_single_proj(
-        self, target_mod: nn.Module, w: torch.Tensor, b: torch.Tensor | None
-    ) -> None:
+    def _copy_single_proj(self, target_mod: nn.Module, w: torch.Tensor, b: torch.Tensor | None) -> None:
         """Decomposes weights into low-rank SVD factors or copies directly."""
         if isinstance(target_mod, SVDLinearProjection):
             with torch.no_grad():
@@ -972,11 +940,7 @@ class TritonSVDLinearAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     target_mod.bias.data.copy_(b)
         else:
-            if (
-                w.ndim == 2
-                and w.shape != target_mod.weight.shape
-                and w.t().shape == target_mod.weight.shape
-            ):
+            if w.ndim == 2 and w.shape != target_mod.weight.shape and w.t().shape == target_mod.weight.shape:
                 w = w.t()
             target_mod.weight.data.copy_(w)
             if b is not None and target_mod.bias is not None:
@@ -997,34 +961,15 @@ class TritonSVDLinearAttention(BaseAttention):
         B, N, C = hidden_states.shape
 
         if torch.is_autocast_enabled() and hidden_states.is_cuda:
-            ac_dtype = (
-                torch.get_autocast_dtype("cuda")
-                if hasattr(torch, "get_autocast_dtype")
-                else torch.float16
-            )
+            ac_dtype = torch.get_autocast_dtype("cuda") if hasattr(torch, "get_autocast_dtype") else torch.float16
             hidden_states = hidden_states.to(ac_dtype)
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
 
-        q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.k_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -1063,7 +1008,11 @@ class TritonSVDLinearAttention(BaseAttention):
         out = out.transpose(1, 2).contiguous().view(B, N, C)
         out = self.out_proj(out)
 
-        out = torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0).clamp(-65000.0, 65000.0).to(hidden_states.dtype)
+        out = (
+            torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0)
+            .clamp(-65000.0, 65000.0)
+            .to(hidden_states.dtype)
+        )
 
         return out, None
 

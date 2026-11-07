@@ -160,20 +160,11 @@ def fp32_linalg(fn, *tensors: torch.Tensor, **kwargs: Any):
         (t.dtype for t in tensors if isinstance(t, torch.Tensor) and t.is_floating_point()),
         torch.float32,
     )
-    prepared = [
-        t.float() if isinstance(t, torch.Tensor) and t.is_floating_point() else t for t in tensors
-    ]
+    prepared = [t.float() if isinstance(t, torch.Tensor) and t.is_floating_point() else t for t in tensors]
     result = fn(*prepared, **kwargs)
     if isinstance(result, tuple):
-        return tuple(
-            x.to(dtype) if isinstance(x, torch.Tensor) and x.is_floating_point() else x
-            for x in result
-        )
-    return (
-        result.to(dtype)
-        if isinstance(result, torch.Tensor) and result.is_floating_point()
-        else result
-    )
+        return tuple(x.to(dtype) if isinstance(x, torch.Tensor) and x.is_floating_point() else x for x in result)
+    return result.to(dtype) if isinstance(result, torch.Tensor) and result.is_floating_point() else result
 
 
 def qwen_module_policy(module_name: str) -> str:

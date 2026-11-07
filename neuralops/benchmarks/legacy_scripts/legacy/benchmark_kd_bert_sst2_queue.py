@@ -113,7 +113,7 @@ def train_single_module_kd(
             # KL divergence for KD
             p_s = F.log_softmax(s_logits / temperature, dim=-1)
             p_t = F.softmax(t_logits / temperature, dim=-1)
-            kd_loss = F.kl_div(p_s, p_t, reduction="batchmean") * (temperature ** 2)
+            kd_loss = F.kl_div(p_s, p_t, reduction="batchmean") * (temperature**2)
 
             total_loss = (1.0 - alpha_kd) * ce_loss + alpha_kd * kd_loss
 
@@ -131,9 +131,11 @@ def train_single_module_kd(
 
     duration = time.time() - start_time
     val_acc, val_loss = evaluate_accuracy(student_model, val_loader, device)
-    mem_peak_gb = (torch.cuda.max_memory_allocated(device) / (1024 ** 3)) if torch.cuda.is_available() else 0.0
+    mem_peak_gb = (torch.cuda.max_memory_allocated(device) / (1024**3)) if torch.cuda.is_available() else 0.0
 
-    logger.info(f"[{module_name}] Completed KD | Accuracy: {val_acc:.2f}% | Val Loss: {val_loss:.4f} | Peak VRAM: {mem_peak_gb:.2f} GB | Time: {duration:.1f}s")
+    logger.info(
+        f"[{module_name}] Completed KD | Accuracy: {val_acc:.2f}% | Val Loss: {val_loss:.4f} | Peak VRAM: {mem_peak_gb:.2f} GB | Time: {duration:.1f}s"
+    )
     return {
         "module": module_name,
         "accuracy": round(val_acc, 2),
@@ -142,7 +144,7 @@ def train_single_module_kd(
         "peak_vram_gb": round(mem_peak_gb, 2),
         "duration_sec": round(duration, 1),
         "steps": kd_steps,
-        "status": "SUCCESS"
+        "status": "SUCCESS",
     }
 
 
@@ -158,23 +160,28 @@ def main() -> None:
     device = torch.device(args.device)
     logger.info(f"Starting BERT SST-2 KD Queue on {device} (Batch size: {args.batch_size}, Steps: {args.kd_steps})")
 
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification
     import datasets
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
     # 1. Load tokenizer & model strictly offline
     logger.info("Loading BERT tokenizer and base model strictly from offline cache...")
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", local_files_only=True)
-    teacher_model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2, local_files_only=True).to(device)
+    teacher_model = AutoModelForSequenceClassification.from_pretrained(
+        "bert-base-uncased", num_labels=2, local_files_only=True
+    ).to(device)
 
     # 2. Load SST-2 dataset from cache
     raw_dataset = datasets.load_dataset("glue", "sst2")
+
     def tokenize_fn(examples: dict[str, Any]) -> dict[str, Any]:
         return tokenizer(examples["sentence"], padding="max_length", truncation=True, max_length=128)
 
     encoded_dataset = raw_dataset.map(tokenize_fn, batched=True)
     encoded_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "label"])
 
-    train_loader = DataLoader(encoded_dataset["train"], batch_size=args.batch_size, shuffle=True, pin_memory=True, drop_last=True)
+    train_loader = DataLoader(
+        encoded_dataset["train"], batch_size=args.batch_size, shuffle=True, pin_memory=True, drop_last=True
+    )
     val_loader = DataLoader(encoded_dataset["validation"], batch_size=args.batch_size, shuffle=False, pin_memory=True)
 
     # Baseline evaluation
@@ -195,6 +202,7 @@ def main() -> None:
 
     results = []
     import copy
+
     import neuralops
     from neuralops.core.registry import create_attention
 
@@ -226,11 +234,7 @@ def main() -> None:
             results.append(rec)
         except Exception as exc:
             logger.error(f"Failed KD for {mod_name}: {exc}")
-            results.append({
-                "module": mod_name,
-                "accuracy": 0.0,
-                "status": f"FAILED: {exc}"
-            })
+            results.append({"module": mod_name, "accuracy": 0.0, "status": f"FAILED: {exc}"})
 
     # Save results
     os.makedirs(os.path.dirname(args.output), exist_ok=True)

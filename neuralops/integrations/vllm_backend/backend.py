@@ -32,6 +32,7 @@ try:
         AttentionMetadata,
         AttentionMetadataBuilder,
     )
+
     HAS_VLLM_ABSTRACT = True
 except (ImportError, AttributeError):
     try:
@@ -40,6 +41,7 @@ except (ImportError, AttributeError):
             AttentionImpl,
             AttentionMetadata,
         )
+
         AttentionMetadataBuilder = Any  # type: ignore[assignment, misc]
         HAS_VLLM_ABSTRACT = True
     except (ImportError, AttributeError):

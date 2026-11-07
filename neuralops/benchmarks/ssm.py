@@ -29,5 +29,17 @@ def run_benchmark(device: str = "cuda", sequence_lengths: tuple[int, ...] = (512
         for t in range(seq_len):
             state = torch.tanh(0.95 * state + x[:, t])
         elapsed = (time.perf_counter() - started) * 1000.0
-        rows.append({"sequence_length": seq_len, "latency_ms": elapsed, "state_mb": state.numel() * state.element_size() / 2**20})
-    return {"module": "mamba_block,selective_ssm,mamba_svd_flash", "category": "ssm", "device": str(target), "rows": rows, "status": "PASS"}
+        rows.append(
+            {
+                "sequence_length": seq_len,
+                "latency_ms": elapsed,
+                "state_mb": state.numel() * state.element_size() / 2**20,
+            }
+        )
+    return {
+        "module": "mamba_block,selective_ssm,mamba_svd_flash",
+        "category": "ssm",
+        "device": str(target),
+        "rows": rows,
+        "status": "PASS",
+    }

@@ -102,11 +102,7 @@ class FusedSVDProjectionFunction(Function):
         U_c = U.contiguous()
         V_T_c = V_T.contiguous()
         S_c = S.contiguous() if (S is not None and S.numel() > 0) else None
-        res_2d = (
-            X_res.reshape(-1, X_res.size(-1)).contiguous()
-            if (X_res is not None and X_res.numel() > 0)
-            else None
-        )
+        res_2d = X_res.reshape(-1, X_res.size(-1)).contiguous() if (X_res is not None and X_res.numel() > 0) else None
         bias_c = bias.contiguous() if (bias is not None and bias.numel() > 0) else None
 
         ctx.has_s = S_c is not None
@@ -124,12 +120,8 @@ class FusedSVDProjectionFunction(Function):
                 mod = _get_cuda_module()
                 if mod is not None:
                     dummy_s = S_c if ctx.has_s else torch.empty(0, device=x.device, dtype=x.dtype)
-                    dummy_res = (
-                        res_2d if ctx.has_res else torch.empty(0, device=x.device, dtype=x.dtype)
-                    )
-                    dummy_b = (
-                        bias_c if ctx.has_bias else torch.empty(0, device=x.device, dtype=x.dtype)
-                    )
+                    dummy_res = res_2d if ctx.has_res else torch.empty(0, device=x.device, dtype=x.dtype)
+                    dummy_b = bias_c if ctx.has_bias else torch.empty(0, device=x.device, dtype=x.dtype)
 
                     out = mod.fused_svd_projection_fwd(
                         x_2d, U_c, dummy_s, V_T_c, dummy_res, dummy_b, ctx.alpha, ctx.beta
@@ -137,9 +129,7 @@ class FusedSVDProjectionFunction(Function):
                     dispatched = True
                     _fallback.set_last_dispatch_backend("fused_svd_projection", "cuda")
             except Exception as e:
-                logger.warning(
-                    "FusedSVDProjection CUDA forward failed (%s); falling back to Level 2/3.", e
-                )
+                logger.warning("FusedSVDProjection CUDA forward failed (%s); falling back to Level 2/3.", e)
 
         if not dispatched:
             out = fused_svd_projection_pytorch_ref(
@@ -176,9 +166,7 @@ class FusedSVDProjectionFunction(Function):
                 mod = _get_cuda_module()
                 if mod is not None:
                     dummy_s = (
-                        S
-                        if (S is not None and S.numel() > 0)
-                        else torch.empty(0, device=dout.device, dtype=dout.dtype)
+                        S if (S is not None and S.numel() > 0) else torch.empty(0, device=dout.device, dtype=dout.dtype)
                     )
                     dx = mod.fused_svd_projection_bwd_dx(dout, U, dummy_s, V_T, ctx.alpha)
                     dx = dx.reshape(ctx.orig_shape)
@@ -251,16 +239,12 @@ def fused_svd_projection(
     backend_val = forced.get() if forced is not None else "auto"
 
     if backend_val == "pytorch" or not x.is_cuda:
-        return fused_svd_projection_pytorch_ref(
-            x, U, S=S, V_T=V_T, X_res=X_res, bias=bias, alpha=alpha, beta=beta
-        )
+        return fused_svd_projection_pytorch_ref(x, U, S=S, V_T=V_T, X_res=X_res, bias=bias, alpha=alpha, beta=beta)
 
     if backend_val == "triton":
         from neuralops.ops.triton.fused_svd_projection_triton import fused_svd_projection_triton
 
-        return fused_svd_projection_triton(
-            x, U, S=S, V_T=V_T, X_res=X_res, bias=bias, alpha=alpha, beta=beta
-        )
+        return fused_svd_projection_triton(x, U, S=S, V_T=V_T, X_res=X_res, bias=bias, alpha=alpha, beta=beta)
 
     # Use Autograd Function for full gradient propagation
     return FusedSVDProjectionFunction.apply(x, U, S, V_T, X_res, bias, alpha, beta)

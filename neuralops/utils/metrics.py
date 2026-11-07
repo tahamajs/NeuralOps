@@ -44,15 +44,11 @@ def compute_f1(preds: np.ndarray, labels: np.ndarray, average: str = "weighted")
     return f1_score(labels, preds, average=average, zero_division=0)
 
 
-def compute_precision_recall(
-    preds: np.ndarray, labels: np.ndarray, average: str = "weighted"
-) -> dict[str, float]:
+def compute_precision_recall(preds: np.ndarray, labels: np.ndarray, average: str = "weighted") -> dict[str, float]:
     """Compute and return precision recall."""
     from neuralops.trainer.metrics import precision_recall_fscore_support
 
-    precision, recall, _, _ = precision_recall_fscore_support(
-        labels, preds, average=average, zero_division=0
-    )
+    precision, recall, _, _ = precision_recall_fscore_support(labels, preds, average=average, zero_division=0)
     return {"precision": precision, "recall": recall}
 
 

@@ -115,7 +115,7 @@ Outer product $t \cdot \theta_i$: $N_{\max} \cdot (D/2)$ FLOPs. Furthermore, Tri
 
 
 ### Memory Footprint & Parameter Requirements
-Specifically, regarding \textbf{Parameter Count}, $0$ trainable parameters (`persistent=False` registered buffers). Furthermore, regarding \textbf{Transient Memory Footprint}, 
+Specifically, regarding \textbf{Parameter Count}, $0$ trainable parameters (`persistent=False` registered buffers). Furthermore, regarding \textbf{Transient Memory Footprint},
 
   \[
   \text{Cache Storage} = 2 \cdot N_{\max} \cdot D \cdot b \text{ bytes}
@@ -191,4 +191,3 @@ The empirical evaluation of `unified_rope` across standard sequence lengths and 
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

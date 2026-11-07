@@ -12,7 +12,6 @@ Dynamically adjusts quantization step sizes according to feature activation stat
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -22,6 +21,7 @@ import torch.nn as nn
 
 from neuralops.compression.quantization.astro_quantizer import quantize_dequantize_tensor
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -97,12 +97,8 @@ class FAQLinear(nn.Module):
             nn.init.zeros_(self.bias)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.randn((out_features, self.lora_r), dtype=dtype, device=device) * 1e-3
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=dtype, device=device))
+            self.lora_B = nn.Parameter(torch.randn((out_features, self.lora_r), dtype=dtype, device=device) * 1e-3)
             with torch.no_grad():
                 tmp = self.lora_A.data.float()
                 nn.init.kaiming_uniform_(tmp, a=5**0.5)
@@ -157,11 +153,7 @@ class FAQLinear(nn.Module):
         )
         with torch.no_grad():
             layer.weight.data.copy_(W)
-            if (
-                getattr(target_mod, "bias", None) is not None
-                and target_mod.bias is not None
-                and layer.bias is not None
-            ):
+            if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None and layer.bias is not None:
                 layer.bias.data.copy_(target_mod.bias.data)
 
             if act_scale is not None:
@@ -188,11 +180,7 @@ class FAQLinear(nn.Module):
         return layer
 
     def get_weight(self) -> torch.Tensor:
-        s = (
-            torch.clamp(self.act_scale, min=1e-6)
-            .unsqueeze(0)
-            .to(device=self.weight.device, dtype=self.weight.dtype)
-        )
+        s = torch.clamp(self.act_scale, min=1e-6).unsqueeze(0).to(device=self.weight.device, dtype=self.weight.dtype)
         w_scaled = self.weight * s
         w_q = quantize_dequantize_tensor(
             w_scaled,
@@ -204,11 +192,7 @@ class FAQLinear(nn.Module):
         return w_q / s
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        s = (
-            torch.clamp(self.act_scale, min=1e-6)
-            .unsqueeze(0)
-            .to(device=self.weight.device, dtype=self.weight.dtype)
-        )
+        s = torch.clamp(self.act_scale, min=1e-6).unsqueeze(0).to(device=self.weight.device, dtype=self.weight.dtype)
         w_scaled = self.weight * s
         w_q = quantize_dequantize_tensor(
             w_scaled,
@@ -237,11 +221,15 @@ class FAQLinear(nn.Module):
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
             suitable, _ = check_triton_suitability(x, "low_rank")
             if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
-                    lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None)
+
+                    lora_out = fused_down_up_gemm_bias_triton(
+                        x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None
+                    )
                     out = out + self.scaling * lora_out
                     return out
                 except Exception:
@@ -294,9 +282,7 @@ class FAQQuantizer(BaseCompressor):
         self.use_ste = bool(_cfg_get(cfg, "faq_use_ste", _cfg_get(cfg, "use_ste", use_ste)))
         self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
         self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
-        self.max_error = float(
-            _cfg_get(cfg, "faq_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        self.max_error = float(_cfg_get(cfg, "faq_max_error", _cfg_get(cfg, "max_error", max_error)))
         self.target_attention_only = bool(
             _cfg_get(
                 cfg,
@@ -313,9 +299,7 @@ class FAQQuantizer(BaseCompressor):
         )
         self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
         self.cfg = cfg
-        self.num_calibration_batches = max(
-            1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches))
-        )
+        self.num_calibration_batches = max(1, int(_cfg_get(cfg, "num_calibration_batches", num_calibration_batches)))
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -369,9 +353,7 @@ class FAQQuantizer(BaseCompressor):
 
         target_mod = getattr(module, "base_layer", module)
         cls_name = target_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
-        )
+        is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
         if not is_linear_like or isinstance(target_mod, FAQLinear):
             return False
 
@@ -380,9 +362,7 @@ class FAQQuantizer(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention")
-            )
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 return False
 
@@ -476,19 +456,10 @@ class FAQQuantizer(BaseCompressor):
                             if isinstance(batch, torch.Tensor):
                                 self.model(batch.to(dev))
                             elif isinstance(batch, dict):
-                                b = {
-                                    k: v.to(dev)
-                                    for k, v in batch.items()
-                                    if isinstance(v, torch.Tensor)
-                                }
+                                b = {k: v.to(dev) for k, v in batch.items() if isinstance(v, torch.Tensor)}
                                 self.model(**b)
                             elif isinstance(batch, (list, tuple)):
-                                self.model(
-                                    *[
-                                        b.to(dev) if isinstance(b, torch.Tensor) else b
-                                        for b in batch
-                                    ]
-                                )
+                                self.model(*[b.to(dev) if isinstance(b, torch.Tensor) else b for b in batch])
                         except Exception as e:
                             logger.debug("FAQ calibration batch %d failed: %s", i, e)
                 else:
@@ -510,11 +481,7 @@ class FAQQuantizer(BaseCompressor):
         for name, module in self.model.named_modules():
             target_mod = getattr(module, "base_layer", module)
             cls_name = target_mod.__class__.__name__.lower()
-            is_linear_like = (
-                isinstance(target_mod, nn.Linear)
-                or "conv1d" in cls_name
-                or hasattr(target_mod, "nf")
-            )
+            is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
             if is_linear_like and hasattr(target_mod, "weight") and target_mod.weight is not None:
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
                 in_f = target_mod.weight.shape[0] if is_conv1d else target_mod.weight.shape[1]
@@ -548,11 +515,7 @@ class FAQQuantizer(BaseCompressor):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
-                is_linear_like = (
-                    isinstance(target_mod, nn.Linear)
-                    or "conv1d" in cls_name
-                    or hasattr(target_mod, "nf")
-                )
+                is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
                 if is_linear_like and not self._is_target_module(name, module):
                     for p in module.parameters():
                         p.requires_grad = False
@@ -630,10 +593,7 @@ class FAQQuantizer(BaseCompressor):
                         else:
                             target_mod.weight.data.copy_(W_recon.to(dtype=raw_w.dtype))
 
-                        if (
-                            getattr(target_mod, "bias", None) is not None
-                            and target_mod.bias is not None
-                        ):
+                        if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
                             b_q = quantize_dequantize_tensor(
                                 target_mod.bias.data,
                                 bits=self.bits,
@@ -676,11 +636,7 @@ class FAQQuantizer(BaseCompressor):
                         self.model(dummy)
                     except Exception:
                         first_linear = next(
-                            (
-                                m
-                                for m in self.model.modules()
-                                if isinstance(m, (nn.Linear, FAQLinear))
-                            ),
+                            (m for m in self.model.modules() if isinstance(m, (nn.Linear, FAQLinear))),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
@@ -708,9 +664,7 @@ class FAQQuantizer(BaseCompressor):
         except Exception:
             stats = {}
 
-        avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
 
         num_targets = len(self.compressed_layers) + len(self.fallback_layers)
         if num_targets > 0 and self.bits > 0:
@@ -755,9 +709,7 @@ def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """FAQ compressor factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     bits = kwargs.pop("bits", _cfg_get(comp_config, "faq_bits", _cfg_get(comp_config, "bits", 3)))
-    alpha = kwargs.pop(
-        "alpha", _cfg_get(comp_config, "faq_alpha", _cfg_get(comp_config, "alpha", 0.5))
-    )
+    alpha = kwargs.pop("alpha", _cfg_get(comp_config, "faq_alpha", _cfg_get(comp_config, "alpha", 0.5)))
     symmetric = kwargs.pop(
         "symmetric",
         _cfg_get(comp_config, "faq_symmetric", _cfg_get(comp_config, "symmetric", True)),

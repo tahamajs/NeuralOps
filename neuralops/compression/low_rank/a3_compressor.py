@@ -12,8 +12,6 @@ Performs activation energy-weighted singular value decomposition with post-compr
 """
 
 from __future__ import annotations
-from neuralops.core.common import _orthogonal_init
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -22,6 +20,8 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from neuralops.core.common import _cfg_get, _orthogonal_init
 
 _CUDA_OOM = getattr(torch.cuda, "OutOfMemoryError", RuntimeError)
 
@@ -121,14 +121,19 @@ class A3FactorizedLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 base_bias = self.bias if (self.lora_rank == 0 or self.lora_A is None) else None
                 out = fused_down_up_gemm_bias_triton(x, self.V, self.U.t().contiguous(), bias=base_bias)
                 if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-                    lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias) * self.lora_scaling
+                    lora_out = (
+                        fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias)
+                        * self.lora_scaling
+                    )
                     return out + lora_out
                 return out
             except Exception:
@@ -202,9 +207,7 @@ class A3FactorizedLinear(nn.Module):
             layer.V.data.copy_(V_factor.to(device=layer.V.device, dtype=layer.V.dtype))
         if bias is not None and layer.bias is not None:
             if layer.bias.shape == bias.shape:
-                layer.bias.data.copy_(
-                    bias.data.to(device=layer.bias.device, dtype=layer.bias.dtype)
-                )
+                layer.bias.data.copy_(bias.data.to(device=layer.bias.device, dtype=layer.bias.dtype))
         return layer
 
 
@@ -292,9 +295,7 @@ class A3Compressor(BaseCompressor):
                     _cfg_get(cfg, "a3_use_fisher", _cfg_get(cfg, "use_fisher", use_fisher)),
                 ),
             )
-            use_cholesky = _cfg_get(
-                cfg, "a3_use_cholesky", _cfg_get(cfg, "use_cholesky", use_cholesky)
-            )
+            use_cholesky = _cfg_get(cfg, "a3_use_cholesky", _cfg_get(cfg, "use_cholesky", use_cholesky))
             allow_ln_failure = _cfg_get(
                 cfg,
                 "a3_allow_ln_failure",
@@ -344,9 +345,7 @@ class A3Compressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.cov_dtype_name = str(cov_dtype).lower()
         if self.cov_dtype_name not in ("float32", "float16"):
@@ -470,9 +469,7 @@ class A3Compressor(BaseCompressor):
             return {}, {}
 
         if self._target_module_names is None:
-            self._target_module_names = [
-                name for name, m in self.model.named_modules() if self._is_target(name, m)
-            ]
+            self._target_module_names = [name for name, m in self.model.named_modules() if self._is_target(name, m)]
 
         target_set = set(self._target_module_names)
         if not target_set:
@@ -531,21 +528,13 @@ class A3Compressor(BaseCompressor):
                     try:
                         if isinstance(batch, dict):
                             self.model(
-                                **{
-                                    k: (v.to(self.target_device) if hasattr(v, "to") else v)
-                                    for k, v in batch.items()
-                                }
+                                **{k: (v.to(self.target_device) if hasattr(v, "to") else v) for k, v in batch.items()}
                             )
                         elif isinstance(batch, torch.Tensor):
                             self.model(batch.to(self.target_device))
                         elif isinstance(batch, (list, tuple)):
                             try:
-                                self.model(
-                                    *[
-                                        (b.to(self.target_device) if hasattr(b, "to") else b)
-                                        for b in batch
-                                    ]
-                                )
+                                self.model(*[(b.to(self.target_device) if hasattr(b, "to") else b) for b in batch])
                             except Exception:
                                 self.model(batch[0].to(self.target_device))
                     except Exception as e:
@@ -728,9 +717,7 @@ class A3Compressor(BaseCompressor):
         raw_w = target_mod.weight.data.float()
         bias = getattr(target_mod, "bias", getattr(module, "bias", None))
 
-        mod_with_nf = (
-            target_mod if hasattr(target_mod, "nf") else (module if hasattr(module, "nf") else None)
-        )
+        mod_with_nf = target_mod if hasattr(target_mod, "nf") else (module if hasattr(module, "nf") else None)
         if mod_with_nf is not None:
             out_f = mod_with_nf.nf
             in_f = getattr(
@@ -740,10 +727,7 @@ class A3Compressor(BaseCompressor):
             )
             W = raw_w.t().contiguous() if raw_w.shape == (in_f, out_f) else raw_w
         elif (
-            bias is not None
-            and bias.ndim == 1
-            and bias.shape[0] == raw_w.shape[1]
-            and bias.shape[0] != raw_w.shape[0]
+            bias is not None and bias.ndim == 1 and bias.shape[0] == raw_w.shape[1] and bias.shape[0] != raw_w.shape[0]
         ):
             W = raw_w.t().contiguous()
             out_f = bias.shape[0]
@@ -884,8 +868,7 @@ class A3Compressor(BaseCompressor):
                 )
                 return None, best_err, r_ceiling
             logger.warning(
-                "A3: %s exceeds max_error (%.3f > %.3f) at r=%d; "
-                "fallback_to_original=False → compressing anyway.",
+                "A3: %s exceeds max_error (%.3f > %.3f) at r=%d; " "fallback_to_original=False → compressing anyway.",
                 name,
                 best_err,
                 self.max_error,
@@ -924,9 +907,7 @@ class A3Compressor(BaseCompressor):
 
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         has_calib_sources = (
-            self.calibration_loader is not None
-            or bool(self.calibration_texts)
-            or self.tokenizer is not None
+            self.calibration_loader is not None or bool(self.calibration_texts) or self.tokenizer is not None
         )
         if not has_calib_sources or (not self.use_fisher and not self.recalibrate_ln):
             logger.info("A3: no calibration sources; using unweighted SVD.")
@@ -1004,15 +985,11 @@ class A3Compressor(BaseCompressor):
                 for p in module.parameters():
                     p.requires_grad = False
                 self.skipped_layers.append(name)
-                self._comp_storage_bytes += (
-                    self._orig_storage_bytes
-                )
+                self._comp_storage_bytes += self._orig_storage_bytes
 
         if self.recalibrate_ln:
             has_calib_data = (
-                self.calibration_loader is not None
-                or self.calibration_texts is not None
-                or self.tokenizer is not None
+                self.calibration_loader is not None or self.calibration_texts is not None or self.tokenizer is not None
             )
             if has_calib_data:
                 try:
@@ -1028,8 +1005,7 @@ class A3Compressor(BaseCompressor):
                     logger.error("A3: LayerNorm recalibration FAILED: %s", e)
                     if not self.allow_ln_failure:
                         raise RuntimeError(
-                            f"LayerNorm recalibration failed: {e}; "
-                            f"set allow_ln_failure=True to bypass."
+                            f"LayerNorm recalibration failed: {e}; " f"set allow_ln_failure=True to bypass."
                         ) from e
             else:
                 logger.info("A3: LayerNorm recalibration skipped (no calibration data).")
@@ -1038,22 +1014,13 @@ class A3Compressor(BaseCompressor):
         avg_err = (total_err / factorized_count) if factorized_count > 0 else 0.0
         total_params = sum(layer_param_counts.values()) if layer_param_counts else 0
         weighted_err = (
-            sum(layer_stats[k]["rel_error"] * layer_param_counts[k] for k in layer_stats)
-            / max(1, total_params)
+            sum(layer_stats[k]["rel_error"] * layer_param_counts[k] for k in layer_stats) / max(1, total_params)
             if total_params > 0
             else 0.0
         )
 
-        storage_ratio = (
-            self._orig_storage_bytes / self._comp_storage_bytes
-            if self._comp_storage_bytes > 0
-            else 1.0
-        )
-        effective_ratio = (
-            self._comp_storage_bytes / self._orig_storage_bytes
-            if self._orig_storage_bytes > 0
-            else 1.0
-        )
+        storage_ratio = self._orig_storage_bytes / self._comp_storage_bytes if self._comp_storage_bytes > 0 else 1.0
+        effective_ratio = self._comp_storage_bytes / self._orig_storage_bytes if self._orig_storage_bytes > 0 else 1.0
 
         stats = self.get_compression_stats()
         stats.update(

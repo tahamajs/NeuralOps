@@ -13,8 +13,8 @@ Manages native CUDA C++, Triton JIT, and PyTorch reference kernel execution.
 
 from __future__ import annotations
 
-import sys
-from neuralops._lazy import _LazyModule
+import importlib
+from typing import Any
 
 _import_structure = {
     "cuda": ["list_cuda_kernels", "CUDA_KERNEL_CATALOG"],
@@ -24,10 +24,17 @@ _import_structure = {
 
 __all__ = ["cuda", "triton", "pytorch"]
 
-module = _LazyModule(
-    __name__,
-    __file__,
-    _import_structure,
-    module_spec=__spec__,
-)
-sys.modules[__name__] = module
+
+def __getattr__(name: str) -> Any:
+    if name in _import_structure:
+        mod = importlib.import_module(f".{name}", __name__)
+        return mod
+    for mod_name, symbols in _import_structure.items():
+        if name in symbols:
+            mod = importlib.import_module(f".{mod_name}", __name__)
+            return getattr(mod, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted(list(globals().keys()) + __all__)

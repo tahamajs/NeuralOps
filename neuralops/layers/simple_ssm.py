@@ -8,4 +8,5 @@
 """
 Compatibility alias for neuralops.layers.ssm.simple_ssm.
 """
+
 from neuralops.layers.ssm.simple_ssm import *  # noqa: F401, F403

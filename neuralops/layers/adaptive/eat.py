@@ -21,29 +21,22 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core.attention_utils import (
-    safe_mask_value as _safe_mask_value,
-    broadcast_cos_sin as _broadcast_cos_sin,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.attention_utils import broadcast_cos_sin as _broadcast_cos_sin
+from neuralops.core.attention_utils import safe_mask_value as _safe_mask_value
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 try:
-    from neuralops.layers.adaptive.progressive_token_pruning import (
-        ProgressiveTokenPruning,
-    )
+    from neuralops.layers.adaptive.progressive_token_pruning import ProgressiveTokenPruning
 except ImportError:
     ProgressiveTokenPruning = None
 
 logger = logging.getLogger(__name__)
 
 
-@ATTENTION_REGISTRY.register(
-    "eat", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("eat", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register(
     "eat_attention", is_alias=True, supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
@@ -56,6 +49,7 @@ class EATBlock(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -76,11 +70,7 @@ class EATBlock(BaseAttention):
 
         cfg_obj = getattr(config, "text_config", config) if config is not None else None
         hidden_size = getattr(cfg_obj, "hidden_size", None) if cfg_obj is not None else None
-        num_heads = (
-            getattr(cfg_obj, "num_attention_heads", None)
-            if cfg_obj is not None
-            else None
-        )
+        num_heads = getattr(cfg_obj, "num_attention_heads", None) if cfg_obj is not None else None
 
         if hidden_size is None and source_attn is not None:
             for cand in ("q_lin", "query", "q_proj", "c_attn", "qkv"):
@@ -131,11 +121,7 @@ class EATBlock(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
 
         cfg_hd = getattr(config, "head_dim", None) if config else None
-        self.head_dim = int(
-            cfg_hd
-            or kwargs.get("head_dim")
-            or (self.dim // max(1, self.num_heads))
-        )
+        self.head_dim = int(cfg_hd or kwargs.get("head_dim") or (self.dim // max(1, self.num_heads)))
 
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
@@ -143,11 +129,7 @@ class EATBlock(BaseAttention):
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
+            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
         )
         self.layer_idx = int(resolved_layer_id)
 
@@ -182,24 +164,29 @@ class EATBlock(BaseAttention):
         model_type = str(getattr(config, "model_type", "") if config else "").lower()
         is_dec = False
         if config is not None:
-            is_dec = bool(
-                getattr(config, "is_decoder", False)
-                or getattr(config, "is_causal", False)
-            )
+            is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
         if any(
             model_type.startswith(p)
             for p in (
-                "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
             )
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
         if source_attn is not None:
-            if getattr(source_attn, "is_decoder", False) or hasattr(
-                source_attn, "c_attn"
-            ):
+            if getattr(source_attn, "is_decoder", False) or hasattr(source_attn, "c_attn"):
                 is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
@@ -259,14 +246,10 @@ class EATBlock(BaseAttention):
             enable_pruning = False
             keep_ratio = None
             if config is not None:
-                enable_pruning = bool(
-                    getattr(config, "enable_pruning", False)
-                )
+                enable_pruning = bool(getattr(config, "enable_pruning", False))
                 keep_ratio = getattr(config, "keep_ratio", None)
             if comp_config is not None:
-                enable_pruning = bool(
-                    getattr(comp_config, "enable_pruning", enable_pruning)
-                )
+                enable_pruning = bool(getattr(comp_config, "enable_pruning", enable_pruning))
                 if getattr(comp_config, "keep_ratio", None) is not None:
                     keep_ratio = getattr(comp_config, "keep_ratio", None)
             if kwargs.get("enable_pruning", False):
@@ -275,9 +258,7 @@ class EATBlock(BaseAttention):
                 keep_ratio = kwargs["keep_ratio"]
 
             if enable_pruning and ProgressiveTokenPruning is not None:
-                effective_ratio = (
-                    float(keep_ratio) if keep_ratio is not None else 0.7
-                )
+                effective_ratio = float(keep_ratio) if keep_ratio is not None else 0.7
                 try:
                     self.prune_layer = ProgressiveTokenPruning(
                         config=config,
@@ -287,16 +268,10 @@ class EATBlock(BaseAttention):
                         layer_idx=self.layer_idx,
                     )
                 except Exception as e:
-                    logger.debug(
-                        "EAT: ProgressiveTokenPruning not created: %s", e
-                    )
+                    logger.debug("EAT: ProgressiveTokenPruning not created: %s", e)
                     self.prune_layer = None
 
-        self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None)
-            if source_attn is not None
-            else None
-        )
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config = comp_config
 
         self._orig_storage_bytes = 0
@@ -308,30 +283,39 @@ class EATBlock(BaseAttention):
     @property
     def query(self):
         return self.q_lin
+
     @property
     def key(self):
         return self.k_lin
+
     @property
     def value(self):
         return self.v_lin
+
     @property
     def dense(self):
         return self.out_lin
+
     @property
     def o_proj(self):
         return self.out_lin
+
     @property
     def out_proj(self):
         return self.out_lin
+
     @property
     def q_proj(self):
         return self.q_lin
+
     @property
     def k_proj(self):
         return self.k_lin
+
     @property
     def v_proj(self):
         return self.v_lin
+
     @property
     def c_proj(self):
         return self.out_lin
@@ -348,10 +332,7 @@ class EATBlock(BaseAttention):
             pass
 
         cls_name = pretrained_attn.__class__.__name__
-        has_out_lin = any(
-            hasattr(pretrained_attn, a)
-            for a in ("out_lin", "c_proj", "o_proj", "out_proj", "dense")
-        )
+        has_out_lin = any(hasattr(pretrained_attn, a) for a in ("out_lin", "c_proj", "o_proj", "out_proj", "dense"))
         is_nested = False
         if (
             (
@@ -369,20 +350,14 @@ class EATBlock(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        if (
-            hasattr(pretrained_attn, "rotary_emb")
-            and pretrained_attn.rotary_emb is not None
-        ):
+        if hasattr(pretrained_attn, "rotary_emb") and pretrained_attn.rotary_emb is not None:
             self.rotary_emb = pretrained_attn.rotary_emb
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -397,11 +372,7 @@ class EATBlock(BaseAttention):
 
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
-            if (
-                hasattr(c_attn_mod, "merge")
-                and callable(c_attn_mod.merge)
-                and not getattr(c_attn_mod, "merged", False)
-            ):
+            if hasattr(c_attn_mod, "merge") and callable(c_attn_mod.merge) and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -420,9 +391,7 @@ class EATBlock(BaseAttention):
                 if is_conv:
                     c_w = c_w.t().contiguous()
                 split = c_w.size(0) // 3
-                bias_mod = getattr(
-                    base_c, "bias", getattr(c_attn_mod, "bias", None)
-                )
+                bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
                 extracted["q"] = (
                     c_w[:split],
@@ -437,10 +406,7 @@ class EATBlock(BaseAttention):
                     c_b[2 * split :] if c_b is not None else None,
                 )
 
-            if (
-                hasattr(pretrained_attn, "c_proj")
-                and pretrained_attn.c_proj is not None
-            ):
+            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
                 c_proj_mod = pretrained_attn.c_proj
                 if (
                     hasattr(c_proj_mod, "merge")
@@ -452,9 +418,7 @@ class EATBlock(BaseAttention):
                     except Exception as e:
                         logger.debug("c_proj merge skipped: %s", e)
                 base_o = _unwrap(c_proj_mod)
-                o_w = getattr(
-                    base_o, "weight", getattr(c_proj_mod, "weight", None)
-                )
+                o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
                     is_conv_o = (
@@ -466,17 +430,13 @@ class EATBlock(BaseAttention):
                     )
                     if is_conv_o:
                         o_w = o_w.t().contiguous()
-                    bias_o = getattr(
-                        base_o, "bias", getattr(c_proj_mod, "bias", None)
-                    )
+                    bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
                     extracted["o"] = (
                         o_w,
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        elif hasattr(pretrained_attn, "self") and hasattr(
-            pretrained_attn.self, "query"
-        ):
+        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -486,9 +446,7 @@ class EATBlock(BaseAttention):
                         m.weight.data.clone(),
                         b.data.clone() if b is not None else None,
                     )
-            if hasattr(pretrained_attn, "output") and hasattr(
-                pretrained_attn.output, "dense"
-            ):
+            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
                 d = pretrained_attn.output.dense
                 b = getattr(d, "bias", None)
                 extracted["o"] = (
@@ -515,11 +473,7 @@ class EATBlock(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -535,11 +489,7 @@ class EATBlock(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"EATBlock copy_weights: missing {missing_after} from {pretrained_attn.__class__.__name__}"
@@ -567,37 +517,24 @@ class EATBlock(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-                if (
-                    w.shape != target.weight.shape
-                    and w.t().contiguous().shape == target.weight.shape
-                ):
+                if w.shape != target.weight.shape and w.t().contiguous().shape == target.weight.shape:
                     w = w.t().contiguous()
 
                 out_d = min(target.weight.size(0), w.size(0))
                 in_d = min(target.weight.size(1), w.size(1))
                 target.weight.data.zero_()
-                target.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        target.weight.device, target.weight.dtype
-                    )
-                )
+                target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
 
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
                     target.bias.data.zero_()
-                    target.bias.data[:mb].copy_(
-                        b[:mb].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
-                n = float(
-                    torch.linalg.norm(target.weight.data.float()).item()
-                )
+                n = float(torch.linalg.norm(target.weight.data.float()).item())
                 if n < 1e-4:
-                    logger.warning(
-                        "EAT: weight for '%s' near-zero norm (%.2e)", key, n
-                    )
+                    logger.warning("EAT: weight for '%s' near-zero norm (%.2e)", key, n)
 
                 if self.freeze_base:
                     target.freeze_base_weights()
@@ -611,9 +548,7 @@ class EATBlock(BaseAttention):
             pass
 
     @classmethod
-    def from_distilbert_pretrained(
-        cls, old_attn, model_config=None, **kwargs
-    ):
+    def from_distilbert_pretrained(cls, old_attn, model_config=None, **kwargs):
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def forward(
@@ -699,8 +634,7 @@ class EATBlock(BaseAttention):
 
             if is_causal:
                 causal = torch.tril(
-                    torch.ones(L, kv_len, device=hidden_states.device, dtype=torch.bool),
-                    diagonal=kv_len - L
+                    torch.ones(L, kv_len, device=hidden_states.device, dtype=torch.bool), diagonal=kv_len - L
                 )[None, None, :, :]
 
                 if attn_mask_combined is not None:
@@ -718,7 +652,9 @@ class EATBlock(BaseAttention):
             _is_causal = is_causal and (L == kv_len)
 
             _sdpa_out = F.scaled_dot_product_attention(
-                q.to(dtype_in), k.to(dtype_in), v.to(dtype_in),
+                q.to(dtype_in),
+                k.to(dtype_in),
+                v.to(dtype_in),
                 is_causal=_is_causal,
                 dropout_p=self.dropout.p if self.training else 0.0,
             )
@@ -744,9 +680,7 @@ class EATBlock(BaseAttention):
                 hm = hm.view(1, -1, 1, 1)
             elif hm.dim() == 2:
                 if hm.shape[-1] != self.num_heads:
-                    raise ValueError(
-                        f"head_mask 2D must be [B, H] with H={self.num_heads}, got {hm.shape}"
-                    )
+                    raise ValueError(f"head_mask 2D must be [B, H] with H={self.num_heads}, got {hm.shape}")
                 hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
             elif hm.dim() == 3:
                 hm = hm.unsqueeze(1)
@@ -764,6 +698,7 @@ class EATBlock(BaseAttention):
         if context.is_cuda and hasattr(self.out_lin, "weight"):
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 out = self.out_lin(context) if not self.is_nested_encoder else context
             except Exception:
                 out = context if self.is_nested_encoder else self.out_lin(context)
@@ -788,6 +723,7 @@ class EATBlock(BaseAttention):
 
         return outputs
 
+
 def inject_eat(
     layer: Any = None,
     model: Any = None,
@@ -809,11 +745,7 @@ def inject_eat(
     if target is None:
         return None
 
-    cfg = (
-        model_config
-        if model_config is not None
-        else getattr(target, "config", None)
-    )
+    cfg = model_config if model_config is not None else getattr(target, "config", None)
 
     layer_list = None
     for path in (
@@ -865,25 +797,17 @@ def inject_eat(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-    if src_attn is not None and (
-        isinstance(src_attn, EATBlock)
-        or "EATBlock" in src_attn.__class__.__name__
-    ):
+    if src_attn is not None and (isinstance(src_attn, EATBlock) or "EATBlock" in src_attn.__class__.__name__):
         return None
     if src_attn is not None and (
-        "DeltaNet" in src_attn.__class__.__name__
-        or "LinearAttention" in src_attn.__class__.__name__
+        "DeltaNet" in src_attn.__class__.__name__ or "LinearAttention" in src_attn.__class__.__name__
     ):
         return None
 
     try:
         if model_config is None and hasattr(target, "config"):
             model_config = target.config
-        if (
-            model_config is None
-            and src_attn is not None
-            and hasattr(src_attn, "config")
-        ):
+        if model_config is None and src_attn is not None and hasattr(src_attn, "config"):
             model_config = src_attn.config
 
         new_attn = EATBlock(

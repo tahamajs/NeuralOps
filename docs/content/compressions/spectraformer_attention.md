@@ -1,6 +1,6 @@
 # Spectraformer: Random Feature Linearisation with Flexible Kernel Approximation
 
-**Registered as `spectraformer`**  
+**Registered as `spectraformer`**
 *A linear‑time attention mechanism that replaces the softmax kernel with a random feature map followed by ReLU activation, enabling O(N) complexity via the associative property.*
 
 ---
@@ -187,4 +187,3 @@ The empirical evaluation of `spectraformer_attention` across standard sequence l
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

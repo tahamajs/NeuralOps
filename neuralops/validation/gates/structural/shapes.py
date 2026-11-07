@@ -90,7 +90,9 @@ class ShapesMatchGate(Gate):
                     severity=self.severity,
                     measured_value=list(test_tensor.shape),
                     threshold=list(base_tensor.shape),
-                    message="Shapes match" if matched else f"Shape mismatch: {test_tensor.shape} vs {base_tensor.shape}",
+                    message=(
+                        "Shapes match" if matched else f"Shape mismatch: {test_tensor.shape} vs {base_tensor.shape}"
+                    ),
                     duration_seconds=time.perf_counter() - t0,
                 )
 

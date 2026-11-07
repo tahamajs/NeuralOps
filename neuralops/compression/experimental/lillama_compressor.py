@@ -12,8 +12,6 @@ Compresses transformer projections via cross-covariance SVD weighted by activati
 """
 
 from __future__ import annotations
-from neuralops.core.common import _get_device, _is_conv1d
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -22,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get, _get_device, _is_conv1d
 from neuralops.core.pruning_utils import get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -60,6 +59,7 @@ class LiLLaMADistiller(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
     category: str = "weight_rewriting"
 
@@ -95,14 +95,10 @@ class LiLLaMADistiller(BaseCompressor):
                 "skip_should_compress_filter",
                 skip_should_compress_filter,
             )
-            max_calibration_batches = _cfg_get(
-                cfg, "max_calibration_batches", max_calibration_batches
-            )
+            max_calibration_batches = _cfg_get(cfg, "max_calibration_batches", max_calibration_batches)
 
         self.tokenizer = (
-            tokenizer
-            or getattr(model, "tokenizer", None)
-            or getattr(getattr(model, "config", None), "tokenizer", None)
+            tokenizer or getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
         )
         self.rank = max(1, int(rank))
         self.calibration_texts = calibration_texts
@@ -165,9 +161,7 @@ class LiLLaMADistiller(BaseCompressor):
 
         target_mod = getattr(module, "base_layer", module)
         cls_lower = target_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(target_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(target_mod, "nf")
-        )
+        is_linear_like = isinstance(target_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(target_mod, "nf")
         if not is_linear_like:
             if _debug:
                 logger.info(f"  [skip] {name}: not linear-like")
@@ -247,11 +241,7 @@ class LiLLaMADistiller(BaseCompressor):
                 inp = inputs[0].detach() if inputs and isinstance(inputs[0], torch.Tensor) else None
                 if isinstance(output, torch.Tensor):
                     out = output.detach()
-                elif (
-                    isinstance(output, (tuple, list))
-                    and output
-                    and isinstance(output[0], torch.Tensor)
-                ):
+                elif isinstance(output, (tuple, list)) and output and isinstance(output[0], torch.Tensor):
                     out = output[0].detach()
                 else:
                     out = None
@@ -264,9 +254,7 @@ class LiLLaMADistiller(BaseCompressor):
             return hook
 
         target_list = [
-            (name, module)
-            for name, module in self.model.named_modules()
-            if self._is_target_module(name, module)
+            (name, module) for name, module in self.model.named_modules() if self._is_target_module(name, module)
         ]
         if not target_list:
             return {}
@@ -297,10 +285,7 @@ class LiLLaMADistiller(BaseCompressor):
                         elif isinstance(batch, torch.Tensor):
                             self.model(batch.to(self.target_device))
                         elif isinstance(batch, (list, tuple)):
-                            batch = [
-                                (v.to(self.target_device) if isinstance(v, torch.Tensor) else v)
-                                for v in batch
-                            ]
+                            batch = [(v.to(self.target_device) if isinstance(v, torch.Tensor) else v) for v in batch]
                             self.model(*batch)
                     except Exception as e:
                         logger.debug("Calibration batch %d failed: %s", i, e)
@@ -381,9 +366,7 @@ class LiLLaMADistiller(BaseCompressor):
         logger.info("LiLLaMA: %d target activation sets collected.", len(activations_map))
 
         target_list = [
-            (name, module)
-            for name, module in self.model.named_modules()
-            if self._is_target_module(name, module)
+            (name, module) for name, module in self.model.named_modules() if self._is_target_module(name, module)
         ]
         if not target_list:
             logger.warning("LiLLaMA: no compressible layers found. Running diagnostic...")
@@ -437,9 +420,7 @@ class LiLLaMADistiller(BaseCompressor):
                     inp_flat = inp.reshape(-1, inp.shape[-1]).float()
                     out_flat = out.reshape(-1, out.shape[-1]).float()
                     if inp_flat.shape[-1] == d_in and out_flat.shape[-1] == d_out:
-                        C = torch.matmul(out_flat.t().contiguous(), inp_flat) / max(
-                            len(inp_flat), 1
-                        )
+                        C = torch.matmul(out_flat.t().contiguous(), inp_flat) / max(len(inp_flat), 1)
                         W_new, r_used = self._factorize(C, self.rank)
                         used_cross_cov = True
                     else:
@@ -460,11 +441,7 @@ class LiLLaMADistiller(BaseCompressor):
                     rel_err,
                     name,
                     self.max_error,
-                    (
-                        "Keeping original."
-                        if self.fallback_to_original
-                        else "Proceeding with distilled weights."
-                    ),
+                    ("Keeping original." if self.fallback_to_original else "Proceeding with distilled weights."),
                 )
                 if self.fallback_to_original:
                     self.fallback_layers.append(name)
@@ -530,9 +507,7 @@ class LiLLaMADistiller(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        compressed_errs = [
-            self.layer_errors[n] for n in self.compressed_layers if n in self.layer_errors
-        ]
+        compressed_errs = [self.layer_errors[n] for n in self.compressed_layers if n in self.layer_errors]
         avg_err = sum(compressed_errs) / len(compressed_errs) if compressed_errs else 0.0
         eff_ratio = total_comp_params / max(1, total_orig_params)
 
@@ -629,9 +604,7 @@ def lillama_factory(
     )
     min_layer_dim = _cfg_get(comp_config, "min_layer_dim", kwargs.pop("min_layer_dim", 8))
     tokenizer = (
-        kwargs.pop("tokenizer", None)
-        or getattr(model, "tokenizer", None)
-        or _cfg_get(comp_config, "tokenizer", None)
+        kwargs.pop("tokenizer", None) or getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None)
     )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 

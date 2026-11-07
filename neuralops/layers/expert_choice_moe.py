@@ -8,4 +8,5 @@
 """
 Compatibility alias for neuralops.layers.sparse.expert_choice_moe.
 """
+
 from neuralops.layers.sparse.expert_choice_moe import *  # noqa: F401, F403

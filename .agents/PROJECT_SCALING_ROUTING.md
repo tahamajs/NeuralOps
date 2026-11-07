@@ -166,4 +166,3 @@ docs/
 ```
 
 Required evidence: immutable run ID, source revision, exact scale metadata, raw log path, and no overwritten prior result.
-

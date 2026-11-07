@@ -12,13 +12,6 @@ High-throughput accelerated attention kernel utilizing block-sparse tiling and h
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.utils.rope import _rotate_half
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -28,15 +21,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.utils.rope import _rotate_half
 
 try:
-    from neuralops.core.triton_sparse_attn import (
-        triton_block_sparse_attention,
-        HAS_TRITON,
-    )
+    from neuralops.core.triton_sparse_attn import HAS_TRITON, triton_block_sparse_attention
 except Exception:
     triton_block_sparse_attention = None
     HAS_TRITON = False
@@ -80,9 +73,7 @@ def _extract_valid_token_mask(
             if (m < -1.0).any():
                 return m >= -1.0
             if (m <= 0.0).all():
-                return torch.ones(
-                    (batch_size, seq_len), dtype=torch.bool, device=device
-                )
+                return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
             return m > 0.5
         return m > 0
 
@@ -167,8 +158,18 @@ class XAttention(BaseAttention):
 
         mt = str(_cfg_get(config, "model_type", "") or "").lower()
         _dec_pfx = (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
         )
         is_dec = (
             bool(_cfg_get(config, "is_decoder", False))
@@ -178,36 +179,26 @@ class XAttention(BaseAttention):
             or kwargs.get("is_causal", False)
         )
         if pretrained_attn is not None:
-            if getattr(pretrained_attn, "is_decoder", False) or hasattr(
-                pretrained_attn, "c_attn"
-            ):
+            if getattr(pretrained_attn, "is_decoder", False) or hasattr(pretrained_attn, "c_attn"):
                 is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_nested_encoder: bool = False
-        self.layer_idx = int(
-            layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0)
-        )
+        self.layer_idx = int(layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0))
 
         self.block_size: int = max(
             0,
-            int(
-                kwargs.get("block_size", _cfg_get(config, "xattn_block_size", block_size))
-            ),
+            int(kwargs.get("block_size", _cfg_get(config, "xattn_block_size", block_size))),
         )
         raw_keep = kwargs.get("keep_ratio", _cfg_get(config, "xattn_keep_ratio", None))
         if raw_keep is not None:
             self.keep_ratio: float = float(raw_keep)
             self.sparsity: float = 1.0 - self.keep_ratio
         else:
-            self.sparsity = float(
-                kwargs.get("sparsity", _cfg_get(config, "xattn_sparsity", sparsity))
-            )
+            self.sparsity = float(kwargs.get("sparsity", _cfg_get(config, "xattn_sparsity", sparsity)))
             self.keep_ratio = 1.0 - self.sparsity
         self.keep_ratio = max(0.0, min(1.0, self.keep_ratio))
 
-        self.lora_rank = int(
-            kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
-        )
+        self.lora_rank = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
 
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and pretrained_attn is not None:
@@ -251,9 +242,7 @@ class XAttention(BaseAttention):
             dtype=target_dtype,
         )
 
-        self.lora_output_scale = nn.Parameter(
-            torch.ones(1, dtype=target_dtype)
-        )
+        self.lora_output_scale = nn.Parameter(torch.ones(1, dtype=target_dtype))
 
         dropout_p = _cfg_get(
             config,
@@ -292,30 +281,39 @@ class XAttention(BaseAttention):
     @property
     def W_q(self):
         return self.q_proj
+
     @property
     def W_k(self):
         return self.k_proj
+
     @property
     def W_v(self):
         return self.v_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
@@ -346,18 +344,14 @@ class XAttention(BaseAttention):
         except Exception as e:
             logger.debug("UniversalAdapter init failed: %s", e)
 
-        if hasattr(src, "c_attn") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             c_attn = getattr(src.c_attn, "base_layer", src.c_attn)
             weight = c_attn.weight.data
             bias = getattr(c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
 
             is_conv1d = "Conv1D" in c_attn.__class__.__name__ or hasattr(c_attn, "nf")
-            if is_conv1d or (
-                weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size
-            ):
+            if is_conv1d or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
                 weight = weight.t().contiguous()
 
             split_size = weight.shape[0] // 3
@@ -378,18 +372,12 @@ class XAttention(BaseAttention):
             c_proj = getattr(src.c_proj, "base_layer", src.c_proj)
             w_o = c_proj.weight.data
             is_conv1d = "Conv1D" in c_proj.__class__.__name__ or hasattr(c_proj, "nf")
-            if is_conv1d or (
-                w_o.dim() == 2
-                and w_o.shape[0] != self.hidden_size
-                and w_o.shape[1] == self.hidden_size
-            ):
+            if is_conv1d or (w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size):
                 w_o = w_o.t().contiguous()
             b_o = getattr(c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        if hasattr(src, "self") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = src.self
             for proj_key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 if hasattr(s, sub):
@@ -402,11 +390,7 @@ class XAttention(BaseAttention):
                             b.data if b is not None else None,
                         )
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = getattr(src.output.dense, "base_layer", src.output.dense)
             b = getattr(dense, "bias", None)
             extracted["o"] = (dense.weight.data, b.data if b is not None else None)
@@ -435,8 +419,15 @@ class XAttention(BaseAttention):
         has_out_proj = any(
             hasattr(src, attr)
             for attr in (
-                "dense", "out_proj", "c_proj", "out_lin", "o_proj",
-                "wo", "o", "proj", "out",
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+                "out",
             )
         )
         self.is_nested_encoder = (
@@ -453,14 +444,8 @@ class XAttention(BaseAttention):
                 return w, b
             if w.shape[0] > target_size and w.shape[0] % target_size == 0:
                 rep = w.shape[0] // target_size
-                w_pooled = (
-                    w.view(target_size, rep, -1).mean(dim=1).contiguous()
-                )
-                b_pooled = (
-                    b.view(target_size, rep).mean(dim=1).contiguous()
-                    if b is not None
-                    else None
-                )
+                w_pooled = w.view(target_size, rep, -1).mean(dim=1).contiguous()
+                b_pooled = b.view(target_size, rep).mean(dim=1).contiguous() if b is not None else None
                 return w_pooled, b_pooled
             return w[:target_size, :], (b[:target_size] if b is not None else None)
 
@@ -487,9 +472,7 @@ class XAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                in_dim = (
-                    self.all_head_size if proj_key == "o" else self.hidden_size
-                )
+                in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
                 w = _orient(w, in_dim)
 
                 if proj_key in ("k", "v"):
@@ -517,9 +500,7 @@ class XAttention(BaseAttention):
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
-                w_norm = float(
-                    torch.linalg.norm(target.weight.data.float()).item()
-                )
+                w_norm = float(torch.linalg.norm(target.weight.data.float()).item())
                 if w_norm < 1e-4:
                     logger.warning(
                         "XAttention copy_weights: '%s' near-zero norm (%.2e)",
@@ -548,9 +529,7 @@ class XAttention(BaseAttention):
     ) -> tuple[torch.Tensor, Any]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         if key_value_states is not None:
-            raise NotImplementedError(
-                "XAttention does not support cross-attention."
-            )
+            raise NotImplementedError("XAttention does not support cross-attention.")
 
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
@@ -566,51 +545,27 @@ class XAttention(BaseAttention):
 
         if past_key_value is not None and past_key_value is not False:
             if isinstance(past_key_value, (tuple, list)):
-                if len(past_key_value) >= 2 and isinstance(
-                    past_key_value[0], torch.Tensor
-                ):
+                if len(past_key_value) >= 2 and isinstance(past_key_value[0], torch.Tensor):
                     past_k, past_v = past_key_value[0], past_key_value[1]
                     past_len = past_k.shape[-2] if past_k is not None else 0
-            elif hasattr(past_key_value, "key_cache") and hasattr(
-                past_key_value, "value_cache"
-            ):
+            elif hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
                 if len(past_key_value.key_cache) > self.layer_idx:
                     past_k = past_key_value.key_cache[self.layer_idx]
                     past_v = past_key_value.value_cache[self.layer_idx]
                     past_len = past_k.shape[-2] if past_k is not None else 0
 
-        Q = (
-            self.q_proj(hidden_states)
-            .view(B, N_q, H, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        K_new = (
-            self.k_proj(hidden_states)
-            .view(B, N_q, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V_new = (
-            self.v_proj(hidden_states)
-            .view(B, N_q, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
+        K_new = self.k_proj(hidden_states).view(B, N_q, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V_new = self.v_proj(hidden_states).view(B, N_q, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
-        pos_emb = (
-            kwargs.get("position_embeddings")
-            if "position_embeddings" in kwargs
-            else None
-        )
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, (tuple, list))
-            and len(pos_emb) >= 2
-        ):
+        pos_emb = kwargs.get("position_embeddings") if "position_embeddings" in kwargs else None
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K_new = apply_rotary_pos_emb(
-                Q, K_new, cos, sin,
+                Q,
+                K_new,
+                cos,
+                sin,
                 position_ids=kwargs.get("position_ids"),
                 past_len=past_len,
             )
@@ -618,16 +573,13 @@ class XAttention(BaseAttention):
             try:
                 position_ids = kwargs.get("position_ids")
                 if position_ids is None and past_len > 0:
-                    position_ids = (
-                        torch.arange(
-                            past_len, past_len + N_q, device=device
-                        )
-                        .unsqueeze(0)
-                        .expand(B, -1)
-                    )
+                    position_ids = torch.arange(past_len, past_len + N_q, device=device).unsqueeze(0).expand(B, -1)
                 cos, sin = self.rotary_emb(K_new, seq_len=past_len + N_q)
                 Q, K_new = apply_rotary_pos_emb(
-                    Q, K_new, cos, sin,
+                    Q,
+                    K_new,
+                    cos,
+                    sin,
                     position_ids=position_ids,
                     past_len=past_len,
                 )
@@ -641,9 +593,7 @@ class XAttention(BaseAttention):
             K_cat, V_cat = K_new, V_new
 
         new_past_key_value: Any = None
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         if use_cache:
             if hasattr(past_key_value, "update") and past_key_value is not None:
                 try:
@@ -674,17 +624,13 @@ class XAttention(BaseAttention):
             or N_q == 1
         )
 
-        valid_m = _extract_valid_token_mask(
-            attention_mask, B, N_k, device
-        ) if attention_mask is not None else None
+        valid_m = _extract_valid_token_mask(attention_mask, B, N_k, device) if attention_mask is not None else None
 
         if use_dense:
             scores = torch.matmul(Q, K_full.transpose(-2, -1).contiguous()) * scale
 
             if self.is_decoder and N_q > 1:
-                q_pos = (
-                    past_len + torch.arange(N_q, device=device)
-                ).unsqueeze(1)
+                q_pos = (past_len + torch.arange(N_q, device=device)).unsqueeze(1)
                 k_pos = torch.arange(N_k, device=device).unsqueeze(0)
                 causal = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
                 scores = scores.masked_fill(~causal, -1e4)
@@ -693,9 +639,7 @@ class XAttention(BaseAttention):
                 if attention_mask.dim() == 4:
                     scores = scores + attention_mask.to(scores.dtype)
                 elif valid_m is not None:
-                    scores = scores.masked_fill(
-                        ~valid_m.unsqueeze(1).unsqueeze(2), -1e4
-                    )
+                    scores = scores.masked_fill(~valid_m.unsqueeze(1).unsqueeze(2), -1e4)
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             attn = F.softmax(scores.float(), dim=-1).to(dtype)
@@ -723,30 +667,22 @@ class XAttention(BaseAttention):
             k_valid[:, :, :N_k, :] = 1.0
 
             if valid_m is not None:
-                k_valid[:, :, :N_k, 0] = (
-                    k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(1).to(K_full.dtype)
-                )
+                k_valid[:, :, :N_k, 0] = k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(1).to(K_full.dtype)
 
             q_valid_blk = q_valid.view(B, 1, num_q_blocks, bsz, 1)
-            Q_blocks = (
-                Q_pad.view(B, H, num_q_blocks, bsz, d) * q_valid_blk
-            ).sum(dim=3) / q_valid_blk.sum(dim=3).clamp(min=1.0)
-
-            k_valid_blk = k_valid.view(B, 1, num_k_blocks, bsz, 1)
-            K_blocks = (
-                K_pad.view(B, H, num_k_blocks, bsz, d) * k_valid_blk
-            ).sum(dim=3) / k_valid_blk.sum(dim=3).clamp(min=1.0)
-
-            coarse_scores = (
-                torch.matmul(Q_blocks, K_blocks.transpose(-1, -2).contiguous())
-                * scale
+            Q_blocks = (Q_pad.view(B, H, num_q_blocks, bsz, d) * q_valid_blk).sum(dim=3) / q_valid_blk.sum(dim=3).clamp(
+                min=1.0
             )
 
+            k_valid_blk = k_valid.view(B, 1, num_k_blocks, bsz, 1)
+            K_blocks = (K_pad.view(B, H, num_k_blocks, bsz, d) * k_valid_blk).sum(dim=3) / k_valid_blk.sum(dim=3).clamp(
+                min=1.0
+            )
+
+            coarse_scores = torch.matmul(Q_blocks, K_blocks.transpose(-1, -2).contiguous()) * scale
+
             if self.is_decoder:
-                q_blk = (
-                    torch.arange(num_q_blocks, device=device).unsqueeze(1)
-                    + (num_k_blocks - num_q_blocks)
-                )
+                q_blk = torch.arange(num_q_blocks, device=device).unsqueeze(1) + (num_k_blocks - num_q_blocks)
                 k_blk = torch.arange(num_k_blocks, device=device).unsqueeze(0)
                 causal_blk = (k_blk <= q_blk).unsqueeze(0).unsqueeze(0)
                 coarse_scores = coarse_scores.masked_fill(~causal_blk, -1e4)
@@ -759,9 +695,7 @@ class XAttention(BaseAttention):
             )
             _, topk_idx = torch.topk(coarse_scores, k=k_blocks_keep, dim=-1)
 
-            block_mask = torch.zeros(
-                (B, H, num_q_blocks, num_k_blocks), device=device, dtype=torch.bool
-            )
+            block_mask = torch.zeros((B, H, num_q_blocks, num_k_blocks), device=device, dtype=torch.bool)
             block_mask.scatter_(-1, topk_idx, True)
 
             if self.is_decoder and causal_blk is not None:
@@ -771,12 +705,8 @@ class XAttention(BaseAttention):
                 block_mask[:, :, diag_idx, diag_idx] = True
 
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
-            if (
-                not FORCE_PYTORCH_FALLBACK
-                and HAS_TRITON
-                and Q.is_cuda
-                and triton_block_sparse_attention is not None
-            ):
+
+            if not FORCE_PYTORCH_FALLBACK and HAS_TRITON and Q.is_cuda and triton_block_sparse_attention is not None:
                 try:
                     token_mask = valid_m if valid_m is not None else None
                     context = triton_block_sparse_attention(
@@ -790,6 +720,7 @@ class XAttention(BaseAttention):
                     )
                 except (RuntimeError, NotImplementedError, ValueError) as e:
                     from neuralops.utils.logging_config import warn_once
+
                     warn_once(
                         "xattention_triton_sparse_fallback",
                         "Triton block-sparse attention failed (%s); falling back to PyTorch.",
@@ -811,20 +742,12 @@ class XAttention(BaseAttention):
                 else:
                     scores_p = scores
 
-                scores_p = scores_p.view(
-                    B, H, num_q_blocks, bsz, num_k_blocks, bsz
-                )
-                scores_p = scores_p.masked_fill(
-                    ~block_mask.unsqueeze(3).unsqueeze(5), -1e4
-                )
-                scores = scores_p.reshape(B, H, total_q, total_k)[
-                    :, :, :N_q, :N_k
-                ]
+                scores_p = scores_p.view(B, H, num_q_blocks, bsz, num_k_blocks, bsz)
+                scores_p = scores_p.masked_fill(~block_mask.unsqueeze(3).unsqueeze(5), -1e4)
+                scores = scores_p.reshape(B, H, total_q, total_k)[:, :, :N_q, :N_k]
 
                 if self.is_decoder:
-                    q_pos = (
-                        past_len + torch.arange(N_q, device=device)
-                    ).unsqueeze(1)
+                    q_pos = (past_len + torch.arange(N_q, device=device)).unsqueeze(1)
                     k_pos = torch.arange(N_k, device=device).unsqueeze(0)
                     causal = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
                     scores = scores.masked_fill(~causal, -1e4)
@@ -833,13 +756,9 @@ class XAttention(BaseAttention):
                     if attention_mask.dim() == 4:
                         scores = scores + attention_mask.to(scores.dtype)
                     elif valid_m is not None:
-                        scores = scores.masked_fill(
-                            ~valid_m.unsqueeze(1).unsqueeze(2), -1e4
-                        )
+                        scores = scores.masked_fill(~valid_m.unsqueeze(1).unsqueeze(2), -1e4)
 
-                scores = torch.nan_to_num(
-                    scores, nan=-1e4, posinf=1e4, neginf=-1e4
-                )
+                scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
                 attn = F.softmax(scores.float(), dim=-1).to(dtype)
                 attn = self.dropout(attn)
                 context = torch.matmul(attn, V_full)
@@ -855,11 +774,7 @@ class XAttention(BaseAttention):
             attn = attn * hm
             context = torch.matmul(attn, V_full)
 
-        context = (
-            context.transpose(1, 2)
-            .contiguous()
-            .view(B, N_q, self.all_head_size)
-        )
+        context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
         if self.is_nested_encoder:
             output = context * self.lora_output_scale
@@ -873,12 +788,8 @@ class XAttention(BaseAttention):
             output = output * v_m.unsqueeze(-1).to(output.dtype)
 
         if output_attentions:
-            return output.to(dtype), (
-                new_past_key_value if self.is_decoder else None
-            ), attn
-        return output.to(dtype), (
-            new_past_key_value if self.is_decoder else None
-        )
+            return output.to(dtype), (new_past_key_value if self.is_decoder else None), attn
+        return output.to(dtype), (new_past_key_value if self.is_decoder else None)
 
 
 def inject_xattention(
@@ -902,11 +813,7 @@ def inject_xattention(
     if target is None:
         return None
 
-    cfg = (
-        model_config
-        if model_config is not None
-        else getattr(target, "config", None)
-    )
+    cfg = model_config if model_config is not None else getattr(target, "config", None)
 
     layer_list = None
     for path in (
@@ -978,20 +885,17 @@ def inject_xattention(
         or getattr(src_attn, "embed_dim", None)
         or (
             src_attn.q_proj.in_features
-            if hasattr(src_attn, "q_proj")
-            and hasattr(src_attn.q_proj, "in_features")
+            if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
             else None
         )
         or (
             src_attn.q_lin.in_features
-            if hasattr(src_attn, "q_lin")
-            and hasattr(src_attn.q_lin, "in_features")
+            if hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features")
             else None
         )
         or (
             src_attn.query.in_features
-            if hasattr(src_attn, "query")
-            and hasattr(src_attn.query, "in_features")
+            if hasattr(src_attn, "query") and hasattr(src_attn.query, "in_features")
             else None
         )
         or 768
@@ -1011,19 +915,13 @@ def inject_xattention(
         cfg = types.SimpleNamespace(
             hidden_size=hidden_size,
             num_attention_heads=num_heads,
-            num_key_value_heads=getattr(
-                src_attn, "num_key_value_heads", num_heads
-            ),
+            num_key_value_heads=getattr(src_attn, "num_key_value_heads", num_heads),
             is_decoder=getattr(src_attn, "is_decoder", False),
         )
 
-    lora_rank = kwargs.pop(
-        "lora_rank", _cfg_get(comp_config, "lora_rank", 16)
-    )
+    lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
     rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
-    block_size = kwargs.pop(
-        "block_size", _cfg_get(comp_config, "block_size", 32)
-    )
+    block_size = kwargs.pop("block_size", _cfg_get(comp_config, "block_size", 32))
     sparsity = kwargs.pop("sparsity", _cfg_get(comp_config, "sparsity", 0.5))
 
     try:
@@ -1072,9 +970,7 @@ def inject_xattention(
         return new_attn
 
     except Exception as e:
-        logger.exception(
-            "inject_xattention failed at layer %d: %s", layer_idx, e
-        )
+        logger.exception("inject_xattention failed at layer %d: %s", layer_idx, e)
         return None
 
 

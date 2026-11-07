@@ -12,12 +12,6 @@ Fuses differential attention mechanisms with state space sequence models and rot
 """
 
 from __future__ import annotations
-from neuralops.core.common import _detect_decoder, _env_flag
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -27,9 +21,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _detect_decoder, _env_flag
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -96,9 +92,7 @@ def _uses_rope(config: Any, old_attn: nn.Module | None) -> bool:
     return False
 
 
-@ATTENTION_REGISTRY.register(
-    "hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class HymbaTransXBlock(BaseAttention):
     r"""HymbaTransX: Hybrid Differential Transformer & State Space Model Block."""
 
@@ -145,9 +139,7 @@ class HymbaTransXBlock(BaseAttention):
                         getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
                     ),
                 )
-                hidden_size = (
-                    getattr(out_layer, "out_features", None) if out_layer is not None else None
-                )
+                hidden_size = getattr(out_layer, "out_features", None) if out_layer is not None else None
         hidden_size = int(hidden_size or 768)
 
         if num_heads is None and config is not None:
@@ -167,28 +159,18 @@ class HymbaTransXBlock(BaseAttention):
         self.dim = hidden_size
         self.hidden_size = hidden_size
         self.num_heads = num_heads
-        cfg_kv = (
-            getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
-            if config
-            else None
-        )
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None)) if config else None
         self.num_kv_heads = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
 
-        cfg_head_dim = (
-            getattr(config, "head_dim", kwargs.get("head_dim"))
-            if config
-            else kwargs.get("head_dim")
-        )
+        cfg_head_dim = getattr(config, "head_dim", kwargs.get("head_dim")) if config else kwargs.get("head_dim")
         if cfg_head_dim is None and source_attn is not None:
             for attr in ("q_proj", "query", "q_lin", "W_q1"):
                 mod = getattr(source_attn, attr, None)
                 if mod is not None and hasattr(mod, "weight"):
                     cfg_head_dim = mod.weight.shape[0] // max(1, self.num_heads)
                     break
-        self.head_dim = (
-            int(cfg_head_dim) if cfg_head_dim is not None else self.dim // max(1, self.num_heads)
-        )
+        self.head_dim = int(cfg_head_dim) if cfg_head_dim is not None else self.dim // max(1, self.num_heads)
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
@@ -286,9 +268,7 @@ class HymbaTransXBlock(BaseAttention):
                 try:
                     from neuralops.layers.ssm.simple_ssm import SimpleSSM
 
-                    self.mamba = SimpleSSM(
-                        d_model=self.dim, config=config, is_decoder=self.is_decoder
-                    )
+                    self.mamba = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
                 except ImportError:
                     logger.warning("HymbaTransX: SimpleSSM not available; SSM branch disabled.")
         if self.mamba is None:
@@ -297,9 +277,7 @@ class HymbaTransXBlock(BaseAttention):
         self.alpha = nn.Parameter(torch.tensor(4.0))
 
         dropout_p = float(
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -388,11 +366,7 @@ class HymbaTransXBlock(BaseAttention):
                 c_w = c_w.data.clone()
                 cls_c = c_attn_mod.__class__.__name__
                 base_cls_c = base_c.__class__.__name__
-                if (
-                    "Conv1D" in cls_c
-                    or "Conv1D" in base_cls_c
-                    or (c_w.ndim == 2 and c_w.shape[1] == 3 * self.dim)
-                ):
+                if "Conv1D" in cls_c or "Conv1D" in base_cls_c or (c_w.ndim == 2 and c_w.shape[1] == 3 * self.dim):
                     c_w = c_w.t().contiguous()
                 split = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
@@ -464,11 +438,7 @@ class HymbaTransXBlock(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -506,21 +476,15 @@ class HymbaTransXBlock(BaseAttention):
 
             wq = _adapt(w_q, self.W_q1.weight.shape)
             if wq is not None:
-                self.W_q1.weight.data.copy_(
-                    wq.to(device=self.W_q1.weight.device, dtype=self.W_q1.weight.dtype)
-                )
+                self.W_q1.weight.data.copy_(wq.to(device=self.W_q1.weight.device, dtype=self.W_q1.weight.dtype))
 
             wk = _adapt(w_k, self.W_k1.weight.shape)
             if wk is not None:
-                self.W_k1.weight.data.copy_(
-                    wk.to(device=self.W_k1.weight.device, dtype=self.W_k1.weight.dtype)
-                )
+                self.W_k1.weight.data.copy_(wk.to(device=self.W_k1.weight.device, dtype=self.W_k1.weight.dtype))
 
             wv = _adapt(w_v, self.W_v.weight.shape)
             if wv is not None:
-                self.W_v.weight.data.copy_(
-                    wv.to(device=self.W_v.weight.device, dtype=self.W_v.weight.dtype)
-                )
+                self.W_v.weight.data.copy_(wv.to(device=self.W_v.weight.device, dtype=self.W_v.weight.dtype))
 
             if w_o is not None:
                 wo = _adapt(w_o, self.out_proj.weight.shape)
@@ -600,7 +564,12 @@ class HymbaTransXBlock(BaseAttention):
         if x is None:
             raise ValueError("HymbaTransXBlock.forward: no input tensor provided.")
 
-        is_causal = bool(kwargs.get("is_causal", False) or kwargs.get("causal", False) or getattr(self, "is_decoder", False) or getattr(self, "is_causal", False))
+        is_causal = bool(
+            kwargs.get("is_causal", False)
+            or kwargs.get("causal", False)
+            or getattr(self, "is_decoder", False)
+            or getattr(self, "is_causal", False)
+        )
         if is_causal:
             self.is_decoder = True
             self.is_causal = True
@@ -706,12 +675,7 @@ class HymbaTransXBlock(BaseAttention):
                 head_mask = head_mask[:, :, :1].unsqueeze(-1)
             diff_attn = diff_attn * head_mask.to(diff_attn.dtype)
 
-        A_out = (
-            torch.matmul(diff_attn, v_cat)
-            .transpose(1, 2)
-            .contiguous()
-            .view(B, L, self.all_head_size)
-        )
+        A_out = torch.matmul(diff_attn, v_cat).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         M_out = None
         if self.mamba is not None:
@@ -742,9 +706,7 @@ class HymbaTransXBlock(BaseAttention):
 
         from neuralops.ops.triton.sliding_window import fused_hymba_meta_token_mix_triton
 
-        combined = fused_hymba_meta_token_mix_triton(
-            A_out, M_out if self.mamba is not None else None, self.alpha
-        )
+        combined = fused_hymba_meta_token_mix_triton(A_out, M_out if self.mamba is not None else None, self.alpha)
 
         if self.is_nested_encoder:
             out = combined

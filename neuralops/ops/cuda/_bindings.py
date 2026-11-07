@@ -65,11 +65,13 @@ if os.path.exists("/share/apps/gcc/gcc-8.2.0/bin/g++"):
 
 import sys
 import types
+
 try:
     import pkg_resources  # noqa: F401
 except ImportError:
     try:
         import packaging
+
         _pr = types.ModuleType("pkg_resources")
         _pr.packaging = packaging
         sys.modules["pkg_resources"] = _pr
@@ -78,6 +80,7 @@ except ImportError:
 
 import torch
 import torch.utils.cpp_extension as _cpp_ext
+
 
 def _enforce_build_env(kwargs: dict[str, Any]) -> None:
     hb = os.path.expanduser("~/bin")
@@ -90,17 +93,24 @@ def _enforce_build_env(kwargs: dict[str, Any]) -> None:
         if b_flag not in extra_ldflags:
             kwargs["extra_ldflags"] = list(extra_ldflags) + [b_flag]
 
+
 _orig_load_inline = _cpp_ext.load_inline
+
+
 def load_inline(*args: Any, **kwargs: Any) -> Any:
     _enforce_build_env(kwargs)
     return _orig_load_inline(*args, **kwargs)
 
+
 _cpp_ext.load_inline = load_inline
 
 _orig_load = _cpp_ext.load
+
+
 def load(*args: Any, **kwargs: Any) -> Any:
     _enforce_build_env(kwargs)
     return _orig_load(*args, **kwargs)
+
 
 _cpp_ext.load = load
 
@@ -183,7 +193,12 @@ def load_cuda_module(
         return None
 
     if shutil.which("nvcc") is None:
-        for cuda_cand in ["/usr/local/cuda/bin", "/usr/local/cuda-11.3/bin", "/usr/local/cuda-11.8/bin", "/usr/local/cuda-12.1/bin"]:
+        for cuda_cand in [
+            "/usr/local/cuda/bin",
+            "/usr/local/cuda-11.3/bin",
+            "/usr/local/cuda-11.8/bin",
+            "/usr/local/cuda-12.1/bin",
+        ]:
             if os.path.exists(os.path.join(cuda_cand, "nvcc")):
                 os.environ["PATH"] = f"{cuda_cand}:{os.environ.get('PATH', '')}"
                 break
@@ -210,7 +225,9 @@ def load_cuda_module(
         cpp_cflags.append("-I/usr/local/cuda/include")
 
     hash_str = hashlib.sha256(
-        (cpp_sources + "\n" + cuda_sources + "\n" + "".join(all_cuda_cflags) + "\n" + "".join(cpp_cflags)).encode("utf-8")
+        (cpp_sources + "\n" + cuda_sources + "\n" + "".join(all_cuda_cflags) + "\n" + "".join(cpp_cflags)).encode(
+            "utf-8"
+        )
     ).hexdigest()[:8]
     cache_key = (name, hash_str)
 

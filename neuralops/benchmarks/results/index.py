@@ -17,6 +17,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Union
+
 import pandas as pd
 
 from neuralops.benchmarks.results.schema import BenchmarkResult
@@ -111,9 +112,15 @@ class ResultsIndex:
         """
         candidates = [r for r in self._load_results() if r.status == "success"]
         if model:
-            candidates = [r for r in candidates if (r.model.get("name") if isinstance(r.model, dict) else r.model) == model]
+            candidates = [
+                r for r in candidates if (r.model.get("name") if isinstance(r.model, dict) else r.model) == model
+            ]
         if dataset:
-            candidates = [r for r in candidates if (r.dataset.get("name") if isinstance(r.dataset, dict) else r.dataset) == dataset]
+            candidates = [
+                r
+                for r in candidates
+                if (r.dataset.get("name") if isinstance(r.dataset, dict) else r.dataset) == dataset
+            ]
 
         if not candidates:
             return {} if group_by is not None else None
@@ -153,6 +160,7 @@ class ResultsIndex:
         if not results:
             return None
         is_lower_better = metric.lower() in ("perplexity", "loss", "latency_ms", "duration_s", "peak_vram_mb")
+
         def score_fn(res: BenchmarkResult) -> float:
             val = (res.metrics or {}).get(metric)
             if val is None and res.resources:
@@ -197,18 +205,24 @@ class ResultsIndex:
         for mod in all_modules:
             mod_runs = [r for r in runs if (r.module.get("name") if isinstance(r.module, dict) else r.module) == mod]
             successful = [r for r in mod_runs if r.status == "success"]
-            models_covered = sorted(set(r.model.get("name") if isinstance(r.model, dict) else r.model for r in mod_runs))
-            datasets_covered = sorted(set(r.dataset.get("name") if isinstance(r.dataset, dict) else r.dataset for r in mod_runs))
+            models_covered = sorted(
+                set(r.model.get("name") if isinstance(r.model, dict) else r.model for r in mod_runs)
+            )
+            datasets_covered = sorted(
+                set(r.dataset.get("name") if isinstance(r.dataset, dict) else r.dataset for r in mod_runs)
+            )
             mod_type = "attention" if mod in ATTENTION_REGISTRY else "compressor"
-            data.append({
-                "module": mod,
-                "type": mod_type,
-                "total_runs": len(mod_runs),
-                "successful_runs": len(successful),
-                "models": ", ".join(models_covered),
-                "datasets": ", ".join(datasets_covered),
-                "is_covered": len(successful) > 0,
-            })
+            data.append(
+                {
+                    "module": mod,
+                    "type": mod_type,
+                    "total_runs": len(mod_runs),
+                    "successful_runs": len(successful),
+                    "models": ", ".join(models_covered),
+                    "datasets": ", ".join(datasets_covered),
+                    "is_covered": len(successful) > 0,
+                }
+            )
         return pd.DataFrame(data)
 
     def missing_combinations(
@@ -255,7 +269,8 @@ class ResultsIndex:
                 "training_type": getattr(r, "training_type", None) or r.config.get("training_type", "none"),
                 "rank": r.config.get("rank"),
                 "status": r.status,
-                "duration_s": (r.resources or {}).get("duration_s") or (r.run_metadata or {}).get("wall_clock_duration_s"),
+                "duration_s": (r.resources or {}).get("duration_s")
+                or (r.run_metadata or {}).get("wall_clock_duration_s"),
                 "peak_vram_mb": (r.resources or {}).get("peak_vram_mb"),
             }
             if r.metrics:
@@ -275,7 +290,20 @@ class ResultsIndex:
         df = self.to_dataframe()
         if df.empty:
             return "No benchmark results found."
-        cols = [c for c in ["module", "model", "dataset", "training_type", "rank", "metric_accuracy", "metric_perplexity", "status"] if c in df.columns]
+        cols = [
+            c
+            for c in [
+                "module",
+                "model",
+                "dataset",
+                "training_type",
+                "rank",
+                "metric_accuracy",
+                "metric_perplexity",
+                "status",
+            ]
+            if c in df.columns
+        ]
         return df[cols].to_markdown(index=False)
 
     def to_latex(self) -> str:
@@ -283,16 +311,33 @@ class ResultsIndex:
         df = self.to_dataframe()
         if df.empty:
             return "% No benchmark results found."
-        cols = [c for c in ["module", "model", "dataset", "training_type", "rank", "metric_accuracy", "metric_perplexity", "status"] if c in df.columns]
+        cols = [
+            c
+            for c in [
+                "module",
+                "model",
+                "dataset",
+                "training_type",
+                "rank",
+                "metric_accuracy",
+                "metric_perplexity",
+                "status",
+            ]
+            if c in df.columns
+        ]
         return df[cols].to_latex(index=False, escape=True)
 
     def build_global_index(self) -> Dict[str, Any]:
         """Build and persist results/index.json summary index."""
         runs = self._load_results(force_reload=True)
         all_modules = sorted(set(list(ATTENTION_REGISTRY.keys()) + list(COMPRESSOR_REGISTRY.keys())))
-        modules_covered = sorted(set(r.module.get("name") if isinstance(r.module, dict) else r.module for r in runs if r.status == "success"))
+        modules_covered = sorted(
+            set(r.module.get("name") if isinstance(r.module, dict) else r.module for r in runs if r.status == "success")
+        )
         models_covered = sorted(set(r.model.get("name") if isinstance(r.model, dict) else r.model for r in runs))
-        datasets_covered = sorted(set(r.dataset.get("name") if isinstance(r.dataset, dict) else r.dataset for r in runs))
+        datasets_covered = sorted(
+            set(r.dataset.get("name") if isinstance(r.dataset, dict) else r.dataset for r in runs)
+        )
 
         index_data: Dict[str, Any] = {
             "total_runs": len(runs),

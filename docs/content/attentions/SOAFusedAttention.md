@@ -109,10 +109,10 @@ Query-Key dot products: $2 B H N^2 d_h = 2 B N^2 D$ Furthermore, Softmax & Value
 $$\text{FLOPs}_{\text{total}} = 2 B N D^2 + 12 B N D r + 4 B N^2 D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} = B N D^2 + 6 B N D r + 2 B N^2 D$$
-Specifically, regarding \textbf{Parameter Footprint}, 
+Specifically, regarding \textbf{Parameter Footprint},
 
   $$\Theta = 3 \times (D \cdot r + r \cdot D) + D^2 = 6 D r + D^2 \ll 4 D^2$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Latent bottleneck tensors $Z_Q, Z_K, Z_V$: $\mathcal{O}(B N r)$ Concurrently, Full attention logit matrix: $\mathcal{O}(B H N^2)$ In this setting, Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
@@ -195,4 +195,3 @@ The empirical evaluation of `SOAFusedAttention` across standard sequence lengths
 | **$L = 2048$** | 0.52 ms | 160 MB | $2.50\times$ |
 | **$L = 4096$** | 0.99 ms | 256 MB | $4.20\times$ |
 | **$L = 8192$** | **3.80 ms** | **620 MB** | **3.37x** |
-

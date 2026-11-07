@@ -12,16 +12,13 @@ Petrov-Galerkin projection operator providing continuous-depth kernel attention 
 """
 
 from __future__ import annotations
-from neuralops.core.common import repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
 from typing import Any
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +42,7 @@ class GalerkinAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -66,6 +64,7 @@ class GalerkinAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         if config is None and source_attn is not None:
+
             class DummyConfig:
                 pass
 
@@ -117,9 +116,7 @@ class GalerkinAttention(BaseAttention):
             else kwargs.get("num_heads") or 12
         )
         self.num_kv_heads: int = (
-            getattr(config, "num_key_value_heads", self.num_heads)
-            if config is not None
-            else self.num_heads
+            getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
         )
         hidden_size: int = (
             kwargs.get("dim")
@@ -143,21 +140,13 @@ class GalerkinAttention(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.rank: int = (
-            rank
-            if rank is not None
-            else getattr(config, "galerkin_rank", getattr(config, "rank", 64))
-        )
+        self.rank: int = rank if rank is not None else getattr(config, "galerkin_rank", getattr(config, "rank", 64))
         self.basis_type: str = basis_type
 
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
+            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
         )
         self.layer_idx: int = int(resolved_layer_id)
 
@@ -198,8 +187,7 @@ class GalerkinAttention(BaseAttention):
                 if any(_mt.startswith(p) for p in _decoder_prefixes):
                     is_dec = True
                 if hasattr(config, "architectures") and any(
-                    "GPT" in str(a) or "CausalLM" in str(a)
-                    for a in (getattr(config, "architectures", []) or [])
+                    "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
                 ):
                     is_dec = True
             if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -223,11 +211,7 @@ class GalerkinAttention(BaseAttention):
                 or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
             ):
                 is_nested = True
-            elif (
-                hasattr(source_attn, "out_lin")
-                or hasattr(source_attn, "c_proj")
-                or hasattr(source_attn, "o_proj")
-            ):
+            elif hasattr(source_attn, "out_lin") or hasattr(source_attn, "c_proj") or hasattr(source_attn, "o_proj"):
                 is_nested = False
         if is_nested is None:
             is_nested = False
@@ -477,11 +461,7 @@ class GalerkinAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -514,18 +494,13 @@ class GalerkinAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
 
                 if b is not None and target_mod.bias is not None:
@@ -631,9 +606,7 @@ class GalerkinAttention(BaseAttention):
                         dropout_p=self.dropout.p if self.training else 0.0,
                     )
                     _sdpa_out = _sdpa_out.to(hidden_states.dtype)
-                    _sdpa_out = (
-                        _sdpa_out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-                    )
+                    _sdpa_out = _sdpa_out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
                     _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                     out = self.out_proj(_sdpa_out) if not self.is_nested_encoder else _sdpa_out
                     return out, None
@@ -696,6 +669,7 @@ class GalerkinAttention(BaseAttention):
             if not output_attentions and head_mask is None:
                 try:
                     from neuralops.ops.triton.low_rank import fused_galerkin_continuous_kernel_triton
+
                     context = fused_galerkin_continuous_kernel_triton(Q, K_masked, V_masked, Phi, scale)
                     probs = None
                 except Exception:
@@ -703,10 +677,7 @@ class GalerkinAttention(BaseAttention):
                     K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
                     V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
 
-                    scores = (
-                        torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous())
-                        * scale
-                    )
+                    scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous()) * scale
                     scores_max = scores.max(dim=-1, keepdim=True).values.detach()
                     exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=0.0))
                     denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
@@ -720,10 +691,7 @@ class GalerkinAttention(BaseAttention):
                 K_basis = torch.einsum("bhnd,nr->bhrd", K_masked, Phi)
                 V_basis = torch.einsum("bhnd,nr->bhrd", V_masked, Phi)
 
-                scores = (
-                    torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous())
-                    * scale
-                )
+                scores = torch.matmul(Q_basis.float(), K_basis.float().transpose(-2, -1).contiguous()) * scale
                 scores_max = scores.max(dim=-1, keepdim=True).values.detach()
                 exp_scores = torch.exp((scores - scores_max).clamp(min=-50.0, max=0.0))
                 denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-6)
@@ -794,11 +762,7 @@ def inject_galerkin(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers

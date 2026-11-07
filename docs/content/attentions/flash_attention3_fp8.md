@@ -113,7 +113,7 @@ Query-Key score matmul: $2 B H L^2 d_h = 2 B L^2 D$ Furthermore, Softmax online 
 $$\text{FLOPs}_{\text{total}} = 8 B L D^2 + 4 B L^2 D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} = 4 B L D^2 + 2 B L^2 D$$
 Specifically, regarding \textbf{SRAM-HBM Memory Traffic}, 8-bit precision halves $Q, K, V$ data movement volume from $2 \text{ bytes/element}$ (FP16/BF16) to $1 \text{ byte/element}$ (FP8). Furthermore, regarding \textbf{HBM Activation IO Complexity}, $\mathcal{O}\left(B L D + \frac{B H L^2 d_h^2}{M_{\text{SRAM}}}\right)$. Concurrently, regarding \textbf{Parameter Footprint}, $\Theta = 4 D^2$.
@@ -202,4 +202,3 @@ The empirical evaluation of `flash_attention3_fp8` across standard sequence leng
 | **$L = 2048$** | 0.52 ms | 160 MB | $2.50\times$ |
 | **$L = 4096$** | 0.99 ms | 256 MB | $4.20\times$ |
 | **$L = 8192$** | **3.80 ms** | **620 MB** | **3.37x** |
-

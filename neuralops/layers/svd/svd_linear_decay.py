@@ -17,14 +17,14 @@ from typing import Any
 import torch
 import torch.nn as nn
 
+from neuralops.core.attention_utils import normalize_attention_mask as _normalize_mask
+from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.layers.svd.svd_linear_attention import (
     SVDLinear,
     SVDLinearAttention,
     compute_exponential_decay,
     inject_svd_linear_attention,
 )
-from neuralops.core.attention_utils import normalize_attention_mask as _normalize_mask
-from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.ops.cuda.svd_linear_decay import svd_linear_decay
 
 logger = logging.getLogger(__name__)
@@ -62,9 +62,7 @@ class DecayDecayLinearAttention(SVDLinearAttention):
         past_state: tuple[torch.Tensor, torch.Tensor] | None = None,
     ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
         if past_state is not None:
-            return super()._forward_decay_gated_linear_kernel(
-                q, k, v, hidden_states, mask=mask, past_state=past_state
-            )
+            return super()._forward_decay_gated_linear_kernel(q, k, v, hidden_states, mask=mask, past_state=past_state)
 
         B, H, N, D_k = q.shape
         compute_dtype = torch.bfloat16 if q.dtype == torch.bfloat16 else torch.float32
@@ -84,9 +82,7 @@ class DecayDecayLinearAttention(SVDLinearAttention):
             )
         else:
             decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
-            lambda_decay = compute_exponential_decay(
-                decay_logits, activation=self.decay_activation
-            ).to(compute_dtype)
+            lambda_decay = compute_exponential_decay(decay_logits, activation=self.decay_activation).to(compute_dtype)
 
         if mask_expanded is not None:
             m_dec = mask_expanded
@@ -135,11 +131,7 @@ def inject_svd_linear_decay(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -151,9 +143,7 @@ def inject_svd_linear_decay(
             res = inject_svd_linear_decay(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -174,10 +164,7 @@ def inject_svd_linear_decay(
             if candidate is None:
                 continue
 
-            if (
-                isinstance(candidate, SVDLinearAttention)
-                or "SVDLinear" in candidate.__class__.__name__
-            ):
+            if isinstance(candidate, SVDLinearAttention) or "SVDLinear" in candidate.__class__.__name__:
                 logger.debug(
                     "inject_svd_linear_decay: %s.%s is already SVDLinearAttention, skipping",
                     type(layer).__name__,
@@ -197,8 +184,7 @@ def inject_svd_linear_decay(
 
     if src_attn is None:
         logger.warning(
-            "inject_svd_linear_decay: no source attention found on %s "
-            "(checked: attn, attention, self_attn, self)",
+            "inject_svd_linear_decay: no source attention found on %s " "(checked: attn, attention, self_attn, self)",
             type(layer).__name__,
         )
         return None

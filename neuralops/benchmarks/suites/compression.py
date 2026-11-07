@@ -146,20 +146,22 @@ class CompressionBenchmark(AbstractBaseBenchmark):
 
         except Exception as e:
             logger.warning("Compression failed for '%s': %s", compressor_name, e)
-            self.results_table.append({
-                "step": step,
-                "mechanism_or_kernel": compressor_name,
-                "batch_size": 2,
-                "seq_len": 16,
-                "dtype": "fp32",
-                "latency_ms": 0.0,
-                "latency_p50_ms": 0.0,
-                "latency_p90_ms": 0.0,
-                "latency_p99_ms": 0.0,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": f"FAILED_RUNTIME: {e}",
-            })
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": compressor_name,
+                    "batch_size": 2,
+                    "seq_len": 16,
+                    "dtype": "fp32",
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "tflops": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": f"FAILED_RUNTIME: {e}",
+                }
+            )
             self.tracker.log_metric("compression_latency_ms", 0.0, step=step)
             return {"compression_latency_ms": 0.0, "forward_latency_ms": 0.0}
 

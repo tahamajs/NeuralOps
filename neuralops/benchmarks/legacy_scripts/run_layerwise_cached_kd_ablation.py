@@ -46,7 +46,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 _orig_named_params = nn.Module.named_parameters
 
@@ -157,17 +157,14 @@ def compute_6pillar_loss(
 
         # 3. Pillar 3: Layer-Attn Representation Distillation (across interior layers)
         if len(s_hidden) > 2:
-            interior_losses = [
-                F.mse_loss(s_hidden[i], t_hidden[i].detach())
-                for i in range(1, len(s_hidden) - 1)
-            ]
+            interior_losses = [F.mse_loss(s_hidden[i], t_hidden[i].detach()) for i in range(1, len(s_hidden) - 1)]
             loss_attn = sum(interior_losses) / len(interior_losses)
         else:
             loss_attn = F.mse_loss(s_last, t_last)
 
         # 4. Pillar 4: SVD Spectrum Alignment
-        s_flat = s_last[:min(s_last.size(0), 8)].view(-1, s_last.size(-1)).float()
-        t_flat = t_last[:min(t_last.size(0), 8)].view(-1, t_last.size(-1)).float()
+        s_flat = s_last[: min(s_last.size(0), 8)].view(-1, s_last.size(-1)).float()
+        t_flat = t_last[: min(t_last.size(0), 8)].view(-1, t_last.size(-1)).float()
         s_sv = torch.linalg.svdvals(s_flat)
         t_sv = torch.linalg.svdvals(t_flat)
         loss_svd = F.mse_loss(s_sv, t_sv)
@@ -326,7 +323,9 @@ def run_single_module_pipeline(
 
     t_iso_dur = time.time() - t_iso_start
     iso_acc, iso_loss, iso_ppl = evaluate_metrics(student_model, val_loader, device)
-    logger.info(f"[{module_name}] Stage 1 (Isolated Attn): Acc={iso_acc:.2f}% | Loss={iso_loss:.4f} | PPL={iso_ppl:.2f} | Time={t_iso_dur:.1f}s")
+    logger.info(
+        f"[{module_name}] Stage 1 (Isolated Attn): Acc={iso_acc:.2f}% | Loss={iso_loss:.4f} | PPL={iso_ppl:.2f} | Time={t_iso_dur:.1f}s"
+    )
 
     # 3. Stage 2: Quick Polish (E2E 6-Pillar KD)
     t_pol_start = time.time()
@@ -360,7 +359,9 @@ def run_single_module_pipeline(
     t_pol_dur = time.time() - t_pol_start
     final_acc, final_loss, final_ppl = evaluate_metrics(student_model, val_loader, device)
     total_dur = time.time() - t0
-    logger.info(f"[{module_name}] Stage 2 (Quick Polish): Acc={final_acc:.2f}% | Loss={final_loss:.4f} | PPL={final_ppl:.2f} | TotalTime={total_dur:.1f}s")
+    logger.info(
+        f"[{module_name}] Stage 2 (Quick Polish): Acc={final_acc:.2f}% | Loss={final_loss:.4f} | PPL={final_ppl:.2f} | TotalTime={total_dur:.1f}s"
+    )
 
     del student_model
     gc.collect()
@@ -388,11 +389,14 @@ def run_single_module_pipeline(
     }
 
 
-def persist_to_sqlite(results: list[dict[str, Any]], base_acc: float, base_ppl: float, sqlite_path: str = "results/master_ledger.sqlite") -> None:
+def persist_to_sqlite(
+    results: list[dict[str, Any]], base_acc: float, base_ppl: float, sqlite_path: str = "results/master_ledger.sqlite"
+) -> None:
     os.makedirs(os.path.dirname(sqlite_path), exist_ok=True)
     conn = sqlite3.connect(sqlite_path)
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         CREATE TABLE IF NOT EXISTS attention_surgery_metrics (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT,
@@ -409,30 +413,34 @@ def persist_to_sqlite(results: list[dict[str, Any]], base_acc: float, base_ppl: 
             total_time_s REAL,
             status TEXT
         )
-    """)
+    """
+    )
     ts = datetime.datetime.now(datetime.timezone.utc).isoformat()
     for r in results:
-        cur.execute("""
+        cur.execute(
+            """
             INSERT INTO attention_surgery_metrics (
                 timestamp, module, baseline_acc, baseline_ppl,
                 zero_shot_acc, zero_shot_ppl, isolated_acc, isolated_ppl,
                 polished_acc, polished_ppl, retention_pct, total_time_s, status
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            ts,
-            r.get("module"),
-            base_acc,
-            base_ppl,
-            r.get("zero_shot_acc", 0.0),
-            r.get("zero_shot_ppl", 0.0),
-            r.get("isolated_acc", 0.0),
-            r.get("isolated_ppl", 0.0),
-            r.get("polished_acc", 0.0),
-            r.get("polished_ppl", 0.0),
-            r.get("retention_pct", 0.0),
-            r.get("total_time_s", 0.0),
-            r.get("status", "UNKNOWN"),
-        ))
+        """,
+            (
+                ts,
+                r.get("module"),
+                base_acc,
+                base_ppl,
+                r.get("zero_shot_acc", 0.0),
+                r.get("zero_shot_ppl", 0.0),
+                r.get("isolated_acc", 0.0),
+                r.get("isolated_ppl", 0.0),
+                r.get("polished_acc", 0.0),
+                r.get("polished_ppl", 0.0),
+                r.get("retention_pct", 0.0),
+                r.get("total_time_s", 0.0),
+                r.get("status", "UNKNOWN"),
+            ),
+        )
     conn.commit()
     conn.close()
 
@@ -469,8 +477,12 @@ def main():
     except Exception:
         tokenizer = None
 
-    arrow_train = os.path.expanduser("~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-train.arrow")
-    arrow_val = os.path.expanduser("~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-validation.arrow")
+    arrow_train = os.path.expanduser(
+        "~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-train.arrow"
+    )
+    arrow_val = os.path.expanduser(
+        "~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-validation.arrow"
+    )
 
     if tokenizer is not None and os.path.exists(arrow_train) and os.path.exists(arrow_val):
         train_dataset = ArrowSST2Dataset(arrow_train, tokenizer)
@@ -480,8 +492,10 @@ def main():
         train_dataset = SyntheticSST2Dataset(num_samples=256, max_length=128)
         val_dataset = SyntheticSST2Dataset(num_samples=64, max_length=128)
 
-    pin_mem = (device.type == "cuda")
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=pin_mem, drop_last=True)
+    pin_mem = device.type == "cuda"
+    train_loader = DataLoader(
+        train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=pin_mem, drop_last=True
+    )
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=pin_mem)
 
     # Prewarm Teacher ONCE
@@ -491,6 +505,7 @@ def main():
     except Exception as exc:
         logger.warning(f"Could not load bert-base-uncased ({exc}); creating Bert model for evaluation.")
         from transformers import BertConfig, BertForSequenceClassification
+
         config = BertConfig(
             vocab_size=1000,
             hidden_size=128,
@@ -523,6 +538,7 @@ def main():
         target_modules = [args.module]
     elif args.all_modules:
         from neuralops.core.registry import ATTENTION_REGISTRY
+
         target_modules = list(ATTENTION_REGISTRY.keys())
     else:
         target_modules = [
@@ -554,35 +570,49 @@ def main():
             results.append(res)
         except Exception as exc:
             logger.error(f"Error testing {mod_name}: {exc}")
-            results.append({
-                "module": mod_name,
-                "zero_shot_acc": 0.0,
-                "zero_shot_ppl": 99.9,
-                "isolated_acc": 0.0,
-                "isolated_ppl": 99.9,
-                "polished_acc": 0.0,
-                "polished_ppl": 99.9,
-                "baseline_acc": round(base_acc, 2),
-                "baseline_ppl": round(base_ppl, 2),
-                "retention_pct": 0.0,
-                "total_time_s": 0.0,
-                "pillars_evaluated": ["Logits", "Hidden", "Layer-Attn", "SVD Spectrum", "Fisher Curvature", "Sparsity"],
-                "status": f"FAILED: {exc}",
-            })
+            results.append(
+                {
+                    "module": mod_name,
+                    "zero_shot_acc": 0.0,
+                    "zero_shot_ppl": 99.9,
+                    "isolated_acc": 0.0,
+                    "isolated_ppl": 99.9,
+                    "polished_acc": 0.0,
+                    "polished_ppl": 99.9,
+                    "baseline_acc": round(base_acc, 2),
+                    "baseline_ppl": round(base_ppl, 2),
+                    "retention_pct": 0.0,
+                    "total_time_s": 0.0,
+                    "pillars_evaluated": [
+                        "Logits",
+                        "Hidden",
+                        "Layer-Attn",
+                        "SVD Spectrum",
+                        "Fisher Curvature",
+                        "Sparsity",
+                    ],
+                    "status": f"FAILED: {exc}",
+                }
+            )
 
         os.makedirs(os.path.dirname(args.out_json), exist_ok=True)
         with open(args.out_json, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
 
     import pandas as pd
+
     df = pd.DataFrame(results)
     df.to_csv(args.out_csv, index=False)
     persist_to_sqlite(results, base_acc=round(base_acc, 2), base_ppl=round(base_ppl, 2), sqlite_path=args.ledger_db)
 
     print("\n" + "=" * 115)
-    print(f"ATTENTION SURGERY & 6-PILLAR KD COMPLETE MATRIX (Teacher Baseline: Acc={base_acc:.2f}%, PPL={base_ppl:.2f})")
+    print(
+        f"ATTENTION SURGERY & 6-PILLAR KD COMPLETE MATRIX (Teacher Baseline: Acc={base_acc:.2f}%, PPL={base_ppl:.2f})"
+    )
     print("=" * 115)
-    print(f"{'Module':<24} | {'Zero-Shot Acc':<13} | {'Iso Acc (PPL)':<17} | {'Pol Acc (PPL)':<17} | {'Retention':<10} | {'Time'}")
+    print(
+        f"{'Module':<24} | {'Zero-Shot Acc':<13} | {'Iso Acc (PPL)':<17} | {'Pol Acc (PPL)':<17} | {'Retention':<10} | {'Time'}"
+    )
     print("-" * 115)
     for r in results:
         mod = r.get("module", "")[:23]

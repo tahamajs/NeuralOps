@@ -142,10 +142,10 @@ Pruning Gate MLP: $2 B N D (D/4) + 2 B N (D/4) H \approx \frac{1}{2} B N D^2$ Fu
 $$\text{Total FLOPs} \approx 8 B N D r + 4 B N D W + \frac{1}{2} B N D^2 + 4 B N D d_h$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx 4 B N D r + 2 B N D W + \frac{1}{4} B N D^2 + 2 B N D d_h$$
-Specifically, regarding \textbf{Parameters}, 
+Specifically, regarding \textbf{Parameters},
 
   $$\Theta = 8 D r + \frac{D^2}{4} + \frac{D H}{4} + D H$$
 Specifically, regarding \textbf{Activation Memory},  Furthermore, Un-fused Local Logits Matrix: $\mathcal{O}(B \cdot H \cdot N \cdot W)$ Concurrently, Global Memory States: $\mathcal{O}(B \cdot H \cdot d_h^2)$ In this setting, Total Memory: $\mathcal{O}(B N D + B H N W + B H d_h^2)$
@@ -197,7 +197,7 @@ At the architectural level, the underlying operational mechanism reveals that th
 ```
 
 ### 6.1 Triton Kernel Design: Fused Low-Rank GEMM
-Standard PyTorch low-rank execution invokes two distinct GPU kernel launches per projection (`x @ W1` followed by `@ W2`), incurring DRAM round-trips for the intermediate rank-$r$ tensor. 
+Standard PyTorch low-rank execution invokes two distinct GPU kernel launches per projection (`x @ W1` followed by `@ W2`), incurring DRAM round-trips for the intermediate rank-$r$ tensor.
 
 **Triton Strategy**: Fuse `W1` and `W2` into a single custom C++/Triton kernel using persistent SRAM registers for intermediate rank outputs:
 Block Size Configuration: `BLOCK_M = 64`, `BLOCK_N = 64`, `BLOCK_K = 32`. Furthermore, Load input block $X_{i} \in \mathbb{R}^{64 \times D}$ into SRAM. Compute tile $X_{i} W_1 \in \mathbb{R}^{64 \times r}$ in registers, then immediately multiply by $W_2$ before writing back to global memory.
@@ -237,4 +237,3 @@ The empirical evaluation of `aegis_hybrid` across standard sequence lengths and 
 | **$L = 2048$** | 0.55 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.04 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.05 ms** | **440 MB** | **6.24x** |
-

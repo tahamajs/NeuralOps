@@ -12,11 +12,6 @@ Reformer-style locality-sensitive hashing attention grouping keys and queries in
 """
 
 from __future__ import annotations
-from neuralops.core.common import FactorizedLoRALinear, _detect_decoder
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -26,9 +21,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import FactorizedLoRALinear, _detect_decoder
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +40,7 @@ class LSHAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -190,9 +188,7 @@ class LSHAttention(BaseAttention):
         return 768
 
     @staticmethod
-    def _detect_num_heads(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any], hidden_size: int
-    ) -> int:
+    def _detect_num_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any], hidden_size: int) -> int:
         for k in ("num_heads", "num_attention_heads", "n_heads", "n_head"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -210,9 +206,7 @@ class LSHAttention(BaseAttention):
         return max(1, hidden_size // 64)
 
     @staticmethod
-    def _detect_num_kv_heads(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any], num_heads: int
-    ) -> int:
+    def _detect_num_kv_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any], num_heads: int) -> int:
         for k in ("num_key_value_heads", "num_kv_heads"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -341,11 +335,7 @@ class LSHAttention(BaseAttention):
             # allowed-swallow: best-effort-telemetry
             pass
 
-        if (
-            hasattr(src, "c_attn")
-            and src.c_attn is not None
-            and any(extracted[k][0] is None for k in ("q", "k", "v"))
-        ):
+        if hasattr(src, "c_attn") and src.c_attn is not None and any(extracted[k][0] is None for k in ("q", "k", "v")):
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
@@ -405,11 +395,7 @@ class LSHAttention(BaseAttention):
                 extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
-            if (
-                hasattr(src, "output")
-                and hasattr(src.output, "dense")
-                and extracted["o"][0] is None
-            ):
+            if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
                 dense = src.output.dense
                 extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -437,15 +423,10 @@ class LSHAttention(BaseAttention):
                                 extracted[proj] = (w_data, getattr(mod, "bias", None))
                                 break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             raise RuntimeError(
-                f"LSHAttention.copy_weights: missing mandatory projections {missing} "
-                f"from {cls_name}."
+                f"LSHAttention.copy_weights: missing mandatory projections {missing} " f"from {cls_name}."
             )
 
         def _orient(w, in_dim):
@@ -534,10 +515,8 @@ class LSHAttention(BaseAttention):
         vectors: (B, H, N, d); proj: (d, num_buckets//2)
         Returns: (B, H, N) bucket indices in [0, num_buckets)
         """
-        from neuralops.ops.triton.sparse_attn import (
-            fused_lsh_hash_and_bin_triton,
-            fused_lsh_hash_and_bin_pytorch,
-        )
+        from neuralops.ops.triton.sparse_attn import fused_lsh_hash_and_bin_pytorch, fused_lsh_hash_and_bin_triton
+
         try:
             return fused_lsh_hash_and_bin_triton(vectors, proj, self.num_buckets)
         except Exception:
@@ -582,9 +561,7 @@ class LSHAttention(BaseAttention):
                     kv_mask = valid_mask[:, None, None, :]
                     bucket_match = bucket_match & kv_mask
 
-                scores_c = (
-                    torch.matmul(Qc.float(), K.float().transpose(-2, -1).contiguous()) * scale
-                )
+                scores_c = torch.matmul(Qc.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
                 scores_c = scores_c.masked_fill(~bucket_match, -1e4)
                 scores_c = torch.nan_to_num(scores_c, nan=-1e4, posinf=1e4, neginf=-1e4)
@@ -677,9 +654,7 @@ class LSHAttention(BaseAttention):
 
             if self.is_decoder and not is_cross:
                 causal_tril = (
-                    torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool))
-                    .unsqueeze(0)
-                    .unsqueeze(0)
+                    torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
                 )
                 scores = scores.masked_fill(~causal_tril, -1e4)
 
@@ -752,11 +727,7 @@ def inject_lsh_attention(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers

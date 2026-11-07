@@ -71,9 +71,7 @@ class HardwareTopology:
     supports_tf32: bool = False
     supports_fp8: bool = False
 
-    supported_dtypes: tuple[torch.dtype, ...] = field(
-        default_factory=lambda: (torch.float32, torch.float16)
-    )
+    supported_dtypes: tuple[torch.dtype, ...] = field(default_factory=lambda: (torch.float32, torch.float16))
 
     @property
     def is_accelerated(self) -> bool:

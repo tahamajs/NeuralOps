@@ -57,6 +57,7 @@ def channel_shuffle_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.elementwise import channel_shuffle_triton
+
         return channel_shuffle_triton
     except (ImportError, AttributeError):
         return None
@@ -67,6 +68,7 @@ def channel_shuffle(
     groups: int = 2,
 ) -> torch.Tensor:
     """3-Level Dispatched Channel Shuffle."""
+
     def cuda_fn(x, groups=2, **kwargs):
         mod = _get_module()
         return mod.channel_shuffle_fwd(x.contiguous(), int(groups))

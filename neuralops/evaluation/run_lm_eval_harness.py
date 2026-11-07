@@ -177,16 +177,7 @@ def print_summary_table(tasks_metrics: dict[str, dict[str, float]], module_name:
 
 def _import_dependencies() -> bool:
     """Verify presence of lm-eval and internal framework modules."""
-    global \
-        torch, \
-        AutoModelForCausalLM, \
-        AutoTokenizer, \
-        ATTENTION_REGISTRY, \
-        COMPRESSOR_REGISTRY, \
-        apply_module_to_model, \
-        HFLM, \
-        simple_evaluate, \
-        _HAS_LM_EVAL
+    global torch, AutoModelForCausalLM, AutoTokenizer, ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, apply_module_to_model, HFLM, simple_evaluate, _HAS_LM_EVAL
 
     try:
         from lm_eval import simple_evaluate as _simple_evaluate
@@ -206,14 +197,11 @@ def _import_dependencies() -> bool:
 
         from neuralops.core.registry import ATTENTION_REGISTRY as _ATTENTION_REGISTRY
         from neuralops.core.registry import COMPRESSOR_REGISTRY as _COMPRESSOR_REGISTRY
+
         try:
-            from neuralops.evaluation.eval_all_models_datasets import (
-                apply_module_to_model as _apply_module_to_model,
-            )
+            from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model as _apply_module_to_model
         except ImportError:
-            from neuralops.eval_all_models_datasets import (
-                apply_module_to_model as _apply_module_to_model,
-            )
+            from neuralops.eval_all_models_datasets import apply_module_to_model as _apply_module_to_model
 
         torch = _torch
         AutoModelForCausalLM = _AutoModelForCausalLM

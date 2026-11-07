@@ -76,8 +76,7 @@ class ResultsSaver(PrimaryResultsSaver):
             "run_id": self.run_id,
             "status": "COMPLETED",
             "metrics": metrics,
-            "config": self.config
-            or (self.cfg.to_dict() if hasattr(self.cfg, "to_dict") else str(self.cfg)),
+            "config": self.config or (self.cfg.to_dict() if hasattr(self.cfg, "to_dict") else str(self.cfg)),
         }
         self._write_json("artifacts/run_report.json", report)
         self._save_model_card(self.config or {}, metrics)

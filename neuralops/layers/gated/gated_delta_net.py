@@ -12,16 +12,12 @@ Associative memory network utilizing delta update rules and gating mechanisms fo
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 from typing import Any
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import _cfg_get, repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -157,9 +153,16 @@ def chunked_delta_rule_scan(
         except Exception as e:
             logger.warning("Triton gdn_scan failed, falling back to PyTorch: %s", e)
 
-    if q.is_cuda and d <= 64 and initial_state is None and mask_h is None and not (q.requires_grad or k.requires_grad or v.requires_grad):
+    if (
+        q.is_cuda
+        and d <= 64
+        and initial_state is None
+        and mask_h is None
+        and not (q.requires_grad or k.requires_grad or v.requires_grad)
+    ):
         try:
             from fla.ops import chunk_gdn
+
             q_fl = q.transpose(1, 2).contiguous()
             k_fl = k.transpose(1, 2).contiguous()
             v_fl = v.transpose(1, 2).contiguous()
@@ -180,9 +183,7 @@ def chunked_delta_rule_scan(
         S = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
 
     if L == 1:
-        y_i, S_out = _delta_chunk_forward(
-            S, q_f, k_f, v_f, beta_f, alpha_f, mask_h
-        )
+        y_i, S_out = _delta_chunk_forward(S, q_f, k_f, v_f, beta_f, alpha_f, mask_h)
         return torch.nan_to_num(y_i, nan=0.0).to(q.dtype), S_out
 
     pad_len = (chunk_size - L % chunk_size) % chunk_size
@@ -284,11 +285,7 @@ class GatedDeltaNet(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         if d_model is None:
-            d_model = (
-                kwargs.get("d_model")
-                or kwargs.get("hidden_size")
-                or kwargs.get("dim")
-            )
+            d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
             if d_model is None and config is not None:
                 d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
             elif d_model is None and source_attn is not None:
@@ -349,9 +346,7 @@ class GatedDeltaNet(BaseAttention):
 
         cfg_kv = None
         if config is not None:
-            cfg_kv = getattr(
-                config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-            )
+            cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         if cfg_kv is None:
             cfg_kv = kwargs.get("num_kv_heads", self.num_heads)
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
@@ -373,11 +368,7 @@ class GatedDeltaNet(BaseAttention):
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
+            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
         )
         self.layer_idx = int(resolved_layer_id)
 
@@ -397,12 +388,8 @@ class GatedDeltaNet(BaseAttention):
                 )
             )
         elif comp_config is not None:
-            self.lora_rank = int(
-                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
-            )
-            self.lora_alpha = float(
-                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
-            )
+            self.lora_rank = int(getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            self.lora_alpha = float(getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         else:
             self.lora_rank = int(kwargs.get("lora_rank", 16))
             self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
@@ -415,9 +402,7 @@ class GatedDeltaNet(BaseAttention):
         model_type = str(getattr(config, "model_type", "") if config else "").lower()
         is_dec = False
         if config is not None:
-            is_dec = bool(
-                getattr(config, "is_decoder", False) or getattr(config, "is_causal", False)
-            )
+            is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
         decoder_prefixes = (
             "gpt",
             "qwen",
@@ -449,51 +434,59 @@ class GatedDeltaNet(BaseAttention):
         if source_attn is not None:
             src_cls = source_attn.__class__.__name__
             if (
-                (
-                    src_cls
-                    in (
-                        "BertSelfAttention",
-                        "RobertaSelfAttention",
-                        "XLMRobertaSelfAttention",
-                        "ElectraSelfAttention",
-                        "DebertaSelfAttention",
-                    )
-                    or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
+                src_cls
+                in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
                 )
-                or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
-            ):
+                or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
+            ) or (hasattr(source_attn, "self") and hasattr(source_attn, "output")):
                 is_nested = True
-        if (
-            not is_nested
-            and model_type in ("roberta", "bert", "xlm-roberta")
-            and not self.is_decoder
-        ):
+        if not is_nested and model_type in ("roberta", "bert", "xlm-roberta") and not self.is_decoder:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         self.q_proj = LoRALinear(
-            self.d_model, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.d_model,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.d_model, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.d_model,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.d_model, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.d_model,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.z_proj = LoRALinear(
-            self.d_model, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.d_model,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.d_model, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.d_model,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -510,9 +503,7 @@ class GatedDeltaNet(BaseAttention):
         self.chunk_size = max(8, min(cs, 128))
 
         self.source_attn = source_attn
-        self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
-        )
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config = comp_config
 
         self._orig_storage_bytes = 0
@@ -541,39 +532,51 @@ class GatedDeltaNet(BaseAttention):
     @property
     def W_q(self):
         return self.q_proj
+
     @property
     def W_k(self):
         return self.k_proj
+
     @property
     def W_v(self):
         return self.v_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
@@ -607,9 +610,7 @@ class GatedDeltaNet(BaseAttention):
         return (state,)
 
     @staticmethod
-    def _normalize_valid_mask(
-        mask: torch.Tensor | None, B: int, L: int, device: torch.device
-    ) -> torch.Tensor | None:
+    def _normalize_valid_mask(mask: torch.Tensor | None, B: int, L: int, device: torch.device) -> torch.Tensor | None:
         """Return (B, L) bool where True = valid, or None."""
         if mask is None:
             return None
@@ -676,8 +677,10 @@ class GatedDeltaNet(BaseAttention):
             self.rotary_emb = old_attn.rotary_emb
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None),
-            "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if hasattr(old_attn, "c_attn") and old_attn.c_attn is not None:
@@ -768,11 +771,7 @@ class GatedDeltaNet(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -785,11 +784,7 @@ class GatedDeltaNet(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning("GatedDeltaNet copy_weights: missing %s", missing_after)
             return
@@ -811,31 +806,22 @@ class GatedDeltaNet(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-                if (
-                    w.shape != target.weight.shape
-                    and w.t().contiguous().shape == target.weight.shape
-                ):
+                if w.shape != target.weight.shape and w.t().contiguous().shape == target.weight.shape:
                     w = w.t().contiguous()
 
                 out_d = min(target.weight.size(0), w.size(0))
                 in_d = min(target.weight.size(1), w.size(1))
-                target.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
-                )
+                target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
 
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
-                    target.bias.data[:mb].copy_(
-                        b[:mb].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
                 n = float(torch.linalg.norm(target.weight.data.float()).item())
                 if n < 1e-4:
-                    logger.warning(
-                        "GatedDeltaNet: '%s' near-zero norm (%.2e)", key, n
-                    )
+                    logger.warning("GatedDeltaNet: '%s' near-zero norm (%.2e)", key, n)
 
                 if self.freeze_base:
                     target.freeze_base_weights()
@@ -845,17 +831,18 @@ class GatedDeltaNet(BaseAttention):
                 out_z = min(self.z_proj.weight.size(0), w_q.size(0))
                 in_z = min(self.z_proj.weight.size(1), w_q.size(1))
                 self.z_proj.weight.data[:out_z, :in_z].copy_(
-                    w_q[:out_z, :in_z].to(
-                        self.z_proj.weight.device, self.z_proj.weight.dtype
-                    )
+                    w_q[:out_z, :in_z].to(self.z_proj.weight.device, self.z_proj.weight.dtype)
                 )
                 if self.freeze_base:
                     self.z_proj.freeze_base_weights()
 
         try:
             for m in (
-                self.q_proj, self.k_proj, self.v_proj,
-                self.z_proj, self.out_proj,
+                self.q_proj,
+                self.k_proj,
+                self.v_proj,
+                self.z_proj,
+                self.out_proj,
             ):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
@@ -899,30 +886,16 @@ class GatedDeltaNet(BaseAttention):
             if past_state is not None:
                 past_len = getattr(past_key_value, "past_len", 0)
                 if past_len == 0 and isinstance(past_key_value, (tuple, list)):
-                    if len(past_key_value) >= 2 and isinstance(
-                        past_key_value[1], int
-                    ):
+                    if len(past_key_value) >= 2 and isinstance(past_key_value[1], int):
                         past_len = past_key_value[1]
 
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = (
-            self.k_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
         z = self.z_proj(hidden_states)
 
         if not is_cross:
-            if position_embeddings is not None and isinstance(
-                position_embeddings, tuple
-            ):
+            if position_embeddings is not None and isinstance(position_embeddings, tuple):
                 cos, sin = position_embeddings
                 if cos.dim() >= 3 and past_len > 0:
                     cos = cos[..., past_len : past_len + L, :]
@@ -931,9 +904,7 @@ class GatedDeltaNet(BaseAttention):
             elif getattr(self, "rotary_emb", None) is not None:
                 if position_ids is None and past_len > 0:
                     position_ids = (
-                        torch.arange(
-                            past_len, past_len + kv_len, device=hidden_states.device
-                        )
+                        torch.arange(past_len, past_len + kv_len, device=hidden_states.device)
                         .unsqueeze(0)
                         .expand(B, -1)
                     )
@@ -951,25 +922,19 @@ class GatedDeltaNet(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         hs_beta = hidden_states.to(self.lora_beta_proj.weight.dtype)
-        beta = (
-            torch.sigmoid(self.lora_beta_proj(hs_beta))
-            .transpose(1, 2)
-            .contiguous()
-        )
+        beta = torch.sigmoid(self.lora_beta_proj(hs_beta)).transpose(1, 2).contiguous()
         hs_alpha = hidden_states.to(self.lora_alpha_proj.weight.dtype)
-        alpha = (
-            torch.sigmoid(self.lora_alpha_proj(hs_alpha))
-            .transpose(1, 2)
-            .contiguous()
-        )
+        alpha = torch.sigmoid(self.lora_alpha_proj(hs_alpha)).transpose(1, 2).contiguous()
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
-        mask_bool = self._normalize_valid_mask(
-            eff_mask, B, kv_len, hidden_states.device
-        )
+        mask_bool = self._normalize_valid_mask(eff_mask, B, kv_len, hidden_states.device)
 
         y_fwd, present_state = chunked_delta_rule_scan(
-            q, k, v, beta, alpha,
+            q,
+            k,
+            v,
+            beta,
+            alpha,
             initial_state=past_state,
             mask=mask_bool,
             chunk_size=self.chunk_size,
@@ -983,7 +948,11 @@ class GatedDeltaNet(BaseAttention):
             alpha_b = torch.flip(alpha, dims=[2])
             mask_b = torch.flip(mask_bool, dims=[1]) if mask_bool is not None else None
             y_bwd_f, _ = chunked_delta_rule_scan(
-                q_b, k_b, v_b, beta_b, alpha_b,
+                q_b,
+                k_b,
+                v_b,
+                beta_b,
+                alpha_b,
                 initial_state=None,
                 mask=mask_b,
                 chunk_size=self.chunk_size,
@@ -1019,9 +988,7 @@ class GatedDeltaNet(BaseAttention):
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)
 
         present_kv = None
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         if use_cache and not is_cross:
             present_kv = self._write_past_state(present_state, past_key_value)
 
@@ -1039,7 +1006,7 @@ class GatedDeltaNet(BaseAttention):
         """Exact O(1) single-step autoregressive recurrent update for GatedDeltaNet."""
         from neuralops.ops.triton.state_update import fused_recurrent_gdn_step
 
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -1076,9 +1043,7 @@ class GatedDeltaNet(BaseAttention):
         k_t = k_norm.squeeze(2)
         v_t = v.squeeze(2)
 
-        out_t, kv_state = fused_recurrent_gdn_step(
-            q_t, k_t, v_t, beta, alpha, kv_state, scale=1.0
-        )
+        out_t, kv_state = fused_recurrent_gdn_step(q_t, k_t, v_t, beta, alpha, kv_state, scale=1.0)
         state["kv_state"] = kv_state
         state["step_idx"] = step_idx + 1
 
@@ -1195,10 +1160,7 @@ def inject_gated_delta_net(
     if src_attn is None and target is not None and hasattr(target, "forward"):
         src_attn = target
 
-    if src_attn is not None and (
-        isinstance(src_attn, GatedDeltaNet)
-        or "GatedDeltaNet" in src_attn.__class__.__name__
-    ):
+    if src_attn is not None and (isinstance(src_attn, GatedDeltaNet) or "GatedDeltaNet" in src_attn.__class__.__name__):
         return None
 
     if src_attn is None and cfg is None:
@@ -1208,11 +1170,7 @@ def inject_gated_delta_net(
         getattr(src_attn, "hidden_size", None)
         or getattr(src_attn, "embed_dim", None)
         or getattr(src_attn, "dim", None)
-        or (
-            getattr(src_attn.q_proj, "in_features", None)
-            if hasattr(src_attn, "q_proj")
-            else None
-        )
+        or (getattr(src_attn.q_proj, "in_features", None) if hasattr(src_attn, "q_proj") else None)
         or (getattr(target, "in_features", None) if target is not None else None)
         or getattr(cfg, "hidden_size", getattr(cfg, "dim", 64))
     )
@@ -1235,9 +1193,7 @@ def inject_gated_delta_net(
             **kwargs,
         )
     except Exception as e:
-        logger.exception(
-            "GatedDeltaNet injection failed at layer %d: %s", layer_idx, e
-        )
+        logger.exception("GatedDeltaNet injection failed at layer %d: %s", layer_idx, e)
         return None
 
     if src_attn is not None and src_attn is not target:

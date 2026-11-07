@@ -12,7 +12,6 @@ Applies variable-length prefix coding to quantized weight matrices and key-value
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import heapq
 import logging
@@ -23,6 +22,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -238,20 +238,12 @@ class HuffmanCoder:
             target_dtype = getattr(torch, orig_dtype_str.replace("torch.", ""), torch.float32)
             if target_dtype == torch.bfloat16:
                 arr = np.frombuffer(packed_bytes, dtype=np.int16)
-                tensor_out = (
-                    torch.from_numpy(arr.copy())
-                    .view(torch.bfloat16)
-                    .reshape(metadata.get("orig_shape"))
-                )
+                tensor_out = torch.from_numpy(arr.copy()).view(torch.bfloat16).reshape(metadata.get("orig_shape"))
             else:
                 dtype_str = orig_dtype_str.replace("torch.", "")
                 np_dtype = getattr(np, dtype_str if hasattr(np, dtype_str) else "float32")
                 arr = np.frombuffer(packed_bytes, dtype=np_dtype)
-                tensor_out = (
-                    torch.from_numpy(arr.copy())
-                    .reshape(metadata.get("orig_shape"))
-                    .to(dtype=target_dtype)
-                )
+                tensor_out = torch.from_numpy(arr.copy()).reshape(metadata.get("orig_shape")).to(dtype=target_dtype)
             return tensor_out.to(device=device)
 
         scale = metadata.get("scale", 1.0)
@@ -340,9 +332,7 @@ class HuffmanCompressor(BaseCompressor):
                 _cfg_get(cfg, "quantize_bits", _cfg_get(cfg, "bits", quantize_bits)),
             )
         )
-        self.max_error = float(
-            _cfg_get(cfg, "huffman_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        self.max_error = float(_cfg_get(cfg, "huffman_max_error", _cfg_get(cfg, "max_error", max_error)))
         self.target_attention_only = bool(
             _cfg_get(
                 cfg,
@@ -451,12 +441,8 @@ class HuffmanCompressor(BaseCompressor):
             norm_w = torch.norm(W_orig, p="fro").item()
 
             try:
-                packed_b, code_map, meta = HuffmanCoder.encode(
-                    W_orig, quantize_bits=self.quantize_bits
-                )
-                W_rec = HuffmanCoder.decode(packed_b, code_map, meta, device=orig_device).to(
-                    dtype=torch.float32
-                )
+                packed_b, code_map, meta = HuffmanCoder.encode(W_orig, quantize_bits=self.quantize_bits)
+                W_rec = HuffmanCoder.decode(packed_b, code_map, meta, device=orig_device).to(dtype=torch.float32)
 
                 if norm_w < 1e-12:
                     err = 0.0
@@ -489,19 +475,13 @@ class HuffmanCompressor(BaseCompressor):
                 else:
                     res_w = W_rec.to(dtype=orig_dtype, device=orig_device)
 
-                assert res_w.shape == orig_shape, (
-                    f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
-                )
+                assert res_w.shape == orig_shape, f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
                 target_mod.weight.data.copy_(res_w)
 
                 for lora_attr in ("lora_A", "lora_B", "lora_a", "lora_b"):
                     if hasattr(module, lora_attr):
                         l_mod = getattr(module, lora_attr)
-                        if (
-                            isinstance(l_mod, nn.Module)
-                            and hasattr(l_mod, "weight")
-                            and l_mod.weight is not None
-                        ):
+                        if isinstance(l_mod, nn.Module) and hasattr(l_mod, "weight") and l_mod.weight is not None:
                             l_mod.weight.requires_grad = True
                         elif isinstance(l_mod, nn.Parameter):
                             l_mod.requires_grad = True
@@ -561,11 +541,7 @@ class HuffmanCompressor(BaseCompressor):
             forward_check_success = None
 
         stats = self.get_compression_stats()
-        avg_err = (
-            (sum(self.layer_errors.values()) / max(1, len(self.layer_errors)))
-            if self.layer_errors
-            else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / max(1, len(self.layer_errors))) if self.layer_errors else 0.0
         stats["quantize_bits"] = self.quantize_bits
         stats["avg_entropy_bits"] = round(total_entropy / max(len(self.compressed_layers), 1), 2)
         stats["total_compressed_bytes"] = total_comp_bytes

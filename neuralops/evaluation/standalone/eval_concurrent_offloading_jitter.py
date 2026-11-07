@@ -5,31 +5,30 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Eval concurrent offloading jitter module.
-"""
+"""Eval concurrent offloading jitter module."""
 
 
 def main() -> None:
     """Run this standalone evaluation experiment."""
 
     import gc
-    import os
-    import time
     import json
+    import os
     import threading
+    import time
+
     import numpy as np
     import torch
-    from transformers import GPT2LMHeadModel, AutoTokenizer
+    from transformers import AutoTokenizer, GPT2LMHeadModel
+
     from neuralops.utils.replace_attention import replace_attention
 
     if not torch.cuda.is_available():
         raise RuntimeError("This GPU contention experiment requires a CUDA-capable device.")
 
-
     def print_log(msg):
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
-
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Concurrent Generation & Background KV Offloading Benchmark on: {torch.cuda.get_device_name(0)}")
@@ -50,7 +49,6 @@ def main() -> None:
 
     input_ids = tokenizer(reasoning_prompt, return_tensors="pt").input_ids.to(device)
     TOTAL_GEN_STEPS = 128
-
 
     class BackgroundWorker:
         """Simulates realistic asynchronous background operations (KV offloading to host pinned memory or SVD compression)."""
@@ -90,7 +88,6 @@ def main() -> None:
             self.stop_event.set()
             if self.thread is not None:
                 self.thread.join(timeout=2.0)
-
 
     architectures = [("GPT-2 Baseline (MHA)", None), ("GPT-2 + SVD Linear Attention", "svd_linear_attention")]
 
@@ -188,7 +185,6 @@ def main() -> None:
         json.dump(benchmark_matrix, f, indent=2)
 
     print_log(f"All concurrent generation benchmarks completed! Written to {out_file}")
-
 
 
 if __name__ == "__main__":

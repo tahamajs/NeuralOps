@@ -129,14 +129,10 @@ def profile_layer_sensitivity(
     intermediate_indices = [idx for idx in range(num_layers) if idx not in boundary_indices]
 
     mean_boundary_entropy = (
-        sum(entropies[i] for i in boundary_indices) / len(boundary_indices)
-        if boundary_indices
-        else 0.0
+        sum(entropies[i] for i in boundary_indices) / len(boundary_indices) if boundary_indices else 0.0
     )
     mean_intermediate_entropy = (
-        sum(entropies[i] for i in intermediate_indices) / len(intermediate_indices)
-        if intermediate_indices
-        else 0.0
+        sum(entropies[i] for i in intermediate_indices) / len(intermediate_indices) if intermediate_indices else 0.0
     )
 
     return AttentionEntropyProfile(
@@ -310,14 +306,10 @@ class MoARouter:
                 # Canonical Pareto optimal partition:
                 # Boundary safeguards: Layers 0-3 and (L-2)-(L-1) Full Attention
                 # Intermediate bulk: Layers 4-(L-3) Linear Attention (26 layers for L=32)
-                self.full_attention_layers = sorted(
-                    list(set([0, 1, 2, 3, num_layers - 2, num_layers - 1]))
-                )
+                self.full_attention_layers = sorted(list(set([0, 1, 2, 3, num_layers - 2, num_layers - 1])))
             else:
                 # For small models, retain boundary layers
-                self.full_attention_layers = sorted(
-                    list(set([0, max(0, num_layers - 1)]))
-                )
+                self.full_attention_layers = sorted(list(set([0, max(0, num_layers - 1)])))
         else:
             invalid_layers = [idx for idx in full_attention_layers if idx < 0 or idx >= num_layers]
             if invalid_layers:
@@ -476,9 +468,7 @@ class MoARouter:
     def get_layer_type(self, layer_idx: int) -> Literal["full_attention", "linear_attention"]:
         """Returns the attention paradigm allocated for a specific layer index."""
         if layer_idx < 0 or layer_idx >= self.num_layers:
-            raise IndexError(
-                f"Layer index {layer_idx} out of range for model with {self.num_layers} layers."
-            )
+            raise IndexError(f"Layer index {layer_idx} out of range for model with {self.num_layers} layers.")
         if layer_idx in self._full_set:
             return "full_attention"
         return "linear_attention"
@@ -571,12 +561,9 @@ class MoARouter:
         boundary_prefix: int = 4,
         boundary_suffix: int = 2,
     ) -> MiddleLayersRoutingResult:
-
         if entropies is not None:
             if len(entropies) != l_total:
-                raise ValueError(
-                    f"entropies length ({len(entropies)}) does not match num_layers ({l_total})"
-                )
+                raise ValueError(f"entropies length ({len(entropies)}) does not match num_layers ({l_total})")
             router._entropies = [float(e) for e in entropies]
 
         # Determine boundary and intermediate layers
@@ -699,9 +686,7 @@ class MoARouter:
         # Speedup/Value contributions
         if layer_speedups is not None:
             if len(layer_speedups) != l_total:
-                raise ValueError(
-                    f"layer_speedups length {len(layer_speedups)} does not match num_layers {l_total}"
-                )
+                raise ValueError(f"layer_speedups length {len(layer_speedups)} does not match num_layers {l_total}")
             speedups = [float(s) for s in layer_speedups]
         else:
             # Latency reduction provides linear throughput acceleration
@@ -847,10 +832,7 @@ class MoARouter:
             linear_layers = [i for i in range(target_depth) if i not in set(full_layers)]
 
         full_set = set(full_layers)
-        schedule_map = {
-            i: "full_attention" if i in full_set else "linear_attention"
-            for i in range(target_depth)
-        }
+        schedule_map = {i: "full_attention" if i in full_set else "linear_attention" for i in range(target_depth)}
 
         router_cls = cls_or_self if isinstance(cls_or_self, type) else type(cls_or_self)
         router = router_cls(num_layers=target_depth, full_attention_layers=full_layers)
@@ -918,15 +900,11 @@ class MoARouter:
 
         if full_set.intersection(linear_set):
             overlap = sorted(list(full_set.intersection(linear_set)))
-            raise ValueError(
-                f"Schema validation error: overlapping layers in full and linear partitions: {overlap}"
-            )
+            raise ValueError(f"Schema validation error: overlapping layers in full and linear partitions: {overlap}")
 
         if full_set.union(linear_set) != set(range(num_layers)):
             missing = sorted(list(set(range(num_layers)) - full_set.union(linear_set)))
-            raise ValueError(
-                f"Schema validation error: partition incomplete, missing layers: {missing}"
-            )
+            raise ValueError(f"Schema validation error: partition incomplete, missing layers: {missing}")
 
     def compute_memory_savings(
         self,

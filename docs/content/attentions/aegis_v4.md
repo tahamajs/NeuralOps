@@ -142,10 +142,10 @@ RFF Einstein sum projections ($\hat{Q} W_{\text{rff}}, \hat{K} W_{\text{rff}}$):
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} = 8 B N D r + 2 B H_l N W d_h + 4 B H_g N d_h F$$
-Specifically, regarding \textbf{Parameter Footprint}, 
+Specifically, regarding \textbf{Parameter Footprint},
 
   $$\Theta = 8 D r + H_g d_h F + H$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Local Softpick logits: $\mathcal{O}(B H_l N W)$ Concurrently, RFF feature activations: $\mathcal{O}(B H_g N F)$ In this setting, Global memory matrix state: $\mathcal{O}(B H_g F d_h)$ Additionally, Total Memory: $\mathcal{O}(B N D + B H_l N W + B H_g N F + B H_g F d_h)$
@@ -237,4 +237,3 @@ The empirical evaluation of `aegis_v4` across standard sequence lengths and lang
 | **$L = 2048$** | 0.55 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.04 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.05 ms** | **440 MB** | **6.24x** |
-

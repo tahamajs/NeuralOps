@@ -27,18 +27,24 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
 os.environ["HF_HUB_OFFLINE"] = "1"
 
+import inspect
+
 import pyarrow.ipc as ipc
 import torch
 import torch.nn as nn
-import inspect
+
 _orig_named_params = nn.Module.named_parameters
+
+
 def _safe_named_parameters(self, prefix="", recurse=True, remove_duplicate=True):
     return _orig_named_params(self, prefix=prefix, recurse=recurse)
+
+
 nn.Module.named_parameters = _safe_named_parameters
 
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("direct_gpu_kd")
@@ -46,6 +52,7 @@ logger = logging.getLogger("direct_gpu_kd")
 
 class ArrowSST2Dataset(Dataset):
     """Direct PyArrow in-memory dataset eliminating third-party network wrappers."""
+
     def __init__(self, arrow_path: str, tokenizer: Any, max_length: int = 128) -> None:
         with open(arrow_path, "rb") as f:
             reader = ipc.open_stream(f)
@@ -60,16 +67,12 @@ class ArrowSST2Dataset(Dataset):
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         item = self.tokenizer(
-            self.sentences[idx],
-            padding="max_length",
-            truncation=True,
-            max_length=self.max_length,
-            return_tensors="pt"
+            self.sentences[idx], padding="max_length", truncation=True, max_length=self.max_length, return_tensors="pt"
         )
         return {
             "input_ids": item["input_ids"].squeeze(0),
             "attention_mask": item["attention_mask"].squeeze(0),
-            "label": torch.tensor(self.labels[idx], dtype=torch.long)
+            "label": torch.tensor(self.labels[idx], dtype=torch.long),
         }
 
 
@@ -149,7 +152,7 @@ def train_single_module_kd(
             ce_loss = F.cross_entropy(s_logits, labels)
             p_s = F.log_softmax(s_logits / temperature, dim=-1)
             p_t = F.softmax(t_logits / temperature, dim=-1)
-            kd_loss = F.kl_div(p_s, p_t, reduction="batchmean") * (temperature ** 2)
+            kd_loss = F.kl_div(p_s, p_t, reduction="batchmean") * (temperature**2)
 
             total_loss = (1.0 - alpha_kd) * ce_loss + alpha_kd * kd_loss
 
@@ -167,9 +170,11 @@ def train_single_module_kd(
 
     duration = time.time() - start_time
     val_acc, val_loss = evaluate_accuracy(student_model, val_loader, device)
-    mem_peak_gb = (torch.cuda.max_memory_allocated(device) / (1024 ** 3)) if torch.cuda.is_available() else 0.0
+    mem_peak_gb = (torch.cuda.max_memory_allocated(device) / (1024**3)) if torch.cuda.is_available() else 0.0
 
-    logger.info(f"[{module_name}] Result: Acc={val_acc:.2f}% | ValLoss={val_loss:.4f} | PeakVRAM={mem_peak_gb:.2f} GB | Time={duration:.1f}s")
+    logger.info(
+        f"[{module_name}] Result: Acc={val_acc:.2f}% | ValLoss={val_loss:.4f} | PeakVRAM={mem_peak_gb:.2f} GB | Time={duration:.1f}s"
+    )
     return {
         "module": module_name,
         "accuracy": round(val_acc, 2),
@@ -178,7 +183,7 @@ def train_single_module_kd(
         "peak_vram_gb": round(mem_peak_gb, 2),
         "duration_sec": round(duration, 1),
         "steps": kd_steps,
-        "status": "SUCCESS"
+        "status": "SUCCESS",
     }
 
 
@@ -193,15 +198,23 @@ def main() -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
     total_vram_gb = (torch.cuda.get_device_properties(0).total_memory / (1024**3)) if torch.cuda.is_available() else 0.0
-    logger.info(f"Direct Execution Target: {gpu_name} ({total_vram_gb:.1f} GB VRAM) | Batch size: {args.batch_size} | Steps: {args.kd_steps}")
+    logger.info(
+        f"Direct Execution Target: {gpu_name} ({total_vram_gb:.1f} GB VRAM) | Batch size: {args.batch_size} | Steps: {args.kd_steps}"
+    )
 
     # 1. Load Tokenizer & Model strictly offline
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", local_files_only=True)
-    teacher_model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2, local_files_only=True).to(device)
+    teacher_model = AutoModelForSequenceClassification.from_pretrained(
+        "bert-base-uncased", num_labels=2, local_files_only=True
+    ).to(device)
 
     # 2. Ingest datasets directly from Arrow
-    train_arrow = os.path.expanduser("~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-train.arrow")
-    val_arrow = os.path.expanduser("~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-validation.arrow")
+    train_arrow = os.path.expanduser(
+        "~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-train.arrow"
+    )
+    val_arrow = os.path.expanduser(
+        "~/.cache/huggingface/datasets/glue/sst2/0.0.0/bcdcba79d07bc864c1c254ccfcedcce55bcc9a8c/glue-validation.arrow"
+    )
 
     train_dataset = ArrowSST2Dataset(train_arrow, tokenizer)
     val_dataset = ArrowSST2Dataset(val_arrow, tokenizer)
@@ -272,11 +285,7 @@ def main() -> None:
             results.append(rec)
         except Exception as exc:
             logger.error(f"Failed KD for {mod_name}: {exc}")
-            results.append({
-                "module": mod_name,
-                "accuracy": 0.0,
-                "status": f"FAILED: {exc}"
-            })
+            results.append({"module": mod_name, "accuracy": 0.0, "status": f"FAILED: {exc}"})
 
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     with open(args.output, "w", encoding="utf-8") as f:

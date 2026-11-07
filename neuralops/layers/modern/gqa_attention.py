@@ -12,12 +12,6 @@ Grouped-query attention interpolating between multi-head and multi-query setups 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    LoRALinear,
-)
 
 import logging
 import math
@@ -27,9 +21,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.utils.rope import _rotate_half, apply_rotary_pos_emb
 
 logger = logging.getLogger(__name__)
@@ -51,6 +47,7 @@ class GroupedQueryAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
@@ -109,9 +106,7 @@ class GroupedQueryAttention(BaseAttention):
                 "num_heads",
                 getattr(src_attn, "num_attention_heads", getattr(src_attn, "n_head", None)),
             )
-        self.num_heads = int(
-            num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 8))
-        )
+        self.num_heads = int(num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 8)))
 
         self.head_dim = int(
             kwargs.get("head_dim", getattr(config, "head_dim", None) if config else None)
@@ -379,8 +374,7 @@ class GroupedQueryAttention(BaseAttention):
 
         cls_name = src.__class__.__name__
         has_out_proj = any(
-            hasattr(src, a)
-            for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
+            hasattr(src, a) for a in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
         )
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
@@ -444,9 +438,7 @@ class GroupedQueryAttention(BaseAttention):
                 out_d = min(target.weight.size(0), w.size(0))
                 in_d = min(target.weight.size(1), w.size(1))
                 target.weight.data.zero_()
-                target.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
-                )
+                target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
 
                 if b is not None and target.bias is not None:
                     mn = min(target.bias.numel(), b.numel())
@@ -600,18 +592,8 @@ class GroupedQueryAttention(BaseAttention):
             past_k, past_v, past_len = self._read_cache(past_key_value, layer_idx)
 
         Q = self.query(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K = (
-            self.key(kv_input)
-            .view(B, N_k_new, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.value(kv_input)
-            .view(B, N_k_new, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.key(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.value(kv_input).view(B, N_k_new, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -635,10 +617,7 @@ class GroupedQueryAttention(BaseAttention):
         attn_weights: torch.Tensor | None = None
 
         use_sdpa = (
-            head_mask is None
-            and not output_attentions
-            and attention_mask is None
-            and encoder_attention_mask is None
+            head_mask is None and not output_attentions and attention_mask is None and encoder_attention_mask is None
         )
 
         if use_sdpa:
@@ -648,6 +627,7 @@ class GroupedQueryAttention(BaseAttention):
                 # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM (direct KV broadcast, no DRAM expansion)
                 try:
                     from neuralops.ops.cuda.flash_gqa import flash_gqa
+
                     context = flash_gqa(Q, K, V, is_causal=is_causal, scale=scale_val)
                     dispatched = True
                 except Exception as e_cuda:
@@ -657,6 +637,7 @@ class GroupedQueryAttention(BaseAttention):
                 # Level 2: Triton JIT autotuned online softmax kernel (direct in-register GQA grouping)
                 try:
                     from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+
                     context = fused_weighted_gqa_online_softmax_triton(
                         Q, K, V, head_weights=None, is_causal=is_causal, scale=scale_val
                     )
@@ -710,9 +691,7 @@ class GroupedQueryAttention(BaseAttention):
                     hm = hm.view(1, H, 1, 1)
                 elif hm.dim() == 2:
                     if hm.shape[-1] != H:
-                        raise ValueError(
-                            f"head_mask last dim {hm.shape[-1]} != num_heads {H}"
-                        )
+                        raise ValueError(f"head_mask last dim {hm.shape[-1]} != num_heads {H}")
                     hm = hm.view(hm.shape[0], H, 1, 1)
                 elif hm.dim() == 3:
                     hm = hm.unsqueeze(1)
@@ -841,10 +820,7 @@ def inject_gqa(
     if src_attn is None:
         src_attn = target
 
-    if (
-        isinstance(src_attn, GroupedQueryAttention)
-        or "GroupedQueryAttention" in src_attn.__class__.__name__
-    ):
+    if isinstance(src_attn, GroupedQueryAttention) or "GroupedQueryAttention" in src_attn.__class__.__name__:
         return None
 
     if cfg is None:

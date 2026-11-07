@@ -52,6 +52,7 @@ def latent_kv_cache_attention_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.linear_attn import triton_fused_latent_kv_cache_attention_pytorch_ref
+
     return triton_fused_latent_kv_cache_attention_pytorch_ref(q, c_kv, u_k, u_v, sm_scale=sm_scale)
 
 
@@ -89,6 +90,7 @@ class LatentKVCacheAttentionFunction(torch.autograd.Function):
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.linear_attn import triton_fused_latent_kv_cache_attention
+
         return triton_fused_latent_kv_cache_attention
     except ImportError:
         return None

@@ -10,14 +10,14 @@ Hybrid Local Kernel Attention Hardware Operators.
 """
 
 from neuralops.ops.cuda.hybrid_local_kernel.hybrid_local_kernel_autograd import (
-    hybrid_local_attn,
-    hybrid_local_attn_ref,
-    hybrid_two_branch_blend,
-    hybrid_two_branch_blend_ref,
-    hybrid_three_branch_blend,
-    hybrid_three_branch_blend_ref,
     hybrid_heterogeneous_branch,
     hybrid_heterogeneous_branch_ref,
+    hybrid_local_attn,
+    hybrid_local_attn_ref,
+    hybrid_three_branch_blend,
+    hybrid_three_branch_blend_ref,
+    hybrid_two_branch_blend,
+    hybrid_two_branch_blend_ref,
 )
 
 __all__ = [

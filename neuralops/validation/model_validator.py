@@ -13,8 +13,9 @@ Validates model architecture construction, layer integrity, and forward pass exe
 
 import torch
 
+
 class ModelValidator:
-    def __init__(self, model, input_shape, device='cpu'):
+    def __init__(self, model, input_shape, device="cpu"):
         self.model = model
         self.input_shape = input_shape
         self.device = device
@@ -38,14 +39,14 @@ class ModelValidator:
             dummy = torch.randint(0, 1000, self.input_shape, device=self.device)
             with torch.no_grad():
                 out = self.model(dummy)
-            logits = out.logits if hasattr(out, 'logits') else out[0]
+            logits = out.logits if hasattr(out, "logits") else out[0]
             print(f"  ✅ Forward pass: output shape {logits.shape}")
             if torch.isnan(logits).any():
-                self.errors.append('NaN in forward output!')
+                self.errors.append("NaN in forward output!")
             if torch.isinf(logits).any():
-                self.errors.append('Inf in forward output!')
+                self.errors.append("Inf in forward output!")
         except Exception as e:
-            self.errors.append(f'Forward failed: {e}')
+            self.errors.append(f"Forward failed: {e}")
             return False
 
         try:
@@ -60,11 +61,11 @@ class ModelValidator:
             print(f"  ✅ Backward pass: loss {out.loss.item():.4f}")
             self.model.zero_grad()
         except Exception as e:
-            self.errors.append(f'Backward failed: {e}')
+            self.errors.append(f"Backward failed: {e}")
 
         n_nan_grads = sum(1 for p in self.model.parameters() if p.grad is not None and torch.isnan(p.grad).any())
         if n_nan_grads > 0:
-            self.errors.append(f'{n_nan_grads} params with NaN grads')
+            self.errors.append(f"{n_nan_grads} params with NaN grads")
 
         print(f"  Errors: {len(self.errors)}")
         return len(self.errors) == 0

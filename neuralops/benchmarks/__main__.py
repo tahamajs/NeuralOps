@@ -14,6 +14,7 @@ Command-line entrypoint for executing NeuralOps benchmark suites.
 from __future__ import annotations
 
 import sys
+
 from neuralops.benchmarks.cli import main
 
 if __name__ == "__main__":

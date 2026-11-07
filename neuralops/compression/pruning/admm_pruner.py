@@ -12,7 +12,6 @@ Applies alternating direction method of multipliers with dynamic penalty paramet
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,12 +22,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
-from neuralops.core.pruning_utils import (
-    apply_24_structured_mask,
-    apply_block_mask,
-    recalibrate_layernorms,
-)
+from neuralops.core.pruning_utils import apply_24_structured_mask, apply_block_mask, recalibrate_layernorms
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -73,9 +69,7 @@ class ADMMMaskedLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = nn.Parameter(
-            torch.empty(out_features, in_features, dtype=dtype, device=device)
-        )
+        self.weight = nn.Parameter(torch.empty(out_features, in_features, dtype=dtype, device=device))
         self.register_buffer(
             "mask",
             torch.ones(out_features, in_features, dtype=dtype, device=device),
@@ -116,6 +110,7 @@ class ADMMMaskedLinear(nn.Module):
         if x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 orig_shape = x.shape
                 x_flat = x.reshape(-1, self.in_features)
                 w_masked = self.weight * self.mask
@@ -175,7 +170,11 @@ class ADMMPruner(BaseCompressor):
         super().__init__(model, name="admm_pruner", **kwargs)
         conf = cfg or kwargs.get("comp_config")
 
-        self.rank = int(kwargs.get("target_rank", kwargs.get("rank"))) if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None) else None
+        self.rank = (
+            int(kwargs.get("target_rank", kwargs.get("rank")))
+            if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None)
+            else None
+        )
         if self.rank is not None:
             self.structured_24 = False
             p_keep = max(0.05, min(0.95, (2.0 * float(self.rank)) / 256.0))
@@ -230,9 +229,7 @@ class ADMMPruner(BaseCompressor):
                 _cfg_get(conf, "dynamic_rho", dynamic_rho),
             )
         )
-        self.use_ste = bool(
-            _cfg_get(conf, "admm_pruner_use_ste", _cfg_get(conf, "use_ste", use_ste))
-        )
+        self.use_ste = bool(_cfg_get(conf, "admm_pruner_use_ste", _cfg_get(conf, "use_ste", use_ste)))
         self.recalibrate_ln = bool(
             _cfg_get(
                 conf,
@@ -297,9 +294,7 @@ class ADMMPruner(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.comp_config = conf
         self._compressed_params: int = 0
@@ -315,10 +310,7 @@ class ADMMPruner(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, ADMMMaskedLinear):
             return False
-        if any(
-            name.endswith(sfx)
-            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
-        ):
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
             return False
 
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -334,10 +326,7 @@ class ADMMPruner(BaseCompressor):
             isinstance(module, nn.Linear)
             or isinstance(target_mod, nn.Linear)
             or is_conv1d
-            or (
-                Conv1D is not None
-                and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
-            )
+            or (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
             or "loralinear" in cls_name
             or hasattr(module, "base_layer")
         )
@@ -453,22 +442,14 @@ class ADMMPruner(BaseCompressor):
                 if self.calibration_loader is not None:
                     for batch in self.calibration_loader:
                         if isinstance(batch, dict):
-                            batch = {
-                                k: v.to(device) if isinstance(v, torch.Tensor) else v
-                                for k, v in batch.items()
-                            }
+                            batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
                             self.model(**batch)
                         elif isinstance(batch, (list, tuple)):
-                            batch = [
-                                v.to(device) if isinstance(v, torch.Tensor) else v for v in batch
-                            ]
+                            batch = [v.to(device) if isinstance(v, torch.Tensor) else v for v in batch]
                             self.model(*batch)
                         elif isinstance(batch, torch.Tensor):
                             self.model(batch.to(device))
-                        if all(
-                            sum(t.shape[0] for t in collected[n]) >= self.distill_batch_size
-                            for n in target_names
-                        ):
+                        if all(sum(t.shape[0] for t in collected[n]) >= self.distill_batch_size for n in target_names):
                             break
                 elif self.calibration_texts is not None and self.tokenizer is not None:
                     for text in self.calibration_texts[:4]:
@@ -494,7 +475,9 @@ class ADMMPruner(BaseCompressor):
                 result[name] = torch.cat(tensor_list, dim=0)
         return result
 
-    def _project_sparse(self, candidate: torch.Tensor, layer_sparsity: float | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+    def _project_sparse(
+        self, candidate: torch.Tensor, layer_sparsity: float | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Project candidate (typically W + U) onto the sparse constraint set.
         Returns (pruned_tensor, binary_mask).
@@ -512,9 +495,7 @@ class ADMMPruner(BaseCompressor):
                 mask = (raw_mask > 0.5).float()
             return pruned, mask
         elif self.block_size != (1, 1):
-            pruned, raw_mask = apply_block_mask(
-                candidate, block_size=self.block_size, sparsity=eff_sp
-            )
+            pruned, raw_mask = apply_block_mask(candidate, block_size=self.block_size, sparsity=eff_sp)
             if raw_mask is None:
                 mask = (pruned.abs() > 1e-12).float()
             elif raw_mask.dtype == torch.bool:
@@ -537,11 +518,7 @@ class ADMMPruner(BaseCompressor):
         self.layer_actual_sparsities = {}
         self.layer_distill_losses = {}
 
-        targets = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        targets = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not targets:
             logger.warning("ADMMPruner: No compressible target modules found.")
@@ -551,9 +528,7 @@ class ADMMPruner(BaseCompressor):
             return self.model, stats
 
         target_names = [name for name, _ in targets]
-        calib_inputs = (
-            self._collect_calibration_inputs(target_names) if self.lambda_distill > 0 else {}
-        )
+        calib_inputs = self._collect_calibration_inputs(target_names) if self.lambda_distill > 0 else {}
 
         for name, module in targets:
             target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -591,7 +566,10 @@ class ADMMPruner(BaseCompressor):
                 Y0 = None
 
             if self.rank is not None:
-                p_keep = max(0.05, min(0.98, float(self.rank * (in_features + out_features)) / max(in_features * out_features, 1)))
+                p_keep = max(
+                    0.05,
+                    min(0.98, float(self.rank * (in_features + out_features)) / max(in_features * out_features, 1)),
+                )
                 layer_sparsity = 1.0 - p_keep
             else:
                 layer_sparsity = self.sparsity
@@ -605,9 +583,7 @@ class ADMMPruner(BaseCompressor):
             best_score = base_w_err
             if self.lambda_distill > 0 and X_calib is not None and Y0 is not None:
                 y0_norm = max(torch.norm(Y0, p="fro").item(), 1e-12)
-                base_y_err = float(
-                    torch.norm((X_calib @ W_sparse_0.t()) - Y0, p="fro").item() / y0_norm
-                )
+                base_y_err = float(torch.norm((X_calib @ W_sparse_0.t()) - Y0, p="fro").item() / y0_norm)
                 best_score = base_w_err + self.lambda_distill * base_y_err
 
             W = W0.clone()
@@ -671,15 +647,10 @@ class ADMMPruner(BaseCompressor):
                             break
 
                         W_sparse_curr = W * mask
-                        curr_w_err = float(
-                            torch.norm(W0 - W_sparse_curr, p="fro").item() / max(w_norm, 1e-12)
-                        )
+                        curr_w_err = float(torch.norm(W0 - W_sparse_curr, p="fro").item() / max(w_norm, 1e-12))
                         curr_score = curr_w_err
                         if self.lambda_distill > 0 and X_calib is not None and Y0 is not None:
-                            curr_y_err = float(
-                                torch.norm((X_calib @ W_sparse_curr.t()) - Y0, p="fro").item()
-                                / y0_norm
-                            )
+                            curr_y_err = float(torch.norm((X_calib @ W_sparse_curr.t()) - Y0, p="fro").item() / y0_norm)
                             curr_score = curr_w_err + self.lambda_distill * curr_y_err
 
                         if curr_score < best_score:
@@ -690,9 +661,7 @@ class ADMMPruner(BaseCompressor):
 
                 if self.lambda_distill > 0 and X_calib is not None and Y0 is not None:
                     with torch.no_grad():
-                        final_distill_loss = float(
-                            torch.mean(((X_calib @ best_W_sparse.t()) - Y0) ** 2).item()
-                        )
+                        final_distill_loss = float(torch.mean(((X_calib @ best_W_sparse.t()) - Y0) ** 2).item())
 
             except Exception as e:
                 logger.warning("ADMMPruner optimization failed on %s: %s", name, e)
@@ -736,9 +705,7 @@ class ADMMPruner(BaseCompressor):
                     p.requires_grad = False
                 continue
 
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
-                module, "base_layer"
-            )
+            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
             if self.use_ste and not has_lora and not is_conv1d and isinstance(module, nn.Linear):
                 admm_layer = ADMMMaskedLinear.from_linear(module, mask=best_mask)
@@ -761,9 +728,7 @@ class ADMMPruner(BaseCompressor):
 
             self.compressed_layers.append(name)
 
-        if self.recalibrate_ln and (
-            self.calibration_loader is not None or self.calibration_texts is not None
-        ):
+        if self.recalibrate_ln and (self.calibration_loader is not None or self.calibration_texts is not None):
             try:
                 recalibrate_layernorms(
                     self.model,
@@ -781,20 +746,17 @@ class ADMMPruner(BaseCompressor):
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
         avg_actual_sparsity = (
-            sum(self.layer_actual_sparsities[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_actual_sparsities[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else (0.5 if self.structured_24 else self.sparsity)
         )
         avg_distill_loss = (
-            sum(self.layer_distill_losses[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_distill_losses[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )

@@ -94,7 +94,7 @@ class TGIRequestBatch:
 
     def admit_request(self, request: TGIRequest) -> Optional[int]:
         """Binds a request to an available free slot if available, or queues it.
-        
+
         Returns:
             Assigned slot_id if admitted immediately, or None if queued.
         """
@@ -112,7 +112,7 @@ class TGIRequestBatch:
 
     def step(self, model: nn.Module) -> Dict[str, int]:
         """Assembles active slot tokens, executes forward step, appends generated tokens.
-        
+
         Returns:
             Mapping of request_id to newly generated token id.
         """
@@ -129,7 +129,7 @@ class TGIRequestBatch:
 
         outputs = _call_model(model, batched_tokens)
         logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
-        
+
         next_tokens = torch.argmax(logits, dim=-1)
         step_results: Dict[str, int] = {}
 
@@ -138,10 +138,10 @@ class TGIRequestBatch:
             tok = int(next_tokens[idx].item())
             slot.generated_ids.append(tok)
             step_results[req_id] = tok
-            
+
             is_max = len(slot.generated_ids) >= slot.max_new_tokens
             is_eos = slot.eos_token_id is not None and tok == slot.eos_token_id
-            
+
             if is_max or is_eos:
                 slot.finished = True
                 slot.finish_reason = "eos" if is_eos else "max_tokens"
@@ -483,7 +483,8 @@ class TGIServingAdapter:
         new_tokens: Dict[str, int] = {}
 
         needs_prefill = [
-            r_id for r_id in active_ids
+            r_id
+            for r_id in active_ids
             if r_id in self.batch_manager.active_slots
             and self.batch_manager.active_slots[r_id].past_kv is None
             and not self.batch_manager.active_slots[r_id].finished
@@ -512,10 +513,12 @@ class TGIServingAdapter:
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
                 slot.past_kv = getattr(outputs, "past_key_values", None)
             else:
-                full_context = torch.cat([
-                    slot.input_ids.to(self.device),
-                    torch.tensor(slot.generated_ids, dtype=torch.long, device=self.device),
-                ])
+                full_context = torch.cat(
+                    [
+                        slot.input_ids.to(self.device),
+                        torch.tensor(slot.generated_ids, dtype=torch.long, device=self.device),
+                    ]
+                )
                 outputs = _call_model(self.model, full_context.unsqueeze(0))
                 logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
 
@@ -654,9 +657,14 @@ class TGIServingAdapter:
             # request_id passed as a non-string tensor or list
             prompt = request_id
             request_id = f"stream_{int(time.time() * 1000)}_{self._total_requests}"
-        elif request_id is not None and prompt is None and isinstance(request_id, str) and (
-            request_id not in self.batch_manager.active_slots
-            and not any(q.request_id == request_id for q in self.batch_manager.queued_slots)
+        elif (
+            request_id is not None
+            and prompt is None
+            and isinstance(request_id, str)
+            and (
+                request_id not in self.batch_manager.active_slots
+                and not any(q.request_id == request_id for q in self.batch_manager.queued_slots)
+            )
         ):
             # Positional call stream_generate(prompt_str, max_new_tokens)
             prompt = request_id
@@ -694,12 +702,14 @@ class TGIServingAdapter:
                     break
                 tok, text, is_final = item
                 if sse_format:
-                    payload = json.dumps({
-                        "token": {"id": tok, "text": text},
-                        "generated_text": text if is_final else None,
-                        "finished": is_final,
-                        "request_id": request_id,
-                    })
+                    payload = json.dumps(
+                        {
+                            "token": {"id": tok, "text": text},
+                            "generated_text": text if is_final else None,
+                            "finished": is_final,
+                            "request_id": request_id,
+                        }
+                    )
                     yield f"data: {payload}\n\n"
                 else:
                     yield (tok, text, is_final)
@@ -744,11 +754,13 @@ class TGIServingAdapter:
             data = await request.json()
             if not isinstance(data, dict):
                 from fastapi import HTTPException
+
                 raise HTTPException(status_code=400, detail="request body must be a JSON object")
             prompt = data.get("inputs", "")
             params = data.get("parameters", {})
             if not isinstance(params, dict):
                 from fastapi import HTTPException
+
                 raise HTTPException(status_code=400, detail="parameters must be a JSON object")
             max_new = params.get("max_new_tokens", 16)
             completions = self.continuous_batching_generate([prompt], max_new_tokens=max_new)
@@ -759,11 +771,13 @@ class TGIServingAdapter:
             data = await request.json()
             if not isinstance(data, dict):
                 from fastapi import HTTPException
+
                 raise HTTPException(status_code=400, detail="request body must be a JSON object")
             prompt = data.get("inputs", "")
             params = data.get("parameters", {})
             if not isinstance(params, dict):
                 from fastapi import HTTPException
+
                 raise HTTPException(status_code=400, detail="parameters must be a JSON object")
             max_new = params.get("max_new_tokens", 16)
 
@@ -784,9 +798,7 @@ def _call_model(model: nn.Module, input_ids: torch.Tensor, **optional_kwargs: An
         return model(input_ids)
     accepts_kwargs = any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in signature.parameters.values())
     accepted = {
-        name: value
-        for name, value in optional_kwargs.items()
-        if accepts_kwargs or name in signature.parameters
+        name: value for name, value in optional_kwargs.items() if accepts_kwargs or name in signature.parameters
     }
     return model(input_ids, **accepted)
 

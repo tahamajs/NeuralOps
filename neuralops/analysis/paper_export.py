@@ -197,8 +197,9 @@ def export_benchmark_table(
 
     fmt = format.lower()
     if fmt == "csv":
-        import io
         import csv
+        import io
+
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(list(columns) + (["pareto_optimal"] if mark_pareto else []))
@@ -214,7 +215,7 @@ def export_benchmark_table(
         header_row = []
         for c in columns:
             if any(k in c.lower() for k in ("name", "module", "regime")):
-                header_row.append(c.replace('_', ' ').title())
+                header_row.append(c.replace("_", " ").title())
             else:
                 arrow = " ↓" if _is_lower_better(c) else " ↑"
                 header_row.append(f"{c.replace('_', ' ').title()}{arrow}")
@@ -276,7 +277,12 @@ def export_benchmark_table(
                     val_str = f"{f_val:.2f}" if isinstance(val, float) else str(val)
                     if highlight_best and c in best_vals and abs(f_val - best_vals[c]) < 1e-6:
                         val_str = rf"\textbf{{{val_str}}}"
-                    elif highlight_best and c in second_vals and abs(f_val - second_vals[c]) < 1e-6 and abs(best_vals[c] - second_vals[c]) > 1e-6:
+                    elif (
+                        highlight_best
+                        and c in second_vals
+                        and abs(f_val - second_vals[c]) < 1e-6
+                        and abs(best_vals[c] - second_vals[c]) > 1e-6
+                    ):
                         val_str = rf"\underline{{{val_str}}}"
                 else:
                     val_str = _escape_latex(str(val))
@@ -287,13 +293,15 @@ def export_benchmark_table(
                 row_items.append(val_str)
             lines.append(" & ".join(row_items) + r" \\")
 
-        lines.extend([
-            r"\bottomrule",
-            r"\end{tabular}",
-            rf"\caption{{{caption} $^\star$ marks Pareto-optimal operating points. Bold indicates best, underline second best.}}",
-            rf"\label{{{label}}}",
-            r"\end{table}",
-        ])
+        lines.extend(
+            [
+                r"\bottomrule",
+                r"\end{tabular}",
+                rf"\caption{{{caption} $^\star$ marks Pareto-optimal operating points. Bold indicates best, underline second best.}}",
+                rf"\label{{{label}}}",
+                r"\end{table}",
+            ]
+        )
         return "\n".join(lines)
 
 

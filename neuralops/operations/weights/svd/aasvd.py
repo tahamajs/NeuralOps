@@ -40,6 +40,7 @@ def compute_activation_covariance(
                 # Reshape to (N, d_in)
                 flat = x.view(-1, x.size(-1)).float()
                 activations[path].append(flat.cpu())
+
         return _hook
 
     for path, mod in target_modules:

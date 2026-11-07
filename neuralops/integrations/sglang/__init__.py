@@ -16,24 +16,15 @@ import logging
 from typing import Any, Optional
 
 from neuralops.core.exceptions import IntegrationNotImplementedError
-from neuralops.integrations.radix_prefix_cache import (
-    RadixPrefixNode,
-    SGLangRadixAdapter,
-)
-from neuralops.integrations.sglang.radix_recurrent import (
-    RadixRecurrentNode,
-    RadixRecurrentTree,
-)
+from neuralops.integrations.radix_prefix_cache import RadixPrefixNode, SGLangRadixAdapter
+from neuralops.integrations.sglang.radix_recurrent import RadixRecurrentNode, RadixRecurrentTree
 
 logger = logging.getLogger("NeuralOps.SGLang")
 
 
 def sglang_is_available() -> bool:
     """Return True if SGLang or sgl_kernel is importable in current environment."""
-    return (
-        importlib.util.find_spec("sglang") is not None
-        or importlib.util.find_spec("sgl_kernel") is not None
-    )
+    return importlib.util.find_spec("sglang") is not None or importlib.util.find_spec("sgl_kernel") is not None
 
 
 def register_neuralops_sglang_plugin(
@@ -62,9 +53,28 @@ def register_neuralops_sglang_plugin(
 
         return register(config_class=config_class, arch_names=arch_names, **kwargs)
     except Exception as exc:
+        raise IntegrationNotImplementedError(f"Failed to register NeuralOps plugin in SGLang runtime: {exc}") from exc
+
+
+def get_sglang_radix_adapter(
+    tree: Optional[RadixRecurrentTree] = None,
+    **kwargs: Any,
+) -> SGLangRadixAdapter:
+    """
+    Construct an SGLangRadixAdapter connected to a RadixRecurrentTree.
+    Fails closed if SGLang runtime is explicitly requested with require_sglang=True
+    when SGLang is not installed.
+    """
+    require_sglang = kwargs.pop("require_sglang", False)
+    if require_sglang and not sglang_is_available():
         raise IntegrationNotImplementedError(
-            f"Failed to register NeuralOps plugin in SGLang runtime: {exc}"
-        ) from exc
+            "SGLang runtime is not installed. Install SGLang with:\n"
+            "    pip install 'sglang>=0.4.0'\n"
+            "Or see https://github.com/sgl-project/sglang for instructions."
+        )
+
+    t = tree if tree is not None else RadixRecurrentTree()
+    return SGLangRadixAdapter(tree=t, **kwargs)
 
 
 __all__ = [
@@ -72,6 +82,7 @@ __all__ = [
     "RadixRecurrentNode",
     "RadixRecurrentTree",
     "SGLangRadixAdapter",
+    "get_sglang_radix_adapter",
     "register_neuralops_sglang_plugin",
     "sglang_is_available",
 ]

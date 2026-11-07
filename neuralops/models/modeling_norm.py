@@ -14,6 +14,7 @@ Layer normalization and RMSNorm layers with optional fused Triton acceleration a
 from __future__ import annotations
 
 import logging
+
 import torch
 import torch.nn as nn
 
@@ -35,6 +36,7 @@ class NeuralOpsRMSNorm(nn.Module):
         if hidden_states.is_cuda and hidden_states.dtype in (torch.float16, torch.bfloat16):
             try:
                 from neuralops.ops.triton.elementwise import rmsnorm_triton
+
                 return rmsnorm_triton(hidden_states, self.weight, self.variance_epsilon)
             except (RuntimeError, ImportError) as e:
                 logger.debug("rmsnorm_triton failed: %s, falling back to PyTorch reference", e)

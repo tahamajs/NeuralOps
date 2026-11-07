@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -21,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -38,9 +41,13 @@ def _get_module():
         )
     return _MODULE
 
+
 from neuralops.ops.triton.elementwise import fused_dynamic_conv1d_pytorch, fused_dynamic_conv1d_triton
 
-def dynamic_conv1d_pytorch_ref(v: torch.Tensor, weights: torch.Tensor, bias: Optional[torch.Tensor] = None, *args, **kwargs) -> torch.Tensor:
+
+def dynamic_conv1d_pytorch_ref(
+    v: torch.Tensor, weights: torch.Tensor, bias: Optional[torch.Tensor] = None, *args, **kwargs
+) -> torch.Tensor:
     if v.dim() == 3:
         B, D, L = v.shape
         K = weights.shape[1]
@@ -51,13 +58,16 @@ def dynamic_conv1d_pytorch_ref(v: torch.Tensor, weights: torch.Tensor, bias: Opt
         return out.to(v.dtype)
     return fused_dynamic_conv1d_pytorch(v, weights, *args, **kwargs)
 
+
 dynamic_conv1d_ref = dynamic_conv1d_pytorch_ref
+
 
 def dynamic_conv1d(v: torch.Tensor, weights: torch.Tensor, bias: Optional[torch.Tensor] = None) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = mod.dynamic_conv1d_fwd
         return fn(*args, **kwargs)
+
     if weights.shape[-1] > 16 or (v.dim() == 4 and v.shape[-1] > 128):
         cuda_fn = None
     triton_fn = fused_dynamic_conv1d_triton if v.dim() == 4 else None
@@ -65,6 +75,8 @@ def dynamic_conv1d(v: torch.Tensor, weights: torch.Tensor, bias: Optional[torch.
         cuda_fn,
         triton_fn,
         dynamic_conv1d_pytorch_ref,
-        v, weights, bias,
+        v,
+        weights,
+        bias,
         kernel_name="dynamic_conv1d",
     )

@@ -12,7 +12,6 @@ Identifies and sheds redundant state-space blocks and attention projections thro
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -24,10 +23,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
-from neuralops.core.pruning_utils import (
-    apply_24_structured_mask,
-    get_calibration_tensors,
-)
+from neuralops.core.common import _cfg_get
+from neuralops.core.pruning_utils import apply_24_structured_mask, get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -145,6 +142,7 @@ class MambaShedderPrunedLinear(nn.Module):
             if x.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                     lora_out = fused_down_up_gemm_bias_triton(
                         x_flat,
                         self.lora_A.t().to(x_flat.dtype).contiguous(),
@@ -181,6 +179,7 @@ class MambaShedderCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -223,9 +222,7 @@ class MambaShedderCompressor(BaseCompressor):
             max_error = _cfg_get(cfg, "max_error", max_error)
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
-            max_calibration_batches = _cfg_get(
-                cfg, "max_calibration_batches", max_calibration_batches
-            )
+            max_calibration_batches = _cfg_get(cfg, "max_calibration_batches", max_calibration_batches)
             min_layer_dim = _cfg_get(cfg, "min_layer_dim", min_layer_dim)
             skip_should_compress_filter = _cfg_get(
                 cfg,
@@ -236,9 +233,7 @@ class MambaShedderCompressor(BaseCompressor):
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
 
         self.tokenizer = (
-            tokenizer
-            or getattr(model, "tokenizer", None)
-            or getattr(getattr(model, "config", None), "tokenizer", None)
+            tokenizer or getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
         )
 
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
@@ -261,9 +256,7 @@ class MambaShedderCompressor(BaseCompressor):
             self.target_device = torch.device(device)
         else:
             first_param = next(iter(model.parameters()), None)
-            self.target_device = (
-                first_param.device if first_param is not None else torch.device("cpu")
-            )
+            self.target_device = first_param.device if first_param is not None else torch.device("cpu")
 
         self.layer_errors: dict[str, float] = {}
         self.stats: dict[str, Any] = {}
@@ -303,9 +296,7 @@ class MambaShedderCompressor(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_lower = base_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(base_mod, "nf")
         if not is_linear_like:
             if _debug:
                 logger.info(f"  [skip] {name}: not linear-like")
@@ -510,9 +501,7 @@ class MambaShedderCompressor(BaseCompressor):
                                 )
                                 hidden = getattr(first_lin, "in_features", 8)
                             dt = next(self.model.parameters()).dtype
-                            self.model(
-                                torch.randn(1, 8, hidden, device=self.target_device, dtype=dt)
-                            )
+                            self.model(torch.randn(1, 8, hidden, device=self.target_device, dtype=dt))
             except Exception as e:
                 logger.warning("MambaShedder: shedding validation failed (%s); reverting.", e)
                 setattr(container_parent, container_attr, old_container)
@@ -534,9 +523,7 @@ class MambaShedderCompressor(BaseCompressor):
         shed_done = self._apply_layer_shedding()
 
         targets = [
-            (name, module)
-            for name, module in self.model.named_modules()
-            if self._is_target_module(name, module)
+            (name, module) for name, module in self.model.named_modules() if self._is_target_module(name, module)
         ]
 
         if not targets:
@@ -670,9 +657,7 @@ class MambaShedderCompressor(BaseCompressor):
                 bias_kept = None
                 if getattr(base_mod, "bias", None) is not None:
                     b_full = base_mod.bias.data.float()
-                    bias_kept = (
-                        b_full.index_select(0, keep_idx).contiguous().to(dtype=dtype, device=device)
-                    )
+                    bias_kept = b_full.index_select(0, keep_idx).contiguous().to(dtype=dtype, device=device)
 
                 lora_A_src = getattr(module, "lora_A", None)
                 lora_B_src = getattr(module, "lora_B", None)
@@ -690,26 +675,11 @@ class MambaShedderCompressor(BaseCompressor):
                     lora_alpha=self.lora_alpha,
                 )
 
-                if (
-                    lora_A_src is not None
-                    and lora_B_src is not None
-                    and new_layer.lora_A is not None
-                ):
+                if lora_A_src is not None and lora_B_src is not None and new_layer.lora_A is not None:
                     with torch.no_grad():
-                        src_A = (
-                            lora_A_src.weight.data
-                            if hasattr(lora_A_src, "weight")
-                            else lora_A_src.data
-                        )
-                        src_B = (
-                            lora_B_src.weight.data
-                            if hasattr(lora_B_src, "weight")
-                            else lora_B_src.data
-                        )
-                        if (
-                            src_A.shape == new_layer.lora_A.shape
-                            and src_B.shape == new_layer.lora_B.shape
-                        ):
+                        src_A = lora_A_src.weight.data if hasattr(lora_A_src, "weight") else lora_A_src.data
+                        src_B = lora_B_src.weight.data if hasattr(lora_B_src, "weight") else lora_B_src.data
+                        if src_A.shape == new_layer.lora_A.shape and src_B.shape == new_layer.lora_B.shape:
                             new_layer.lora_A.copy_(
                                 src_A.to(
                                     new_layer.lora_A.device,
@@ -768,16 +738,10 @@ class MambaShedderCompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        avg_err = (
-            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
-        )
+        avg_err = sum(self.layer_errors.values()) / max(1, len(self.layer_errors)) if self.layer_errors else 0.0
 
         storage_ratio = total_orig_bytes / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
-        effective_ratio = (
-            total_comp_bytes / max(1, total_orig_bytes) if total_orig_bytes > 0 else 1.0
-        )
+        effective_ratio = total_comp_bytes / max(1, total_orig_bytes) if total_orig_bytes > 0 else 1.0
 
         try:
             stats = self.get_compression_stats()
@@ -853,9 +817,7 @@ def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) ->
         ),
     )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False))
     target_attention_only = kwargs.pop(
         "target_attention_only",
         _cfg_get(comp_config, "target_attention_only", False),

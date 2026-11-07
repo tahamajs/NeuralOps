@@ -1,7 +1,7 @@
 # سند ممیزی ۰۱: ارزیابی جامع مطالعات حذفی، رژیم‌های تقطیر و بازیابی دقت
 ## تحلیل داده‌های تجربی، شواهد پنهان و دستورالعمل تدوین بخش Ablation در گزارش نهایی رساله
-**تاریخ ممیزی:** اکتبر ۲۰۲۶  
-**پلتفرم هدف:** `NeuralOps v1.6.0`  
+**تاریخ ممیزی:** اکتبر ۲۰۲۶
+**پلتفرم هدف:** `NeuralOps v1.6.0`
 **منابع داده‌های خام:**
 - `results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.csv`
 - `results/v13_deep_empirical_suite/ablation_6pillar/ablation_summary.md`

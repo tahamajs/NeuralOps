@@ -12,10 +12,12 @@ High-throughput inference engine supporting sampling, beam search, and continuou
 """
 
 from __future__ import annotations
+
 import inspect
 import math
-from typing import Generator, Any
 from dataclasses import dataclass, field
+from typing import Any, Generator
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -33,6 +35,7 @@ __all__ = [
 @dataclass
 class GenerationRequest:
     """Represents a serving generation request with its generation state."""
+
     request_id: str
     input_ids: torch.Tensor
     max_new_tokens: int = 16
@@ -333,13 +336,8 @@ def _call_model(model: nn.Module, input_ids: torch.Tensor, **optional_kwargs: An
         signature = inspect.signature(model.forward)
     except (TypeError, ValueError):
         return model(input_ids)
-    accepts_kwargs = any(
-        parameter.kind is inspect.Parameter.VAR_KEYWORD
-        for parameter in signature.parameters.values()
-    )
+    accepts_kwargs = any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in signature.parameters.values())
     accepted = {
-        name: value
-        for name, value in optional_kwargs.items()
-        if accepts_kwargs or name in signature.parameters
+        name: value for name, value in optional_kwargs.items() if accepts_kwargs or name in signature.parameters
     }
     return model(input_ids, **accepted)

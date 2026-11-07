@@ -149,7 +149,7 @@ Specifically, regarding \textbf{Total MACs}, $2 \left(1 + \frac{1}{R}\right) B N
 
 
 ### Memory Footprint & KV Cache Reduction
-Specifically, regarding \textbf{Parameter Count}, $D^2 \left(2 + \frac{2}{R}\right) + D (H_Q d_k + 2 H_{KV} d_k)$ floats. Furthermore, regarding \textbf{Autoregressive Decoding KV Cache Footprint}, 
+Specifically, regarding \textbf{Parameter Count}, $D^2 \left(2 + \frac{2}{R}\right) + D (H_Q d_k + 2 H_{KV} d_k)$ floats. Furthermore, regarding \textbf{Autoregressive Decoding KV Cache Footprint},
 
   \[
   \text{KV Cache Size}_{\text{GQA}} = 2 \cdot B \cdot H_{KV} \cdot N \cdot d_k \cdot b = \frac{2 B N D \cdot b}{R} \text{ bytes}
@@ -227,4 +227,3 @@ The empirical evaluation of `gqa_attention` across standard sequence lengths and
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

@@ -63,10 +63,30 @@ def _is_non_lora_trainable(n_low: str) -> bool:
     if any(f".{x}." in n_low or n_low.endswith(f".{x}") for x in ("u", "v", "weight_u", "weight_v")):
         return True
     svd_proj_tags = (
-        ".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
-        ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
-        ".comp_", ".svd_", ".cur_", ".salr", ".direct_svd", ".sparse_proj",
-        ".cores", ".centroids", ".weight_table", ".alpha", ".proj_k", ".proj_v",
+        ".down.",
+        ".up.",
+        ".u_proj",
+        ".v_proj",
+        ".u_matrix",
+        ".v_matrix",
+        ".w_a",
+        ".w_b",
+        ".weight_u",
+        ".weight_v",
+        ".factor",
+        ".factors",
+        ".comp_",
+        ".svd_",
+        ".cur_",
+        ".salr",
+        ".direct_svd",
+        ".sparse_proj",
+        ".cores",
+        ".centroids",
+        ".weight_table",
+        ".alpha",
+        ".proj_k",
+        ".proj_v",
     )
     if any(tag in n_low for tag in svd_proj_tags):
         return True
@@ -94,22 +114,48 @@ def _is_candidate_trainable_param(
     if any(
         tag in n_low
         for tag in (
-            "lora_a", "lora_b", "lora_", ".adapter", ".prompt", ".gate",
-            "gate.", ".alpha", ".beta", ".output_scale", ".decay",
-            "span_logits", ".span_logits",
+            "lora_a",
+            "lora_b",
+            "lora_",
+            ".adapter",
+            ".prompt",
+            ".gate",
+            "gate.",
+            ".alpha",
+            ".beta",
+            ".output_scale",
+            ".decay",
+            "span_logits",
+            ".span_logits",
         )
     ):
         return True
 
-    if any(h in n_low for h in ("score.", "score", "classifier.", "classifier", "classification_head", "pre_classifier", "pooler")):
+    if any(
+        h in n_low
+        for h in ("score.", "score", "classifier.", "classifier", "classification_head", "pre_classifier", "pooler")
+    ):
         return True
 
     if any(
         n_low.endswith(sfx)
         for sfx in (
-            ".weight", ".bias", ".u", ".v", ".a", ".b", ".beta", ".alpha",
-            ".gate", ".in_proj", ".out_proj", ".x_proj", ".q_proj", ".k_proj",
-            ".v_proj", ".z_proj",
+            ".weight",
+            ".bias",
+            ".u",
+            ".v",
+            ".a",
+            ".b",
+            ".beta",
+            ".alpha",
+            ".gate",
+            ".in_proj",
+            ".out_proj",
+            ".x_proj",
+            ".q_proj",
+            ".k_proj",
+            ".v_proj",
+            ".z_proj",
         )
     ):
         if not any(tag in n_low for tag in LORA_KEYWORDS):
@@ -118,7 +164,9 @@ def _is_candidate_trainable_param(
 
     if layer_has_lora and (
         any(n_low.endswith(sfx) for sfx in (".u", ".s", ".v", ".weight_u", ".weight_v", ".bias"))
-        or ".base_layer." in n_low or ".lin1." in n_low or ".lin2." in n_low
+        or ".base_layer." in n_low
+        or ".lin1." in n_low
+        or ".lin2." in n_low
     ):
         return False
 
@@ -128,11 +176,12 @@ def _is_candidate_trainable_param(
     if has_lora:
         if n_low.endswith(".output_gate") or ".inner.e" in n_low or ".inner.f" in n_low:
             return True
-        if (".inner." in n_low or "._wrapped_attention." in n_low) and not (
-            n_low.endswith((".weight", ".bias"))
-        ):
+        if (".inner." in n_low or "._wrapped_attention." in n_low) and not (n_low.endswith((".weight", ".bias"))):
             return True
-        if any(tag in n_low for tag in (".delta_mem.", ".beta_gate.", ".forget_gate.", ".input_gate.", ".output_proj.", ".mem_proj.")):
+        if any(
+            tag in n_low
+            for tag in (".delta_mem.", ".beta_gate.", ".forget_gate.", ".input_gate.", ".output_proj.", ".mem_proj.")
+        ):
             return True
         return False
 
@@ -167,9 +216,7 @@ def _collect_trainable_params(
 
     for name, param in model.named_parameters():
         n_low = name.lower()
-        parent_module_prefix = (
-            name.split(".base_layer.")[0] if ".base_layer." in name else name.rsplit(".", 1)[0]
-        )
+        parent_module_prefix = name.split(".base_layer.")[0] if ".base_layer." in name else name.rsplit(".", 1)[0]
         layer_has_lora = any(
             k.startswith(parent_module_prefix) and any(t in k.lower() for t in LORA_KEYWORDS)
             for k, _ in model.named_parameters()
@@ -301,18 +348,14 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
         List of parameters chosen for gradient optimization.
     """
     svd_modules = [
-        m
-        for m in model.modules()
-        if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear")
+        m for m in model.modules() if m.__class__.__name__ in ("SVDLinear", "SVDLinearLayer", "FactorisedLinear")
     ]
     svd_param_ids = {id(p) for m in svd_modules for p in m.parameters()}
     has_svd = len(svd_modules) > 0
 
     has_lora = any(any(t in n.lower() for t in LORA_KEYWORDS) for n, _ in model.named_parameters())
 
-    trainable_params = _collect_trainable_params(
-        model, svd_param_ids=svd_param_ids, has_svd=has_svd, has_lora=has_lora
-    )
+    trainable_params = _collect_trainable_params(model, svd_param_ids=svd_param_ids, has_svd=has_svd, has_lora=has_lora)
 
     trainable_id_set = {id(p) for p in trainable_params}
     for _, param in model.named_parameters():
@@ -326,8 +369,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     )
 
     is_nested_or_deep = any(
-        "encoder" in n.lower() or "roberta" in n.lower() or "bert" in n.lower()
-        for n, _ in model.named_parameters()
+        "encoder" in n.lower() or "roberta" in n.lower() or "bert" in n.lower() for n, _ in model.named_parameters()
     )
     prune_threshold = 10_000_000 if (has_lora or is_nested_or_deep) else 2_000_000
 

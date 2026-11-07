@@ -19,10 +19,10 @@ from __future__ import annotations
 import datetime
 import gzip
 import logging
-from pathlib import Path
 import shutil
 import sqlite3
 import time
+from pathlib import Path
 from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
@@ -122,7 +122,9 @@ class SQLiteMaintenanceEngine:
                             unlinked_count += 1
 
         return {
-            "cutoff_date_utc": (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=max_age_days)).isoformat(),
+            "cutoff_date_utc": (
+                datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=max_age_days)
+            ).isoformat(),
             "processed_runs": len(processed_runs),
             "compressed_files": compressed_count,
             "unlinked_files": unlinked_count,

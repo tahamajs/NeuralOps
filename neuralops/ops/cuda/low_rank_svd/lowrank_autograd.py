@@ -73,6 +73,7 @@ def fused_lowrank_gated_gemm_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.low_rank import triton_fused_lowrank_gated_gemm
+
         return triton_fused_lowrank_gated_gemm
     except ImportError:
         return None

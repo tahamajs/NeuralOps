@@ -46,6 +46,7 @@ def build_main_parser() -> argparse.ArgumentParser:
     # 2. Additional core CLI subcommands
     try:
         from neuralops.cli.compress_cmd import build_compress_parser, cmd_compress
+
         compress_p = build_compress_parser(subparsers.add_parser("compress", help="Model compression"))
         compress_p.set_defaults(handler=cmd_compress)
     except Exception:
@@ -53,6 +54,7 @@ def build_main_parser() -> argparse.ArgumentParser:
 
     try:
         from neuralops.cli.eval_cmd import build_eval_parser, cmd_eval
+
         eval_p = build_eval_parser(subparsers.add_parser("eval", aliases=["evaluate"], help="Model evaluation"))
         eval_p.set_defaults(handler=cmd_eval)
     except Exception:
@@ -60,6 +62,7 @@ def build_main_parser() -> argparse.ArgumentParser:
 
     try:
         from neuralops.cli.list_cmd import build_list_parser, cmd_list
+
         list_p = build_list_parser(subparsers.add_parser("list", help="List registered components"))
         list_p.set_defaults(handler=cmd_list)
     except Exception:
@@ -67,6 +70,7 @@ def build_main_parser() -> argparse.ArgumentParser:
 
     try:
         from neuralops.cli.serve_cmd import build_serve_parser, cmd_serve
+
         serve_p = build_serve_parser(subparsers.add_parser("serve", help="Launch inference serving server"))
         serve_p.set_defaults(handler=cmd_serve)
     except Exception:
@@ -74,6 +78,7 @@ def build_main_parser() -> argparse.ArgumentParser:
 
     try:
         from neuralops.cli.test_cmd import build_test_parser, cmd_test
+
         test_p = build_test_parser(subparsers.add_parser("test", help="Run diagnostic health tests"))
         test_p.set_defaults(handler=cmd_test)
     except Exception:
@@ -81,6 +86,7 @@ def build_main_parser() -> argparse.ArgumentParser:
 
     try:
         from neuralops.cli.train_cmd import build_train_parser, cmd_train
+
         train_p = build_train_parser(subparsers.add_parser("train", help="Pretrain or fine-tune models"))
         train_p.set_defaults(handler=cmd_train)
     except Exception:
@@ -88,6 +94,7 @@ def build_main_parser() -> argparse.ArgumentParser:
 
     try:
         from neuralops.cli.doctor import cmd_doctor
+
         doctor_p = subparsers.add_parser("doctor", help="Inspect local hardware, toolchains, and environment health")
         doctor_p.add_argument("--json", action="store_true", default=False, help="Output diagnostics as JSON")
         doctor_p.set_defaults(handler=cmd_doctor)
@@ -96,6 +103,7 @@ def build_main_parser() -> argparse.ArgumentParser:
 
     try:
         from neuralops.cli.info import cmd_info
+
         info_p = subparsers.add_parser("info", help="Display hardware, framework, and registered component status")
         info_p.add_argument("--json", action="store_true", default=False, help="Output system information as JSON")
         info_p.set_defaults(handler=cmd_info)
@@ -103,12 +111,8 @@ def build_main_parser() -> argparse.ArgumentParser:
         pass
 
     try:
-        from neuralops.cli.surgery_cmd import (
-            build_surgery_parser,
-            build_transplant_parser,
-            cmd_surgery,
-            cmd_transplant,
-        )
+        from neuralops.cli.surgery_cmd import build_surgery_parser, build_transplant_parser, cmd_surgery, cmd_transplant
+
         surg_p = build_surgery_parser(
             subparsers.add_parser(
                 "surgery",
@@ -130,6 +134,7 @@ def build_main_parser() -> argparse.ArgumentParser:
 
     try:
         from neuralops.ui.cli import build_ui_parser, cmd_ui
+
         ui_p = build_ui_parser(
             subparsers.add_parser(
                 "ui",

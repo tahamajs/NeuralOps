@@ -1,16 +1,16 @@
 # ACD-01 Task Report: arXiv Monograph Clean Build & Build Hygiene
 
-**Task ID:** ACD-01  
-**Track:** Academic Monograph Engineering (Phase P0)  
-**Host:** Local macOS (TeX Live 2025 / `pdflatex`, `bibtex`, `xelatex`)  
-**Audit Findings Addressed:** AC-C02, AC-H02, AC-M06  
-**Artifact Path:** `/Users/tahamajs/dev/Project/.agents/agt-reports/ACD-01-report.md`  
+**Task ID:** ACD-01
+**Track:** Academic Monograph Engineering (Phase P0)
+**Host:** Local macOS (TeX Live 2025 / `pdflatex`, `bibtex`, `xelatex`)
+**Audit Findings Addressed:** AC-C02, AC-H02, AC-M06
+**Artifact Path:** `/Users/tahamajs/dev/Project/.agents/agt-reports/ACD-01-report.md`
 
 ---
 
 ## 1. Executive Summary
 
-A clean, reproducible build pipeline was established for the 1,417-page arXiv monograph `academic/paper/arxiv/main.pdf`. 
+A clean, reproducible build pipeline was established for the 1,417-page arXiv monograph `academic/paper/arxiv/main.pdf`.
 
 All audit discrepancies were comprehensively investigated and resolved:
 1. **Zero Undefined Citations & Zero Undefined References:** Rebuilding from scratch (`pdflatex -> bibtex -> pdflatex -> pdflatex`) confirmed that the prior audit warning of "88 undefined cites + 51 undefined refs" was caused by a stale intermediate `.aux` state from an interrupted build. With a clean pipeline and font shape substitution guards in `macros.tex`, `grep -i "undefined" main.log` produces **exactly 0 matches**.

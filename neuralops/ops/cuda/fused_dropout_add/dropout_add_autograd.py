@@ -58,6 +58,7 @@ def fused_dropout_add_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.elementwise import dropout_add_triton
+
         return dropout_add_triton
     except (ImportError, AttributeError):
         return None
@@ -154,9 +155,7 @@ def fused_dropout_add(
     if seed is None:
         seed = random.randint(0, 2**31 - 1)
 
-    needs_grad = torch.is_grad_enabled() and any(
-        t.requires_grad for t in (x, residual) if isinstance(t, torch.Tensor)
-    )
+    needs_grad = torch.is_grad_enabled() and any(t.requires_grad for t in (x, residual) if isinstance(t, torch.Tensor))
 
     if needs_grad:
         return _FusedDropoutAddFunction.apply(x, residual, p, training, seed)

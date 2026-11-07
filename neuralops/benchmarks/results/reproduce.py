@@ -14,8 +14,8 @@ Implements reproduce functionality for NeuralOps.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import stat
+from pathlib import Path
 from typing import Any
 
 from neuralops.benchmarks.results.schema import BenchmarkResult

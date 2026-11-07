@@ -20,19 +20,22 @@ from neuralops.cli.core.output import CliReporter
 def handle_results(args: argparse.Namespace) -> int:
     """Summarize, query, or export benchmark results and master ledger records."""
     # Check if this invocation is for the master ledger sub-features
-    has_ledger_flags = any([
-        getattr(args, "dossier", None),
-        getattr(args, "diff", None),
-        getattr(args, "sync", False),
-        getattr(args, "delete", False),
-        getattr(args, "add", False),
-        getattr(args, "plot", None),
-    ])
+    has_ledger_flags = any(
+        [
+            getattr(args, "dossier", None),
+            getattr(args, "diff", None),
+            getattr(args, "sync", False),
+            getattr(args, "delete", False),
+            getattr(args, "add", False),
+            getattr(args, "plot", None),
+        ]
+    )
 
     if has_ledger_flags:
         return handle_ledger(args)
 
     from neuralops.benchmarks.api import Runner
+
     reporter = CliReporter(
         quiet=getattr(args, "quiet", False),
         verbose=getattr(args, "verbose", False),
@@ -51,6 +54,7 @@ def handle_results(args: argparse.Namespace) -> int:
         reporter.print_json(df.to_dict(orient="records"))
     elif fmt in ("latex", "markdown", "csv"):
         from neuralops.core.paper_export import export_benchmark_table
+
         records = df.to_dict(orient="records")
         out = export_benchmark_table(
             records=records,
@@ -69,6 +73,7 @@ def handle_results(args: argparse.Namespace) -> int:
 def handle_ledger(args: argparse.Namespace) -> int:
     """Query, inspect, diff, sync, and mutate master results SQLite ledger."""
     from neuralops.core.results_ledger import ResultRecord, get_default_ledger
+
     reporter = CliReporter(
         quiet=getattr(args, "quiet", False),
         verbose=getattr(args, "verbose", False),
@@ -180,8 +185,10 @@ def handle_recipe(args: argparse.Namespace) -> int:
         return int(ExitCode.USAGE_ERROR)
 
     from neuralops.recipe.loader import load_recipe
+
     if action == "plan":
         from neuralops.pipeline_transform.planner import plan_recipe
+
         rec = load_recipe(args.file)
         plan = plan_recipe(rec)
         print(f"Recipe '{rec.metadata.name}' v{rec.metadata.version}: {len(plan.stages)} stage(s) planned.")
@@ -194,18 +201,22 @@ def handle_recipe(args: argparse.Namespace) -> int:
         from neuralops.pipeline_transform.executor import execute_plan
         from neuralops.pipeline_transform.planner import plan_recipe
         from neuralops.reporting.report import render_report
+
         rec = load_recipe(args.file)
         plan = plan_recipe(rec)
         device = getattr(args, "device", "auto")
         stop_on_error = getattr(args, "stop_on_error", True)
         res = execute_plan(plan, device=device, stop_on_error=stop_on_error)
-        print(f"Transformation status: {res.status.value} (Stages: {len(res.stages)}, Elapsed: {res.total_time_seconds:.2f}s)")
+        print(
+            f"Transformation status: {res.status.value} (Stages: {len(res.stages)}, Elapsed: {res.total_time_seconds:.2f}s)"
+        )
         if hasattr(res, "evidence") and res.evidence is not None:
             print("\n" + render_report(res.evidence))
         return int(ExitCode.SUCCESS) if res.status.value == "SUCCESS" else int(ExitCode.INTERNAL_ERROR)
 
     elif action == "validate":
         from neuralops.validation.static import validate_recipe_static
+
         rec = load_recipe(args.file)
         try:
             warnings = validate_recipe_static(rec)
@@ -229,12 +240,14 @@ def handle_recipe(args: argparse.Namespace) -> int:
     elif action == "evidence":
         from neuralops.reporting.evidence import load_evidence
         from neuralops.reporting.report import render_report
+
         ev = load_evidence(args.file)
         print(render_report(ev))
         return int(ExitCode.SUCCESS)
 
     elif action == "benchmark":
         import torch
+
         from neuralops.benchmarks.parallel_benchmark import DataParallelBenchmark
         from neuralops.benchmarks.recipe_benchmark import run_recipe_benchmark
         from neuralops.distributed.context import DistributedContext
@@ -257,7 +270,9 @@ def handle_recipe(args: argparse.Namespace) -> int:
             seq_len=getattr(args, "seq_len", 16),
             parallel_benchmark=parallel_bench,
         )
-        print(f"Recipe Benchmark '{results['recipe_name']}' completed (device={results['device']}, speedup={results['comparison']['speedup']:.2f}x):")
+        print(
+            f"Recipe Benchmark '{results['recipe_name']}' completed (device={results['device']}, speedup={results['comparison']['speedup']:.2f}x):"
+        )
         print(json.dumps(results, indent=2))
         return int(ExitCode.SUCCESS)
 
@@ -270,6 +285,7 @@ def handle_evidence(args: argparse.Namespace) -> int:
     if action == "show":
         from neuralops.reporting.evidence import load_evidence
         from neuralops.reporting.report import render_report
+
         ev = load_evidence(args.file)
         print(render_report(ev))
         return int(ExitCode.SUCCESS)
@@ -282,6 +298,7 @@ def handle_ops(args: argparse.Namespace) -> int:
     action = getattr(args, "ops_action", None)
     if action == "list" or action is None:
         from neuralops.operations.registry import list_operations
+
         ops = list_operations()
         print(f"Registered Operations ({len(ops)}):")
         for op in ops:

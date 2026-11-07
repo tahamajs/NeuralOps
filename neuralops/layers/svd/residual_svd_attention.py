@@ -13,10 +13,6 @@ Augments frozen low-rank SVD projection bases with trainable residual adapter ma
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
-
 import logging
 import math
 from typing import Any
@@ -25,10 +21,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import ResSVDLinear
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +40,7 @@ class ResidualSVDAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -69,9 +67,7 @@ class ResidualSVDAttention(BaseAttention):
 
         self.hidden_size: int = int(getattr(config, "hidden_size", kwargs.get("hidden_size", 768)))
         self.dim = self.hidden_size
-        self.num_heads: int = int(
-            getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
-        )
+        self.num_heads: int = int(getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12)))
         self.num_kv_heads: int = int(
             getattr(
                 config,
@@ -96,9 +92,7 @@ class ResidualSVDAttention(BaseAttention):
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
         self.base_rank: int = int(
-            base_rank
-            if base_rank is not None
-            else getattr(comp_config, "base_rank", effective_rank)
+            base_rank if base_rank is not None else getattr(comp_config, "base_rank", effective_rank)
         )
         self.residual_rank: int = int(
             residual_rank
@@ -196,8 +190,7 @@ class ResidualSVDAttention(BaseAttention):
             self.copy_weights(pretrained_attn)
 
         logger.info(
-            "ResSVDAttention: hidden=%d, heads=%d, head_dim=%d, is_decoder=%s, "
-            "base_rank=%d, residual_rank=%d",
+            "ResSVDAttention: hidden=%d, heads=%d, head_dim=%d, is_decoder=%s, " "base_rank=%d, residual_rank=%d",
             self.hidden_size,
             self.num_heads,
             self.head_dim,
@@ -389,11 +382,7 @@ class ResidualSVDAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -406,15 +395,10 @@ class ResidualSVDAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
-                f"ResSVDAttention.copy_weights: missing {missing_after} "
-                f"from {cls_name}. Refusing random init."
+                f"ResSVDAttention.copy_weights: missing {missing_after} " f"from {cls_name}. Refusing random init."
             )
 
         if self.is_nested_encoder and extracted["o"][0] is None:
@@ -509,9 +493,7 @@ class ResidualSVDAttention(BaseAttention):
         **kwargs: Any,
     ):
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "ResSVDAttention: cross-attention (encoder_hidden_states) is not supported."
-            )
+            raise NotImplementedError("ResSVDAttention: cross-attention (encoder_hidden_states) is not supported.")
 
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
@@ -585,6 +567,7 @@ class ResidualSVDAttention(BaseAttention):
             if context.is_cuda and hasattr(self.out_proj, "base_U"):
                 try:
                     from neuralops.ops.triton.low_rank import fused_residual_svd_gemm_triton
+
                     output = self.out_proj(context)
                 except Exception:
                     output = self.out_proj(context)
@@ -631,11 +614,7 @@ def inject_res_svd(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

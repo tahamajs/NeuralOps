@@ -12,15 +12,6 @@ Structure-of-Arrays memory layout fast attention kernel optimizing GPU cache uti
 """
 
 from __future__ import annotations
-from neuralops.core.common import FactorizedLinear
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _read_past_kv
-
-from neuralops.core.attention_utils import (
-    safe_mask_value as _safe_mask_value,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -32,9 +23,12 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.attention_utils import safe_mask_value as _safe_mask_value
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import FactorizedLinear, _cfg_get, _read_past_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -118,11 +112,7 @@ class FactorizedLoRAUp(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
-        if (
-            self.lora_rank > 0
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
         return out
 
@@ -173,9 +163,7 @@ class SOAAttention(BaseAttention):
         except TypeError:
             super().__init__(cfg)
 
-        self.layer_idx = int(
-            layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0)
-        )
+        self.layer_idx = int(layer_idx if layer_idx is not None else kwargs.get("layer_idx", 0))
 
         self.hidden_size: int = (
             getattr(
@@ -193,36 +181,32 @@ class SOAAttention(BaseAttention):
         if hasattr(self.hidden_size, "hidden_size"):
             self.hidden_size = self.hidden_size.hidden_size
 
-        self.num_heads: int = int(
-            getattr(
-                cfg,
-                "num_attention_heads",
+        self.num_heads: int = (
+            int(
                 getattr(
                     cfg,
-                    "n_heads",
+                    "num_attention_heads",
                     getattr(
                         cfg,
-                        "num_heads",
-                        kwargs.get(
-                            "num_attention_heads", kwargs.get("num_heads", 12)
+                        "n_heads",
+                        getattr(
+                            cfg,
+                            "num_heads",
+                            kwargs.get("num_attention_heads", kwargs.get("num_heads", 12)),
                         ),
                     ),
-                ),
+                )
+                if cfg is not None
+                else kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
             )
-            if cfg is not None
-            else kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
-        ) or 12
+            or 12
+        )
 
         head_dim = kwargs.get("head_dim")
         if not head_dim and src_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
                 mod = getattr(src_attn, attr, None)
-                if (
-                    mod is not None
-                    and hasattr(mod, "weight")
-                    and mod.weight is not None
-                    and mod.weight.ndim == 2
-                ):
+                if mod is not None and hasattr(mod, "weight") and mod.weight is not None and mod.weight.ndim == 2:
                     head_dim = mod.weight.shape[0] // max(1, self.num_heads)
                     break
             if not head_dim:
@@ -240,9 +224,7 @@ class SOAAttention(BaseAttention):
                 getattr(
                     cfg,
                     "num_kv_heads",
-                    kwargs.get(
-                        "num_key_value_heads", kwargs.get("num_kv_heads")
-                    ),
+                    kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads")),
                 ),
             )
             if cfg is not None
@@ -250,9 +232,7 @@ class SOAAttention(BaseAttention):
         )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
-        self.num_key_value_groups: int = max(
-            1, self.num_heads // max(1, self.num_kv_heads)
-        )
+        self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.kv_repeat: int = self.num_key_value_groups
 
         self.q_head_size: int = self.num_heads * self.head_dim
@@ -279,8 +259,18 @@ class SOAAttention(BaseAttention):
 
         _mt = str(getattr(cfg, "model_type", "") or "").lower() if cfg else ""
         _decoder_prefixes = (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
         )
         is_dec = (
             bool(_cfg_get(cfg, "is_decoder", False))
@@ -438,9 +428,7 @@ class SOAAttention(BaseAttention):
                 if hasattr(old_attn.output, "dense"):
                     dense = getattr(old_attn.output.dense, "base_layer", old_attn.output.dense)
                     w_o = dense.weight.detach()
-                    b_o = (
-                        dense.bias.detach() if dense.bias is not None else None
-                    )
+                    b_o = dense.bias.detach() if dense.bias is not None else None
             else:
                 src = old_attn
 
@@ -450,12 +438,8 @@ class SOAAttention(BaseAttention):
 
                 c_attn_mod = src.c_attn
                 base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
-                c_w = getattr(
-                    base_c, "weight", getattr(c_attn_mod, "weight", None)
-                ).detach()
-                c_b = getattr(
-                    base_c, "bias", getattr(c_attn_mod, "bias", None)
-                )
+                c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None)).detach()
+                c_b = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = c_b.detach() if c_b is not None else None
 
                 is_conv = (
@@ -483,12 +467,8 @@ class SOAAttention(BaseAttention):
 
                 c_proj_mod = src.c_proj
                 base_p = getattr(c_proj_mod, "base_layer", c_proj_mod)
-                out_w = getattr(
-                    base_p, "weight", getattr(c_proj_mod, "weight", None)
-                ).detach()
-                b_o = getattr(
-                    base_p, "bias", getattr(c_proj_mod, "bias", None)
-                )
+                out_w = getattr(base_p, "weight", getattr(c_proj_mod, "weight", None)).detach()
+                b_o = getattr(base_p, "bias", getattr(c_proj_mod, "bias", None))
                 b_o = b_o.detach() if b_o is not None else None
 
                 is_conv_p = (
@@ -502,11 +482,7 @@ class SOAAttention(BaseAttention):
                     out_w = out_w.t().contiguous()
                 w_o = out_w
 
-            elif (
-                hasattr(src, "query")
-                and hasattr(src, "key")
-                and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -519,76 +495,32 @@ class SOAAttention(BaseAttention):
                         if hasattr(src, attr):
                             proj = getattr(src, attr)
                             w_o = proj.weight.detach()
-                            b_o = (
-                                proj.bias.detach()
-                                if proj.bias is not None
-                                else None
-                            )
+                            b_o = proj.bias.detach() if proj.bias is not None else None
                             break
 
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
-                b_q = (
-                    src.q_proj.bias.detach()
-                    if src.q_proj.bias is not None
-                    else None
-                )
+                b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
-                b_k = (
-                    src.k_proj.bias.detach()
-                    if src.k_proj.bias is not None
-                    else None
-                )
+                b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
                 w_v = src.v_proj.weight.detach()
-                b_v = (
-                    src.v_proj.bias.detach()
-                    if src.v_proj.bias is not None
-                    else None
-                )
+                b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
 
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = (
-                        src.o_proj.bias.detach()
-                        if src.o_proj.bias is not None
-                        else None
-                    )
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
-                b_q = (
-                    src.q_lin.bias.detach()
-                    if src.q_lin.bias is not None
-                    else None
-                )
+                b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
-                b_k = (
-                    src.k_lin.bias.detach()
-                    if src.k_lin.bias is not None
-                    else None
-                )
+                b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
                 w_v = src.v_lin.weight.detach()
-                b_v = (
-                    src.v_lin.bias.detach()
-                    if src.v_lin.bias is not None
-                    else None
-                )
+                b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
 
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = (
-                        src.out_lin.bias.detach()
-                        if src.out_lin.bias is not None
-                        else None
-                    )
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
             if w_q is None or w_k is None or w_v is None:
                 try:
@@ -612,8 +544,7 @@ class SOAAttention(BaseAttention):
                 missing.append("Out")
             if missing:
                 raise RuntimeError(
-                    f"SOAAttention: Failed to extract weights {missing} "
-                    f"from {type(old_attn).__name__}"
+                    f"SOAAttention: Failed to extract weights {missing} " f"from {type(old_attn).__name__}"
                 )
 
             def _factorize_svd(
@@ -637,12 +568,8 @@ class SOAAttention(BaseAttention):
                 up.weight.zero_()
                 sqrt_s = torch.sqrt(S[:r])
 
-                down.weight.data[:r, :].copy_(
-                    (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(down.weight.dtype)
-                )
-                up.weight.data[:, :r].copy_(
-                    (U[:, :r] * sqrt_s).to(up.weight.dtype)
-                )
+                down.weight.data[:r, :].copy_((sqrt_s.unsqueeze(1) * Vt[:r, :]).to(down.weight.dtype))
+                up.weight.data[:, :r].copy_((U[:, :r] * sqrt_s).to(up.weight.dtype))
 
                 if bias is not None and up.bias is not None:
                     n = min(up.bias.numel(), bias.numel())
@@ -667,24 +594,13 @@ class SOAAttention(BaseAttention):
                 if isinstance(self.out_proj, LoRALinear):
                     out_d = min(self.out_proj.weight.size(0), w_o.size(0))
                     in_d = min(self.out_proj.weight.size(1), w_o.size(1))
-                    self.out_proj.weight.data[:out_d, :in_d].copy_(
-                        w_o[:out_d, :in_d].to(self.out_proj.weight.dtype)
-                    )
-                    if (
-                        b_o is not None
-                        and self.out_proj.bias is not None
-                    ):
+                    self.out_proj.weight.data[:out_d, :in_d].copy_(w_o[:out_d, :in_d].to(self.out_proj.weight.dtype))
+                    if b_o is not None and self.out_proj.bias is not None:
                         mb = min(self.out_proj.bias.numel(), b_o.numel())
-                        self.out_proj.bias.data[:mb].copy_(
-                            b_o[:mb].to(self.out_proj.bias.dtype)
-                        )
-                    f_norm_o = float(
-                        torch.linalg.norm(self.out_proj.weight.detach().float()).item()
-                    )
+                        self.out_proj.bias.data[:mb].copy_(b_o[:mb].to(self.out_proj.bias.dtype))
+                    f_norm_o = float(torch.linalg.norm(self.out_proj.weight.detach().float()).item())
                     if f_norm_o < 1e-4:
-                        logger.warning(
-                            "SOAAttention: out_proj norm near zero (%.2e)", f_norm_o
-                        )
+                        logger.warning("SOAAttention: out_proj norm near zero (%.2e)", f_norm_o)
             elif self.is_nested_encoder:
                 self.out_proj = nn.Identity()
 
@@ -729,6 +645,7 @@ class SOAAttention(BaseAttention):
         kv_len_new = kv_input.shape[1]
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
         if (
             HAS_TRITON
             and not FORCE_PYTORCH_FALLBACK
@@ -739,9 +656,16 @@ class SOAAttention(BaseAttention):
         ):
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
-                q = fused_down_up_gemm_bias_triton(hidden_states, self.q_down.weight, self.q_up.weight, bias=self.q_up.bias)
-                k_new = fused_down_up_gemm_bias_triton(kv_input, self.k_down.weight, self.k_up.weight, bias=self.k_up.bias)
-                v_new = fused_down_up_gemm_bias_triton(kv_input, self.v_down.weight, self.v_up.weight, bias=self.v_up.bias)
+
+                q = fused_down_up_gemm_bias_triton(
+                    hidden_states, self.q_down.weight, self.q_up.weight, bias=self.q_up.bias
+                )
+                k_new = fused_down_up_gemm_bias_triton(
+                    kv_input, self.k_down.weight, self.k_up.weight, bias=self.k_up.bias
+                )
+                v_new = fused_down_up_gemm_bias_triton(
+                    kv_input, self.v_down.weight, self.v_up.weight, bias=self.v_up.bias
+                )
             except Exception:
                 z_q = self.q_down(hidden_states)
                 z_k = self.k_down(kv_input)
@@ -762,49 +686,26 @@ class SOAAttention(BaseAttention):
         head_dim = self.head_dim
 
         q = q.view(B, N, H, head_dim).transpose(1, 2).contiguous()
-        k_new = (
-            k_new.view(B, kv_len_new, H_kv, head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v_new = (
-            v_new.view(B, kv_len_new, H_kv, head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k_new = k_new.view(B, kv_len_new, H_kv, head_dim).transpose(1, 2).contiguous()
+        v_new = v_new.view(B, kv_len_new, H_kv, head_dim).transpose(1, 2).contiguous()
 
         past_k, past_v, past_len = (None, None, 0)
         if past_key_value is not None and not is_cross:
             past_k, past_v, past_len = _read_past_kv(past_key_value, self.layer_idx)
 
         pos_emb = kwargs.get("position_embeddings")
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, tuple)
-            and len(pos_emb) == 2
-            and not is_cross
-        ):
+        if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2 and not is_cross:
             cos, sin = pos_emb
-            q, k_new = apply_rotary_pos_emb(
-                q, k_new, cos, sin, past_len=past_len
-            )
+            q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, past_len=past_len)
         elif getattr(self, "rotary_emb", None) is not None and not is_cross:
             try:
                 position_ids = kwargs.get("position_ids")
                 if position_ids is None and past_len > 0:
                     position_ids = (
-                        torch.arange(
-                            past_len, past_len + N, device=hidden_states.device
-                        )
-                        .unsqueeze(0)
-                        .expand(B, -1)
+                        torch.arange(past_len, past_len + N, device=hidden_states.device).unsqueeze(0).expand(B, -1)
                     )
-                cos, sin = self.rotary_emb(
-                    k_new, seq_len=past_len + kv_len_new
-                )
-                q, k_new = apply_rotary_pos_emb(
-                    q, k_new, cos, sin, past_len=past_len
-                )
+                cos, sin = self.rotary_emb(k_new, seq_len=past_len + kv_len_new)
+                q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin, past_len=past_len)
             except Exception as e:
                 logger.debug("SOAAttention rotary_emb failed: %s", e)
 
@@ -817,13 +718,9 @@ class SOAAttention(BaseAttention):
         N_kv = k.shape[-2]
 
         new_past_kv: Any = None
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         if use_cache and not is_cross:
-            new_past_kv = _write_past_kv(
-                k_new, v_new, past_key_value, self.layer_idx
-            )
+            new_past_kv = _write_past_kv(k_new, v_new, past_key_value, self.layer_idx)
 
         if H_kv != H:
             k = repeat_kv(k, self.num_key_value_groups)
@@ -861,21 +758,13 @@ class SOAAttention(BaseAttention):
 
                 if is_causal or (key_padding_mask is not None):
                     bias_val = _safe_mask_value(q.dtype)
-                    attn_bias = torch.zeros(
-                        (B, 1, N, N_kv), device=q.device, dtype=q.dtype
-                    )
+                    attn_bias = torch.zeros((B, 1, N, N_kv), device=q.device, dtype=q.dtype)
 
                     if is_causal:
-                        q_pos = (
-                            past_len + torch.arange(N, device=q.device)
-                        ).unsqueeze(1)
-                        k_pos = torch.arange(
-                            N_kv, device=q.device
-                        ).unsqueeze(0)
+                        q_pos = (past_len + torch.arange(N, device=q.device)).unsqueeze(1)
+                        k_pos = torch.arange(N_kv, device=q.device).unsqueeze(0)
                         causal_bool = k_pos <= q_pos
-                        attn_bias = attn_bias.masked_fill(
-                            ~causal_bool.unsqueeze(0).unsqueeze(0), bias_val
-                        )
+                        attn_bias = attn_bias.masked_fill(~causal_bool.unsqueeze(0).unsqueeze(0), bias_val)
 
                     if key_padding_mask is not None:
                         attn_bias = attn_bias.masked_fill(
@@ -896,50 +785,28 @@ class SOAAttention(BaseAttention):
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
 
-                context = (
-                    _sdpa_out.to(hidden_states.dtype)
-                    .transpose(1, 2)
-                    .contiguous()
-                    .view(B, N, self.all_head_size)
-                )
-                context = torch.nan_to_num(
-                    context, nan=0.0, posinf=1e4, neginf=-1e4
-                )
+                context = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
             except Exception as e:
-                logger.debug(
-                    "SOA SDPA failed, falling back to manual: %s", e
-                )
+                logger.debug("SOA SDPA failed, falling back to manual: %s", e)
                 context = None
 
         if context is None:
-            scores = (
-                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
             if is_causal:
-                q_pos = (
-                    past_len + torch.arange(N, device=scores.device)
-                ).unsqueeze(1)
-                k_pos = torch.arange(
-                    N_kv, device=scores.device
-                ).unsqueeze(0)
+                q_pos = (past_len + torch.arange(N, device=scores.device)).unsqueeze(1)
+                k_pos = torch.arange(N_kv, device=scores.device).unsqueeze(0)
                 causal_bool = k_pos <= q_pos
                 bias_val = _safe_mask_value(scores.dtype)
-                scores = scores.masked_fill(
-                    ~causal_bool.unsqueeze(0).unsqueeze(0), bias_val
-                )
+                scores = scores.masked_fill(~causal_bool.unsqueeze(0).unsqueeze(0), bias_val)
 
             if key_padding_mask is not None:
                 bias_val = _safe_mask_value(scores.dtype)
-                scores = scores.masked_fill(
-                    key_padding_mask.unsqueeze(1).unsqueeze(2), bias_val
-                )
+                scores = scores.masked_fill(key_padding_mask.unsqueeze(1).unsqueeze(2), bias_val)
 
-            scores = torch.nan_to_num(
-                scores, nan=-1e4, posinf=1e4, neginf=-1e4
-            )
+            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             attn_weights = F.softmax(scores, dim=-1).to(v.dtype)
             attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
 
@@ -954,12 +821,7 @@ class SOAAttention(BaseAttention):
                 attn_weights = attn_weights * hm
 
             attn_weights = self.dropout(attn_weights)
-            context = (
-                torch.matmul(attn_weights, v)
-                .transpose(1, 2)
-                .contiguous()
-                .view(B, N, self.all_head_size)
-            )
+            context = torch.matmul(attn_weights, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             output = context
@@ -1089,9 +951,7 @@ def inject_soa_attn(
                 kwargs.pop("k_rank", 128),
             ),
         )
-        dropout = getattr(
-            comp_config, "dropout", kwargs.pop("dropout", 0.1)
-        )
+        dropout = getattr(comp_config, "dropout", kwargs.pop("dropout", 0.1))
 
         new_attn = SOAAttention(
             config=cfg,
@@ -1134,9 +994,7 @@ def inject_soa_attn(
         return new_attn
 
     except Exception as e:
-        logger.exception(
-            "inject_soa_attn failed at layer %d: %s", layer_idx, e
-        )
+        logger.exception("inject_soa_attn failed at layer %d: %s", layer_idx, e)
         return None
 
 

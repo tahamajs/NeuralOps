@@ -12,9 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
-from typing import Any
+
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -22,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -39,10 +41,11 @@ def _get_module():
         )
     return _MODULE
 
+
 def hgrn2_spatial_scan_pytorch_ref(*args, **kwargs) -> torch.Tensor:
     if len(args) == 4:
         q, k, v, g = args
-        x = (k * v)
+        x = k * v
         gate = g
         q_mul = q
     elif len(args) == 2:
@@ -66,6 +69,7 @@ def hgrn2_spatial_scan_pytorch_ref(*args, **kwargs) -> torch.Tensor:
     if q_mul is not None:
         out = q_mul * out
     return out
+
 
 def _hgrn2_spatial_scan_dispatch(*args, **kwargs) -> torch.Tensor:
     def cuda_fn(*call_args, **call_kwargs):
@@ -129,6 +133,7 @@ class _Hgrn2_spatial_scanFunction(torch.autograd.Function):
             else:
                 res.append(None)
         return tuple(res)
+
 
 def hgrn2_spatial_scan(x, g):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, g)):

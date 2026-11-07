@@ -12,13 +12,6 @@ Approximates dense inner products with continuous relaxations of Hamming distanc
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 from typing import Any
@@ -27,12 +20,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import _cfg_get, _unpack_weight_bias
+
 logger = logging.getLogger(__name__)
 
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 try:
     from neuralops.utils.model_family import ModelAdapter
@@ -53,6 +49,7 @@ class HammingAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
@@ -100,9 +97,7 @@ class HammingAttention(BaseAttention):
             )
 
         if not hidden_size and pretrained_attn is not None:
-            hidden_size = getattr(
-                pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", 0)
-            )
+            hidden_size = getattr(pretrained_attn, "hidden_size", getattr(pretrained_attn, "embed_dim", 0))
             if not hidden_size:
                 for cand in ("q_proj", "q_lin", "query", "c_attn"):
                     m = getattr(pretrained_attn, cand, None)
@@ -264,11 +259,7 @@ class HammingAttention(BaseAttention):
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o, b_o = _unpack_weight_bias(src.c_proj)
             if w_o is not None:
-                if (
-                    w_o.dim() == 2
-                    and w_o.shape[0] != self.hidden_size
-                    and w_o.shape[1] == self.hidden_size
-                ):
+                if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
                     w_o = w_o.t().contiguous()
                 extracted["o"] = (w_o, b_o)
 
@@ -304,10 +295,7 @@ class HammingAttention(BaseAttention):
         if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
             self.is_nested_encoder = False
         elif (
-            (
-                cls_name in ("BertSelfAttention", "RobertaSelfAttention")
-                or (hasattr(src, "query") and not has_out)
-            )
+            (cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (hasattr(src, "query") and not has_out))
             or hasattr(src, "self")
             and hasattr(src, "output")
         ):
@@ -410,18 +398,12 @@ class HammingAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        from neuralops.ops.triton.sparse_attn import (
-            fused_hamming_scores_triton,
-            fused_hamming_scores_pytorch,
-        )
+        from neuralops.ops.triton.sparse_attn import fused_hamming_scores_pytorch, fused_hamming_scores_triton
+
         try:
-            scores = fused_hamming_scores_triton(
-                Q, K, self.lora_q_scale, self.lora_k_scale, self.lora_temp
-            )
+            scores = fused_hamming_scores_triton(Q, K, self.lora_q_scale, self.lora_k_scale, self.lora_temp)
         except Exception:
-            scores = fused_hamming_scores_pytorch(
-                Q, K, self.lora_q_scale, self.lora_k_scale, self.lora_temp
-            )
+            scores = fused_hamming_scores_pytorch(Q, K, self.lora_q_scale, self.lora_k_scale, self.lora_temp)
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         if mask is not None:

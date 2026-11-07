@@ -51,14 +51,14 @@ def lut_codebook_dequant_gemm_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.fused_norm_linear import triton_lut_codebook_dequant_gemm_pytorch_ref
-    return triton_lut_codebook_dequant_gemm_pytorch_ref(
-        x, indices_packed, codebook, group_size=group_size, bias=bias
-    )
+
+    return triton_lut_codebook_dequant_gemm_pytorch_ref(x, indices_packed, codebook, group_size=group_size, bias=bias)
 
 
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.fused_norm_linear import triton_lut_codebook_dequant_gemm
+
         return triton_lut_codebook_dequant_gemm
     except ImportError:
         return None
@@ -76,6 +76,7 @@ def lut_codebook_dequant_gemm(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """3-Level Dispatched LUT Codebook Dequantization GEMM."""
+
     def cuda_fn(x, indices_packed, codebook, group_size=64, bias=None):
         mod = _get_module()
         dummy_bias = torch.empty(0, device=x.device, dtype=x.dtype)

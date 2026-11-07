@@ -14,6 +14,7 @@ Unified command-line package execution interface routing directly to the benchma
 from __future__ import annotations
 
 import sys
+
 from neuralops.benchmarks.cli import main
 
 if __name__ == "__main__":

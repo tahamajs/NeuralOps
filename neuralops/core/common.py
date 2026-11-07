@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Callable
 import os
+from typing import Any, Callable
 
 import torch
 import torch.nn as nn
@@ -121,7 +121,6 @@ def _apply_rope(
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
 
-
     def rotate_half(x: torch.Tensor) -> torch.Tensor:
         x1 = x[..., : x.shape[-1] // 2]
         x2 = x[..., x.shape[-1] // 2 :]
@@ -132,8 +131,8 @@ def _apply_rope(
     return q_embed.type_as(q), k_embed.type_as(k)
 
 
+from neuralops.core.low_rank.factorized import FactorisedLinear, FactorizedLinear
 from neuralops.core.peft.lora import LoRALinear
-from neuralops.core.low_rank.factorized import FactorizedLinear, FactorisedLinear
 
 _FactorizedLinear = FactorizedLinear
 
@@ -183,27 +182,17 @@ class ResSVDLinear(nn.Module):
         self.factorize_base = factorize_base
 
         if self.factorize_base:
-            self.base_V = nn.Parameter(
-                torch.empty((self.base_rank, in_features), dtype=dtype, device=device)
-            )
-            self.base_U = nn.Parameter(
-                torch.empty((out_features, self.base_rank), dtype=dtype, device=device)
-            )
+            self.base_V = nn.Parameter(torch.empty((self.base_rank, in_features), dtype=dtype, device=device))
+            self.base_U = nn.Parameter(torch.empty((out_features, self.base_rank), dtype=dtype, device=device))
             self.base_V.requires_grad = False
             self.base_U.requires_grad = False
         else:
-            self.base_weight = nn.Parameter(
-                torch.empty((out_features, in_features), dtype=dtype, device=device)
-            )
+            self.base_weight = nn.Parameter(torch.empty((out_features, in_features), dtype=dtype, device=device))
             self.base_weight.requires_grad = False
 
         if self.residual_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.residual_rank, in_features), dtype=dtype, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, self.residual_rank), dtype=dtype, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.residual_rank, in_features), dtype=dtype, device=device))
+            self.lora_B = nn.Parameter(torch.empty((out_features, self.residual_rank), dtype=dtype, device=device))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -318,6 +307,7 @@ class ResSVDLinear(nn.Module):
 
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                 return fused_svd_lora_sparse_attn_triton(
                     x,
                     w_down=self.base_V,

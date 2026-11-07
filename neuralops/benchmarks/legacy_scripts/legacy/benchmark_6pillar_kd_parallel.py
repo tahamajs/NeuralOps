@@ -28,10 +28,10 @@ import csv
 import logging
 import math
 import os
-from pathlib import Path
 import sqlite3
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -61,7 +61,9 @@ logger = logging.getLogger("neuralops.kd_6pillar")
 class DenseTeacherModel(nn.Module):
     """Standard dense Transformer LM teacher for multi-pillar distillation."""
 
-    def __init__(self, vocab_size: int = 1000, hidden_size: int = 768, num_heads: int = 12, num_layers: int = 4) -> None:
+    def __init__(
+        self, vocab_size: int = 1000, hidden_size: int = 768, num_heads: int = 12, num_layers: int = 4
+    ) -> None:
         super().__init__()
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
@@ -69,22 +71,26 @@ class DenseTeacherModel(nn.Module):
         self.head_dim = hidden_size // num_heads
 
         self.embed = nn.Embedding(vocab_size, hidden_size)
-        self.layers = nn.ModuleList([
-            nn.TransformerEncoderLayer(
-                d_model=hidden_size,
-                nhead=num_heads,
-                dim_feedforward=hidden_size * 2,
-                dropout=0.0,
-                activation="gelu",
-                batch_first=True,
-                norm_first=True,
-            )
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                nn.TransformerEncoderLayer(
+                    d_model=hidden_size,
+                    nhead=num_heads,
+                    dim_feedforward=hidden_size * 2,
+                    dropout=0.0,
+                    activation="gelu",
+                    batch_first=True,
+                    norm_first=True,
+                )
+                for _ in range(num_layers)
+            ]
+        )
         self.norm = nn.LayerNorm(hidden_size)
         self.head = nn.Linear(hidden_size, vocab_size, bias=False)
 
-    def forward(self, input_ids: torch.Tensor) -> tuple[torch.Tensor, list[torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+    def forward(
+        self, input_ids: torch.Tensor
+    ) -> tuple[torch.Tensor, list[torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         B, S = input_ids.shape
         x = self.embed(input_ids)
         hidden_states = []
@@ -176,9 +182,13 @@ def train_module_kd(
 
     try:
         if module_type == "attention":
-            student, ratio = apply_module_to_model(student, module_name, module_type="attention", rank=32, device=device)
+            student, ratio = apply_module_to_model(
+                student, module_name, module_type="attention", rank=32, device=device
+            )
         else:
-            student, ratio = apply_module_to_model(student, module_name, module_type="compressor", rank=32, device=device)
+            student, ratio = apply_module_to_model(
+                student, module_name, module_type="compressor", rank=32, device=device
+            )
     except Exception as e:
         logger.warning(f"Failed to inject {module_name}: {e}")
         return {
@@ -298,9 +308,19 @@ def main() -> int:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     fieldnames = [
-        "module", "category", "status", "duration_sec", "initial_ppl",
-        "final_ppl", "ppl_drop_pct", "initial_ce_loss", "final_ce_loss",
-        "steps_completed", "throughput_tokens_per_sec", "peak_vram_mb", "params_m"
+        "module",
+        "category",
+        "status",
+        "duration_sec",
+        "initial_ppl",
+        "final_ppl",
+        "ppl_drop_pct",
+        "initial_ce_loss",
+        "final_ce_loss",
+        "steps_completed",
+        "throughput_tokens_per_sec",
+        "peak_vram_mb",
+        "params_m",
     ]
 
     with open(out_path, "w", newline="", encoding="utf-8") as f:
@@ -312,7 +332,9 @@ def main() -> int:
         for idx, (m_name, m_type) in enumerate(worker_modules, 1):
             sys.stdout.flush()
             sys.stderr.flush()
-            logger.info(f"[Worker {args.worker_id}] [{idx}/{len(worker_modules)}] Starting 6-Pillar KD + PPL: {m_name} ({m_type})...")
+            logger.info(
+                f"[Worker {args.worker_id}] [{idx}/{len(worker_modules)}] Starting 6-Pillar KD + PPL: {m_name} ({m_type})..."
+            )
             sys.stdout.flush()
             res = train_module_kd(m_name, m_type, teacher, kd_suite, dev, max_duration_sec=args.max_duration)
             writer.writerow(res)

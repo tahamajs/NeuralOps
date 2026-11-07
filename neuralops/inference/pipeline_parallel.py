@@ -145,7 +145,7 @@ class PipelineParallelInference:
         self.model: Optional[nn.Module] = None
         self.owned_layers: List[nn.Module] = []
         self.streams: List[torch.cuda.Stream] = []
-        self.is_single_gpu: bool = (self.world_size <= 1)
+        self.is_single_gpu: bool = self.world_size <= 1
 
     @staticmethod
     def _extract_components(model: nn.Module) -> dict[str, Any]:
@@ -217,6 +217,7 @@ class PipelineParallelInference:
         if isinstance(model_id, str):
             try:
                 from transformers import AutoModelForCausalLM
+
                 model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype)
             except Exception as e:
                 raise RuntimeError(f"Failed to load model from model_id '{model_id}': {e}") from e
@@ -251,8 +252,8 @@ class PipelineParallelInference:
             self.owned_layers = my_layers
             device = self.context.get_device(my_rank)
 
-            is_first = (my_rank == 0)
-            is_last = (my_rank == world_size - 1)
+            is_first = my_rank == 0
+            is_last = my_rank == world_size - 1
 
             self.stage = PipelineStage(
                 stage_id=my_rank,
@@ -277,8 +278,8 @@ class PipelineParallelInference:
             dev = torch.device(f"cuda:{s}")
             s_indices = layer_partitions[s]
             s_layers = [layers[i] for i in s_indices]
-            is_first = (s == 0)
-            is_last = (s == world_size - 1)
+            is_first = s == 0
+            is_last = s == world_size - 1
 
             stage_obj = PipelineStage(
                 stage_id=s,
@@ -346,12 +347,8 @@ class PipelineParallelInference:
         num_micro = len(micro_inputs)
         total_steps = num_micro + num_stages - 1
 
-        stage_intermediates: dict[int, dict[int, torch.Tensor]] = {
-            s: {} for s in range(num_stages)
-        }
-        events: dict[int, dict[int, torch.cuda.Event]] = {
-            s: {} for s in range(num_stages)
-        }
+        stage_intermediates: dict[int, dict[int, torch.Tensor]] = {s: {} for s in range(num_stages)}
+        events: dict[int, dict[int, torch.cuda.Event]] = {s: {} for s in range(num_stages)}
         micro_logits: List[Optional[torch.Tensor]] = [None] * num_micro
 
         with torch.no_grad():
@@ -409,12 +406,16 @@ class PipelineParallelInference:
                     out = self.stage(inp, attention_mask=mask)
                     dist.send(out.contiguous(), dst=1)
                 elif 0 < rank < world_size - 1:
-                    recv_buf = torch.empty((m_batch, seq_len, hidden_size), dtype=torch.float32, device=self.stage.device)
+                    recv_buf = torch.empty(
+                        (m_batch, seq_len, hidden_size), dtype=torch.float32, device=self.stage.device
+                    )
                     dist.recv(recv_buf, src=rank - 1)
                     out = self.stage(recv_buf, attention_mask=mask)
                     dist.send(out.contiguous(), dst=rank + 1)
                 else:
-                    recv_buf = torch.empty((m_batch, seq_len, hidden_size), dtype=torch.float32, device=self.stage.device)
+                    recv_buf = torch.empty(
+                        (m_batch, seq_len, hidden_size), dtype=torch.float32, device=self.stage.device
+                    )
                     dist.recv(recv_buf, src=rank - 1)
                     logits = self.stage(recv_buf, attention_mask=mask)
                     micro_logits.append(logits)

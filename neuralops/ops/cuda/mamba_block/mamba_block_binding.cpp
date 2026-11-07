@@ -16,4 +16,3 @@ std::vector<torch::Tensor> mamba_step_fwd(
     const torch::Tensor& C_mat,
     const torch::Tensor& prev_state
 );
-

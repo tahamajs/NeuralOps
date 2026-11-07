@@ -126,11 +126,7 @@ def compute_gelora_base_ranks(model, dataloader, config) -> Any:
     target_substrings = ["query", "key", "value", "dense"]
     rank_dict = {}
     for name, _ in model.named_modules():
-        if (
-            any(ts in name for ts in target_substrings)
-            and "classifier" not in name
-            and "pooler" not in name
-        ):
+        if any(ts in name for ts in target_substrings) and "classifier" not in name and "pooler" not in name:
             parts = name.split(".")
             layer_idx = None
             for i, part in enumerate(parts):

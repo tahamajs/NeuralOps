@@ -18,7 +18,8 @@ from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
-from neuralops.ops.triton._base import triton, tl, HAS_TRITON
+
+from neuralops.ops.triton._base import HAS_TRITON, tl, triton
 
 
 @triton.autotune(
@@ -97,8 +98,20 @@ def _block_sparse_streaming_attn_kernel(
             offs_n = kv_block_id * BLOCK_SIZE + tl.arange(0, BLOCK_N)
             mask_n = offs_n < L
 
-            k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_n[:, None] * stride_kl + offs_d[None, :] * stride_kd
-            v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_n[:, None] * stride_vl + offs_d[None, :] * stride_vd
+            k_ptrs = (
+                k_ptr
+                + pid_b * stride_kb
+                + pid_h * stride_kh
+                + offs_n[:, None] * stride_kl
+                + offs_d[None, :] * stride_kd
+            )
+            v_ptrs = (
+                v_ptr
+                + pid_b * stride_vb
+                + pid_h * stride_vh
+                + offs_n[:, None] * stride_vl
+                + offs_d[None, :] * stride_vd
+            )
 
             # Cache active blocks into registers
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0).to(tl.float32)

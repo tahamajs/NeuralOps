@@ -7,8 +7,8 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Root entry point for the canonical resource-scaling benchmark."""
 
-
 import warnings
+
 warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
 
 import sys
@@ -21,7 +21,6 @@ if _BENCHMARKS_DIR in sys.path:
     sys.path.remove(_BENCHMARKS_DIR)
 
 from neuralops.benchmarks.resource_scaling import main
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

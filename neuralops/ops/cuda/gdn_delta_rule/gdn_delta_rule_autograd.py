@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any, Optional
+
 import torch
 import torch.nn.functional as F
 
@@ -21,6 +23,7 @@ from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
 
 def _get_module():
     global _MODULE
@@ -37,6 +40,7 @@ def _get_module():
             functions=["gdn_delta_rule_fwd"],
         )
     return _MODULE
+
 
 def gdn_delta_rule_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
     B, H, L, D = q.shape
@@ -55,20 +59,27 @@ def gdn_delta_rule_pytorch_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor
                 out[b_idx, h_idx, t] = torch.matmul(q_t, S).to(q.dtype)
     return out
 
+
 def gdn_delta_rule_triton_ref(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
     return gdn_delta_rule_pytorch_ref(q, k, v, beta)
+
 
 def _gdn_delta_rule_fwd_dispatch(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
     def cuda_fn(q, k, v, beta, **kwargs):
         mod = _get_module()
         return mod.gdn_delta_rule_fwd(q.contiguous(), k.contiguous(), v.contiguous(), beta.contiguous())
+
     return dispatch(
         cuda_fn,
         gdn_delta_rule_triton_ref,
         gdn_delta_rule_pytorch_ref,
-        q, k, v, beta,
+        q,
+        k,
+        v,
+        beta,
         kernel_name="gdn_delta_rule",
     )
+
 
 class _GDNDeltaRuleFunction(torch.autograd.Function):
     @staticmethod
@@ -91,6 +102,7 @@ class _GDNDeltaRuleFunction(torch.autograd.Function):
 
         grads = torch.autograd.grad(out_p, [q_p, k_p, v_p, beta_p], dout, allow_unused=True)
         return grads[0], grads[1], grads[2], grads[3]
+
 
 def gdn_delta_rule(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, beta: torch.Tensor) -> torch.Tensor:
     if any(t.requires_grad for t in (q, k, v, beta) if isinstance(t, torch.Tensor)):

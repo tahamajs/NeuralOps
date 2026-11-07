@@ -12,15 +12,6 @@ Vision GNN-inspired 2D grid linear attention capturing spatial neighbourhood gra
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _detect_decoder
-
-from neuralops.core.attention_utils import (
-    safe_mask_value as _safe_mask_value,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -31,9 +22,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.attention_utils import safe_mask_value as _safe_mask_value
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get, _detect_decoder, _read_past_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -92,7 +86,8 @@ class ViGAttention(BaseAttention):
         else:
             self.adapter = None
             self.dim = _cfg_get(
-                config, "hidden_size",
+                config,
+                "hidden_size",
                 kwargs.get("hidden_size", kwargs.get("d_model", 768)),
             )
             self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
@@ -128,24 +123,40 @@ class ViGAttention(BaseAttention):
                 target_dtype = p.dtype
 
         self.q_proj = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
         self.k_proj = LoRALinear(
-            self.dim, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
         self.v_proj = LoRALinear(
-            self.dim, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, dtype=target_dtype,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            dtype=target_dtype,
         )
 
         self.gate_net = nn.Linear(self.dim, 2 * self.num_heads).float()
@@ -153,9 +164,9 @@ class ViGAttention(BaseAttention):
         nn.init.normal_(self.gate_net.weight, std=0.02)
 
         dropout_p = _cfg_get(
-            config, "dropout",
-            _cfg_get(config, "hidden_dropout_prob",
-                     _cfg_get(config, "attention_probs_dropout_prob", 0.1)),
+            config,
+            "dropout",
+            _cfg_get(config, "hidden_dropout_prob", _cfg_get(config, "attention_probs_dropout_prob", 0.1)),
         )
         self.dropout = nn.Dropout(float(dropout_p))
         self.rotary_emb = getattr(src_attn, "rotary_emb", None)
@@ -174,38 +185,49 @@ class ViGAttention(BaseAttention):
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
 
     def copy_weights(self, old_attn: Any) -> None:
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None),
-            "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         for proj in ["q", "k", "v", "o"]:
@@ -225,29 +247,29 @@ class ViGAttention(BaseAttention):
             if (
                 "Conv1D" in old_attn.c_attn.__class__.__name__
                 or hasattr(old_attn.c_attn, "nf")
-                or (weight.dim() == 2 and (
-                    weight.shape[0] < weight.shape[1]
-                    or weight.shape[1] == 3 * self.dim
-                ))
+                or (weight.dim() == 2 and (weight.shape[0] < weight.shape[1] or weight.shape[1] == 3 * self.dim))
             ):
                 weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
-            extracted["q"] = (weight[:split_size, :],
-                              bias_data[:split_size] if bias_data is not None else None)
-            extracted["k"] = (weight[split_size:2 * split_size, :],
-                              bias_data[split_size:2 * split_size] if bias_data is not None else None)
-            extracted["v"] = (weight[2 * split_size:, :],
-                              bias_data[2 * split_size:] if bias_data is not None else None)
+            extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
+            extracted["k"] = (
+                weight[split_size : 2 * split_size, :],
+                bias_data[split_size : 2 * split_size] if bias_data is not None else None,
+            )
+            extracted["v"] = (
+                weight[2 * split_size :, :],
+                bias_data[2 * split_size :] if bias_data is not None else None,
+            )
 
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
             w_o = old_attn.c_proj.weight.data
             if (
                 "Conv1D" in old_attn.c_proj.__class__.__name__
                 or hasattr(old_attn.c_proj, "nf")
-                or (w_o.dim() == 2 and (
-                    w_o.shape[0] < w_o.shape[1]
-                    or (w_o.shape[0] != self.dim and w_o.shape[1] == self.dim)
-                ))
+                or (
+                    w_o.dim() == 2
+                    and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] != self.dim and w_o.shape[1] == self.dim))
+                )
             ):
                 w_o = w_o.t().contiguous()
             b_o = getattr(old_attn.c_proj, "bias", None)
@@ -264,11 +286,7 @@ class ViGAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(old_attn, "output")
-            and hasattr(old_attn.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") and extracted["o"][0] is None:
             dense = old_attn.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -290,8 +308,7 @@ class ViGAttention(BaseAttention):
 
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(
-            hasattr(old_attn, attr)
-            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "out")
+            hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "out")
         )
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
@@ -314,8 +331,11 @@ class ViGAttention(BaseAttention):
             w_reshaped = w.view(src_heads, head_dim, in_feat)
             if src_heads > target_heads and src_heads % target_heads == 0:
                 group = src_heads // target_heads
-                return w_reshaped.view(target_heads, group, head_dim, in_feat).mean(dim=1).reshape(
-                    target_heads * head_dim, in_feat)
+                return (
+                    w_reshaped.view(target_heads, group, head_dim, in_feat)
+                    .mean(dim=1)
+                    .reshape(target_heads * head_dim, in_feat)
+                )
             if src_heads > target_heads:
                 idx = torch.linspace(0, src_heads - 1, target_heads).long()
                 return w_reshaped.index_select(0, idx).reshape(target_heads * head_dim, in_feat)
@@ -355,9 +375,7 @@ class ViGAttention(BaseAttention):
                 out_d = min(target.weight.shape[0], w.shape[0])
                 in_d = min(target.weight.shape[1], w.shape[1])
                 target.weight.data.zero_()
-                target.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
-                )
+                target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
 
                 if b is not None and target.bias is not None:
                     mn = min(target.bias.numel(), b.numel())
@@ -471,9 +489,8 @@ class ViGAttention(BaseAttention):
         if q_lin.is_cuda and past_len == 0 and L == N_kv and q_lin.shape[-1] <= 128:
             try:
                 from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
-                return fused_svd_linear_chunk_scan_triton(
-                    q_lin, k_lin, v_f, chunk_size=min(chunk_size, 64), eps=1e-4
-                )
+
+                return fused_svd_linear_chunk_scan_triton(q_lin, k_lin, v_f, chunk_size=min(chunk_size, 64), eps=1e-4)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
@@ -545,9 +562,7 @@ class ViGAttention(BaseAttention):
         elif getattr(self, "rotary_emb", None) is not None and not is_cross:
             position_ids = kwargs.get("position_ids")
             if position_ids is None:
-                position_ids = torch.arange(
-                    past_len, past_len + N_kv_new, device=device
-                ).unsqueeze(0).expand(B, -1)
+                position_ids = torch.arange(past_len, past_len + N_kv_new, device=device).unsqueeze(0).expand(B, -1)
             try:
                 cos, sin = self.rotary_emb(k_new, position_ids=position_ids)
                 q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
@@ -620,9 +635,9 @@ class ViGAttention(BaseAttention):
         else:
             out_global = self._linear_attention_encoder(q_lin, k_lin, v_f).to(dtype)
 
-        gates = F.softmax(
-            self.gate_net(hidden_states.to(self.gate_net.weight.dtype)).view(B, N, Hh, 2), dim=-1
-        ).to(dtype)
+        gates = F.softmax(self.gate_net(hidden_states.to(self.gate_net.weight.dtype)).view(B, N, Hh, 2), dim=-1).to(
+            dtype
+        )
         gate_graph = gates[..., 0].transpose(1, 2).contiguous().unsqueeze(-1)
         gate_global = gates[..., 1].transpose(1, 2).contiguous().unsqueeze(-1)
 
@@ -721,6 +736,7 @@ def inject_vig(
         return target if num_injected > 0 else None
 
     try:
+
         def _already_injected(m):
             if m is None:
                 return False
@@ -757,6 +773,7 @@ def inject_vig(
 
         if model_config is None:
             import types
+
             hidden_size = (
                 getattr(src, "hidden_size", None)
                 or getattr(src, "embed_dim", None)
@@ -765,11 +782,7 @@ def inject_vig(
                 or (src.query.in_features if hasattr(src, "query") and hasattr(src.query, "in_features") else None)
                 or 768
             )
-            num_heads = (
-                getattr(src, "num_heads", None)
-                or getattr(src, "num_attention_heads", None)
-                or 12
-            )
+            num_heads = getattr(src, "num_heads", None) or getattr(src, "num_attention_heads", None) or 12
             model_config = types.SimpleNamespace(
                 hidden_size=hidden_size,
                 num_attention_heads=num_heads,

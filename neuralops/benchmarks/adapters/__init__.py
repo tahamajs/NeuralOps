@@ -11,11 +11,7 @@ NeuralOps Benchmarks Adapters Subpackage.
 
 from neuralops.benchmarks.adapters.classification import ClassificationAdapter
 from neuralops.benchmarks.adapters.compressor import CompressorModuleAdapter
-from neuralops.benchmarks.adapters.cuda_adapter import (
-    CANONICAL_CUDA_MODULES,
-    CUDAKernelAdapter,
-    CUDA_KERNEL_ALIASES,
-)
+from neuralops.benchmarks.adapters.cuda_adapter import CANONICAL_CUDA_MODULES, CUDA_KERNEL_ALIASES, CUDAKernelAdapter
 from neuralops.benchmarks.adapters.model import (
     BaseModelAdapter,
     HuggingFaceModelAdapter,
@@ -52,13 +48,5 @@ __all__ = [
     "CUDA_KERNEL_ALIASES",
 ]
 
-from neuralops.benchmarks.adapters.base import (
-    BaseBenchmarkAdapter,
-    BenchmarkInputs,
-    NumericsReport,
-)
-
-from neuralops.benchmarks.adapters import classification
-from neuralops.benchmarks.adapters import perplexity
-from neuralops.benchmarks.adapters import ruler
-from neuralops.benchmarks.adapters import zeroshot
+from neuralops.benchmarks.adapters import classification, perplexity, ruler, zeroshot
+from neuralops.benchmarks.adapters.base import BaseBenchmarkAdapter, BenchmarkInputs, NumericsReport

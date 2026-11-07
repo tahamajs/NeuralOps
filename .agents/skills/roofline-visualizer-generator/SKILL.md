@@ -52,9 +52,9 @@ def plot_roofline(output_path: str):
     intensities = np.logspace(-1, 3, 500)
     b_peak = 0.2558  # TB/s
     p_peak = 70.6    # TFLOP/s
-    
+
     attainable = np.minimum(p_peak, intensities * b_peak)
-    
+
     plt.figure(figsize=(6, 4), dpi=300)
     plt.loglog(intensities, attainable, color="#1f77b4", linewidth=2, label="Attainable Ceiling (SM 8.9)")
     plt.axvline(x=183.1, color="red", linestyle="--", label="Attention Bound (183.1 FLOP/B)")

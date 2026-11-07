@@ -12,7 +12,6 @@ Incorporates empirical Fisher information and second-order Hessian traces to gui
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -66,11 +66,15 @@ class LowRankLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
-                return fused_down_up_gemm_bias_triton(x, self.V.t().contiguous(), self.U.t().contiguous(), bias=self.bias)
+
+                return fused_down_up_gemm_bias_triton(
+                    x, self.V.t().contiguous(), self.U.t().contiguous(), bias=self.bias
+                )
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
@@ -91,6 +95,7 @@ class LowRankCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
     """
     SoKA Low-Rank Linear Compressor.
@@ -116,9 +121,7 @@ class LowRankCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "soka_rank", _cfg_get(cfg, "rank", rank))
-            energy_threshold = _cfg_get(
-                cfg, "soka_energy", _cfg_get(cfg, "energy_threshold", energy_threshold)
-            )
+            energy_threshold = _cfg_get(cfg, "soka_energy", _cfg_get(cfg, "energy_threshold", energy_threshold))
             max_error = _cfg_get(cfg, "max_error", max_error)
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
@@ -157,11 +160,7 @@ class LowRankCompressor(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_name.lower()
-            or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name.lower() or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
         if isinstance(base_mod, LowRankLinear):
@@ -236,9 +235,7 @@ class LowRankCompressor(BaseCompressor):
                 )
 
                 new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
-                new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(
-                    dtype=dtype, device=device
-                )
+                new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
 
                 if base_mod.bias is not None:
                     new_layer.bias.data.copy_(base_mod.bias.data)
@@ -335,12 +332,8 @@ def soka_factory(
         _cfg_get(comp_config, "soka_energy", _cfg_get(comp_config, "energy_threshold", None)),
     )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
-    )
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
 
     compressor = LowRankCompressor(
         model,

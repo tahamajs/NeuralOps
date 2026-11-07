@@ -137,9 +137,7 @@ def run_resource_scaling(config: BenchmarkConfig) -> list[BenchmarkResult]:
                 p50 = _percentile(samples, 0.50)
                 p95 = _percentile(samples, 0.95)
                 mean_latency = statistics.mean(samples)
-                tokens_per_sec = (
-                    batch_size * seq_len / (mean_latency / 1000.0) if mean_latency > 0 else 0.0
-                )
+                tokens_per_sec = batch_size * seq_len / (mean_latency / 1000.0) if mean_latency > 0 else 0.0
                 result = BenchmarkResult(
                     module={"name": module_name, "type": "kernel", "family": "attention"},
                     model={"name": "synthetic_attention_probe"},
@@ -162,7 +160,12 @@ def run_resource_scaling(config: BenchmarkConfig) -> list[BenchmarkResult]:
                         module={"name": module_name, "type": "kernel", "family": "attention"},
                         model={"name": "synthetic_attention_probe"},
                         dataset={"name": "synthetic", "task": "performance"},
-                        config={"device": str(device), "dtype": str(dtype), "batch_size": batch_size, "seq_len": seq_len},
+                        config={
+                            "device": str(device),
+                            "dtype": str(dtype),
+                            "batch_size": batch_size,
+                            "seq_len": seq_len,
+                        },
                         metrics={
                             "latency_ms": float("nan"),
                             "p50_ms": float("nan"),

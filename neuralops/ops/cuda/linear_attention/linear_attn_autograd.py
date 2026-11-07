@@ -74,9 +74,11 @@ def linear_attention_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.linear_attn import fwd
+
         def triton_linear_attn_adapter(q, k, v):
             res, _ = fwd(q, k, v, is_causal=True)
             return res
+
         return triton_linear_attn_adapter
     except (RuntimeError, MemoryError, AssertionError, ValueError, ImportError, AttributeError) as exc:
         logger.warning("Failed to initialize Triton implementation for linear attention: %s", exc, exc_info=True)
@@ -92,6 +94,7 @@ def linear_attention(
     if q.shape[-1] > 64 or v.shape[-1] > 64:
         cuda_fn = None
     else:
+
         def cuda_fn(q, k, v):
             mod = _get_module()
             return mod.linear_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous())
@@ -122,5 +125,6 @@ class LinearAttentionFunction(torch.autograd.Function):
         k_grad = torch.zeros_like(k)
         v_grad = torch.zeros_like(v)
         return q_grad, k_grad, v_grad
+
 
 __all__ = ["LinearAttentionFunction", "linear_attention"]

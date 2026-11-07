@@ -12,8 +12,6 @@ Hybrid recurrent attention pairing HGRN-2 gating with delta-rule associative sta
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-from neuralops.core.common import _env_flag, _env_float, _unpack_weight_bias
 
 import logging
 import math
@@ -22,10 +20,11 @@ from typing import Any
 import torch
 import torch.nn as nn
 
+from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get, _env_flag, _env_float, _unpack_weight_bias
+from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.layers.gated.gated_delta_net import GatedDeltaNet
 from neuralops.layers.gated.hgrn2_gated_layer import HGRN2Layer
-from neuralops.core.base import BaseAttention
-from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -145,12 +144,8 @@ class HGRN2GatedDeltaNet(BaseAttention):
             self.is_decoder = bool(is_dec)
         self.is_causal: bool = False
 
-        self.lora_rank: int = int(
-            _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
-        )
-        self.lora_alpha: float = float(
-            _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha))
-        )
+        self.lora_rank: int = int(_cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
+        self.lora_alpha: float = float(_cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base: bool = self.lora_rank > 0
 
         _reserved = {
@@ -205,9 +200,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if target_dtype is not None:
             self.to(target_dtype)
 
-        self._per_layer_trainable = sum(
-            p.numel() for p in self.parameters() if p.requires_grad
-        )
+        self._per_layer_trainable = sum(p.numel() for p in self.parameters() if p.requires_grad)
         if self._per_layer_trainable > 5e6:
             logger.warning(
                 "HGRN2GatedDeltaNet per-layer trainable: %.1fM.",
@@ -307,7 +300,12 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if disable_hgrn and disable_delta:
             raise RuntimeError("Both branches disabled. Nothing to compute.")
 
-        is_causal = bool(kwargs.get("is_causal", False) or kwargs.get("causal", False) or getattr(self, "is_decoder", False) or getattr(self, "is_causal", False))
+        is_causal = bool(
+            kwargs.get("is_causal", False)
+            or kwargs.get("causal", False)
+            or getattr(self, "is_decoder", False)
+            or getattr(self, "is_causal", False)
+        )
         if is_causal:
             self.is_decoder = True
             self.is_causal = True
@@ -383,6 +381,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             if hidden_states.is_cuda:
                 try:
                     from neuralops.ops.triton.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
+
                     out = fused_jamba_hybrid_ssm_attn_gate_triton(
                         delta_out.to(hidden_states.dtype),
                         hgrn_out.to(hidden_states.dtype),
@@ -390,22 +389,16 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     )
                 except Exception:
                     gamma = torch.sigmoid(raw_gamma).to(hidden_states.dtype)
-                    out = gamma * hgrn_out.to(hidden_states.dtype) + (
-                        1.0 - gamma
-                    ) * delta_out.to(hidden_states.dtype)
+                    out = gamma * hgrn_out.to(hidden_states.dtype) + (1.0 - gamma) * delta_out.to(hidden_states.dtype)
             else:
                 gamma = torch.sigmoid(raw_gamma).to(hidden_states.dtype)
-                out = gamma * hgrn_out.to(hidden_states.dtype) + (
-                    1.0 - gamma
-                ) * delta_out.to(hidden_states.dtype)
+                out = gamma * hgrn_out.to(hidden_states.dtype) + (1.0 - gamma) * delta_out.to(hidden_states.dtype)
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         new_past_key_value: Any = None
         if self.is_decoder:
-            use_cache = kwargs.get("use_cache", False) or (
-                past_key_value is not None and past_key_value is not False
-            )
+            use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
             if use_cache:
                 new_past_key_value = (hgrn_state, delta_state)
 
@@ -449,20 +442,14 @@ def inject_hgrn2_gated_deltanet(
     **kwargs: Any,
 ):
     if _depth > 8:
-        logger.warning(
-            "inject_hgrn2_gated_deltanet: max recursion depth exceeded."
-        )
+        logger.warning("inject_hgrn2_gated_deltanet: max recursion depth exceeded.")
         return None
 
     target = layer if layer is not None else model
     if target is None:
         return None
 
-    cfg = (
-        model_config
-        if model_config is not None
-        else getattr(target, "config", None)
-    )
+    cfg = model_config if model_config is not None else getattr(target, "config", None)
 
     layer_list = None
     for path in (

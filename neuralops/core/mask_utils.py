@@ -13,8 +13,10 @@ High-performance mask generation and manipulation utilities for causal and non-c
 
 from __future__ import annotations
 
-import torch
 from typing import Optional, Tuple
+
+import torch
+
 from neuralops.core.attention_mask import get_token_valid_mask
 
 

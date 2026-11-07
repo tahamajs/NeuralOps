@@ -109,18 +109,18 @@ def _hgrn2_outer_chunk_kernel(
     BLOCK_D: tl.constexpr
 ):
     pid_b = tl.program_id(0)
-    
+
     s_state = tl.zeros((D, D), dtype=tl.float32)
     for t in range(L):
         x_t = tl.load(X_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D))
         k_t = tl.load(K_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D))
         v_t = tl.load(V_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D))
         f_t = tl.load(F_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D))
-        
+
         # Convex interpolation
         s_state = f_t[:, None] * s_state + (1.0 - f_t[:, None]) * (k_t[:, None] * v_t[None, :])
         y_t = tl.sum(s_state * x_t[:, None], axis=0)
-        
+
         tl.store(Out_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D), y_t)
 ```
 
@@ -152,4 +152,3 @@ The empirical evaluation of `hgrn2_outer` across standard sequence lengths and l
 | **$L = 2048$** | 0.45 ms | 180 MB | $2.50\times$ |
 | **$L = 4096$** | 0.85 ms | 288 MB | $4.20\times$ |
 | **$L = 8192$** | **1.65 ms** | **320 MB** | **7.75x** |
-

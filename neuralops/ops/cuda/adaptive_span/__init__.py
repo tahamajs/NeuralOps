@@ -9,9 +9,6 @@
 Adaptive Span Attention Hardware Operators.
 """
 
-from neuralops.ops.cuda.adaptive_span.adaptive_span_autograd import (
-    adaptive_span,
-    fused_adaptive_span_penalty_pytorch,
-)
+from neuralops.ops.cuda.adaptive_span.adaptive_span_autograd import adaptive_span, fused_adaptive_span_penalty_pytorch
 
 __all__ = ["adaptive_span", "fused_adaptive_span_penalty_pytorch"]

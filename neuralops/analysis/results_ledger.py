@@ -15,16 +15,16 @@ from __future__ import annotations
 
 import csv
 import dataclasses
-from dataclasses import asdict, dataclass, field
 import datetime
 import hashlib
 import json
 import logging
 import math
 import os
-from pathlib import Path
 import sqlite3
 import subprocess
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 logger = logging.getLogger("neuralops.results_ledger")
@@ -380,7 +380,10 @@ class ResultsLedger:
                 try:
                     d = json.loads(r_json)
                     d["status"] = "deleted"
-                    cur.execute("UPDATE results SET status = 'deleted', raw_json = ? WHERE record_id = ?", (json.dumps(d, ensure_ascii=False), r_id))
+                    cur.execute(
+                        "UPDATE results SET status = 'deleted', raw_json = ? WHERE record_id = ?",
+                        (json.dumps(d, ensure_ascii=False), r_id),
+                    )
                 except Exception:
                     cur.execute("UPDATE results SET status = 'deleted' WHERE record_id = ?", (r_id,))
         count = cur.rowcount
@@ -474,7 +477,11 @@ class ResultsLedger:
                     rec.status,
                     rec.timestamp_utc,
                     rec.git_commit_sha,
-                    rec.generation_method.get("algorithm", "") if isinstance(rec.generation_method, dict) else str(rec.generation_method),
+                    (
+                        rec.generation_method.get("algorithm", "")
+                        if isinstance(rec.generation_method, dict)
+                        else str(rec.generation_method)
+                    ),
                     rec.experimental_setup.get("backbone", "") if isinstance(rec.experimental_setup, dict) else "",
                     rec.experimental_setup.get("dataset", "") if isinstance(rec.experimental_setup, dict) else "",
                     rec.experimental_setup.get("rank") if isinstance(rec.experimental_setup, dict) else None,
@@ -630,7 +637,11 @@ class ResultsLedger:
 
         where_str = f"WHERE {' AND '.join(where)}" if where else ""
         direction = "DESC" if descending else "ASC"
-        order_col = sort_by if sort_by in ("timestamp_utc", "accuracy", "speedup_x", "latency_triton_ms", "peak_vram_mb", "revision") else "timestamp_utc"
+        order_col = (
+            sort_by
+            if sort_by in ("timestamp_utc", "accuracy", "speedup_x", "latency_triton_ms", "peak_vram_mb", "revision")
+            else "timestamp_utc"
+        )
 
         limit_str = f"LIMIT {limit}" if limit else ""
         sql = f"SELECT raw_json FROM results {where_str} ORDER BY {order_col} {direction} {limit_str}"
@@ -689,8 +700,18 @@ class ResultsLedger:
 
         return {
             "module_name": module_name,
-            "revision_a": {"rev": rec_a.revision, "git": rec_a.git_commit_sha, "date": rec_a.timestamp_utc, "metrics": rec_a.metrics},
-            "revision_b": {"rev": rec_b.revision, "git": rec_b.git_commit_sha, "date": rec_b.timestamp_utc, "metrics": rec_b.metrics},
+            "revision_a": {
+                "rev": rec_a.revision,
+                "git": rec_a.git_commit_sha,
+                "date": rec_a.timestamp_utc,
+                "metrics": rec_a.metrics,
+            },
+            "revision_b": {
+                "rev": rec_b.revision,
+                "git": rec_b.git_commit_sha,
+                "date": rec_b.timestamp_utc,
+                "metrics": rec_b.metrics,
+            },
             "deltas": deltas,
         }
 
@@ -768,7 +789,7 @@ class ResultsLedger:
         ]
 
         if not items:
-            svg.append('</svg>')
+            svg.append("</svg>")
             return "\n".join(svg)
 
         plot_w = width - 2 * padding
@@ -783,10 +804,16 @@ class ResultsLedger:
                 bar_h = (ym / max_y) * (plot_h - 20)
                 bx = padding + i * (bar_w + gap) + gap / 2
                 by = height - padding - bar_h
-                svg.append(f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bar_h:.1f}" fill="#38bdf8" rx="4"/>')
-                svg.append(f'<text x="{bx + bar_w/2:.1f}" y="{by - 6:.1f}" fill="#f8fafc" font-size="10" text-anchor="middle">{ym:.1f}</text>')
+                svg.append(
+                    f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bar_h:.1f}" fill="#38bdf8" rx="4"/>'
+                )
+                svg.append(
+                    f'<text x="{bx + bar_w/2:.1f}" y="{by - 6:.1f}" fill="#f8fafc" font-size="10" text-anchor="middle">{ym:.1f}</text>'
+                )
                 short_name = name[:10]
-                svg.append(f'<text x="{bx + bar_w/2:.1f}" y="{height - padding + 15:.1f}" fill="#cbd5e1" font-size="9" text-anchor="middle">{short_name}</text>')
+                svg.append(
+                    f'<text x="{bx + bar_w/2:.1f}" y="{height - padding + 15:.1f}" fill="#cbd5e1" font-size="9" text-anchor="middle">{short_name}</text>'
+                )
         else:
             max_x = max((x[1] for x in items), default=1.0) or 1.0
             min_x = min((x[1] for x in items), default=0.0)
@@ -798,10 +825,12 @@ class ResultsLedger:
             for name, xm, ym, sha in items:
                 cx = padding + ((xm - min_x) / span_x) * (plot_w - 40) + 20
                 cy = height - padding - ((ym - min_y) / span_y) * (plot_h - 40) - 20
-                svg.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5" fill="#f43f5e" stroke="#fff" stroke-width="1.5"/>')
+                svg.append(
+                    f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5" fill="#f43f5e" stroke="#fff" stroke-width="1.5"/>'
+                )
                 svg.append(f'<text x="{cx + 8:.1f}" y="{cy + 4:.1f}" fill="#cbd5e1" font-size="9">{name[:12]}</text>')
 
-        svg.append('</svg>')
+        svg.append("</svg>")
         return "\n".join(svg)
 
     def export_table(
@@ -827,7 +856,10 @@ class ResultsLedger:
 
         rows = []
         for r in records:
-            setup_str = f"{r.experimental_setup.get('backbone', '')} {r.experimental_setup.get('dataset', '')}".strip() or "Standard"
+            setup_str = (
+                f"{r.experimental_setup.get('backbone', '')} {r.experimental_setup.get('dataset', '')}".strip()
+                or "Standard"
+            )
             row = [r.module_name, r.category, r.family, setup_str]
             for mk in active_metric_keys:
                 val = r.metrics.get(mk)
@@ -842,6 +874,7 @@ class ResultsLedger:
 
         if format == "csv":
             import io
+
             out = io.StringIO()
             writer = csv.writer(out)
             writer.writerow(headers)
@@ -862,7 +895,9 @@ class ResultsLedger:
             for r in rows:
                 escaped = [c.replace("_", "\\_").replace("%", "\\%") for c in r]
                 lines.append(" & ".join(escaped) + " \\\\")
-            lines.extend(["\\bottomrule", "\\end{tabular}", "\\caption{NeuralOps Benchmark Provenance Ledger}", "\\end{table}"])
+            lines.extend(
+                ["\\bottomrule", "\\end{tabular}", "\\caption{NeuralOps Benchmark Provenance Ledger}", "\\end{table}"]
+            )
             return "\n".join(lines)
 
         col_w = [max(len(h), max((len(r[i]) for r in rows), default=0)) for i, h in enumerate(headers)]

@@ -12,21 +12,29 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
+
 import torch
+
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
 _MODULE = None
+
+
 def _get_module():
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
-        with open(curr_dir / "simple_ssm_binding.cpp", "r", encoding="utf-8") as f: cpp_src = f.read()
-        with open(curr_dir / "simple_ssm.cu", "r", encoding="utf-8") as f: cuda_src = f.read()
+        with open(curr_dir / "simple_ssm_binding.cpp", "r", encoding="utf-8") as f:
+            cpp_src = f.read()
+        with open(curr_dir / "simple_ssm.cu", "r", encoding="utf-8") as f:
+            cuda_src = f.read()
         _MODULE = load_cuda_module("cuda_simple_ssm", cpp_src, cuda_src, ["simple_ssm_fwd"])
     return _MODULE
+
 
 def simple_ssm_ref(x: torch.Tensor, decay: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
     B, N, D = x.shape
@@ -38,11 +46,14 @@ def simple_ssm_ref(x: torch.Tensor, decay: torch.Tensor, scale: torch.Tensor) ->
         out[:, t, :] = (s * scale.float()).to(dtype=x.dtype)
     return out
 
+
 def _simple_ssm_fwd_dispatch(x: torch.Tensor, decay: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
     def cuda_fn(x, decay, scale):
         mod = _get_module()
         return mod.simple_ssm_fwd(x.contiguous(), decay.contiguous(), scale.contiguous())
+
     return dispatch(cuda_fn, simple_ssm_ref, simple_ssm_ref, x, decay=decay, scale=scale, kernel_name="simple_ssm")
+
 
 class _SimpleSSMFunction(torch.autograd.Function):
     @staticmethod
@@ -63,6 +74,7 @@ class _SimpleSSMFunction(torch.autograd.Function):
         dout_val = douts[0] if len(douts) == 1 else douts
         grads = torch.autograd.grad(out_p, [x_p, decay_p, scale_p], dout_val, allow_unused=True)
         return grads[0], grads[1], grads[2]
+
 
 def simple_ssm(x: torch.Tensor, decay: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
     if any(t.requires_grad for t in (x, decay, scale) if isinstance(t, torch.Tensor)):

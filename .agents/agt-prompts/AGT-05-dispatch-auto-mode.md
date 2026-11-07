@@ -179,4 +179,3 @@ Exact problems, with file paths and evidence (audit, 2026-11-06):
 ```
 
 ---
-

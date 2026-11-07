@@ -201,4 +201,3 @@ Exact problem, with file paths and line references (audit, 2026-11-06):
 ```
 
 ---
-

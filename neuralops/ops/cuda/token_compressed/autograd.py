@@ -14,6 +14,7 @@ from __future__ import annotations
 import math
 from pathlib import Path
 from typing import Any
+
 import torch
 from torch.autograd import Function
 
@@ -75,9 +76,7 @@ class TokenCompressedAttentionFunction(Function):
         # Fallback to PyTorch reference
         from neuralops.ops.triton.token_compressed_triton import _token_compressed_attention_pytorch
 
-        return _token_compressed_attention_pytorch(
-            q, k, v, num_projected_tokens=num_projected_tokens, scale=scale
-        )
+        return _token_compressed_attention_pytorch(q, k, v, num_projected_tokens=num_projected_tokens, scale=scale)
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):

@@ -1,6 +1,6 @@
 # SoKA (Kronecker Product) Compressor – Low‑Rank SVD Placeholder
 
-**Registered as `soka`**  
+**Registered as `soka`**
 *Replaces each linear layer with a factorised low‑rank module (U·V) initialised from truncated SVD of the original weight matrix. Intended as a lightweight surrogate for a true structured Kronecker product decomposition, it provides immediate parameter reduction and inference speed‑up.*
 
 ---
@@ -200,4 +200,3 @@ The empirical evaluation of `soka_compressor` across standard sequence lengths a
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

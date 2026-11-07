@@ -30,10 +30,10 @@ from typing import Any, Dict
 from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.serving.request_batcher import (
     TGIRequest,
-    TGIRequestSlot,
     TGIRequestBatch,
-    TGIStreamingIterator,
+    TGIRequestSlot,
     TGIServingAdapter,
+    TGIStreamingIterator,
 )
 
 logger = logging.getLogger("NeuralOps.TGI")
@@ -105,10 +105,10 @@ def register_neuralops_tgi_plugin(*args: Any, **kwargs: Any) -> Dict[str, Any]:
 
 def create_tgi_app(adapter: TGIServingAdapter) -> Any:
     """Expose standalone HTTP/SSE server handler using FastAPI/Starlette for TGI-compatible serving.
-    
+
     Args:
         adapter: TGIServingAdapter instance.
-        
+
     Returns:
         FastAPI / Starlette application instance exposing /health, /info, /generate, and /generate_stream.
     """

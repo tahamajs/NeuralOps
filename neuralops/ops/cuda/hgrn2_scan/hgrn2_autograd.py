@@ -12,8 +12,10 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 """
 
 from __future__ import annotations
+
 import logging
 from typing import Any
+
 """
 HGRN2 Bidirectional Scan Interface and 3-Level Fallback.
 Target: SM 8.9 (NVIDIA Ada Lovelace RTX 4070 Laptop GPU, 8GB VRAM).
@@ -43,7 +45,9 @@ def _get_module():
             with open(curr_dir / "hgrn2_scan.cu", "r", encoding="utf-8") as f:
                 cuda_src = f.read()
             _MODULE = load_cuda_module(
-                name="cuda_hgrn2_scan", cpp_sources=cpp_src, cuda_sources=cuda_src,
+                name="cuda_hgrn2_scan",
+                cpp_sources=cpp_src,
+                cuda_sources=cuda_src,
                 functions=["hgrn2_bidirectional_scan_fwd"],
             )
         except Exception as exc:
@@ -59,12 +63,14 @@ def hgrn2_fused_bwd_scan_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.hgrn2_scan import triton_hgrn2_fused_bwd_scan_pytorch_ref
+
     return triton_hgrn2_fused_bwd_scan_pytorch_ref(x, g)
 
 
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.hgrn2_scan import triton_hgrn2_fused_bwd_scan
+
         return triton_hgrn2_fused_bwd_scan
     except ImportError:
         return None
@@ -75,6 +81,7 @@ def _hgrn2_fused_bwd_scan_dispatch(
     g: torch.Tensor,
 ) -> torch.Tensor:
     """3-Level Dispatched Bidirectional HGRN2 Scan."""
+
     def cuda_fn(x, g):
         mod = _get_module()
         return mod.hgrn2_bidirectional_scan_fwd(x.contiguous(), g.contiguous())
@@ -124,9 +131,11 @@ class _Hgrn2_fused_bwd_scanFunction(torch.autograd.Function):
                 res.append(None)
         return tuple(res)
 
+
 def hgrn2_fused_bwd_scan(x, g):
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, g)):
         return _Hgrn2_fused_bwd_scanFunction.apply(x, g)
     return _hgrn2_fused_bwd_scan_dispatch(x, g)
+
 
 hgrn2_scan = hgrn2_fused_bwd_scan

@@ -42,8 +42,12 @@ def get_all_131_attentions(project_dir: str) -> List[Dict[str, Any]]:
                             "latency_ms": item.get("latency_ms"),
                             "status": item.get("status", "OK"),
                             "family": _infer_family(name),
-                            "complexity_time": "O(N)" if not any(x in name for x in ["full", "exact", "quadratic"]) else "O(N^2)",
-                            "complexity_space": "O(1)" if any(x in name for x in ["linear", "recurrent", "mamba", "rwkv"]) else "O(N)",
+                            "complexity_time": (
+                                "O(N)" if not any(x in name for x in ["full", "exact", "quadratic"]) else "O(N^2)"
+                            ),
+                            "complexity_space": (
+                                "O(1)" if any(x in name for x in ["linear", "recurrent", "mamba", "rwkv"]) else "O(N)"
+                            ),
                         }
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -107,13 +111,15 @@ def get_all_72_compressors(project_dir: str) -> List[Dict[str, Any]]:
                     if name:
                         rel_err = item.get("rel_err")
                         ratio = round(1.0 / max(0.001, (rel_err if rel_err is not None else 0.25) * 2), 2)
-                        compressors.append({
-                            "name": name,
-                            "compress_ms": item.get("compress_ms"),
-                            "rel_err": rel_err,
-                            "compression_ratio": ratio,
-                            "status": item.get("status", "OK"),
-                        })
+                        compressors.append(
+                            {
+                                "name": name,
+                                "compress_ms": item.get("compress_ms"),
+                                "rel_err": rel_err,
+                                "compression_ratio": ratio,
+                                "status": item.get("status", "OK"),
+                            }
+                        )
         except Exception:
             # allowed-swallow: best-effort-telemetry
             pass
@@ -121,13 +127,15 @@ def get_all_72_compressors(project_dir: str) -> List[Dict[str, Any]]:
     if not compressors:
         for idx in range(1, 73):
             name = f"compression_engine_{idx:02d}"
-            compressors.append({
-                "name": name,
-                "compress_ms": 12.5 + idx * 0.8,
-                "rel_err": 0.02 + (idx * 0.002),
-                "compression_ratio": 4.0,
-                "status": "OK",
-            })
+            compressors.append(
+                {
+                    "name": name,
+                    "compress_ms": 12.5 + idx * 0.8,
+                    "rel_err": 0.02 + (idx * 0.002),
+                    "compression_ratio": 4.0,
+                    "status": "OK",
+                }
+            )
 
     compressors.sort(key=lambda x: x.get("rel_err") or 999.0)
     _CACHED_72_COMPRESSORS = compressors
@@ -160,13 +168,15 @@ def get_paged_kv_cache_state(num_blocks: int = 64, block_size: int = 16) -> Dict
         else:
             tok_count = 0
 
-        blocks.append({
-            "block_id": b_idx,
-            "seq_id": sid,
-            "is_free": is_free,
-            "token_count": tok_count,
-            "capacity": block_size,
-        })
+        blocks.append(
+            {
+                "block_id": b_idx,
+                "seq_id": sid,
+                "is_free": is_free,
+                "token_count": tok_count,
+                "capacity": block_size,
+            }
+        )
 
     utilization = round((allocated_count / num_blocks) * 100, 1)
     return {
@@ -209,8 +219,26 @@ def get_speculative_decoding_state() -> Dict[str, Any]:
             {"gamma": 8, "acceptance_rate": 0.710, "effective_speedup": 2.74},
         ],
         "history_acceptance_rates": [
-            0.72, 0.74, 0.76, 0.81, 0.79, 0.78, 0.83, 0.82, 0.85, 0.78,
-            0.79, 0.80, 0.81, 0.84, 0.78, 0.77, 0.82, 0.86, 0.79, 0.83,
+            0.72,
+            0.74,
+            0.76,
+            0.81,
+            0.79,
+            0.78,
+            0.83,
+            0.82,
+            0.85,
+            0.78,
+            0.79,
+            0.80,
+            0.81,
+            0.84,
+            0.78,
+            0.77,
+            0.82,
+            0.86,
+            0.79,
+            0.83,
         ],
     }
 
@@ -231,15 +259,17 @@ def get_all_notebooks(project_dir: str) -> List[Dict[str, Any]]:
             num = f.split("_")[0]
             clean_title = f.replace(".ipynb", "").replace("_", " ").title()
             tags = [t for t in f.replace(".ipynb", "").split("_")[1:] if len(t) > 2]
-            notebooks.append({
-                "id": num,
-                "title": clean_title,
-                "description": f"Executable Jupyter research notebook: {clean_title}.",
-                "filename": f"notebooks/{f}",
-                "tags": tags,
-                "path": os.path.join(nb_dir, f),
-                "status": "certified",
-            })
+            notebooks.append(
+                {
+                    "id": num,
+                    "title": clean_title,
+                    "description": f"Executable Jupyter research notebook: {clean_title}.",
+                    "filename": f"notebooks/{f}",
+                    "tags": tags,
+                    "path": os.path.join(nb_dir, f),
+                    "status": "certified",
+                }
+            )
     return notebooks
 
 

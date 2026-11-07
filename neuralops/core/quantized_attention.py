@@ -12,7 +12,9 @@ FP8 and INT8 quantized attention routines featuring dynamic scaling factors and 
 """
 
 from __future__ import annotations
+
 import math
+
 import torch
 import torch.nn.functional as F
 

@@ -14,11 +14,11 @@ hardware context, and status codes for production regression tracking.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
-from pathlib import Path
 import sys
 import threading
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 

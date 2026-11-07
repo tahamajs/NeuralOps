@@ -1,7 +1,7 @@
 # NeuralOps Codebase Architecture: Part 07
 # The 6-Pillar Knowledge Distillation & Post-Surgery Healing Pipeline
 
-**Assigned Subagent**: `Agent 07: Distillation & Post-Surgery Healing Scientist`  
+**Assigned Subagent**: `Agent 07: Distillation & Post-Surgery Healing Scientist`
 **Target Codebase Paths**:
 - `neuralops/trainer/distillation/`
 - `neuralops/trainer/peft_recovery/`
@@ -65,7 +65,7 @@ class SixPillarDistillationTrainer:
         self.teacher = teacher_model.eval()
         for p in self.teacher.parameters():
             p.requires_grad = False
-            
+
         self.weights = loss_weights or {
             "kd": 1.0, "cka": 0.5, "attn": 0.2,
             "cos": 0.5, "stiefel": 0.05, "entropy": 0.1
@@ -75,12 +75,12 @@ class SixPillarDistillationTrainer:
         with torch.no_grad():
             t_out = self.teacher(**batch, output_hidden_states=True)
         s_out = self.student(**batch, output_hidden_states=True)
-        
+
         l_kd = compute_kd_loss(s_out.logits, t_out.logits, temperature=2.0)
         l_cka = compute_linear_cka(s_out.hidden_states[-1], t_out.hidden_states[-1])
         l_cos = compute_cosine_loss(s_out.hidden_states[-1], t_out.hidden_states[-1])
         l_stiefel = compute_stiefel_penalty(self.student)
-        
+
         total = (self.weights["kd"] * l_kd +
                  self.weights["cka"] * l_cka +
                  self.weights["cos"] * l_cos +

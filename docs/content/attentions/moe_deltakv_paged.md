@@ -1,12 +1,12 @@
 # MoE-DeltaKV-Paged: Mixture-of-Block-Attention with Paged Delta-KV Compression
 
 ## 1. Abstract
-As Transformer models scale toward infinite context lengths, the memory footprint and bandwidth requirements of the Key-Value (KV) cache become the primary inference bottleneck. We introduce **MoE-DeltaKV-Paged**, a hybrid attention architecture that solves this by coupling a top-$k$ Mixture-of-Block-Attention (MoBA) router with Paged Delta-KV temporal compression. By partitioning sequences into fixed physical pages and storing only low-rank quantized frame differences ($\Delta K$, $\Delta V$), the module reduces KV cache memory consumption by up to 8x while preserving exact cross-token dependencies for high-entropy tokens. 
+As Transformer models scale toward infinite context lengths, the memory footprint and bandwidth requirements of the Key-Value (KV) cache become the primary inference bottleneck. We introduce **MoE-DeltaKV-Paged**, a hybrid attention architecture that solves this by coupling a top-$k$ Mixture-of-Block-Attention (MoBA) router with Paged Delta-KV temporal compression. By partitioning sequences into fixed physical pages and storing only low-rank quantized frame differences ($\Delta K$, $\Delta V$), the module reduces KV cache memory consumption by up to 8x while preserving exact cross-token dependencies for high-entropy tokens.
 
 ## 2. Introduction & Motivation
-Standard Multi-Head Attention scales as $\mathcal{O}(L^2)$ in time and $\mathcal{O}(L \cdot d)$ in KV cache storage. While sparse routing mechanisms like Mixture-of-Block-Attention (MoBA) lower the time complexity to $\mathcal{O}(L \cdot B)$, they typically still necessitate caching the full history of token states. 
+Standard Multi-Head Attention scales as $\mathcal{O}(L^2)$ in time and $\mathcal{O}(L \cdot d)$ in KV cache storage. While sparse routing mechanisms like Mixture-of-Block-Attention (MoBA) lower the time complexity to $\mathcal{O}(L \cdot B)$, they typically still necessitate caching the full history of token states.
 
-MoE-DeltaKV-Paged directly addresses the cache capacity ceiling by acknowledging that token representations exhibit high temporal correlation. Instead of caching dense vectors per token, this architecture borrows from virtual memory systems and video compression: it manages context in discrete physical pages and stores temporal differences (deltas) compressed via low-rank SVD and 4-bit non-uniform quantization. 
+MoE-DeltaKV-Paged directly addresses the cache capacity ceiling by acknowledging that token representations exhibit high temporal correlation. Instead of caching dense vectors per token, this architecture borrows from virtual memory systems and video compression: it manages context in discrete physical pages and stores temporal differences (deltas) compressed via low-rank SVD and 4-bit non-uniform quantization.
 
 ## 3. Mathematical Formulation
 Let physical KV memory be partitioned into blocks of size $S_{page}$. For an incoming query block $\bar{Q}_i \in \mathbb{R}^{d}$, the router computes gating scores across historical key block centroids $\bar{K}_j$:
@@ -23,7 +23,7 @@ $$ O_i = \sum_{j \in \mathcal{P}_{active}} g_j \cdot \text{Softmax}\left( \frac{
 
 ## 4. Architecture & Implementation
 The architecture is structured in three cascading stages:
-1. **Delta-KV Temporal Compression Engine**: Intercepts the $K$ and $V$ projections, computes differences against the previous sequence step, performs randomized SVD truncation, and executes min-max uniform quantization. 
+1. **Delta-KV Temporal Compression Engine**: Intercepts the $K$ and $V$ projections, computes differences against the previous sequence step, performs randomized SVD truncation, and executes min-max uniform quantization.
 2. **MoE-Block Router**: Pools query and reconstructed key sequences into blocks of `page_size`. A dense linear mapping $W_{rg}$ generates a correlation matrix. Causal masking ensures query blocks only select from past or current pages.
 3. **Paged Block-Sparse Attention**: Gathers the top-$k$ active key/value pages based on the routing indices. It evaluates the exact dot-product attention, applying intra-block causal masks dynamically to avoid future-token leakage within the currently active block.
 
@@ -58,4 +58,3 @@ The empirical evaluation of `moe_deltakv_paged` across standard sequence lengths
 | **$L = 2048$** | 0.62 ms | 240 MB | $2.50\times$ |
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
-

@@ -12,15 +12,12 @@ Optimized GPU attention kernel exploiting asynchronous tensor core copy and ping
 """
 
 from __future__ import annotations
-from neuralops.core.common import repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 from typing import Any
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +41,7 @@ def _flush_denormals(t: torch.Tensor) -> torch.Tensor:
     if t.is_floating_point():
         return torch.where(t.abs() < _FTZ_THRESHOLD, torch.zeros_like(t), t)
     return t
+
 
 try:
     from flash_attn_interface import flash_attn_func
@@ -84,6 +82,7 @@ class FlashAttention3(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         if config is None:
+
             class DummyConfig:
                 pass
 
@@ -128,9 +127,7 @@ class FlashAttention3(BaseAttention):
                 )
             else:
                 config.hidden_size = kwargs.get("hidden_size", 768)
-                config.num_attention_heads = kwargs.get(
-                    "num_heads", kwargs.get("num_attention_heads", 12)
-                )
+                config.num_attention_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
 
         super().__init__(config, rank)
         self.num_heads: int = (
@@ -147,9 +144,7 @@ class FlashAttention3(BaseAttention):
             else kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
         )
         self.num_kv_heads: int = (
-            getattr(config, "num_key_value_heads", self.num_heads)
-            if config is not None
-            else self.num_heads
+            getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
         )
         self.hidden_size: int = (
             getattr(
@@ -181,11 +176,7 @@ class FlashAttention3(BaseAttention):
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
+            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
         )
         self.layer_idx: int = int(resolved_layer_id)
 
@@ -226,8 +217,7 @@ class FlashAttention3(BaseAttention):
             else False
         )
         if hasattr(config, "architectures") and any(
-            "GPT" in str(a) or "CausalLM" in str(a)
-            for a in (getattr(config, "architectures", []) or [])
+            "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -251,11 +241,7 @@ class FlashAttention3(BaseAttention):
                 or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
             ):
                 is_nested = True
-            elif (
-                hasattr(source_attn, "out_lin")
-                or hasattr(source_attn, "c_proj")
-                or hasattr(source_attn, "o_proj")
-            ):
+            elif hasattr(source_attn, "out_lin") or hasattr(source_attn, "c_proj") or hasattr(source_attn, "o_proj"):
                 is_nested = False
         if is_nested is None:
             is_nested = False
@@ -297,11 +283,7 @@ class FlashAttention3(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         self.rotary_emb = None
@@ -506,11 +488,7 @@ class FlashAttention3(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -523,11 +501,7 @@ class FlashAttention3(BaseAttention):
             except Exception as e:
                 logger.debug(f"UniversalAdapter fallback warning: {e}")
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.debug(
                 f"FlashAttention3 copy_weights: missing mandatory projections {missing_after} "
@@ -554,18 +528,13 @@ class FlashAttention3(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
 
                 if b is not None and target_mod.bias is not None:
@@ -611,18 +580,8 @@ class FlashAttention3(BaseAttention):
         kv_len = kv_input.shape[1]
 
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
-        k = (
-            self.k_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         if position_embeddings is not None and not is_cross_attention:
             if isinstance(position_embeddings, tuple):
@@ -738,6 +697,7 @@ class FlashAttention3(BaseAttention):
             if out.is_cuda and hasattr(self.out_proj, "weight"):
                 try:
                     from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                     final_out = self.out_proj(out)
                 except Exception:
                     final_out = self.out_proj(out)
@@ -778,11 +738,7 @@ def inject_flash_attention3(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -794,9 +750,7 @@ def inject_flash_attention3(
             res = inject_flash_attention3(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,

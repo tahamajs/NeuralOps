@@ -88,9 +88,7 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
             continue
         if name.endswith((".inner", "._wrapped_attention")):
             continue
-        is_output_submodule = (
-            name.endswith((".output", "_output")) or "selfoutput" in class_name
-        )
+        is_output_submodule = name.endswith((".output", "_output")) or "selfoutput" in class_name
         if is_output_submodule:
             continue
 
@@ -164,11 +162,7 @@ def get_ffn_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
         if any(x in class_name for x in ["mlp", "ffn", "feedforward"]):
             ffn_modules.append((name, module))
             continue
-        if (
-            hasattr(module, "gate_proj")
-            or hasattr(module, "up_proj")
-            or hasattr(module, "intermediate")
-        ):
+        if hasattr(module, "gate_proj") or hasattr(module, "up_proj") or hasattr(module, "intermediate"):
             ffn_modules.append((name, module))
     return ffn_modules
 

@@ -83,9 +83,7 @@ def _fused_cross_entropy_fwd_kernel(
         m = new_m
 
     log_sum_exp = m + tl.log(d)
-    target_logit = tl.load(
-        logits_ptr + row_idx * stride_logits_row + target_idx * stride_logits_col
-    )
+    target_logit = tl.load(logits_ptr + row_idx * stride_logits_row + target_idx * stride_logits_col)
     loss = log_sum_exp - target_logit
     tl.store(loss_ptr + row_idx, loss)
 
@@ -187,9 +185,7 @@ class _FusedCrossEntropyFunction(torch.autograd.Function):
                 IGNORE_INDEX=ignore_index,
             )
         else:
-            loss_per_token = F.cross_entropy(
-                logits_flat, targets_flat, ignore_index=ignore_index, reduction="none"
-            )
+            loss_per_token = F.cross_entropy(logits_flat, targets_flat, ignore_index=ignore_index, reduction="none")
 
         valid_mask = targets_flat != ignore_index
         total_valid = valid_mask.sum().clamp(min=1).item()
@@ -332,9 +328,7 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
 
         scale_norm = 1.0 / total_valid if reduction == "mean" else 1.0
 
-        compute_grads = (
-            hidden_states.requires_grad or weight.requires_grad or (bias is not None and bias.requires_grad)
-        )
+        compute_grads = hidden_states.requires_grad or weight.requires_grad or (bias is not None and bias.requires_grad)
 
         grad_hidden = torch.empty_like(h_flat) if compute_grads and hidden_states.requires_grad else None
         grad_weight = torch.zeros_like(weight) if compute_grads and weight.requires_grad else None
@@ -387,7 +381,9 @@ class FusedLinearCrossEntropyFunction(torch.autograd.Function):
         grad_hidden, grad_weight, grad_bias = ctx.saved_tensors
         g_val = grad_output.to(torch.float32)
 
-        out_grad_h = (grad_hidden.view(ctx.orig_shape) * g_val).to(grad_hidden.dtype) if grad_hidden is not None else None
+        out_grad_h = (
+            (grad_hidden.view(ctx.orig_shape) * g_val).to(grad_hidden.dtype) if grad_hidden is not None else None
+        )
         out_grad_w = (grad_weight * g_val).to(grad_weight.dtype) if grad_weight is not None else None
         out_grad_b = (grad_bias * g_val).to(grad_bias.dtype) if grad_bias is not None else None
 
@@ -427,7 +423,12 @@ class FusedLinearCrossEntropy(nn.Module):
         targets: torch.Tensor,
         bias: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        if isinstance(targets, torch.Tensor) and targets.dtype in (torch.float16, torch.float32, torch.bfloat16) and bias is not None and bias.dtype in (torch.int32, torch.int64):
+        if (
+            isinstance(targets, torch.Tensor)
+            and targets.dtype in (torch.float16, torch.float32, torch.bfloat16)
+            and bias is not None
+            and bias.dtype in (torch.int32, torch.int64)
+        ):
             actual_bias = targets
             actual_targets = bias
         else:

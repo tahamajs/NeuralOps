@@ -54,7 +54,7 @@ def get_neuralops_fsdp_policy(min_num_params: int = int(1e5)):
         raise ValueError("min_num_params must be positive")
     try:
         from neuralops.core.base import BaseAttention
-        from neuralops.trainer.peft_recovery.svd_adapters import PiSSALinear, DoRALinear
+        from neuralops.trainer.peft_recovery.svd_adapters import DoRALinear, PiSSALinear
     except ImportError as exc:
         raise RuntimeError("NeuralOps FSDP policy dependencies could not be imported") from exc
 

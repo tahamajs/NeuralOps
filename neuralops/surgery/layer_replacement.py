@@ -97,9 +97,7 @@ def find_nested_attention_modules(
             continue
 
         is_match = (
-            target_filter(name, module)
-            if target_filter is not None
-            else _is_default_attention_target(name, module)
+            target_filter(name, module) if target_filter is not None else _is_default_attention_target(name, module)
         )
 
         if is_match:
@@ -163,11 +161,7 @@ def broadcast_gqa_heads(
             .view(num_heads * head_dim, in_dim)
         )
     elif w.ndim == 1 and w.shape[0] == num_kv_heads * head_dim:
-        return (
-            w.view(num_kv_heads, head_dim)
-            .repeat_interleave(group_size, dim=0)
-            .view(num_heads * head_dim)
-        )
+        return w.view(num_kv_heads, head_dim).repeat_interleave(group_size, dim=0).view(num_heads * head_dim)
     return w
 
 
@@ -219,6 +213,7 @@ def _instantiate_replacement(
 
     if attention_key is not None:
         from neuralops.core.registry import ATTENTION_REGISTRY
+
         fn = ATTENTION_REGISTRY.get(attention_key)
         if fn is None:
             raise ValueError(f"Attention key '{attention_key}' not found in ATTENTION_REGISTRY.")
@@ -246,9 +241,7 @@ def replace_attention_recursive(
     nesting depths, including inside nn.Sequential, nn.ModuleList, and custom blocks (P053).
     Guarantees full transactional rollback if an exception occurs mid-transplant.
     """
-    targets = find_nested_attention_modules(
-        model, target_filter=target_filter, layer_indices=layer_indices
-    )
+    targets = find_nested_attention_modules(model, target_filter=target_filter, layer_indices=layer_indices)
 
     if not targets:
         logger.warning("No attention targets found to replace in model hierarchy.")
@@ -275,8 +268,7 @@ def replace_attention_recursive(
             logger.debug("Replaced module at '%s' with %s", path, type(new_mod).__name__)
     except Exception as err:
         logger.error(
-            "Attention replacement failed mid-transplant at '%s': %s. "
-            "Rolling back %d replaced layer(s).",
+            "Attention replacement failed mid-transplant at '%s': %s. " "Rolling back %d replaced layer(s).",
             path if "path" in locals() else "unknown",
             err,
             len(replaced_so_far),

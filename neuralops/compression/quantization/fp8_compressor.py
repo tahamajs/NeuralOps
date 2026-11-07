@@ -12,6 +12,7 @@ Quantizes model parameters to FP8 formats (E4M3 and E5M2) with dynamic scaling f
 """
 
 from __future__ import annotations
+
 import logging
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -67,8 +68,10 @@ class FP8Compressor(BaseCompressor):
         self.use_native = self.has_sm89 if use_native_fp8 is None else use_native_fp8
         self.max_val = 448.0 if self.fp8_format == "e4m3" else 57344.0
         self.target_dtype = (
-            torch.float8_e4m3fn if self.fp8_format == "e4m3" else torch.float8_e5m2
-        ) if hasattr(torch, "float8_e4m3fn") else torch.float32
+            (torch.float8_e4m3fn if self.fp8_format == "e4m3" else torch.float8_e5m2)
+            if hasattr(torch, "float8_e4m3fn")
+            else torch.float32
+        )
 
     def _quantize_tensor(self, w: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Quantizes weight tensor to FP8 and returns (dequantized_w, fp8_w, scale)."""

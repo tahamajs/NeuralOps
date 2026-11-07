@@ -16,6 +16,7 @@ retaining explicit per-channel/per-group scaling factors.
 from __future__ import annotations
 
 from typing import Any, Optional
+
 import torch
 import torch.nn as nn
 
@@ -51,9 +52,7 @@ class AWQQuantizer:
         s = torch.mean(torch.abs(x.to(torch.float32)), dim=0)
         self.act_scales = torch.maximum(self.act_scales, s)
 
-    def _quantize_to_grid(
-        self, W_scaled: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def _quantize_to_grid(self, W_scaled: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Quantizes scaled weights to an exact integer grid and returns (q_int, weight_scale)."""
         q_max = 2 ** (self.bits - 1) - 1
         q_min = -(2 ** (self.bits - 1))
@@ -66,7 +65,9 @@ class AWQQuantizer:
             group_scales = max_val / float(q_max)
             q_grouped = torch.clamp(torch.round(W_grouped / group_scales), q_min, q_max)
             q_int = q_grouped.reshape(out_features, in_features).to(torch.int8)
-            weight_scale = group_scales.expand(out_features, num_groups, self.group_size).reshape(out_features, in_features)
+            weight_scale = group_scales.expand(out_features, num_groups, self.group_size).reshape(
+                out_features, in_features
+            )
         else:
             max_val = torch.amax(torch.abs(W_scaled), dim=-1, keepdim=True).clamp(min=1e-8)
             scale = max_val / float(q_max)
@@ -139,9 +140,7 @@ class AWQCompressor(BaseCompressor):
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 layer_key = name or "root"
-                awq = AWQQuantizer(
-                    module, bits=self.bits, alpha=self.alpha, group_size=self.group_size
-                )
+                awq = AWQQuantizer(module, bits=self.bits, alpha=self.alpha, group_size=self.group_size)
                 if self.calib_data is not None:
                     for batch in self.calib_data:
                         awq.observe(batch)
@@ -155,9 +154,7 @@ class AWQCompressor(BaseCompressor):
                 total_params += module.weight.numel()
 
         if not stats["layers"] and isinstance(self.model, nn.Linear):
-            awq = AWQQuantizer(
-                self.model, bits=self.bits, alpha=self.alpha, group_size=self.group_size
-            )
+            awq = AWQQuantizer(self.model, bits=self.bits, alpha=self.alpha, group_size=self.group_size)
             if self.calib_data is not None:
                 for batch in self.calib_data:
                     awq.observe(batch)
@@ -171,9 +168,7 @@ class AWQCompressor(BaseCompressor):
             total_params += self.model.weight.numel()
 
         avg_err = (
-            sum(stats["layer_errors"].values()) / max(1, len(stats["layer_errors"]))
-            if stats["layer_errors"]
-            else 0.0
+            sum(stats["layer_errors"].values()) / max(1, len(stats["layer_errors"])) if stats["layer_errors"] else 0.0
         )
         stats["avg_reconstruction_error"] = float(avg_err)
         stats["total_parameters"] = total_params

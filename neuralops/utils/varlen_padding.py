@@ -14,6 +14,7 @@ Handles padding and cumulative sequence length indexing for variable-length batc
 from __future__ import annotations
 
 from typing import Tuple
+
 import torch
 
 
@@ -74,9 +75,7 @@ def pad_input(
         dense_tensor: [B, S, D]
     """
     dim = hidden_states.shape[-1]
-    output = torch.zeros(
-        (batch * seqlen, dim), dtype=hidden_states.dtype, device=hidden_states.device
-    )
+    output = torch.zeros((batch * seqlen, dim), dtype=hidden_states.dtype, device=hidden_states.device)
     output[indices] = hidden_states
     return output.view(batch, seqlen, dim)
 

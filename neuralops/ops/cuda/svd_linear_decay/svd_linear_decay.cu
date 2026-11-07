@@ -67,7 +67,7 @@ __global__ void svd_linear_decay_fwd_kernel(
     // S_t[d1][d2] where d1 in [0, D_k).
     // To fit in registers, D_k is tiled or looped over d1, while d2 is parallelized across threads.
     // For fast execution, each thread maintains an accumulator for its assigned d2 column.
-    
+
     // Allocate registers for S state column: up to 64 rows of D_k per thread's assigned d2
     // If D_k <= 64, each thread manages 1 element of d2 across all d1 rows.
     // D_v is partitioned among threads in block:

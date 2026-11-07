@@ -120,10 +120,10 @@ Router projection: $2 B L D E$ Furthermore, Expert FFN evaluation ($k$ active ex
 $$\text{FLOPs}_{\text{avg}} = \frac{R}{R+1} \text{FLOPs}_{\text{mamba}} + \frac{1}{R+1} \text{FLOPs}_{\text{attn}} + \text{FLOPs}_{\text{moe}}$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx \frac{R}{R+1} (6 B L D^2 + B L D d_{\text{state}}) + \frac{1}{R+1} (2 B L D^2 + B L^2 D) + 2 k B L D D_{\text{ff}}$$
-Specifically, regarding \textbf{Parameter Footprint}, 
+Specifically, regarding \textbf{Parameter Footprint},
 
   $$\Theta = (6 D^2 + D d_{\text{state}}) + 4 D^2 + (D E + 2 k E D_{\text{ff}})$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Mamba recurrence state: $\mathcal{O}(B D d_{\text{state}})$ Concurrently, Dense MHA attention logit matrix: $\mathcal{O}(B L^2)$ (at MHA layers) In this setting, MoE routing activation: $\mathcal{O}(B L E + k B L D)$
@@ -221,4 +221,3 @@ The empirical evaluation of `granite_hybrid` across standard sequence lengths an
 | **$L = 2048$** | 0.55 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.04 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.05 ms** | **440 MB** | **6.24x** |
-

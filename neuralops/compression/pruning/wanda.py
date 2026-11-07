@@ -12,6 +12,7 @@ Prunes weights according to the product of weight magnitudes and input activatio
 """
 
 from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -82,6 +83,7 @@ def wanda_prune_model(
 ) -> dict[str, torch.Tensor]:
     """Applies Wanda pruning to all eligible linear layers of model, protecting task heads."""
     from neuralops.utils.compat.architectures import should_compress_linear
+
     masks = {}
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):
@@ -112,9 +114,7 @@ class WandaCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="wanda", **kwargs)
-        self.sparsity = _cfg_get(
-            comp_config, "wanda_sparsity", _cfg_get(comp_config, "sparsity", sparsity)
-        )
+        self.sparsity = _cfg_get(comp_config, "wanda_sparsity", _cfg_get(comp_config, "sparsity", sparsity))
         self.calib_data = calib_data
         self.masks: dict[str, torch.Tensor] = {}
 

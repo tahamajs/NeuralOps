@@ -50,10 +50,10 @@ def run_dynamic_range_benchmark(
     if device.type == "cuda":
         torch.cuda.set_device(device.index if device.index is not None else 0)
 
-    from neuralops.core.triton_kernels.gla_scan import gla_scan
-    from neuralops.core.cuda_kernels.sparse_attention import block_sparse_attn
     from neuralops.core.cuda_kernels.rotational_svd.rotational_svd_autograd import rotational_svd
     from neuralops.core.cuda_kernels.samba_moe.samba_moe_autograd import samba_moe
+    from neuralops.core.cuda_kernels.sparse_attention import block_sparse_attn
+    from neuralops.core.triton_kernels.gla_scan import gla_scan
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
     print(f"=== Dynamic Range Stress Test on {device} ({gpu_name}) ===")
@@ -77,21 +77,21 @@ def run_dynamic_range_benchmark(
 
             try:
                 if k_name == "gla_scan":
-                    q = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale / (D ** 0.5)
-                    k = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale / (D ** 0.5)
+                    q = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale / (D**0.5)
+                    k = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale / (D**0.5)
                     v = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale
                     lam = -torch.rand(B, H, N, device=device, dtype=torch.float32) * 0.5
                     fn = lambda: gla_scan(q, k, v, lambdas=lam)
                 elif k_name == "sparse_attention":
-                    q_sp = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale / (D ** 0.5)
-                    k_sp = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale / (D ** 0.5)
+                    q_sp = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale / (D**0.5)
+                    k_sp = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale / (D**0.5)
                     v_sp = (2.0 * torch.rand(B, H, N, D, device=device, dtype=torch.float32) - 1.0) * scale
                     fn = lambda: block_sparse_attn(q_sp, k_sp, v_sp, sparse_mask, block_size=16)
                 elif k_name == "rotational_svd":
                     x_rot = (2.0 * torch.rand(B, N, D, device=device, dtype=torch.float32) - 1.0) * scale
                     rin = torch.eye(D, device=device, dtype=torch.float32)
-                    vr = torch.randn(D, r_dim, device=device, dtype=torch.float32) / (r_dim ** 0.5)
-                    ur = torch.randn(r_dim, D, device=device, dtype=torch.float32) / (r_dim ** 0.5)
+                    vr = torch.randn(D, r_dim, device=device, dtype=torch.float32) / (r_dim**0.5)
+                    ur = torch.randn(r_dim, D, device=device, dtype=torch.float32) / (r_dim**0.5)
                     fn = lambda: rotational_svd(x_rot, rin, vr, ur)
                 elif k_name == "samba_moe":
                     e1 = (2.0 * torch.rand(B, N, D, device=device, dtype=torch.float32) - 1.0) * scale
@@ -135,30 +135,46 @@ def run_dynamic_range_benchmark(
                     "status": "PASS" if (not has_nan and not has_inf) else "FAIL",
                 }
                 results.append(row)
-                print(f"  Scale {scale_str:<6} | Latency: {lat_ms:6.3f} ms | Min: {min_val:10.2e} | Max: {max_val:10.2e} | Norm: {norm_val:10.2e} | Stable: {row['status']}")
+                print(
+                    f"  Scale {scale_str:<6} | Latency: {lat_ms:6.3f} ms | Min: {min_val:10.2e} | Max: {max_val:10.2e} | Norm: {norm_val:10.2e} | Stable: {row['status']}"
+                )
 
             except Exception as exc:
                 print(f"  Scale {scale_str:<6} | EXCEPTION: {exc}")
-                results.append({
-                    "kernel": k_name,
-                    "scale": scale,
-                    "scale_label": scale_str,
-                    "latency_ms": 0.0,
-                    "min_val": 0.0,
-                    "max_val": 0.0,
-                    "frobenius_norm": 0.0,
-                    "zero_nan": False,
-                    "zero_inf": False,
-                    "status": f"FAIL ({exc})",
-                })
+                results.append(
+                    {
+                        "kernel": k_name,
+                        "scale": scale,
+                        "scale_label": scale_str,
+                        "latency_ms": 0.0,
+                        "min_val": 0.0,
+                        "max_val": 0.0,
+                        "frobenius_norm": 0.0,
+                        "zero_nan": False,
+                        "zero_inf": False,
+                        "status": f"FAIL ({exc})",
+                    }
+                )
 
     if output_csv:
         csv_path = Path(output_csv)
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         with open(csv_path, mode="w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=[
-                "kernel", "scale", "scale_label", "latency_ms", "min_val", "max_val", "frobenius_norm", "zero_nan", "zero_inf", "status"
-            ])
+            writer = csv.DictWriter(
+                f,
+                fieldnames=[
+                    "kernel",
+                    "scale",
+                    "scale_label",
+                    "latency_ms",
+                    "min_val",
+                    "max_val",
+                    "frobenius_norm",
+                    "zero_nan",
+                    "zero_inf",
+                    "status",
+                ],
+            )
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
@@ -180,7 +196,9 @@ def run_dynamic_range_benchmark(
             r"\begin{table*}[t]",
             r"\centering",
             r"\small",
-            r"\caption{Dynamic Range Numerical Stress Audit across extreme input scales ($10^{-4}$ to $10^{4}$) on " + gpu_name + r". Testing numerical stability, norm preservation, and floating-point overflow resistance.}",
+            r"\caption{Dynamic Range Numerical Stress Audit across extreme input scales ($10^{-4}$ to $10^{4}$) on "
+            + gpu_name
+            + r". Testing numerical stability, norm preservation, and floating-point overflow resistance.}",
             r"\label{tab:dynamic_range_stress}",
             r"\begin{tabular}{llccccc}",
             r"\toprule",
@@ -190,7 +208,7 @@ def run_dynamic_range_benchmark(
 
         curr_kernel = None
         for r in results:
-            k_disp = r['kernel'].replace('_', r'\_')
+            k_disp = r["kernel"].replace("_", r"\_")
             if k_disp != curr_kernel:
                 if curr_kernel is not None:
                     tex.append(r"\midrule")
@@ -199,20 +217,22 @@ def run_dynamic_range_benchmark(
             else:
                 k_col = ""
 
-            scale_disp = f"$10^{{{int(math.log10(r['scale']))}}}$" if r['scale'] != 1.0 else "$10^{0}$"
+            scale_disp = f"$10^{{{int(math.log10(r['scale']))}}}$" if r["scale"] != 1.0 else "$10^{0}$"
             lat = f"{r['latency_ms']:.3f}"
             min_str = f"{r['min_val']:.2e}"
             max_str = f"{r['max_val']:.2e}"
             norm_str = f"{r['frobenius_norm']:.2e}"
-            status_str = r"\checkmark" if (r['zero_nan'] and r['zero_inf']) else r"\times"
+            status_str = r"\checkmark" if (r["zero_nan"] and r["zero_inf"]) else r"\times"
 
             tex.append(f"{k_col} & {scale_disp} & {lat} & {min_str} & {max_str} & {norm_str} & {status_str} \\\\")
 
-        tex.extend([
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table*}",
-        ])
+        tex.extend(
+            [
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table*}",
+            ]
+        )
         with open(tex_path, mode="w", encoding="utf-8") as f:
             f.write("\n".join(tex) + "\n")
         print(f"Saved LaTeX Table to: {tex_path}")
@@ -222,10 +242,27 @@ def run_dynamic_range_benchmark(
 
 def main():
     parser = argparse.ArgumentParser(description="Dynamic Range Stress Test Benchmark")
-    parser.add_argument("--output", type=str, default="docs/benchmarks/paper_benchmarks_dynamic_range_stress.csv", help="Path to save CSV output")
-    parser.add_argument("--output-json", type=str, default="results/paper_benchmarks_dynamic_range_stress.json", help="Path to save JSON output")
-    parser.add_argument("--tex-output", type=str, default="docs/reports/PAPER_TABLES_DYNAMIC_RANGE.tex", help="Path to save LaTeX table")
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="Device to execute benchmark")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="docs/benchmarks/paper_benchmarks_dynamic_range_stress.csv",
+        help="Path to save CSV output",
+    )
+    parser.add_argument(
+        "--output-json",
+        type=str,
+        default="results/paper_benchmarks_dynamic_range_stress.json",
+        help="Path to save JSON output",
+    )
+    parser.add_argument(
+        "--tex-output", type=str, default="docs/reports/PAPER_TABLES_DYNAMIC_RANGE.tex", help="Path to save LaTeX table"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        help="Device to execute benchmark",
+    )
     parser.add_argument("--warmup", type=int, default=5, help="Warmup iterations")
     parser.add_argument("--repeat", type=int, default=30, help="Repeat iterations")
     parser.add_argument("--quick", action="store_true", help="Quick mode (3 scales, warmup=1, repeat=3)")

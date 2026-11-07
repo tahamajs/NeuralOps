@@ -12,12 +12,6 @@ Hybrid attention architecture interleaving selective state space models with ful
 """
 
 from __future__ import annotations
-from neuralops.core.common import _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    safe_mask_value as _safe_mask_value,
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -27,11 +21,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.layers.gated.gated_delta_net import LoRALinear
 from neuralops.core.adapters import UniversalAdapter
+from neuralops.core.attention_utils import apply_rotary_pos_emb
+from neuralops.core.attention_utils import safe_mask_value as _safe_mask_value
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
+from neuralops.layers.gated.gated_delta_net import LoRALinear
 
 logger = logging.getLogger(__name__)
 
@@ -71,13 +68,9 @@ class Mamba2(nn.Module):
         self.inner_dim: int = inner_dim
 
         self.in_proj: nn.Linear = nn.Linear(d_model, inner_dim * 2)
-        self.conv1d: nn.Conv1d = nn.Conv1d(
-            inner_dim, inner_dim, d_conv, groups=inner_dim, padding=d_conv - 1
-        )
+        self.conv1d: nn.Conv1d = nn.Conv1d(inner_dim, inner_dim, d_conv, groups=inner_dim, padding=d_conv - 1)
         self.dt_proj: nn.Linear = nn.Linear(inner_dim, inner_dim)
-        self.A_log: nn.Parameter = nn.Parameter(
-            torch.log(torch.rand(inner_dim, d_state) * 0.1 + 1e-3)
-        )
+        self.A_log: nn.Parameter = nn.Parameter(torch.log(torch.rand(inner_dim, d_state) * 0.1 + 1e-3))
         self.D: nn.Parameter = nn.Parameter(torch.ones(inner_dim))
         self.out_proj: nn.Linear = nn.Linear(inner_dim, d_model)
 
@@ -100,9 +93,7 @@ class Mamba2(nn.Module):
         h = torch.empty(B, L, inner, state, device=device, dtype=dtype)
 
         running_h = (
-            initial_state
-            if initial_state is not None
-            else torch.zeros(B, inner, state, device=device, dtype=dtype)
+            initial_state if initial_state is not None else torch.zeros(B, inner, state, device=device, dtype=dtype)
         )
 
         if L == 1:
@@ -154,11 +145,7 @@ class Mamba2(nn.Module):
         x_proj = self.in_proj(x)
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
-        x_ssm = (
-            self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L]
-            .transpose(1, 2)
-            .contiguous()
-        )
+        x_ssm = self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L].transpose(1, 2).contiguous()
 
         dt = F.softplus(self.dt_proj(x_ssm))
         A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
@@ -246,9 +233,7 @@ class MixtureOfExperts(nn.Module):
     def router(self) -> nn.Linear:
         return self.lora_router
 
-    def forward(
-        self, x: torch.Tensor, **kwargs: Any
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor]:
         """Forward pass.
 
         Returns:
@@ -347,9 +332,7 @@ class GraniteHybridBlock(BaseAttention):
         if num_heads is None:
             num_heads = _get("num_attention_heads", _get("num_heads", None))
         if num_heads is None and src_attn is not None:
-            num_heads = getattr(
-                src_attn, "num_heads", getattr(src_attn, "num_attention_heads", None)
-            )
+            num_heads = getattr(src_attn, "num_heads", getattr(src_attn, "num_attention_heads", None))
         num_heads = num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 8))
 
         self.dim: int = int(dim)
@@ -365,7 +348,8 @@ class GraniteHybridBlock(BaseAttention):
         kv_heads = _get("num_key_value_heads", None)
         if kv_heads is None and src_attn is not None:
             kv_heads = getattr(
-                src_attn, "num_key_value_heads",
+                src_attn,
+                "num_key_value_heads",
                 getattr(src_attn, "num_kv_heads", getattr(src_attn, "n_kv_heads", None)),
             )
             if (
@@ -386,8 +370,18 @@ class GraniteHybridBlock(BaseAttention):
             _get("is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))),
         )
         _decoder_prefixes = (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
         )
         if any(model_type.startswith(p) for p in _decoder_prefixes):
             is_dec = True
@@ -400,33 +394,42 @@ class GraniteHybridBlock(BaseAttention):
         self.lora_alpha: float = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base: bool = self.lora_rank > 0
 
-        dropout_p = float(
-            _get("dropout", _get("hidden_dropout_prob",
-                                 _get("attention_probs_dropout_prob", 0.1)))
-        )
+        dropout_p = float(_get("dropout", _get("hidden_dropout_prob", _get("attention_probs_dropout_prob", 0.1))))
         self.dropout_p = dropout_p
         self.dropout = nn.Dropout(dropout_p)
 
         self.mamba = Mamba2(d_model=self.dim)
 
         self.q_proj = LoRALinear(
-            self.dim, self.all_head_size,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.dim, self.kv_head_size,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.dim, self.kv_head_size,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim,
-            bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -453,30 +456,39 @@ class GraniteHybridBlock(BaseAttention):
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
@@ -507,13 +519,13 @@ class GraniteHybridBlock(BaseAttention):
             m_state = past_key_value[2] if len(past_key_value) >= 3 else None
             return k, v, (k.shape[-2] if k is not None else 0), m_state
 
-        if hasattr(past_key_value, 'key_cache') and hasattr(past_key_value, 'value_cache'):
+        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
             kc, vc = past_key_value.key_cache, past_key_value.value_cache
             if layer_idx < len(kc) and kc[layer_idx] is not None:
                 k = kc[layer_idx]
                 v = vc[layer_idx]
                 m_state = None
-                if hasattr(past_key_value, 'mamba_cache') and layer_idx < len(past_key_value.mamba_cache):
+                if hasattr(past_key_value, "mamba_cache") and layer_idx < len(past_key_value.mamba_cache):
                     m_state = past_key_value.mamba_cache[layer_idx]
                 return k, v, k.shape[-2], m_state
 
@@ -589,23 +601,16 @@ class GraniteHybridBlock(BaseAttention):
         H, Dh = self.num_heads, self.head_dim
         H_kv = self.num_kv_heads
 
-        past_k, past_v, past_len, past_mamba_state = self._read_past_kv(
-            past_key_value, self.layer_idx
-        )
+        past_k, past_v, past_len, past_mamba_state = self._read_past_kv(past_key_value, self.layer_idx)
 
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
         k_new = self.k_proj(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
         v_new = self.v_proj(hidden_states).view(B, L, H_kv, Dh).transpose(1, 2).contiguous()
 
-        pos_emb = (
-            position_embeddings if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         pos_ids = kwargs.get("position_ids")
         if pos_ids is None and past_len > 0:
-            pos_ids = torch.arange(
-                past_len, past_len + L, device=device
-            ).unsqueeze(0).expand(B, -1)
+            pos_ids = torch.arange(past_len, past_len + L, device=device).unsqueeze(0).expand(B, -1)
 
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
@@ -666,15 +671,15 @@ class GraniteHybridBlock(BaseAttention):
             attn_out = self.out_proj(context)
         attn_out = self.dropout(attn_out)
 
-        mamba_out, next_mamba_state = self.mamba(
-            hidden_states, past_state=past_mamba_state
-        )
+        mamba_out, next_mamba_state = self.mamba(hidden_states, past_state=past_mamba_state)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
         gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype))
         if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and attn_out.is_cuda and attn_out.shape == mamba_out.shape:
             try:
                 from neuralops.ops.triton.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
+
                 alpha_ssm = -gate_out.mean(dim=-1, keepdim=True)
                 x = fused_jamba_hybrid_ssm_attn_gate_triton(attn_out, mamba_out, alpha_ssm)
             except Exception:
@@ -697,14 +702,10 @@ class GraniteHybridBlock(BaseAttention):
 
         x = torch.nan_to_num(x, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         present_kv: Any = None
         if use_cache:
-            present_kv = self._write_past_kv(
-                K, V, next_mamba_state, past_key_value, self.layer_idx
-            )
+            present_kv = self._write_past_kv(K, V, next_mamba_state, past_key_value, self.layer_idx)
         else:
             present_kv = past_key_value
 
@@ -723,8 +724,10 @@ class GraniteHybridBlock(BaseAttention):
             return
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None),
-            "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         try:
@@ -743,10 +746,11 @@ class GraniteHybridBlock(BaseAttention):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 extracted["q"] = (c_w[:split_size], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size:2 * split_size],
-                                  c_b[split_size:2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size:],
-                                  c_b[2 * split_size:] if c_b is not None else None)
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (c_w[2 * split_size :], c_b[2 * split_size :] if c_b is not None else None)
 
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
             o_w, o_b = _unpack_weight_bias(old_attn.c_proj)

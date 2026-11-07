@@ -12,12 +12,6 @@ Hybrid attention and state space module utilizing spectral channel modulation fo
 """
 
 from __future__ import annotations
-from neuralops.core.common import _unpack_weight_bias
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -28,18 +22,22 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import _unpack_weight_bias
+
 logger = logging.getLogger(__name__)
 
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 try:
     from neuralops.layers.Mamba import Mamba
 except Exception:
+
     class Mamba(nn.Module):
         def __init__(self, d_model: int = 768, **kwargs: Any) -> None:
             super().__init__()
@@ -143,6 +141,7 @@ class SpectralMambaAttention(BaseAttention):
 
     This module is deprecated. Use 'simple_ssm' instead.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -217,10 +216,7 @@ class SpectralMambaAttention(BaseAttention):
         if (
             any(model_type.startswith(p) for p in decoder_prefixes)
             or hasattr(config, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
         ):
             is_dec = True
         if kwargs.get("is_causal", False):
@@ -289,9 +285,7 @@ class SpectralMambaAttention(BaseAttention):
         self.gate_lora_A = nn.Parameter(torch.randn(4, self.hidden_size) * 0.01)
         self.gate_lora_B = nn.Parameter(torch.randn(1, 4) * 1e-4)
 
-        dropout_p = _cfg_get(
-            config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
-        )
+        dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
         source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
@@ -410,11 +404,7 @@ class SpectralMambaAttention(BaseAttention):
                             extracted[proj_key] = (w, b)
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -427,11 +417,7 @@ class SpectralMambaAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning(
                 f"SpectralMambaAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
@@ -462,16 +448,10 @@ class SpectralMambaAttention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif (
-                    w.shape[0] < target_mod.weight.shape[0]
-                    and target_mod.weight.shape[0] % w.shape[0] == 0
-                ):
+                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
-                elif (
-                    w.shape[0] > target_mod.weight.shape[0]
-                    and w.shape[0] % target_mod.weight.shape[0] == 0
-                ):
+                elif w.shape[0] > target_mod.weight.shape[0] and w.shape[0] % target_mod.weight.shape[0] == 0:
                     repeats = w.shape[0] // target_mod.weight.shape[0]
                     w_grouped = w.view(target_mod.weight.shape[0], repeats, w.shape[1]).mean(dim=1)
                     target_mod.weight.copy_(w_grouped)
@@ -484,16 +464,10 @@ class SpectralMambaAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (
-                        b.shape[0] < target_mod.bias.shape[0]
-                        and target_mod.bias.shape[0] % b.shape[0] == 0
-                    ):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
-                    elif (
-                        b.shape[0] > target_mod.bias.shape[0]
-                        and b.shape[0] % target_mod.bias.shape[0] == 0
-                    ):
+                    elif b.shape[0] > target_mod.bias.shape[0] and b.shape[0] % target_mod.bias.shape[0] == 0:
                         repeats = b.shape[0] // target_mod.bias.shape[0]
                         b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(dim=1)
                         target_mod.bias.copy_(b_grouped)
@@ -562,16 +536,8 @@ class SpectralMambaAttention(BaseAttention):
         B, N, D = hidden_states.shape
 
         q = self.q_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k = (
-            self.k_lin(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        v = (
-            self.v_lin(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        k = self.k_lin(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v = self.v_lin(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -610,17 +576,10 @@ class SpectralMambaAttention(BaseAttention):
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
                 _sdpa_out = (
-                    _sdpa_out.to(hidden_states.dtype)
-                    .transpose(1, 2)
-                    .contiguous()
-                    .view(B, N, self.all_head_size)
+                    _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
                 )
                 _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                attn_out = (
-                    self.out_proj(_sdpa_out)
-                    if not getattr(self, "is_nested_encoder", False)
-                    else _sdpa_out
-                )
+                attn_out = self.out_proj(_sdpa_out) if not getattr(self, "is_nested_encoder", False) else _sdpa_out
             except Exception as e:
                 logger.debug("SDPA failed, falling back to manual attention: %s", e)
                 attn_out = None
@@ -644,22 +603,15 @@ class SpectralMambaAttention(BaseAttention):
 
             if head_mask is not None:
                 if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                    attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(
+                    attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(attn_weights.dtype)
+                elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
+                    attn_weights = attn_weights * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(
                         attn_weights.dtype
                     )
-                elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                    attn_weights = attn_weights * head_mask.view(
-                        head_mask.size(0), self.num_heads, 1, 1
-                    ).to(attn_weights.dtype)
                 elif head_mask.dim() == 4:
                     attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
-            attn_ctx = (
-                torch.matmul(attn_weights, v)
-                .permute(0, 2, 1, 3)
-                .contiguous()
-                .view(B, N, self.all_head_size)
-            )
+            attn_ctx = torch.matmul(attn_weights, v).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
             if self.is_nested_encoder:
                 attn_out = attn_ctx
@@ -677,13 +629,11 @@ class SpectralMambaAttention(BaseAttention):
                 mamba_out = mamba_out[..., : attn_out.shape[-1]]
 
         gate_logits = F.linear(hidden_states, self.gate_weight, self.gate_bias)
-        gate_logits = (
-            gate_logits
-            + F.linear(F.linear(hidden_states, self.gate_lora_A), self.gate_lora_B) * 2.0
-        )
+        gate_logits = gate_logits + F.linear(F.linear(hidden_states, self.gate_lora_A), self.gate_lora_B) * 2.0
         if hidden_states.is_cuda and attn_out.shape == mamba_out.shape:
             try:
                 from neuralops.ops.triton.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
+
                 out = fused_jamba_hybrid_ssm_attn_gate_triton(attn_out, mamba_out, -gate_logits)
             except Exception:
                 g = torch.sigmoid(gate_logits)

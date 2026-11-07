@@ -17,6 +17,7 @@ import importlib
 from typing import Any
 
 from neuralops._optional import _require_torch
+
 _require_torch("neuralops.layers")
 
 from neuralops.core.registry import ATTENTION_REGISTRY, get_attention, list_attentions

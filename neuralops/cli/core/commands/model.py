@@ -23,12 +23,15 @@ from neuralops.cli.core.output import CliReporter
 def handle_compress(args: argparse.Namespace) -> int:
     """Executes model compression via the requested engine."""
     from neuralops.cli.compress_cmd import cmd_compress
+
     try:
         ret = cmd_compress(args)
         return int(ret) if ret is not None else int(ExitCode.SUCCESS)
     except Exception as e_comp:
         err_str = f"{e_comp} {str(getattr(e_comp, '__cause__', '') or '')}"
-        if any(term in err_str.lower() for term in ["architecture", "could not locate", "unsupported model", "mismatch"]):
+        if any(
+            term in err_str.lower() for term in ["architecture", "could not locate", "unsupported model", "mismatch"]
+        ):
             raise ArchitectureMismatchError(
                 f"Model architecture incompatible with compressor: {e_comp}. "
                 "Ensure the model contains compatible linear layers or attention projections.",
@@ -41,6 +44,7 @@ def handle_transplant(args: argparse.Namespace) -> int:
     """Perform surgical attention transplantation on a model checkpoint."""
     import torch
     from transformers import AutoModel, AutoTokenizer
+
     from neuralops import transplant_attention
 
     reporter = CliReporter(
@@ -49,12 +53,18 @@ def handle_transplant(args: argparse.Namespace) -> int:
         json_mode=getattr(args, "json", False),
     )
 
-    calib_text = getattr(args, "calibration_text", None) or getattr(args, "calibration_dataset", None) or getattr(args, "dataset", None)
+    calib_text = (
+        getattr(args, "calibration_text", None)
+        or getattr(args, "calibration_dataset", None)
+        or getattr(args, "dataset", None)
+    )
 
     if not isinstance(args.rank, int) or isinstance(args.rank, bool) or args.rank < 1:
         raise ValueError("--rank must be a positive integer")
     if (args.calibrate or args.heal) and not calib_text:
-        raise ValueError("--calibrate and --heal require --calibration-text / --calibration-dataset so real model inputs are used.")
+        raise ValueError(
+            "--calibrate and --heal require --calibration-text / --calibration-dataset so real model inputs are used."
+        )
     if args.heal and (
         not isinstance(args.heal_steps, int)
         or isinstance(args.heal_steps, bool)
@@ -83,7 +93,9 @@ def handle_transplant(args: argparse.Namespace) -> int:
             except Exception:
                 pass
         sample_texts = [sample_text] if sample_text else ["The quick brown fox jumps over the lazy dog."]
-        calibration_inputs = tokenizer(sample_texts, return_tensors="pt", padding=True, truncation=True, max_length=args.seq_len)
+        calibration_inputs = tokenizer(
+            sample_texts, return_tensors="pt", padding=True, truncation=True, max_length=args.seq_len
+        )
         calibration_inputs = {k: v.to(device) for k, v in calibration_inputs.items()}
 
     reporter.log(f"[+] Replacing attention layers with '{args.target}' (rank={args.rank})...")
@@ -115,7 +127,9 @@ def handle_transplant(args: argparse.Namespace) -> int:
 def handle_search(args: argparse.Namespace) -> int:
     """Executes AutoSVD Fisher & Gram sensitivity search and Pareto rank allocation."""
     import json
+
     from transformers import AutoModel
+
     from neuralops.compression_engine.svd.auto_svd import AutoSVDCompressor, solve_optimal_rank_allocation
 
     reporter = CliReporter(
@@ -127,7 +141,9 @@ def handle_search(args: argparse.Namespace) -> int:
     reporter.log(f"Loading model '{args.model}' for AutoSVD Pareto rank search...")
     model = AutoModel.from_pretrained(args.model)
 
-    reporter.log(f"Solving optimal rank allocation for target_param_ratio={args.target_param_ratio} (min_rank={args.min_rank})...")
+    reporter.log(
+        f"Solving optimal rank allocation for target_param_ratio={args.target_param_ratio} (min_rank={args.min_rank})..."
+    )
     ranks, stats = solve_optimal_rank_allocation(
         model,
         target_param_ratio=args.target_param_ratio,
@@ -165,6 +181,7 @@ def handle_search(args: argparse.Namespace) -> int:
 def handle_export(args: argparse.Namespace) -> int:
     """Export model to ONNX, GGUF, SafeTensors, or TorchScript."""
     from transformers import AutoModel
+
     import neuralops
 
     reporter = CliReporter(
@@ -183,6 +200,7 @@ def handle_export(args: argparse.Namespace) -> int:
         model = neuralops.compress(model, method=args.comp, rank=args.rank)
 
     from neuralops.export.exporter import export_model
+
     out = export_model(
         model=model,
         output_dir=args.output_dir,
@@ -200,6 +218,7 @@ def handle_generate(args: argparse.Namespace) -> int:
     """Runs autoregressive text generation with self-speculative decoding."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
     from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
 
     reporter = CliReporter(
@@ -234,15 +253,19 @@ def handle_generate(args: argparse.Namespace) -> int:
     gen_text = tokenizer.decode(out_ids[0], skip_special_tokens=True)
 
     if getattr(args, "json", False):
-        reporter.print_json({
-            "generated_text": gen_text,
-            "elapsed_s": elapsed,
-            "tokens_per_sec": len(out_ids[0]) / max(elapsed, 1e-6),
-            "stats": stats,
-        })
+        reporter.print_json(
+            {
+                "generated_text": gen_text,
+                "elapsed_s": elapsed,
+                "tokens_per_sec": len(out_ids[0]) / max(elapsed, 1e-6),
+                "stats": stats,
+            }
+        )
     else:
         print(f"\n{gen_text}\n")
-        reporter.log(f"Generated {len(out_ids[0])} tokens in {elapsed:.2f}s ({len(out_ids[0])/max(elapsed, 1e-6):.1f} tok/s)")
+        reporter.log(
+            f"Generated {len(out_ids[0])} tokens in {elapsed:.2f}s ({len(out_ids[0])/max(elapsed, 1e-6):.1f} tok/s)"
+        )
 
     return int(ExitCode.SUCCESS)
 
@@ -250,6 +273,7 @@ def handle_generate(args: argparse.Namespace) -> int:
 def handle_serve(args: argparse.Namespace) -> int:
     """Dispatches API inference server or ContinuousBatcher engine."""
     from neuralops.cli.serve_cmd import cmd_serve
+
     ret = cmd_serve(args)
     return int(ret) if ret is not None else int(ExitCode.SUCCESS)
 
@@ -257,6 +281,7 @@ def handle_serve(args: argparse.Namespace) -> int:
 def handle_train(args: argparse.Namespace) -> int:
     """Dispatches single or distributed model training."""
     from neuralops.cli.train_cmd import cmd_train
+
     ret = cmd_train(args)
     return int(ret) if ret is not None else int(ExitCode.SUCCESS)
 
@@ -264,6 +289,7 @@ def handle_train(args: argparse.Namespace) -> int:
 def handle_eval(args: argparse.Namespace) -> int:
     """Dispatches model evaluation across accuracy, latency, and perplexity."""
     from neuralops.cli.eval_cmd import cmd_eval
+
     ret = cmd_eval(args)
     return int(ret) if ret is not None else int(ExitCode.SUCCESS)
 
@@ -271,6 +297,7 @@ def handle_eval(args: argparse.Namespace) -> int:
 def handle_distill(args: argparse.Namespace) -> int:
     """Executes multi-level attention & logit knowledge distillation."""
     from neuralops.cli.distill_cmd import cmd_distill
+
     try:
         ret = cmd_distill(args)
         return int(ret) if ret is not None else int(ExitCode.SUCCESS)
@@ -278,6 +305,7 @@ def handle_distill(args: argparse.Namespace) -> int:
         # Fallback to direct distillation loop
         import torch
         from transformers import AutoModelForSequenceClassification
+
         from neuralops.trainer.distillation.multi_level_kd import LogitDistillationLoss
 
         device = "cuda" if torch.cuda.is_available() else "cpu"

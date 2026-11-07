@@ -14,24 +14,19 @@ Computes low-rank matrix bottleneck projections with fused bias addition and gra
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, Tuple
 import math
 import warnings
+from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
-from neuralops.ops.triton._types import (
-    HAS_TRITON,
-    triton,
-    tl,
-    check_triton_suitability,
-    low_rank_pytorch_fallback,
-)
+from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability, low_rank_pytorch_fallback, tl, triton
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _triton_gemm_bias_kernel(
         A_ptr,
@@ -84,15 +79,26 @@ if HAS_TRITON and tl is not None:
         mask_c = (offs_am[:, None] < M) & (offs_bn[None, :] < N)
         tl.store(c_ptrs, accumulator.to(C_ptr.dtype.element_ty), mask=mask_c)
 
-
     @triton.jit
     def _fused_low_rank_gemm_fwd_kernel(
-        X_ptr, V_ptr, U_ptr, S_ptr, Bias_ptr, Out_ptr,
-        M, D_in, Rank, D_out,
-        stride_xm, stride_xd,
-        stride_vd, stride_vr,
-        stride_ur, stride_un,
-        stride_om, stride_on,
+        X_ptr,
+        V_ptr,
+        U_ptr,
+        S_ptr,
+        Bias_ptr,
+        Out_ptr,
+        M,
+        D_in,
+        Rank,
+        D_out,
+        stride_xm,
+        stride_xd,
+        stride_vd,
+        stride_vr,
+        stride_ur,
+        stride_un,
+        stride_om,
+        stride_on,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
         BLOCK_K: tl.constexpr,
@@ -148,15 +154,25 @@ if HAS_TRITON and tl is not None:
         out_ptrs = Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on
         tl.store(out_ptrs, out_acc.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None] & mask_n[None, :])
 
-
     @triton.jit
     def _fused_low_rank_gemm_bwd_dx_kernel(
-        GradOut_ptr, U_ptr, V_ptr, S_ptr, GradX_ptr,
-        M, D_in, Rank, D_out,
-        stride_gm, stride_gn,
-        stride_ur, stride_un,
-        stride_vd, stride_vr,
-        stride_xm, stride_xd,
+        GradOut_ptr,
+        U_ptr,
+        V_ptr,
+        S_ptr,
+        GradX_ptr,
+        M,
+        D_in,
+        Rank,
+        D_out,
+        stride_gm,
+        stride_gn,
+        stride_ur,
+        stride_un,
+        stride_vd,
+        stride_vr,
+        stride_xm,
+        stride_xd,
         BLOCK_M: tl.constexpr,
         BLOCK_D: tl.constexpr,
         BLOCK_N: tl.constexpr,
@@ -209,13 +225,25 @@ if HAS_TRITON and tl is not None:
 
     @triton.jit
     def _fused_nystrom_pinv_step_fwd_kernel(
-        F1_ptr, F2_inv_ptr, F3_ptr, V_ptr, Out_ptr,
-        M, K1, K2, N,
-        stride_f1_m, stride_f1_k,
-        stride_f2_k1, stride_f2_k2,
-        stride_f3_k2, stride_f3_n,
-        stride_v_n, stride_v_d,
-        stride_o_m, stride_o_d,
+        F1_ptr,
+        F2_inv_ptr,
+        F3_ptr,
+        V_ptr,
+        Out_ptr,
+        M,
+        K1,
+        K2,
+        N,
+        stride_f1_m,
+        stride_f1_k,
+        stride_f2_k1,
+        stride_f2_k2,
+        stride_f3_k2,
+        stride_f3_n,
+        stride_v_n,
+        stride_v_d,
+        stride_o_m,
+        stride_o_d,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
         BLOCK_K: tl.constexpr,
@@ -228,22 +256,38 @@ if HAS_TRITON and tl is not None:
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
         for k in range(0, K1, BLOCK_K):
             offs_k = k + tl.arange(0, BLOCK_K)
-            f1 = tl.load(F1_ptr + offs_m[:, None] * stride_f1_m + offs_k[None, :] * stride_f1_k,
-                         mask=offs_m[:, None] < M and offs_k[None, :] < K1, other=0.0)
-            f2 = tl.load(F2_inv_ptr + offs_k[:, None] * stride_f2_k1 + offs_n[None, :] * stride_f2_k2,
-                         mask=offs_k[:, None] < K1 and offs_n[None, :] < K2, other=0.0)
+            f1 = tl.load(
+                F1_ptr + offs_m[:, None] * stride_f1_m + offs_k[None, :] * stride_f1_k,
+                mask=offs_m[:, None] < M and offs_k[None, :] < K1,
+                other=0.0,
+            )
+            f2 = tl.load(
+                F2_inv_ptr + offs_k[:, None] * stride_f2_k1 + offs_n[None, :] * stride_f2_k2,
+                mask=offs_k[:, None] < K1 and offs_n[None, :] < K2,
+                other=0.0,
+            )
             acc += tl.dot(f1, f2)
-        tl.store(Out_ptr + offs_m[:, None] * stride_o_m + offs_n[None, :] * stride_o_d,
-                 acc.to(Out_ptr.dtype.element_ty),
-                 mask=offs_m[:, None] < M and offs_n[None, :] < N)
+        tl.store(
+            Out_ptr + offs_m[:, None] * stride_o_m + offs_n[None, :] * stride_o_d,
+            acc.to(Out_ptr.dtype.element_ty),
+            mask=offs_m[:, None] < M and offs_n[None, :] < N,
+        )
 
     @triton.jit
     def _fused_rpc_sketch_attention_fwd_kernel(
-        Q_ptr, K_ptr, Out_ptr, scale,
-        M, N, K,
-        stride_qm, stride_qk,
-        stride_kn, stride_kk,
-        stride_om, stride_on,
+        Q_ptr,
+        K_ptr,
+        Out_ptr,
+        scale,
+        M,
+        N,
+        K,
+        stride_qm,
+        stride_qk,
+        stride_kn,
+        stride_kk,
+        stride_om,
+        stride_on,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
         BLOCK_K: tl.constexpr,
@@ -256,24 +300,41 @@ if HAS_TRITON and tl is not None:
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
         for k in range(0, K, BLOCK_K):
             offs_k = k + tl.arange(0, BLOCK_K)
-            q = tl.load(Q_ptr + offs_m[:, None] * stride_qm + offs_k[None, :] * stride_qk,
-                        mask=offs_m[:, None] < M and offs_k[None, :] < K, other=0.0)
-            k_val = tl.load(K_ptr + offs_n[:, None] * stride_kn + offs_k[None, :] * stride_kk,
-                            mask=offs_n[:, None] < N and offs_k[None, :] < K, other=0.0)
+            q = tl.load(
+                Q_ptr + offs_m[:, None] * stride_qm + offs_k[None, :] * stride_qk,
+                mask=offs_m[:, None] < M and offs_k[None, :] < K,
+                other=0.0,
+            )
+            k_val = tl.load(
+                K_ptr + offs_n[:, None] * stride_kn + offs_k[None, :] * stride_kk,
+                mask=offs_n[:, None] < N and offs_k[None, :] < K,
+                other=0.0,
+            )
             acc += tl.dot(q, tl.trans(k_val))
         acc = acc * scale
-        tl.store(Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on,
-                 acc.to(Out_ptr.dtype.element_ty),
-                 mask=offs_m[:, None] < M and offs_n[None, :] < N)
+        tl.store(
+            Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on,
+            acc.to(Out_ptr.dtype.element_ty),
+            mask=offs_m[:, None] < M and offs_n[None, :] < N,
+        )
 
     @triton.jit
     def _fused_primal_dual_landmark_fwd_kernel(
-        F1_ptr, X_ptr, F3_ptr, Out_ptr,
-        M, N, K,
-        stride_f1_m, stride_f1_k,
-        stride_x_k, stride_x_n,
-        stride_f3_n, stride_f3_d,
-        stride_om, stride_od,
+        F1_ptr,
+        X_ptr,
+        F3_ptr,
+        Out_ptr,
+        M,
+        N,
+        K,
+        stride_f1_m,
+        stride_f1_k,
+        stride_x_k,
+        stride_x_n,
+        stride_f3_n,
+        stride_f3_d,
+        stride_om,
+        stride_od,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
         BLOCK_K: tl.constexpr,
@@ -286,23 +347,43 @@ if HAS_TRITON and tl is not None:
         acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
         for k in range(0, K, BLOCK_K):
             offs_k = k + tl.arange(0, BLOCK_K)
-            f1 = tl.load(F1_ptr + offs_m[:, None] * stride_f1_m + offs_k[None, :] * stride_f1_k,
-                         mask=offs_m[:, None] < M and offs_k[None, :] < K, other=0.0)
-            x = tl.load(X_ptr + offs_k[:, None] * stride_x_k + offs_n[None, :] * stride_x_n,
-                        mask=offs_k[:, None] < K and offs_n[None, :] < N, other=0.0)
+            f1 = tl.load(
+                F1_ptr + offs_m[:, None] * stride_f1_m + offs_k[None, :] * stride_f1_k,
+                mask=offs_m[:, None] < M and offs_k[None, :] < K,
+                other=0.0,
+            )
+            x = tl.load(
+                X_ptr + offs_k[:, None] * stride_x_k + offs_n[None, :] * stride_x_n,
+                mask=offs_k[:, None] < K and offs_n[None, :] < N,
+                other=0.0,
+            )
             acc += tl.dot(f1, x)
-        tl.store(Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_od,
-                 acc.to(Out_ptr.dtype.element_ty),
-                 mask=offs_m[:, None] < M and offs_n[None, :] < N)
+        tl.store(
+            Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_od,
+            acc.to(Out_ptr.dtype.element_ty),
+            mask=offs_m[:, None] < M and offs_n[None, :] < N,
+        )
 
     @triton.jit
     def _fused_svd_mamba_proj_fwd_kernel(
-        X_ptr, V_ptr, S_ptr, U_ptr, Bias_ptr, Out_ptr,
-        M, D_in, Rank, D_out,
-        stride_xm, stride_xd,
-        stride_vd, stride_vr,
-        stride_ur, stride_un,
-        stride_om, stride_on,
+        X_ptr,
+        V_ptr,
+        S_ptr,
+        U_ptr,
+        Bias_ptr,
+        Out_ptr,
+        M,
+        D_in,
+        Rank,
+        D_out,
+        stride_xm,
+        stride_xd,
+        stride_vd,
+        stride_vr,
+        stride_ur,
+        stride_un,
+        stride_om,
+        stride_on,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
         BLOCK_K: tl.constexpr,
@@ -323,21 +404,32 @@ if HAS_TRITON and tl is not None:
         for k in range(0, D_in, BLOCK_K):
             offs_k = k + tl.arange(0, BLOCK_K)
             mask_k = offs_k < D_in
-            x = tl.load(X_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xd,
-                        mask=mask_m[:, None] & mask_k[None, :], other=0.0)
-            v = tl.load(V_ptr + offs_k[:, None] * stride_vd + offs_r[None, :] * stride_vr,
-                        mask=mask_k[:, None] & mask_r[None, :], other=0.0)
+            x = tl.load(
+                X_ptr + offs_m[:, None] * stride_xm + offs_k[None, :] * stride_xd,
+                mask=mask_m[:, None] & mask_k[None, :],
+                other=0.0,
+            )
+            v = tl.load(
+                V_ptr + offs_k[:, None] * stride_vd + offs_r[None, :] * stride_vr,
+                mask=mask_k[:, None] & mask_r[None, :],
+                other=0.0,
+            )
             z += tl.dot(x, v)
         z = z * s_val[None, :]
-        u = tl.load(U_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un,
-                    mask=mask_r[:, None] & mask_n[None, :], other=0.0)
+        u = tl.load(
+            U_ptr + offs_r[:, None] * stride_ur + offs_n[None, :] * stride_un,
+            mask=mask_r[:, None] & mask_n[None, :],
+            other=0.0,
+        )
         out = tl.dot(z.to(u.dtype), u)
         if HAS_BIAS:
             bias = tl.load(Bias_ptr + offs_n, mask=mask_n, other=0.0)
             out = out + bias[None, :]
-        tl.store(Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on,
-                 out.to(Out_ptr.dtype.element_ty),
-                 mask=mask_m[:, None] & mask_n[None, :])
+        tl.store(
+            Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on,
+            out.to(Out_ptr.dtype.element_ty),
+            mask=mask_m[:, None] & mask_n[None, :],
+        )
 
 
 class _TritonLowRankAutogradFunction(torch.autograd.Function):
@@ -375,12 +467,24 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
             grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(D_out, BLOCK_N))
 
             _fused_low_rank_gemm_fwd_kernel[grid](
-                x_2d, V_mat, U_mat, s_t, bias_t, y,
-                M, D_in, Rank, D_out,
-                x_2d.stride(0), x_2d.stride(1),
-                V_mat.stride(0), V_mat.stride(1),
-                U_mat.stride(0), U_mat.stride(1),
-                y.stride(0), y.stride(1),
+                x_2d,
+                V_mat,
+                U_mat,
+                s_t,
+                bias_t,
+                y,
+                M,
+                D_in,
+                Rank,
+                D_out,
+                x_2d.stride(0),
+                x_2d.stride(1),
+                V_mat.stride(0),
+                V_mat.stride(1),
+                U_mat.stride(0),
+                U_mat.stride(1),
+                y.stride(0),
+                y.stride(1),
                 BLOCK_M=BLOCK_M,
                 BLOCK_N=BLOCK_N,
                 BLOCK_K=BLOCK_K,
@@ -394,12 +498,22 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         z = torch.empty((M, Rank), dtype=x.dtype, device=x.device)
         grid_z = (triton.cdiv(M, 64), triton.cdiv(Rank, 64))
         _triton_gemm_bias_kernel[grid_z](
-            x_2d, V_mat, V_mat, z,
-            M, Rank, D_in,
-            x_2d.stride(0), x_2d.stride(1),
-            V_mat.stride(0), V_mat.stride(1),
-            z.stride(0), z.stride(1),
-            BLOCK_M=64, BLOCK_N=64, BLOCK_K=32,
+            x_2d,
+            V_mat,
+            V_mat,
+            z,
+            M,
+            Rank,
+            D_in,
+            x_2d.stride(0),
+            x_2d.stride(1),
+            V_mat.stride(0),
+            V_mat.stride(1),
+            z.stride(0),
+            z.stride(1),
+            BLOCK_M=64,
+            BLOCK_N=64,
+            BLOCK_K=32,
             HAS_BIAS=False,
         )
         if has_s:
@@ -408,12 +522,22 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         y = torch.empty((M, D_out), dtype=x.dtype, device=x.device)
         grid_y = (triton.cdiv(M, 64), triton.cdiv(D_out, 64))
         _triton_gemm_bias_kernel[grid_y](
-            z, U_mat, bias_t, y,
-            M, D_out, Rank,
-            z.stride(0), z.stride(1),
-            U_mat.stride(0), U_mat.stride(1),
-            y.stride(0), y.stride(1),
-            BLOCK_M=64, BLOCK_N=64, BLOCK_K=32,
+            z,
+            U_mat,
+            bias_t,
+            y,
+            M,
+            D_out,
+            Rank,
+            z.stride(0),
+            z.stride(1),
+            U_mat.stride(0),
+            U_mat.stride(1),
+            y.stride(0),
+            y.stride(1),
+            BLOCK_M=64,
+            BLOCK_N=64,
+            BLOCK_K=32,
             HAS_BIAS=has_bias,
         )
 
@@ -457,12 +581,23 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
                 BLOCK_R = max(16, min(32, triton.next_power_of_2(Rank)))
                 grid_dx = (triton.cdiv(M, BLOCK_M), triton.cdiv(D_in, BLOCK_D))
                 _fused_low_rank_gemm_bwd_dx_kernel[grid_dx](
-                    grad_out_2d, U_mat, V_mat, s_t, g_x_2d,
-                    M, D_in, Rank, D_out,
-                    grad_out_2d.stride(0), grad_out_2d.stride(1),
-                    U_mat.stride(0), U_mat.stride(1),
-                    V_mat.stride(0), V_mat.stride(1),
-                    g_x_2d.stride(0), g_x_2d.stride(1),
+                    grad_out_2d,
+                    U_mat,
+                    V_mat,
+                    s_t,
+                    g_x_2d,
+                    M,
+                    D_in,
+                    Rank,
+                    D_out,
+                    grad_out_2d.stride(0),
+                    grad_out_2d.stride(1),
+                    U_mat.stride(0),
+                    U_mat.stride(1),
+                    V_mat.stride(0),
+                    V_mat.stride(1),
+                    g_x_2d.stride(0),
+                    g_x_2d.stride(1),
                     BLOCK_M=BLOCK_M,
                     BLOCK_D=BLOCK_D,
                     BLOCK_N=BLOCK_N,
@@ -570,6 +705,7 @@ def low_rank_forward(
       out = z @ U.T + bias
     """
     from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
     if x.is_cuda and HAS_TRITON and not FORCE_PYTORCH_FALLBACK and gate is None:
         suitable, _ = check_triton_suitability(x, "low_rank")
         if suitable and is_supported(x, U, V, bias=bias):
@@ -591,12 +727,18 @@ def low_rank_forward(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _dynamic_fp8_quant_kernel(
-        X_ptr, Y_fp8_ptr, Scale_ptr,
-        M, K,
-        stride_xm, stride_xk,
-        stride_ym, stride_yk,
+        X_ptr,
+        Y_fp8_ptr,
+        Scale_ptr,
+        M,
+        K,
+        stride_xm,
+        stride_xk,
+        stride_ym,
+        stride_yk,
         BLOCK_K: tl.constexpr,
     ):
         pid_m = tl.program_id(0)
@@ -613,16 +755,26 @@ if HAS_TRITON:
 
         scaled_x = x / scale
         clamped_x = tl.clamp(scaled_x, -448.0, 448.0)
-        tl.store(Y_fp8_ptr + pid_m * stride_ym + offs_k * stride_yk, clamped_x.to(Y_fp8_ptr.dtype.element_ty), mask=mask)
-
+        tl.store(
+            Y_fp8_ptr + pid_m * stride_ym + offs_k * stride_yk, clamped_x.to(Y_fp8_ptr.dtype.element_ty), mask=mask
+        )
 
     @triton.jit
     def _fp8_matmul_kernel(
-        A_ptr, B_ptr, C_ptr, ScaleA_ptr, ScaleB_ptr,
-        M, N, K,
-        stride_am, stride_ak,
-        stride_bk, stride_bn,
-        stride_cm, stride_cn,
+        A_ptr,
+        B_ptr,
+        C_ptr,
+        ScaleA_ptr,
+        ScaleB_ptr,
+        M,
+        N,
+        K,
+        stride_am,
+        stride_ak,
+        stride_bk,
+        stride_bn,
+        stride_cm,
+        stride_cn,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
         BLOCK_K: tl.constexpr,
@@ -672,6 +824,7 @@ def quantize_to_fp8_dynamic(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor
     if has_native_fp8:
         try:
             from neuralops.ops.triton.hardware_profile import get_device_hardware_profile
+
             prof = get_device_hardware_profile(x.device)
             if prof.sm_major >= 8 and prof.sm_minor >= 9:
                 x_fp8 = torch.empty((M, K), device=x.device, dtype=torch.float8_e4m3fn)
@@ -679,9 +832,15 @@ def quantize_to_fp8_dynamic(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor
                 BLOCK_K = triton.next_power_of_2(K)
                 grid = (M,)
                 _dynamic_fp8_quant_kernel[grid](
-                    x_2d, x_fp8, scale, M, K,
-                    x_2d.stride(0), x_2d.stride(1),
-                    x_fp8.stride(0), x_fp8.stride(1),
+                    x_2d,
+                    x_fp8,
+                    scale,
+                    M,
+                    K,
+                    x_2d.stride(0),
+                    x_2d.stride(1),
+                    x_fp8.stride(0),
+                    x_fp8.stride(1),
                     BLOCK_K=BLOCK_K,
                 )
                 return x_fp8.view(orig_shape), scale
@@ -726,12 +885,23 @@ def fp8_tensorcore_matmul_triton(
             BLOCK_K = 32
             grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(N, BLOCK_N))
             _fp8_matmul_kernel[grid](
-                a_fp8.view(M, K), b_fp8.view(K, N), c, scale_a, scale_b,
-                M, N, K,
-                a_fp8.stride(0), a_fp8.stride(1),
-                b_fp8.stride(0), b_fp8.stride(1),
-                c.stride(0), c.stride(1),
-                BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_K=BLOCK_K,
+                a_fp8.view(M, K),
+                b_fp8.view(K, N),
+                c,
+                scale_a,
+                scale_b,
+                M,
+                N,
+                K,
+                a_fp8.stride(0),
+                a_fp8.stride(1),
+                b_fp8.stride(0),
+                b_fp8.stride(1),
+                c.stride(0),
+                c.stride(1),
+                BLOCK_M=BLOCK_M,
+                BLOCK_N=BLOCK_N,
+                BLOCK_K=BLOCK_K,
             )
             return c
         except Exception as e:
@@ -817,6 +987,7 @@ def unpack_int4_weights(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _w4a16_gemm_kernel(
         X_ptr,
@@ -873,8 +1044,16 @@ if HAS_TRITON:
             s_ptrs = Scales_ptr + (offs_n[:, None] * stride_sn + (group_idx[None, :]) * stride_sg)
             z_ptrs = Zeros_ptr + (offs_n[:, None] * stride_zn + (group_idx[None, :]) * stride_zg)
 
-            s_lo = tl.load(Scales_ptr + (offs_n[:, None] * stride_sn + (k_start // GROUP_SIZE) * stride_sg), mask=offs_n[:, None] < N, other=1.0).to(tl.float32)
-            z_lo = tl.load(Zeros_ptr + (offs_n[:, None] * stride_zn + (k_start // GROUP_SIZE) * stride_zg), mask=offs_n[:, None] < N, other=0.0).to(tl.float32)
+            s_lo = tl.load(
+                Scales_ptr + (offs_n[:, None] * stride_sn + (k_start // GROUP_SIZE) * stride_sg),
+                mask=offs_n[:, None] < N,
+                other=1.0,
+            ).to(tl.float32)
+            z_lo = tl.load(
+                Zeros_ptr + (offs_n[:, None] * stride_zn + (k_start // GROUP_SIZE) * stride_zg),
+                mask=offs_n[:, None] < N,
+                other=0.0,
+            ).to(tl.float32)
 
             x_even = x_tile[:, 0::2]
             x_odd = x_tile[:, 1::2]
@@ -918,13 +1097,24 @@ def fused_w4a16_gemm_triton(
             BLOCK_K = 64
             grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(N, BLOCK_N))
             _w4a16_gemm_kernel[grid](
-                x_2d, packed, scales, zeros, out,
-                M, N, K,
-                x_2d.stride(0), x_2d.stride(1),
-                packed.stride(0), packed.stride(1),
-                scales.stride(0), scales.stride(1),
-                zeros.stride(0), zeros.stride(1),
-                out.stride(0), out.stride(1),
+                x_2d,
+                packed,
+                scales,
+                zeros,
+                out,
+                M,
+                N,
+                K,
+                x_2d.stride(0),
+                x_2d.stride(1),
+                packed.stride(0),
+                packed.stride(1),
+                scales.stride(0),
+                scales.stride(1),
+                zeros.stride(0),
+                zeros.stride(1),
+                out.stride(0),
+                out.stride(1),
                 GROUP_SIZE=group_size,
                 BLOCK_M=BLOCK_M,
                 BLOCK_N=BLOCK_N,
@@ -948,6 +1138,7 @@ class BitPackedW4A16Linear(torch.nn.Module):
     Drop-in replacement for nn.Linear with true bit-packed uint8 weight storage.
     Cuts weight memory from 16 bits to ~4.5 bits (including scales/zeros).
     """
+
     def __init__(
         self,
         in_features: int,
@@ -1017,6 +1208,7 @@ class BitPackedLowRankSVDLinear(torch.nn.Module):
     Keeps top singular vectors in exact FP16 and packs the remaining rank into INT4.
     Achieves 6x-8x total weight compression with near-lossless accuracy.
     """
+
     def __init__(
         self,
         in_features: int,
@@ -1036,15 +1228,23 @@ class BitPackedLowRankSVDLinear(torch.nn.Module):
         self.tail_rank = rank - self.exact_rank
 
         if self.exact_rank > 0:
-            self.u_exact = torch.nn.Parameter(torch.randn(out_features, self.exact_rank, device=device, dtype=dtype) * 0.02)
-            self.v_exact = torch.nn.Parameter(torch.randn(self.exact_rank, in_features, device=device, dtype=dtype) * 0.02)
+            self.u_exact = torch.nn.Parameter(
+                torch.randn(out_features, self.exact_rank, device=device, dtype=dtype) * 0.02
+            )
+            self.v_exact = torch.nn.Parameter(
+                torch.randn(self.exact_rank, in_features, device=device, dtype=dtype) * 0.02
+            )
         else:
             self.register_parameter("u_exact", None)
             self.register_parameter("v_exact", None)
 
         if self.tail_rank > 0:
-            self.u_tail_packed = BitPackedW4A16Linear(self.tail_rank, out_features, bias=False, group_size=group_size, device=device, dtype=dtype)
-            self.v_tail_packed = BitPackedW4A16Linear(in_features, self.tail_rank, bias=False, group_size=group_size, device=device, dtype=dtype)
+            self.u_tail_packed = BitPackedW4A16Linear(
+                self.tail_rank, out_features, bias=False, group_size=group_size, device=device, dtype=dtype
+            )
+            self.v_tail_packed = BitPackedW4A16Linear(
+                in_features, self.tail_rank, bias=False, group_size=group_size, device=device, dtype=dtype
+            )
         else:
             self.u_tail_packed = None
             self.v_tail_packed = None
@@ -1082,15 +1282,15 @@ class BitPackedLowRankSVDLinear(torch.nn.Module):
         U, S, Vh = torch.linalg.svd(raw_w.float(), full_matrices=False)
         r = min(rank, len(S))
         U_r = U[:, :r] * torch.sqrt(S[:r])
-        V_r = (torch.sqrt(S[:r])[:, None] * Vh[:r, :])
+        V_r = torch.sqrt(S[:r])[:, None] * Vh[:r, :]
 
         if mod.exact_rank > 0:
-            mod.u_exact.data.copy_(U_r[:, :mod.exact_rank].to(mod.u_exact.dtype))
-            mod.v_exact.data.copy_(V_r[:mod.exact_rank, :].to(mod.v_exact.dtype))
+            mod.u_exact.data.copy_(U_r[:, : mod.exact_rank].to(mod.u_exact.dtype))
+            mod.v_exact.data.copy_(V_r[: mod.exact_rank, :].to(mod.v_exact.dtype))
 
         if mod.tail_rank > 0:
-            u_tail = U_r[:, mod.exact_rank:r].contiguous()
-            v_tail = V_r[mod.exact_rank:r, :].contiguous()
+            u_tail = U_r[:, mod.exact_rank : r].contiguous()
+            v_tail = V_r[mod.exact_rank : r, :].contiguous()
 
             p_u, s_u, z_u = pack_int4_weights(u_tail, group_size=group_size)
             mod.u_tail_packed.qweight.copy_(p_u)
@@ -1122,19 +1322,19 @@ class BitPackedLowRankSVDLinear(torch.nn.Module):
 
 
 __all__ = [
-    'is_supported',
-    'fwd',
-    'bwd',
-    'low_rank_forward',
-    'quantize_to_fp8_dynamic',
-    'fp8_tensorcore_matmul_triton',
-    'pack_int4_weights',
-    'unpack_int4_weights',
-    'fused_w4a16_gemm_triton',
-    'BitPackedW4A16Linear',
-    'BitPackedLowRankSVDLinear',
-    'fused_linformer_seq_proj_triton',
-    'fused_linformer_seq_proj_pytorch',
+    "is_supported",
+    "fwd",
+    "bwd",
+    "low_rank_forward",
+    "quantize_to_fp8_dynamic",
+    "fp8_tensorcore_matmul_triton",
+    "pack_int4_weights",
+    "unpack_int4_weights",
+    "fused_w4a16_gemm_triton",
+    "BitPackedW4A16Linear",
+    "BitPackedLowRankSVDLinear",
+    "fused_linformer_seq_proj_triton",
+    "fused_linformer_seq_proj_pytorch",
 ]
 
 
@@ -1151,7 +1351,7 @@ def fused_linformer_seq_proj_triton(
     seq_tensor: torch.Tensor,
 ) -> torch.Tensor:
     """Fused Linformer sequence low-rank projection in GPU SRAM."""
-    from neuralops.ops.triton._types import check_triton_suitability, HAS_TRITON
+    from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability
 
     if not (HAS_TRITON and proj_mat.is_cuda and seq_tensor.is_cuda):
         return fused_linformer_seq_proj_pytorch(proj_mat, seq_tensor)
@@ -1200,7 +1400,7 @@ def fused_galerkin_continuous_kernel_triton(
     scale: float,
 ) -> torch.Tensor:
     """Fused continuous Galerkin operator kernel evaluated in GPU SRAM."""
-    from neuralops.ops.triton._types import check_triton_suitability, HAS_TRITON
+    from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability
 
     if not (HAS_TRITON and Q.is_cuda and Phi.is_cuda):
         return fused_galerkin_continuous_kernel_pytorch(Q, K, V, Phi, scale)
@@ -1516,15 +1716,28 @@ def fused_int4_lut_dequant_matmul_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _int4_lut_dequant_gemm_kernel(
-        X_ptr, QW_ptr, LUT_ptr, Scales_ptr, Bias_ptr, Out_ptr,
-        M, N, K,
-        stride_xm, stride_xk,
-        stride_wn, stride_wk,
-        stride_om, stride_on,
+        X_ptr,
+        QW_ptr,
+        LUT_ptr,
+        Scales_ptr,
+        Bias_ptr,
+        Out_ptr,
+        M,
+        N,
+        K,
+        stride_xm,
+        stride_xk,
+        stride_wn,
+        stride_wk,
+        stride_om,
+        stride_on,
         HAS_BIAS: tl.constexpr,
-        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
     ):
         pid_m = tl.program_id(0)
         pid_n = tl.program_id(1)
@@ -1573,7 +1786,7 @@ def fused_int4_lut_dequant_matmul_triton(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Fused INT4 LUT dequantization + matmul in GPU SRAM."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if HAS_TRITON and x.is_cuda and not FORCE_PYTORCH_FALLBACK:
         try:
@@ -1594,13 +1807,25 @@ def fused_int4_lut_dequant_matmul_triton(
             scales_2d = scales.view(N, 1).contiguous() if scales.dim() == 1 else scales.contiguous()
 
             _int4_lut_dequant_gemm_kernel[grid](
-                x_2d, qweight.contiguous(), lut.contiguous(), scales_2d, bias_ptr, out,
-                M, N, K,
-                x_2d.stride(0), x_2d.stride(1),
-                qweight.stride(0), qweight.stride(1),
-                out.stride(0), out.stride(1),
+                x_2d,
+                qweight.contiguous(),
+                lut.contiguous(),
+                scales_2d,
+                bias_ptr,
+                out,
+                M,
+                N,
+                K,
+                x_2d.stride(0),
+                x_2d.stride(1),
+                qweight.stride(0),
+                qweight.stride(1),
+                out.stride(0),
+                out.stride(1),
                 HAS_BIAS=has_bias,
-                BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_K=BLOCK_K,
+                BLOCK_M=BLOCK_M,
+                BLOCK_N=BLOCK_N,
+                BLOCK_K=BLOCK_K,
             )
             ref = fused_int4_lut_dequant_matmul_pytorch(x, qweight, lut, scales, bias)
             if (out.view(*orig_shape[:-1], N) - ref).abs().max() < 1e-2:
@@ -1613,14 +1838,26 @@ def fused_int4_lut_dequant_matmul_triton(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _roast_hashed_gemm_kernel(
-        X_ptr, W_table_ptr, H_idx_ptr, Signs_ptr, Bias_ptr, Out_ptr,
-        M, N, K,
-        stride_xm, stride_xk,
-        stride_om, stride_on,
+        X_ptr,
+        W_table_ptr,
+        H_idx_ptr,
+        Signs_ptr,
+        Bias_ptr,
+        Out_ptr,
+        M,
+        N,
+        K,
+        stride_xm,
+        stride_xk,
+        stride_om,
+        stride_on,
         HAS_BIAS: tl.constexpr,
-        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
+        BLOCK_K: tl.constexpr,
     ):
         pid_m = tl.program_id(0)
         pid_n = tl.program_id(1)
@@ -1657,17 +1894,29 @@ if HAS_TRITON and tl is not None:
         out_ptrs = Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on
         tl.store(out_ptrs, acc.to(Out_ptr.dtype.element_ty), mask=(offs_m[:, None] < M) & (offs_n[None, :] < N))
 
-
     @triton.jit
     def _kronecker_fused_gemm_kernel(
-        X_ptr, A_ptr, B_ptr, Bias_ptr, Out_ptr,
-        Total_Batches, P, Q, R, S,
-        stride_xm, stride_xk,
-        stride_ap, stride_aq,
-        stride_br, stride_bs,
-        stride_om, stride_on,
+        X_ptr,
+        A_ptr,
+        B_ptr,
+        Bias_ptr,
+        Out_ptr,
+        Total_Batches,
+        P,
+        Q,
+        R,
+        S,
+        stride_xm,
+        stride_xk,
+        stride_ap,
+        stride_aq,
+        stride_br,
+        stride_bs,
+        stride_om,
+        stride_on,
         HAS_BIAS: tl.constexpr,
-        BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr,
+        BLOCK_M: tl.constexpr,
+        BLOCK_N: tl.constexpr,
     ):
         """Contract (A ⊗ B) X in a single tiled 2D grid where In = Q*S, Out = P*R."""
         pid_m = tl.program_id(0)
@@ -1699,7 +1948,11 @@ if HAS_TRITON and tl is not None:
             acc += b[None, :]
 
         out_ptrs = Out_ptr + offs_m[:, None] * stride_om + offs_n[None, :] * stride_on
-        tl.store(out_ptrs, acc.to(Out_ptr.dtype.element_ty), mask=(offs_m[:, None] < Total_Batches) & (offs_n[None, :] < N_out))
+        tl.store(
+            out_ptrs,
+            acc.to(Out_ptr.dtype.element_ty),
+            mask=(offs_m[:, None] < Total_Batches) & (offs_n[None, :] < N_out),
+        )
 
 
 def fused_roast_hashed_gather_gemm_pytorch(
@@ -1745,12 +1998,23 @@ def fused_roast_hashed_gather_gemm_triton(
             bias_ptr = bias.contiguous() if has_bias else torch.empty((1,), device=x.device, dtype=x.dtype)
 
             _roast_hashed_gemm_kernel[grid](
-                x_2d, weight_comp.contiguous(), h_idx.contiguous(), signs.contiguous(), bias_ptr, out,
-                M, N, K,
-                x_2d.stride(0), x_2d.stride(1),
-                out.stride(0), out.stride(1),
+                x_2d,
+                weight_comp.contiguous(),
+                h_idx.contiguous(),
+                signs.contiguous(),
+                bias_ptr,
+                out,
+                M,
+                N,
+                K,
+                x_2d.stride(0),
+                x_2d.stride(1),
+                out.stride(0),
+                out.stride(1),
                 HAS_BIAS=has_bias,
-                BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N, BLOCK_K=BLOCK_K,
+                BLOCK_M=BLOCK_M,
+                BLOCK_N=BLOCK_N,
+                BLOCK_K=BLOCK_K,
             )
             return out.view(*orig_shape[:-1], N)
         except Exception:
@@ -1958,9 +2222,7 @@ def fused_svd_qkv_rope_attention_triton(
             # allowed-swallow: best-effort-telemetry
             pass
 
-    return fused_svd_qkv_rope_attention_pytorch(
-        x, U_q, V_q, U_k, V_k, U_v, V_v, num_heads, cos, sin, is_causal, scale
-    )
+    return fused_svd_qkv_rope_attention_pytorch(x, U_q, V_q, U_k, V_k, U_v, V_v, num_heads, cos, sin, is_causal, scale)
 
 
 def fused_svd_gemm_triton(
@@ -1971,7 +2233,7 @@ def fused_svd_gemm_triton(
     residual: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Fused low-rank bottleneck GEMM: (x @ V^T) @ U^T + bias (+ residual) in SRAM registers."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and x.is_cuda and U.is_cuda and V.is_cuda:
         try:
@@ -2034,6 +2296,7 @@ def fused_svd_lora_sparse_attn_triton(
 
 
 if HAS_TRITON:
+
     @triton.jit
     def _fused_hnc_nullspace_spectral_step_fwd_kernel(
         W_ptr,
@@ -2254,70 +2517,70 @@ def rotational_svd_triton(
 
 
 __all__ = [
-    'is_supported',
-    'fwd',
-    'bwd',
-    'low_rank_forward',
-    'quantize_to_fp8_dynamic',
-    'fp8_tensorcore_matmul_triton',
-    'pack_int4_weights',
-    'unpack_int4_weights',
-    'fused_w4a16_gemm_triton',
-    'BitPackedW4A16Linear',
-    'BitPackedLowRankSVDLinear',
-    'fused_linformer_seq_proj_triton',
-    'fused_linformer_seq_proj_pytorch',
-    'fused_galerkin_continuous_kernel_triton',
-    'fused_galerkin_continuous_kernel_pytorch',
-    'fused_nystrom_landmark_pinv_step_triton',
-    'fused_nystrom_landmark_pinv_step_pytorch',
-    'fused_rpc_sketch_attention_triton',
-    'fused_rpc_sketch_attention_pytorch',
-    'fused_primal_dual_landmark_triton',
-    'fused_primal_dual_landmark_pytorch',
-    'fused_svd_mamba_proj_triton',
-    'fused_svd_mamba_proj_pytorch',
-    'fused_lola_3way_decomposition_triton',
-    'fused_lola_3way_decomposition_pytorch',
-    'fused_int4_lut_dequant_matmul_triton',
-    'fused_int4_lut_dequant_matmul_pytorch',
-    'fused_roast_hashed_gather_gemm_triton',
-    'fused_roast_hashed_gather_gemm_pytorch',
-    'fused_kronecker_batched_gemm_triton',
-    'fused_kronecker_batched_gemm_pytorch',
-    'fused_tt_core_contraction_triton',
-    'fused_tt_core_contraction_pytorch',
-    'fused_salt_singular_mod_gemm_triton',
-    'fused_salt_singular_mod_gemm_pytorch',
-    'fused_svd_qkv_rope_attention_triton',
-    'fused_svd_qkv_rope_attention_pytorch',
-    'fused_svd_gemm_triton',
-    'fused_down_up_gemm_bias_triton',
-    'fused_residual_svd_gemm_triton',
-    'fused_svd_lora_sparse_attn_triton',
-    'fused_hnc_nullspace_step_triton',
-    'fused_hnc_nullspace_step_pytorch',
-    'block_diag_matmul_triton',
-    'rotational_svd_triton',
-    'triton_fused_lowrank_gated_gemm',
-    'triton_fused_lowrank_gated_gemm_pytorch_ref',
-    'triton_fused_lowrank_sparse_gemm',
-    'triton_fused_lowrank_sparse_gemm_pytorch_ref',
-    'triton_strided_tt_contraction',
-    'triton_strided_tt_linear',
-    'triton_strided_tt_contraction_pytorch_ref',
-    'triton_fused_kronecker_matmul',
-    'triton_fused_kronecker_matmul_pytorch_ref',
-    'triton_spectral_entropy_svd_gate',
-    'triton_spectral_entropy_svd_gate_pytorch_ref',
-    'direct_svd_compress',
-    'direct_svd_compress_pytorch',
-    'asvd_compress',
-    'asvd_compress_pytorch',
-    'fwsvd_compress',
-    'fwsvd_compress_pytorch',
-    'hnc_svd_compress',
-    'hnc_svd_compress_pytorch',
+    "is_supported",
+    "fwd",
+    "bwd",
+    "low_rank_forward",
+    "quantize_to_fp8_dynamic",
+    "fp8_tensorcore_matmul_triton",
+    "pack_int4_weights",
+    "unpack_int4_weights",
+    "fused_w4a16_gemm_triton",
+    "BitPackedW4A16Linear",
+    "BitPackedLowRankSVDLinear",
+    "fused_linformer_seq_proj_triton",
+    "fused_linformer_seq_proj_pytorch",
+    "fused_galerkin_continuous_kernel_triton",
+    "fused_galerkin_continuous_kernel_pytorch",
+    "fused_nystrom_landmark_pinv_step_triton",
+    "fused_nystrom_landmark_pinv_step_pytorch",
+    "fused_rpc_sketch_attention_triton",
+    "fused_rpc_sketch_attention_pytorch",
+    "fused_primal_dual_landmark_triton",
+    "fused_primal_dual_landmark_pytorch",
+    "fused_svd_mamba_proj_triton",
+    "fused_svd_mamba_proj_pytorch",
+    "fused_lola_3way_decomposition_triton",
+    "fused_lola_3way_decomposition_pytorch",
+    "fused_int4_lut_dequant_matmul_triton",
+    "fused_int4_lut_dequant_matmul_pytorch",
+    "fused_roast_hashed_gather_gemm_triton",
+    "fused_roast_hashed_gather_gemm_pytorch",
+    "fused_kronecker_batched_gemm_triton",
+    "fused_kronecker_batched_gemm_pytorch",
+    "fused_tt_core_contraction_triton",
+    "fused_tt_core_contraction_pytorch",
+    "fused_salt_singular_mod_gemm_triton",
+    "fused_salt_singular_mod_gemm_pytorch",
+    "fused_svd_qkv_rope_attention_triton",
+    "fused_svd_qkv_rope_attention_pytorch",
+    "fused_svd_gemm_triton",
+    "fused_down_up_gemm_bias_triton",
+    "fused_residual_svd_gemm_triton",
+    "fused_svd_lora_sparse_attn_triton",
+    "fused_hnc_nullspace_step_triton",
+    "fused_hnc_nullspace_step_pytorch",
+    "block_diag_matmul_triton",
+    "rotational_svd_triton",
+    "triton_fused_lowrank_gated_gemm",
+    "triton_fused_lowrank_gated_gemm_pytorch_ref",
+    "triton_fused_lowrank_sparse_gemm",
+    "triton_fused_lowrank_sparse_gemm_pytorch_ref",
+    "triton_strided_tt_contraction",
+    "triton_strided_tt_linear",
+    "triton_strided_tt_contraction_pytorch_ref",
+    "triton_fused_kronecker_matmul",
+    "triton_fused_kronecker_matmul_pytorch_ref",
+    "triton_spectral_entropy_svd_gate",
+    "triton_spectral_entropy_svd_gate_pytorch_ref",
+    "direct_svd_compress",
+    "direct_svd_compress_pytorch",
+    "asvd_compress",
+    "asvd_compress_pytorch",
+    "fwsvd_compress",
+    "fwsvd_compress_pytorch",
+    "hnc_svd_compress",
+    "hnc_svd_compress_pytorch",
 ]
 
 
@@ -2387,7 +2650,6 @@ def _fused_lowrank_gated_gemm_1d_kernel(
         z_acc = z_acc * gate[None, :]
 
     z_tile = z_acc.to(x_ptr.dtype.element_ty)
-
 
     num_n_blocks = tl.cdiv(N, BLOCK_N)
     for n_idx in range(num_n_blocks):
@@ -2654,7 +2916,11 @@ def triton_fused_lowrank_sparse_gemm_pytorch_ref(
     y_lr = torch.matmul(torch.matmul(x_2d, V_mat), U_mat)
     if s is not None:
         if isinstance(s, tuple) and len(s) == 3:
-            s_dense = torch.sparse_csr_tensor(s[0], s[1], s[2], size=(N, K), device=x_2d.device).to_dense().to(dtype=x_2d.dtype)
+            s_dense = (
+                torch.sparse_csr_tensor(s[0], s[1], s[2], size=(N, K), device=x_2d.device)
+                .to_dense()
+                .to(dtype=x_2d.dtype)
+            )
             y_sp = torch.matmul(x_2d, s_dense.t())
         elif isinstance(s, torch.Tensor) and not s.is_sparse:
             y_sp = torch.matmul(x_2d, s.to(dtype=x_2d.dtype).t())
@@ -3276,6 +3542,7 @@ def triton_spectral_entropy_svd_gate(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 16}, num_stages=2, num_warps=2),
@@ -3330,6 +3597,7 @@ if HAS_TRITON and tl is not None:
         out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
         out_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
         tl.store(out_ptrs, accumulator, mask=out_mask)
+
 else:
     _direct_svd_reconstruct_kernel = None
 
@@ -3404,7 +3672,9 @@ def direct_svd_compress(
         )
         return out.to(dtype=W.dtype)
 
-    logger.warning("direct_svd_compress: Triton unavailable or unsuitable on current device/shape, using PyTorch fallback.")
+    logger.warning(
+        "direct_svd_compress: Triton unavailable or unsuitable on current device/shape, using PyTorch fallback."
+    )
     return (W_recon_pre * scale).to(dtype=W.dtype)
 
 
@@ -3438,6 +3708,7 @@ def direct_svd_compress_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 16}, num_stages=2, num_warps=2),
@@ -3495,6 +3766,7 @@ if HAS_TRITON and tl is not None:
         out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
         out_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
         tl.store(out_ptrs, accumulator, mask=out_mask)
+
 else:
     _asvd_reconstruct_kernel = None
 
@@ -3559,12 +3831,7 @@ def asvd_compress(
     comp_row_norms = torch.norm(W_recon_pre, dim=-1, keepdim=True).clamp_min(1e-6)
     row_gain = (orig_row_norms / comp_row_norms).clamp(0.2, 5.0).squeeze(-1).contiguous()
 
-    if (
-        HAS_TRITON
-        and W.is_cuda
-        and check_triton_suitability(W, "asvd")
-        and _asvd_reconstruct_kernel is not None
-    ):
+    if HAS_TRITON and W.is_cuda and check_triton_suitability(W, "asvd") and _asvd_reconstruct_kernel is not None:
         out = torch.empty((M, N), device=W.device, dtype=torch.float32)
         grid = lambda META: (
             triton.cdiv(M, META["BLOCK_M"]),
@@ -3641,6 +3908,7 @@ def asvd_compress_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 16}, num_stages=2, num_warps=2),
@@ -3691,6 +3959,7 @@ if HAS_TRITON and tl is not None:
         out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
         out_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
         tl.store(out_ptrs, accumulator, mask=out_mask)
+
 else:
     _fwsvd_reconstruct_kernel = None
 
@@ -3772,12 +4041,7 @@ def fwsvd_compress(
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).contiguous()
         V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).contiguous()
 
-    if (
-        HAS_TRITON
-        and W.is_cuda
-        and check_triton_suitability(W, "fwsvd")
-        and _fwsvd_reconstruct_kernel is not None
-    ):
+    if HAS_TRITON and W.is_cuda and check_triton_suitability(W, "fwsvd") and _fwsvd_reconstruct_kernel is not None:
         out = torch.empty((M, N), device=W.device, dtype=torch.float32)
         grid = lambda META: (
             triton.cdiv(M, META["BLOCK_M"]),
@@ -3867,6 +4131,7 @@ def fwsvd_compress_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 16}, num_stages=2, num_warps=2),
@@ -3917,6 +4182,7 @@ if HAS_TRITON and tl is not None:
         out_ptrs = Out_ptr + (offs_m[:, None] * stride_om + offs_n[None, :] * stride_on)
         out_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
         tl.store(out_ptrs, accumulator, mask=out_mask)
+
 else:
     _hnc_svd_reconstruct_kernel = None
 
@@ -3973,12 +4239,7 @@ def hnc_svd_compress(
         A_r = (U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).contiguous()
         B_r = (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).contiguous()
 
-    if (
-        HAS_TRITON
-        and W.is_cuda
-        and check_triton_suitability(W, "hnc_svd")
-        and _hnc_svd_reconstruct_kernel is not None
-    ):
+    if HAS_TRITON and W.is_cuda and check_triton_suitability(W, "hnc_svd") and _hnc_svd_reconstruct_kernel is not None:
         out = torch.empty((M, N), device=W.device, dtype=torch.float32)
         grid = lambda META: (
             triton.cdiv(M, META["BLOCK_M"]),
@@ -4042,7 +4303,3 @@ def hnc_svd_compress_pytorch(
         B_r = (torch.sqrt(S[:r]).unsqueeze(1) * Vh[:r, :]).contiguous()
 
     return torch.matmul(A_r, B_r).to(dtype=W.dtype)
-
-
-
-

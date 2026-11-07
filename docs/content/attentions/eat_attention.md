@@ -116,7 +116,7 @@ Downstream Transformer layer $\ell+1$ operates on reduced length $L'$, cutting i
 $$\Delta \text{FLOPs}_{\text{downstream}} = 4 B D (L^2 - L'^2) + 24 B (L - L') D^2 = 4 B D L^2 (1 - \gamma^2) + 24 B L D^2 (1 - \gamma)$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx 12 B L D^2 + 2 B D L^2$$
 Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Attention Score Tensor: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$ Concurrently, Intermediate FFN Buffer: $B \cdot L \cdot 4D \times 2 \text{ bytes}$ In this setting, Pruned Output Buffer: $B \cdot L' \cdot D \times 2 \text{ bytes}$ Additionally, Memory scales as $\mathcal{O}(B H L^2 + B L D)$.
@@ -255,4 +255,3 @@ The empirical evaluation of `eat` across standard sequence lengths and language 
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

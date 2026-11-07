@@ -17,6 +17,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+
 try:
     import torch
     import torch.nn as nn
@@ -29,7 +30,9 @@ except ModuleNotFoundError as exc:
     raise
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from neuralops.export.exporter import export_model as _export_model, load_model as _load_model, load_exported_model
+from neuralops.export.exporter import export_model as _export_model
+from neuralops.export.exporter import load_exported_model
+from neuralops.export.exporter import load_model as _load_model
 
 logger = logging.getLogger("NeuralOps.API")
 
@@ -76,18 +79,21 @@ def replace_attention(
     if target_mod is not None:
         if model is None:
             return None
-        from neuralops.core.model_utils import replace_module
         from neuralops.core.architecture import get_attention_modules
+        from neuralops.core.model_utils import replace_module
+
         modules_list = list(get_attention_modules(model))
         for layer_i, (name, old_attn) in enumerate(modules_list):
             if layers is not None and layer_i not in layers:
                 continue
             import copy
+
             mod_copy = copy.deepcopy(target_mod)
             old_param = next(old_attn.parameters(), None)
             if old_param is not None:
                 mod_copy = mod_copy.to(device=old_param.device, dtype=old_param.dtype)
             from neuralops.utils.replace_attention import UniversalAttentionWrapper
+
             wrapped = UniversalAttentionWrapper(mod_copy, layer_name=name, return_tuple=True)
             replace_module(model, name, wrapped)
         return model
@@ -105,10 +111,7 @@ def replace_attention(
         attn_name = "gla_attention"
     if attn_name.startswith("fla:"):
         from neuralops.core.exceptions import IntegrationNotImplementedError
-        from neuralops.integrations.fla import (
-            fla_is_available,
-            SUPPORTED_FLA_ATTENTIONS,
-        )
+        from neuralops.integrations.fla import SUPPORTED_FLA_ATTENTIONS, fla_is_available
 
         if not fla_is_available():
             raise IntegrationNotImplementedError(
@@ -121,6 +124,7 @@ def replace_attention(
             )
     elif attn_name not in ATTENTION_REGISTRY:
         from neuralops.core.exceptions import AttentionNotRegisteredError
+
         raise AttentionNotRegisteredError(
             f"Unknown attention module '{attn_name}'. "
             f"Use neuralops.list_attentions() to see all {len(ATTENTION_REGISTRY)} available modules."
@@ -133,6 +137,7 @@ def replace_attention(
     hybrid_spec = kwargs.get("hybrid_spec", None)
     if hybrid_spec is not None:
         from neuralops.models.hybrid_spec import normalize_hybrid_spec
+
         norm_spec = normalize_hybrid_spec(hybrid_spec)
         call_kwargs["hybrid_spec"] = norm_spec
 
@@ -165,6 +170,7 @@ def replace_attention(
         raise
 
     from neuralops.export.surgery_manifest import record_attention_surgery
+
     record_attention_surgery(
         out_model,
         layer_path="all_attention",
@@ -189,6 +195,7 @@ def replace_attention(
             raise
 
     from neuralops.utils.hub_integration import attach_attention_methods
+
     return attach_attention_methods(out_model)
 
 
@@ -250,6 +257,7 @@ def compress(
 
     orig_cls = out_model.__class__
     if not getattr(orig_cls, "_supports_compress_unpack", False):
+
         class _CompressibleModelProxy(orig_cls):
             _supports_compress_unpack = True
 
@@ -321,6 +329,7 @@ def serve(
 
     if isinstance(model, str):
         from transformers import AutoModelForCausalLM
+
         resolved_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = AutoModelForCausalLM.from_pretrained(
             model,
@@ -328,6 +337,7 @@ def serve(
         ).to(resolved_device)
 
     from neuralops.integrations.serving import create_openai_serving_app
+
     app = create_openai_serving_app(
         model,
         backend=backend,
@@ -337,32 +347,35 @@ def serve(
         **kwargs,
     )
     import uvicorn
+
     return uvicorn.run(app, host=host, port=port)
-
-
 
 
 def collect_surgery_distillation_loss(model: nn.Module) -> torch.Tensor:
     """Collect shadow twin distillation loss across all transplanted attention layers."""
     from neuralops.surgery.shadow_twin import collect_surgery_distillation_loss as _collect
+
     return _collect(model)
 
 
 def set_surgery_alpha(model: nn.Module, alpha: float) -> None:
     """Adjust distillation blending weight alpha in [0, 1] across all transplanted layers."""
     from neuralops.surgery.shadow_twin import set_surgery_alpha as _set_alpha
+
     _set_alpha(model, alpha)
 
 
 def set_surgery_stage(model: nn.Module, stage: int) -> None:
     """Set multi-stage recovery training curriculum stage (1: Shadow, 2: Joint, 3: Finalized)."""
     from neuralops.surgery.shadow_twin import set_surgery_stage as _set_stage
+
     _set_stage(model, stage)
 
 
 def finalize_surgery(model: nn.Module) -> nn.Module:
     """Sever teacher branches and permanently finalize student attention transplantation."""
     from neuralops.surgery.shadow_twin import finalize_surgery as _finalize
+
     return _finalize(model)
 
 
@@ -393,7 +406,6 @@ def export_model(
 export = export_model
 
 
-
 def push_to_hub(
     model: nn.Module,
     repo_id: str,
@@ -420,6 +432,7 @@ def push_to_hub(
         URL string of the uploaded HuggingFace Hub repository.
     """
     from neuralops.models.hub import push_model_to_hub as _push
+
     return _push(
         model=model,
         repo_id=repo_id,
@@ -461,6 +474,7 @@ def compile_to_so(
 ) -> Any:
     """Compile a model to a standalone C++ AOTInductor shared library (.so or .pt2)."""
     from neuralops.export.exporter import compile_to_so as _compile_to_so
+
     return _compile_to_so(
         model=model,
         sample_inputs=sample_inputs,
@@ -558,9 +572,7 @@ class TextGenerationPipeline:
             is_single = True
 
         if tok is None:
-            raise ValueError(
-                "A tokenizer must be provided to encode string inputs for 'text-generation' pipeline."
-            )
+            raise ValueError("A tokenizer must be provided to encode string inputs for 'text-generation' pipeline.")
 
         input_ids, attention_mask = self._encode_prompts(tok, prompts)
         target_dev = self._get_device()
@@ -738,9 +750,7 @@ def pipeline(
     """
     normalized_task = task.lower().strip()
     if normalized_task not in ("text-generation", "text_generation"):
-        raise ValueError(
-            f"Unsupported pipeline task '{task}'. Currently supported tasks: ['text-generation']."
-        )
+        raise ValueError(f"Unsupported pipeline task '{task}'. Currently supported tasks: ['text-generation'].")
 
     pipe = TextGenerationPipeline(model=model, tokenizer=tokenizer, device=device, **kwargs)
 
@@ -819,11 +829,7 @@ def get_attention_class(name: str) -> Type[Any]:
     """
     if name.startswith("fla:"):
         from neuralops.core.exceptions import IntegrationNotImplementedError
-        from neuralops.integrations.fla import (
-            EXTENSION_ATTENTION_REGISTRY,
-            SUPPORTED_FLA_ATTENTIONS,
-            fla_is_available,
-        )
+        from neuralops.integrations.fla import EXTENSION_ATTENTION_REGISTRY, SUPPORTED_FLA_ATTENTIONS, fla_is_available
 
         if not fla_is_available():
             raise IntegrationNotImplementedError(
@@ -838,6 +844,7 @@ def get_attention_class(name: str) -> Type[Any]:
 
     if name not in ATTENTION_REGISTRY:
         from neuralops.core.exceptions import AttentionNotRegisteredError
+
         raise AttentionNotRegisteredError(f"Unknown attention '{name}'. Available: {list_attentions()}")
     return ATTENTION_REGISTRY[name]
 
@@ -853,6 +860,7 @@ def get_compressor_class(name: str) -> Type[Any]:
     """
     if name not in COMPRESSOR_REGISTRY:
         from neuralops.core.exceptions import CompressorNotRegisteredError
+
         raise CompressorNotRegisteredError(f"Unknown compressor '{name}'. Available: {list_compressors()}")
     return COMPRESSOR_REGISTRY[name]
 
@@ -884,10 +892,7 @@ def list_families() -> Dict[str, List[str]]:
 
 
 # Canonical universal factories (F-80 single implementation in core.registry)
-from neuralops.core.registry import (
-    create_attention,
-    create_compressor,
-)
+from neuralops.core.registry import create_attention, create_compressor
 
 # Canonical attention lookup triple: get_attention is canonical; get_attention_class and get_attention_module are aliases
 get_attention = get_attention_class
@@ -899,30 +904,37 @@ compress_model = compress
 def register_custom_attention(*args: Any, **kwargs: Any) -> Any:
     """Register a custom attention mechanism with full framework compatibility."""
     from neuralops.core.extensibility import register_custom_attention as _reg
+
     return _reg(*args, **kwargs)
 
 
 def register_custom_compressor(*args: Any, **kwargs: Any) -> Any:
     """Register a custom compression engine with full framework compatibility."""
     from neuralops.core.extensibility import register_custom_compressor as _reg
+
     return _reg(*args, **kwargs)
 
 
 def unregister_custom_module(name: str, category: Optional[str] = None) -> bool:
     """Cleanly unregister a custom module to restore the canonical registry counts."""
     from neuralops.core.extensibility import unregister_custom_module as _unreg
+
     return _unreg(name, category)
 
 
 def validate_module_contract(*args: Any, **kwargs: Any) -> Dict[str, Any]:
     """Automated 6-point contract diagnostic check for any module."""
     from neuralops.core.extensibility import validate_module_contract as _val
+
     return _val(*args, **kwargs)
 
 
-def scaffold_module(name: str, category: str = "attention", family: str = "linear-scan", output_file: Optional[str] = None) -> str:
+def scaffold_module(
+    name: str, category: str = "attention", family: str = "linear-scan", output_file: Optional[str] = None
+) -> str:
     """Generate boilerplate code for a new custom module."""
     from neuralops.core.extensibility import scaffold_module as _scaff
+
     return _scaff(name, category=category, family=family, output_file=output_file)
 
 
@@ -942,8 +954,8 @@ def compare_attentions_ablation(
     Profiles empirical hardware performance via `profile_roofline`, computes multi-objective
     Pareto frontiers via `compute_pareto_frontier`, and generates publication tables.
     """
-    from neuralops.core.roofline import profile_roofline
     from neuralops.core.paper_export import compute_pareto_frontier, export_benchmark_table
+    from neuralops.core.roofline import profile_roofline
 
     target_dev = device or ("cuda:0" if torch.cuda.is_available() else "cpu")
     records = []
@@ -1011,6 +1023,7 @@ def surgical_transplant_and_heal_pipeline(
       4. Optional save_surgical_checkpoint serialization
     """
     import copy
+
     from neuralops.core._attention_surgery import heal_replaced_model
 
     if student_base_model is None:
@@ -1019,14 +1032,29 @@ def surgical_transplant_and_heal_pipeline(
         student = student_base_model
 
     call_kwargs = dict(kwargs)
-    if "embed_dim" not in call_kwargs and "d_model" not in call_kwargs and "hidden_size" not in call_kwargs and "dim" not in call_kwargs:
-        t_dim = getattr(teacher_model, "dim", getattr(teacher_model, "hidden_size", getattr(teacher_model, "d_model", None)))
+    if (
+        "embed_dim" not in call_kwargs
+        and "d_model" not in call_kwargs
+        and "hidden_size" not in call_kwargs
+        and "dim" not in call_kwargs
+    ):
+        t_dim = getattr(
+            teacher_model, "dim", getattr(teacher_model, "hidden_size", getattr(teacher_model, "d_model", None))
+        )
         if t_dim is None and hasattr(teacher_model, "config"):
             t_dim = getattr(teacher_model.config, "hidden_size", getattr(teacher_model.config, "d_model", None))
         if t_dim is None:
-            if calibration_inputs is not None and isinstance(calibration_inputs, torch.Tensor) and calibration_inputs.ndim >= 2:
+            if (
+                calibration_inputs is not None
+                and isinstance(calibration_inputs, torch.Tensor)
+                and calibration_inputs.ndim >= 2
+            ):
                 t_dim = calibration_inputs.shape[-1]
-            elif isinstance(calibration_inputs, (list, tuple)) and len(calibration_inputs) > 0 and isinstance(calibration_inputs[0], torch.Tensor):
+            elif (
+                isinstance(calibration_inputs, (list, tuple))
+                and len(calibration_inputs) > 0
+                and isinstance(calibration_inputs[0], torch.Tensor)
+            ):
                 t_dim = calibration_inputs[0].shape[-1]
         if t_dim is not None:
             call_kwargs["embed_dim"] = t_dim
@@ -1066,6 +1094,7 @@ def surgical_transplant_and_heal_pipeline(
     saved_path = None
     if save_dir is not None:
         from neuralops.models.surgical_io import save_surgical_checkpoint
+
         saved_path = save_surgical_checkpoint(
             model=student,
             save_dir=save_dir,
@@ -1155,15 +1184,24 @@ def train(
     Returns:
         Dictionary containing training telemetry and metrics.
     """
-    from neuralops.core.utils.general import set_seed
-    from neuralops.benchmarks.core.training import finetune_classification
     from torch.utils.data import DataLoader
+
+    from neuralops.benchmarks.core.training import finetune_classification
+    from neuralops.core.utils.general import set_seed
 
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
 
-    train_loader = dataset if isinstance(dataset, DataLoader) else DataLoader(dataset, batch_size=kwargs.pop("batch_size", 32), shuffle=True)
-    eval_loader = eval_dataset if (eval_dataset is None or isinstance(eval_dataset, DataLoader)) else DataLoader(eval_dataset, batch_size=kwargs.pop("eval_batch_size", 32))
+    train_loader = (
+        dataset
+        if isinstance(dataset, DataLoader)
+        else DataLoader(dataset, batch_size=kwargs.pop("batch_size", 32), shuffle=True)
+    )
+    eval_loader = (
+        eval_dataset
+        if (eval_dataset is None or isinstance(eval_dataset, DataLoader))
+        else DataLoader(eval_dataset, batch_size=kwargs.pop("eval_batch_size", 32))
+    )
 
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
     return finetune_classification(
@@ -1207,14 +1245,19 @@ def distill(
     Returns:
         Dictionary containing distillation metrics.
     """
+    from torch.utils.data import DataLoader
+
     from neuralops.core.utils.general import set_seed
     from neuralops.trainer.distillation.multi_level_kd import distill as _canonical_distill
-    from torch.utils.data import DataLoader
 
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
 
-    train_loader = dataset if isinstance(dataset, DataLoader) else DataLoader(dataset, batch_size=kwargs.pop("batch_size", 32), shuffle=True)
+    train_loader = (
+        dataset
+        if isinstance(dataset, DataLoader)
+        else DataLoader(dataset, batch_size=kwargs.pop("batch_size", 32), shuffle=True)
+    )
 
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
     return _canonical_distill(
@@ -1257,6 +1300,7 @@ def evaluate(
     """
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
     from neuralops.core.utils.general import set_seed
+
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
     if not isinstance(dataset, str):
@@ -1271,10 +1315,7 @@ def evaluate(
             for batch in loader:
                 if isinstance(batch, dict):
                     labels = batch.pop("labels", batch.pop("label", None))
-                    inputs = {
-                        key: value.to(dev) if hasattr(value, "to") else value
-                        for key, value in batch.items()
-                    }
+                    inputs = {key: value.to(dev) if hasattr(value, "to") else value for key, value in batch.items()}
                 elif isinstance(batch, (tuple, list)) and len(batch) >= 2:
                     inputs, labels = {"input_ids": batch[0].to(dev)}, batch[-1].to(dev)
                 else:
@@ -1301,6 +1342,7 @@ def evaluate(
         return {"metrics": totals, "num_samples": samples, "device": str(dev)}
 
     from neuralops.evaluation.eval_all_models_datasets import evaluate_single_combination_opt
+
     result = evaluate_single_combination_opt(
         track=kwargs.pop("track", "track1_svd"),
         module_name=kwargs.pop("module_name", "standard"),
@@ -1334,7 +1376,12 @@ def load_and_prepare_dataset(
     train_dataset = load_dataset_by_name(
         dataset_name, tokenizer, max_length=max_length, split="train", max_samples=max_samples
     )
-    eval_split = "validation" if dataset_name.lower().replace("glue_", "") in {"sst2", "mrpc", "mnli", "qqp", "qnli", "rte", "cola", "stsb", "wnli"} else "test"
+    eval_split = (
+        "validation"
+        if dataset_name.lower().replace("glue_", "")
+        in {"sst2", "mrpc", "mnli", "qqp", "qnli", "rte", "cola", "stsb", "wnli"}
+        else "test"
+    )
     eval_dataset = load_dataset_by_name(
         dataset_name, tokenizer, max_length=max_length, split=eval_split, max_samples=max_samples
     )
@@ -1427,9 +1474,11 @@ def benchmark(
         BenchmarkResult object.
     """
     from neuralops.core.utils.general import set_seed
+
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
     from neuralops.benchmarks.api import benchmark as _bm
+
     return _bm(
         module=module,
         model=model,
@@ -1471,6 +1520,7 @@ def benchmark_all(
         Aggregated summary dataframe or results list.
     """
     from neuralops.benchmarks.api import Runner
+
     runner = Runner(
         modules=modules,
         models=models,
@@ -1496,6 +1546,7 @@ def has_triton() -> bool:
     """Check whether Triton kernel compiler and GPU backend are available."""
     try:
         from neuralops.core.triton_kernels import HAS_TRITON
+
         return bool(HAS_TRITON)
     except (ImportError, AttributeError):
         return False
@@ -1535,6 +1586,7 @@ def validate(
     if model is None:
         raise ValueError("Must provide a model instance to validate.")
     from neuralops.validation.model_validator import ModelValidator
+
     validator = ModelValidator(model=model, input_shape=input_shape, device=device)
     return bool(validator.validate())
 
@@ -1567,8 +1619,9 @@ def quick_benchmark(
     **kwargs: Any,
 ) -> Any:
     """Quickly benchmark a model on sample inputs and return a latency summary DataFrame."""
-    import pandas as pd
     import time
+
+    import pandas as pd
 
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
     if isinstance(dev, str):
@@ -1612,13 +1665,10 @@ def quick_benchmark(
     elif isinstance(out, torch.Tensor):
         is_finite = bool(torch.isfinite(out).all())
 
-    return pd.DataFrame([
-        {"task": task, "device": dev.type, "latency_ms": latency_ms, "finite": is_finite}
-    ])
+    return pd.DataFrame([{"task": task, "device": dev.type, "latency_ms": latency_ms, "finite": is_finite}])
 
 
 from neuralops.trainer import NeuralOpsTrainer  # noqa: E402
-
 
 __all__ = [
     "load_model",
@@ -1683,18 +1733,17 @@ __all__ = [
     "TextGenerationPipeline",
 ]
 
+from neuralops.analysis.inspector import compare, summary
 from neuralops.core.state_cache import NeuralOpsStateCache, benchmark_autoregressive_decoding
 from neuralops.core.triton_kernels.autotuner import select_optimal_triton_config
-
+from neuralops.export.surgery_manifest import merge_for_inference
 from neuralops.recipes import oneshot, recommend
-from neuralops.analysis.inspector import summary, compare
 from neuralops.transformers import (
-    AutoNeuralOpsModel,
     AutoNeuralOpsForCausalLM,
     AutoNeuralOpsForSequenceClassification,
+    AutoNeuralOpsModel,
     patch_transformers,
 )
-from neuralops.export.surgery_manifest import merge_for_inference
 from neuralops.utils.hub_integration import load_attention_from_hub, save_attention_only
 
 # Canonical Public API symbol mapping (F-79 single source of truth)

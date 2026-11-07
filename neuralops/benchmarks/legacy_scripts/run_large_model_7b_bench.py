@@ -1,13 +1,14 @@
-import sys
-import os
 import gc
-import json
-import time
 import glob
+import json
+import os
+import sys
+import time
+
 import torch
 import torch.nn as nn
 from safetensors.torch import load_file
-from transformers.models.llama.modeling_llama import LlamaDecoderLayer, LlamaConfig
+from transformers.models.llama.modeling_llama import LlamaConfig, LlamaDecoderLayer
 
 print("================================================================================")
 print("  NeuralOps HEAVY LLM Layer Benchmark on Qwen2.5-7B (NVIDIA RTX 3090 - 24GB)")
@@ -25,12 +26,12 @@ llama_cfg = LlamaConfig(
     vocab_size=cfg_dict.get("vocab_size", 152064),
     hidden_size=cfg_dict.get("hidden_size", 3584),
     intermediate_size=cfg_dict.get("intermediate_size", 18944),
-    num_hidden_layers=1, # Layer-by-layer benchmark with real Qwen 7B dimensions
+    num_hidden_layers=1,  # Layer-by-layer benchmark with real Qwen 7B dimensions
     num_attention_heads=cfg_dict.get("num_attention_heads", 28),
     num_key_value_heads=cfg_dict.get("num_key_value_heads", 4),
     rms_norm_eps=cfg_dict.get("rms_norm_eps", 1e-6),
     rope_theta=cfg_dict.get("rope_theta", 1000000.0),
-    torch_dtype="float16"
+    torch_dtype="float16",
 )
 
 print("\nModel Layer Architecture (Exact Qwen2.5-7B-Instruct Specifications):")
@@ -74,12 +75,12 @@ seq_lens = [512, 1024, 2048, 4096, 8192, 16384]
 
 for s in seq_lens:
     hidden_states = torch.randn(batch_size, s, llama_cfg.hidden_size, dtype=torch.float16, device=device)
-    
+
     # Warmup
     with torch.no_grad():
         _ = layer(hidden_states)
     torch.cuda.synchronize()
-    
+
     # Accurate timing
     reps = 5
     t_start = time.perf_counter()
@@ -90,7 +91,7 @@ for s in seq_lens:
     lat_layer_ms = ((time.perf_counter() - t_start) / reps) * 1000.0
     lat_full_model_ms = lat_layer_ms * 28.0
     mem_gb = torch.cuda.memory_allocated(device) / (1024**3)
-    
+
     print("{:<10} | {:<17.3f} ms | {:<19.2f} ms | {:.2f} GB".format(s, lat_layer_ms, lat_full_model_ms, mem_gb))
 
 print("=" * 80)

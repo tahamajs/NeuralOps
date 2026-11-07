@@ -202,6 +202,7 @@ def run_recipe_benchmark(
     if dataset is not None:
         try:
             if parallel_benchmark is not None and getattr(parallel_benchmark, "world_size", 1) > 1:
+
                 def _acc_fn(m: nn.Module, d: Any) -> float:
                     return _evaluate_accuracy(m, d)
 
@@ -232,12 +233,14 @@ def run_recipe_benchmark(
     # Per-stage records
     stage_summaries = []
     for s in exec_result.stage_records:
-        stage_summaries.append({
-            "stage_id": s.stage_id,
-            "operation": s.operation_name,
-            "duration_seconds": s.duration,
-            "success": s.success,
-        })
+        stage_summaries.append(
+            {
+                "stage_id": s.stage_id,
+                "operation": s.operation_name,
+                "duration_seconds": s.duration,
+                "success": s.success,
+            }
+        )
 
     return {
         "recipe_name": recipe_obj.metadata.name,

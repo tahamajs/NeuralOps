@@ -12,7 +12,6 @@ Jointly solves low-rank matrix factorization and uniform integer quantization to
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -22,6 +21,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -72,15 +72,9 @@ class UniQLinear(nn.Module):
         self.register_buffer("U_q", U_q.to(device=device), persistent=True)
         self.register_buffer("S_q", S_q.to(device=device), persistent=True)
         self.register_buffer("Vt_q", Vt_q.to(device=device), persistent=True)
-        self.register_buffer(
-            "scale_u", scale_u.to(device=device, dtype=torch.float32), persistent=True
-        )
-        self.register_buffer(
-            "scale_s", scale_s.to(device=device, dtype=torch.float32), persistent=True
-        )
-        self.register_buffer(
-            "scale_v", scale_v.to(device=device, dtype=torch.float32), persistent=True
-        )
+        self.register_buffer("scale_u", scale_u.to(device=device, dtype=torch.float32), persistent=True)
+        self.register_buffer("scale_s", scale_s.to(device=device, dtype=torch.float32), persistent=True)
+        self.register_buffer("scale_v", scale_v.to(device=device, dtype=torch.float32), persistent=True)
 
         if bias is not None:
             self.bias = nn.Parameter(bias.to(dtype=dtype, device=device), requires_grad=False)
@@ -103,10 +97,12 @@ class UniQLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 U = (self.U_q.float() * self.scale_u.unsqueeze(1)).to(x.dtype)
                 S = (self.S_q.float() * self.scale_s).to(x.dtype)
                 Vt = (self.Vt_q.float() * self.scale_v.unsqueeze(1)).to(x.dtype)
@@ -190,9 +186,7 @@ class UniQLCompressor(BaseCompressor):
         if cfg is not None:
             rank = _cfg_get(cfg, "uniql_rank", _cfg_get(cfg, "rank", rank))
             bits = _cfg_get(cfg, "uniql_bits", _cfg_get(cfg, "bits", bits))
-            max_error = _cfg_get(
-                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error_legacy", max_error)
-            )
+            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error_legacy", max_error))
             max_retries = _cfg_get(cfg, "max_retries", max_retries)
             fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
             target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
@@ -267,17 +261,11 @@ class UniQLCompressor(BaseCompressor):
 
         base_layer = getattr(module, "base_layer", module)
         cls_name = base_layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or (
-            hasattr(base_layer, "nf") and hasattr(base_layer, "weight")
-        )
+        is_conv1d = "conv1d" in cls_name or (hasattr(base_layer, "nf") and hasattr(base_layer, "weight"))
         is_linear_like = (
             isinstance(base_layer, nn.Linear)
             or is_conv1d
-            or (
-                hasattr(base_layer, "weight")
-                and hasattr(base_layer.weight, "ndim")
-                and base_layer.weight.ndim == 2
-            )
+            or (hasattr(base_layer, "weight") and hasattr(base_layer.weight, "ndim") and base_layer.weight.ndim == 2)
         )
         if not is_linear_like:
             return False
@@ -297,9 +285,7 @@ class UniQLCompressor(BaseCompressor):
         """
         raw_w = base_layer.weight.data
         cls_name = base_layer.__class__.__name__.lower()
-        is_conv1d = "conv1d" in cls_name or (
-            hasattr(base_layer, "nf") and raw_w.shape[0] < raw_w.shape[1]
-        )
+        is_conv1d = "conv1d" in cls_name or (hasattr(base_layer, "nf") and raw_w.shape[0] < raw_w.shape[1])
         if is_conv1d:
             W = raw_w.t().contiguous().float()
         else:
@@ -449,12 +435,8 @@ class UniQLCompressor(BaseCompressor):
                 setattr(parent, child_name, new_layer)
 
             orig_bytes = raw_w.numel() * raw_w.element_size()
-            comp_bytes = (
-                result["U_q"].numel() + result["S_q"].numel() + result["Vt_q"].numel()
-            )
-            comp_bytes += (
-                result["scale_u"].numel() + result["scale_s"].numel() + result["scale_v"].numel()
-            ) * 4
+            comp_bytes = result["U_q"].numel() + result["S_q"].numel() + result["Vt_q"].numel()
+            comp_bytes += (result["scale_u"].numel() + result["scale_s"].numel() + result["scale_v"].numel()) * 4
             if bias_tensor is not None:
                 orig_bytes += base_layer.bias.numel() * base_layer.bias.element_size()
                 comp_bytes += bias_tensor.numel() * bias_tensor.element_size()
@@ -497,9 +479,7 @@ class UniQLCompressor(BaseCompressor):
                 "orig_storage_bytes": orig_storage_bytes,
                 "comp_storage_bytes": comp_storage_bytes,
                 "storage_compression_ratio": round(ratio, 3),
-                "storage_reduction_pct": round(
-                    100.0 * (1.0 - comp_storage_bytes / max(1, orig_storage_bytes)), 2
-                ),
+                "storage_reduction_pct": round(100.0 * (1.0 - comp_storage_bytes / max(1, orig_storage_bytes)), 2),
             }
         )
 
@@ -516,13 +496,9 @@ class UniQLCompressor(BaseCompressor):
 def uniql_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """UniQL factory."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    rank = kwargs.pop(
-        "rank", _cfg_get(comp_config, "uniql_rank", _cfg_get(comp_config, "rank", 64))
-    )
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "uniql_rank", _cfg_get(comp_config, "rank", 64)))
     bits = kwargs.pop("bits", _cfg_get(comp_config, "uniql_bits", _cfg_get(comp_config, "bits", 8)))
-    target_attn = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     compressor = UniQLCompressor(
         model,
         rank=rank,

@@ -58,7 +58,9 @@ def run_all_26_kernels(
         raise ValueError(f"Unsupported dtype '{dtype_str}'. Choose float16, float32, or bfloat16.") from exc
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
-    print(f"Running Direct Kernel Benchmark on: {device} ({gpu_name}) | Precision: {dtype_str} | Warmup: {warmup} | Reps: {repeat}")
+    print(
+        f"Running Direct Kernel Benchmark on: {device} ({gpu_name}) | Precision: {dtype_str} | Warmup: {warmup} | Reps: {repeat}"
+    )
 
     results = []
 
@@ -69,7 +71,7 @@ def run_all_26_kernels(
         if not should_run(name):
             return
 
-        is_cuda = (device.type == "cuda")
+        is_cuda = device.type == "cuda"
         try:
             for _ in range(warmup):
                 _ = triton_fn(*args, **kwargs)
@@ -118,70 +120,113 @@ def run_all_26_kernels(
                 "status": status,
             }
             results.append(entry)
-            print(f"  {name:36s} {shape_str:20s}: Tri={t_tri:6.3f}ms, PT={t_pt:6.3f}ms, Speedup={sp:5.2f}x, Diff={max_diff:.2e}")
+            print(
+                f"  {name:36s} {shape_str:20s}: Tri={t_tri:6.3f}ms, PT={t_pt:6.3f}ms, Speedup={sp:5.2f}x, Diff={max_diff:.2e}"
+            )
         except Exception as exc:
             print(f"  {name:36s} {shape_str:20s}: ERROR - {exc}")
-            results.append({
-                "kernel": name,
-                "shape": shape_str,
-                "triton_ms": 0.0,
-                "pytorch_ms": 0.0,
-                "speedup": 0.0,
-                "max_diff": float("inf"),
-                "status": f"ERROR: {exc}",
-            })
+            results.append(
+                {
+                    "kernel": name,
+                    "shape": shape_str,
+                    "triton_ms": 0.0,
+                    "pytorch_ms": 0.0,
+                    "speedup": 0.0,
+                    "max_diff": float("inf"),
+                    "status": f"ERROR: {exc}",
+                }
+            )
 
-    from neuralops.core.triton_kernels.low_rank import (
-        fused_hnc_nullspace_step_pytorch,
-        fused_hnc_nullspace_step_triton,
-    )
+    from neuralops.core.triton_kernels.low_rank import fused_hnc_nullspace_step_pytorch, fused_hnc_nullspace_step_triton
+
     dim = 2048
     w = torch.randn(dim, dim, device=device, dtype=dtype)
     g = torch.randn(dim, dim, device=device, dtype=dtype)
     r = torch.randn(dim, dim, device=device, dtype=dtype)
-    bench_pair("fused_hnc_nullspace_step", f"({dim}x{dim})", fused_hnc_nullspace_step_triton, fused_hnc_nullspace_step_pytorch, w, g, r, 0.05)
-
-    from neuralops.core.triton_kernels.low_rank import (
-        fused_linformer_seq_proj_pytorch,
-        fused_linformer_seq_proj_triton,
+    bench_pair(
+        "fused_hnc_nullspace_step",
+        f"({dim}x{dim})",
+        fused_hnc_nullspace_step_triton,
+        fused_hnc_nullspace_step_pytorch,
+        w,
+        g,
+        r,
+        0.05,
     )
+
+    from neuralops.core.triton_kernels.low_rank import fused_linformer_seq_proj_pytorch, fused_linformer_seq_proj_triton
+
     seq_len = 4096
     x_lin = torch.randn(8, 16, seq_len, 64, device=device, dtype=dtype)
     proj_lin = torch.randn(64, seq_len, device=device, dtype=dtype)
-    bench_pair("fused_linformer_seq_proj", f"(T={seq_len})", fused_linformer_seq_proj_triton, fused_linformer_seq_proj_pytorch, proj_lin, x_lin)
+    bench_pair(
+        "fused_linformer_seq_proj",
+        f"(T={seq_len})",
+        fused_linformer_seq_proj_triton,
+        fused_linformer_seq_proj_pytorch,
+        proj_lin,
+        x_lin,
+    )
 
     from neuralops.core.triton_kernels.low_rank import (
         fused_kronecker_batched_gemm_pytorch,
         fused_kronecker_batched_gemm_triton,
     )
+
     x_kron = torch.randn(4, 128, 256, device=device, dtype=dtype)
     A_kron = torch.randn(16, 16, device=device, dtype=dtype)
     B_kron = torch.randn(16, 16, device=device, dtype=dtype)
-    bench_pair("fused_kronecker_gemm", "(dim=256, r=16)", fused_kronecker_batched_gemm_triton, fused_kronecker_batched_gemm_pytorch, x_kron, A_kron, B_kron)
+    bench_pair(
+        "fused_kronecker_gemm",
+        "(dim=256, r=16)",
+        fused_kronecker_batched_gemm_triton,
+        fused_kronecker_batched_gemm_pytorch,
+        x_kron,
+        A_kron,
+        B_kron,
+    )
 
     from neuralops.core.triton_kernels.low_rank import (
         fused_nystrom_landmark_pinv_step_pytorch,
         fused_nystrom_landmark_pinv_step_triton,
     )
+
     m = 32
     N = 512
     F1 = F.softmax(torch.randn(4, 8, N, m, device=device, dtype=torch.float32), dim=-1)
     F2_pinv = torch.randn(4, 8, m, m, device=device, dtype=torch.float32)
     F3 = F.softmax(torch.randn(4, 8, m, N, device=device, dtype=torch.float32), dim=-1)
     V_nys = torch.randn(4, 8, N, 64, device=device, dtype=torch.float32)
-    bench_pair("fused_nystrom_landmark_pinv", f"(m={m}, N={N})", fused_nystrom_landmark_pinv_step_triton, fused_nystrom_landmark_pinv_step_pytorch, F1, F2_pinv, F3, V_nys)
-
-    from neuralops.core.triton_kernels.sliding_window import (
-        sliding_window_attention,
-        sliding_window_pytorch,
+    bench_pair(
+        "fused_nystrom_landmark_pinv",
+        f"(m={m}, N={N})",
+        fused_nystrom_landmark_pinv_step_triton,
+        fused_nystrom_landmark_pinv_step_pytorch,
+        F1,
+        F2_pinv,
+        F3,
+        V_nys,
     )
+
+    from neuralops.core.triton_kernels.sliding_window import sliding_window_attention, sliding_window_pytorch
+
     seq_len = 2048
     q_sw = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
     k_sw = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
     v_sw = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
-    bench_pair("sliding_window_attention", f"(T={seq_len}, W=128)", sliding_window_attention, sliding_window_pytorch, q_sw, k_sw, v_sw, 128)
+    bench_pair(
+        "sliding_window_attention",
+        f"(T={seq_len}, W=128)",
+        sliding_window_attention,
+        sliding_window_pytorch,
+        q_sw,
+        k_sw,
+        v_sw,
+        128,
+    )
 
     from neuralops.core.triton_kernels.gla_scan import gla_scan, gla_scan_pytorch
+
     seq_len = 1024
     q_gla = F.elu(torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)) + 1.0
     k_gla = F.elu(torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)) + 1.0
@@ -190,6 +235,7 @@ def run_all_26_kernels(
     bench_pair("gla_scan", f"(T={seq_len})", gla_scan, gla_scan_pytorch, q_gla, k_gla, v_gla, g_gla)
 
     from neuralops.core.triton_kernels.gdn_scan import gdn_scan, gdn_scan_pytorch
+
     seq_len = 1024
     q_gdn = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
     k_gdn = F.normalize(torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype), dim=-1)
@@ -199,70 +245,80 @@ def run_all_26_kernels(
     bench_pair("gdn_scan", f"(T={seq_len})", gdn_scan, gdn_scan_pytorch, q_gdn, k_gdn, v_gdn, beta_gdn, alpha_gdn)
 
     from neuralops.core.triton_kernels.hgrn2_scan import hgrn2_scan, hgrn2_scan_pytorch
+
     seq_len = 1024
     f_hgrn = torch.sigmoid(torch.randn(2, seq_len, 256, device=device, dtype=dtype))
     iv_hgrn = torch.randn(2, seq_len, 256, device=device, dtype=dtype)
-    bench_pair("hgrn2_scan", f"(T={seq_len})", lambda f, iv: hgrn2_scan(f, iv, res_clip=1.0), lambda f, iv: hgrn2_scan_pytorch(f, iv, res_clip=1.0), f_hgrn, iv_hgrn)
+    bench_pair(
+        "hgrn2_scan",
+        f"(T={seq_len})",
+        lambda f, iv: hgrn2_scan(f, iv, res_clip=1.0),
+        lambda f, iv: hgrn2_scan_pytorch(f, iv, res_clip=1.0),
+        f_hgrn,
+        iv_hgrn,
+    )
 
     from neuralops.core.triton_kernels.softplus import softplus_fwd, softplus_pytorch
+
     num_elements = 4194304
     x_sp = torch.randn(num_elements, device=device, dtype=dtype)
     bench_pair("softplus", f"({num_elements})", softplus_fwd, softplus_pytorch, x_sp)
 
-    from neuralops.core.triton_kernels.fused_norm_linear import (
-        fused_rmsnorm_gate_triton,
-        fused_rmsnorm_gate,
-    )
+    from neuralops.core.triton_kernels.fused_norm_linear import fused_rmsnorm_gate, fused_rmsnorm_gate_triton
+
     dim = 2048
     x_fnl = torch.randn(2, 512, dim, device=device, dtype=dtype)
     g_fnl = torch.randn(2, 512, dim, device=device, dtype=dtype)
     w_fnl = torch.randn(dim, device=device, dtype=dtype)
     bench_pair("fused_norm_linear", f"({dim})", fused_rmsnorm_gate_triton, fused_rmsnorm_gate, x_fnl, g_fnl, w_fnl)
 
-    from neuralops.core.triton_kernels.cosformer_triton_kernel import (
-        cosformer_pytorch_fwd,
-        cosformer_triton_fwd,
-    )
+    from neuralops.core.triton_kernels.cosformer_triton_kernel import cosformer_pytorch_fwd, cosformer_triton_fwd
+
     seq_len = 1024
     q_cos = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
     k_cos = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
     v_cos = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
-    scale_cos = 64.0 ** -0.5
+    scale_cos = 64.0**-0.5
     q_cos_act = F.elu(q_cos.float() * scale_cos) + 1.0
     k_cos_act = F.elu(k_cos.float()) + 1.0
-    bench_pair("cosformer", f"(T={seq_len})", lambda q, k, v: cosformer_triton_fwd(q, k, v, is_causal=False), lambda q, k, v: cosformer_pytorch_fwd(q, k, v, is_causal=False), q_cos_act, k_cos_act, v_cos.float())
-
-    from neuralops.core.triton_kernels.fused_ce import (
-        fused_cross_entropy,
-        fused_cross_entropy_pytorch,
+    bench_pair(
+        "cosformer",
+        f"(T={seq_len})",
+        lambda q, k, v: cosformer_triton_fwd(q, k, v, is_causal=False),
+        lambda q, k, v: cosformer_pytorch_fwd(q, k, v, is_causal=False),
+        q_cos_act,
+        k_cos_act,
+        v_cos.float(),
     )
+
+    from neuralops.core.triton_kernels.fused_ce import fused_cross_entropy, fused_cross_entropy_pytorch
+
     vocab = 50257
     logits_ce = torch.randn(8, 256, vocab, device=device, dtype=dtype)
     targets_ce = torch.randint(0, vocab, (8, 256), device=device)
     bench_pair("fused_ce", f"(V={vocab})", fused_cross_entropy, fused_cross_entropy_pytorch, logits_ce, targets_ce)
 
-    from neuralops.core.triton_kernels.fused_kd import (
-        fused_kd_loss,
-        fused_kd_loss_pytorch,
-    )
+    from neuralops.core.triton_kernels.fused_kd import fused_kd_loss, fused_kd_loss_pytorch
+
     vocab = 16384
     s_logits = torch.randn(2, 64, vocab, device=device, dtype=dtype)
     t_logits = torch.randn(2, 64, vocab, device=device, dtype=dtype)
     bench_pair("fused_kd", f"(V={vocab})", fused_kd_loss, fused_kd_loss_pytorch, s_logits, t_logits, 2.0)
 
-    from neuralops.core.triton_kernels.selective_scan import (
-        selective_scan_fn,
-        selective_scan_ref,
-    )
+    from neuralops.core.triton_kernels.selective_scan import selective_scan_fn, selective_scan_ref
+
     seq_len = 512
     u_ssm = torch.randn(2, 64, seq_len, device=device, dtype=dtype)
     delta_ssm = F.softplus(torch.randn(2, 64, seq_len, device=device, dtype=dtype)) * 0.05
     A_ssm = -torch.rand(64, 16, device=device, dtype=dtype) - 0.1
     B_ssm = torch.randn(2, 16, seq_len, device=device, dtype=dtype) * 0.1
     C_ssm = torch.randn(2, 16, seq_len, device=device, dtype=dtype) * 0.1
-    bench_pair("selective_scan", f"(T={seq_len})", selective_scan_fn, selective_scan_ref, u_ssm, delta_ssm, A_ssm, B_ssm, C_ssm)
+    bench_pair(
+        "selective_scan", f"(T={seq_len})", selective_scan_fn, selective_scan_ref, u_ssm, delta_ssm, A_ssm, B_ssm, C_ssm
+    )
 
     from neuralops.core.triton_kernels.fms_scan import fms_scan, fms_scan_pytorch
+
     seq_len = 1024
     q_fms = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
     k_fms = torch.randn(2, 4, seq_len, 64, device=device, dtype=dtype)
@@ -270,46 +326,82 @@ def run_all_26_kernels(
     decay_fms = torch.sigmoid(torch.randn(4, device=device, dtype=dtype))
     bench_pair("fms_scan", f"(T={seq_len})", fms_scan, fms_scan_pytorch, q_fms, k_fms, v_fms, decay_fms)
 
-    from neuralops.core.triton_kernels.paged_attention import (
-        paged_attention_kernel,
-        paged_attention_pytorch,
-    )
+    from neuralops.core.triton_kernels.paged_attention import paged_attention_kernel, paged_attention_pytorch
+
     num_blocks, block_size, num_heads, head_dim = 128, 16, 4, 64
     k_cache = torch.randn(num_blocks, block_size, num_heads, head_dim, device=device, dtype=dtype)
     v_cache = torch.randn(num_blocks, block_size, num_heads, head_dim, device=device, dtype=dtype)
     block_tables = torch.arange(num_blocks, device=device, dtype=torch.int32).view(2, 64)
     context_lens = torch.full((2,), 64 * block_size, device=device, dtype=torch.int32)
     q_pa = torch.randn(2, num_heads, head_dim, device=device, dtype=dtype)
-    bench_pair("paged_attention", "(B=2, H=4, d=64)", paged_attention_kernel, paged_attention_pytorch, q_pa, k_cache, v_cache, block_tables, context_lens, block_size=block_size)
+    bench_pair(
+        "paged_attention",
+        "(B=2, H=4, d=64)",
+        paged_attention_kernel,
+        paged_attention_pytorch,
+        q_pa,
+        k_cache,
+        v_cache,
+        block_tables,
+        context_lens,
+        block_size=block_size,
+    )
 
-    from neuralops.core.triton_kernels.gqa import (
+    from neuralops.core.triton_kernels.gqa import fused_mqa_bias_scale_pytorch, fused_mqa_bias_scale_triton
+
+    scores_gqa = torch.randn(4, 8, 256, 256, device=device, dtype=torch.float32)
+    bench_pair(
+        "fused_mqa_bias_scale",
+        "(256x256, causal)",
         fused_mqa_bias_scale_triton,
         fused_mqa_bias_scale_pytorch,
+        scores_gqa,
+        0.25,
+        is_causal=True,
+        past_len=4,
     )
-    scores_gqa = torch.randn(4, 8, 256, 256, device=device, dtype=torch.float32)
-    bench_pair("fused_mqa_bias_scale", "(256x256, causal)", fused_mqa_bias_scale_triton, fused_mqa_bias_scale_pytorch, scores_gqa, 0.25, is_causal=True, past_len=4)
 
-    from neuralops.core.triton_kernels.sparse_attn import (
-        fused_hamming_scores_triton,
-        fused_hamming_scores_pytorch,
-    )
+    from neuralops.core.triton_kernels.sparse_attn import fused_hamming_scores_pytorch, fused_hamming_scores_triton
+
     Q_ham = torch.randn(4, 8, 256, 64, device=device, dtype=torch.float32)
     K_ham = torch.randn(4, 8, 256, 64, device=device, dtype=torch.float32)
     lora_q = torch.randn(8, device=device, dtype=torch.float32)
     lora_k = torch.randn(8, device=device, dtype=torch.float32)
     temp = torch.tensor([1.2], device=device, dtype=torch.float32)
-    bench_pair("fused_hamming_scores", "(256x64)", fused_hamming_scores_triton, fused_hamming_scores_pytorch, Q_ham, K_ham, lora_q, lora_k, temp)
+    bench_pair(
+        "fused_hamming_scores",
+        "(256x64)",
+        fused_hamming_scores_triton,
+        fused_hamming_scores_pytorch,
+        Q_ham,
+        K_ham,
+        lora_q,
+        lora_k,
+        temp,
+    )
 
     from neuralops.core.triton_kernels.elementwise import (
-        fused_favor_plus_feature_map_triton,
         fused_favor_plus_feature_map_pytorch,
+        fused_favor_plus_feature_map_triton,
     )
+
     x_fav = torch.randn(4, 8, 256, 64, device=device, dtype=torch.float32)
     omega_fav = torch.randn(128, 64, device=device, dtype=torch.float32)
-    bench_pair("fused_favor_plus", "(256x64, M=128)", fused_favor_plus_feature_map_triton, fused_favor_plus_feature_map_pytorch, x_fav, omega_fav, num_features=128, kernel_type="favor_plus")
+    bench_pair(
+        "fused_favor_plus",
+        "(256x64, M=128)",
+        fused_favor_plus_feature_map_triton,
+        fused_favor_plus_feature_map_pytorch,
+        x_fav,
+        omega_fav,
+        num_features=128,
+        kernel_type="favor_plus",
+    )
 
-    from neuralops.core.triton_kernels.fused_rope import fused_rope_fwd_kernel, apply_rope_rotation
     import triton
+
+    from neuralops.core.triton_kernels.fused_rope import apply_rope_rotation, fused_rope_fwd_kernel
+
     B_r, H_r, N_r, D_r = 4, 8, 1024, 64
     q_r = torch.randn(B_r, H_r, N_r, D_r, device=device, dtype=dtype)
     k_r = torch.randn(B_r, H_r, N_r, D_r, device=device, dtype=dtype)
@@ -322,41 +414,99 @@ def run_all_26_kernels(
         BLOCK_M = 32
         grid = (triton.cdiv(N_r, BLOCK_M), B_r * H_r)
         fused_rope_fwd_kernel[grid](
-            q, k, cos, sin, out_q, out_k,
-            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-            0, cos.stride(0), cos.stride(1),
-            0, sin.stride(0), sin.stride(1),
-            out_q.stride(0), out_q.stride(1), out_q.stride(2), out_q.stride(3),
-            out_k.stride(0), out_k.stride(1), out_k.stride(2), out_k.stride(3),
-            H_r, N_r, D_r, D_r // 2,
+            q,
+            k,
+            cos,
+            sin,
+            out_q,
+            out_k,
+            q.stride(0),
+            q.stride(1),
+            q.stride(2),
+            q.stride(3),
+            k.stride(0),
+            k.stride(1),
+            k.stride(2),
+            k.stride(3),
+            0,
+            cos.stride(0),
+            cos.stride(1),
+            0,
+            sin.stride(0),
+            sin.stride(1),
+            out_q.stride(0),
+            out_q.stride(1),
+            out_q.stride(2),
+            out_q.stride(3),
+            out_k.stride(0),
+            out_k.stride(1),
+            out_k.stride(2),
+            out_k.stride(3),
+            H_r,
+            N_r,
+            D_r,
+            D_r // 2,
             BLOCK_M=BLOCK_M,
         )
         return out_q
 
-    bench_pair("fused_rope", f"(T={N_r}, d={D_r})", tri_rope_bench, lambda q, k, c, s: apply_rope_rotation(q, c, s), q_r, k_r, cos_r, sin_r)
+    bench_pair(
+        "fused_rope",
+        f"(T={N_r}, d={D_r})",
+        tri_rope_bench,
+        lambda q, k, c, s: apply_rope_rotation(q, c, s),
+        q_r,
+        k_r,
+        cos_r,
+        sin_r,
+    )
 
     from neuralops.core.triton_kernels.block_sparse import (
-        fused_moba_block_router_combine_triton,
         fused_moba_block_router_combine_pytorch,
+        fused_moba_block_router_combine_triton,
     )
+
     Qb_moba = torch.randn(4, 4, 16, 16, 32, device=device, dtype=torch.float32)
     Kb_moba = torch.randn(4, 4, 16, 16, 32, device=device, dtype=torch.float32)
     Vb_moba = torch.randn(4, 4, 16, 16, 32, device=device, dtype=torch.float32)
-    bench_pair("fused_moba_block_router", "(16x16x32)", fused_moba_block_router_combine_triton, fused_moba_block_router_combine_pytorch, Qb_moba, Kb_moba, Vb_moba, 0.25, top_k=2, is_causal=True)
+    bench_pair(
+        "fused_moba_block_router",
+        "(16x16x32)",
+        fused_moba_block_router_combine_triton,
+        fused_moba_block_router_combine_pytorch,
+        Qb_moba,
+        Kb_moba,
+        Vb_moba,
+        0.25,
+        top_k=2,
+        is_causal=True,
+    )
 
     from neuralops.core.triton_kernels.linear_attn import (
-        fused_rala_augmented_scan_triton,
         fused_rala_augmented_scan_pytorch,
+        fused_rala_augmented_scan_triton,
     )
+
     q_rala = F.softplus(torch.randn(2, 4, 512, 32, device=device, dtype=dtype))
     k_rala = F.softplus(torch.randn(2, 4, 512, 32, device=device, dtype=dtype))
     v_rala = torch.randn(2, 4, 512, 32, device=device, dtype=dtype)
     lora_U = torch.randn(4, 32, 4, device=device, dtype=dtype)
     lora_V = torch.randn(4, 32, 4, device=device, dtype=dtype)
-    bench_pair("fused_rala_augmented_scan", "(512x32, r=4)", fused_rala_augmented_scan_triton, fused_rala_augmented_scan_pytorch, q_rala, k_rala, v_rala, lora_U, lora_V, is_causal=True)
+    bench_pair(
+        "fused_rala_augmented_scan",
+        "(512x32, r=4)",
+        fused_rala_augmented_scan_triton,
+        fused_rala_augmented_scan_pytorch,
+        q_rala,
+        k_rala,
+        v_rala,
+        lora_U,
+        lora_V,
+        is_causal=True,
+    )
 
     from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
+
     q_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
     k_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
     v_rec = torch.randn(2, 4, 64, device=device, dtype=dtype)
@@ -383,30 +533,55 @@ def run_all_26_kernels(
     )
 
     from neuralops.core.triton_kernels.selective_scan import (
-        fused_jamba_hybrid_ssm_attn_gate_triton,
         fused_jamba_hybrid_ssm_attn_gate_pytorch,
+        fused_jamba_hybrid_ssm_attn_gate_triton,
     )
+
     attn_out_j = torch.randn(8, 512, 1024, device=device, dtype=torch.float32)
     ssm_out_j = torch.randn(8, 512, 1024, device=device, dtype=torch.float32)
     alpha_j = torch.randn(16, device=device, dtype=torch.float32)
-    bench_pair("fused_jamba_hybrid_gate", "(512x1024, H=16)", fused_jamba_hybrid_ssm_attn_gate_triton, fused_jamba_hybrid_ssm_attn_gate_pytorch, attn_out_j, ssm_out_j, alpha_j)
+    bench_pair(
+        "fused_jamba_hybrid_gate",
+        "(512x1024, H=16)",
+        fused_jamba_hybrid_ssm_attn_gate_triton,
+        fused_jamba_hybrid_ssm_attn_gate_pytorch,
+        attn_out_j,
+        ssm_out_j,
+        alpha_j,
+    )
 
     from neuralops.core.triton_kernels.fms_scan import (
-        fused_goldfinch_hopfield_lookup_triton,
         fused_goldfinch_hopfield_lookup_pytorch,
+        fused_goldfinch_hopfield_lookup_triton,
     )
+
     g_gf = torch.sigmoid(torch.randn(4, 512, 128, device=device, dtype=torch.float32))
     v_gf = torch.tanh(torch.randn(4, 512, 128, device=device, dtype=torch.float32))
-    bench_pair("fused_goldfinch_hopfield", "(512x128, chunk=16)", fused_goldfinch_hopfield_lookup_triton, fused_goldfinch_hopfield_lookup_pytorch, g_gf, v_gf, chunk_size=16)
-
-    from neuralops.core.triton_kernels.flash_decoding import (
-        flash_decode_kernel,
-        flash_decoding_pytorch,
+    bench_pair(
+        "fused_goldfinch_hopfield",
+        "(512x128, chunk=16)",
+        fused_goldfinch_hopfield_lookup_triton,
+        fused_goldfinch_hopfield_lookup_pytorch,
+        g_gf,
+        v_gf,
+        chunk_size=16,
     )
+
+    from neuralops.core.triton_kernels.flash_decoding import flash_decode_kernel, flash_decoding_pytorch
+
     q_fd = torch.randn(2, 4, 1, 64, device=device, dtype=dtype)
     k_fd = torch.randn(2, 4, 1024, 64, device=device, dtype=dtype)
     v_fd = torch.randn(2, 4, 1024, 64, device=device, dtype=dtype)
-    bench_pair("flash_decode", "(N_kv=1024, H=4, d=64)", flash_decode_kernel, flash_decoding_pytorch, q_fd, k_fd, v_fd, chunk_size=64)
+    bench_pair(
+        "flash_decode",
+        "(N_kv=1024, H=4, d=64)",
+        flash_decode_kernel,
+        flash_decoding_pytorch,
+        q_fd,
+        k_fd,
+        v_fd,
+        chunk_size=64,
+    )
 
     if output_json:
         out_path = Path(output_json)
@@ -419,7 +594,9 @@ def run_all_26_kernels(
         csv_path = Path(output_csv)
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=["kernel", "shape", "triton_ms", "pytorch_ms", "speedup", "max_diff", "status"])
+            writer = csv.DictWriter(
+                f, fieldnames=["kernel", "shape", "triton_ms", "pytorch_ms", "speedup", "max_diff", "status"]
+            )
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
@@ -432,10 +609,19 @@ def run_all_26_kernels(
 
 def main():
     parser = argparse.ArgumentParser(description="Direct Triton vs PyTorch 26 Kernels Benchmark")
-    parser.add_argument("--output", type=str, default="results/triton_all_26_kernels_benchmark.csv", help="Path to save CSV output")
-    parser.add_argument("--output-json", type=str, default="results/triton_all_26_kernels_benchmark.json", help="Path to save JSON output")
+    parser.add_argument(
+        "--output", type=str, default="results/triton_all_26_kernels_benchmark.csv", help="Path to save CSV output"
+    )
+    parser.add_argument(
+        "--output-json",
+        type=str,
+        default="results/triton_all_26_kernels_benchmark.json",
+        help="Path to save JSON output",
+    )
     parser.add_argument("--device", type=str, default="cuda:0", help="CUDA device to execute benchmark")
-    parser.add_argument("--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"], help="Precision")
+    parser.add_argument(
+        "--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"], help="Precision"
+    )
     parser.add_argument("--warmup", type=int, default=5, help="Warmup iterations")
     parser.add_argument("--repeat", type=int, default=30, help="Measurement repetitions")
     parser.add_argument("--quick", action="store_true", help="Quick mode (warmup=1, repeat=3)")

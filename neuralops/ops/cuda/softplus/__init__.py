@@ -9,10 +9,7 @@
 Fused Softplus Activation Hardware Operators.
 """
 
-from neuralops.ops.cuda.softplus.softplus_autograd import (
-    fused_softplus,
-    fused_softplus_pytorch_ref,
-)
+from neuralops.ops.cuda.softplus.softplus_autograd import fused_softplus, fused_softplus_pytorch_ref
 
 __all__ = [
     "fused_softplus",

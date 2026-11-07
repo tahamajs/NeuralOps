@@ -21,6 +21,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.benchmarks.registry import register_benchmark
 
 logger = logging.getLogger(__name__)
@@ -113,7 +114,6 @@ def build_few_shot_prompt(
     return prompt
 
 
-
 @register_benchmark(name="lm_eval_mmlu_gsm8k", mode="lm-eval", hardware="any")
 def benchmark_lm_eval_mmlu_gsm8k(
     model: nn.Module | None = None,
@@ -146,14 +146,13 @@ def benchmark_lm_eval_mmlu_gsm8k(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for benchmark_lm_eval_mmlu_gsm8k, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for benchmark_lm_eval_mmlu_gsm8k, but CUDA is not available.")
 
     torch.manual_seed(seed)
 
     # Lightweight causal LM fallback if none passed
     if model is None:
+
         class _LightCausalLM(nn.Module):
             def __init__(self, vocab: int, dim: int):
                 super().__init__()
@@ -178,8 +177,7 @@ def benchmark_lm_eval_mmlu_gsm8k(
         prompt_len = base_prompt_len + shot_len
         prompt_ids = torch.randint(100, vocab_size - 100, (1, prompt_len), device=dev)
         candidates = [
-            torch.randint(100, vocab_size - 100, (1, 4 + (c_idx % 3)), device=dev)
-            for c_idx in range(num_choices)
+            torch.randint(100, vocab_size - 100, (1, 4 + (c_idx % 3)), device=dev) for c_idx in range(num_choices)
         ]
         ground_truth = i % num_choices
 
@@ -215,4 +213,3 @@ def run_benchmark(**kwargs: Any) -> dict[str, Any]:
 # Alias for explicit phase naming compliance
 run_lm_eval_benchmark = benchmark_lm_eval_mmlu_gsm8k
 CoreModule = benchmark_lm_eval_mmlu_gsm8k
-

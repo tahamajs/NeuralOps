@@ -19,9 +19,7 @@ import numpy as np
 import pandas as pd
 
 
-def compute_metrics(
-    predictions: np.ndarray, labels: np.ndarray, task: str = "classification"
-) -> dict[str, float]:
+def compute_metrics(predictions: np.ndarray, labels: np.ndarray, task: str = "classification") -> dict[str, float]:
     """Compute and return metrics."""
     predictions = np.asarray(predictions)
     labels = np.asarray(labels)
@@ -31,6 +29,7 @@ def compute_metrics(
         raise ValueError(f"Unsupported task type: {task}")
 
     from scipy.stats import pearsonr, spearmanr
+
     from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
 
     metrics = {}

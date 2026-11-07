@@ -58,8 +58,13 @@ class AttentionReplaceOperation(Operation):
         target = config.get("target")
         try:
             from neuralops.surgery.attention.replace import replace_attention
+
             transformed = replace_attention(model, attention=target)
-            return transformed, {"params_used": config, "operation_version": self.version, "output_state": self.output_state}
+            return transformed, {
+                "params_used": config,
+                "operation_version": self.version,
+                "output_state": self.output_state,
+            }
         except Exception as exc:
             raise IntegrationNotImplementedError(
                 f"attention.replace failed to execute target '{target}': {exc}"

@@ -61,7 +61,7 @@ def flash_gqa_pytorch_ref(
     group_size = H // H_KV
 
     if scale is None:
-        scale = 1.0 / (D ** 0.5)
+        scale = 1.0 / (D**0.5)
 
     if group_size > 1:
         k_exp = k.repeat_interleave(group_size, dim=1)
@@ -94,6 +94,7 @@ def _flash_gqa_triton_fallback(
 
     try:
         from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+
         return fused_weighted_gqa_online_softmax_triton(
             q=q,
             k=k,

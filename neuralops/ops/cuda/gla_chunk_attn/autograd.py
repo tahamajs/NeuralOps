@@ -62,16 +62,27 @@ def gla_chunk_attn_pytorch_ref(
 
 def _gla_chunk_attn_dispatch(q, k, v, g=None, scale=None) -> torch.Tensor:
     """3-Level Dispatched GLA Chunk Attention."""
+
     def cuda_fn(q, k, v, g=None, scale=None, **kwargs):
         mod = _get_module()
-        sc = scale if "scale" in kwargs or "scale" in locals() and locals().get("scale") is not None else 1.0 / math.sqrt(q.shape[-1])
-        return mod.gla_chunk_attn_fwd(q.contiguous(), k.contiguous(), v.contiguous(), g.contiguous() if g is not None else None, sc)
+        sc = (
+            scale
+            if "scale" in kwargs or "scale" in locals() and locals().get("scale") is not None
+            else 1.0 / math.sqrt(q.shape[-1])
+        )
+        return mod.gla_chunk_attn_fwd(
+            q.contiguous(), k.contiguous(), v.contiguous(), g.contiguous() if g is not None else None, sc
+        )
 
     return dispatch(
         cuda_fn,
         None,
         gla_chunk_attn_pytorch_ref,
-        q, k, v, g, scale,
+        q,
+        k,
+        v,
+        g,
+        scale,
         kernel_name="gla_chunk_attn",
     )
 

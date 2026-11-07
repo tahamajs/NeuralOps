@@ -17,12 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from neuralops.core.exceptions import IntegrationNotImplementedError
-from neuralops.recipe.errors import (
-    E_PARSE_DUP_KEY,
-    E_PARSE_JSON_SYNTAX,
-    E_PARSE_YAML_SYNTAX,
-    RecipeParseError,
-)
+from neuralops.recipe.errors import E_PARSE_DUP_KEY, E_PARSE_JSON_SYNTAX, E_PARSE_YAML_SYNTAX, RecipeParseError
 from neuralops.recipe.schema import Recipe
 from neuralops.recipe.versioning import check_language_version
 
@@ -31,16 +26,12 @@ def _json_check_dup_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     res: dict[str, Any] = {}
     for k, v in pairs:
         if k in res:
-            raise RecipeParseError(
-                f"Duplicate key '{k}' detected in JSON payload", E_PARSE_DUP_KEY, k
-            )
+            raise RecipeParseError(f"Duplicate key '{k}' detected in JSON payload", E_PARSE_DUP_KEY, k)
         res[k] = v
     return res
 
 
-def _format_syntax_error(
-    raw_text: str, line: Optional[int], col: Optional[int], message: str
-) -> str:
+def _format_syntax_error(raw_text: str, line: Optional[int], col: Optional[int], message: str) -> str:
     """Formats a user-friendly error frame with line and column pointers."""
     if line is None:
         return message
@@ -75,13 +66,9 @@ def loads_recipe(text: str, format: Optional[str] = None) -> Recipe:
             raise
         except json.JSONDecodeError as exc:
             msg = _format_syntax_error(stripped, exc.lineno, exc.colno, exc.msg)
-            raise RecipeParseError(
-                f"Failed to parse recipe JSON:{msg}", E_PARSE_JSON_SYNTAX
-            ) from exc
+            raise RecipeParseError(f"Failed to parse recipe JSON:{msg}", E_PARSE_JSON_SYNTAX) from exc
         except Exception as exc:
-            raise RecipeParseError(
-                f"Failed to parse recipe JSON: {exc}", E_PARSE_JSON_SYNTAX
-            ) from exc
+            raise RecipeParseError(f"Failed to parse recipe JSON: {exc}", E_PARSE_JSON_SYNTAX) from exc
     else:
         try:
             import yaml
@@ -135,13 +122,9 @@ def loads_recipe(text: str, format: Optional[str] = None) -> Recipe:
                 line_no = exc.problem_mark.line + 1
                 col_no = exc.problem_mark.column + 1
             msg = _format_syntax_error(stripped, line_no, col_no, str(exc))
-            raise RecipeParseError(
-                f"Failed to parse recipe YAML:{msg}", E_PARSE_YAML_SYNTAX
-            ) from exc
+            raise RecipeParseError(f"Failed to parse recipe YAML:{msg}", E_PARSE_YAML_SYNTAX) from exc
         except Exception as exc:
-            raise RecipeParseError(
-                f"Failed to parse recipe YAML: {exc}", E_PARSE_YAML_SYNTAX
-            ) from exc
+            raise RecipeParseError(f"Failed to parse recipe YAML: {exc}", E_PARSE_YAML_SYNTAX) from exc
 
     check_language_version(data)
     recipe = Recipe.from_dict(data)

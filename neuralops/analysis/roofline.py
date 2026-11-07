@@ -147,7 +147,9 @@ def get_device_roofline_specs(device: Optional[Union[str, torch.device]] = None)
 def _set_global_fallback(flag: bool) -> None:
     """Recursively set FORCE_PYTORCH_FALLBACK across all loaded neuralops modules."""
     import sys
+
     from neuralops.core.triton_kernels import _types as tt_types
+
     tt_types.FORCE_PYTORCH_FALLBACK = flag
 
     for name, mod in list(sys.modules.items()):
@@ -191,8 +193,20 @@ def estimate_module_flops_and_bytes(
             out_f = sub.out_features
             proj_flops += 2.0 * B * T * in_f * out_f
             found_projections += 1
-        elif sub_cls in ("LoRALinear", "SVDLinear", "FactorizedLinear", "DynamicSVDLinear", "DobiSVDLinearLayer", "ResSVDLinear"):
-            if hasattr(sub, "weight") and sub.weight is not None and hasattr(sub.weight, "shape") and len(sub.weight.shape) == 2:
+        elif sub_cls in (
+            "LoRALinear",
+            "SVDLinear",
+            "FactorizedLinear",
+            "DynamicSVDLinear",
+            "DobiSVDLinearLayer",
+            "ResSVDLinear",
+        ):
+            if (
+                hasattr(sub, "weight")
+                and sub.weight is not None
+                and hasattr(sub.weight, "shape")
+                and len(sub.weight.shape) == 2
+            ):
                 out_f, in_f = sub.weight.shape
                 proj_flops += 2.0 * B * T * in_f * out_f
                 found_projections += 1
@@ -298,24 +312,32 @@ def profile_roofline(
         module_name = module_or_name
         if "compose(" in module_name or "proj=" in module_name:
             from neuralops.core.composable import ComposableAttention
+
             module = ComposableAttention(embed_dim=embed_dim, num_heads=num_heads, **module_kwargs)
         else:
             from neuralops.core.registry import ATTENTION_REGISTRY
+
             cls = ATTENTION_REGISTRY.get(module_name)
             if cls is not None:
                 try:
                     module = cls(embed_dim=embed_dim, num_heads=num_heads, **module_kwargs)
                 except Exception as exc1:
-                    logger.debug("Failed initializing %s with embed_dim/num_heads: %s; trying BertConfig", module_name, exc1)
+                    logger.debug(
+                        "Failed initializing %s with embed_dim/num_heads: %s; trying BertConfig", module_name, exc1
+                    )
                     try:
                         from transformers import BertConfig
+
                         cfg = BertConfig(hidden_size=embed_dim, num_attention_heads=num_heads)
                         module = cls(config=cfg, **module_kwargs)
                     except Exception as exc2:
-                        logger.debug("Failed initializing %s with BertConfig: %s; trying kwargs only", module_name, exc2)
+                        logger.debug(
+                            "Failed initializing %s with BertConfig: %s; trying kwargs only", module_name, exc2
+                        )
                         module = cls(**module_kwargs)
             else:
                 from neuralops.core.composable import ComposableAttention
+
                 module = ComposableAttention(embed_dim=embed_dim, num_heads=num_heads)
     else:
         module = module_or_name
@@ -376,6 +398,7 @@ def profile_roofline(
         _saved_fla_chunk = None
         try:
             import sys
+
             _fla_ops = sys.modules.get("fla.ops")
             if _fla_ops is not None and hasattr(_fla_ops, "chunk_gdn"):
                 _saved_fla_chunk = _fla_ops.chunk_gdn
@@ -412,6 +435,7 @@ def profile_roofline(
             if _saved_fla_chunk is not None:
                 try:
                     import sys
+
                     _fla_ops = sys.modules.get("fla.ops")
                     if _fla_ops is not None:
                         _fla_ops.chunk_gdn = _saved_fla_chunk
@@ -480,9 +504,14 @@ def profile_roofline(
     if log_to_ledger:
         try:
             from neuralops.analysis.results_ledger import log_experiment_result
+
             log_experiment_result(
                 module_name=module_name,
-                category="triton_kernel" if any(k in module_name.lower() for k in ("triton", "kernel", "scan")) else "attention",
+                category=(
+                    "triton_kernel"
+                    if any(k in module_name.lower() for k in ("triton", "kernel", "scan"))
+                    else "attention"
+                ),
                 family="hardware-roofline",
                 generation_method={
                     "algorithm": "Hardware Roofline Dual-Path CUDA Event Profiler",
@@ -524,19 +553,33 @@ def render_roofline_terminal(report: RooflineReport) -> str:
     lines.append("=" * w)
     lines.append(f"  Module:          {report.module_name:<28} Precision:   {report.precision}")
     lines.append(f"  Device:          {report.device_name} ({report.sm_version})")
-    lines.append(f"  Input Shape:     B={report.batch_size}, T={report.seq_len}, D={report.embed_dim}, H={report.num_heads} (head_dim={report.head_dim})")
+    lines.append(
+        f"  Input Shape:     B={report.batch_size}, T={report.seq_len}, D={report.embed_dim}, H={report.num_heads} (head_dim={report.head_dim})"
+    )
     lines.append("-" * w)
-    lines.append(f"  Peak Compute:    {report.peak_tflops:>8.1f} TFLOPS          Peak Bandwidth: {report.peak_bandwidth_gb_s:>8.1f} GB/s")
-    lines.append(f"  Hardware Ridge:  {report.ridge_point:>8.2f} FLOPs/Byte      Bottleneck:     {report.bottleneck_regime}")
+    lines.append(
+        f"  Peak Compute:    {report.peak_tflops:>8.1f} TFLOPS          Peak Bandwidth: {report.peak_bandwidth_gb_s:>8.1f} GB/s"
+    )
+    lines.append(
+        f"  Hardware Ridge:  {report.ridge_point:>8.2f} FLOPs/Byte      Bottleneck:     {report.bottleneck_regime}"
+    )
     lines.append("-" * w)
     lines.append(f"  Total Work:      {report.total_flops / 1e9:>8.2f} GFLOPs")
-    lines.append(f"  HBM Naive:       {report.hbm_bytes_naive / 1e6:>8.2f} MB (AI: {report.arithmetic_intensity_naive:.2f} FLOPs/B)")
-    lines.append(f"  HBM Fused:       {report.hbm_bytes_fused / 1e6:>8.2f} MB (AI: {report.arithmetic_intensity_fused:.2f} FLOPs/B)")
+    lines.append(
+        f"  HBM Naive:       {report.hbm_bytes_naive / 1e6:>8.2f} MB (AI: {report.arithmetic_intensity_naive:.2f} FLOPs/B)"
+    )
+    lines.append(
+        f"  HBM Fused:       {report.hbm_bytes_fused / 1e6:>8.2f} MB (AI: {report.arithmetic_intensity_fused:.2f} FLOPs/B)"
+    )
     lines.append(f"  SRAM Traffic Saved by Triton Fusion: {report.sram_bytes_saved_mb:.2f} MB")
-    py_tflops = (report.total_flops / (max(1e-5, report.latency_pytorch_ms / 1000.0) * 1e12))
-    py_bw = (report.hbm_bytes_naive / (max(1e-5, report.latency_pytorch_ms / 1000.0) * 1e9))
-    lines.append(f"  Latency (PyTorch Native): {report.latency_pytorch_ms:>8.3f} ms  -->  Achieved [P]: {py_tflops:>6.2f} TFLOPS ({py_bw:>6.1f} GB/s)")
-    lines.append(f"  Latency (NeuralOps Triton):{report.latency_triton_ms:>8.3f} ms  -->  Achieved [T]: {report.achieved_tflops:>6.2f} TFLOPS ({report.achieved_bandwidth_gb_s:>6.1f} GB/s)")
+    py_tflops = report.total_flops / (max(1e-5, report.latency_pytorch_ms / 1000.0) * 1e12)
+    py_bw = report.hbm_bytes_naive / (max(1e-5, report.latency_pytorch_ms / 1000.0) * 1e9)
+    lines.append(
+        f"  Latency (PyTorch Native): {report.latency_pytorch_ms:>8.3f} ms  -->  Achieved [P]: {py_tflops:>6.2f} TFLOPS ({py_bw:>6.1f} GB/s)"
+    )
+    lines.append(
+        f"  Latency (NeuralOps Triton):{report.latency_triton_ms:>8.3f} ms  -->  Achieved [T]: {report.achieved_tflops:>6.2f} TFLOPS ({report.achieved_bandwidth_gb_s:>6.1f} GB/s)"
+    )
     lines.append(f"  🚀 EMPIRICAL SPEEDUP:      {report.speedup_x:>8.2f}x (Hardware Efficiency Gain)")
     lines.append("=" * w)
 
@@ -569,7 +612,7 @@ def render_roofline_terminal(report: RooflineReport) -> str:
 
     for c in range(plot_cols):
         l_ai = min_log_ai + (c / (plot_cols - 1)) * (max_log_ai - min_log_ai)
-        ai_at_col = 10.0 ** l_ai
+        ai_at_col = 10.0**l_ai
         attainable_p = min(report.peak_tflops, (ai_at_col * report.peak_bandwidth_gb_s) / 1000.0)
         r = _perf_to_row(attainable_p)
         if c >= ridge_col:
@@ -591,7 +634,9 @@ def render_roofline_terminal(report: RooflineReport) -> str:
         grid[t_row][t_col] = "T"
 
     lines.append("  LOG-LOG ROOFLINE HARDWARE CHARACTERISTIC CURVE:")
-    lines.append(f"  TFLOPS (Peak: {report.peak_tflops:.1f} TFLOPS │ Ridge: {report.ridge_point:.1f} FLOPs/B │ Slope: {report.peak_bandwidth_gb_s:.1f} GB/s)")
+    lines.append(
+        f"  TFLOPS (Peak: {report.peak_tflops:.1f} TFLOPS │ Ridge: {report.ridge_point:.1f} FLOPs/B │ Slope: {report.peak_bandwidth_gb_s:.1f} GB/s)"
+    )
     lines.append("    ^")
     for r_idx, row_chars in enumerate(grid):
         if r_idx == peak_row:

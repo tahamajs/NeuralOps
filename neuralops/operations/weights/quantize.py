@@ -82,6 +82,4 @@ class WeightsQuantizeOperation(Operation):
             }
             return compressed_model, evidence
 
-        raise IntegrationNotImplementedError(
-            f"weights.quantize method '{method}' (bits={bits}) is not supported."
-        )
+        raise IntegrationNotImplementedError(f"weights.quantize method '{method}' (bits={bits}) is not supported.")

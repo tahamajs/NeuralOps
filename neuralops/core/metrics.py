@@ -65,6 +65,7 @@ def compute_dataset_metrics(
 
     try:
         from scipy.stats import pearsonr, spearmanr
+
         from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
     except ImportError as e:
         logger.warning("sklearn/scipy not available: %s", e)
@@ -85,9 +86,7 @@ def compute_dataset_metrics(
             labels_set = set(all_labels)
             avg = "binary" if len(labels_set) <= 2 else "macro"
             metrics["accuracy_pct"] = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
-            metrics["f1_score"] = round(
-                float(f1_score(all_labels, all_preds, average=avg, zero_division=0)), 4
-            )
+            metrics["f1_score"] = round(float(f1_score(all_labels, all_preds, average=avg, zero_division=0)), 4)
 
         elif metric_type == "perplexity":
             if mean_loss > 0:

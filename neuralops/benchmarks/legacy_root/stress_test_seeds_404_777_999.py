@@ -10,11 +10,12 @@
 Delegates directly to canonical neuralops.benchmarks.stress_test_seeds_404_777_999.
 """
 
-
 import warnings
+
 warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
 
 import sys
+
 from neuralops.benchmarks.stress_test_seeds_404_777_999 import main
 
 if __name__ == "__main__":

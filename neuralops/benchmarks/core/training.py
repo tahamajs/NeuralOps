@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
@@ -49,9 +50,11 @@ def finetune_classification(
     opt_lower = (optimizer_name or "adamw").lower()
     if opt_lower == "muon":
         from neuralops.trainer.optimizers.muon import create_muon_adamw_optimizer
+
         optimizer = create_muon_adamw_optimizer(model, lr_muon=lr, lr_adamw=lr)
     elif opt_lower in ("stiefel", "riemannian"):
         from neuralops.trainer.optimizers.factory import create_riemannian_stiefel
+
         optimizer = create_riemannian_stiefel(model, lr=lr)
     else:
         classifier_and_adapter_params = []
@@ -62,11 +65,29 @@ def finetune_classification(
             if not p.requires_grad:
                 continue
             name_lower = name.lower()
-            if any(k in name_lower for k in (
-                "classifier", "head", "score", "lora", "gate", "alpha", "beta",
-                "delta", "ssm", "conv1d", "dt_proj", "x_proj", "a_log", "d_bwd",
-                "output_scale", "out_proj", "in_proj", "kernel"
-            )):
+            if any(
+                k in name_lower
+                for k in (
+                    "classifier",
+                    "head",
+                    "score",
+                    "lora",
+                    "gate",
+                    "alpha",
+                    "beta",
+                    "delta",
+                    "ssm",
+                    "conv1d",
+                    "dt_proj",
+                    "x_proj",
+                    "a_log",
+                    "d_bwd",
+                    "output_scale",
+                    "out_proj",
+                    "in_proj",
+                    "kernel",
+                )
+            ):
                 classifier_and_adapter_params.append(p)
             else:
                 backbone_params.append(p)
@@ -77,7 +98,9 @@ def finetune_classification(
         if backbone_params:
             param_groups.append({"params": backbone_params, "lr": lr, "weight_decay": 0.01})
         if not param_groups:
-            param_groups = [{"params": [p for p in model.parameters() if p.requires_grad], "lr": lr, "weight_decay": 0.01}]
+            param_groups = [
+                {"params": [p for p in model.parameters() if p.requires_grad], "lr": lr, "weight_decay": 0.01}
+            ]
 
         trainable_params = [p for group in param_groups for p in group["params"]]
         optimizer = AdamW(param_groups, foreach=False)
@@ -86,11 +109,16 @@ def finetune_classification(
     if dist_backend in ("ddp", "fsdp", "deepspeed"):
         try:
             from accelerate import Accelerator
+
             accelerator = Accelerator(mixed_precision=mixed_precision if mixed_precision in ("fp16", "bf16") else "no")
             model, optimizer, train_loader = accelerator.prepare(model, optimizer, train_loader)
             device = accelerator.device
         except Exception as e:
-            LOG.warning("Distributed backend '%s' requested but Accelerate initialization failed: %s. Using local device.", dist_backend, e)
+            LOG.warning(
+                "Distributed backend '%s' requested but Accelerate initialization failed: %s. Using local device.",
+                dist_backend,
+                e,
+            )
 
     use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
     mp_type = (mixed_precision or "no").lower()
@@ -98,12 +126,13 @@ def finetune_classification(
     amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
     scaler = torch.amp.GradScaler("cuda", enabled=(mp_type == "fp16" and use_cuda))
 
-
     step = 0
     epoch_losses = []
     import sys
+
     try:
         from tqdm import tqdm
+
         has_tqdm = True
     except ImportError:
         has_tqdm = False
@@ -111,12 +140,16 @@ def finetune_classification(
     for epoch in range(epochs):
         running_loss = 0.0
         count = 0
-        pbar = tqdm(
-            train_loader,
-            desc=f"Epoch {epoch + 1}/{epochs}",
-            file=sys.stderr,
-            leave=False,
-        ) if has_tqdm else train_loader
+        pbar = (
+            tqdm(
+                train_loader,
+                desc=f"Epoch {epoch + 1}/{epochs}",
+                file=sys.stderr,
+                leave=False,
+            )
+            if has_tqdm
+            else train_loader
+        )
 
         for batch in pbar:
             input_ids = batch[0].to(device)
@@ -158,7 +191,9 @@ def finetune_classification(
 
             if tracker is not None and step % log_interval == 0:
                 try:
-                    tracker.log_metrics({"train/loss": cur_loss, "train/epoch": epoch + (count / max(len(train_loader), 1))}, step=step)
+                    tracker.log_metrics(
+                        {"train/loss": cur_loss, "train/epoch": epoch + (count / max(len(train_loader), 1))}, step=step
+                    )
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
                     pass

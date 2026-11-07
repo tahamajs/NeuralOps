@@ -12,7 +12,6 @@ Fuses orthogonal rotation transformations, PCA-based subspace slicing, and unifo
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,8 +22,9 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
-from neuralops.core.pruning_utils import get_calibration_tensors, adaptive_max_error
+from neuralops.core.pruning_utils import adaptive_max_error, get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -115,9 +115,7 @@ class RotationalSliceGPTINT4Linear(nn.Module):
         self.rel_error: float = 0.0
 
         if bias is not None:
-            self.bias = nn.Parameter(
-                bias.clone().to(device=Q_P_r.device, dtype=Q_P_r.dtype), requires_grad=False
-            )
+            self.bias = nn.Parameter(bias.clone().to(device=Q_P_r.device, dtype=Q_P_r.dtype), requires_grad=False)
         else:
             self.register_parameter("bias", None)
 
@@ -147,6 +145,7 @@ class RotationalSliceGPTINT4Linear(nn.Module):
         if self.W_centroids.ndim == 1 and x.is_cuda and self.W_centroids.shape[0] == 16:
             try:
                 from neuralops.ops.triton.low_rank import fused_int4_lut_dequant_matmul_triton
+
                 orig_shape = x_proj.shape
                 x_2d = x_proj.reshape(-1, orig_shape[-1])
                 y_2d = fused_int4_lut_dequant_matmul_triton(
@@ -216,9 +215,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             adaptive_max_error(r_ratio, 768, 768) if r_ratio is not None else 0.85,
         )
         fallback_to_original = fb if fb is not None else _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-        target_attention_only = bool(
-            target_attention_only or _cfg_get(cfg, "target_attention_only", False)
-        )
+        target_attention_only = bool(target_attention_only or _cfg_get(cfg, "target_attention_only", False))
 
         self.rank = int(rk) if rk is not None else None
         self.r_ratio = float(slice_ratio if slice_ratio is not None else r_ratio)
@@ -244,9 +241,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             torch.device(device)
             if device is not None
             else (
-                next(target_model.parameters(), torch.tensor(0.0)).device
-                if model is not None
-                else torch.device("cpu")
+                next(target_model.parameters(), torch.tensor(0.0)).device if model is not None else torch.device("cpu")
             )
         )
         self.layer_errors: dict[str, float] = {}
@@ -303,9 +298,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
 
@@ -373,9 +366,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         W_sliced = W_tilde @ P_r
         X_sliced = P_r.T @ X_tilde
 
-        H = 2.0 * (X_sliced @ X_sliced.T) / max(X_sliced.shape[1], 1) + self.lambda_reg * torch.eye(
-            r, device=device
-        )
+        H = 2.0 * (X_sliced @ X_sliced.T) / max(X_sliced.shape[1], 1) + self.lambda_reg * torch.eye(r, device=device)
         try:
             H_inv = torch.linalg.inv(H)
         except Exception:
@@ -431,12 +422,15 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         if model is not None and isinstance(model, nn.Module):
             self.model = model
             self._original_params = self._count_params(self.model)
-        elif (
-            (model is not None and isinstance(model, torch.Tensor))
-            or (len(args) >= 1 and isinstance(args[0], torch.Tensor))
+        elif (model is not None and isinstance(model, torch.Tensor)) or (
+            len(args) >= 1 and isinstance(args[0], torch.Tensor)
         ):
             W = model if isinstance(model, torch.Tensor) else args[0]
-            X = args[0] if (len(args) >= 1 and isinstance(model, torch.Tensor)) else (args[1] if len(args) >= 2 else None)
+            X = (
+                args[0]
+                if (len(args) >= 1 and isinstance(model, torch.Tensor))
+                else (args[1] if len(args) >= 2 else None)
+            )
             return self.compress_matrix(W, X)
         elif len(args) >= 1 and isinstance(args[0], nn.Module):
             self.model = args[0]
@@ -470,13 +464,23 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                 act_flat = act.reshape(-1, act.shape[-1]).float()
                 if act_flat.shape[-1] == d_in:
                     mean_act = act_flat.mean(dim=0, keepdim=True).to(device=device)
-                    gen_x = torch.Generator(device=device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu").manual_seed(self.seed + d_in)
+                    gen_x = torch.Generator(
+                        device=(
+                            device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu"
+                        )
+                    ).manual_seed(self.seed + d_in)
                     X = mean_act.T + 0.01 * torch.randn(d_in, 32, device=device, generator=gen_x)
                 else:
-                    gen_x = torch.Generator(device=device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu").manual_seed(self.seed + d_in)
+                    gen_x = torch.Generator(
+                        device=(
+                            device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu"
+                        )
+                    ).manual_seed(self.seed + d_in)
                     X = torch.randn(d_in, 32, device=device, generator=gen_x)
             else:
-                gen_x = torch.Generator(device=device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu").manual_seed(self.seed + d_in)
+                gen_x = torch.Generator(
+                    device=device if (isinstance(device, torch.device) and device.type in ("cpu", "cuda")) else "cpu"
+                ).manual_seed(self.seed + d_in)
                 X = torch.randn(d_in, 32, device=device, generator=gen_x)
 
             try:
@@ -581,9 +585,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
                 "orig_storage_bytes": self._orig_bytes,
                 "comp_storage_bytes": self._comp_bytes,
                 "storage_compression_ratio": round(storage_ratio, 3),
-                "storage_reduction_pct": round(
-                    100.0 * (1.0 - self._comp_bytes / max(1, self._orig_bytes)), 2
-                ),
+                "storage_reduction_pct": round(100.0 * (1.0 - self._comp_bytes / max(1, self._orig_bytes)), 2),
                 "method": "rotational_slicegpt_int4",
             }
         )

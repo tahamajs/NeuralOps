@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -35,9 +36,7 @@ class LearnableAttentionSink(nn.Module):
         self.sink_k = nn.Parameter(torch.randn(1, num_heads, num_sink_tokens, head_dim) * 0.02)
         self.sink_v = nn.Parameter(torch.zeros(1, num_heads, num_sink_tokens, head_dim))
 
-    def prepend_sinks(
-        self, k: torch.Tensor, v: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def prepend_sinks(self, k: torch.Tensor, v: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         B = k.size(0)
         sk = self.sink_k.expand(B, -1, -1, -1)
         sv = self.sink_v.expand(B, -1, -1, -1)
@@ -76,7 +75,7 @@ class SpectralJacobianRegularizer(nn.Module):
         sigma = v.norm(p=2)
 
         violation = F.relu(sigma - self.max_sigma)
-        return self.weight * (violation ** 2)
+        return self.weight * (violation**2)
 
 
 __all__ = [

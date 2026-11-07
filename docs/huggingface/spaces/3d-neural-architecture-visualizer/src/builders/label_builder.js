@@ -207,4 +207,3 @@ export function createLayerLabelSpriteWithDepth(text, layerIdx, totalLayers, wor
     if (visualObjects) visualObjects.push(sprite);
     return sprite;
 }
-

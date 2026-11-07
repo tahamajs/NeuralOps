@@ -13,11 +13,6 @@ Hierarchical intra-block and inter-block attention for efficient processing of l
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -27,9 +22,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -119,16 +115,14 @@ class BlockTransformerHIBA(BaseAttention):
 
         self.block_size: int = max(8, int(block_size))
         self.top_k_inter: int = max(1, int(top_k_inter))
-        self.rectification_interval: int = max(1, int(rectification_interval if rectification_interval is not None else 4))
+        self.rectification_interval: int = max(
+            1, int(rectification_interval if rectification_interval is not None else 4)
+        )
 
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
+            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
         )
         self.layer_idx: int = int(resolved_layer_id)
 
@@ -151,13 +145,20 @@ class BlockTransformerHIBA(BaseAttention):
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = False
         if config is not None:
-            is_dec = bool(
-                getattr(config, "is_decoder", False)
-                or getattr(config, "is_causal", False)
-            )
+            is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
         _dec_prefixes = (
-            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
         )
         if any(model_type.startswith(p) for p in _dec_prefixes):
             is_dec = True
@@ -224,39 +225,51 @@ class BlockTransformerHIBA(BaseAttention):
     @property
     def q_proj(self):
         return self.W_q
+
     @property
     def k_proj(self):
         return self.W_k
+
     @property
     def v_proj(self):
         return self.W_v
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def q_lin(self):
         return self.W_q
+
     @property
     def k_lin(self):
         return self.W_k
+
     @property
     def v_lin(self):
         return self.W_v
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def query(self):
         return self.W_q
+
     @property
     def key(self):
         return self.W_k
+
     @property
     def value(self):
         return self.W_v
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
@@ -284,10 +297,7 @@ class BlockTransformerHIBA(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -306,10 +316,7 @@ class BlockTransformerHIBA(BaseAttention):
 
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
-            if (
-                hasattr(c_attn_mod, "merge")
-                and not getattr(c_attn_mod, "merged", False)
-            ):
+            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -371,10 +378,7 @@ class BlockTransformerHIBA(BaseAttention):
                         mod.weight.data.clone(),
                         mod.bias.data.clone() if mod.bias is not None else None,
                     )
-            if (
-                hasattr(pretrained_attn, "output")
-                and hasattr(pretrained_attn.output, "dense")
-            ):
+            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
                 out_mod = pretrained_attn.output.dense
                 extracted["o"] = (
                     out_mod.weight.data.clone(),
@@ -399,11 +403,7 @@ class BlockTransformerHIBA(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -416,11 +416,7 @@ class BlockTransformerHIBA(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning(
                 "BlockTransformerHIBA copy_weights: missing %s from %s",
@@ -448,10 +444,7 @@ class BlockTransformerHIBA(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
 
                 out_d = min(target_mod.weight.size(0), w.size(0))
@@ -568,6 +561,7 @@ class BlockTransformerHIBA(BaseAttention):
         if q_blk.is_cuda and k_blk.is_cuda:
             try:
                 from neuralops.ops.triton.block_sparse import block_sparse_triton
+
                 intra_scores = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * scale
             except Exception:
                 intra_scores = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * scale
@@ -575,12 +569,8 @@ class BlockTransformerHIBA(BaseAttention):
             intra_scores = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * scale
 
         if is_causal:
-            causal_in_blk = torch.tril(
-                torch.ones(bs, bs, device=q.device, dtype=torch.bool)
-            )
-            intra_scores = intra_scores.masked_fill(
-                ~causal_in_blk.view(1, 1, 1, bs, bs), -1e4
-            )
+            causal_in_blk = torch.tril(torch.ones(bs, bs, device=q.device, dtype=torch.bool))
+            intra_scores = intra_scores.masked_fill(~causal_in_blk.view(1, 1, 1, bs, bs), -1e4)
 
         if valid_blk is not None and not valid_blk.all():
             pad_k_intra = ~valid_blk.unsqueeze(1).unsqueeze(-2)
@@ -625,9 +615,7 @@ class BlockTransformerHIBA(BaseAttention):
                     valid_nb = None
 
             if k_nb is None:
-                inter_scores_list.append(
-                    intra_scores.new_zeros(B, H, bs, 0)
-                )
+                inter_scores_list.append(intra_scores.new_zeros(B, H, bs, 0))
                 inter_v_list.append(v_blk.new_zeros(B, H, bs, 0, D))
                 continue
 
@@ -685,9 +673,7 @@ class BlockTransformerHIBA(BaseAttention):
 
         scores_f = all_scores.float()
         m = scores_f.amax(dim=-1, keepdim=True)
-        m_safe = torch.where(
-            m < -1e3, torch.zeros_like(m), m
-        )
+        m_safe = torch.where(m < -1e3, torch.zeros_like(m), m)
         exp_scores = torch.exp((scores_f - m_safe).clamp(max=0.0))
         denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-9)
         probs = (exp_scores / denom).to(all_scores.dtype)
@@ -698,26 +684,18 @@ class BlockTransformerHIBA(BaseAttention):
             hm = head_mask
             if hm.dim() == 1:
                 if hm.shape[0] != self.num_heads:
-                    raise ValueError(
-                        f"head_mask 1D has {hm.shape[0]} heads, expected {self.num_heads}"
-                    )
+                    raise ValueError(f"head_mask 1D has {hm.shape[0]} heads, expected {self.num_heads}")
                 hm = hm.view(1, -1, 1, 1)
             elif hm.dim() == 2:
                 if hm.shape[-1] != self.num_heads:
-                    raise ValueError(
-                        f"head_mask 2D last dim = {hm.shape[-1]}, expected {self.num_heads}"
-                    )
+                    raise ValueError(f"head_mask 2D last dim = {hm.shape[-1]}, expected {self.num_heads}")
                 hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
             elif hm.dim() == 3:
                 if hm.shape[1] != self.num_heads:
-                    raise ValueError(
-                        f"head_mask 3D dim 1 = {hm.shape[1]}, expected {self.num_heads}"
-                    )
+                    raise ValueError(f"head_mask 3D dim 1 = {hm.shape[1]}, expected {self.num_heads}")
                 hm = hm.unsqueeze(-1)
             head_mask = hm
-        out_blocks = torch.matmul(
-            probs.unsqueeze(-2), all_v
-        ).squeeze(-2)
+        out_blocks = torch.matmul(probs.unsqueeze(-2), all_v).squeeze(-2)
 
         out = out_blocks.reshape(B, H, L_pad, D)[:, :, :L, :]
         return out
@@ -745,37 +723,18 @@ class BlockTransformerHIBA(BaseAttention):
         kv_states = encoder_hidden_states if is_cross_attention else hidden_states
         S = kv_states.shape[1]
 
-        q = (
-            self.W_q(hidden_states)
-            .view(B, L, H, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.W_k(kv_states)
-            .view(B, S, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.W_v(kv_states)
-            .view(B, S, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.W_q(hidden_states).view(B, L, H, self.head_dim).transpose(1, 2).contiguous()
+        k = self.W_k(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.W_v(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         pos_emb = kwargs.get("position_embeddings")
         cos = kwargs.get(
             "cos",
-            pos_emb[0]
-            if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2
-            else None,
+            pos_emb[0] if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2 else None,
         )
         sin = kwargs.get(
             "sin",
-            pos_emb[1]
-            if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2
-            else None,
+            pos_emb[1] if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2 else None,
         )
 
         if cos is not None and sin is not None:
@@ -784,11 +743,7 @@ class BlockTransformerHIBA(BaseAttention):
             try:
                 position_ids = kwargs.get("position_ids")
                 if position_ids is None:
-                    position_ids = (
-                        torch.arange(S, device=hidden_states.device)
-                        .unsqueeze(0)
-                        .expand(B, -1)
-                    )
+                    position_ids = torch.arange(S, device=hidden_states.device).unsqueeze(0).expand(B, -1)
                 cos_r, sin_r = self.rotary_emb(k, seq_len=S)
                 q, k = apply_rotary_pos_emb(q, k, cos_r, sin_r, position_ids)
             except Exception as e:
@@ -829,7 +784,7 @@ class BlockTransformerHIBA(BaseAttention):
                 try:
                     attn_bias = None
                     if valid_mask is not None and not valid_mask.all():
-                        causal_mask = torch.ones((L, S), device=q.device, dtype=torch.bool).tril(diagonal=S-L)
+                        causal_mask = torch.ones((L, S), device=q.device, dtype=torch.bool).tril(diagonal=S - L)
                         attn_bias = torch.zeros((1, 1, L, S), device=q.device, dtype=q.dtype)
                         attn_bias = attn_bias.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
                     _qs = maybe_half(q)
@@ -845,12 +800,7 @@ class BlockTransformerHIBA(BaseAttention):
                         dropout_p=self.dropout.p if self.training else 0.0,
                     )
 
-                    out = (
-                        _sdpa_out.to(hidden_states.dtype)
-                        .transpose(1, 2)
-                        .contiguous()
-                        .view(B, L, self.all_head_size)
-                    )
+                    out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                     out = torch.nan_to_num(out, nan=0.0)
 
                     if not isinstance(self.out_proj, nn.Identity):
@@ -860,16 +810,21 @@ class BlockTransformerHIBA(BaseAttention):
 
                 except (RuntimeError, NotImplementedError) as e:
                     from neuralops.utils.logging_config import warn_once
+
                     warn_once("hiba_dense_sdpa", "HIBA dense SDPA failed, using manual fallback: %s", e)
 
             scale = 1.0 / math.sqrt(self.head_dim)
             scores = torch.matmul(q, k.transpose(-2, -1)) * scale
             scores = scores.float()
             if is_causal_dense:
-                causal_mask = torch.triu(
-                    torch.full((L, S), float("-inf"), device=scores.device),
-                    diagonal=1 + (S - L),
-                ).unsqueeze(0).unsqueeze(0)
+                causal_mask = (
+                    torch.triu(
+                        torch.full((L, S), float("-inf"), device=scores.device),
+                        diagonal=1 + (S - L),
+                    )
+                    .unsqueeze(0)
+                    .unsqueeze(0)
+                )
                 scores = scores + causal_mask
 
             if valid_mask is not None and not valid_mask.all():
@@ -888,9 +843,7 @@ class BlockTransformerHIBA(BaseAttention):
             return_attn = probs if output_attentions else None
 
         else:
-            out = self._hierarchical_attention(
-                q, k, v, valid_mask, head_mask, is_cross_attention
-            )
+            out = self._hierarchical_attention(q, k, v, valid_mask, head_mask, is_cross_attention)
             return_attn = None
 
         out = out.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
@@ -905,6 +858,7 @@ class BlockTransformerHIBA(BaseAttention):
                 final_out = out
 
         return final_out.to(hidden_states.dtype), return_attn
+
 
 def inject_block_transformer_hiba(
     layer: Any = None,
@@ -927,11 +881,7 @@ def inject_block_transformer_hiba(
     if target is None:
         return None
 
-    cfg = (
-        model_config
-        if model_config is not None
-        else getattr(target, "config", None)
-    )
+    cfg = model_config if model_config is not None else getattr(target, "config", None)
 
     layer_list = None
     for path in (
@@ -991,10 +941,7 @@ def inject_block_transformer_hiba(
         )
         return None
 
-    if (
-        isinstance(src_attn, BlockTransformerHIBA)
-        or "BlockTransformerHIBA" in src_attn.__class__.__name__
-    ):
+    if isinstance(src_attn, BlockTransformerHIBA) or "BlockTransformerHIBA" in src_attn.__class__.__name__:
         return None
 
     hidden_size = (
@@ -1002,8 +949,7 @@ def inject_block_transformer_hiba(
         or getattr(src_attn, "embed_dim", None)
         or (
             src_attn.q_proj.in_features
-            if hasattr(src_attn, "q_proj")
-            and hasattr(src_attn.q_proj, "in_features")
+            if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
             else None
         )
         or (getattr(target, "in_features", None) if target else None)

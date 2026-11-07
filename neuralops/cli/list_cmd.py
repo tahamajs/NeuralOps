@@ -39,9 +39,7 @@ try:
 except (ImportError, AttributeError):
     __version__ = "1.4.3"
 
-CATALOG_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "benchmarks", "static_catalog.json"
-)
+CATALOG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "benchmarks", "static_catalog.json")
 
 
 def _load_catalog() -> Dict[str, List[Dict[str, Any]]]:
@@ -222,18 +220,20 @@ def cmd_list(args: Any) -> int:
             continue
         if backend_filter == "triton" and triton_supp != "✓":
             continue
-        attn_records.append({
-            "name": name,
-            "category": "attention",
-            "family": fam,
-            "authors": authors,
-            "causal": item.get("supports_causal", True),
-            "gqa": item.get("supports_gqa", False),
-            "rope": item.get("supports_rope", False),
-            "cuda": cuda_supp,
-            "triton": triton_supp,
-            "pytorch": "✓",
-        })
+        attn_records.append(
+            {
+                "name": name,
+                "category": "attention",
+                "family": fam,
+                "authors": authors,
+                "causal": item.get("supports_causal", True),
+                "gqa": item.get("supports_gqa", False),
+                "rope": item.get("supports_rope", False),
+                "cuda": cuda_supp,
+                "triton": triton_supp,
+                "pytorch": "✓",
+            }
+        )
 
     comp_records: List[Dict[str, Any]] = []
     for item in raw_compressors:
@@ -245,18 +245,20 @@ def cmd_list(args: Any) -> int:
             continue
         if backend_filter == "triton" and triton_supp != "✓":
             continue
-        comp_records.append({
-            "name": name,
-            "category": "compressor",
-            "family": fam,
-            "authors": authors,
-            "causal": item.get("supports_causal", True),
-            "gqa": False,
-            "rope": False,
-            "cuda": cuda_supp,
-            "triton": triton_supp,
-            "pytorch": "✓",
-        })
+        comp_records.append(
+            {
+                "name": name,
+                "category": "compressor",
+                "family": fam,
+                "authors": authors,
+                "causal": item.get("supports_causal", True),
+                "gqa": False,
+                "rope": False,
+                "cuda": cuda_supp,
+                "triton": triton_supp,
+                "pytorch": "✓",
+            }
+        )
 
     if output_json:
         data: Dict[str, Any] = {

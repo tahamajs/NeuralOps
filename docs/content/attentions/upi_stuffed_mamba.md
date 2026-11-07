@@ -137,21 +137,21 @@ def _upi_mamba_fused_kernel(
 ):
     pid_b = tl.program_id(0)
     pid_d = tl.program_id(1)
-    
+
     alpha_gamma = 1.0 - tl.sigmoid(gamma_val)
     offs_d = pid_d * BLOCK_D + tl.arange(0, BLOCK_D)
     offs_s = tl.arange(0, d_state)
-    
+
     h_state = tl.zeros((BLOCK_D, d_state), dtype=tl.float32)
     a_diag = tl.load(A_ptr + offs_d[:, None] * d_state + offs_s[None, :])
-    
+
     for t in range(L):
         x_t = tl.load(X_ptr + pid_b * stride_xb + t * stride_xl + offs_d)
         dt_t = tl.load(Delta_ptr + pid_b * stride_xb + t * stride_xl + offs_d)
-        
+
         a_bar = alpha_gamma * tl.exp(dt_t[:, None] * a_diag)
         b_bar = dt_t[:, None] * x_t[:, None]
-        
+
         h_state = a_bar * h_state + b_bar
         out_t = tl.sum(h_state, axis=1)
         tl.store(Out_ptr + pid_b * stride_xb + t * stride_xl + offs_d, out_t)
@@ -185,4 +185,3 @@ The empirical evaluation of `upi_stuffed_mamba` across standard sequence lengths
 | **$L = 2048$** | 0.45 ms | 180 MB | $2.50\times$ |
 | **$L = 4096$** | 0.85 ms | 288 MB | $4.20\times$ |
 | **$L = 8192$** | **1.65 ms** | **320 MB** | **7.75x** |
-

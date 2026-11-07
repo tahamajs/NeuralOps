@@ -12,7 +12,6 @@ Employs differentiable singular value gating functions to dynamically prune low-
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -61,9 +61,7 @@ class DobiSVDLinearLayer(nn.Module):
 
         self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
         self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-        self.gate = nn.Parameter(
-            torch.full((self.rank,), fill_value=init_gate_val, dtype=dtype, device=device)
-        )
+        self.gate = nn.Parameter(torch.full((self.rank,), fill_value=init_gate_val, dtype=dtype, device=device))
 
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
@@ -116,6 +114,7 @@ class DobiSVDLinearLayer(nn.Module):
         if getattr(self, "use_triton", True) and x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import triton_fused_lowrank_gated_gemm
+
                 out = triton_fused_lowrank_gated_gemm(x_flat, self.V, self.U, alpha=self.gate, b_drift=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception as e:
@@ -125,10 +124,12 @@ class DobiSVDLinearLayer(nn.Module):
         V_gated = self.V * g
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x_flat, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 out = fused_down_up_gemm_bias_triton(x_flat, V_gated, self.U.t().contiguous(), bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
@@ -273,9 +274,7 @@ class DobiSVDCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention")
-            )
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 return False
 
@@ -307,11 +306,7 @@ class DobiSVDCompressor(BaseCompressor):
 
         in_f = None
         out_f = None
-        if (
-            target_mod.bias is not None
-            and getattr(target_mod.bias, "ndim", 0) == 1
-            and raw_w.ndim == 2
-        ):
+        if target_mod.bias is not None and getattr(target_mod.bias, "ndim", 0) == 1 and raw_w.ndim == 2:
             bias_len = target_mod.bias.shape[0]
             if raw_w.shape[1] == bias_len and raw_w.shape[0] != bias_len:
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -359,6 +354,7 @@ class DobiSVDCompressor(BaseCompressor):
         if self.truncate_activations:
             try:
                 from neuralops.ops.triton.elementwise import fast_hadamard_transform
+
                 W_target = fast_hadamard_transform(W, block_size=min(128, in_f))
             except Exception:
                 W_target = W
@@ -450,11 +446,7 @@ class DobiSVDCompressor(BaseCompressor):
         total_orig_decomp_params = 0
         total_comp_decomp_params = 0
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not target_layers:
             logger.warning("Dobi-SVD: No compressible linear layers found.")
@@ -478,11 +470,7 @@ class DobiSVDCompressor(BaseCompressor):
             cls_name = target_mod.__class__.__name__.lower()
             in_f = None
             out_f = None
-            if (
-                target_mod.bias is not None
-                and getattr(target_mod.bias, "ndim", 0) == 1
-                and raw_w.ndim == 2
-            ):
+            if target_mod.bias is not None and getattr(target_mod.bias, "ndim", 0) == 1 and raw_w.ndim == 2:
                 bias_len = target_mod.bias.shape[0]
                 if raw_w.shape[1] == bias_len and raw_w.shape[0] != bias_len:
                     in_f, out_f = raw_w.shape[0], raw_w.shape[1]
@@ -543,16 +531,11 @@ class DobiSVDCompressor(BaseCompressor):
             comp_params = r * (in_f + out_f) + r
             total_comp_decomp_params += comp_params
 
-        effective_ratio = (
-            total_comp_decomp_params / total_orig_decomp_params
-            if total_orig_decomp_params > 0
-            else 1.0
-        )
+        effective_ratio = total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )

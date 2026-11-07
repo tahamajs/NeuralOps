@@ -20,6 +20,7 @@ import time
 from typing import Any
 
 import torch
+
 from neuralops.benchmarks.registry import register_benchmark
 from neuralops.kernels.cuda import flash_decoding_attention
 
@@ -78,9 +79,7 @@ def benchmark_flash_attn_tflops(
     """
     dev = torch.device(device)
     if dev.type == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError(
-            "CUDA device requested for benchmark_flash_attn_tflops, but CUDA is not available."
-        )
+        raise RuntimeError("CUDA device requested for benchmark_flash_attn_tflops, but CUDA is not available.")
 
     dtype = torch.float16 if dev.type == "cuda" else torch.float32
 
@@ -89,7 +88,7 @@ def benchmark_flash_attn_tflops(
     v = torch.randn(batch, heads, seq_len, dim, device=dev, dtype=dtype, requires_grad=True)
 
     # 4 * B * H * S^2 * D FLOPs for forward attention
-    fwd_flops = 4.0 * batch * heads * (seq_len ** 2) * dim
+    fwd_flops = 4.0 * batch * heads * (seq_len**2) * dim
     # Backward pass performs ~2.5x fwd FLOPs (or 8 * B * H * S^2 * D FLOPs)
     bwd_flops = 2.0 * fwd_flops
     total_flops = fwd_flops + bwd_flops
@@ -193,4 +192,3 @@ def run_benchmark(**kwargs: Any) -> dict[str, Any]:
 
 # Canonical Aliases for Multi-Agent Implementation Plan contract compliance
 CoreModule = benchmark_flash_attn_tflops
-

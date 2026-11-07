@@ -33,28 +33,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.stats import pearsonr, spearmanr
-from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
 from torch.profiler import ProfilerActivity, profile
 
-from neuralops.evaluation.eval_data import (
-    _PREPARED_DATASET_CACHE,
-    build_calibration_loader,
-    get_dataset_batch,
-)
-from neuralops.evaluation.eval_patcher import (
-    apply_module_to_model,
-    get_base_model_cached,
-)
+from neuralops.evaluation.eval_data import _PREPARED_DATASET_CACHE, build_calibration_loader, get_dataset_batch
+from neuralops.evaluation.eval_patcher import apply_module_to_model, get_base_model_cached
 from neuralops.evaluation.eval_types import (
     ACTIVATION_AWARE_MODULES,
-    BenchmarkResult,
     COMPUTE_OPTIMIZERS,
     DEPRECATED_MODULES,
     KV_CACHE_OPTIMIZERS,
     LM_DATASETS,
     MODEL_TOKENIZER_MAPPING,
+    BenchmarkResult,
 )
 from neuralops.evaluation.eval_utils import _extract_logits_and_loss, _filter_batch
+from neuralops.trainer.metrics import accuracy_score, f1_score, matthews_corrcoef
 
 logger = logging.getLogger("EvalEngine")
 
@@ -181,9 +174,7 @@ def _setup_eval_environment(
     family = model_family.lower()
     lm_model_families = {"gpt2", "t5", "qwen", "qwen2", "qwen3.5", "qwen3_5"}
     if is_lm and family not in lm_model_families:
-        raise ValueError(
-            f"Language-model evaluation is not supported for model family '{model_family}'."
-        )
+        raise ValueError(f"Language-model evaluation is not supported for model family '{model_family}'.")
     num_labels = 0 if is_lm else (1 if dataset.lower() == "stsb" else 2)
     mem_phases: dict[str, dict[str, float]] = {}
 
@@ -244,9 +235,7 @@ def _apply_compression_phase(
     calib_used = False
 
     if module_type == "compressor" and module_name in ACTIVATION_AWARE_MODULES:
-        run_log_lines.append(
-            f"[CALIB] Building calibration loader for {module_name} on {dataset}..."
-        )
+        run_log_lines.append(f"[CALIB] Building calibration loader for {module_name} on {dataset}...")
         calib_loader, calib_tok, calib_source = build_calibration_loader(
             dataset=dataset,
             model_family=model_family,
@@ -256,15 +245,11 @@ def _apply_compression_phase(
             batch_size=8,
         )
         if calib_loader is None:
-            run_log_lines.append(
-                f"[CALIB] Warning: Failed to build calibration loader for {module_name}"
-            )
+            run_log_lines.append(f"[CALIB] Warning: Failed to build calibration loader for {module_name}")
             logger.warning("[CALIB] No calibration loader built for %s on %s.", module_name, dataset)
         else:
             calib_used = True
-            run_log_lines.append(
-                f"[CALIB] Successfully built calibration loader from {calib_source} (500 samples)"
-            )
+            run_log_lines.append(f"[CALIB] Successfully built calibration loader from {calib_source} (500 samples)")
 
     t_calib = time.time() - t_calib_0
     if is_cuda:
@@ -275,9 +260,7 @@ def _apply_compression_phase(
         }
 
     t_comp_0 = time.time()
-    run_log_lines.append(
-        f"[INJECT] Injecting module '{module_name}' (type={module_type}, rank={rank})"
-    )
+    run_log_lines.append(f"[INJECT] Injecting module '{module_name}' (type={module_type}, rank={rank})")
     model, comp_ratio = apply_module_to_model(
         model=model,
         module_name=module_name,
@@ -502,9 +485,7 @@ def _evaluate_model_accuracy(
                 allow_synthetic=allow_synthetic,
             )
             data_source = (
-                "prepared_dataset"
-                if dataset_cache_key in _PREPARED_DATASET_CACHE
-                else "single_batch_fallback"
+                "prepared_dataset" if dataset_cache_key in _PREPARED_DATASET_CACHE else "single_batch_fallback"
             )
 
         if dataset_cache_key in _PREPARED_DATASET_CACHE:
@@ -556,11 +537,7 @@ def _evaluate_model_accuracy(
                 if is_lm and out.loss is not None:
                     target_labels = filtered_inputs.get("labels")
                     if target_labels is not None:
-                        scored_labels = (
-                            target_labels
-                            if model_family.lower() == "t5"
-                            else target_labels[:, 1:]
-                        )
+                        scored_labels = target_labels if model_family.lower() == "t5" else target_labels[:, 1:]
                         n_targets = int((scored_labels != -100).sum().item())
                         lm_nll_sum += float(out.loss.detach().item()) * n_targets
                         lm_token_count += n_targets
@@ -572,9 +549,7 @@ def _evaluate_model_accuracy(
                     and logits.shape == base_logits.shape
                 ):
                     if logits.dim() == 1:
-                        sim = F.cosine_similarity(
-                            base_logits.unsqueeze(0), logits.unsqueeze(0), dim=-1
-                        ).mean().item()
+                        sim = F.cosine_similarity(base_logits.unsqueeze(0), logits.unsqueeze(0), dim=-1).mean().item()
                     else:
                         sim = F.cosine_similarity(base_logits, logits, dim=-1).mean().item()
                     sum_cosine_sim += float(sim)
@@ -734,14 +709,7 @@ def _finalize_benchmark_result(
             run_dir.mkdir(parents=True, exist_ok=True)
         except OSError:
             fallback_base = Path(tempfile.gettempdir()) / "neuralops_results"
-            run_dir = (
-                fallback_base
-                / Path(results_dir).name
-                / model_family
-                / dataset
-                / module_name
-                / f"rank_{rank}"
-            )
+            run_dir = fallback_base / Path(results_dir).name / model_family / dataset / module_name / f"rank_{rank}"
             run_dir.mkdir(parents=True, exist_ok=True)
             results_dir = str(fallback_base / Path(results_dir).name)
 
@@ -781,18 +749,14 @@ def _finalize_benchmark_result(
         }
         (run_dir / "config.json").write_text(json.dumps(cfg_dict, indent=2), encoding="utf-8")
 
-        (run_dir / "module_stats.json").write_text(
-            json.dumps(comp_stats, indent=2, default=str), encoding="utf-8"
-        )
+        (run_dir / "module_stats.json").write_text(json.dumps(comp_stats, indent=2, default=str), encoding="utf-8")
 
         mem_profile_dict = {
             "phases": mem_phases,
             "oom_encountered": (retry_count > 0 and not success),
             "batch_size_reductions": ([current_batch_size] if current_batch_size != batch_size else []),
         }
-        (run_dir / "memory_profile.json").write_text(
-            json.dumps(mem_profile_dict, indent=2), encoding="utf-8"
-        )
+        (run_dir / "memory_profile.json").write_text(json.dumps(mem_profile_dict, indent=2), encoding="utf-8")
 
         timing_profile_dict = {
             "phases": {
@@ -805,9 +769,7 @@ def _finalize_benchmark_result(
                 "total_s": round(time.time() - t_run_start, 2),
             }
         }
-        (run_dir / "timing_profile.json").write_text(
-            json.dumps(timing_profile_dict, indent=2), encoding="utf-8"
-        )
+        (run_dir / "timing_profile.json").write_text(json.dumps(timing_profile_dict, indent=2), encoding="utf-8")
 
         fidelity_dict = {
             "baseline_logits": baseline_logits_samples[:8] if baseline_logits_samples else [],
@@ -815,9 +777,7 @@ def _finalize_benchmark_result(
             "cosine_similarity_per_sample": [round(s, 4) for s in sample_cosines[:8]],
             "mean_fidelity": result.fidelity_score,
         }
-        (run_dir / "fidelity_samples.json").write_text(
-            json.dumps(fidelity_dict, indent=2), encoding="utf-8"
-        )
+        (run_dir / "fidelity_samples.json").write_text(json.dumps(fidelity_dict, indent=2), encoding="utf-8")
 
         (run_dir / "seed.json").write_text(
             json.dumps(
@@ -847,9 +807,7 @@ def _finalize_benchmark_result(
             "traceback": exc_traceback,
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
-        (run_dir / "result.json").write_text(
-            json.dumps(full_result_json, indent=2), encoding="utf-8"
-        )
+        (run_dir / "result.json").write_text(json.dumps(full_result_json, indent=2), encoding="utf-8")
 
     except Exception as save_e:
         logger.error("Failed to write run artifacts: %s", save_e)

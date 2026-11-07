@@ -10,10 +10,10 @@ Paged Recurrent Step Hardware Operators.
 """
 
 from neuralops.ops.cuda.paged_recurrent_step.paged_recurrent_step_autograd import (
+    paged_recurrent_state_step_pytorch,
     paged_recurrent_step,
     paged_recurrent_step_pytorch_ref,
     paged_recurrent_step_ref,
-    paged_recurrent_state_step_pytorch,
 )
 
 __all__ = [

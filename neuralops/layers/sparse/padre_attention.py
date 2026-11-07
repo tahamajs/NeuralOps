@@ -12,12 +12,6 @@ Polynomial attention replacing softmax with bounded polynomial feature expansion
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -28,9 +22,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +64,7 @@ class PADReAttention(BaseAttention):
                     self.hidden_size = w.shape[1] if w.ndim == 2 else self.hidden_size
                     break
 
-        self.num_heads = _cfg_get(
-            config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
-        )
+        self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         self.num_kv_heads = _cfg_get(
             config,
             "num_key_value_heads",
@@ -97,9 +91,7 @@ class PADReAttention(BaseAttention):
             "padre_temperature",
             _cfg_get(config, "padre_temperature", kwargs.get("temperature", temperature)),
         )
-        self.max_error = float(
-            _cfg_get(self.comp_config, "max_error", kwargs.get("max_error", 0.20))
-        )
+        self.max_error = float(_cfg_get(self.comp_config, "max_error", kwargs.get("max_error", 0.20)))
 
         is_dec = _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
         model_type = str(_cfg_get(config, "model_type", "")).lower()
@@ -335,11 +327,7 @@ class PADReAttention(BaseAttention):
                                 )
                                 break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -352,11 +340,7 @@ class PADReAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning(
                 "PADReAttention copy_weights failed: missing mandatory projections %s from %s.",
@@ -391,9 +375,7 @@ class PADReAttention(BaseAttention):
                 if lA is not None and lB is not None:
                     tA = getattr(lA, "weight", lA)
                     tB = getattr(lB, "weight", lB)
-                    if isinstance(tA, (torch.Tensor, nn.Parameter)) and isinstance(
-                        tB, (torch.Tensor, nn.Parameter)
-                    ):
+                    if isinstance(tA, (torch.Tensor, nn.Parameter)) and isinstance(tB, (torch.Tensor, nn.Parameter)):
                         source_lora[proj_key] = (tA.data.clone(), tB.data.clone())
 
         with torch.no_grad():
@@ -408,9 +390,7 @@ class PADReAttention(BaseAttention):
 
                 src_norm = torch.linalg.norm(w.float()).item()
                 if src_norm < 1e-4:
-                    logger.warning(
-                        f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4"
-                    )
+                    logger.warning(f"Source weight for {proj_key} has near-zero norm {src_norm:.6f} < 1e-4")
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -432,10 +412,7 @@ class PADReAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif (
-                        b.shape[0] < target_mod.bias.shape[0]
-                        and target_mod.bias.shape[0] % b.shape[0] == 0
-                    ):
+                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -447,15 +424,9 @@ class PADReAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    logger.warning(
-                        "Compressor copy_weights warning. Proceeding with initialized weights."
-                    )
+                    logger.warning("Compressor copy_weights warning. Proceeding with initialized weights.")
 
-                if (
-                    proj_key in source_lora
-                    and target_mod.lora_A is not None
-                    and target_mod.lora_B is not None
-                ):
+                if proj_key in source_lora and target_mod.lora_A is not None and target_mod.lora_B is not None:
                     slA, slB = source_lora[proj_key]
                     if slA.shape == target_mod.lora_A.shape:
                         target_mod.lora_A.copy_(slA)
@@ -494,24 +465,9 @@ class PADReAttention(BaseAttention):
         """
         B, N, _ = hidden_states.shape
 
-        q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.k_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -704,23 +660,13 @@ def inject_padre(
                     new_res = new_attn(dummy_x)
                     new_out = new_res[0] if isinstance(new_res, tuple) else new_res
 
-                    if (
-                        orig_out is not None
-                        and new_out is not None
-                        and orig_out.shape == new_out.shape
-                    ):
+                    if orig_out is not None and new_out is not None and orig_out.shape == new_out.shape:
                         norm_orig = torch.norm(orig_out.float(), p="fro").clamp_min(1e-12)
-                        output_error = float(
-                            (torch.norm((orig_out - new_out).float(), p="fro") / norm_orig).item()
-                        )
+                        output_error = float((torch.norm((orig_out - new_out).float(), p="fro") / norm_orig).item())
                     else:
                         output_error = 0.0
 
-                if (
-                    max_err is not None
-                    and output_error > max_err
-                    and not kwargs.get("force_inject", True)
-                ):
+                if max_err is not None and output_error > max_err and not kwargs.get("force_inject", True):
                     logger.warning(
                         "PADReAttention layer %d output equivalence error %.4f exceeded threshold %.4f. Skipping replacement.",
                         layer_idx,

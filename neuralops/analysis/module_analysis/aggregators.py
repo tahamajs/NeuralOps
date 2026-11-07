@@ -18,9 +18,7 @@ from typing import Any, Dict, List, Set
 from neuralops.analysis.module_analysis.constants import ALIASES
 
 
-def get_all_module_rows(
-    mod_name: str, csv_data: Dict[str, Dict[str, List[Dict[str, Any]]]]
-) -> List[Dict[str, Any]]:
+def get_all_module_rows(mod_name: str, csv_data: Dict[str, Dict[str, List[Dict[str, Any]]]]) -> List[Dict[str, Any]]:
     """Gather all CSV rows associated with a module name and its aliases.
 
     Args:
@@ -112,9 +110,7 @@ def determine_sub_category(mod_name: str, mod_type: str, cat: str) -> str:
         else:
             return "Compression-Failed"
 
-    if any(
-        k in lname for k in ["mamba", "jamba", "samba", "griffin", "hgrn2", "hymba", "simple_ssm"]
-    ):
+    if any(k in lname for k in ["mamba", "jamba", "samba", "griffin", "hgrn2", "hymba", "simple_ssm"]):
         return "SSM"
     if any(
         k in lname

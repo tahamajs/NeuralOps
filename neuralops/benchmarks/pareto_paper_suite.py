@@ -21,6 +21,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
 import torch
 import torch.nn as nn
 
@@ -154,7 +155,7 @@ class PaperParetoBenchmarkSuite:
         x = torch.randn(1, seq_len, self.d_model, device=self.device, dtype=self.dtype)
         needle = torch.ones(1, 1, self.d_model, device=self.device, dtype=self.dtype) * 3.0
         needle_pos = 128
-        x[:, needle_pos:needle_pos+1, :] = needle
+        x[:, needle_pos : needle_pos + 1, :] = needle
 
         with torch.no_grad():
             out = module(x)
@@ -187,11 +188,13 @@ class PaperParetoBenchmarkSuite:
                 f"{r.method_name} & {r.category} & {p2k} & {p4k} & {r.decode_tokens_per_sec} & {r.peak_vram_mb} & {r.passkey_recall_pct}\\% \\\\"
             )
 
-        lines.extend([
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table*}",
-        ])
+        lines.extend(
+            [
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table*}",
+            ]
+        )
         return "\n".join(lines)
 
 

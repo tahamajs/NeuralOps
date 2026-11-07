@@ -50,6 +50,8 @@ class TrainerRegistry:
         """List."""
         return list(cls._registry.keys())
 
+    list_trainers = list
+
     @classmethod
     def create(cls, name: str, **kwargs) -> BaseTrainer:
         """Create."""

@@ -12,6 +12,7 @@ Fused forward and backward knowledge distillation loss kernel combining CE and K
 """
 
 from __future__ import annotations
+
 import torch
 import torch.nn.functional as F
 
@@ -61,11 +62,10 @@ def fused_linear_kl_divergence(
     for v_start in range(0, V, chunk_size):
         v_end = min(v_start + chunk_size, V)
         logits_chunk = h_f @ w_f[v_start:v_end].T
-        kl = kl + (p_teacher[:, v_start:v_end] *
-                   (log_p_teacher[:, v_start:v_end] - logits_chunk)).sum(dim=-1)
+        kl = kl + (p_teacher[:, v_start:v_end] * (log_p_teacher[:, v_start:v_end] - logits_chunk)).sum(dim=-1)
 
     kl = kl + log_z
-    kl = kl * (temperature ** 2)
+    kl = kl * (temperature**2)
 
     if reduction == "batchmean" or reduction == "mean":
         return kl.mean()

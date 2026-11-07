@@ -10,18 +10,18 @@ Mixture of Experts Routing Hardware Operators.
 """
 
 from neuralops.ops.cuda.moe_routing.moe_autograd import (
-    moe_dispatch_gather,
-    moe_dispatch,
-    moe_gather,
-    moe_topk_routing_fused,
-    moe_routing,
-    moe_routing_ref,
-    moe_routing_pytorch_ref,
-    moe_dispatch_gather_ref,
-    moe_dispatch_gather_pytorch_ref,
-    moe_route_pytorch_ref,
     _moe_dispatch_pytorch_ref,
     _moe_gather_pytorch_ref,
+    moe_dispatch,
+    moe_dispatch_gather,
+    moe_dispatch_gather_pytorch_ref,
+    moe_dispatch_gather_ref,
+    moe_gather,
+    moe_route_pytorch_ref,
+    moe_routing,
+    moe_routing_pytorch_ref,
+    moe_routing_ref,
+    moe_topk_routing_fused,
 )
 
 __all__ = [

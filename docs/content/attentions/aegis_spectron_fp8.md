@@ -11,7 +11,7 @@ Specifically, regarding \textbf{Local Branch}, extracts high-frequency syntax an
 A dynamic Spectron routing gate continuously evaluates the information entropy of the sequence, ensuring that computationally expensive paths are only engaged when sequence complexity demands it.
 
 ## 3. Mathematical Formulation & Derivations
-Given an input activation sequence $X \in \mathbb{R}^{B \times L \times D}$, the module first evaluates spectral entropy $\mathcal{S}(X)$ to determine routing dynamics. The input is passed through three parallel transformation paths. 
+Given an input activation sequence $X \in \mathbb{R}^{B \times L \times D}$, the module first evaluates spectral entropy $\mathcal{S}(X)$ to determine routing dynamics. The input is passed through three parallel transformation paths.
 
 The unified output $Y \in \mathbb{R}^{B \times L \times D}$ is defined as a convex combination of branch outputs:
 $$Y = \alpha_{loc} Y_{loc} + \alpha_{glob} Y_{glob} + \alpha_{lin} Y_{lin}$$
@@ -43,7 +43,7 @@ $$D_{fp32} = A_{fp8, E4M3} \cdot B_{fp8, E4M3} + C_{fp32}$$
 By casting hidden states dynamically based on numerical stability constraints, the module doubles the theoretical peak TFLOPS compared to 16-bit primitives, avoiding bottleneck latency typical in high-branching architectures.
 
 ## 7. Integration & Complexity Profile
-Integrating Aegis-Spectron-FP8 requires a simple drop-in replacement via the `@ATTENTION_REGISTRY` decorator. 
+Integrating Aegis-Spectron-FP8 requires a simple drop-in replacement via the `@ATTENTION_REGISTRY` decorator.
 **Time Complexity:** $\mathcal{O}(L \cdot D \cdot (W + r + 1))$ Furthermore, **Memory Complexity:** $\mathcal{O}(L \cdot D)$ eliminating quadratic sequence caching entirely. Concurrently, **Hardware Mapping:** Ideal for deep layers where high contextual entropy intersects with severe KV-cache limits, allowing continuous generative decoding without OOM regressions.
 
 
@@ -67,4 +67,3 @@ The empirical evaluation of `aegis_spectron_fp8` across standard sequence length
 | **$L = 2048$** | 0.58 ms | 210 MB | $2.50\times$ |
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
-

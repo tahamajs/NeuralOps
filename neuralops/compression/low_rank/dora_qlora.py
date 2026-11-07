@@ -12,6 +12,7 @@ Decomposes weight matrices into magnitude vectors and directional low-rank matri
 """
 
 from __future__ import annotations
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -58,7 +59,7 @@ class QuantizedLinear(nn.Module):
         self.out_features = out_features
         self.bits = bits
         self.q_max = 2 ** (bits - 1) - 1
-        self.q_min = -2 ** (bits - 1)
+        self.q_min = -(2 ** (bits - 1))
 
         raw_w = torch.randn(out_features, in_features)
         scale = raw_w.abs().amax(dim=-1, keepdim=True) / self.q_max
@@ -105,6 +106,7 @@ class QLoRALinear(nn.Module):
         base_out = self.base(x)
         try:
             from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
             lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t()) * self.scaling
         except Exception:
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling

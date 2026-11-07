@@ -1,8 +1,8 @@
 # ⚡ بررسی جامع امکان‌سنجی و طراحی معماری ادغام با FLA (Flash Linear Attention)
 
-**پلتفرم هدف:** اکوسیستم NeuralOps (v1.7.0+)  
-**موضوع:** ادغام دوطرفه، استفاده از کرنل‌ها و لایه‌های رسمی `flash-linear-attention (FLA)` در موتور جراحی و پایپ‌لاین‌های NeuralOps  
-**تاریخ گزارش:** اکتبر ۲۰۲۶  
+**پلتفرم هدف:** اکوسیستم NeuralOps (v1.7.0+)
+**موضوع:** ادغام دوطرفه، استفاده از کرنل‌ها و لایه‌های رسمی `flash-linear-attention (FLA)` در موتور جراحی و پایپ‌لاین‌های NeuralOps
+**تاریخ گزارش:** اکتبر ۲۰۲۶
 **وضعیت امکان‌سنجی:** **کاملاً امکان‌پذیر (Feasible & Recommended)** — حدود ۳۰٪ زیرساخت آن از قبل در مخزن وجود دارد.
 
 ---
@@ -12,7 +12,7 @@
 کتابخانه **Flash Linear Attention (FLA)** (توسعه‌داده‌شده توسط Songlin Yang و همکاران) معتبرترین مخزن تحقیقاتی تخصصی برای پیاده‌سازی کرنل‌های موازی تریتون (Triton Chunk/Fused Kernels) در حوزه‌ی اتنشن‌های خطی و بازگشتی (مانند GLA, DeltaNet, RetNet, RWKV-6, HGRN-2, Gated DeltaNet) است.
 
 ### پاسخ صریح به پرسش کاربر:
-> **آیا می‌توان قابلیتی اضافه کرد تا کاربر بتواند مستقیماً از خود کتابخانه‌ی FLA در NeuralOps استفاده کند؟**  
+> **آیا می‌توان قابلیتی اضافه کرد تا کاربر بتواند مستقیماً از خود کتابخانه‌ی FLA در NeuralOps استفاده کند؟**
 > **پاسخ: بله، ۱۰۰٪ و بدون هیچ‌گونه تداخل با معماری فعلی.**
 
 در حال حاضر در NeuralOps:
@@ -83,7 +83,7 @@ model = AutoModelForCausalLM.from_pretrained("gpt2")
 
 # جراحی اتنشن با استفاده از لایه رسمی FLA:
 model = neuralops.replace_attention(
-    model, 
+    model,
     target_attention="fla:gla",     # یا "fla:retnet", "fla:gated_deltanet", "fla:rwkv6"
     backend="fla"
 )
@@ -193,7 +193,7 @@ except ImportError:
 
 class FLALayerAdapter(nn.Module):
     """
-    Adapter wrapping official FLA layers to provide strict Hugging Face 
+    Adapter wrapping official FLA layers to provide strict Hugging Face
     transformer attention signature compatibility.
     """
     def __init__(self, fla_layer_cls, config, **kwargs):

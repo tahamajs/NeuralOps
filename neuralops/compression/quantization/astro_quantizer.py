@@ -12,7 +12,6 @@ Employs straight-through estimator (STE) training and asymmetric dynamic scaling
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -335,9 +335,7 @@ class AstroQuantizer(BaseCompressor):
 
         bits = int(_cfg_get(cfg, "astro_bits", _cfg_get(cfg, "bits", bits)))
         symmetric = bool(_cfg_get(cfg, "astro_symmetric", _cfg_get(cfg, "symmetric", symmetric)))
-        per_channel = bool(
-            _cfg_get(cfg, "astro_per_channel", _cfg_get(cfg, "per_channel", per_channel))
-        )
+        per_channel = bool(_cfg_get(cfg, "astro_per_channel", _cfg_get(cfg, "per_channel", per_channel)))
         use_ste = bool(_cfg_get(cfg, "astro_use_ste", _cfg_get(cfg, "use_ste", use_ste)))
         max_error = float(_cfg_get(cfg, "astro_max_error", _cfg_get(cfg, "max_error", max_error)))
         fallback_to_original = bool(
@@ -371,9 +369,7 @@ class AstroQuantizer(BaseCompressor):
         )
         min_bits = int(_cfg_get(cfg, "astro_min_bits", _cfg_get(cfg, "min_bits", min_bits)))
         max_bits = int(_cfg_get(cfg, "astro_max_bits", _cfg_get(cfg, "max_bits", max_bits)))
-        fisher_beta = float(
-            _cfg_get(cfg, "astro_fisher_beta", _cfg_get(cfg, "fisher_beta", fisher_beta))
-        )
+        fisher_beta = float(_cfg_get(cfg, "astro_fisher_beta", _cfg_get(cfg, "fisher_beta", fisher_beta)))
 
         self.bits = bits
         self.symmetric = symmetric
@@ -393,9 +389,7 @@ class AstroQuantizer(BaseCompressor):
         self.calibration_texts = kwargs.get("calibration_texts")
         device = kwargs.get("device")
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.comp_config = cfg
         self.target_modules = target_modules
@@ -410,10 +404,7 @@ class AstroQuantizer(BaseCompressor):
         if isinstance(module, AstroLinear):
             return False
 
-        if any(
-            name.endswith(sfx)
-            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
-        ):
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
             return False
 
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -542,11 +533,7 @@ class AstroQuantizer(BaseCompressor):
                     loss = 0.5 * torch.sum(out.logits.pow(2))
                 elif isinstance(out, torch.Tensor):
                     loss = 0.5 * torch.sum(out.pow(2))
-                elif (
-                    isinstance(out, (tuple, list))
-                    and len(out) > 0
-                    and isinstance(out[0], torch.Tensor)
-                ):
+                elif isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor):
                     loss = 0.5 * torch.sum(out[0].pow(2))
                 else:
                     loss = None
@@ -556,9 +543,7 @@ class AstroQuantizer(BaseCompressor):
                     loss.backward()
                     for name, module in self.model.named_modules():
                         if self._is_target_module(name, module):
-                            target_mod = getattr(
-                                module, "base_layer", getattr(module, "linear", module)
-                            )
+                            target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
                             if getattr(target_mod.weight, "grad", None) is not None:
                                 g = target_mod.weight.grad.detach().float()
                                 cls_name = module.__class__.__name__.lower()
@@ -585,9 +570,7 @@ class AstroQuantizer(BaseCompressor):
                 channel_norm = torch.norm(W, p=2, dim=1).cpu()
                 if name in activations and activations[name]:
                     act_list = activations[name]
-                    act_concat = torch.cat(
-                        [a.reshape(-1, a.shape[-1]) for a in act_list], dim=0
-                    ).float()
+                    act_concat = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0).float()
                     act_scale = torch.norm(act_concat, p=2, dim=0).mean().item()
                     channel_norm = channel_norm * max(act_scale, 1e-4)
                 fisher_info[name] = channel_norm
@@ -611,9 +594,7 @@ class AstroQuantizer(BaseCompressor):
             target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
             cls_name = module.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
-                module, "base_layer"
-            )
+            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
             raw_w = target_mod.weight.data
             W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
@@ -681,13 +662,9 @@ class AstroQuantizer(BaseCompressor):
                     replace_module(self.model, name, astro_layer)
             else:
                 if is_conv1d:
-                    target_mod.weight.data.copy_(
-                        W_quant.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device)
-                    )
+                    target_mod.weight.data.copy_(W_quant.t().contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
                 else:
-                    target_mod.weight.data.copy_(
-                        W_quant.contiguous().to(dtype=raw_w.dtype, device=raw_w.device)
-                    )
+                    target_mod.weight.data.copy_(W_quant.contiguous().to(dtype=raw_w.dtype, device=raw_w.device))
 
                 if target_mod.bias is not None:
                     bias_bits = int(round(avg_bits))
@@ -698,9 +675,7 @@ class AstroQuantizer(BaseCompressor):
                         per_channel=False,
                         use_ste=False,
                     )
-                    target_mod.bias.data.copy_(
-                        b_quant.to(dtype=target_mod.bias.dtype, device=target_mod.bias.device)
-                    )
+                    target_mod.bias.data.copy_(b_quant.to(dtype=target_mod.bias.dtype, device=target_mod.bias.device))
 
             if has_lora:
                 for p_name, p in module.named_parameters():
@@ -711,14 +686,12 @@ class AstroQuantizer(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
         actual_avg_bits = (
-            sum(self.layer_average_bits[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_average_bits[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else float(self.bits)
         )

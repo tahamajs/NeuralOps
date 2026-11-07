@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _delta_net_scan_fwd_kernel(
         q_ptr,
@@ -121,6 +122,7 @@ if HAS_TRITON and tl is not None:
                 + offs_k[None, :] * stride_sk
             )
             tl.store(s_ptrs, S.to(final_state_ptr.dtype.element_ty))
+
 else:
     _delta_net_scan_fwd_kernel = None
 
@@ -203,12 +205,23 @@ def delta_net_scan_triton(
         alpha = alpha.squeeze(-1)
 
     is_suitable, reason = check_triton_suitability(q, "delta_net_scan", head_dim=D_K, seq_len=L, allow_fp32=True)
-    if not is_suitable or not HAS_TRITON or initial_state is not None or D_K not in (16, 32, 64, 128) or D_V not in (16, 32, 64, 128):
+    if (
+        not is_suitable
+        or not HAS_TRITON
+        or initial_state is not None
+        or D_K not in (16, 32, 64, 128)
+        or D_V not in (16, 32, 64, 128)
+    ):
         if not is_suitable:
             logger.warning("Triton kernel 'delta_net_scan' using PyTorch fallback: %s", reason)
         return delta_net_scan_pytorch(
-            q, k, v, beta=beta, alpha=alpha,
-            initial_state=initial_state, return_final_state=return_final_state,
+            q,
+            k,
+            v,
+            beta=beta,
+            alpha=alpha,
+            initial_state=initial_state,
+            return_final_state=return_final_state,
         )
 
     q_c = q.contiguous()
@@ -223,16 +236,44 @@ def delta_net_scan_triton(
     grid = (B, H)
     try:
         _delta_net_scan_fwd_kernel[grid](
-            q_c, k_c, v_c, alpha_c, beta_c, out, final_s,
-            B, H, L,
-            D_K=D_K, D_V=D_V,
-            stride_qb=q_c.stride(0), stride_qh=q_c.stride(1), stride_ql=q_c.stride(2), stride_qd=q_c.stride(3),
-            stride_kb=k_c.stride(0), stride_kh=k_c.stride(1), stride_kl=k_c.stride(2), stride_kd=k_c.stride(3),
-            stride_vb=v_c.stride(0), stride_vh=v_c.stride(1), stride_vl=v_c.stride(2), stride_vd=v_c.stride(3),
-            stride_ab=alpha_c.stride(0), stride_ah=alpha_c.stride(1), stride_al=alpha_c.stride(2),
-            stride_bb=beta_c.stride(0), stride_bh=beta_c.stride(1), stride_bl=beta_c.stride(2),
-            stride_ob=out.stride(0), stride_oh=out.stride(1), stride_ol=out.stride(2), stride_od=out.stride(3),
-            stride_sb=final_s.stride(0), stride_sh=final_s.stride(1), stride_sv=final_s.stride(2), stride_sk=final_s.stride(3),
+            q_c,
+            k_c,
+            v_c,
+            alpha_c,
+            beta_c,
+            out,
+            final_s,
+            B,
+            H,
+            L,
+            D_K=D_K,
+            D_V=D_V,
+            stride_qb=q_c.stride(0),
+            stride_qh=q_c.stride(1),
+            stride_ql=q_c.stride(2),
+            stride_qd=q_c.stride(3),
+            stride_kb=k_c.stride(0),
+            stride_kh=k_c.stride(1),
+            stride_kl=k_c.stride(2),
+            stride_kd=k_c.stride(3),
+            stride_vb=v_c.stride(0),
+            stride_vh=v_c.stride(1),
+            stride_vl=v_c.stride(2),
+            stride_vd=v_c.stride(3),
+            stride_ab=alpha_c.stride(0),
+            stride_ah=alpha_c.stride(1),
+            stride_al=alpha_c.stride(2),
+            stride_bb=beta_c.stride(0),
+            stride_bh=beta_c.stride(1),
+            stride_bl=beta_c.stride(2),
+            stride_ob=out.stride(0),
+            stride_oh=out.stride(1),
+            stride_ol=out.stride(2),
+            stride_od=out.stride(3),
+            stride_sb=final_s.stride(0),
+            stride_sh=final_s.stride(1),
+            stride_sv=final_s.stride(2),
+            stride_sk=final_s.stride(3),
             SAVE_STATE=return_final_state,
         )
         if return_final_state:
@@ -241,8 +282,13 @@ def delta_net_scan_triton(
     except Exception as exc:
         logger.warning("Triton kernel 'delta_net_scan' failed (%s); falling back to PyTorch reference.", exc)
         return delta_net_scan_pytorch(
-            q, k, v, beta=beta, alpha=alpha,
-            initial_state=initial_state, return_final_state=return_final_state,
+            q,
+            k,
+            v,
+            beta=beta,
+            alpha=alpha,
+            initial_state=initial_state,
+            return_final_state=return_final_state,
         )
 
 

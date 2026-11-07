@@ -1,9 +1,9 @@
 # MoBA Attention: Mixture-of-Block Attention via Centroid Cosine Routing
 
 ## 1. Executive Abstract & Architectural Motivation
-Standard Multi-Head Self-Attention (MHSA) computes dense pairwise token interactions across sequence length $L$, incurring quadratic computational time complexity $\mathcal{O}(L^2 d)$ and memory footprint $\mathcal{O}(L^2 + L d)$. For long-context language modeling, this quadratic bottleneck severely restricts context length. **MoBA (Mixture-of-Block Attention)** addresses this limitation by reformulating fine-grained token-to-token attention as a two-stage hierarchical sparse routing process. 
+Standard Multi-Head Self-Attention (MHSA) computes dense pairwise token interactions across sequence length $L$, incurring quadratic computational time complexity $\mathcal{O}(L^2 d)$ and memory footprint $\mathcal{O}(L^2 + L d)$. For long-context language modeling, this quadratic bottleneck severely restricts context length. **MoBA (Mixture-of-Block Attention)** addresses this limitation by reformulating fine-grained token-to-token attention as a two-stage hierarchical sparse routing process.
 
-The sequence of length $L$ is partitioned into uniform contiguous blocks of size $B_{\text{sz}}$. Rather than calculating dense interactions between all tokens, MoBA abstracts each block into a single spatial centroid vector via uniform arithmetic mean pooling. Inter-block affinity scores are derived by computing scaled dot-product similarities between query block centroids and key block centroids. For each query block, MoBA dynamically selects the top-$k$ most relevant key-value blocks based on these centroid affinities. Fine-grained dense attention is subsequently executed strictly between the query tokens within the block and the tokens belonging to the $k$ routed key-value blocks. 
+The sequence of length $L$ is partitioned into uniform contiguous blocks of size $B_{\text{sz}}$. Rather than calculating dense interactions between all tokens, MoBA abstracts each block into a single spatial centroid vector via uniform arithmetic mean pooling. Inter-block affinity scores are derived by computing scaled dot-product similarities between query block centroids and key block centroids. For each query block, MoBA dynamically selects the top-$k$ most relevant key-value blocks based on these centroid affinities. Fine-grained dense attention is subsequently executed strictly between the query tokens within the block and the tokens belonging to the $k$ routed key-value blocks.
 
 This hierarchical routing scheme reduces the memory footprint and computational complexity of attention matrix generation from $\mathcal{O}(L^2)$ to $\mathcal{O}\left(\frac{L^2}{B_{\text{sz}}^2} d + L k B_{\text{sz}} d\right)$. When the condition $k B_{\text{sz}} \ll L$ holds, MoBA achieves linear scaling behavior relative to sequence length for token-level attention while incurring only a minimal quadratic overhead at the coarse block-centroid level.
 
@@ -85,7 +85,7 @@ $$\mathbf{Y} = \operatorname{Slice}\left(\mathbf{O}_p, :L\right) \mathbf{W}_O \i
          │                                   │
          └─────────────────┬─────────────────┘
                            ▼
-              Gather Selected K_sel, V_sel 
+              Gather Selected K_sel, V_sel
              [B, H, k * B_sz, d_k] Per Block
                            │
                            ▼
@@ -128,7 +128,7 @@ Let $B$ be batch size, $H$ number of heads, $d_k$ head dimension ($D = H d_k$), 
 $$\text{Total FLOPs} = 8 B L D^2 + \frac{2 B D L^2}{B_{\text{sz}}^2} + 4 B D L k B_{\text{sz}} + 2 B L D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx 4 B L D^2 + \frac{B D L^2}{B_{\text{sz}}^2} + 2 B D L k B_{\text{sz}}$$
 Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Unpadded/Padded Q, K, V tensors: $3 \times B \cdot L_p \cdot D \times 2 \text{ bytes}$ (FP16/BF16) Concurrently, Centroid matrices: $2 \times B \cdot H \cdot n_b \cdot d_k \times 2 \text{ bytes}$ In this setting, Block Affinity Score matrix: $B \cdot H \cdot n_b \cdot n_b \times 2 \text{ bytes}$ Additionally, Gathered $K_{\text{sel}}, V_{\text{sel}}$ (in sequential block loop): $2 \times B \cdot H \cdot k B_{\text{sz}} \cdot d_k \times 2 \text{ bytes}$ per iteration. Moreover, Per-block attention matrix: $B \cdot H \cdot B_{\text{sz}} \cdot (k B_{\text{sz}}) \times 2 \text{ bytes}$.
@@ -312,4 +312,3 @@ The empirical evaluation of `moba_attention` across standard sequence lengths an
 | **$L = 2048$** | 0.62 ms | 240 MB | $2.50\times$ |
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
-

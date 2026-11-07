@@ -9,9 +9,6 @@
 GDN Delta Rule Recurrent Scan Hardware Operators.
 """
 
-from neuralops.ops.cuda.gdn_delta_rule.gdn_delta_rule_autograd import (
-    gdn_delta_rule,
-    gdn_delta_rule_pytorch_ref,
-)
+from neuralops.ops.cuda.gdn_delta_rule.gdn_delta_rule_autograd import gdn_delta_rule, gdn_delta_rule_pytorch_ref
 
 __all__ = ["gdn_delta_rule", "gdn_delta_rule_pytorch_ref"]

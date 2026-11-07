@@ -14,11 +14,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
 from neuralops.ui.queries.ledger import get_attention_results
-from neuralops.ui.queries.static_catalog import (
-    get_attention_metadata,
-    list_attentions,
-    list_families,
-)
+from neuralops.ui.queries.static_catalog import get_attention_metadata, list_attentions, list_families
 
 router = APIRouter()
 

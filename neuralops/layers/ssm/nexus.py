@@ -11,17 +11,13 @@ NEXUS: Neural Efficient X-Scoring Unified Sparse Attention
 Unified sparse attention framework combining dynamic token scoring with structured block-level sparsity.
 """
 
-from neuralops.core.common import softpick
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from dataclasses import dataclass
 from typing import Any
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
+from neuralops.core.common import softpick
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +26,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 
 @dataclass
@@ -61,9 +57,7 @@ class NEXUSConfig:
 
 class XAttentionScorer:
     @staticmethod
-    def score_blocks(
-        Q: torch.Tensor, K: torch.Tensor, block_size: int, stride: int = 2
-    ) -> torch.Tensor:
+    def score_blocks(Q: torch.Tensor, K: torch.Tensor, block_size: int, stride: int = 2) -> torch.Tensor:
         B, H, N, D = Q.shape
         n_blocks = (N + block_size - 1) // block_size
 
@@ -113,9 +107,7 @@ class SeerGating(nn.Module):
             nn.Linear(gate_rank, gate_rank),
         )
 
-    def forward(
-        self, Q: torch.Tensor, K: torch.Tensor, n_blocks: int, training: bool = True
-    ) -> torch.Tensor:
+    def forward(self, Q: torch.Tensor, K: torch.Tensor, n_blocks: int, training: bool = True) -> torch.Tensor:
         B, H, N, D = Q.shape
         gr = self.q_pool[0].out_features
 
@@ -126,9 +118,7 @@ class SeerGating(nn.Module):
         q_gate = self.q_pool(Q_pooled.to(p_dtype)).view(B, H, 1, gr)
         k_gate = self.k_pool(K_pooled.to(p_dtype)).view(B, H, gr, 1)
 
-        gate_score = torch.sigmoid(
-            torch.matmul(q_gate, k_gate).squeeze(-1).squeeze(-1) / self.temperature
-        )
+        gate_score = torch.sigmoid(torch.matmul(q_gate, k_gate).squeeze(-1).squeeze(-1) / self.temperature)
 
         k_float = gate_score * n_blocks
 
@@ -282,6 +272,7 @@ class NEXUSAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -314,11 +305,7 @@ class NEXUSAttention(BaseAttention):
             getattr(model_config, "dim", kwargs.get("hidden_size", kwargs.get("dim", 768))),
         )
         cfg_head_dim = getattr(model_config, "head_dim", None) if model_config else None
-        adapter_head_dim = (
-            getattr(getattr(model_config, "adapter", None), "head_dim", None)
-            if model_config
-            else None
-        )
+        adapter_head_dim = getattr(getattr(model_config, "adapter", None), "head_dim", None) if model_config else None
         self.head_dim: int = int(
             cfg_head_dim
             or adapter_head_dim
@@ -358,15 +345,19 @@ class NEXUSAttention(BaseAttention):
         else:
             _mt = str(getattr(model_config, "model_type", "") or "").lower() if model_config else ""
             self.is_decoder = (
-                bool(
-                    getattr(model_config, "is_decoder", False)
-                    or getattr(model_config, "causal", False)
-                )
+                bool(getattr(model_config, "is_decoder", False) or getattr(model_config, "causal", False))
                 or any(
                     _mt.startswith(p)
                     for p in (
-                        "gpt", "qwen", "llama", "mistral", "falcon",
-                        "bloom", "opt", "gpt_neo", "gpt2",
+                        "gpt",
+                        "qwen",
+                        "llama",
+                        "mistral",
+                        "falcon",
+                        "bloom",
+                        "opt",
+                        "gpt_neo",
+                        "gpt2",
                     )
                 )
                 if model_config
@@ -380,37 +371,62 @@ class NEXUSAttention(BaseAttention):
         target_device = kwargs.get("device", src_p.device if src_p is not None else None)
 
         self.query = LoRALinear(
-            self.hidden_size, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, device=target_device, dtype=target_dtype,
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            device=target_device,
+            dtype=target_dtype,
         )
         self.key = LoRALinear(
-            self.hidden_size, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, device=target_device, dtype=target_dtype,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            device=target_device,
+            dtype=target_dtype,
         )
         self.value = LoRALinear(
-            self.hidden_size, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, device=target_device, dtype=target_dtype,
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            device=target_device,
+            dtype=target_dtype,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.hidden_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=True, device=target_device, dtype=target_dtype,
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+            device=target_device,
+            dtype=target_dtype,
         )
         self.dropout = nn.Dropout(self.cfg.dropout)
 
         self.dss_attn = DualStageStripeAttention(
-            self.cfg, self.head_dim, num_heads=self.num_heads,
-            is_decoder=self.is_decoder, is_nested_encoder=self.is_nested_encoder,
+            self.cfg,
+            self.head_dim,
+            num_heads=self.num_heads,
+            is_decoder=self.is_decoder,
+            is_nested_encoder=self.is_nested_encoder,
         )
 
         self.seer_gate: SeerGating | None = None
         if self.cfg.seer_enabled:
             self.seer_gate = SeerGating(
-                self.head_dim, self.num_heads,
-                self.cfg.seer_gate_rank, self.cfg.seer_top_k_blocks,
+                self.head_dim,
+                self.num_heads,
+                self.cfg.seer_gate_rank,
+                self.cfg.seer_top_k_blocks,
                 self.cfg.seer_temperature,
             )
         self.seer_beta = nn.Parameter(torch.zeros(1, device=target_device, dtype=target_dtype))
@@ -438,27 +454,35 @@ class NEXUSAttention(BaseAttention):
     @property
     def q_proj(self):
         return self.query
+
     @property
     def k_proj(self):
         return self.key
+
     @property
     def v_proj(self):
         return self.value
+
     @property
     def q_lin(self):
         return self.query
+
     @property
     def k_lin(self):
         return self.key
+
     @property
     def v_lin(self):
         return self.value
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
@@ -549,9 +573,7 @@ class NEXUSAttention(BaseAttention):
                     expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
                     scores = scores + torch.tanh(self.seer_beta).to(scores.dtype) * (expanded_seer - 1.0) * 10000.0
             if token_valid is not None:
-                scores = scores.masked_fill(
-                    (~token_valid.bool()).unsqueeze(1).unsqueeze(2), -1e4
-                )
+                scores = scores.masked_fill((~token_valid.bool()).unsqueeze(1).unsqueeze(2), -1e4)
             if self.cfg.softpick_enabled:
                 attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
             else:
@@ -574,32 +596,27 @@ class NEXUSAttention(BaseAttention):
             mask_c = token_valid[:, start:end] if token_valid is not None else None
 
             scores_intra = torch.matmul(Q_c, K_c.transpose(-2, -1).contiguous()) * scale
-            causal_intra = torch.tril(
-                torch.ones(C_len, C_len, device=device, dtype=torch.bool)
-            )
-            scores_intra = scores_intra.masked_fill(
-                ~causal_intra.unsqueeze(0).unsqueeze(0), -1e4
-            )
+            causal_intra = torch.tril(torch.ones(C_len, C_len, device=device, dtype=torch.bool))
+            scores_intra = scores_intra.masked_fill(~causal_intra.unsqueeze(0).unsqueeze(0), -1e4)
             if self.seer_gate is not None and getattr(self.cfg, "seer_enabled", False):
                 bs = max(1, self.cfg.block_size)
                 nb_intra = (C_len + bs - 1) // bs
                 if nb_intra > 1:
                     seer_mask = self.seer_gate(Q_c, K_c, nb_intra, training=self.training)
-                    expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :C_len, :C_len]
-                    scores_intra = scores_intra + torch.tanh(self.seer_beta).to(scores_intra.dtype) * (expanded_seer - 1.0) * 10000.0
+                    expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[
+                        :, :, :C_len, :C_len
+                    ]
+                    scores_intra = (
+                        scores_intra
+                        + torch.tanh(self.seer_beta).to(scores_intra.dtype) * (expanded_seer - 1.0) * 10000.0
+                    )
             if mask_c is not None:
-                scores_intra = scores_intra.masked_fill(
-                    (~mask_c.bool()).unsqueeze(1).unsqueeze(2), -1e4
-                )
+                scores_intra = scores_intra.masked_fill((~mask_c.bool()).unsqueeze(1).unsqueeze(2), -1e4)
 
             if self.cfg.softpick_enabled:
-                attn_intra = softpick(
-                    scores_intra, dim=-1, temperature=self.cfg.softpick_temperature
-                )
+                attn_intra = softpick(scores_intra, dim=-1, temperature=self.cfg.softpick_temperature)
             else:
-                scores_intra = torch.nan_to_num(
-                    scores_intra, nan=-1e4, posinf=1e4, neginf=-1e4
-                )
+                scores_intra = torch.nan_to_num(scores_intra, nan=-1e4, posinf=1e4, neginf=-1e4)
                 attn_intra = F.softmax(scores_intra, dim=-1)
 
             out_intra = torch.matmul(attn_intra, V_c)
@@ -621,29 +638,19 @@ class NEXUSAttention(BaseAttention):
                     return X
                 X_flat = X.reshape(Bx * Hx, Nx, Dx).transpose(1, 2).contiguous()
                 pooled = F.adaptive_avg_pool1d(X_flat, n_landmarks)
-                return pooled.transpose(1, 2).contiguous().reshape(
-                    Bx, Hx, n_landmarks, Dx
-                )
+                return pooled.transpose(1, 2).contiguous().reshape(Bx, Hx, n_landmarks, Dx)
 
             K_landmarks = _pool(K_prev, m_prev)
 
-            scores1 = torch.matmul(
-                Q_c, K_landmarks.transpose(-2, -1).contiguous()
-            ) * scale
+            scores1 = torch.matmul(Q_c, K_landmarks.transpose(-2, -1).contiguous()) * scale
             F1 = F.softmax(scores1, dim=-1)
 
-            scores2 = torch.matmul(
-                K_landmarks, K_landmarks.transpose(-2, -1).contiguous()
-            ) * scale
+            scores2 = torch.matmul(K_landmarks, K_landmarks.transpose(-2, -1).contiguous()) * scale
             F2 = F.softmax(scores2, dim=-1)
 
-            scores3 = torch.matmul(
-                K_landmarks, K_prev.transpose(-2, -1).contiguous()
-            ) * scale
+            scores3 = torch.matmul(K_landmarks, K_prev.transpose(-2, -1).contiguous()) * scale
             if mask_prev is not None:
-                scores3 = scores3.masked_fill(
-                    (~mask_prev.bool()).unsqueeze(1).unsqueeze(2), -1e4
-                )
+                scores3 = scores3.masked_fill((~mask_prev.bool()).unsqueeze(1).unsqueeze(2), -1e4)
             F3 = F.softmax(scores3, dim=-1)
 
             try:
@@ -656,6 +663,7 @@ class NEXUSAttention(BaseAttention):
             if F1.is_cuda and V_prev.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_nystrom_landmark_pinv_step_pytorch
+
                     out_cross = fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V_prev)
                 except Exception:
                     step1 = torch.matmul(F3, V_prev)
@@ -678,7 +686,10 @@ class NEXUSAttention(BaseAttention):
         from neuralops.core.adapters import UniversalAdapter
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         for proj in ["q", "k", "v", "o"]:
@@ -748,8 +759,7 @@ class NEXUSAttention(BaseAttention):
 
         cls_name = src.__class__.__name__
         has_out_proj = any(
-            hasattr(src, attr)
-            for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
+            hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")
         )
         is_nested = False
         if (
@@ -771,7 +781,10 @@ class NEXUSAttention(BaseAttention):
 
         with torch.no_grad():
             for proj_key, target in [
-                ("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj),
+                ("q", self.query),
+                ("k", self.key),
+                ("v", self.value),
+                ("o", self.out_proj),
             ]:
                 w, b = extracted[proj_key]
                 if w is not None:
@@ -882,7 +895,10 @@ class NEXUSAttention(BaseAttention):
 
         if is_causal and not is_cross:
             context = self._chunked_causal_nexus(
-                Q, K, V, token_valid,
+                Q,
+                K,
+                V,
+                token_valid,
                 chunk_size=self.cfg.causal_chunk_size,
                 num_landmarks=self.cfg.causal_landmarks,
             )
@@ -954,7 +970,7 @@ class NEXUSAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, dict[str, Any]]:
         """Exact O(1) single-step autoregressive recurrent update for NEXUSAttention."""
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -1055,11 +1071,7 @@ def inject_nexus(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -1069,8 +1081,13 @@ def inject_nexus(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_nexus(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -1100,11 +1117,14 @@ def inject_nexus(
             nexus_cfg = NEXUSConfig(
                 block_size=(getattr(comp_config, "block_size", 16) if comp_config else 16),
                 top_k_blocks=(getattr(comp_config, "top_k_inter", 4) if comp_config else 4),
-                xattn_enabled=True, seer_enabled=True,
-                dual_stage_enabled=True, stripe_enabled=True,
+                xattn_enabled=True,
+                seer_enabled=True,
+                dual_stage_enabled=True,
+                stripe_enabled=True,
                 rectify_interval=(getattr(comp_config, "rectify_interval", 4) if comp_config else 4),
                 rff_features=(getattr(comp_config, "rff_features", 128) if comp_config else 128),
-                softpick_enabled=True, sparse_min_seq_len=8,
+                softpick_enabled=True,
+                sparse_min_seq_len=8,
                 enable_spectraformer=(getattr(comp_config, "enable_spectraformer", False) if comp_config else False),
                 dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
                 causal_chunk_size=(getattr(comp_config, "causal_chunk_size", 256) if comp_config else 256),
@@ -1112,9 +1132,12 @@ def inject_nexus(
             )
 
         new_attn = NEXUSAttention(
-            model_config=cfg, nexus_cfg=nexus_cfg,
-            layer_idx=layer_idx, total_layers=total_layers,
-            pretrained_attn=src_attn, **kwargs,
+            model_config=cfg,
+            nexus_cfg=nexus_cfg,
+            layer_idx=layer_idx,
+            total_layers=total_layers,
+            pretrained_attn=src_attn,
+            **kwargs,
         )
 
         p = next(src_attn.parameters(), None)

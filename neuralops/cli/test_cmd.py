@@ -174,14 +174,16 @@ def _run_surgery_suite(quiet: bool = False) -> Tuple[bool, List[Tuple[str, str, 
     all_ok = True
 
     try:
-        from neuralops.api import transplant_attention, set_surgery_alpha
         import torch.nn as nn
+
+        from neuralops.api import set_surgery_alpha, transplant_attention
 
         # Construct test model with linear layers
         class TestModule(nn.Module):
             def __init__(self) -> None:
                 super().__init__()
                 self.proj = nn.Linear(64, 64)
+
             def forward(self, x: torch.Tensor) -> torch.Tensor:
                 return self.proj(x)
 
@@ -205,15 +207,18 @@ def _run_eval_suite(quiet: bool = False) -> Tuple[bool, List[Tuple[str, str, str
     all_ok = True
 
     try:
-        from neuralops.benchmarks.eval_bridge import BenchmarkEvaluator, BenchmarkEvalResult
+        from neuralops.benchmarks.eval_bridge import BenchmarkEvalResult, BenchmarkEvaluator
 
         # 1. Verify Bridge Exports
         try:
             from neuralops.evaluation import BenchmarkEvaluator as EvalEvaluator
+
             assert BenchmarkEvaluator is EvalEvaluator, "Evaluation bridge export identity mismatch"
         except ImportError:
             pass
-        results.append(("Evaluation Bridge Export", "BenchmarkEvaluator unified across evaluation & benchmarks", "PASS"))
+        results.append(
+            ("Evaluation Bridge Export", "BenchmarkEvaluator unified across evaluation & benchmarks", "PASS")
+        )
 
         # 2. Verify Result Dataclass
         res = BenchmarkEvalResult(
@@ -230,7 +235,9 @@ def _run_eval_suite(quiet: bool = False) -> Tuple[bool, List[Tuple[str, str, str
         )
         assert res.model_name == "test_model"
         assert res.throughput_tokens_per_sec == 12500.0
-        results.append(("Telemetry Result Schema", "BenchmarkEvalResult schema validated with hardware & task metrics", "PASS"))
+        results.append(
+            ("Telemetry Result Schema", "BenchmarkEvalResult schema validated with hardware & task metrics", "PASS")
+        )
 
         # 3. Verify Evaluator Harness
         evaluator = BenchmarkEvaluator(model="gpt2", batch_size=2, seq_len=32, device="cpu")
@@ -248,7 +255,9 @@ def cmd_test(args: Any = None) -> int:
     if isinstance(args, dict):
         args_ns = argparse.Namespace(**args)
     elif args is None:
-        args_ns = argparse.Namespace(all=True, health=False, kernels=False, surgery=False, eval_suite=False, quiet=False)
+        args_ns = argparse.Namespace(
+            all=True, health=False, kernels=False, surgery=False, eval_suite=False, quiet=False
+        )
     else:
         args_ns = args
 
@@ -271,13 +280,15 @@ def cmd_test(args: Any = None) -> int:
 
     if not quiet:
         if HAS_RICH and console is not None:
-            console.print(Panel(
-                "[bold cyan]NeuralOps Fast Diagnostic Test Suite[/bold cyan]\n"
-                "[dim]Validating system readiness, 131 attention mechanisms, 72 compression engines,\n"
-                "26 Triton kernels, 114 CUDA kernel implementations, surgery runtime, and unified evaluation bridge.[/dim]",
-                title="[bold cyan]NeuralOps Diagnostic Engine[/bold cyan]",
-                border_style="cyan",
-            ))
+            console.print(
+                Panel(
+                    "[bold cyan]NeuralOps Fast Diagnostic Test Suite[/bold cyan]\n"
+                    "[dim]Validating system readiness, 131 attention mechanisms, 72 compression engines,\n"
+                    "26 Triton kernels, 114 CUDA kernel implementations, surgery runtime, and unified evaluation bridge.[/dim]",
+                    title="[bold cyan]NeuralOps Diagnostic Engine[/bold cyan]",
+                    border_style="cyan",
+                )
+            )
         else:
             print("=================================================================")
             print("NeuralOps Diagnostic Test Suite (Fast Runner)")

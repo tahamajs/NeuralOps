@@ -9,5 +9,4 @@
 NeuralOps Benchmarks Utils Subpackage.
 """
 
-from neuralops.benchmarks.utils import gpu_probe
-from neuralops.benchmarks.utils import harvest_data
+from neuralops.benchmarks.utils import gpu_probe, harvest_data

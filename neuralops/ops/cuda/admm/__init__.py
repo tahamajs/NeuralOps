@@ -12,8 +12,9 @@ ADMM 2:4 Structured Pruning CUDA Kernel Operator.
 from __future__ import annotations
 
 import torch
-from neuralops.ops.cuda.admm.autograd import ADMM24Function
+
 from neuralops.core.pruning_utils import apply_24_structured_mask
+from neuralops.ops.cuda.admm.autograd import ADMM24Function
 
 
 def admm_pruner_compress(

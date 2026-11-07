@@ -30,12 +30,13 @@ def query_hardware_gpu() -> Optional[Dict[str, Any]]:
     """Query live GPU hardware metrics via NVML, PyTorch, or nvidia-smi."""
     try:
         import torch
+
         if torch.cuda.is_available():
             dev_idx = 0
             dev_name = torch.cuda.get_device_name(dev_idx)
-            total_mb = torch.cuda.get_device_properties(dev_idx).total_memory / (1024 ** 2)
-            alloc_mb = torch.cuda.memory_allocated(dev_idx) / (1024 ** 2)
-            reserved_mb = torch.cuda.memory_reserved(dev_idx) / (1024 ** 2)
+            total_mb = torch.cuda.get_device_properties(dev_idx).total_memory / (1024**2)
+            alloc_mb = torch.cuda.memory_allocated(dev_idx) / (1024**2)
+            reserved_mb = torch.cuda.memory_reserved(dev_idx) / (1024**2)
 
             smi_path = shutil.which("nvidia-smi")
             gpu_util = 0.0
@@ -155,10 +156,14 @@ def get_live_logs(
     is_local_gpu: bool = False,
 ) -> Dict[str, Any]:
     """Fetch recent log lines from active execution on GPU server or local disk."""
-    local_logs = sorted(
-        glob.glob(os.path.join(project_dir, "results", "**", "console.log"), recursive=True),
-        key=os.path.getmtime,
-    ) if os.path.exists(os.path.join(project_dir, "results")) else []
+    local_logs = (
+        sorted(
+            glob.glob(os.path.join(project_dir, "results", "**", "console.log"), recursive=True),
+            key=os.path.getmtime,
+        )
+        if os.path.exists(os.path.join(project_dir, "results"))
+        else []
+    )
 
     if local_logs:
         target = local_logs[-1]

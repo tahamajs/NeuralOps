@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+
 import torch
 
 
@@ -31,6 +32,7 @@ class DataType(str, Enum):
 @dataclass
 class KernelLaunchConfig:
     """CUDA kernel execution configuration."""
+
     grid_dim: tuple[int, int, int]
     block_dim: tuple[int, int, int]
     shared_mem_bytes: int = 0

@@ -118,7 +118,7 @@ class _MoEDispatchAutograd(torch.autograd.Function):
     @staticmethod
     def backward(ctx, *grad_outputs):
         grad_dispatched = grad_outputs[0]
-        expert_offsets, = ctx.saved_tensors
+        (expert_offsets,) = ctx.saved_tensors
         total_slots = grad_dispatched.size(0)
 
         valid_mask = (expert_offsets >= 0) & (expert_offsets < total_slots)
@@ -166,9 +166,13 @@ class _MoEGatherAutograd(torch.autograd.Function):
         safe_offsets = torch.clamp(expert_offsets, 0, max(0, total_slots - 1))
 
         gathered_exp = expert_outputs[safe_offsets]
-        grad_routing_weights = (grad_out.unsqueeze(1).float() * gathered_exp.float()).sum(dim=-1).to(routing_weights.dtype) * valid_mask
+        grad_routing_weights = (grad_out.unsqueeze(1).float() * gathered_exp.float()).sum(dim=-1).to(
+            routing_weights.dtype
+        ) * valid_mask
 
-        weighted_grad = (grad_out.unsqueeze(1) * routing_weights.unsqueeze(-1) * valid_mask.unsqueeze(-1)).view(-1, hidden_dim)
+        weighted_grad = (grad_out.unsqueeze(1) * routing_weights.unsqueeze(-1) * valid_mask.unsqueeze(-1)).view(
+            -1, hidden_dim
+        )
         flat_offsets = safe_offsets.view(-1, 1).expand(-1, hidden_dim)
         grad_expert_outputs = torch.zeros_like(expert_outputs)
         grad_expert_outputs.scatter_add_(0, flat_offsets, weighted_grad)
@@ -203,7 +207,7 @@ def moe_dispatch_gather_pytorch_ref(
 ) -> torch.Tensor:
     """End-to-end vectorized PyTorch reference for dispatch + expert execution + gather."""
     orig_shape = tokens.shape
-    is_3d = (len(orig_shape) == 3)
+    is_3d = len(orig_shape) == 3
     if is_3d:
         B, T, D = orig_shape
         tokens = tokens.view(-1, D)
@@ -231,7 +235,7 @@ def moe_dispatch_gather(
 ) -> torch.Tensor:
     """Bitonic MoE Fused Dispatch & Gather with 3-level fallback."""
     orig_shape = tokens.shape
-    is_3d = (len(orig_shape) == 3)
+    is_3d = len(orig_shape) == 3
     if is_3d:
         B, T, D = orig_shape
         tokens = tokens.view(-1, D)
@@ -245,14 +249,22 @@ def moe_dispatch_gather(
     if torch.is_grad_enabled() and (tokens.requires_grad or gate_logits.requires_grad):
         topk_vals, topk_indices = torch.topk(gate_logits, k=top_k, dim=-1)
         routing_weights = F.softmax(topk_vals.float(), dim=-1).to(tokens.dtype)
-        expert_offsets = torch.arange(num_tokens * top_k, device=tokens.device, dtype=torch.int32).view(num_tokens, top_k)
+        expert_offsets = torch.arange(num_tokens * top_k, device=tokens.device, dtype=torch.int32).view(
+            num_tokens, top_k
+        )
         total_slots = num_tokens * top_k
         dispatched = _MoEDispatchAutograd.apply(tokens, topk_indices, expert_offsets, total_slots)
         expert_outputs = expert_fn(dispatched)
         out = _MoEGatherAutograd.apply(expert_outputs, routing_weights, topk_indices, expert_offsets)
     else:
         mod = _get_module()
-        if mod is not None and tokens.is_cuda and gate_logits.is_cuda and hasattr(mod, "moe_fused_dispatch") and top_k <= 32:
+        if (
+            mod is not None
+            and tokens.is_cuda
+            and gate_logits.is_cuda
+            and hasattr(mod, "moe_fused_dispatch")
+            and top_k <= 32
+        ):
             try:
                 dispatched, routing_weights, topk_indices = mod.moe_fused_dispatch(tokens, gate_logits, top_k)
                 expert_outputs = expert_fn(dispatched)
@@ -266,20 +278,34 @@ def moe_dispatch_gather(
 
         topk_vals, topk_indices = torch.topk(gate_logits, k=top_k, dim=-1)
         routing_weights = F.softmax(topk_vals.float(), dim=-1).to(tokens.dtype)
-        expert_offsets = torch.arange(num_tokens * top_k, device=tokens.device, dtype=torch.int32).view(num_tokens, top_k)
+        expert_offsets = torch.arange(num_tokens * top_k, device=tokens.device, dtype=torch.int32).view(
+            num_tokens, top_k
+        )
         total_slots = num_tokens * top_k
 
         cuda_dispatch = mod.moe_dispatch if mod is not None else None
         cuda_gather = mod.moe_gather if mod is not None else None
 
         dispatched = dispatch(
-            cuda_dispatch, None, _moe_dispatch_pytorch_ref,
-            tokens, topk_indices, expert_offsets, total_slots, kernel_name="moe_dispatch"
+            cuda_dispatch,
+            None,
+            _moe_dispatch_pytorch_ref,
+            tokens,
+            topk_indices,
+            expert_offsets,
+            total_slots,
+            kernel_name="moe_dispatch",
         )
         expert_outputs = expert_fn(dispatched)
         out = dispatch(
-            cuda_gather, None, _moe_gather_pytorch_ref,
-            expert_outputs, routing_weights, topk_indices, expert_offsets, kernel_name="moe_gather"
+            cuda_gather,
+            None,
+            _moe_gather_pytorch_ref,
+            expert_outputs,
+            routing_weights,
+            topk_indices,
+            expert_offsets,
+            kernel_name="moe_gather",
         )
 
     if is_3d:
@@ -298,8 +324,14 @@ def moe_dispatch(
     mod = _get_module()
     cuda_dispatch = mod.moe_dispatch if mod is not None else None
     return dispatch(
-        cuda_dispatch, None, _moe_dispatch_pytorch_ref,
-        tokens, topk_indices, expert_offsets, total_slots, kernel_name="moe_dispatch"
+        cuda_dispatch,
+        None,
+        _moe_dispatch_pytorch_ref,
+        tokens,
+        topk_indices,
+        expert_offsets,
+        total_slots,
+        kernel_name="moe_dispatch",
     )
 
 
@@ -313,8 +345,14 @@ def moe_gather(
     mod = _get_module()
     cuda_gather = mod.moe_gather if mod is not None else None
     return dispatch(
-        cuda_gather, None, _moe_gather_pytorch_ref,
-        expert_outputs, routing_weights, topk_indices, expert_offsets, kernel_name="moe_gather"
+        cuda_gather,
+        None,
+        _moe_gather_pytorch_ref,
+        expert_outputs,
+        routing_weights,
+        topk_indices,
+        expert_offsets,
+        kernel_name="moe_gather",
     )
 
 
@@ -331,6 +369,7 @@ def moe_topk_routing_fused(
 
     def _triton_topk_routing(logits, k):
         from neuralops.ops.triton.sparse_attn import fused_reap_moe_router_triton
+
         weights, indices = fused_reap_moe_router_triton(logits, k)
         return weights, indices
 

@@ -171,7 +171,7 @@ def compute_hierarchical_roofline(
 ) -> dict[str, str | float]:
     spec = ROOFLINE_TARGETS[target]
     time_sec = latency_ms * 1e-3
-    
+
     achieved_tflops = (flops / time_sec) / 1e12
     achieved_dram_bw = (dram_bytes / time_sec) / 1e9
     achieved_l2_bw = (l2_bytes / time_sec) / 1e12
@@ -272,7 +272,7 @@ def chunk_kda_fwd_kernel(
     # Coalesced global memory loads with 64-bit address casting
     q_ptrs = q_ptr + tl.cast(pid_b, tl.int64) * stride_qb + tl.cast(pid_h, tl.int64) * stride_qh + \
              tl.cast(offs_t[:, None], tl.int64) * stride_qt + tl.cast(offs_k[None, :], tl.int64) * stride_qd
-    
+
     q_tile = tl.load(q_ptrs, mask=offs_t[:, None] < T, other=0.0)
     # Register-resident computation ...
 ```
@@ -385,7 +385,7 @@ def svd_compact_state_update_kernel(
     # 3. Compact state recurrence in registers
     core_ptrs = core_s_ptr + offs_r[:, None] * R + offs_r[None, :]
     core_s = tl.load(core_ptrs)
-    
+
     # Outer product rank-1 update in compact space
     core_s = decay_gamma * core_s + (k_proj[:, None] * k_proj[None, :])
     tl.store(core_ptrs, core_s)

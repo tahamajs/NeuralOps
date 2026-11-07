@@ -1,10 +1,10 @@
 # AGT-03 Final Report: Making `trust_remote_code` Opt-In and Logged (P0 / Finding F-87)
 
-**Date**: 2026-11-07  
-**Commit Baseline**: `5e84792c670461277b8687716d63b848fec34151`  
-**Target Files**: `neuralops/benchmarks/config.py`, `neuralops/benchmarks/core/model_loader.py`, `neuralops/benchmarks/cli.py`, `neuralops/benchmarks/core/runner.py`, `neuralops/export/exporter.py`  
-**Test File**: `tests/benchmarks/test_trust_remote_code.py`  
-**Environment**: `/Users/tahamajs/dev/Project/.venv` (Python 3.14.3)  
+**Date**: 2026-11-07
+**Commit Baseline**: `5e84792c670461277b8687716d63b848fec34151`
+**Target Files**: `neuralops/benchmarks/config.py`, `neuralops/benchmarks/core/model_loader.py`, `neuralops/benchmarks/cli.py`, `neuralops/benchmarks/core/runner.py`, `neuralops/export/exporter.py`
+**Test File**: `tests/benchmarks/test_trust_remote_code.py`
+**Environment**: `/Users/tahamajs/dev/Project/.venv` (Python 3.14.3)
 
 ---
 

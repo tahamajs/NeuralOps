@@ -45,17 +45,17 @@ Never deviate from these verified counts:
 
 ## 1. Title Formulation Architecture
 
-Titles must be informative, precise, and authoritative. Avoid clickbait adjectives (*"A Revolutionary Framework"*, *"Next-Generation AI"*, *"An Unprecedented Study"*). 
+Titles must be informative, precise, and authoritative. Avoid clickbait adjectives (*"A Revolutionary Framework"*, *"Next-Generation AI"*, *"An Unprecedented Study"*).
 
 ### Structural Formula
 $$[\textbf{Platform/System Name}]: [\textbf{Core Technical Mechanism}] + [\textbf{Hardware/Systems Paradigm}] + [\textbf{Target Application Domain}]$$
 
 ### Canonical Recommended Titles
-- **arXiv Master Title**:  
+- **arXiv Master Title**:
   `NeuralOps: A Unified System for In-Place Attention Surgery, Multi-Level Kernel Fallback, and Empirical LLM Compression`
-- **NeurIPS / ICLR Focus (Algorithmic & Surgery)**:  
+- **NeurIPS / ICLR Focus (Algorithmic & Surgery)**:
   `NeuralOps: Systematic Neural Surgery and 3-Tier Hardware Fallback for Efficient Language Models`
-- **MLSys Focus (Systems & Infrastructure)**:  
+- **MLSys Focus (Systems & Infrastructure)**:
   `NeuralOps: A Zero-Overhead Hardware Fallback and Execution Platform for Sub-Quadratic Attention and LLM Surgery`
 
 ---
@@ -78,23 +78,23 @@ An academic abstract in top AI venues must function as an exact microcosm of the
 
 ### Detailed Functional Breakdown
 
-1. **Sentence 1: Context & Urgency**  
+1. **Sentence 1: Context & Urgency**
    Establish the explosive divergence between quadratic attention bottlenecks, sub-quadratic attention designs, and hardware realities.
    *Example*: "The exponential growth of context lengths in large language models (LLMs) has catalyzed the development of sub-quadratic attention mechanisms and low-rank compression engines, yet translating these theoretical advancements into consistent hardware speedups remains severely hindered by architectural fragmentation."
 
-2. **Sentence 2: The Core Obstacle (The Hook)**  
+2. **Sentence 2: The Core Obstacle (The Hook)**
    Identify why previous attempts fail: non-standardized tensor layouts ($[B, S, H, D]$ vs $[B, H, S, D]$), brittle causal masking, unhandled hardware crashes, and the multi-million-dollar cost of retraining from scratch.
    *Example*: "Existing frameworks suffer from incompatible tensor contracts, fragile custom CUDA extensions that fail outside isolated containers, and prohibitive pre-training costs that prevent researchers from surgically evaluating novel operators within pre-trained foundation models."
 
-3. **Sentence 3: The NeuralOps Solution (The Pivot)**  
+3. **Sentence 3: The NeuralOps Solution (The Pivot)**
    Introduce NeuralOps as the unified open-source surgical platform, defining its core capabilities (131 attentions, 72 compressors, in-place drop-in surgery, and 3-level fallback hierarchy).
    *Example*: "In this work, we introduce \textsc{NeuralOps}, a unified, production-grade system designed for in-place neural attention surgery and zero-overhead kernel execution across 131 attention mechanisms and 72 model compression engines."
 
-4. **Sentence 4: Key Macro Empirical Results (The Hard Evidence)**  
+4. **Sentence 4: Key Macro Empirical Results (The Hard Evidence)**
    Deliver verified, unrounded quantitative telemetry from the master ledger on RTX 4070 (SM 8.9), reporting both fast and slow paths honestly.
    *Example*: "Governed by an automatic three-level fallback hierarchy (\textsc{CUDA C++} $\to$ \textsc{Triton JIT} $\to$ Vectorized \textsc{PyTorch}) and strict online correctness gates, macro-evaluation across 203 unified modules on an NVIDIA RTX 4070 reveals 42 \texttt{PASS\_FAST} operators achieving up to $3.12\times$ kernel speedup, while correctly routing 161 reference implementations without a single unhandled fallback, numerical NaN corruption, or timeout."
 
-5. **Sentence 5: Impact & Reproducibility Statement**  
+5. **Sentence 5: Impact & Reproducibility Statement**
    Assert public availability, zero synthetic fallbacks, and complete end-to-end integration with production serving engines (vLLM and SGLang).
    *Example*: "Combined with closed-form Cholesky whitening and Riemannian Stiefel distillation that recovers $99.06\%$ of baseline dense accuracy in under 250 steps, \textsc{NeuralOps} is fully open-sourced with reproducible test suites, pre-trained checkpoints, and native vLLM and SGLang serving integration."
 
@@ -188,19 +188,19 @@ Conclude Section 1 with an authoritative 5-pillar contribution list. Every bulle
 ```latex
 \noindent In summary, this work delivers five foundational contributions:
 \begin{enumerate}
-    \item \textbf{Unified Architectural Registry \& Surgical Framework:} 
+    \item \textbf{Unified Architectural Registry \& Surgical Framework:}
     We design and release an open-source surgical platform unifying \textbf{131 attention mechanisms} across 7 distinct families and \textbf{72 model compression engines} across 5 algorithmic paradigms. Built on standard $(B, S, H, D)$ tensor contracts, causal mask invariants, and PEP~562 lazy-loading interfaces, the framework enables seamless, in-place module transplantation (\texttt{replace\_attention}) within pre-trained foundation models with sub-$30\,\text{ms}$ import overhead.
 
-    \item \textbf{Three-Level Zero-Overhead Hardware Fallback Engine:} 
+    \item \textbf{Three-Level Zero-Overhead Hardware Fallback Engine:}
     We formalize a hierarchical execution contract bridging native \textsc{CUDA C++} (Level~1; 114 compiled packages), autotuned \textsc{Triton JIT} (Level~2; 26 canonical modules), and vectorized \textsc{PyTorch} (Level~3). Governed by frozen \texttt{@lru\_cache} dispatch tables, the system achieves sub-$5\,\mu\text{s}$ operator resolution and enforces strict pre-execution correctness gates ($\text{atol} \le 10^{-3}$), preventing runtime crashes across heterogeneous GPU architectures.
 
-    \item \textbf{Riemannian Subspace Alignment \& Multi-Pillar Distillation:} 
+    \item \textbf{Riemannian Subspace Alignment \& Multi-Pillar Distillation:}
     We establish the theoretical foundations of post-surgery parameter recovery, formulating closed-form Cholesky covariance whitening ($\mathbf{\Sigma}_X = \mathbf{L}\mathbf{L}^\top$) to pull back activation spaces and project gradients onto the Stiefel manifold $\text{St}(p, n)$ via $\mathcal{P}_U(\mathbf{G}) = \mathbf{G} - \mathbf{U}\,\text{sym}(\mathbf{U}^\top \mathbf{G})$. Coupled with a 6-pillar distillation objective, our protocol recovers up to \textbf{$99.06\%$} of dense baseline accuracy ($51.30\% \to 89.40\%$ on RoBERTa-base SST-2) in fewer than 250 optimization steps.
 
-    \item \textbf{Exhaustive Empirical Telemetry on Ada Lovelace Architecture:} 
+    \item \textbf{Exhaustive Empirical Telemetry on Ada Lovelace Architecture:}
     We conduct the largest publicly disclosed, ceteris paribus hardware evaluation across \textbf{203 unified operators} on an NVIDIA RTX~4070 (SM~8.9). Our macro-telemetry reveals 42 \texttt{PASS\_FAST} operators achieving up to $3.12\times$ speedup and 161 \texttt{PASS\_SLOW} reference executions, identifying the sequence length crossover point at $N^* \approx 2048$, while yielding a \textbf{$63.6\%$} GPU power reduction and \textbf{$6.7^\circ\text{C}$} thermal drop.
 
-    \item \textbf{Production Serving Integration \& Zero-Fake Artifact Integrity:} 
+    \item \textbf{Production Serving Integration \& Zero-Fake Artifact Integrity:}
     We demonstrate end-to-end deployment by integrating surgically modified models into production inference pipelines, including \textsc{vLLM} PagedAttention and \textsc{SGLang} RadixAttention prefix caching ($4.2\times$ throughput improvement). We enforce a zero-fake serialization standard, guaranteeing fully functional, byte-validated GGUF, SafeTensors, and ONNX exports without synthetic placeholders.
 \end{enumerate}
 ```

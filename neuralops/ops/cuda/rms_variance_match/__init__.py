@@ -10,9 +10,9 @@ RMS Variance Match Hardware Operators.
 """
 
 from neuralops.ops.cuda.rms_variance_match.rms_variance_match_autograd import (
+    fused_rms_variance_match_triton,
     rms_variance_match,
     rms_variance_match_pytorch_ref,
-    fused_rms_variance_match_triton,
 )
 
 __all__ = [

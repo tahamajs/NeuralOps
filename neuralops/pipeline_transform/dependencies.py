@@ -141,7 +141,7 @@ class ConflictDetector:
                 if constraint.startswith("after:"):
                     target_op = constraint.split("after:", 1)[1]
                     # If this op is run, but target_op appears LATER in the recipe
-                    later_ops = [o.type for o in self.recipe.operations[idx + 1:]]
+                    later_ops = [o.type for o in self.recipe.operations[idx + 1 :]]
                     if target_op in later_ops:
                         conflicts.append(
                             Conflict(

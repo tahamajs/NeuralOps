@@ -11,11 +11,6 @@ Hybrid Local Kernel Attention
 Combines local sliding-window attention with global kernelized projections for efficient sequence processing.
 """
 
-from neuralops.core.common import _detect_decoder
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 import logging
 import math
 from dataclasses import dataclass
@@ -25,8 +20,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core.attention_utils import repeat_kv
+from neuralops.core.attention_utils import apply_rotary_pos_emb, repeat_kv
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _detect_decoder
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -118,9 +114,7 @@ class FactorisedLinear(nn.Module):
                 if bias is not None:
                     bias = bias.view(self.out_features, rep).mean(dim=1)
             elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
-                padded = torch.zeros(
-                    self.out_features, self.in_features, device=W.device, dtype=W.dtype
-                )
+                padded = torch.zeros(self.out_features, self.in_features, device=W.device, dtype=W.dtype)
                 r = min(self.out_features, W.shape[0])
                 c = min(self.in_features, W.shape[1])
                 padded[:r, :c] = W[:r, :c]
@@ -219,6 +213,7 @@ def _local_window_attention_v2(
     if Q.is_cuda and token_valid is None and past_len == 0 and N == N_k and D <= 256:
         try:
             from neuralops.ops.cuda.hybrid_local_kernel import hybrid_local_attn
+
             return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder)
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -287,10 +282,14 @@ def _global_linear_attention_v2(
             return torch.nan_to_num(num / den, nan=0.0).to(Q.dtype)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
         if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and Q.is_cuda and token_valid is None and D <= 128:
             try:
                 from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
-                return fused_svd_linear_chunk_scan_triton(phi_Q.to(Q.dtype), phi_K.to(Q.dtype), V, chunk_size=64, eps=1e-6)
+
+                return fused_svd_linear_chunk_scan_triton(
+                    phi_Q.to(Q.dtype), phi_K.to(Q.dtype), V, chunk_size=64, eps=1e-6
+                )
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
@@ -342,6 +341,7 @@ class HybridLocalKernelAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -429,17 +429,9 @@ class HybridLocalKernelAttention(BaseAttention):
                     if config is not None
                     else 128
                 ),
-                dropout=(
-                    kwargs.get("dropout", getattr(config, "dropout", 0.1))
-                    if config is not None
-                    else 0.1
-                ),
-                use_adaptive_pruning=(
-                    getattr(config, "use_gate", True) if config is not None else True
-                ),
-                gate_init_bias=(
-                    getattr(config, "gate_init_bias", 1.8) if config is not None else 1.8
-                ),
+                dropout=(kwargs.get("dropout", getattr(config, "dropout", 0.1)) if config is not None else 0.1),
+                use_adaptive_pruning=(getattr(config, "use_gate", True) if config is not None else True),
+                gate_init_bias=(getattr(config, "gate_init_bias", 1.8) if config is not None else 1.8),
                 is_decoder=dec,
             )
 
@@ -451,8 +443,7 @@ class HybridLocalKernelAttention(BaseAttention):
         self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads)
         if self.num_heads % max(1, self.num_kv_heads) != 0:
             raise ValueError(
-                f"num_heads ({self.num_heads}) must be divisible by "
-                f"num_kv_heads ({self.num_kv_heads})."
+                f"num_heads ({self.num_heads}) must be divisible by " f"num_kv_heads ({self.num_kv_heads})."
             )
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
@@ -620,9 +611,7 @@ class HybridLocalKernelAttention(BaseAttention):
                     or hasattr(base_p, "nf")
                 )
                 if is_conv1d or (
-                    w_o.dim() == 2
-                    and w_o.shape[0] != self.hidden_size
-                    and w_o.shape[1] == self.hidden_size
+                    w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size
                 ):
                     w_o = w_o.t().contiguous()
                 b_o = getattr(base_p, "bias", getattr(c_proj_mod, "bias", None))
@@ -637,11 +626,7 @@ class HybridLocalKernelAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(old_attn, "output")
-            and hasattr(old_attn.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") and extracted["o"][0] is None:
             dense = old_attn.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -677,11 +662,7 @@ class HybridLocalKernelAttention(BaseAttention):
                 "proj",
             )
         )
-        if (
-            hasattr(old_attn, "out_lin")
-            or hasattr(old_attn, "c_proj")
-            or hasattr(old_attn, "o_proj")
-        ):
+        if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
             self.is_nested_encoder = False
         elif (
             hasattr(old_attn, "self")
@@ -825,8 +806,7 @@ class HybridLocalKernelAttention(BaseAttention):
         output_hidden_states: bool | None = False,
         return_dict: bool | None = True,
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
-            use_cache: bool | None = None,
-
+        use_cache: bool | None = None,
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
@@ -927,6 +907,7 @@ class HybridLocalKernelAttention(BaseAttention):
             if local_out.is_cuda:
                 try:
                     from neuralops.ops.cuda.hybrid_local_kernel import hybrid_two_branch_blend
+
                     fused = hybrid_two_branch_blend(local_out, global_out, alpha)
                 except Exception:
                     fused = alpha * local_out + (1.0 - alpha) * global_out
@@ -967,6 +948,7 @@ class HybridLocalKernelAttention(BaseAttention):
             return (output, present, None)
         else:
             return (output, present)
+
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.zeros((), device=self.out_proj.up.weight.device)
 
@@ -1007,11 +989,7 @@ def inject_hybrid_local_kernel(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers

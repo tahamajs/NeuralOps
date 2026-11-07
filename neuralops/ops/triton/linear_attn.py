@@ -22,11 +22,7 @@ import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
-from neuralops.ops.triton._types import (
-    HAS_TRITON,
-    check_triton_suitability,
-    linear_attn_pytorch_fallback,
-)
+from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability, linear_attn_pytorch_fallback
 
 if HAS_TRITON:
     import triton
@@ -110,9 +106,7 @@ if HAS_TRITON:
 
             scores_intra = tl.dot(phi_q, tl.trans(phi_k))
             causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
-            scores_causal = tl.where(
-                causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0
-            )
+            scores_causal = tl.where(causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0)
 
             num_intra = tl.dot(scores_causal, v_tile.to(tl.float32))
             denom_intra = tl.sum(scores_causal, axis=1)
@@ -410,9 +404,7 @@ def fwd(
             sin_weight=sin_weight,
             **kwargs,
         )
-    return _TritonLinearAttnAutogradFunction.apply(
-        q, k, v, is_causal, phi, eps, cos_weight, sin_weight
-    )
+    return _TritonLinearAttnAutogradFunction.apply(q, k, v, is_causal, phi, eps, cos_weight, sin_weight)
 
 
 def bwd(
@@ -487,7 +479,9 @@ def fused_rala_augmented_scan_pytorch(
 
     lin_out = torch.nan_to_num(num / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
     rank_mat = torch.einsum("hdr,her->hde", lora_U.float(), lora_V.float())
-    aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+    aug_out = torch.nan_to_num(
+        torch.einsum("bhnd,hde->bhne", q_p, rank_mat) / denom, nan=0.0, posinf=1e4, neginf=-1e4
+    ).to(q.dtype)
     return lin_out, aug_out
 
 
@@ -500,7 +494,7 @@ def fused_rala_augmented_scan_triton(
     is_causal: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Fused RALA linear attention with rank augmentation evaluated with GPU Triton acceleration."""
-    from neuralops.ops.triton._types import check_triton_suitability, HAS_TRITON
+    from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability
 
     suitable, _ = check_triton_suitability(q, "linear_attn", head_dim=q.shape[-1], seq_len=q.shape[-2])
     if HAS_TRITON and q.is_cuda and suitable:
@@ -520,7 +514,9 @@ def fused_rala_augmented_scan_triton(
             aug_out = torch.nan_to_num(aug_num / denom, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
             return lin_out, aug_out
         except Exception as e:
-            logger.warning("Fused RALA augmented scan accelerated path failed (%s); falling back to PyTorch reference.", e)
+            logger.warning(
+                "Fused RALA augmented scan accelerated path failed (%s); falling back to PyTorch reference.", e
+            )
 
     return fused_rala_augmented_scan_pytorch(q, k, v, lora_U, lora_V, is_causal=is_causal)
 
@@ -535,6 +531,7 @@ def fused_nasc_spectral_linear_scan_pytorch(
 ) -> torch.Tensor:
     """Exact PyTorch fallback for NASC spectral RFF linear attention scan."""
     import math
+
     import torch.nn.functional as F
 
     rff_features = rff_proj.shape[-1]
@@ -577,7 +574,7 @@ def fused_nasc_spectral_linear_scan_triton(
     is_causal: bool = True,
 ) -> torch.Tensor:
     """Fused NASC spectral RFF linear scan accelerated on GPU."""
-    from neuralops.ops.triton._types import check_triton_suitability, HAS_TRITON
+    from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability
 
     suitable, _ = check_triton_suitability(q, "linear_attn", head_dim=q.shape[-1], seq_len=q.shape[-2])
     if HAS_TRITON and q.is_cuda and suitable:
@@ -638,13 +635,12 @@ def fused_ttt_linear_scan_triton(
                 = S_{t-1} - etas_t * k_t^T @ (k_t @ S_{t-1} - v_t)
         which is mathematically and bitwise identical to the TTT online gradient step on memory matrix S!
     """
-    from neuralops.ops.triton._types import (
-        FORCE_PYTORCH_FALLBACK,
-        check_triton_suitability,
-    )
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
     if not FORCE_PYTORCH_FALLBACK and q.is_cuda and q.shape[-1] <= 64:
         try:
             from neuralops.ops.triton.gdn_scan import gdn_scan_triton
+
             suitable, _ = check_triton_suitability(
                 q, "gdn_scan", head_dim=q.shape[-1], seq_len=q.shape[-2], supports_backward=True
             )
@@ -661,15 +657,30 @@ def fused_ttt_linear_scan_triton(
 
     return fused_ttt_linear_scan_pytorch(q, k, v, etas)
 
+
 if HAS_TRITON:
+
     @triton.jit
     def _svd_linear_chunk_scan_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Decay_ptr, Out_ptr,
-        stride_qbh, stride_qn, stride_qd,
-        stride_kbh, stride_kn, stride_kd,
-        stride_vbh, stride_vn, stride_vd,
-        stride_dbh, stride_dn,
-        stride_obh, stride_on, stride_od,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Decay_ptr,
+        Out_ptr,
+        stride_qbh,
+        stride_qn,
+        stride_qd,
+        stride_kbh,
+        stride_kn,
+        stride_kd,
+        stride_vbh,
+        stride_vn,
+        stride_vd,
+        stride_dbh,
+        stride_dn,
+        stride_obh,
+        stride_on,
+        stride_od,
         N: tl.constexpr,
         D_K: tl.constexpr,
         D_V: tl.constexpr,
@@ -727,9 +738,7 @@ if HAS_TRITON:
 
             scores_intra = tl.dot(phi_q, tl.trans(phi_k))
             causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
-            scores_causal = tl.where(
-                causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0
-            )
+            scores_causal = tl.where(causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0)
 
             num_intra = tl.dot(scores_causal, v_tile)
             denom_intra = tl.sum(scores_causal, axis=1)
@@ -762,7 +771,8 @@ def fused_svd_linear_chunk_scan_triton(
     eps: float = 1e-4,
 ) -> torch.Tensor:
     """Dispatches single-pass fused SVD linear chunk scan kernel on GPU."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON, check_triton_suitability
+
     suitable, _ = check_triton_suitability(q, "linear_attn", head_dim=q.shape[-1], seq_len=q.shape[-2])
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda and suitable and q.shape[-1] <= 128:
@@ -784,12 +794,25 @@ def fused_svd_linear_chunk_scan_triton(
 
             grid = (B * H,)
             _svd_linear_chunk_scan_fwd_kernel[grid](
-                q_flat, k_flat, v_flat, decay_flat, out,
-                q_flat.stride(0), q_flat.stride(1), q_flat.stride(2),
-                k_flat.stride(0), k_flat.stride(1), k_flat.stride(2),
-                v_flat.stride(0), v_flat.stride(1), v_flat.stride(2),
-                stride_dbh, stride_dn,
-                out.stride(0), out.stride(1), out.stride(2),
+                q_flat,
+                k_flat,
+                v_flat,
+                decay_flat,
+                out,
+                q_flat.stride(0),
+                q_flat.stride(1),
+                q_flat.stride(2),
+                k_flat.stride(0),
+                k_flat.stride(1),
+                k_flat.stride(2),
+                v_flat.stride(0),
+                v_flat.stride(1),
+                v_flat.stride(2),
+                stride_dbh,
+                stride_dn,
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
                 N=N,
                 D_K=D_K,
                 D_V=D_V,
@@ -803,12 +826,14 @@ def fused_svd_linear_chunk_scan_triton(
             pass
 
     from neuralops.ops.triton.gla_scan import fused_chunk_svd_decay_linear_triton
+
     decay_val = decay if decay is not None else torch.ones(q.shape[:-1], device=q.device, dtype=torch.float32)
     out, _ = fused_chunk_svd_decay_linear_triton(q, k, v, decay_val, chunk_size=chunk_size, eps=eps)
     return out
 
 
 if HAS_TRITON:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 32}, num_stages=2, num_warps=2),
@@ -895,14 +920,14 @@ if HAS_TRITON:
         u_ptrs = u_v_ptr + offs_r[:, None] * stride_ur + offs_dv[None, :] * stride_ud
         u_v_tile = tl.load(u_ptrs).to(tl.float32)
 
-        o_tile = tl.dot(acc_latent_norm.to(q_latent_ptr.dtype.element_ty), u_v_tile.to(q_latent_ptr.dtype.element_ty), allow_tf32=True)
+        o_tile = tl.dot(
+            acc_latent_norm.to(q_latent_ptr.dtype.element_ty),
+            u_v_tile.to(q_latent_ptr.dtype.element_ty),
+            allow_tf32=True,
+        )
 
         o_ptrs = (
-            o_ptr
-            + pid_b * stride_ob
-            + pid_h * stride_oh
-            + offs_m[:, None] * stride_ol
-            + offs_dv[None, :] * stride_od
+            o_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_m[:, None] * stride_ol + offs_dv[None, :] * stride_od
         )
         tl.store(o_ptrs, o_tile.to(q_latent_ptr.dtype.element_ty), mask=mask_m[:, None])
 
@@ -915,7 +940,9 @@ def triton_fused_latent_kv_cache_attention_pytorch_ref(
     sm_scale: Optional[float] = None,
 ) -> torch.Tensor:
     import math
+
     import torch.nn.functional as F
+
     B, H, L_Q, D_K = q.shape
     B_c, L_KV, R = c_kv.shape
     _D_V = u_v.shape[1]
@@ -939,6 +966,7 @@ def triton_fused_latent_kv_cache_attention(
     sm_scale: Optional[float] = None,
 ) -> torch.Tensor:
     import math
+
     B, H, L_Q, D_K = q.shape
     B_c, L_KV, R = c_kv.shape
     D_V = u_v.shape[1]
@@ -994,15 +1022,37 @@ def triton_fused_latent_kv_cache_attention(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _zeros_causal_fwd_kernel(
-        Q_ptr, K_ptr, V_ptr, Mask_ptr, Out_ptr,
-        stride_qb, stride_qh, stride_ql, stride_qd,
-        stride_kb, stride_kh, stride_kl, stride_kd,
-        stride_vb, stride_vh, stride_vl, stride_vd,
-        stride_mb, stride_ml,
-        stride_ob, stride_oh, stride_ol, stride_od,
-        B_size, H_size, L_size, D_size, eps,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        Mask_ptr,
+        Out_ptr,
+        stride_qb,
+        stride_qh,
+        stride_ql,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kl,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vl,
+        stride_vd,
+        stride_mb,
+        stride_ml,
+        stride_ob,
+        stride_oh,
+        stride_ol,
+        stride_od,
+        B_size,
+        H_size,
+        L_size,
+        D_size,
+        eps,
         HAS_MASK: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
@@ -1020,9 +1070,21 @@ if HAS_TRITON and tl is not None:
         Z = tl.zeros((BLOCK_D,), dtype=tl.float32)
 
         for t in range(L_size):
-            q_t = tl.load(Q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
-            k_t = tl.load(K_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
-            v_t = tl.load(V_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
+            q_t = tl.load(
+                Q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
+                mask=mask_d,
+                other=0.0,
+            ).to(tl.float32)
+            k_t = tl.load(
+                K_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd,
+                mask=mask_d,
+                other=0.0,
+            ).to(tl.float32)
+            v_t = tl.load(
+                V_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd,
+                mask=mask_d,
+                other=0.0,
+            ).to(tl.float32)
 
             valid = 1.0
             if HAS_MASK:
@@ -1045,7 +1107,11 @@ if HAS_TRITON and tl is not None:
             den_t = tl.maximum(tl.sum(q_hat * Z), eps)
             y_t = num_t / den_t
 
-            tl.store(Out_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_d * stride_od, y_t.to(Out_ptr.dtype.element_ty), mask=mask_d)
+            tl.store(
+                Out_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_d * stride_od,
+                y_t.to(Out_ptr.dtype.element_ty),
+                mask=mask_d,
+            )
 
 
 class _ZerosLinearScanFunction(torch.autograd.Function):
@@ -1061,13 +1127,34 @@ class _ZerosLinearScanFunction(torch.autograd.Function):
 
         grid = (B, H)
         _zeros_causal_fwd_kernel[grid](
-            q, k, v, mask_t, out,
-            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-            mask_t.stride(0) if has_mask else 0, mask_t.stride(1) if has_mask else 0,
-            out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-            B, H, L, D, eps,
+            q,
+            k,
+            v,
+            mask_t,
+            out,
+            q.stride(0),
+            q.stride(1),
+            q.stride(2),
+            q.stride(3),
+            k.stride(0),
+            k.stride(1),
+            k.stride(2),
+            k.stride(3),
+            v.stride(0),
+            v.stride(1),
+            v.stride(2),
+            v.stride(3),
+            mask_t.stride(0) if has_mask else 0,
+            mask_t.stride(1) if has_mask else 0,
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            out.stride(3),
+            B,
+            H,
+            L,
+            D,
+            eps,
             HAS_MASK=has_mask,
             BLOCK_D=BLOCK_D,
         )
@@ -1092,7 +1179,11 @@ class _ZerosLinearScanFunction(torch.autograd.Function):
             k_v = k_ * mask_val
             v_v = v_ * mask_val
 
-            counts = torch.cumsum(mask_t, dim=-1).clamp(min=1.0).unsqueeze(1).unsqueeze(-1) if has_mask else torch.arange(1, L + 1, device=q.device).view(1, 1, -1, 1).float()
+            counts = (
+                torch.cumsum(mask_t, dim=-1).clamp(min=1.0).unsqueeze(1).unsqueeze(-1)
+                if has_mask
+                else torch.arange(1, L + 1, device=q.device).view(1, 1, -1, 1).float()
+            )
             k_cumsum = torch.cumsum(k_v, dim=2)
             k_mean = k_cumsum / counts
             k_centered = k_v - k_mean
@@ -1114,7 +1205,9 @@ class _ZerosLinearScanFunction(torch.autograd.Function):
         return dq, dk, dv, None, None
 
 
-def fused_zeros_linear_scan_triton(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, valid_mask=None, eps: float = 1e-6) -> torch.Tensor:
+def fused_zeros_linear_scan_triton(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, valid_mask=None, eps: float = 1e-6
+) -> torch.Tensor:
     """Fused Zero-Mean Causal Linear Attention Scan in Triton with zero intermediate 5D HBM allocation."""
     if not HAS_TRITON or not q.is_cuda or q.shape[-1] > 128:
         B, H, L, D = q.shape
@@ -1123,7 +1216,11 @@ def fused_zeros_linear_scan_triton(q: torch.Tensor, k: torch.Tensor, v: torch.Te
         mask_val = valid_mask.unsqueeze(1).unsqueeze(-1).to(q.device) if has_mask else 1.0
         k_v = k.float() * mask_val
         v_v = v.float() * mask_val
-        counts = torch.cumsum(valid_mask.float(), dim=-1).clamp(min=1.0).unsqueeze(1).unsqueeze(-1) if has_mask else torch.arange(1, L + 1, device=q.device).view(1, 1, -1, 1).float()
+        counts = (
+            torch.cumsum(valid_mask.float(), dim=-1).clamp(min=1.0).unsqueeze(1).unsqueeze(-1)
+            if has_mask
+            else torch.arange(1, L + 1, device=q.device).view(1, 1, -1, 1).float()
+        )
         k_cumsum = torch.cumsum(k_v, dim=2)
         k_mean = k_cumsum / counts
         k_centered = k_v - k_mean

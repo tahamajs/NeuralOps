@@ -12,7 +12,6 @@ Slices redundant computational dimensions in transformer blocks by transforming 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -112,11 +112,7 @@ class SliceGPTPCALoRALinear(nn.Module):
         lora_alpha: float = 1.0,
     ) -> SliceGPTPCALoRALinear:
         base_mod = getattr(linear, "base_layer", linear)
-        bias = (
-            base_mod.bias.detach()
-            if hasattr(base_mod, "bias") and base_mod.bias is not None
-            else None
-        )
+        bias = base_mod.bias.detach() if hasattr(base_mod, "bias") and base_mod.bias is not None else None
         in_features = getattr(base_mod, "in_features", sliced_weight.shape[1])
         out_features = getattr(base_mod, "out_features", sliced_weight.shape[0])
 
@@ -154,11 +150,15 @@ class SliceGPTPCALoRALinear(nn.Module):
         )
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
             suitable, _ = check_triton_suitability(x, "low_rank")
             if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
                 try:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
-                    lora_delta = fused_down_up_gemm_bias_triton(x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None)
+
+                    lora_delta = fused_down_up_gemm_bias_triton(
+                        x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None
+                    )
                     return out + (self.scaling * lora_delta)
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
@@ -223,14 +223,10 @@ class SliceGPTPCACompressor(BaseCompressor):
                 0.95,
             ),
         )
-        self.tokenizer = (
-            tokenizer or getattr(model, "tokenizer", None) or _cfg_get(cfg_obj, "tokenizer", None)
-        )
+        self.tokenizer = tokenizer or getattr(model, "tokenizer", None) or _cfg_get(cfg_obj, "tokenizer", None)
         self.calibration_texts = calibration_texts or _cfg_get(cfg_obj, "calibration_texts", None)
         self.skip_attention_qkv = bool(
-            skip_attention_qkv
-            if skip_attention_qkv is not None
-            else _cfg_get(cfg_obj, "skip_attention_qkv", False)
+            skip_attention_qkv if skip_attention_qkv is not None else _cfg_get(cfg_obj, "skip_attention_qkv", False)
         )
         self.target_attention_only = bool(
             target_attention_only
@@ -254,14 +250,10 @@ class SliceGPTPCACompressor(BaseCompressor):
                 self.target_device = torch.device(device)
             except Exception:
                 self.target_device = (
-                    next(model.parameters()).device
-                    if list(model.parameters())
-                    else torch.device("cpu")
+                    next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
                 )
         else:
-            self.target_device = (
-                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
-            )
+            self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
 
         self.visited_modules: set[int] = set()
         self.sliced_layers: list[str] = []
@@ -419,10 +411,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                         self.model(calib_inputs.to(self.target_device))
                     elif isinstance(calib_inputs, (list, tuple)):
                         self.model(
-                            *[
-                                (t.to(self.target_device) if isinstance(t, torch.Tensor) else t)
-                                for t in calib_inputs
-                            ]
+                            *[(t.to(self.target_device) if isinstance(t, torch.Tensor) else t) for t in calib_inputs]
                         )
                 except Exception as ex_calib:
                     logger.debug(
@@ -510,9 +499,7 @@ class SliceGPTPCACompressor(BaseCompressor):
         total_params_before = 0
         total_params_after = 0
 
-        target_items = [
-            (n, m) for n, m in self.model.named_modules() if self._is_target_module(n, m)
-        ]
+        target_items = [(n, m) for n, m in self.model.named_modules() if self._is_target_module(n, m)]
 
         for name, module in target_items:
             mod_id = id(module)
@@ -540,17 +527,13 @@ class SliceGPTPCACompressor(BaseCompressor):
 
                 cov_mat = activations_map.get(name, None)
                 if cov_mat is not None and cov_mat.shape[0] == d_in and cov_mat.shape[1] == d_in:
-                    cov = cov_mat.to(device=device, dtype=torch.float32) + 1e-5 * torch.eye(
-                        d_in, device=device
-                    )
+                    cov = cov_mat.to(device=device, dtype=torch.float32) + 1e-5 * torch.eye(d_in, device=device)
                     try:
                         eigvals, V = torch.linalg.eigh(cov)
                         idx = torch.argsort(eigvals, descending=True)
                         eigvals = eigvals[idx]
                         V = V[:, idx]
-                        eye_diff = torch.norm(
-                            torch.matmul(V.T, V) - torch.eye(d_in), p="fro"
-                        ).item()
+                        eye_diff = torch.norm(torch.matmul(V.T, V) - torch.eye(d_in), p="fro").item()
                         if eye_diff > 1e-2 or torch.isnan(V).any():
                             raise ValueError(f"Eigh basis non-orthogonal (diff={eye_diff:.4f})")
                     except Exception as e_eigh:
@@ -593,9 +576,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                 rel_err = (torch.norm(W - W_reconstructed, p="fro") / norm_orig).item()
                 self.layer_errors[name] = float(rel_err)
 
-                is_invalid = (
-                    torch.isnan(W_reconstructed).any() or torch.isinf(W_reconstructed).any()
-                )
+                is_invalid = torch.isnan(W_reconstructed).any() or torch.isinf(W_reconstructed).any()
                 if rel_err > self.max_error:
                     logger.warning(
                         "SliceGPTPCA: reconstruction error %.4f on %s exceeded threshold %.4f.",
@@ -644,9 +625,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                     in_features=d_in,
                     out_features=d_out,
                     rank=effective_keep,
-                    bias=(
-                        getattr(base_mod, "bias", None) is not None and base_mod.bias is not None
-                    ),
+                    bias=(getattr(base_mod, "bias", None) is not None and base_mod.bias is not None),
                     dtype=dtype,
                     device=device,
                     lora_r=used_lora_r,
@@ -667,17 +646,9 @@ class SliceGPTPCACompressor(BaseCompressor):
                         src_lb = getattr(module.lora_B, "weight", module.lora_B)
                         la_target = svd_layer.lora_A
                         lb_target = svd_layer.lora_B
-                        if (
-                            hasattr(src_la, "data")
-                            and la_target is not None
-                            and src_la.shape == la_target.shape
-                        ):
+                        if hasattr(src_la, "data") and la_target is not None and src_la.shape == la_target.shape:
                             la_target.data.copy_(src_la.data)
-                        if (
-                            hasattr(src_lb, "data")
-                            and lb_target is not None
-                            and src_lb.shape == lb_target.shape
-                        ):
+                        if hasattr(src_lb, "data") and lb_target is not None and src_lb.shape == lb_target.shape:
                             lb_target.data.copy_(src_lb.data)
                     except Exception as e_lora:
                         logger.debug("SliceGPTPCA LoRA copy skipped on %s: %s", name, e_lora)
@@ -714,12 +685,8 @@ class SliceGPTPCACompressor(BaseCompressor):
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
-        avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        )
-        compression_rate = (
-            total_params_before / max(1, total_params_after) if total_params_after > 0 else 1.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        compression_rate = total_params_before / max(1, total_params_after) if total_params_after > 0 else 1.0
 
         stats = self.get_compression_stats()
         stats.update(
@@ -753,9 +720,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                 "num_fallback_layers": len(self.fallback_layers),
                 "is_noop": (total_params_after >= total_params_before),
                 "noop_reason": (
-                    "no_factorizable_layers_or_fallback_all"
-                    if total_params_after >= total_params_before
-                    else None
+                    "no_factorizable_layers_or_fallback_all" if total_params_after >= total_params_before else None
                 ),
                 "method": "slicegpt_pca_real_low_rank_factorization",
             }
@@ -763,8 +728,7 @@ class SliceGPTPCACompressor(BaseCompressor):
         self.stats = stats
 
         logger.info(
-            "SliceGPTPCA (real): %d layers factorized, avg recon error %.4f, "
-            "params %d -> %d (%.2fx compression)",
+            "SliceGPTPCA (real): %d layers factorized, avg recon error %.4f, " "params %d -> %d (%.2fx compression)",
             sliced_layers_count,
             avg_err,
             total_params_before,
@@ -801,19 +765,13 @@ def slicegpt_pca_factory(
         "tokenizer",
         getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None),
     )
-    skip_attention_qkv = kwargs.pop(
-        "skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False)
-    )
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    skip_attention_qkv = kwargs.pop("skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", False))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 1.0))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False))
 
     compressor = SliceGPTPCACompressor(
         model,

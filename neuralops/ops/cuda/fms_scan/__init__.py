@@ -9,10 +9,7 @@
 Factorised Matrix State Scan Hardware Operators.
 """
 
-from neuralops.ops.cuda.fms_scan.fms_autograd import (
-    fms_scan,
-    fms_scan_pytorch_ref,
-)
+from neuralops.ops.cuda.fms_scan.fms_autograd import fms_scan, fms_scan_pytorch_ref
 
 __all__ = [
     "fms_scan",

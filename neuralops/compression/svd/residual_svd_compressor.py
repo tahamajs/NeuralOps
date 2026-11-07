@@ -132,14 +132,19 @@ class ResSVDLinear(nn.Module):
         y = Base(x) + scaling * (x @ A^T) @ B^T + bias
         """
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda and self.factorize_base:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 base_bias = self.bias if (self.residual_rank == 0 or self.lora_A is None) else None
                 base_out = fused_down_up_gemm_bias_triton(x, self.base_V, self.base_U.t().contiguous(), bias=base_bias)
                 if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-                    res_out = fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias) * self.scaling
+                    res_out = (
+                        fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias)
+                        * self.scaling
+                    )
                     return base_out + res_out
                 return base_out
             except Exception:
@@ -312,9 +317,7 @@ class ResSVDLinear(nn.Module):
 
             if original_weight is not None:
                 W_orig = original_weight.float().to(W_approx.device)
-                error = torch.norm(W_orig - W_approx, p="fro") / (
-                    torch.norm(W_orig, p="fro") + 1e-12
-                )
+                error = torch.norm(W_orig - W_approx, p="fro") / (torch.norm(W_orig, p="fro") + 1e-12)
                 return float(error.item())
 
             return 0.0
@@ -390,11 +393,7 @@ class ResSVDCompressor(BaseCompressor):
         """
         self.replaced_layers = []
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not target_layers:
             logger.warning("No compressible linear layers found in model.")
@@ -419,9 +418,7 @@ class ResSVDCompressor(BaseCompressor):
         stats = self.get_compression_stats()
         stats["trainable_parameters"] = trainable_params
         stats["frozen_parameters"] = frozen_params
-        stats["trainable_percentage"] = (
-            (trainable_params / total_params * 100.0) if total_params > 0 else 0.0
-        )
+        stats["trainable_percentage"] = (trainable_params / total_params * 100.0) if total_params > 0 else 0.0
         stats["base_rank"] = self.base_rank
         stats["residual_rank"] = self.residual_rank
         stats["replaced_layers"] = self.replaced_layers

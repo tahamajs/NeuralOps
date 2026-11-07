@@ -12,9 +12,6 @@ Re-exports SelfSpeculativeDecoder from neuralops.inference.speculative_decoding.
 
 from __future__ import annotations
 
-from neuralops.inference.speculative_decoding import (
-    SelfSpeculativeDecoder,
-    SpeculativeVerificationResult,
-)
+from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder, SpeculativeVerificationResult
 
 __all__ = ["SelfSpeculativeDecoder", "SpeculativeVerificationResult"]

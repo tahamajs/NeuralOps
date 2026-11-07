@@ -78,9 +78,7 @@ class DRONECompressor(BaseCompressor):
         self.tokenizer = tokenizer
         self.target_modules = target_modules
         self.target_attention_only = target_attention_only
-        self.device = (
-            torch.device(device) if device is not None else next(model.parameters()).device
-        )
+        self.device = torch.device(device) if device is not None else next(model.parameters()).device
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
         self.layer_errors: dict[str, float] = {}
@@ -89,9 +87,7 @@ class DRONECompressor(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLinear):
             return False
-        if any(
-            name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
-        ):
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]):
             return False
 
         target_mod = getattr(module, "base_layer", module)
@@ -177,10 +173,7 @@ class DRONECompressor(BaseCompressor):
             cls_name = layer.__class__.__name__.lower()
             target_cls = target_mod.__class__.__name__.lower()
             is_conv1d = (
-                "conv1d" in cls_name
-                or "conv1d" in target_cls
-                or hasattr(layer, "nf")
-                or hasattr(target_mod, "nf")
+                "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
             )
             weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
             if weight_tensor is None:
@@ -293,9 +286,7 @@ class DRONECompressor(BaseCompressor):
             "num_compressed": len(self.compressed_layers),
             "num_fallback": len(self.fallback_layers),
             "avg_reconstruction_error": (
-                float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors)))
-                if self.layer_errors
-                else 0.0
+                float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors))) if self.layer_errors else 0.0
             ),
             "layer_ranks": self.layer_ranks,
         }

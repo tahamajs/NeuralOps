@@ -2,7 +2,7 @@
  * physics/token_trajectory.js
  * ============================
  * Token 3D Trajectory & Mathematical Physics Engine.
- * 
+ *
  * Maps vertical token flow progress (y) into 3D positions (x, z) reflecting
  * the model's actual computational graph and tensor connectivity:
  *   - DistilBERT / RoBERTa: SVD low-rank bottleneck (compression into rank-64 manifold)
@@ -19,7 +19,7 @@ const STRIDE = VISUAL_CONFIG.TOKENS.layerStride; // 3.2 units
 /**
  * Computes a token's exact (x, z) coordinates and active sublayer designation
  * based on its vertical position along the model height.
- * 
+ *
  * @param {object} t - Token state { isResidual, lateralNoise, subStream, swigluStream, expertTarget, headIdx }
  * @param {number} y - Current vertical scene height in Three.js units
  * @param {boolean} isCompressed - True for right column (compressed), False for left column (baseline)

@@ -12,7 +12,6 @@ Combines dynamic channel-selective quantization with sparse token eviction to re
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -62,9 +62,7 @@ class HybridKVCache:
         static_heads_mask: torch.Tensor | None = None,
     ) -> None:
         self.budget = float(budget)
-        self.max_cache_len = (
-            max(8, int(max_cache_len * self.budget)) if self.budget > 0 else int(max_cache_len)
-        )
+        self.max_cache_len = max(8, int(max_cache_len * self.budget)) if self.budget > 0 else int(max_cache_len)
         self.num_sinks = int(num_sinks)
         self.recent_window = int(recent_window)
         self.static_ratio = float(static_ratio)
@@ -222,9 +220,7 @@ class HybridKVCompressor(BaseCompressor):
                 _cfg_get(cfg, "max_cache_len", max_cache_len),
             )
         )
-        self.num_sinks = int(
-            _cfg_get(cfg, "hybridkv_num_sinks", _cfg_get(cfg, "num_sinks", num_sinks))
-        )
+        self.num_sinks = int(_cfg_get(cfg, "hybridkv_num_sinks", _cfg_get(cfg, "num_sinks", num_sinks)))
         self.recent_window = int(
             _cfg_get(
                 cfg,

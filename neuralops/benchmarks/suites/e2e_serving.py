@@ -52,6 +52,7 @@ class ServingBenchmark(AbstractBaseBenchmark):
         self.flush_l2_cache()
 
         dim = 64
+
         # Prefill simulation
         def prefill() -> Any:
             x = torch.randn(batch_size, prompt_len, dim, device=self.device)
@@ -95,23 +96,25 @@ class ServingBenchmark(AbstractBaseBenchmark):
 
         except Exception as e:
             logger.warning("Serving simulation error: %s", e)
-            self.results_table.append({
-                "step": step,
-                "mechanism_or_kernel": "serving_simulation",
-                "batch_size": batch_size,
-                "seq_len": prompt_len + gen_len,
-                "dtype": "fp32",
-                "latency_ms": 0.0,
-                "latency_p50_ms": 0.0,
-                "latency_p90_ms": 0.0,
-                "latency_p99_ms": 0.0,
-                "ttft_ms": 0.0,
-                "itl_ms": 0.0,
-                "throughput_tokens_per_sec": 0.0,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": f"FAILED_RUNTIME: {e}",
-            })
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": "serving_simulation",
+                    "batch_size": batch_size,
+                    "seq_len": prompt_len + gen_len,
+                    "dtype": "fp32",
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "ttft_ms": 0.0,
+                    "itl_ms": 0.0,
+                    "throughput_tokens_per_sec": 0.0,
+                    "tflops": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": f"FAILED_RUNTIME: {e}",
+                }
+            )
             self.tracker.log_metric("ttft_ms", 0.0, step=step)
             return {"ttft_ms": 0.0, "throughput_tokens_per_sec": 0.0}
 

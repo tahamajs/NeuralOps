@@ -26,7 +26,6 @@ from neuralops.core.pruning_utils import adaptive_max_error, get_calibration_ten
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -81,10 +80,12 @@ class COMPOTLinear(nn.Module):
         x_flat = x.reshape(-1, self.in_features)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x_flat, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 out = fused_down_up_gemm_bias_triton(x_flat, self.A, self.B.t().contiguous(), bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
@@ -340,11 +341,7 @@ class COMPOTCompressor(BaseCompressor):
         self.layer_ranks = {}
         self.used_activations = {}
 
-        targets = [
-            (name, mod)
-            for name, mod in list(self.model.named_modules())
-            if self._is_target_module(name, mod)
-        ]
+        targets = [(name, mod) for name, mod in list(self.model.named_modules()) if self._is_target_module(name, mod)]
 
         if not targets:
             logger.warning("COMPOT: No compressible layers found.")
@@ -371,9 +368,7 @@ class COMPOTCompressor(BaseCompressor):
             r = max(1, min(adaptive_rank, max_r))
 
             act = activations.get(name, None)
-            compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(
-                target_mod, activations=act, rank=r
-            )
+            compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(target_mod, activations=act, rank=r)
             self.layer_errors[name] = err
             self.layer_ranks[name] = r
             self.used_activations[name] = used_act
@@ -418,8 +413,7 @@ class COMPOTCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -465,9 +459,7 @@ def compot_compressor_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for COMPOT compression."""
-    effective_rank = (
-        rank or getattr(comp_config, "compot_rank", None) or getattr(comp_config, "rank", 64)
-    )
+    effective_rank = rank or getattr(comp_config, "compot_rank", None) or getattr(comp_config, "rank", 64)
     cal_texts = getattr(comp_config, "compot_calibration_texts", None)
     tokenizer = getattr(comp_config, "tokenizer", None) or getattr(model, "tokenizer", None)
     max_error = getattr(comp_config, "compot_max_error", getattr(comp_config, "max_error", 0.20))

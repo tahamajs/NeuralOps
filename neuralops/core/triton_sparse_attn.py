@@ -12,10 +12,11 @@ Backward-compatibility bridge exposing Triton-accelerated block-sparse attention
 """
 
 from typing import Any
+
 import torch
 
-from neuralops.ops.triton.sparse_attn import fwd as _sparse_attn_fwd
 from neuralops.ops.triton._common import HAS_TRITON
+from neuralops.ops.triton.sparse_attn import fwd as _sparse_attn_fwd
 
 
 def triton_block_sparse_attention(

@@ -9,10 +9,7 @@
 LUT Codebook Dequantization GEMM Hardware Operators.
 """
 
-from neuralops.ops.cuda.lut_gemm.lut_autograd import (
-    lut_codebook_dequant_gemm,
-    lut_codebook_dequant_gemm_pytorch_ref,
-)
+from neuralops.ops.cuda.lut_gemm.lut_autograd import lut_codebook_dequant_gemm, lut_codebook_dequant_gemm_pytorch_ref
 
 __all__ = [
     "lut_codebook_dequant_gemm",

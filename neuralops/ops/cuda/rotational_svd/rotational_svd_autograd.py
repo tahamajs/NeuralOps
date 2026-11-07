@@ -68,6 +68,7 @@ def rotational_svd_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.low_rank import rotational_svd_triton
+
         return rotational_svd_triton
     except (ImportError, AttributeError):
         return None

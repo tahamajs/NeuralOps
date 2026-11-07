@@ -50,12 +50,14 @@ def fms_scan_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.fms_scan import fms_scan_pytorch
+
     return fms_scan_pytorch(q, k, v, decay)
 
 
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.fms_scan import fms_scan
+
         return fms_scan
     except ImportError:
         return None
@@ -68,6 +70,7 @@ def fms_scan(
     decay: torch.Tensor,
 ) -> torch.Tensor:
     """3-Level Dispatched FMS Recurrent Scan."""
+
     def cuda_fn(q, k, v, decay, **kwargs):
         mod = _get_module()
         return mod.fms_scan_fwd(

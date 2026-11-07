@@ -53,6 +53,7 @@ def hadamard_w4a16_gemm_pytorch_ref(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation."""
     from neuralops.ops.triton.fused_norm_linear import triton_fused_hadamard_w4a16_gemm_pytorch_ref
+
     return triton_fused_hadamard_w4a16_gemm_pytorch_ref(
         x, w_packed, scales, zeros, group_size=group_size, bias=bias, apply_hadamard=apply_hadamard
     )
@@ -61,6 +62,7 @@ def hadamard_w4a16_gemm_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.fused_norm_linear import triton_fused_hadamard_w4a16_gemm
+
         return triton_fused_hadamard_w4a16_gemm
     except ImportError:
         return None
@@ -151,6 +153,7 @@ class _HadamardW4A16GemmFunction(torch.autograd.Function):
 
         if ctx.apply_hadamard:
             from neuralops.ops.triton.elementwise import fast_hadamard_transform
+
             dx_2d = fast_hadamard_transform(dx_2d)
 
         dx = dx_2d.reshape(ctx.orig_shape)
@@ -172,15 +175,9 @@ def hadamard_w4a16_gemm(
     apply_hadamard: bool = False,
 ) -> torch.Tensor:
     """3-Level Dispatched Hadamard W4A16 GEMM with full autograd support."""
-    needs_grad = torch.is_grad_enabled() and any(
-        t.requires_grad for t in (x, bias) if isinstance(t, torch.Tensor)
-    )
+    needs_grad = torch.is_grad_enabled() and any(t.requires_grad for t in (x, bias) if isinstance(t, torch.Tensor))
 
     if needs_grad:
-        return _HadamardW4A16GemmFunction.apply(
-            x, w_packed, scales, zeros, group_size, bias, apply_hadamard
-        )
+        return _HadamardW4A16GemmFunction.apply(x, w_packed, scales, zeros, group_size, bias, apply_hadamard)
 
-    return _fwd_dispatch(
-        x, w_packed, scales, zeros, group_size=group_size, bias=bias, apply_hadamard=apply_hadamard
-    )
+    return _fwd_dispatch(x, w_packed, scales, zeros, group_size=group_size, bias=bias, apply_hadamard=apply_hadamard)

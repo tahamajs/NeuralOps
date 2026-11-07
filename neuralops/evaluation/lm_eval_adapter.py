@@ -29,15 +29,19 @@ logger = logging.getLogger(__name__)
 
 try:
     import lm_eval.api.model
+
     BaseLM = lm_eval.api.model.LM
     HAS_LM_EVAL = True
 except (ImportError, AttributeError, ModuleNotFoundError):
     try:
         from lm_eval.base import LM as BaseLM
+
         HAS_LM_EVAL = True
     except (ImportError, AttributeError, ModuleNotFoundError):
+
         class BaseLM:
             """Fallback BaseLM if lm-evaluation-harness is not installed."""
+
         HAS_LM_EVAL = False
 
 
@@ -97,7 +101,11 @@ class NeuralOpsLMEvalAdapter(BaseLM):
 
             with torch.no_grad():
                 outputs = self.model(input_tensor)
-                logits = outputs.logits if hasattr(outputs, "logits") else (outputs[0] if isinstance(outputs, (tuple, list)) else outputs)
+                logits = (
+                    outputs.logits
+                    if hasattr(outputs, "logits")
+                    else (outputs[0] if isinstance(outputs, (tuple, list)) else outputs)
+                )
                 if logits.dim() == 2:
                     logits = logits.unsqueeze(0)
 
@@ -127,7 +135,11 @@ class NeuralOpsLMEvalAdapter(BaseLM):
             input_tensor = torch.tensor([tokens], device=self.device)
             with torch.no_grad():
                 outputs = self.model(input_tensor)
-                logits = outputs.logits if hasattr(outputs, "logits") else (outputs[0] if isinstance(outputs, (tuple, list)) else outputs)
+                logits = (
+                    outputs.logits
+                    if hasattr(outputs, "logits")
+                    else (outputs[0] if isinstance(outputs, (tuple, list)) else outputs)
+                )
                 if logits.dim() == 2:
                     logits = logits.unsqueeze(0)
             log_probs = F.log_softmax(logits[0, :-1, :], dim=-1)
@@ -148,15 +160,17 @@ class NeuralOpsLMEvalAdapter(BaseLM):
             with torch.no_grad():
                 for _ in range(max_new):
                     out = self.model(curr)
-                    logits = out.logits if hasattr(out, "logits") else (out[0] if isinstance(out, (tuple, list)) else out)
+                    logits = (
+                        out.logits if hasattr(out, "logits") else (out[0] if isinstance(out, (tuple, list)) else out)
+                    )
                     if logits.dim() == 2:
                         logits = logits.unsqueeze(0)
                     next_tok = logits[:, -1, :].argmax(dim=-1, keepdim=True)
                     curr = torch.cat([curr, next_tok], dim=-1)
-                    text = self.tokenizer.decode(curr[0, inp.shape[-1]:])
+                    text = self.tokenizer.decode(curr[0, inp.shape[-1] :])
                     if any(u in text for u in until):
                         break
-            text = self.tokenizer.decode(curr[0, inp.shape[-1]:])
+            text = self.tokenizer.decode(curr[0, inp.shape[-1] :])
             results.append(text)
         return results
 
@@ -213,20 +227,24 @@ def save_lm_eval_results(
         scores = results.get("scores", {})
         if isinstance(scores, dict):
             for task, score in scores.items():
-                rows.append({
+                rows.append(
+                    {
+                        "model": model_name,
+                        "module_name": module_name,
+                        "module_type": module_type,
+                        "task": task,
+                        "accuracy": score,
+                    }
+                )
+        else:
+            rows.append(
+                {
                     "model": model_name,
                     "module_name": module_name,
                     "module_type": module_type,
-                    "task": task,
-                    "accuracy": score,
-                })
-        else:
-            rows.append({
-                "model": model_name,
-                "module_name": module_name,
-                "module_type": module_type,
-                "scores": str(scores),
-            })
+                    "scores": str(scores),
+                }
+            )
         if rows:
             fieldnames = list(rows[0].keys())
             with open(out_c, "w", encoding="utf-8", newline="") as f:
@@ -256,6 +274,7 @@ def main() -> None:
             sys.path.insert(0, p)
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
     from neuralops.evaluation.eval_patcher import apply_module_to_model
 
     logger.info("Loading model and tokenizer: %s", args.model)

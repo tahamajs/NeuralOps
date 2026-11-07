@@ -80,6 +80,7 @@ def spectral_entropy_svd_gate_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.low_rank import triton_spectral_entropy_svd_gate
+
         return triton_spectral_entropy_svd_gate
     except ImportError:
         return None
@@ -112,7 +113,6 @@ def spectral_entropy_svd_gate(
     eff_r = min(int(effective_rank), r_max)
     if eff_r > 128:
         cuda_fn = None
-
 
     return dispatch(
         cuda_fn,

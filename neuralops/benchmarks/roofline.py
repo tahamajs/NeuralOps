@@ -34,16 +34,32 @@ def calculate_flops(attention_type: str, B: int, H: int, S: int, D: int, *, wind
     return int(4 * B * H * pairs * D)
 
 
-def calculate_bandwidth_bytes(attention_type: str, B: int, H: int, S: int, D: int, dtype: str | Any = "float16", *, window: int | None = None) -> int:
+def calculate_bandwidth_bytes(
+    attention_type: str, B: int, H: int, S: int, D: int, dtype: str | Any = "float16", *, window: int | None = None
+) -> int:
     """Estimate bytes moved for Q, K, V, and output tensors."""
     del attention_type, window
     if min(B, H, S, D) <= 0:
         raise ValueError("B, H, S, and D must be positive")
-    itemsize = getattr(dtype, "itemsize", None) or {"float16": 2, "bfloat16": 2, "float32": 4, "float64": 8}.get(str(dtype), 2)
+    itemsize = getattr(dtype, "itemsize", None) or {"float16": 2, "bfloat16": 2, "float32": 4, "float64": 8}.get(
+        str(dtype), 2
+    )
     return int(4 * B * H * S * D * itemsize)
 
 
-def roofline_metrics(attention_type: str, B: int, H: int, S: int, D: int, latency_ms: float, *, window: int | None = None, dtype: str = "float16", dram_gbps: float = 256.0, peak_tflops: float = 79.2) -> dict[str, float | int | str]:
+def roofline_metrics(
+    attention_type: str,
+    B: int,
+    H: int,
+    S: int,
+    D: int,
+    latency_ms: float,
+    *,
+    window: int | None = None,
+    dtype: str = "float16",
+    dram_gbps: float = 256.0,
+    peak_tflops: float = 79.2,
+) -> dict[str, float | int | str]:
     """Compute arithmetic intensity and achieved throughput."""
     flops = calculate_flops(attention_type, B, H, S, D, window=window)
     bandwidth = calculate_bandwidth_bytes(attention_type, B, H, S, D, dtype, window=window)

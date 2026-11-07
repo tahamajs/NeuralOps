@@ -98,7 +98,9 @@ def plan_recipe(
     declared_caps = adapter.declared_capabilities()
 
     # Base parameter count estimation if model is available
-    base_params = sum(p.numel() for p in model_or_config.parameters()) if isinstance(model_or_config, nn.Module) else 100_000_000
+    base_params = (
+        sum(p.numel() for p in model_or_config.parameters()) if isinstance(model_or_config, nn.Module) else 100_000_000
+    )
 
     for idx, op in enumerate(recipe_obj.operations):
         op_id = op.id or f"stage-{idx + 1}"
@@ -199,8 +201,16 @@ def plan_recipe(
         warnings=warnings,
         estimated_parameters_delta=total_param_delta,
         recipe_hash=r_hash,
-        validation_spec=recipe_obj.validation.to_dict() if hasattr(recipe_obj.validation, "to_dict") else asdict_safe(recipe_obj.validation),
-        execution_spec=recipe_obj.execution.to_dict() if hasattr(recipe_obj.execution, "to_dict") else asdict_safe(recipe_obj.execution),
+        validation_spec=(
+            recipe_obj.validation.to_dict()
+            if hasattr(recipe_obj.validation, "to_dict")
+            else asdict_safe(recipe_obj.validation)
+        ),
+        execution_spec=(
+            recipe_obj.execution.to_dict()
+            if hasattr(recipe_obj.execution, "to_dict")
+            else asdict_safe(recipe_obj.execution)
+        ),
         metadata={
             "recipe_version": recipe_obj.metadata.version,
             "author": recipe_obj.metadata.author,

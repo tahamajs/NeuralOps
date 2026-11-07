@@ -19,1302 +19,330 @@ _SPECIAL_MAP: dict[str, tuple[str, str]] = {
 }
 
 _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
-  "load_cuda_module": [
-    "_bindings",
-    "load_cuda_module"
-  ],
-  "get_cuda_arch_flags": [
-    "_bindings",
-    "get_cuda_arch_flags"
-  ],
-  "dispatch": [
-    "_fallback",
-    "dispatch"
-  ],
-  "force_kernel_backend": [
-    "_fallback",
-    "force_kernel_backend"
-  ],
-  "get_dispatch_stats": [
-    "_fallback",
-    "get_dispatch_stats"
-  ],
-  "reset_dispatch_stats": [
-    "_fallback",
-    "reset_dispatch_stats"
-  ],
-  "is_cuda_available": [
-    "_utils",
-    "is_cuda_available"
-  ],
-  "get_device_capability": [
-    "_utils",
-    "get_device_capability"
-  ],
-  "check_cuda_error": [
-    "_utils",
-    "check_cuda_error"
-  ],
-  "fused_lowrank_gated_gemm": [
-    "low_rank_svd",
-    "fused_lowrank_gated_gemm"
-  ],
-  "fused_lowrank_gated_gemm_pytorch_ref": [
-    "low_rank_svd",
-    "fused_lowrank_gated_gemm_pytorch_ref"
-  ],
-  "chunked_delta_gate_scan": [
-    "gdn_scan",
-    "chunked_delta_gate_scan"
-  ],
-  "chunked_delta_gate_scan_pytorch_ref": [
-    "gdn_scan",
-    "chunked_delta_gate_scan_pytorch_ref"
-  ],
-  "hgrn2_fused_bwd_scan": [
-    "hgrn2_scan",
-    "hgrn2_fused_bwd_scan"
-  ],
-  "hgrn2_fused_bwd_scan_pytorch_ref": [
-    "hgrn2_scan",
-    "hgrn2_fused_bwd_scan_pytorch_ref"
-  ],
-  "cosformer_linear_attention": [
-    "cosformer",
-    "cosformer_linear_attention"
-  ],
-  "cosformer_linear_attention_pytorch_ref": [
-    "cosformer",
-    "cosformer_linear_attention_pytorch_ref"
-  ],
-  "fused_norm_linear": [
-    "fused_norm_linear",
-    "fused_norm_linear"
-  ],
-  "fused_norm_linear_pytorch_ref": [
-    "fused_norm_linear",
-    "fused_norm_linear_pytorch_ref"
-  ],
-  "fused_rotary_emb": [
-    "fused_rope",
-    "fused_rotary_emb"
-  ],
-  "fused_rotary_emb_pytorch_ref": [
-    "fused_rope",
-    "fused_rotary_emb_pytorch_ref"
-  ],
-  "kronecker_matmul": [
-    "kronecker_gemm",
-    "kronecker_matmul"
-  ],
-  "kronecker_matmul_pytorch_ref": [
-    "kronecker_gemm",
-    "kronecker_matmul_pytorch_ref"
-  ],
-  "lut_codebook_dequant_gemm": [
-    "lut_gemm",
-    "lut_codebook_dequant_gemm"
-  ],
-  "lut_codebook_dequant_gemm_pytorch_ref": [
-    "lut_gemm",
-    "lut_codebook_dequant_gemm_pytorch_ref"
-  ],
-  "linear_attention": [
-    "linear_attention",
-    "linear_attention"
-  ],
-  "linear_attention_pytorch_ref": [
-    "linear_attention",
-    "linear_attention_pytorch_ref"
-  ],
-  "fused_cross_entropy": [
-    "fused_ce",
-    "fused_cross_entropy"
-  ],
-  "fused_cross_entropy_pytorch_ref": [
-    "fused_ce",
-    "fused_cross_entropy_pytorch_ref"
-  ],
-  "rpca_sparse_svd_gemm": [
-    "rpca_sparse_svd",
-    "rpca_sparse_svd_gemm"
-  ],
-  "rpca_sparse_svd_gemm_pytorch_ref": [
-    "rpca_sparse_svd",
-    "rpca_sparse_svd_gemm_pytorch_ref"
-  ],
-  "tt_contraction": [
-    "tt_contraction",
-    "tt_contraction"
-  ],
-  "tt_contraction_pytorch_ref": [
-    "tt_contraction",
-    "tt_contraction_pytorch_ref"
-  ],
-  "tt_linear": [
-    "tt_contraction",
-    "tt_linear"
-  ],
-  "tt_linear_pytorch_ref": [
-    "tt_contraction",
-    "tt_linear_pytorch_ref"
-  ],
-  "hadamard_w4a16_gemm": [
-    "hadamard_gemm",
-    "hadamard_w4a16_gemm"
-  ],
-  "hadamard_w4a16_gemm_pytorch_ref": [
-    "hadamard_gemm",
-    "hadamard_w4a16_gemm_pytorch_ref"
-  ],
-  "act_scale_quant_gemm": [
-    "act_scale_gemm",
-    "act_scale_quant_gemm"
-  ],
-  "act_scale_quant_gemm_pytorch_ref": [
-    "act_scale_gemm",
-    "act_scale_quant_gemm_pytorch_ref"
-  ],
-  "latent_kv_cache_attention": [
-    "latent_kv_attn",
-    "latent_kv_cache_attention"
-  ],
-  "latent_kv_cache_attention_pytorch_ref": [
-    "latent_kv_attn",
-    "latent_kv_cache_attention_pytorch_ref"
-  ],
-  "spectral_entropy_svd_gate": [
-    "entropy_gate",
-    "spectral_entropy_svd_gate"
-  ],
-  "spectral_entropy_svd_gate_pytorch_ref": [
-    "entropy_gate",
-    "spectral_entropy_svd_gate_pytorch_ref"
-  ],
-  "fused_kd_loss": [
-    "fused_kd",
-    "fused_kd_loss"
-  ],
-  "fused_kd_loss_pytorch_ref": [
-    "fused_kd",
-    "fused_kd_loss_pytorch_ref"
-  ],
-  "recurrent_linear_step": [
-    "state_update",
-    "recurrent_linear_step"
-  ],
-  "recurrent_linear_step_pytorch_ref": [
-    "state_update",
-    "recurrent_linear_step_pytorch_ref"
-  ],
-  "flash_decoding_attention": [
-    "flash_decoding",
-    "flash_decoding_attention"
-  ],
-  "flash_decoding_attention_pytorch_ref": [
-    "flash_decoding",
-    "flash_decoding_attention_pytorch_ref"
-  ],
-  "fms_scan": [
-    "fms_scan",
-    "fms_scan"
-  ],
-  "fms_scan_pytorch_ref": [
-    "fms_scan",
-    "fms_scan_pytorch_ref"
-  ],
-  "rmsnorm": [
-    "rmsnorm",
-    "rmsnorm"
-  ],
-  "rmsnorm_pytorch_ref": [
-    "rmsnorm",
-    "rmsnorm_pytorch_ref"
-  ],
-  "layernorm": [
-    "layernorm",
-    "layernorm"
-  ],
-  "layernorm_pytorch_ref": [
-    "layernorm",
-    "layernorm_pytorch_ref"
-  ],
-  "swiglu": [
-    "swiglu",
-    "swiglu"
-  ],
-  "swiglu_pytorch_ref": [
-    "swiglu",
-    "swiglu_pytorch_ref"
-  ],
-  "fast_gelu": [
-    "fast_gelu",
-    "fast_gelu"
-  ],
-  "fast_gelu_pytorch_ref": [
-    "fast_gelu",
-    "fast_gelu_pytorch_ref"
-  ],
-  "fused_softplus": [
-    "softplus",
-    "fused_softplus"
-  ],
-  "fused_softplus_pytorch_ref": [
-    "softplus",
-    "fused_softplus_pytorch_ref"
-  ],
-  "gla_scan": [
-    "gla_scan",
-    "gla_scan"
-  ],
-  "gla_scan_pytorch_ref": [
-    "gla_scan",
-    "gla_scan_pytorch_ref"
-  ],
-  "causal_conv1d": [
-    "causal_conv1d",
-    "causal_conv1d"
-  ],
-  "causal_conv1d_pytorch_ref": [
-    "causal_conv1d",
-    "causal_conv1d_pytorch_ref"
-  ],
-  "recurrent_gla_step": [
-    "recurrent_gla_step",
-    "recurrent_gla_step"
-  ],
-  "recurrent_gla_step_pytorch_ref": [
-    "recurrent_gla_step",
-    "recurrent_gla_step_pytorch_ref"
-  ],
-  "recurrent_hgrn2_step": [
-    "recurrent_hgrn2_step",
-    "recurrent_hgrn2_step"
-  ],
-  "recurrent_hgrn2_step_pytorch_ref": [
-    "recurrent_hgrn2_step",
-    "recurrent_hgrn2_step_pytorch_ref"
-  ],
-  "fused_dropout_add": [
-    "fused_dropout_add",
-    "fused_dropout_add"
-  ],
-  "fused_dropout_add_pytorch_ref": [
-    "fused_dropout_add",
-    "fused_dropout_add_pytorch_ref"
-  ],
-  "varlen_attention": [
-    "varlen_attention",
-    "varlen_attention"
-  ],
-  "varlen_attention_pytorch_ref": [
-    "varlen_attention",
-    "varlen_attention_pytorch_ref"
-  ],
-  "cross_attention": [
-    "cross_attention",
-    "cross_attention"
-  ],
-  "cross_attention_pytorch_ref": [
-    "cross_attention",
-    "cross_attention_pytorch_ref"
-  ],
-  "rotational_svd": [
-    "rotational_svd",
-    "rotational_svd"
-  ],
-  "rotational_svd_pytorch_ref": [
-    "rotational_svd",
-    "rotational_svd_pytorch_ref"
-  ],
-  "block_diag_matmul": [
-    "block_diag_gemm",
-    "block_diag_matmul"
-  ],
-  "block_diag_matmul_pytorch_ref": [
-    "block_diag_gemm",
-    "block_diag_matmul_pytorch_ref"
-  ],
-  "ternary_gemm": [
-    "ternary_gemm",
-    "ternary_gemm"
-  ],
-  "ternary_gemm_pytorch_ref": [
-    "ternary_gemm",
-    "ternary_gemm_pytorch_ref"
-  ],
-  "fp4_gemm": [
-    "fp4_gemm",
-    "fp4_gemm"
-  ],
-  "fp4_gemm_pytorch_ref": [
-    "fp4_gemm",
-    "fp4_gemm_pytorch_ref"
-  ],
-  "channel_shuffle": [
-    "channel_shuffle",
-    "channel_shuffle"
-  ],
-  "channel_shuffle_pytorch_ref": [
-    "channel_shuffle",
-    "channel_shuffle_pytorch_ref"
-  ],
-  "speculative_verify": [
-    "speculative_verify",
-    "speculative_verify"
-  ],
-  "speculative_verify_pytorch_ref": [
-    "speculative_verify",
-    "speculative_verify_pytorch_ref"
-  ],
-  "alibi_attention": [
-    "alibi_attention",
-    "alibi_attention"
-  ],
-  "alibi_attention_pytorch_ref": [
-    "alibi_attention",
-    "alibi_attention_pytorch_ref"
-  ],
-  "flash_gqa": [
-    "flash_gqa",
-    "flash_gqa"
-  ],
-  "flash_gqa_pytorch_ref": [
-    "flash_gqa",
-    "flash_gqa_pytorch_ref"
-  ],
-  "moe_dispatch_gather": [
-    "moe_routing",
-    "moe_dispatch_gather"
-  ],
-  "moe_route_pytorch_ref": [
-    "moe_routing",
-    "moe_route_pytorch_ref"
-  ],
-  "moe_routing": [
-    "moe_routing",
-    "moe_routing"
-  ],
-  "moe_routing_ref": [
-    "moe_routing",
-    "moe_routing_ref"
-  ],
-  "moe_routing_pytorch_ref": [
-    "moe_routing",
-    "moe_routing_pytorch_ref"
-  ],
-  "moe_dispatch": [
-    "moe_routing",
-    "moe_dispatch"
-  ],
-  "moe_gather": [
-    "moe_routing",
-    "moe_gather"
-  ],
-  "paged_attention": [
-    "paged_attention",
-    "paged_attention"
-  ],
-  "paged_attention_pytorch_reference": [
-    "paged_attention",
-    "paged_attention_pytorch_reference"
-  ],
-  "copy_blocks_cow": [
-    "paged_kv_cache",
-    "copy_blocks_cow"
-  ],
-  "copy_blocks_cow_pytorch_ref": [
-    "paged_kv_cache",
-    "copy_blocks_cow_pytorch_ref"
-  ],
-  "w4a16_gemm": [
-    "quantized_gemm",
-    "w4a16_gemm"
-  ],
-  "w4a16_gemm_pytorch_ref": [
-    "quantized_gemm",
-    "w4a16_gemm_pytorch_ref"
-  ],
-  "fp8_gemm": [
-    "fp8_gemm",
-    "fp8_gemm"
-  ],
-  "fp8_gemm_pytorch_ref": [
-    "fp8_gemm",
-    "fp8_gemm_pytorch_ref"
-  ],
-  "selective_scan": [
-    "selective_scan",
-    "selective_scan"
-  ],
-  "selective_scan_pytorch_ref": [
-    "selective_scan",
-    "selective_scan_pytorch_ref"
-  ],
-  "sliding_window_attn": [
-    "sliding_window",
-    "sliding_window_attn"
-  ],
-  "sliding_window_pytorch_ref": [
-    "sliding_window",
-    "sliding_window_pytorch_ref"
-  ],
-  "block_sparse_attn": [
-    "sparse_attention",
-    "block_sparse_attn"
-  ],
-  "block_sparse_attn_pytorch_ref": [
-    "sparse_attention",
-    "block_sparse_attn_pytorch_ref"
-  ],
-  "entmax_bisect": [
-    "entmax_bisect",
-    "entmax_bisect"
-  ],
-  "fused_entmax_bisect_pytorch": [
-    "entmax_bisect",
-    "fused_entmax_bisect_pytorch"
-  ],
-  "split_head_norm": [
-    "split_head_norm",
-    "split_head_norm"
-  ],
-  "split_head_norm_pytorch_ref": [
-    "split_head_norm",
-    "split_head_norm_pytorch_ref"
-  ],
-  "aegis_gate_norm": [
-    "aegis_gate_norm",
-    "aegis_gate_norm"
-  ],
-  "aegis_gate_norm_pytorch_ref": [
-    "aegis_gate_norm",
-    "aegis_gate_norm_pytorch_ref"
-  ],
-  "entropy_pruning": [
-    "entropy_pruning",
-    "entropy_pruning"
-  ],
-  "entropy_pruning_pytorch_ref": [
-    "entropy_pruning",
-    "entropy_pruning_pytorch_ref"
-  ],
-  "favor_plus": [
-    "favor_plus",
-    "favor_plus"
-  ],
-  "favor_plus_pytorch_ref": [
-    "favor_plus",
-    "favor_plus_pytorch_ref"
-  ],
-  "fwht_transform": [
-    "fwht_transform",
-    "fwht_transform"
-  ],
-  "fast_hadamard_transform": [
-    "fwht_transform",
-    "fast_hadamard_transform"
-  ],
-  "rms_variance_match": [
-    "rms_variance_match",
-    "rms_variance_match"
-  ],
-  "fused_rms_variance_match_triton": [
-    "rms_variance_match",
-    "fused_rms_variance_match_triton"
-  ],
-  "spectral_shrinkage": [
-    "spectral_shrinkage",
-    "spectral_shrinkage"
-  ],
-  "spectral_shrinkage_pytorch_ref": [
-    "spectral_shrinkage",
-    "spectral_shrinkage_pytorch_ref"
-  ],
-  "adaptive_span": [
-    "adaptive_span",
-    "adaptive_span"
-  ],
-  "fused_adaptive_span_penalty_pytorch": [
-    "adaptive_span",
-    "fused_adaptive_span_penalty_pytorch"
-  ],
-  "dynamic_conv1d": [
-    "dynamic_conv1d",
-    "dynamic_conv1d"
-  ],
-  "fused_dynamic_conv1d_pytorch": [
-    "dynamic_conv1d",
-    "fused_dynamic_conv1d_pytorch"
-  ],
-  "paged_recurrent_step": [
-    "paged_recurrent_step",
-    "paged_recurrent_step"
-  ],
-  "paged_recurrent_state_step_pytorch": [
-    "paged_recurrent_step",
-    "paged_recurrent_state_step_pytorch"
-  ],
-  "paged_kv_evict": [
-    "paged_kv_evict",
-    "paged_kv_evict"
-  ],
-  "paged_kv_compact_pytorch_ref": [
-    "paged_kv_evict",
-    "paged_kv_compact_pytorch_ref"
-  ],
-  "unified_rope_offset": [
-    "unified_rope_offset",
-    "unified_rope_offset"
-  ],
-  "fused_unified_rope_offset_pytorch": [
-    "unified_rope_offset",
-    "fused_unified_rope_offset_pytorch"
-  ],
-  "flash_decode_stage2": [
-    "flash_decode_stage2",
-    "flash_decode_stage2"
-  ],
-  "flash_decode_stage2_pytorch_ref": [
-    "flash_decode_stage2",
-    "flash_decode_stage2_pytorch_ref"
-  ],
-  "svd_prefix_scan": [
-    "svd_prefix_scan",
-    "svd_prefix_scan"
-  ],
-  "svd_prefix_scan_pytorch_ref": [
-    "svd_prefix_scan",
-    "svd_prefix_scan_pytorch_ref"
-  ],
-  "gdn_delta_rule": [
-    "gdn_delta_rule",
-    "gdn_delta_rule"
-  ],
-  "gdn_delta_rule_pytorch_ref": [
-    "gdn_delta_rule",
-    "gdn_delta_rule_pytorch_ref"
-  ],
-  "hgrn2_spatial_scan": [
-    "hgrn2_spatial_scan",
-    "hgrn2_spatial_scan"
-  ],
-  "hgrn2_spatial_scan_pytorch_ref": [
-    "hgrn2_spatial_scan",
-    "hgrn2_spatial_scan_pytorch_ref"
-  ],
-  "gla_unnormalized_scan": [
-    "gla_unnormalized_scan",
-    "gla_unnormalized_scan"
-  ],
-  "gla_unnormalized_scan_pytorch_ref": [
-    "gla_unnormalized_scan",
-    "gla_unnormalized_scan_pytorch_ref"
-  ],
-  "bitonic_topk": [
-    "bitonic_topk",
-    "bitonic_topk"
-  ],
-  "bitonic_topk_pytorch_ref": [
-    "bitonic_topk",
-    "bitonic_topk_pytorch_ref"
-  ],
-  "logcumsumexp": [
-    "logcumsumexp",
-    "logcumsumexp"
-  ],
-  "logcumsumexp_pytorch_ref": [
-    "logcumsumexp",
-    "logcumsumexp_pytorch_ref"
-  ],
-  "soa_attn": [
-    "soa_attn",
-    "soa_attn"
-  ],
-  "soa_attn_ref": [
-    "soa_attn",
-    "soa_attn_ref"
-  ],
-  "nasc_attention": [
-    "nasc_attention",
-    "nasc_attention"
-  ],
-  "nasc_attention_ref": [
-    "nasc_attention",
-    "nasc_attention_ref"
-  ],
-  "tpa_attention": [
-    "tpa_attention",
-    "tpa_attention"
-  ],
-  "tpa_attention_ref": [
-    "tpa_attention",
-    "tpa_attention_ref"
-  ],
-  "spectra_v2": [
-    "spectra_v2",
-    "spectra_v2"
-  ],
-  "spectra_v2_ref": [
-    "spectra_v2",
-    "spectra_v2_ref"
-  ],
-  "spectraformer": [
-    "spectraformer_attention",
-    "spectraformer"
-  ],
-  "spectraformer_ref": [
-    "spectraformer_attention",
-    "spectraformer_ref"
-  ],
-  "galerkin_attention": [
-    "galerkin_attention",
-    "galerkin_attention"
-  ],
-  "galerkin_attention_ref": [
-    "galerkin_attention",
-    "galerkin_attention_ref"
-  ],
-  "hydra_attention": [
-    "hydra_attention",
-    "hydra_attention"
-  ],
-  "hydra_attention_ref": [
-    "hydra_attention",
-    "hydra_attention_ref"
-  ],
-  "rfa_attention": [
-    "rfa_attention",
-    "rfa_attention"
-  ],
-  "rfa_attention_ref": [
-    "rfa_attention",
-    "rfa_attention_ref"
-  ],
-  "fast_attention": [
-    "fast_attention",
-    "fast_attention"
-  ],
-  "fast_attention_ref": [
-    "fast_attention",
-    "fast_attention_ref"
-  ],
-  "linear_rnn_attention": [
-    "linear_rnn_attention",
-    "linear_rnn_attention"
-  ],
-  "linear_rnn_attention_ref": [
-    "linear_rnn_attention",
-    "linear_rnn_attention_ref"
-  ],
-  "differential_attention": [
-    "differential_attention",
-    "differential_attention"
-  ],
-  "differential_attention_ref": [
-    "differential_attention",
-    "differential_attention_ref"
-  ],
-  "decay_linear_attention": [
-    "decay_linear_attention",
-    "decay_linear_attention"
-  ],
-  "decay_linear_attention_ref": [
-    "decay_linear_attention",
-    "decay_linear_attention_ref"
-  ],
-  "hstu_attention": [
-    "hstu_attention",
-    "hstu_attention"
-  ],
-  "hstu_attention_ref": [
-    "hstu_attention",
-    "hstu_attention_ref"
-  ],
-  "longformer": [
-    "longformer",
-    "longformer"
-  ],
-  "longformer_ref": [
-    "longformer",
-    "longformer_ref"
-  ],
-  "bigbird": [
-    "bigbird",
-    "bigbird"
-  ],
-  "bigbird_ref": [
-    "bigbird",
-    "bigbird_ref"
-  ],
-  "reformer": [
-    "reformer",
-    "reformer"
-  ],
-  "reformer_ref": [
-    "reformer",
-    "reformer_ref"
-  ],
-  "local_attention": [
-    "local_attention",
-    "local_attention"
-  ],
-  "local_attention_ref": [
-    "local_attention",
-    "local_attention_ref"
-  ],
-  "cluster_attention": [
-    "cluster_attention",
-    "cluster_attention"
-  ],
-  "cluster_attention_ref": [
-    "cluster_attention",
-    "cluster_attention_ref"
-  ],
-  "routing_attention": [
-    "routing_attention",
-    "routing_attention"
-  ],
-  "routing_attention_ref": [
-    "routing_attention",
-    "routing_attention_ref"
-  ],
-  "vspec": [
-    "vspec",
-    "vspec"
-  ],
-  "vspec_ref": [
-    "vspec",
-    "vspec_ref"
-  ],
-  "goldfinch_ahn": [
-    "goldfinch_ahn",
-    "goldfinch_ahn"
-  ],
-  "goldfinch_ahn_ref": [
-    "goldfinch_ahn",
-    "goldfinch_ahn_ref"
-  ],
-  "hla_attention": [
-    "hla_attention",
-    "hla_attention"
-  ],
-  "hla_attention_ref": [
-    "hla_attention",
-    "hla_attention_ref"
-  ],
-  "phantom": [
-    "phantom",
-    "phantom"
-  ],
-  "phantom_ref": [
-    "phantom",
-    "phantom_ref"
-  ],
-  "mamba_block": [
-    "mamba_block",
-    "mamba_block"
-  ],
-  "mamba_block_ref": [
-    "mamba_block",
-    "mamba_block_ref"
-  ],
-  "selective_ssm": [
-    "selective_ssm",
-    "selective_ssm"
-  ],
-  "selective_ssm_ref": [
-    "selective_ssm",
-    "selective_ssm_ref"
-  ],
-  "upi_stuffed_mamba": [
-    "upi_stuffed_mamba",
-    "upi_stuffed_mamba"
-  ],
-  "upi_stuffed_mamba_ref": [
-    "upi_stuffed_mamba",
-    "upi_stuffed_mamba_ref"
-  ],
-  "jamba": [
-    "jamba",
-    "jamba"
-  ],
-  "jamba_ref": [
-    "jamba",
-    "jamba_ref"
-  ],
-  "nexus": [
-    "nexus",
-    "nexus"
-  ],
-  "nexus_ref": [
-    "nexus",
-    "nexus_ref"
-  ],
-  "hymba_transx": [
-    "hymba_transx",
-    "hymba_transx"
-  ],
-  "hymba_transx_ref": [
-    "hymba_transx",
-    "hymba_transx_ref"
-  ],
-  "griffin_ssd": [
-    "griffin_ssd",
-    "griffin_ssd"
-  ],
-  "griffin_ssd_ref": [
-    "griffin_ssd",
-    "griffin_ssd_ref"
-  ],
-  "jamba_info": [
-    "jamba_info",
-    "jamba_info"
-  ],
-  "jamba_info_ref": [
-    "jamba_info",
-    "jamba_info_ref"
-  ],
-  "samba_moe": [
-    "samba_moe",
-    "samba_moe"
-  ],
-  "samba_moe_ref": [
-    "samba_moe",
-    "samba_moe_ref"
-  ],
-  "mamba_svd_flash": [
-    "mamba_svd_flash",
-    "mamba_svd_flash"
-  ],
-  "mamba_svd_flash_ref": [
-    "mamba_svd_flash",
-    "mamba_svd_flash_ref"
-  ],
-  "samba_m3": [
-    "samba_m3",
-    "samba_m3"
-  ],
-  "samba_m3_ref": [
-    "samba_m3",
-    "samba_m3_ref"
-  ],
-  "orion": [
-    "orion",
-    "orion"
-  ],
-  "orion_ref": [
-    "orion",
-    "orion_ref"
-  ],
-  "spectral_mamba": [
-    "spectral_mamba",
-    "spectral_mamba"
-  ],
-  "spectral_mamba_ref": [
-    "spectral_mamba",
-    "spectral_mamba_ref"
-  ],
-  "simple_ssm": [
-    "simple_ssm",
-    "simple_ssm"
-  ],
-  "simple_ssm_ref": [
-    "simple_ssm",
-    "simple_ssm_ref"
-  ],
-  "nystrom_attention": [
-    "nystrom_attention",
-    "nystrom_attention"
-  ],
-  "nystrom_attention_ref": [
-    "nystrom_attention",
-    "nystrom_attention_ref"
-  ],
-  "linformer_attention": [
-    "linformer_attention",
-    "linformer_attention"
-  ],
-  "linformer_attention_ref": [
-    "linformer_attention",
-    "linformer_attention_ref"
-  ],
-  "rwkv6": [
-    "rwkv6",
-    "rwkv6"
-  ],
-  "rwkv6_ref": [
-    "rwkv6",
-    "rwkv6_ref"
-  ],
-  "multi_scale_retention": [
-    "multi_scale_retention",
-    "multi_scale_retention"
-  ],
-  "multi_scale_retention_pytorch_ref": [
-    "multi_scale_retention",
-    "multi_scale_retention_pytorch_ref"
-  ],
-  "liquid_attention": [
-    "liquid_attention",
-    "liquid_attention"
-  ],
-  "liquid_attention_ref": [
-    "liquid_attention",
-    "liquid_attention_ref"
-  ],
-  "mamba2_block": [
-    "mamba2_block",
-    "mamba2_block"
-  ],
-  "mamba2_block_ref": [
-    "mamba2_block",
-    "mamba2_block_ref"
-  ],
-  "retnet_retention": [
-    "multi_scale_retention",
-    "multi_scale_retention"
-  ],
-  "retnet_retention_pytorch_ref": [
-    "multi_scale_retention",
-    "multi_scale_retention_pytorch_ref"
-  ],
-  "act_scale_gemm": [
-    "act_scale_gemm",
-    "act_scale_quant_gemm"
-  ],
-  "block_diag_gemm": [
-    "block_diag_gemm",
-    "block_diag_matmul"
-  ],
-  "cosformer": [
-    "cosformer",
-    "cosformer_linear_attention"
-  ],
-  "cosformer_attn": [
-    "cosformer",
-    "cosformer_linear_attention"
-  ],
-  "entropy_gate": [
-    "entropy_gate",
-    "spectral_entropy_svd_gate"
-  ],
-  "expert_dispatch": [
-    "moe_routing",
-    "moe_dispatch_gather"
-  ],
-  "flash_decoding": [
-    "flash_decoding",
-    "flash_decoding_attention"
-  ],
-  "fused_ce": [
-    "fused_ce",
-    "fused_cross_entropy"
-  ],
-  "fused_kd": [
-    "fused_kd",
-    "fused_kd_loss"
-  ],
-  "fused_rope": [
-    "fused_rope",
-    "fused_rotary_emb"
-  ],
-  "hadamard_gemm": [
-    "hadamard_gemm",
-    "hadamard_w4a16_gemm"
-  ],
-  "hgrn2_scan": [
-    "hgrn2_scan",
-    "hgrn2_fused_bwd_scan"
-  ],
-  "kronecker_gemm": [
-    "kronecker_gemm",
-    "kronecker_matmul"
-  ],
-  "kv_cache_copy": [
-    "paged_kv_cache",
-    "copy_blocks_cow"
-  ],
-  "latent_kv_attn": [
-    "latent_kv_attn",
-    "latent_kv_cache_attention"
-  ],
-  "linear_attn": [
-    "linear_attention",
-    "linear_attention"
-  ],
-  "lut_gemm": [
-    "lut_gemm",
-    "lut_codebook_dequant_gemm"
-  ],
-  "moe_router": [
-    "moe_routing",
-    "moe_dispatch_gather"
-  ],
-  "rpca_sparse_svd": [
-    "rpca_sparse_svd",
-    "rpca_sparse_svd_gemm"
-  ],
-  "sliding_window": [
-    "sliding_window",
-    "sliding_window_attn"
-  ],
-  "softplus": [
-    "softplus",
-    "fused_softplus"
-  ],
-  "sparse_attention": [
-    "sparse_attention",
-    "block_sparse_attn"
-  ],
-  "spectraformer_attention": [
-    "spectraformer_attention",
-    "spectraformer"
-  ],
-  "state_update": [
-    "state_update",
-    "recurrent_linear_step"
-  ],
-  "gdn_scan": [
-    "gdn_scan",
-    "chunked_delta_gate_scan"
-  ],
-  "low_rank_svd": [
-    "low_rank_svd",
-    "fused_lowrank_gated_gemm"
-  ],
-  "paged_kv_cache": [
-    "paged_kv_cache",
-    "copy_blocks_cow"
-  ],
-  "quantized_gemm": [
-    "quantized_gemm",
-    "w4a16_gemm"
-  ],
-  "adaptive_sparse": [
-    "adaptive_sparse",
-    "adaptive_sparse_attention_forward"
-  ],
-  "adaptive_sparse_attention_forward": [
-    "adaptive_sparse",
-    "adaptive_sparse_attention_forward"
-  ],
-  "admm": [
-    "admm",
-    "admm_pruner_compress"
-  ],
-  "admm_pruner_compress": [
-    "admm",
-    "admm_pruner_compress"
-  ],
-  "asvd": [
-    "asvd",
-    "asvd_compress"
-  ],
-  "asvd_compress": [
-    "asvd",
-    "asvd_compress"
-  ],
-  "awq": [
-    "awq",
-    "awq_compress"
-  ],
-  "awq_compress": [
-    "awq",
-    "awq_compress"
-  ],
-  "based_taylor_attention": [
-    "based_taylor_attention",
-    "based_taylor_attention"
-  ],
-  "based_taylor_attention_pytorch_ref": [
-    "based_taylor_attention",
-    "based_taylor_attention_pytorch_ref"
-  ],
-  "chela_slay": [
-    "chela_slay",
-    "chela_slay_attention_forward"
-  ],
-  "chela_slay_attention_forward": [
-    "chela_slay",
-    "chela_slay_attention_forward"
-  ],
-  "chela_slay_wide": [
-    "chela_slay_wide",
-    "chela_slay_wide_attention_forward"
-  ],
-  "chela_slay_wide_attention_forward": [
-    "chela_slay",
-    "chela_slay_wide_attention_forward"
-  ],
-  "direct_svd": [
-    "direct_svd",
-    "direct_svd_compress"
-  ],
-  "direct_svd_compress": [
-    "direct_svd",
-    "direct_svd_compress"
-  ],
-  "dynamic_conv": [
-    "dynamic_conv",
-    "dynamic_conv_attention_forward"
-  ],
-  "dynamic_conv_attention_forward": [
-    "dynamic_conv",
-    "dynamic_conv_attention_forward"
-  ],
-  "fp8_compressor": [
-    "fp8_compressor",
-    "fp8_compressor_compress"
-  ],
-  "fp8_compressor_compress": [
-    "fp8_compressor",
-    "fp8_compressor_compress"
-  ],
-  "fused_svd_projection": [
-    "fused_svd_projection",
-    "fused_svd_projection"
-  ],
-  "fused_svd_projection_pytorch_ref": [
-    "fused_svd_projection",
-    "fused_svd_projection_pytorch_ref"
-  ],
-  "fwsvd": [
-    "fwsvd",
-    "fwsvd_compress"
-  ],
-  "fwsvd_compress": [
-    "fwsvd",
-    "fwsvd_compress"
-  ],
-  "gated_deltanet": [
-    "gated_deltanet",
-    "gated_deltanet"
-  ],
-  "gated_deltanet_pytorch_ref": [
-    "gated_deltanet",
-    "gated_deltanet_pytorch_ref"
-  ],
-  "gla_chunk_attn": [
-    "gla_chunk_attn",
-    "gla_chunk_attn"
-  ],
-  "gla_chunk_attn_pytorch_ref": [
-    "gla_chunk_attn",
-    "gla_chunk_attn_pytorch_ref"
-  ],
-  "hnc_svd": [
-    "hnc_svd",
-    "hnc_svd_compress"
-  ],
-  "hnc_svd_compress": [
-    "hnc_svd",
-    "hnc_svd_compress"
-  ],
-  "hybrid_local_kernel": [
-    "hybrid_local_kernel",
-    "hybrid_local_attn"
-  ],
-  "hybrid_local_attn": [
-    "hybrid_local_kernel",
-    "hybrid_local_attn"
-  ],
-  "kmeans_quantize": [
-    "kmeans_quantize",
-    "kmeans_quantize_compress"
-  ],
-  "kmeans_quantize_compress": [
-    "kmeans_quantize",
-    "kmeans_quantize_compress"
-  ],
-  "lightning_attention": [
-    "lightning_attention",
-    "lightning_attention"
-  ],
-  "lightning_attention_pytorch_ref": [
-    "lightning_attention",
-    "lightning_attention_pytorch_ref"
-  ],
-  "lsh_attention": [
-    "lsh_attention",
-    "lsh_attention_forward"
-  ],
-  "lsh_attention_forward": [
-    "lsh_attention",
-    "lsh_attention_forward"
-  ],
-  "rala": [
-    "rala",
-    "rala_attention_forward"
-  ],
-  "rala_attention_forward": [
-    "rala",
-    "rala_attention_forward"
-  ],
-  "retnet_chunk_retention": [
-    "retnet_chunk_retention",
-    "retnet_chunk_retention"
-  ],
-  "retnet_chunk_retention_pytorch_ref": [
-    "retnet_chunk_retention",
-    "retnet_chunk_retention_pytorch_ref"
-  ],
-  "rwkv6_state_scan": [
-    "rwkv6_state_scan",
-    "rwkv6_state_scan"
-  ],
-  "rwkv6_state_scan_pytorch_ref": [
-    "rwkv6_state_scan",
-    "rwkv6_state_scan_pytorch_ref"
-  ],
-  "sparsegpt": [
-    "sparsegpt",
-    "sparsegpt_compress"
-  ],
-  "sparsegpt_compress": [
-    "sparsegpt",
-    "sparsegpt_compress"
-  ],
-  "svd_linear_decay": [
-    "svd_linear_decay",
-    "svd_linear_decay"
-  ],
-  "svd_linear_decay_pytorch_ref": [
-    "svd_linear_decay",
-    "svd_linear_decay_pytorch_ref"
-  ],
-  "svd_mamba_fused": [
-    "svd_mamba_fused",
-    "svd_mamba_fused"
-  ],
-  "svd_mamba_fused_pytorch_ref": [
-    "svd_mamba_fused",
-    "svd_mamba_fused_pytorch_ref"
-  ],
-  "token_compressed": [
-    "token_compressed",
-    "token_compressed_attention_forward"
-  ],
-  "token_compressed_attention_forward": [
-    "token_compressed",
-    "token_compressed_attention_forward"
-  ],
-  "ttt_linear_step": [
-    "ttt_linear_step",
-    "ttt_linear_step_attention_forward"
-  ],
-  "ttt_linear_step_attention_forward": [
-    "ttt_linear_step",
-    "ttt_linear_step_attention_forward"
-  ],
-  "wanda": [
-    "wanda",
-    "wanda_compress"
-  ],
-  "wanda_compress": [
-    "wanda",
-    "wanda_compress"
-  ]
+    "load_cuda_module": ["_bindings", "load_cuda_module"],
+    "get_cuda_arch_flags": ["_bindings", "get_cuda_arch_flags"],
+    "dispatch": ["_fallback", "dispatch"],
+    "force_kernel_backend": ["_fallback", "force_kernel_backend"],
+    "get_dispatch_stats": ["_fallback", "get_dispatch_stats"],
+    "reset_dispatch_stats": ["_fallback", "reset_dispatch_stats"],
+    "is_cuda_available": ["_utils", "is_cuda_available"],
+    "get_device_capability": ["_utils", "get_device_capability"],
+    "check_cuda_error": ["_utils", "check_cuda_error"],
+    "fused_lowrank_gated_gemm": ["low_rank_svd", "fused_lowrank_gated_gemm"],
+    "fused_lowrank_gated_gemm_pytorch_ref": ["low_rank_svd", "fused_lowrank_gated_gemm_pytorch_ref"],
+    "chunked_delta_gate_scan": ["gdn_scan", "chunked_delta_gate_scan"],
+    "chunked_delta_gate_scan_pytorch_ref": ["gdn_scan", "chunked_delta_gate_scan_pytorch_ref"],
+    "hgrn2_fused_bwd_scan": ["hgrn2_scan", "hgrn2_fused_bwd_scan"],
+    "hgrn2_fused_bwd_scan_pytorch_ref": ["hgrn2_scan", "hgrn2_fused_bwd_scan_pytorch_ref"],
+    "cosformer_linear_attention": ["cosformer", "cosformer_linear_attention"],
+    "cosformer_linear_attention_pytorch_ref": ["cosformer", "cosformer_linear_attention_pytorch_ref"],
+    "fused_norm_linear": ["fused_norm_linear", "fused_norm_linear"],
+    "fused_norm_linear_pytorch_ref": ["fused_norm_linear", "fused_norm_linear_pytorch_ref"],
+    "fused_rotary_emb": ["fused_rope", "fused_rotary_emb"],
+    "fused_rotary_emb_pytorch_ref": ["fused_rope", "fused_rotary_emb_pytorch_ref"],
+    "kronecker_matmul": ["kronecker_gemm", "kronecker_matmul"],
+    "kronecker_matmul_pytorch_ref": ["kronecker_gemm", "kronecker_matmul_pytorch_ref"],
+    "lut_codebook_dequant_gemm": ["lut_gemm", "lut_codebook_dequant_gemm"],
+    "lut_codebook_dequant_gemm_pytorch_ref": ["lut_gemm", "lut_codebook_dequant_gemm_pytorch_ref"],
+    "linear_attention": ["linear_attention", "linear_attention"],
+    "linear_attention_pytorch_ref": ["linear_attention", "linear_attention_pytorch_ref"],
+    "fused_cross_entropy": ["fused_ce", "fused_cross_entropy"],
+    "fused_cross_entropy_pytorch_ref": ["fused_ce", "fused_cross_entropy_pytorch_ref"],
+    "rpca_sparse_svd_gemm": ["rpca_sparse_svd", "rpca_sparse_svd_gemm"],
+    "rpca_sparse_svd_gemm_pytorch_ref": ["rpca_sparse_svd", "rpca_sparse_svd_gemm_pytorch_ref"],
+    "tt_contraction": ["tt_contraction", "tt_contraction"],
+    "tt_contraction_pytorch_ref": ["tt_contraction", "tt_contraction_pytorch_ref"],
+    "tt_linear": ["tt_contraction", "tt_linear"],
+    "tt_linear_pytorch_ref": ["tt_contraction", "tt_linear_pytorch_ref"],
+    "hadamard_w4a16_gemm": ["hadamard_gemm", "hadamard_w4a16_gemm"],
+    "hadamard_w4a16_gemm_pytorch_ref": ["hadamard_gemm", "hadamard_w4a16_gemm_pytorch_ref"],
+    "act_scale_quant_gemm": ["act_scale_gemm", "act_scale_quant_gemm"],
+    "act_scale_quant_gemm_pytorch_ref": ["act_scale_gemm", "act_scale_quant_gemm_pytorch_ref"],
+    "latent_kv_cache_attention": ["latent_kv_attn", "latent_kv_cache_attention"],
+    "latent_kv_cache_attention_pytorch_ref": ["latent_kv_attn", "latent_kv_cache_attention_pytorch_ref"],
+    "spectral_entropy_svd_gate": ["entropy_gate", "spectral_entropy_svd_gate"],
+    "spectral_entropy_svd_gate_pytorch_ref": ["entropy_gate", "spectral_entropy_svd_gate_pytorch_ref"],
+    "fused_kd_loss": ["fused_kd", "fused_kd_loss"],
+    "fused_kd_loss_pytorch_ref": ["fused_kd", "fused_kd_loss_pytorch_ref"],
+    "recurrent_linear_step": ["state_update", "recurrent_linear_step"],
+    "recurrent_linear_step_pytorch_ref": ["state_update", "recurrent_linear_step_pytorch_ref"],
+    "flash_decoding_attention": ["flash_decoding", "flash_decoding_attention"],
+    "flash_decoding_attention_pytorch_ref": ["flash_decoding", "flash_decoding_attention_pytorch_ref"],
+    "fms_scan": ["fms_scan", "fms_scan"],
+    "fms_scan_pytorch_ref": ["fms_scan", "fms_scan_pytorch_ref"],
+    "rmsnorm": ["rmsnorm", "rmsnorm"],
+    "rmsnorm_pytorch_ref": ["rmsnorm", "rmsnorm_pytorch_ref"],
+    "layernorm": ["layernorm", "layernorm"],
+    "layernorm_pytorch_ref": ["layernorm", "layernorm_pytorch_ref"],
+    "swiglu": ["swiglu", "swiglu"],
+    "swiglu_pytorch_ref": ["swiglu", "swiglu_pytorch_ref"],
+    "fast_gelu": ["fast_gelu", "fast_gelu"],
+    "fast_gelu_pytorch_ref": ["fast_gelu", "fast_gelu_pytorch_ref"],
+    "fused_softplus": ["softplus", "fused_softplus"],
+    "fused_softplus_pytorch_ref": ["softplus", "fused_softplus_pytorch_ref"],
+    "gla_scan": ["gla_scan", "gla_scan"],
+    "gla_scan_pytorch_ref": ["gla_scan", "gla_scan_pytorch_ref"],
+    "causal_conv1d": ["causal_conv1d", "causal_conv1d"],
+    "causal_conv1d_pytorch_ref": ["causal_conv1d", "causal_conv1d_pytorch_ref"],
+    "recurrent_gla_step": ["recurrent_gla_step", "recurrent_gla_step"],
+    "recurrent_gla_step_pytorch_ref": ["recurrent_gla_step", "recurrent_gla_step_pytorch_ref"],
+    "recurrent_hgrn2_step": ["recurrent_hgrn2_step", "recurrent_hgrn2_step"],
+    "recurrent_hgrn2_step_pytorch_ref": ["recurrent_hgrn2_step", "recurrent_hgrn2_step_pytorch_ref"],
+    "fused_dropout_add": ["fused_dropout_add", "fused_dropout_add"],
+    "fused_dropout_add_pytorch_ref": ["fused_dropout_add", "fused_dropout_add_pytorch_ref"],
+    "varlen_attention": ["varlen_attention", "varlen_attention"],
+    "varlen_attention_pytorch_ref": ["varlen_attention", "varlen_attention_pytorch_ref"],
+    "cross_attention": ["cross_attention", "cross_attention"],
+    "cross_attention_pytorch_ref": ["cross_attention", "cross_attention_pytorch_ref"],
+    "rotational_svd": ["rotational_svd", "rotational_svd"],
+    "rotational_svd_pytorch_ref": ["rotational_svd", "rotational_svd_pytorch_ref"],
+    "block_diag_matmul": ["block_diag_gemm", "block_diag_matmul"],
+    "block_diag_matmul_pytorch_ref": ["block_diag_gemm", "block_diag_matmul_pytorch_ref"],
+    "ternary_gemm": ["ternary_gemm", "ternary_gemm"],
+    "ternary_gemm_pytorch_ref": ["ternary_gemm", "ternary_gemm_pytorch_ref"],
+    "fp4_gemm": ["fp4_gemm", "fp4_gemm"],
+    "fp4_gemm_pytorch_ref": ["fp4_gemm", "fp4_gemm_pytorch_ref"],
+    "channel_shuffle": ["channel_shuffle", "channel_shuffle"],
+    "channel_shuffle_pytorch_ref": ["channel_shuffle", "channel_shuffle_pytorch_ref"],
+    "speculative_verify": ["speculative_verify", "speculative_verify"],
+    "speculative_verify_pytorch_ref": ["speculative_verify", "speculative_verify_pytorch_ref"],
+    "alibi_attention": ["alibi_attention", "alibi_attention"],
+    "alibi_attention_pytorch_ref": ["alibi_attention", "alibi_attention_pytorch_ref"],
+    "flash_gqa": ["flash_gqa", "flash_gqa"],
+    "flash_gqa_pytorch_ref": ["flash_gqa", "flash_gqa_pytorch_ref"],
+    "moe_dispatch_gather": ["moe_routing", "moe_dispatch_gather"],
+    "moe_route_pytorch_ref": ["moe_routing", "moe_route_pytorch_ref"],
+    "moe_routing": ["moe_routing", "moe_routing"],
+    "moe_routing_ref": ["moe_routing", "moe_routing_ref"],
+    "moe_routing_pytorch_ref": ["moe_routing", "moe_routing_pytorch_ref"],
+    "moe_dispatch": ["moe_routing", "moe_dispatch"],
+    "moe_gather": ["moe_routing", "moe_gather"],
+    "paged_attention": ["paged_attention", "paged_attention"],
+    "paged_attention_pytorch_reference": ["paged_attention", "paged_attention_pytorch_reference"],
+    "copy_blocks_cow": ["paged_kv_cache", "copy_blocks_cow"],
+    "copy_blocks_cow_pytorch_ref": ["paged_kv_cache", "copy_blocks_cow_pytorch_ref"],
+    "w4a16_gemm": ["quantized_gemm", "w4a16_gemm"],
+    "w4a16_gemm_pytorch_ref": ["quantized_gemm", "w4a16_gemm_pytorch_ref"],
+    "fp8_gemm": ["fp8_gemm", "fp8_gemm"],
+    "fp8_gemm_pytorch_ref": ["fp8_gemm", "fp8_gemm_pytorch_ref"],
+    "selective_scan": ["selective_scan", "selective_scan"],
+    "selective_scan_pytorch_ref": ["selective_scan", "selective_scan_pytorch_ref"],
+    "sliding_window_attn": ["sliding_window", "sliding_window_attn"],
+    "sliding_window_pytorch_ref": ["sliding_window", "sliding_window_pytorch_ref"],
+    "block_sparse_attn": ["sparse_attention", "block_sparse_attn"],
+    "block_sparse_attn_pytorch_ref": ["sparse_attention", "block_sparse_attn_pytorch_ref"],
+    "entmax_bisect": ["entmax_bisect", "entmax_bisect"],
+    "fused_entmax_bisect_pytorch": ["entmax_bisect", "fused_entmax_bisect_pytorch"],
+    "split_head_norm": ["split_head_norm", "split_head_norm"],
+    "split_head_norm_pytorch_ref": ["split_head_norm", "split_head_norm_pytorch_ref"],
+    "aegis_gate_norm": ["aegis_gate_norm", "aegis_gate_norm"],
+    "aegis_gate_norm_pytorch_ref": ["aegis_gate_norm", "aegis_gate_norm_pytorch_ref"],
+    "entropy_pruning": ["entropy_pruning", "entropy_pruning"],
+    "entropy_pruning_pytorch_ref": ["entropy_pruning", "entropy_pruning_pytorch_ref"],
+    "favor_plus": ["favor_plus", "favor_plus"],
+    "favor_plus_pytorch_ref": ["favor_plus", "favor_plus_pytorch_ref"],
+    "fwht_transform": ["fwht_transform", "fwht_transform"],
+    "fast_hadamard_transform": ["fwht_transform", "fast_hadamard_transform"],
+    "rms_variance_match": ["rms_variance_match", "rms_variance_match"],
+    "fused_rms_variance_match_triton": ["rms_variance_match", "fused_rms_variance_match_triton"],
+    "spectral_shrinkage": ["spectral_shrinkage", "spectral_shrinkage"],
+    "spectral_shrinkage_pytorch_ref": ["spectral_shrinkage", "spectral_shrinkage_pytorch_ref"],
+    "adaptive_span": ["adaptive_span", "adaptive_span"],
+    "fused_adaptive_span_penalty_pytorch": ["adaptive_span", "fused_adaptive_span_penalty_pytorch"],
+    "dynamic_conv1d": ["dynamic_conv1d", "dynamic_conv1d"],
+    "fused_dynamic_conv1d_pytorch": ["dynamic_conv1d", "fused_dynamic_conv1d_pytorch"],
+    "paged_recurrent_step": ["paged_recurrent_step", "paged_recurrent_step"],
+    "paged_recurrent_state_step_pytorch": ["paged_recurrent_step", "paged_recurrent_state_step_pytorch"],
+    "paged_kv_evict": ["paged_kv_evict", "paged_kv_evict"],
+    "paged_kv_compact_pytorch_ref": ["paged_kv_evict", "paged_kv_compact_pytorch_ref"],
+    "unified_rope_offset": ["unified_rope_offset", "unified_rope_offset"],
+    "fused_unified_rope_offset_pytorch": ["unified_rope_offset", "fused_unified_rope_offset_pytorch"],
+    "flash_decode_stage2": ["flash_decode_stage2", "flash_decode_stage2"],
+    "flash_decode_stage2_pytorch_ref": ["flash_decode_stage2", "flash_decode_stage2_pytorch_ref"],
+    "svd_prefix_scan": ["svd_prefix_scan", "svd_prefix_scan"],
+    "svd_prefix_scan_pytorch_ref": ["svd_prefix_scan", "svd_prefix_scan_pytorch_ref"],
+    "gdn_delta_rule": ["gdn_delta_rule", "gdn_delta_rule"],
+    "gdn_delta_rule_pytorch_ref": ["gdn_delta_rule", "gdn_delta_rule_pytorch_ref"],
+    "hgrn2_spatial_scan": ["hgrn2_spatial_scan", "hgrn2_spatial_scan"],
+    "hgrn2_spatial_scan_pytorch_ref": ["hgrn2_spatial_scan", "hgrn2_spatial_scan_pytorch_ref"],
+    "gla_unnormalized_scan": ["gla_unnormalized_scan", "gla_unnormalized_scan"],
+    "gla_unnormalized_scan_pytorch_ref": ["gla_unnormalized_scan", "gla_unnormalized_scan_pytorch_ref"],
+    "bitonic_topk": ["bitonic_topk", "bitonic_topk"],
+    "bitonic_topk_pytorch_ref": ["bitonic_topk", "bitonic_topk_pytorch_ref"],
+    "logcumsumexp": ["logcumsumexp", "logcumsumexp"],
+    "logcumsumexp_pytorch_ref": ["logcumsumexp", "logcumsumexp_pytorch_ref"],
+    "soa_attn": ["soa_attn", "soa_attn"],
+    "soa_attn_ref": ["soa_attn", "soa_attn_ref"],
+    "nasc_attention": ["nasc_attention", "nasc_attention"],
+    "nasc_attention_ref": ["nasc_attention", "nasc_attention_ref"],
+    "tpa_attention": ["tpa_attention", "tpa_attention"],
+    "tpa_attention_ref": ["tpa_attention", "tpa_attention_ref"],
+    "spectra_v2": ["spectra_v2", "spectra_v2"],
+    "spectra_v2_ref": ["spectra_v2", "spectra_v2_ref"],
+    "spectraformer": ["spectraformer_attention", "spectraformer"],
+    "spectraformer_ref": ["spectraformer_attention", "spectraformer_ref"],
+    "galerkin_attention": ["galerkin_attention", "galerkin_attention"],
+    "galerkin_attention_ref": ["galerkin_attention", "galerkin_attention_ref"],
+    "hydra_attention": ["hydra_attention", "hydra_attention"],
+    "hydra_attention_ref": ["hydra_attention", "hydra_attention_ref"],
+    "rfa_attention": ["rfa_attention", "rfa_attention"],
+    "rfa_attention_ref": ["rfa_attention", "rfa_attention_ref"],
+    "fast_attention": ["fast_attention", "fast_attention"],
+    "fast_attention_ref": ["fast_attention", "fast_attention_ref"],
+    "linear_rnn_attention": ["linear_rnn_attention", "linear_rnn_attention"],
+    "linear_rnn_attention_ref": ["linear_rnn_attention", "linear_rnn_attention_ref"],
+    "differential_attention": ["differential_attention", "differential_attention"],
+    "differential_attention_ref": ["differential_attention", "differential_attention_ref"],
+    "decay_linear_attention": ["decay_linear_attention", "decay_linear_attention"],
+    "decay_linear_attention_ref": ["decay_linear_attention", "decay_linear_attention_ref"],
+    "hstu_attention": ["hstu_attention", "hstu_attention"],
+    "hstu_attention_ref": ["hstu_attention", "hstu_attention_ref"],
+    "longformer": ["longformer", "longformer"],
+    "longformer_ref": ["longformer", "longformer_ref"],
+    "bigbird": ["bigbird", "bigbird"],
+    "bigbird_ref": ["bigbird", "bigbird_ref"],
+    "reformer": ["reformer", "reformer"],
+    "reformer_ref": ["reformer", "reformer_ref"],
+    "local_attention": ["local_attention", "local_attention"],
+    "local_attention_ref": ["local_attention", "local_attention_ref"],
+    "cluster_attention": ["cluster_attention", "cluster_attention"],
+    "cluster_attention_ref": ["cluster_attention", "cluster_attention_ref"],
+    "routing_attention": ["routing_attention", "routing_attention"],
+    "routing_attention_ref": ["routing_attention", "routing_attention_ref"],
+    "vspec": ["vspec", "vspec"],
+    "vspec_ref": ["vspec", "vspec_ref"],
+    "goldfinch_ahn": ["goldfinch_ahn", "goldfinch_ahn"],
+    "goldfinch_ahn_ref": ["goldfinch_ahn", "goldfinch_ahn_ref"],
+    "hla_attention": ["hla_attention", "hla_attention"],
+    "hla_attention_ref": ["hla_attention", "hla_attention_ref"],
+    "phantom": ["phantom", "phantom"],
+    "phantom_ref": ["phantom", "phantom_ref"],
+    "mamba_block": ["mamba_block", "mamba_block"],
+    "mamba_block_ref": ["mamba_block", "mamba_block_ref"],
+    "selective_ssm": ["selective_ssm", "selective_ssm"],
+    "selective_ssm_ref": ["selective_ssm", "selective_ssm_ref"],
+    "upi_stuffed_mamba": ["upi_stuffed_mamba", "upi_stuffed_mamba"],
+    "upi_stuffed_mamba_ref": ["upi_stuffed_mamba", "upi_stuffed_mamba_ref"],
+    "jamba": ["jamba", "jamba"],
+    "jamba_ref": ["jamba", "jamba_ref"],
+    "nexus": ["nexus", "nexus"],
+    "nexus_ref": ["nexus", "nexus_ref"],
+    "hymba_transx": ["hymba_transx", "hymba_transx"],
+    "hymba_transx_ref": ["hymba_transx", "hymba_transx_ref"],
+    "griffin_ssd": ["griffin_ssd", "griffin_ssd"],
+    "griffin_ssd_ref": ["griffin_ssd", "griffin_ssd_ref"],
+    "jamba_info": ["jamba_info", "jamba_info"],
+    "jamba_info_ref": ["jamba_info", "jamba_info_ref"],
+    "samba_moe": ["samba_moe", "samba_moe"],
+    "samba_moe_ref": ["samba_moe", "samba_moe_ref"],
+    "mamba_svd_flash": ["mamba_svd_flash", "mamba_svd_flash"],
+    "mamba_svd_flash_ref": ["mamba_svd_flash", "mamba_svd_flash_ref"],
+    "samba_m3": ["samba_m3", "samba_m3"],
+    "samba_m3_ref": ["samba_m3", "samba_m3_ref"],
+    "orion": ["orion", "orion"],
+    "orion_ref": ["orion", "orion_ref"],
+    "spectral_mamba": ["spectral_mamba", "spectral_mamba"],
+    "spectral_mamba_ref": ["spectral_mamba", "spectral_mamba_ref"],
+    "simple_ssm": ["simple_ssm", "simple_ssm"],
+    "simple_ssm_ref": ["simple_ssm", "simple_ssm_ref"],
+    "nystrom_attention": ["nystrom_attention", "nystrom_attention"],
+    "nystrom_attention_ref": ["nystrom_attention", "nystrom_attention_ref"],
+    "linformer_attention": ["linformer_attention", "linformer_attention"],
+    "linformer_attention_ref": ["linformer_attention", "linformer_attention_ref"],
+    "rwkv6": ["rwkv6", "rwkv6"],
+    "rwkv6_ref": ["rwkv6", "rwkv6_ref"],
+    "multi_scale_retention": ["multi_scale_retention", "multi_scale_retention"],
+    "multi_scale_retention_pytorch_ref": ["multi_scale_retention", "multi_scale_retention_pytorch_ref"],
+    "liquid_attention": ["liquid_attention", "liquid_attention"],
+    "liquid_attention_ref": ["liquid_attention", "liquid_attention_ref"],
+    "mamba2_block": ["mamba2_block", "mamba2_block"],
+    "mamba2_block_ref": ["mamba2_block", "mamba2_block_ref"],
+    "retnet_retention": ["multi_scale_retention", "multi_scale_retention"],
+    "retnet_retention_pytorch_ref": ["multi_scale_retention", "multi_scale_retention_pytorch_ref"],
+    "act_scale_gemm": ["act_scale_gemm", "act_scale_quant_gemm"],
+    "block_diag_gemm": ["block_diag_gemm", "block_diag_matmul"],
+    "cosformer": ["cosformer", "cosformer_linear_attention"],
+    "cosformer_attn": ["cosformer", "cosformer_linear_attention"],
+    "entropy_gate": ["entropy_gate", "spectral_entropy_svd_gate"],
+    "expert_dispatch": ["moe_routing", "moe_dispatch_gather"],
+    "flash_decoding": ["flash_decoding", "flash_decoding_attention"],
+    "fused_ce": ["fused_ce", "fused_cross_entropy"],
+    "fused_kd": ["fused_kd", "fused_kd_loss"],
+    "fused_rope": ["fused_rope", "fused_rotary_emb"],
+    "hadamard_gemm": ["hadamard_gemm", "hadamard_w4a16_gemm"],
+    "hgrn2_scan": ["hgrn2_scan", "hgrn2_fused_bwd_scan"],
+    "kronecker_gemm": ["kronecker_gemm", "kronecker_matmul"],
+    "kv_cache_copy": ["paged_kv_cache", "copy_blocks_cow"],
+    "latent_kv_attn": ["latent_kv_attn", "latent_kv_cache_attention"],
+    "linear_attn": ["linear_attention", "linear_attention"],
+    "lut_gemm": ["lut_gemm", "lut_codebook_dequant_gemm"],
+    "moe_router": ["moe_routing", "moe_dispatch_gather"],
+    "rpca_sparse_svd": ["rpca_sparse_svd", "rpca_sparse_svd_gemm"],
+    "sliding_window": ["sliding_window", "sliding_window_attn"],
+    "softplus": ["softplus", "fused_softplus"],
+    "sparse_attention": ["sparse_attention", "block_sparse_attn"],
+    "spectraformer_attention": ["spectraformer_attention", "spectraformer"],
+    "state_update": ["state_update", "recurrent_linear_step"],
+    "gdn_scan": ["gdn_scan", "chunked_delta_gate_scan"],
+    "low_rank_svd": ["low_rank_svd", "fused_lowrank_gated_gemm"],
+    "paged_kv_cache": ["paged_kv_cache", "copy_blocks_cow"],
+    "quantized_gemm": ["quantized_gemm", "w4a16_gemm"],
+    "adaptive_sparse": ["adaptive_sparse", "adaptive_sparse_attention_forward"],
+    "adaptive_sparse_attention_forward": ["adaptive_sparse", "adaptive_sparse_attention_forward"],
+    "admm": ["admm", "admm_pruner_compress"],
+    "admm_pruner_compress": ["admm", "admm_pruner_compress"],
+    "asvd": ["asvd", "asvd_compress"],
+    "asvd_compress": ["asvd", "asvd_compress"],
+    "awq": ["awq", "awq_compress"],
+    "awq_compress": ["awq", "awq_compress"],
+    "based_taylor_attention": ["based_taylor_attention", "based_taylor_attention"],
+    "based_taylor_attention_pytorch_ref": ["based_taylor_attention", "based_taylor_attention_pytorch_ref"],
+    "chela_slay": ["chela_slay", "chela_slay_attention_forward"],
+    "chela_slay_attention_forward": ["chela_slay", "chela_slay_attention_forward"],
+    "chela_slay_wide": ["chela_slay_wide", "chela_slay_wide_attention_forward"],
+    "chela_slay_wide_attention_forward": ["chela_slay", "chela_slay_wide_attention_forward"],
+    "direct_svd": ["direct_svd", "direct_svd_compress"],
+    "direct_svd_compress": ["direct_svd", "direct_svd_compress"],
+    "dynamic_conv": ["dynamic_conv", "dynamic_conv_attention_forward"],
+    "dynamic_conv_attention_forward": ["dynamic_conv", "dynamic_conv_attention_forward"],
+    "fp8_compressor": ["fp8_compressor", "fp8_compressor_compress"],
+    "fp8_compressor_compress": ["fp8_compressor", "fp8_compressor_compress"],
+    "fused_svd_projection": ["fused_svd_projection", "fused_svd_projection"],
+    "fused_svd_projection_pytorch_ref": ["fused_svd_projection", "fused_svd_projection_pytorch_ref"],
+    "fwsvd": ["fwsvd", "fwsvd_compress"],
+    "fwsvd_compress": ["fwsvd", "fwsvd_compress"],
+    "gated_deltanet": ["gated_deltanet", "gated_deltanet"],
+    "gated_deltanet_pytorch_ref": ["gated_deltanet", "gated_deltanet_pytorch_ref"],
+    "gla_chunk_attn": ["gla_chunk_attn", "gla_chunk_attn"],
+    "gla_chunk_attn_pytorch_ref": ["gla_chunk_attn", "gla_chunk_attn_pytorch_ref"],
+    "hnc_svd": ["hnc_svd", "hnc_svd_compress"],
+    "hnc_svd_compress": ["hnc_svd", "hnc_svd_compress"],
+    "hybrid_local_kernel": ["hybrid_local_kernel", "hybrid_local_attn"],
+    "hybrid_local_attn": ["hybrid_local_kernel", "hybrid_local_attn"],
+    "kmeans_quantize": ["kmeans_quantize", "kmeans_quantize_compress"],
+    "kmeans_quantize_compress": ["kmeans_quantize", "kmeans_quantize_compress"],
+    "lightning_attention": ["lightning_attention", "lightning_attention"],
+    "lightning_attention_pytorch_ref": ["lightning_attention", "lightning_attention_pytorch_ref"],
+    "lsh_attention": ["lsh_attention", "lsh_attention_forward"],
+    "lsh_attention_forward": ["lsh_attention", "lsh_attention_forward"],
+    "rala": ["rala", "rala_attention_forward"],
+    "rala_attention_forward": ["rala", "rala_attention_forward"],
+    "retnet_chunk_retention": ["retnet_chunk_retention", "retnet_chunk_retention"],
+    "retnet_chunk_retention_pytorch_ref": ["retnet_chunk_retention", "retnet_chunk_retention_pytorch_ref"],
+    "rwkv6_state_scan": ["rwkv6_state_scan", "rwkv6_state_scan"],
+    "rwkv6_state_scan_pytorch_ref": ["rwkv6_state_scan", "rwkv6_state_scan_pytorch_ref"],
+    "sparsegpt": ["sparsegpt", "sparsegpt_compress"],
+    "sparsegpt_compress": ["sparsegpt", "sparsegpt_compress"],
+    "svd_linear_decay": ["svd_linear_decay", "svd_linear_decay"],
+    "svd_linear_decay_pytorch_ref": ["svd_linear_decay", "svd_linear_decay_pytorch_ref"],
+    "svd_mamba_fused": ["svd_mamba_fused", "svd_mamba_fused"],
+    "svd_mamba_fused_pytorch_ref": ["svd_mamba_fused", "svd_mamba_fused_pytorch_ref"],
+    "token_compressed": ["token_compressed", "token_compressed_attention_forward"],
+    "token_compressed_attention_forward": ["token_compressed", "token_compressed_attention_forward"],
+    "ttt_linear_step": ["ttt_linear_step", "ttt_linear_step_attention_forward"],
+    "ttt_linear_step_attention_forward": ["ttt_linear_step", "ttt_linear_step_attention_forward"],
+    "wanda": ["wanda", "wanda_compress"],
+    "wanda_compress": ["wanda", "wanda_compress"],
 }
 
 
@@ -1466,5 +494,5 @@ CUDA_KERNEL_CATALOG: list[str] = [
     "varlen_attention",
     "vspec",
     "w4a16_gemm",
-    "wanda"
+    "wanda",
 ]

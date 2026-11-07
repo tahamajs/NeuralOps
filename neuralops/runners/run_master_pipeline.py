@@ -157,9 +157,7 @@ def main():
                 elapsed = time.time() - t_start
                 rate = completed / elapsed * 60
                 eta = (len(tasks) - completed) / max(rate, 0.01)
-                print(
-                    f"[PROGRESS] {completed}/{len(tasks)} | {rate:.1f} tasks/min | ETA {eta:.0f} min"
-                )
+                print(f"[PROGRESS] {completed}/{len(tasks)} | {rate:.1f} tasks/min | ETA {eta:.0f} min")
 
     total = time.time() - t_start
     print(f"[DONE] {completed}/{len(tasks)} finished ({failed} failed) in {total / 60:.1f} min")

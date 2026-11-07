@@ -22,18 +22,14 @@ import importlib
 import logging
 import math
 import os
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 
-from neuralops.benchmarks.adapters.base import (
-    BaseBenchmarkAdapter,
-    BenchmarkInputs,
-    NumericsReport,
-)
+from neuralops.benchmarks.adapters.base import BaseBenchmarkAdapter, BenchmarkInputs, NumericsReport
 from neuralops.benchmarks.results.schema import BenchmarkResult, BenchmarkStatus
 
 logger = logging.getLogger(__name__)
@@ -146,9 +142,7 @@ class TritonKernelAdapter(BaseBenchmarkAdapter):
         self.is_extension = is_extension
         self.device = dev_obj
         self._module_path = (
-            f"neuralops.ops.triton.{kernel_name}"
-            if is_extension
-            else f"neuralops.core.triton_kernels.{kernel_name}"
+            f"neuralops.ops.triton.{kernel_name}" if is_extension else f"neuralops.core.triton_kernels.{kernel_name}"
         )
         self._module: Optional[Any] = None
         self._kernel_fn: Optional[Callable[..., Any]] = None
@@ -288,9 +282,11 @@ class TritonKernelAdapter(BaseBenchmarkAdapter):
                         e,
                     )
                     from neuralops.ops.triton._common import triton_dispatch
+
                     return triton_dispatch(self.kernel_name, *args, **kwargs)
             else:
                 from neuralops.ops.triton._common import triton_dispatch
+
                 logger.warning(
                     "[Triton Dispatch Fallback] Dispatching kernel '%s' via common fallback dispatcher.",
                     self.kernel_name,
@@ -413,6 +409,7 @@ class TritonKernelAdapter(BaseBenchmarkAdapter):
             out = self._pytorch_fallback_fn(*args, **kwargs)
         else:
             from neuralops.ops.triton._common import triton_dispatch
+
             out = triton_dispatch(self.kernel_name, *args, **kwargs)
 
         if isinstance(out, tuple):
@@ -437,6 +434,7 @@ class TritonKernelAdapter(BaseBenchmarkAdapter):
             backend_used = "triton"
         else:
             from neuralops.ops.triton._common import triton_dispatch
+
             out = triton_dispatch(self.kernel_name, *args, **kwargs)
             backend_used = "pytorch"
 

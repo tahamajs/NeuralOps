@@ -12,6 +12,7 @@ Backward compatibility shim for neuralops.analysis.roofline.
 from __future__ import annotations
 
 import warnings
+
 from neuralops.analysis.roofline import *  # noqa: F401, F403
 
 warnings.warn(

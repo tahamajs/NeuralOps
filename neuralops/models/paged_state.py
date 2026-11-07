@@ -149,10 +149,7 @@ class PagedStateTable:
                 raise KeyError(f"Sequence {s_id} is not registered")
             allocated = self.seq_page_tables[s_id]
             if len(allocated) > max_pages:
-                raise ValueError(
-                    f"Sequence {s_id} owns {len(allocated)} pages, exceeding "
-                    f"max_pages={max_pages}"
-                )
+                raise ValueError(f"Sequence {s_id} owns {len(allocated)} pages, exceeding " f"max_pages={max_pages}")
             for j, p_id in enumerate(allocated):
                 table[i, j] = p_id
         return table

@@ -14,12 +14,11 @@ Cache manipulation utilities for autoregressive generation, continuous decoding,
 from __future__ import annotations
 
 from typing import Any
+
 import torch
 
 
-def read_cache(
-    past_key_value: Any, layer_idx: int
-) -> tuple[torch.Tensor | None, torch.Tensor | None, int, Any | None]:
+def read_cache(past_key_value: Any, layer_idx: int) -> tuple[torch.Tensor | None, torch.Tensor | None, int, Any | None]:
     """Extract key, value, sequence length, and optional SSM/recurrent state from past_key_value cache."""
     if past_key_value is None:
         return None, None, 0, None

@@ -122,9 +122,7 @@ def _get_attn_submodule(layer: nn.Module, attn_attr: str, model_type: str = "") 
     return container
 
 
-def _attach_new_attention(
-    layer: nn.Module, attn_attr: str, new_attn: nn.Module | None, model_type: str = ""
-) -> None:
+def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: nn.Module | None, model_type: str = "") -> None:
     """Attach new attention module with proper guard for nested encoders."""
     if new_attn is None:
         logger.error(
@@ -170,11 +168,7 @@ def _replace_layers(
 
     Tries the registry injector first; falls back to _build_attention_from_registry.
     """
-    from neuralops.core._attention_extractors import (
-        _infer_hidden_size,
-        _infer_num_heads,
-        _resolve_class_name,
-    )
+    from neuralops.core._attention_extractors import _infer_hidden_size, _infer_num_heads, _resolve_class_name
 
     total_layers = len(layers)
 

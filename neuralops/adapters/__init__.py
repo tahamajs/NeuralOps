@@ -10,18 +10,14 @@ Architecture Adapters Subpackage.
 """
 
 from neuralops.adapters.base import ArchitectureAdapter
-from neuralops.adapters.errors import AdapterError
-from neuralops.adapters.registry import (
-    find_adapter,
-    list_adapters,
-    register_adapter,
-)
 
 # Eagerly register concrete adapters
 from neuralops.adapters.distilbert import DistilBertAdapter
+from neuralops.adapters.errors import AdapterError
 from neuralops.adapters.generic import GenericAdapter
 from neuralops.adapters.gpt2 import Gpt2Adapter
 from neuralops.adapters.llama import LlamaAdapter
+from neuralops.adapters.registry import find_adapter, list_adapters, register_adapter
 
 __all__ = [
     "AdapterError",

@@ -85,9 +85,7 @@ def install_lazy_family(namespace: dict[str, Any]) -> list[str]:
             try:
                 value = getattr(module, attribute_name)
             except AttributeError as exc:
-                raise AttributeError(
-                    f"module {package_name!r} has no attribute {name!r}"
-                ) from exc
+                raise AttributeError(f"module {package_name!r} has no attribute {name!r}") from exc
         else:
             raise AttributeError(f"module {package_name!r} has no attribute {name!r}")
         namespace[name] = value

@@ -61,9 +61,7 @@ class UnslothTrainer(BaseTrainer):
             logger.info("Unsloth fast kernels detected and enabled.")
         except ImportError:
             self._unsloth_available = False
-            logger.info(
-                "Unsloth library not installed. Falling back to optimized HuggingFaceTrainer."
-            )
+            logger.info("Unsloth library not installed. Falling back to optimized HuggingFaceTrainer.")
 
         self._delegate = HuggingFaceTrainer(
             model=self.model,

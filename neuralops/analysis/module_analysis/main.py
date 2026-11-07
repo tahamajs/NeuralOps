@@ -25,27 +25,12 @@ from neuralops.analysis.module_analysis.aggregators import (
     get_all_module_rows,
     get_best_dataset_result,
 )
-from neuralops.analysis.module_analysis.constants import (
-    ALIASES,
-    CSV_OUT,
-    KNOWN_LIT,
-    MD_OUT,
-    PAPERS_DIR,
-    PROJECT_ROOT,
-)
-from neuralops.analysis.module_analysis.parsers import (
-    load_all_csv_records,
-    resolve_code_path,
-)
-from neuralops.analysis.module_analysis.reporters import (
-    write_csv_report,
-    write_markdown_report,
-)
+from neuralops.analysis.module_analysis.constants import ALIASES, CSV_OUT, KNOWN_LIT, MD_OUT, PAPERS_DIR, PROJECT_ROOT
+from neuralops.analysis.module_analysis.parsers import load_all_csv_records, resolve_code_path
+from neuralops.analysis.module_analysis.reporters import write_csv_report, write_markdown_report
 
 
-def run_all_modules_analysis(
-    csv_output_path: Path = CSV_OUT, md_output_path: Path = MD_OUT
-) -> List[Dict[str, Any]]:
+def run_all_modules_analysis(csv_output_path: Path = CSV_OUT, md_output_path: Path = MD_OUT) -> List[Dict[str, Any]]:
     """Execute complete 217-module audit, classification, and report generation.
 
     Args:
@@ -90,11 +75,7 @@ def run_all_modules_analysis(
         verif_by_name = {r["name"]: r for r in verif_data.get("results", [])}
 
     paper_dirs = sorted(
-        [
-            d.name
-            for d in PAPERS_DIR.iterdir()
-            if d.is_dir() and not d.name.startswith("_") and d.name != "Template.md"
-        ]
+        [d.name for d in PAPERS_DIR.iterdir() if d.is_dir() and not d.name.startswith("_") and d.name != "Template.md"]
     )
     print(f"Total modules to analyze: {len(paper_dirs)}")
 
@@ -184,9 +165,7 @@ def run_all_modules_analysis(
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
                     pass
-        compression_ratio = (
-            f"{max(valid_comps):.3f}x" if valid_comps else ("1.000x" if all_mod_rows else "N/A")
-        )
+        compression_ratio = f"{max(valid_comps):.3f}x" if valid_comps else ("1.000x" if all_mod_rows else "N/A")
 
         params_before, params_after = "N/A", "N/A"
         for r in all_mod_rows:

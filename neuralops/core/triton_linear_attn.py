@@ -14,10 +14,11 @@ Backward-compatibility bridge exposing Triton-accelerated causal linear attentio
 from __future__ import annotations
 
 from typing import Any
+
 import torch
 
-from neuralops.ops.triton.linear_attn import fwd as _linear_attn_fwd
 from neuralops.ops.triton._common import HAS_TRITON
+from neuralops.ops.triton.linear_attn import fwd as _linear_attn_fwd
 
 
 def fast_linear_attention(
@@ -34,7 +35,9 @@ def fast_linear_attention(
 
 class LinearAttentionTriton:
     @staticmethod
-    def apply(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, is_causal: bool = True, eps: float = 1e-6) -> torch.Tensor:
+    def apply(
+        q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, is_causal: bool = True, eps: float = 1e-6
+    ) -> torch.Tensor:
         return fast_linear_attention(q, k, v, is_causal=is_causal, eps=eps)
 
 

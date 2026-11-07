@@ -3,7 +3,7 @@
 ## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) computes pairwise similarity matrices of size $L \times L$, scaling quadratically with sequence length $L$. In contexts where token-to-token cross-attention provides marginal utility relative to its computational expense, **BAM-UMoE (Block-Attention Replacement via Unified Mixture-of-Experts)** replaces quadratic attention mechanisms entirely. Instead of inter-token matrix multiplication, BAM-UMoE formulates Transformer layer transformations as a sequence of parameter-efficient, token-wise conditional routing computations over specialized expert sub-networks.
 
-The core architecture consists of two stacked **Unified Mixture-of-Experts (UMoE)** blocks with top-$k$ routing: a QKV-MoE that projects input representations into unified feature spaces, followed by an FFN-MoE that handles high-dimensional non-linear feature synthesis. By bypassing pairwise sequence attention, BAM-UMoE achieves linear complexity $\mathcal{O}(L \cdot k \cdot D^2)$ with respect to sequence length, providing an asymptotic speedup and memory footprint reduction. 
+The core architecture consists of two stacked **Unified Mixture-of-Experts (UMoE)** blocks with top-$k$ routing: a QKV-MoE that projects input representations into unified feature spaces, followed by an FFN-MoE that handles high-dimensional non-linear feature synthesis. By bypassing pairwise sequence attention, BAM-UMoE achieves linear complexity $\mathcal{O}(L \cdot k \cdot D^2)$ with respect to sequence length, providing an asymptotic speedup and memory footprint reduction.
 
 This model shifts the computational paradigm from *sequence-level token interaction* to *token-level capacity scaling via sparse expert routing*, enabling extreme inference throughput in compute-constrained environments.
 
@@ -18,7 +18,7 @@ where $\mathbf{W}_{\text{gate}} \in \mathbb{R}^{D \times E}$.
 
 The top-$k$ expert routing selection identifies the indices $\mathcal{I}_{\text{top-}k}$ and logit values $\mathbf{S}_{\text{top-}k}$ for each token:
 $$\mathcal{I}_{\text{top-}k}, \mathbf{S}_{\text{top-}k} = \operatorname{TopK}\left(\mathbf{R}, k\right)$$
-where $\mathcal{I}_{\text{top-}k} \in \{1, \dots, E\}^{B \times L \times k}$ and $\mathbf{S}_{\text{top-}k} \in \mathbb{R}^{B \times L \times k}$. 
+where $\mathcal{I}_{\text{top-}k} \in \{1, \dots, E\}^{B \times L \times k}$ and $\mathbf{S}_{\text{top-}k} \in \mathbb{R}^{B \times L \times k}$.
 
 Softmax normalization is applied over the top-$k$ logits to compute gating probabilities $\mathbf{P}$:
 $$\mathbf{P}_{b, \ell, j} = \frac{\exp(\mathbf{S}_{\text{top-}k, b, \ell, j})}{\sum_{m=1}^k \exp(\mathbf{S}_{\text{top-}k, b, \ell, m})}, \quad j \in \{1, \dots, k\}$$
@@ -126,7 +126,7 @@ $$\mathbf{Y}_{\text{final}} = \mathbf{H}_2 \odot \mathbf{M}_{\text{attn}}$$
 ### 4.1 FLOPs and Arithmetic Workload Breakdown
 Let $B$ represent the batch size, $L$ the sequence length, $D$ the hidden feature dimension, $E$ the total expert pool size, and $k$ the number of top active experts selected per token. The arithmetic complexity of the un-fused baseline implementation can be characterized systematically across its sequential operational phases.
 
-The initial routing stage evaluates gating logits across all candidate experts via linear projection $\mathbf{W}_{\text{gate, QKV}}$, incurring $\operatorname{FLOPs}_{\text{qkv\_router}} = 2 B L D E$. During expert evaluation, each expert sub-network $e$ applies an expansion projection $D \to 6D$ requiring $2 \cdot 6 D^2 = 12 D^2$ FLOPs followed by a contracting projection $6D \to 3D$ requiring $2 \cdot 6D \cdot 3D = 36 D^2$ FLOPs, culminating in $48 D^2$ FLOPs per expert. Evaluating all $E$ experts across $B \times L$ tokens yields $\operatorname{FLOPs}_{\text{qkv\_experts}} = 48 B L E D^2$. Gathering and weighting the top-$k$ expert outputs introduces an additional $\operatorname{FLOPs}_{\text{qkv\_sum}} = 2 B L k (3D) = 6 B L k D$, while the subsequent linear projection on the value component accounts for $\operatorname{FLOPs}_{\text{out\_proj}} = 2 B L D^2$. 
+The initial routing stage evaluates gating logits across all candidate experts via linear projection $\mathbf{W}_{\text{gate, QKV}}$, incurring $\operatorname{FLOPs}_{\text{qkv\_router}} = 2 B L D E$. During expert evaluation, each expert sub-network $e$ applies an expansion projection $D \to 6D$ requiring $2 \cdot 6 D^2 = 12 D^2$ FLOPs followed by a contracting projection $6D \to 3D$ requiring $2 \cdot 6D \cdot 3D = 36 D^2$ FLOPs, culminating in $48 D^2$ FLOPs per expert. Evaluating all $E$ experts across $B \times L$ tokens yields $\operatorname{FLOPs}_{\text{qkv\_experts}} = 48 B L E D^2$. Gathering and weighting the top-$k$ expert outputs introduces an additional $\operatorname{FLOPs}_{\text{qkv\_sum}} = 2 B L k (3D) = 6 B L k D$, while the subsequent linear projection on the value component accounts for $\operatorname{FLOPs}_{\text{out\_proj}} = 2 B L D^2$.
 
 Concurrently, the feed-forward mixture-of-experts (FFN-MoE) pipeline mirrors this structure: router logit generation requires $\operatorname{FLOPs}_{\text{ffn\_router}} = 2 B L D E$, while each FFN expert performs an expansion $D \to 2D$ ($4 D^2$ FLOPs) and contraction $2D \to D$ ($4 D^2$ FLOPs) for a cumulative $8 D^2$ FLOPs per expert, totaling $\operatorname{FLOPs}_{\text{ffn\_experts}} = 8 B L E D^2$ across the full expert bank. Finally, weighted gating summation in the FFN stage contributes $\operatorname{FLOPs}_{\text{ffn\_sum}} = 2 B L k D$. Summing these individual components establishes the aggregate computational requirement:
 $$\text{Total FLOPs} = 56 B L E D^2 + 2 B L D^2 + 4 B L D E + 8 B L k D$$
@@ -209,7 +209,7 @@ def _umoe_scatter_kernel(
     # Loop over top-k assignments for this token
     for k_idx in range(K):
         expert_id = tl.load(TopK_Idx_ptr + token_id * stride_idx_t + k_idx * stride_idx_k)
-        
+
         # Atomic fetch and increment slot in target expert bucket
         slot_idx = tl.atomic_add(Offsets_ptr + expert_id, 1)
 
@@ -247,4 +247,3 @@ The empirical evaluation of `bam_umoe` across standard sequence lengths and lang
 | **$L = 2048$** | 0.62 ms | 240 MB | $2.50\times$ |
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
-

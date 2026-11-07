@@ -44,9 +44,7 @@ def main():
 
     registry = get_registry()
     if args.module not in registry:
-        logger.error(
-            f"Module '{args.module}' not found in registry. Available modules: {list(registry.keys())[:5]}..."
-        )
+        logger.error(f"Module '{args.module}' not found in registry. Available modules: {list(registry.keys())[:5]}...")
         sys.exit(1)
 
     default_args = registry[args.module]

@@ -14,6 +14,7 @@ Provides compatibility wrappers, attention layer patching, and model loaders for
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
+
 import torch
 import torch.nn as nn
 
@@ -60,6 +61,7 @@ class _BaseAutoNeuralOps:
         if cls._HF_CLASS is None:
             try:
                 from transformers import AutoModel
+
                 hf_loader = AutoModel
             except ImportError:
                 hf_loader = None
@@ -75,20 +77,24 @@ class _BaseAutoNeuralOps:
 
         if recipe is not None:
             from neuralops.recipes import oneshot
+
             model = oneshot(model, recipe=recipe)
 
         if attn_to_use is not None:
             from neuralops.api import replace_attention
+
             model = replace_attention(model, attention=attn_to_use, rank=rank)
 
         if compressor is not None:
             from neuralops.api import compress
+
             model = compress(model, method=compressor, rank=rank, rank_ratio=rank_ratio)
 
         if peft_recovery is not None:
             peft_str = peft_recovery.lower()
             if "pissa" in peft_str:
                 from neuralops.trainer.peft_recovery.svd_adapters import inject_pissa_adapters
+
                 inject_pissa_adapters(model, rank=rank or 16)
 
         return model
@@ -109,6 +115,7 @@ class AutoNeuralOpsModel(_BaseAutoNeuralOps):
     ) -> nn.Module:
         try:
             from transformers import AutoModel
+
             cls._HF_CLASS = AutoModel
         except ImportError:
             cls._HF_CLASS = None
@@ -137,6 +144,7 @@ class AutoNeuralOpsForCausalLM(_BaseAutoNeuralOps):
     ) -> nn.Module:
         try:
             from transformers import AutoModelForCausalLM
+
             cls._HF_CLASS = AutoModelForCausalLM
         except ImportError:
             cls._HF_CLASS = None
@@ -165,6 +173,7 @@ class AutoNeuralOpsForSequenceClassification(_BaseAutoNeuralOps):
     ) -> nn.Module:
         try:
             from transformers import AutoModelForSequenceClassification
+
             cls._HF_CLASS = AutoModelForSequenceClassification
         except ImportError:
             cls._HF_CLASS = None
@@ -182,8 +191,10 @@ def register_hf_automodel() -> bool:
     """Hooks NeuralOps configurations into HuggingFace AutoConfig / AutoModel registries if present."""
     try:
         from transformers import AutoConfig, AutoModel, AutoModelForCausalLM
+
         from neuralops.models.configuration import NeuralOpsConfig
-        from neuralops.models.modeling import NeuralOpsModel, NeuralOpsForCausalLM
+        from neuralops.models.modeling import NeuralOpsForCausalLM, NeuralOpsModel
+
         AutoConfig.register("neuralops", NeuralOpsConfig, exist_ok=True)
         AutoModel.register(NeuralOpsConfig, NeuralOpsModel, exist_ok=True)
         AutoModelForCausalLM.register(NeuralOpsConfig, NeuralOpsForCausalLM, exist_ok=True)

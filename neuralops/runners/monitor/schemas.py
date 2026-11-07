@@ -14,6 +14,7 @@ Pydantic schemas and data transfer objects for benchmark telemetry and dashboard
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -31,7 +32,9 @@ class GpuMetrics(BaseModel):
 
 class AttentionModuleItem(BaseModel):
     name: str = Field(..., description="Canonical module identifier")
-    family: Optional[str] = Field(default="subquadratic", description="Algorithmic family (e.g. linear, state_space, chunked, toeplitz)")
+    family: Optional[str] = Field(
+        default="subquadratic", description="Algorithmic family (e.g. linear, state_space, chunked, toeplitz)"
+    )
     complexity_time: Optional[str] = Field(default="O(N)", description="Asymptotic time complexity")
     complexity_space: Optional[str] = Field(default="O(N)", description="Asymptotic memory complexity")
     latency_ms: Optional[float] = Field(default=None, description="Triton kernel latency in ms")
@@ -104,8 +107,26 @@ class SpeculativeDecodingMetrics(BaseModel):
     )
     history_acceptance_rates: List[float] = Field(
         default_factory=lambda: [
-            0.72, 0.74, 0.76, 0.81, 0.79, 0.78, 0.83, 0.82, 0.85, 0.78,
-            0.79, 0.80, 0.81, 0.84, 0.78, 0.77, 0.82, 0.86, 0.79, 0.83,
+            0.72,
+            0.74,
+            0.76,
+            0.81,
+            0.79,
+            0.78,
+            0.83,
+            0.82,
+            0.85,
+            0.78,
+            0.79,
+            0.80,
+            0.81,
+            0.84,
+            0.78,
+            0.77,
+            0.82,
+            0.86,
+            0.79,
+            0.83,
         ]
     )
 

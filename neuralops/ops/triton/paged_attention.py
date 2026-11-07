@@ -12,24 +12,43 @@ Executes attention lookups over non-contiguous paged memory blocks for high-thro
 """
 
 from __future__ import annotations
+
 import math
+
 import torch
 import torch.nn.functional as F
 
-from neuralops.ops.triton._common import HAS_TRITON, triton, tl
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
 __all__ = ["paged_attention_kernel", "paged_attention_pytorch"]
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def paged_attention_fwd_kernel(
-        Q_ptr, K_CACHE_ptr, V_CACHE_ptr, BLOCK_TABLE_ptr, SEQ_LENS_ptr, OUT_ptr,
-        stride_qb, stride_qh, stride_qd,
-        stride_kblk, stride_kidx, stride_kh, stride_kd,
-        stride_vblk, stride_vidx, stride_vh, stride_vd,
-        stride_bt_b, stride_bt_idx,
-        stride_ob, stride_oh, stride_od,
+        Q_ptr,
+        K_CACHE_ptr,
+        V_CACHE_ptr,
+        BLOCK_TABLE_ptr,
+        SEQ_LENS_ptr,
+        OUT_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qd,
+        stride_kblk,
+        stride_kidx,
+        stride_kh,
+        stride_kd,
+        stride_vblk,
+        stride_vidx,
+        stride_vh,
+        stride_vd,
+        stride_bt_b,
+        stride_bt_idx,
+        stride_ob,
+        stride_oh,
+        stride_od,
         H,
         BLOCK_SIZE: tl.constexpr,
         BLOCK_D: tl.constexpr,
@@ -101,14 +120,33 @@ if HAS_TRITON and tl is not None:
 
     @triton.jit
     def paged_attention_splitk_stage1_kernel(
-        Q_ptr, K_CACHE_ptr, V_CACHE_ptr, BLOCK_TABLE_ptr, SEQ_LENS_ptr,
-        MidOut_ptr, MidLse_ptr,
-        stride_qb, stride_qh, stride_qd,
-        stride_kblk, stride_kidx, stride_kh, stride_kd,
-        stride_vblk, stride_vidx, stride_vh, stride_vd,
-        stride_bt_b, stride_bt_idx,
-        stride_mb, stride_mh, stride_ms, stride_md,
-        stride_lb, stride_lh, stride_ls,
+        Q_ptr,
+        K_CACHE_ptr,
+        V_CACHE_ptr,
+        BLOCK_TABLE_ptr,
+        SEQ_LENS_ptr,
+        MidOut_ptr,
+        MidLse_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qd,
+        stride_kblk,
+        stride_kidx,
+        stride_kh,
+        stride_kd,
+        stride_vblk,
+        stride_vidx,
+        stride_vh,
+        stride_vd,
+        stride_bt_b,
+        stride_bt_idx,
+        stride_mb,
+        stride_mh,
+        stride_ms,
+        stride_md,
+        stride_lb,
+        stride_lh,
+        stride_ls,
         H,
         NUM_SPLITS: tl.constexpr,
         BLOCK_SIZE: tl.constexpr,
@@ -190,10 +228,20 @@ if HAS_TRITON and tl is not None:
 
     @triton.jit
     def paged_attention_splitk_stage2_kernel(
-        MidOut_ptr, MidLse_ptr, SEQ_LENS_ptr, OUT_ptr,
-        stride_mb, stride_mh, stride_ms, stride_md,
-        stride_lb, stride_lh, stride_ls,
-        stride_ob, stride_oh, stride_od,
+        MidOut_ptr,
+        MidLse_ptr,
+        SEQ_LENS_ptr,
+        OUT_ptr,
+        stride_mb,
+        stride_mh,
+        stride_ms,
+        stride_md,
+        stride_lb,
+        stride_lh,
+        stride_ls,
+        stride_ob,
+        stride_oh,
+        stride_od,
         H,
         NUM_SPLITS: tl.constexpr,
         BLOCK_D: tl.constexpr,
@@ -288,7 +336,8 @@ def paged_attention_kernel(
     block_size: int = 16,
 ) -> torch.Tensor:
     """Dispatches paged attention to Triton kernel if supported, else PyTorch fallback."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON, check_triton_suitability
+
     B, H, D = q.shape
     # Support standard floating and 8-bit precision representations
     supported_dtypes = (
@@ -317,26 +366,45 @@ def paged_attention_kernel(
 
             out = torch.empty_like(q)
             max_seq_len = int(seq_lens.max().item()) if seq_lens.numel() > 0 else 0
-            
+
             # FlashDecoding logic: partition sequence length across thread blocks (Split-K)
             # to maximize SM occupancy on short-batch, long-context decode steps
             num_blocks_max = (max_seq_len + block_size - 1) // block_size if max_seq_len > 0 else 0
             NUM_SPLITS = min(16, max(1, num_blocks_max // 2))
-            
+
             if NUM_SPLITS > 1 and max_seq_len > block_size * 2:
                 mid_out = torch.empty((B, H, NUM_SPLITS, D), dtype=q.dtype, device=q.device)
                 mid_lse = torch.empty((B, H, NUM_SPLITS), dtype=torch.float32, device=q.device)
                 grid_stage1 = (NUM_SPLITS, B, H)
                 num_warps = 4 if D >= 64 else 2
                 paged_attention_splitk_stage1_kernel[grid_stage1](
-                    q, k_cache, v_cache, block_tables, seq_lens,
-                    mid_out, mid_lse,
-                    q.stride(0), q.stride(1), q.stride(2),
-                    k_cache.stride(0), k_cache.stride(1), k_cache.stride(2), k_cache.stride(3),
-                    v_cache.stride(0), v_cache.stride(1), v_cache.stride(2), v_cache.stride(3),
-                    block_tables.stride(0), block_tables.stride(1),
-                    mid_out.stride(0), mid_out.stride(1), mid_out.stride(2), mid_out.stride(3),
-                    mid_lse.stride(0), mid_lse.stride(1), mid_lse.stride(2),
+                    q,
+                    k_cache,
+                    v_cache,
+                    block_tables,
+                    seq_lens,
+                    mid_out,
+                    mid_lse,
+                    q.stride(0),
+                    q.stride(1),
+                    q.stride(2),
+                    k_cache.stride(0),
+                    k_cache.stride(1),
+                    k_cache.stride(2),
+                    k_cache.stride(3),
+                    v_cache.stride(0),
+                    v_cache.stride(1),
+                    v_cache.stride(2),
+                    v_cache.stride(3),
+                    block_tables.stride(0),
+                    block_tables.stride(1),
+                    mid_out.stride(0),
+                    mid_out.stride(1),
+                    mid_out.stride(2),
+                    mid_out.stride(3),
+                    mid_lse.stride(0),
+                    mid_lse.stride(1),
+                    mid_lse.stride(2),
                     H,
                     NUM_SPLITS=NUM_SPLITS,
                     BLOCK_SIZE=block_size,
@@ -345,10 +413,20 @@ def paged_attention_kernel(
                 )
                 grid_stage2 = (B, H)
                 paged_attention_splitk_stage2_kernel[grid_stage2](
-                    mid_out, mid_lse, seq_lens, out,
-                    mid_out.stride(0), mid_out.stride(1), mid_out.stride(2), mid_out.stride(3),
-                    mid_lse.stride(0), mid_lse.stride(1), mid_lse.stride(2),
-                    out.stride(0), out.stride(1), out.stride(2),
+                    mid_out,
+                    mid_lse,
+                    seq_lens,
+                    out,
+                    mid_out.stride(0),
+                    mid_out.stride(1),
+                    mid_out.stride(2),
+                    mid_out.stride(3),
+                    mid_lse.stride(0),
+                    mid_lse.stride(1),
+                    mid_lse.stride(2),
+                    out.stride(0),
+                    out.stride(1),
+                    out.stride(2),
                     H,
                     NUM_SPLITS=NUM_SPLITS,
                     BLOCK_D=D,
@@ -360,12 +438,28 @@ def paged_attention_kernel(
             grid = (B, H)
             num_warps = 4 if D >= 64 else 2
             paged_attention_fwd_kernel[grid](
-                q, k_cache, v_cache, block_tables, seq_lens, out,
-                q.stride(0), q.stride(1), q.stride(2),
-                k_cache.stride(0), k_cache.stride(1), k_cache.stride(2), k_cache.stride(3),
-                v_cache.stride(0), v_cache.stride(1), v_cache.stride(2), v_cache.stride(3),
-                block_tables.stride(0), block_tables.stride(1),
-                out.stride(0), out.stride(1), out.stride(2),
+                q,
+                k_cache,
+                v_cache,
+                block_tables,
+                seq_lens,
+                out,
+                q.stride(0),
+                q.stride(1),
+                q.stride(2),
+                k_cache.stride(0),
+                k_cache.stride(1),
+                k_cache.stride(2),
+                k_cache.stride(3),
+                v_cache.stride(0),
+                v_cache.stride(1),
+                v_cache.stride(2),
+                v_cache.stride(3),
+                block_tables.stride(0),
+                block_tables.stride(1),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
                 H,
                 BLOCK_SIZE=block_size,
                 BLOCK_D=D,
@@ -379,16 +473,33 @@ def paged_attention_kernel(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _paged_recurrent_state_step_kernel(
-        Q_ptr, K_ptr, V_ptr,
-        PAGE_POOL_ptr, BLOCK_TABLE_ptr, OUT_ptr,
-        stride_qb, stride_qh, stride_qd,
-        stride_kb, stride_kh, stride_kd,
-        stride_vb, stride_vh, stride_vd,
-        stride_pp_page, stride_pp_h, stride_pp_d1, stride_pp_d2,
-        stride_bt_b, stride_bt_idx,
-        stride_ob, stride_oh, stride_od,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        PAGE_POOL_ptr,
+        BLOCK_TABLE_ptr,
+        OUT_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vd,
+        stride_pp_page,
+        stride_pp_h,
+        stride_pp_d1,
+        stride_pp_d2,
+        stride_bt_b,
+        stride_bt_idx,
+        stride_ob,
+        stride_oh,
+        stride_od,
         decay: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
@@ -487,14 +598,30 @@ def paged_recurrent_state_step_triton(
             out = torch.empty_like(q_t)
             grid = (B, H)
             _paged_recurrent_state_step_kernel[grid](
-                q_t, k_t, v_t,
-                page_pool, block_tables, out,
-                q_t.stride(0), q_t.stride(1), q_t.stride(2),
-                k_t.stride(0), k_t.stride(1), k_t.stride(2),
-                v_t.stride(0), v_t.stride(1), v_t.stride(2),
-                page_pool.stride(0), page_pool.stride(1), page_pool.stride(2), page_pool.stride(3),
-                block_tables.stride(0), block_tables.stride(1),
-                out.stride(0), out.stride(1), out.stride(2),
+                q_t,
+                k_t,
+                v_t,
+                page_pool,
+                block_tables,
+                out,
+                q_t.stride(0),
+                q_t.stride(1),
+                q_t.stride(2),
+                k_t.stride(0),
+                k_t.stride(1),
+                k_t.stride(2),
+                v_t.stride(0),
+                v_t.stride(1),
+                v_t.stride(2),
+                page_pool.stride(0),
+                page_pool.stride(1),
+                page_pool.stride(2),
+                page_pool.stride(3),
+                block_tables.stride(0),
+                block_tables.stride(1),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
                 decay=float(decay),
                 BLOCK_D=D,
             )
@@ -503,16 +630,17 @@ def paged_recurrent_state_step_triton(
             # allowed-swallow: best-effort-telemetry
             pass
 
-    return paged_recurrent_state_step_pytorch(
-        q_t, k_t, v_t, page_pool, block_tables, page_slot=page_slot, decay=decay
-    )
+    return paged_recurrent_state_step_pytorch(q_t, k_t, v_t, page_pool, block_tables, page_slot=page_slot, decay=decay)
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def _paged_kv_evict_compact_kernel(
-        K_IN_ptr, V_IN_ptr,
-        K_OUT_ptr, V_OUT_ptr,
+        K_IN_ptr,
+        V_IN_ptr,
+        K_OUT_ptr,
+        V_OUT_ptr,
         SCORES_ptr,
         KEEP_INDICES_ptr,
         total_items,
@@ -552,15 +680,18 @@ def paged_kv_evict_compact_triton(
     _, keep_indices = torch.topk(importance_scores, k=num_keep, sorted=True)
     keep_indices = keep_indices.sort().values.contiguous()
 
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
     if HAS_TRITON and k_cache.is_cuda and not FORCE_PYTORCH_FALLBACK and D in (16, 32, 64, 128, 256):
         try:
             k_out = torch.empty((num_keep, D), dtype=k_cache.dtype, device=k_cache.device)
             v_out = torch.empty((num_keep, D), dtype=v_cache.dtype, device=v_cache.device)
             grid = (num_keep,)
             _paged_kv_evict_compact_kernel[grid](
-                k_cache.contiguous(), v_cache.contiguous(),
-                k_out, v_out,
+                k_cache.contiguous(),
+                v_cache.contiguous(),
+                k_out,
+                v_out,
                 importance_scores.contiguous(),
                 keep_indices,
                 num_keep,

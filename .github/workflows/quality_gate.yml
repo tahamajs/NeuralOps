@@ -116,4 +116,3 @@ jobs:
           /tmp/cli-smoke-venv/bin/neuralops --help
           /tmp/cli-smoke-venv/bin/neuralops info
           /tmp/cli-smoke-venv/bin/python -m neuralops --help
-

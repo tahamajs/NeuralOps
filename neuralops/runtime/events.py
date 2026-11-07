@@ -11,9 +11,9 @@ Event Bus and Lifecycle Notifications for Decoupled Telemetry.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import datetime
 import logging
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger("NeuralOps.Runtime.Events")
@@ -31,9 +31,7 @@ class RunEvent:
 
     topic: str
     payload: Dict[str, Any] = field(default_factory=dict)
-    timestamp: str = field(
-        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat()
-    )
+    timestamp: str = field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
 
 
 EventListener = Callable[[RunEvent], None]

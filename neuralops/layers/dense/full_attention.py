@@ -13,11 +13,6 @@ Standard multi-head scaled dot-product attention providing exact full-context se
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
@@ -27,9 +22,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -57,6 +53,7 @@ class FullAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_bidirectional: bool = True
     supports_gqa: bool = True
@@ -73,12 +70,8 @@ class FullAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank)
         self.adapter = ModelAdapter(config)
-        self.hidden_size: int = self.adapter.hidden_size or kwargs.get(
-            "hidden_size", kwargs.get("d_model", 768)
-        )
-        self.num_heads: int = self.adapter.num_heads or kwargs.get(
-            "num_heads", kwargs.get("num_attention_heads", 12)
-        )
+        self.hidden_size: int = self.adapter.hidden_size or kwargs.get("hidden_size", kwargs.get("d_model", 768))
+        self.num_heads: int = self.adapter.num_heads or kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
         self.num_kv_heads: int = self.adapter.num_key_value_heads or kwargs.get(
             "num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads)
         )
@@ -218,11 +211,7 @@ class FullAttention(BaseAttention):
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             w_o = src.c_proj.weight.data
-            if (
-                w_o.dim() == 2
-                and w_o.shape[0] != self.hidden_size
-                and w_o.shape[1] == self.hidden_size
-            ):
+            if w_o.dim() == 2 and w_o.shape[0] != self.hidden_size and w_o.shape[1] == self.hidden_size:
                 w_o = w_o.t().contiguous()
             b_o = getattr(src.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
@@ -295,9 +284,7 @@ class FullAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(
-                "FullAttention copy_weights warning. Proceeding with initialized weights."
-            )
+            logger.warning("FullAttention copy_weights warning. Proceeding with initialized weights.")
 
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
@@ -401,17 +388,12 @@ class FullAttention(BaseAttention):
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "")
-            in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
 
-        use_sdpa = (
-            not output_attentions
-            and head_mask is None
-            and (mask is None or mask.dim() == 4)
-        )
+        use_sdpa = not output_attentions and head_mask is None and (mask is None or mask.dim() == 4)
 
         if use_sdpa:
             dispatched = False
@@ -421,16 +403,20 @@ class FullAttention(BaseAttention):
                 # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
                 try:
                     from neuralops.ops.cuda.flash_gqa import flash_gqa
+
                     context = flash_gqa(Q, K, V, is_causal=is_causal_sdpa, scale=scale_val).to(dtype)
                     dispatched = True
                     attn = None
                 except Exception as e_cuda:
-                    logger.debug("FullAttention Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda)
+                    logger.debug(
+                        "FullAttention Level 1 CUDA dispatch failed (%s), falling back to Level 2 Triton", e_cuda
+                    )
 
             if not dispatched and Q.is_cuda and not self.training and mask is None and d <= 128:
                 # Level 2: Triton JIT autotuned online softmax kernel
                 try:
                     from neuralops.ops.triton.gqa import fused_weighted_gqa_online_softmax_triton
+
                     context = fused_weighted_gqa_online_softmax_triton(
                         Q, K, V, head_weights=None, is_causal=is_causal_sdpa, scale=scale_val
                     ).to(dtype)
@@ -453,13 +439,14 @@ class FullAttention(BaseAttention):
                         if is_decoder and attn_mask is None:
                             causal_tril = (
                                 torch.tril(
-                                    torch.ones((N_q, N_k), device=device, dtype=torch.bool),
-                                    diagonal=max(0, N_k - N_q)
+                                    torch.ones((N_q, N_k), device=device, dtype=torch.bool), diagonal=max(0, N_k - N_q)
                                 )
                                 .unsqueeze(0)
                                 .unsqueeze(0)
                             )
-                            attn_mask = torch.zeros((1, 1, N_q, N_k), device=device, dtype=Q.dtype).masked_fill(~causal_tril, -10000.0)
+                            attn_mask = torch.zeros((1, 1, N_q, N_k), device=device, dtype=Q.dtype).masked_fill(
+                                ~causal_tril, -10000.0
+                            )
 
                         context = F.scaled_dot_product_attention(
                             Q, K, V, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=False
@@ -483,10 +470,7 @@ class FullAttention(BaseAttention):
 
             if is_decoder:
                 causal_tril = (
-                    torch.tril(
-                        torch.ones((N_q, N_k), device=device, dtype=torch.bool),
-                        diagonal=max(0, N_k - N_q)
-                    )
+                    torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool), diagonal=max(0, N_k - N_q))
                     .unsqueeze(0)
                     .unsqueeze(0)
                 )
@@ -513,6 +497,7 @@ class FullAttention(BaseAttention):
             if context.is_cuda and hasattr(self.out_proj, "weight"):
                 try:
                     from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
+
                     output = self.out_proj(context)
                 except Exception:
                     output = self.out_proj(context)
@@ -553,11 +538,7 @@ def inject_full_attention(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -569,9 +550,7 @@ def inject_full_attention(
             res = inject_full_attention(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,

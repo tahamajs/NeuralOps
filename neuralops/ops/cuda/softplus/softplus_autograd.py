@@ -55,6 +55,7 @@ def fused_softplus_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.softplus import softplus_triton
+
         return softplus_triton
     except (ImportError, AttributeError):
         return None

@@ -66,7 +66,7 @@ def retnet_chunk_retention_pytorch_ref(
     pos = torch.arange(L, device=q.device)
     dist = (pos[:, None] - pos[None, :]).clamp(min=0).float()
     causal_mask = pos[:, None] >= pos[None, :]
-    decay = (gamma ** dist) * causal_mask
+    decay = (gamma**dist) * causal_mask
     ret = sim * decay
     out = torch.matmul(ret, v.float())
     return out.to(q.dtype)
@@ -74,16 +74,25 @@ def retnet_chunk_retention_pytorch_ref(
 
 def _retnet_chunk_retention_dispatch(q, k, v, gamma=0.9, scale=None) -> torch.Tensor:
     """3-Level Dispatched RetNet Chunk Retention."""
+
     def cuda_fn(q, k, v, gamma=0.9, scale=None, **kwargs):
         mod = _get_module()
-        sc = scale if "scale" in kwargs or "scale" in locals() and locals().get("scale") is not None else 1.0 / math.sqrt(q.shape[-1])
+        sc = (
+            scale
+            if "scale" in kwargs or "scale" in locals() and locals().get("scale") is not None
+            else 1.0 / math.sqrt(q.shape[-1])
+        )
         return mod.retnet_chunk_retention_fwd(q.contiguous(), k.contiguous(), v.contiguous(), float(gamma))
 
     return dispatch(
         cuda_fn,
         None,
         retnet_chunk_retention_pytorch_ref,
-        q, k, v, gamma, scale,
+        q,
+        k,
+        v,
+        gamma,
+        scale,
         kernel_name="retnet_chunk_retention",
     )
 

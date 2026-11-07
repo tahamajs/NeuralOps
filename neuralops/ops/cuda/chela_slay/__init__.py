@@ -11,10 +11,7 @@ CHELA-SLAY Attention CUDA operator.
 
 from __future__ import annotations
 
-from neuralops.ops.cuda.chela_slay.autograd import (
-    ChelaSlayAttentionFunction,
-    chela_slay_attention_forward,
-)
+from neuralops.ops.cuda.chela_slay.autograd import ChelaSlayAttentionFunction, chela_slay_attention_forward
 
 __all__ = [
     "ChelaSlayAttentionFunction",

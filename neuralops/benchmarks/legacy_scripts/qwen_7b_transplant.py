@@ -16,6 +16,7 @@ import copy
 import os
 import subprocess
 import time
+
 import torch
 import torch.nn as nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -32,7 +33,9 @@ def print_gpu_memory(label: str = "") -> None:
         allocated = torch.cuda.memory_allocated() / (1024**3)
         reserved = torch.cuda.memory_reserved() / (1024**3)
         max_allocated = torch.cuda.max_memory_allocated() / (1024**3)
-        print(f"[{label}] VRAM Allocated: {allocated:.2f} GB | Reserved: {reserved:.2f} GB | Peak: {max_allocated:.2f} GB")
+        print(
+            f"[{label}] VRAM Allocated: {allocated:.2f} GB | Reserved: {reserved:.2f} GB | Peak: {max_allocated:.2f} GB"
+        )
         try:
             res = subprocess.run(
                 ["nvidia-smi", "--query-gpu=memory.used,memory.total,utilization.gpu", "--format=csv,noheader,nounits"],
@@ -56,7 +59,9 @@ def main() -> None:
 
     default_paths = [
         os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct"),
-        os.environ.get("HF_QWEN_7B_PATH", os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct")),
+        os.environ.get(
+            "HF_QWEN_7B_PATH", os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct")
+        ),
         "Qwen/Qwen2.5-7B-Instruct",
     ]
     model_path = args.model_path
@@ -177,7 +182,7 @@ def main() -> None:
             do_sample=False,
             pad_token_id=tokenizer.pad_token_id,
         )
-    pred_text_before = tokenizer.decode(out_tokens[0][inputs.input_ids.shape[1]:], skip_special_tokens=True).strip()
+    pred_text_before = tokenizer.decode(out_tokens[0][inputs.input_ids.shape[1] :], skip_special_tokens=True).strip()
     print(f"Generated text (Before): '{pred_text_before}'")
 
     # 3. Cache layer 14 attention activations using calibration tokens
@@ -248,7 +253,9 @@ def main() -> None:
                 pred0_f.reshape(-1, tgt_f.shape[-1]),
                 tgt_f.reshape(-1, tgt_f.shape[-1]),
                 dim=-1,
-            ).mean().item()
+            )
+            .mean()
+            .item()
         )
 
     print(f"Initial Alignment -> MSE: {init_mse:.6f} | Cosine Similarity: {init_cos:.4f}")
@@ -267,11 +274,14 @@ def main() -> None:
         pred_f = pred_val.float()
 
         loss_fro = torch.norm(pred_f - tgt_f, p="fro") ** 2 / denom
-        loss_cos = 1.0 - torch.nn.functional.cosine_similarity(
-            pred_f.reshape(-1, tgt_f.shape[-1]),
-            tgt_f.reshape(-1, tgt_f.shape[-1]),
-            dim=-1,
-        ).mean()
+        loss_cos = (
+            1.0
+            - torch.nn.functional.cosine_similarity(
+                pred_f.reshape(-1, tgt_f.shape[-1]),
+                tgt_f.reshape(-1, tgt_f.shape[-1]),
+                dim=-1,
+            ).mean()
+        )
         loss = loss_fro + 0.5 * loss_cos
 
         loss.backward()
@@ -304,7 +314,9 @@ def main() -> None:
                 pred_final_f.reshape(-1, tgt_f.shape[-1]),
                 tgt_f.reshape(-1, tgt_f.shape[-1]),
                 dim=-1,
-            ).mean().item()
+            )
+            .mean()
+            .item()
         )
 
     for p in trainable_params:
@@ -329,7 +341,9 @@ def main() -> None:
             do_sample=False,
             pad_token_id=tokenizer.pad_token_id,
         )
-    pred_text_after = tokenizer.decode(out_tokens_after[0][inputs.input_ids.shape[1]:], skip_special_tokens=True).strip()
+    pred_text_after = tokenizer.decode(
+        out_tokens_after[0][inputs.input_ids.shape[1] :], skip_special_tokens=True
+    ).strip()
     print(f"Generated text (After Surgery & Healing): '{pred_text_after}'")
     print_gpu_memory("Final")
 

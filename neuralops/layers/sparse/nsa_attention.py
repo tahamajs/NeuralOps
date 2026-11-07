@@ -13,14 +13,11 @@ Native sparse attention combining sliding-window local context with fine-grained
 
 from __future__ import annotations
 
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
-
 import logging
 import math
 from typing import Any
+
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +28,8 @@ import torch.nn.functional as F
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
-from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.utils.gqa import repeat_kv
 
 
 class DSAConfig:
@@ -103,6 +100,7 @@ class NativeSparseAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = True
 
     def __init__(
@@ -136,9 +134,7 @@ class NativeSparseAttention(BaseAttention):
                         getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
                     ),
                 )
-                hidden_size = (
-                    getattr(out_layer, "out_features", 768) if out_layer is not None else 768
-                )
+                hidden_size = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
             else:
                 hidden_size = 768
 
@@ -175,16 +171,10 @@ class NativeSparseAttention(BaseAttention):
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
-        self.block_size = int(
-            kwargs.get("block_size", getattr(config, "block_size", 64))
-        )
-        self.window_size = (
-            getattr(config, "nsa_window_size", window_size) if config else window_size
-        )
+        self.block_size = int(kwargs.get("block_size", getattr(config, "block_size", 64)))
+        self.window_size = getattr(config, "nsa_window_size", window_size) if config else window_size
         self.top_k = getattr(config, "nsa_top_k", top_k) if config else top_k
-        self.router_hidden = int(
-            kwargs.get("router_hidden", getattr(config, "router_hidden", 64))
-        )
+        self.router_hidden = int(kwargs.get("router_hidden", getattr(config, "router_hidden", 64)))
 
         self._learned_router: LearnedBlockRouter | None = None
 
@@ -216,10 +206,7 @@ class NativeSparseAttention(BaseAttention):
         if (
             any(_mt.startswith(p) for p in _decoder_prefixes)
             or hasattr(config, "architectures")
-            and any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (getattr(config, "architectures", []) or [])
-            )
+            and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or []))
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -285,11 +272,7 @@ class NativeSparseAttention(BaseAttention):
         self.key = self.k_proj
         self.value = self.v_proj
 
-        dropout_p = (
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config
-            else 0.1
-        )
+        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
         self.dropout = nn.Dropout(dropout_p)
 
         if source_attn is not None:
@@ -307,9 +290,7 @@ class NativeSparseAttention(BaseAttention):
             or hasattr(src, "c_proj")
             or hasattr(src, "o_proj")
         )
-        if cls_name in ["BertSelfAttention", "RobertaSelfAttention"] or (
-            hasattr(src, "query") and not has_out
-        ):
+        if cls_name in ["BertSelfAttention", "RobertaSelfAttention"] or (hasattr(src, "query") and not has_out):
             self.is_nested_encoder = True
         if hasattr(src, "self") and hasattr(src, "output"):
             self.is_nested_encoder = True
@@ -401,11 +382,7 @@ class NativeSparseAttention(BaseAttention):
                             if (
                                 (mod.__class__.__name__ == "Conv1D")
                                 or hasattr(mod, "nf")
-                                or (
-                                    w_data.ndim == 2
-                                    and proj_key == "o"
-                                    and w_data.shape[0] < w_data.shape[1]
-                                )
+                                or (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1])
                             ):
                                 w_data = w_data.t().contiguous()
                             extracted[proj_key] = (
@@ -414,11 +391,7 @@ class NativeSparseAttention(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -431,11 +404,7 @@ class NativeSparseAttention(BaseAttention):
             except Exception as e:
                 logger.debug(f"UniversalAdapter fallback: {e}")
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             raise RuntimeError(
                 f"NativeSparseAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
@@ -461,18 +430,13 @@ class NativeSparseAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
 
                 if b is not None and target_mod.bias is not None:
@@ -515,7 +479,11 @@ class NativeSparseAttention(BaseAttention):
         v_raw = self.v_proj(hidden_states)
 
         num_blocks = (L + self.block_size - 1) // self.block_size
-        if self._learned_router is None or self._learned_router.num_blocks != num_blocks or self._learned_router.d != self.all_head_size:
+        if (
+            self._learned_router is None
+            or self._learned_router.num_blocks != num_blocks
+            or self._learned_router.d != self.all_head_size
+        ):
             self._learned_router = LearnedBlockRouter(
                 d=self.all_head_size,
                 num_blocks=num_blocks,
@@ -559,24 +527,15 @@ class NativeSparseAttention(BaseAttention):
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
                 _sdpa_out = (
-                    _sdpa_out.to(hidden_states.dtype)
-                    .transpose(1, 2)
-                    .contiguous()
-                    .view(B, L, self.all_head_size)
+                    _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                 )
                 _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                return (
-                    self.out_proj(_sdpa_out)
-                    if not getattr(self, "is_nested_encoder", False)
-                    else _sdpa_out
-                ), None
+                return (self.out_proj(_sdpa_out) if not getattr(self, "is_nested_encoder", False) else _sdpa_out), None
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
 
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
         key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
@@ -619,11 +578,16 @@ class NativeSparseAttention(BaseAttention):
                 if not is_dec and attention_mask is None and selected_blocks is not None:
                     try:
                         from neuralops.ops.triton.block_sparse import triton_block_sparse_streaming_attn
+
                         num_blocks_q = (L + self.block_size - 1) // self.block_size
                         # Expand selected blocks to shape [B, H, num_blocks_q, top_k]
-                        active_ids = selected_blocks.unsqueeze(1).unsqueeze(2).expand(B, H, num_blocks_q, -1).contiguous()
+                        active_ids = (
+                            selected_blocks.unsqueeze(1).unsqueeze(2).expand(B, H, num_blocks_q, -1).contiguous()
+                        )
                         accel_context = triton_block_sparse_streaming_attn(
-                            Q, K, V,
+                            Q,
+                            K,
+                            V,
                             active_block_indices=active_ids,
                             block_size=self.block_size,
                             sm_scale=scale,
@@ -636,10 +600,13 @@ class NativeSparseAttention(BaseAttention):
                 if accel_context is None:
                     try:
                         from neuralops.ops.triton.sparse_attn import fwd as triton_sparse_fwd
+
                         num_blocks_q = (L + self.block_size - 1) // self.block_size
                         b_mask_2d = block_mask.unsqueeze(1).expand(-1, num_blocks_q, -1).contiguous()
                         accel_context = triton_sparse_fwd(
-                            Q, K, V,
+                            Q,
+                            K,
+                            V,
                             block_mask=b_mask_2d,
                             block_size=self.block_size,
                             is_causal=is_dec,
@@ -651,7 +618,9 @@ class NativeSparseAttention(BaseAttention):
             if accel_context is None:
                 try:
                     accel_context = F.scaled_dot_product_attention(
-                        Q, K, V,
+                        Q,
+                        K,
+                        V,
                         attn_mask=total_mask,
                         dropout_p=self.dropout.p if self.training else 0.0,
                         scale=scale,
@@ -722,11 +691,7 @@ def inject_nsa(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif (
-        hasattr(target, "bert")
-        and hasattr(target.bert, "encoder")
-        and hasattr(target.bert.encoder, "layer")
-    ):
+    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
@@ -738,9 +703,7 @@ def inject_nsa(
             res = inject_nsa(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=(comp_config if "comp_config" in locals() or "comp_config" in kwargs else None),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,

@@ -9,10 +9,7 @@
 Causal 1D Convolution Hardware Operators.
 """
 
-from neuralops.ops.cuda.causal_conv1d.conv1d_autograd import (
-    causal_conv1d,
-    causal_conv1d_pytorch_ref,
-)
+from neuralops.ops.cuda.causal_conv1d.conv1d_autograd import causal_conv1d, causal_conv1d_pytorch_ref
 
 __all__ = [
     "causal_conv1d",

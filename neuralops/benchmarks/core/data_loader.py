@@ -18,9 +18,9 @@ import os
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
+
 import torch
 from torch.utils.data import DataLoader, Dataset, IterableDataset, TensorDataset
-
 
 from neuralops.benchmarks.result import DatasetMetadata
 
@@ -38,15 +38,15 @@ GLUE_TASKS: dict[str, dict[str, Any]] = {
     "wnli": {"cols": ("sentence1", "sentence2"), "num_labels": 2, "task": "classification", "val_size": 71},
 }
 
-GLUE_VALIDATION_SIZES: dict[str, int] = {
-    task: info["val_size"] for task, info in GLUE_TASKS.items()
-}
+GLUE_VALIDATION_SIZES: dict[str, int] = {task: info["val_size"] for task, info in GLUE_TASKS.items()}
 
 
 class _TokenizedIterableDataset(IterableDataset):
     """Lazily tokenize a Hugging Face or local streaming dataset."""
 
-    def __init__(self, rows: Iterable[dict[str, Any]], tokenizer: Any, columns: tuple[str, str | None], max_length: int) -> None:
+    def __init__(
+        self, rows: Iterable[dict[str, Any]], tokenizer: Any, columns: tuple[str, str | None], max_length: int
+    ) -> None:
         super().__init__()
         self.rows = rows
         self.tokenizer = tokenizer
@@ -137,6 +137,7 @@ def load_dataset_by_name(
     :mod:`neuralops.evaluation.eval_data`.
     """
     import os
+
     hf_cache_dir = os.environ.get("HF_DATASETS_CACHE") or os.path.expanduser("~/.cache/huggingface/datasets")
     if os.path.isdir(hf_cache_dir):
         os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
@@ -150,9 +151,7 @@ def load_dataset_by_name(
     try:
         from datasets import load_dataset
     except ImportError as exc:
-        raise RuntimeError(
-            "The 'datasets' package is required for GLUE, WikiText, and local dataset loading."
-        ) from exc
+        raise RuntimeError("The 'datasets' package is required for GLUE, WikiText, and local dataset loading.") from exc
 
     local_path = Path(name).expanduser()
     if local_path.is_file():
@@ -160,12 +159,16 @@ def load_dataset_by_name(
             raw_local = _load_local_dataset(local_path, streaming=streaming, cache_dir=hf_cache_dir)
             if streaming:
                 columns = tuple(c for c in ("sentence", "text", "sentence1") if c in raw_local.column_names)
-                first = columns[0] if columns else next(c for c in raw_local.column_names if c not in {"label", "labels"})
+                first = (
+                    columns[0] if columns else next(c for c in raw_local.column_names if c not in {"label", "labels"})
+                )
                 second = "sentence2" if "sentence2" in raw_local.column_names else None
                 return _TokenizedIterableDataset(raw_local, tokenizer, (first, second), max_length)
             rows = raw_local
             text_columns = [c for c in ("sentence", "text", "sentence1") if c in rows.column_names]
-            first = text_columns[0] if text_columns else next(c for c in rows.column_names if c not in {"label", "labels"})
+            first = (
+                text_columns[0] if text_columns else next(c for c in rows.column_names if c not in {"label", "labels"})
+            )
             second = "sentence2" if "sentence2" in rows.column_names else None
             texts1 = list(rows[first])
             texts2 = list(rows[second]) if second else None
@@ -178,9 +181,9 @@ def load_dataset_by_name(
                 return_tensors="pt",
             )
             labels = torch.tensor(
-                rows["label"] if "label" in rows.column_names
-                else rows["labels"] if "labels" in rows.column_names
-                else [0] * len(rows)
+                rows["label"]
+                if "label" in rows.column_names
+                else rows["labels"] if "labels" in rows.column_names else [0] * len(rows)
             )
             return TensorDataset(enc["input_ids"], enc["attention_mask"], labels)
         except Exception as exc:
@@ -233,10 +236,14 @@ def load_dataset_by_name(
         return TensorDataset(*tensors)
 
     if "wikitext" in name_clean:
-        subset = "wikitext-2-raw-v1" if "wikitext2" in name_clean or "wikitext-2" in name_clean else "wikitext-103-raw-v1"
+        subset = (
+            "wikitext-2-raw-v1" if "wikitext2" in name_clean or "wikitext-2" in name_clean else "wikitext-103-raw-v1"
+        )
         split_name = "test" if split in ("val", "validation", "test") else split
         try:
-            raw_ds = load_dataset("Salesforce/wikitext", subset, split=split_name, streaming=streaming, cache_dir=cache_dir)
+            raw_ds = load_dataset(
+                "Salesforce/wikitext", subset, split=split_name, streaming=streaming, cache_dir=cache_dir
+            )
         except Exception:
             try:
                 raw_ds = load_dataset("wikitext", subset, split=split_name, streaming=streaming, cache_dir=cache_dir)
@@ -293,7 +300,9 @@ def load_glue_dataset(task_name: str, tokenizer: Any, max_length: int = 128, spl
     return load_dataset_by_name(name=task_name, tokenizer=tokenizer, max_length=max_length, split=split)
 
 
-def load_wikitext_dataset(tokenizer: Any, max_length: int = 512, split: str = "test", subset: str = "wikitext-2-raw-v1") -> Dataset:
+def load_wikitext_dataset(
+    tokenizer: Any, max_length: int = 512, split: str = "test", subset: str = "wikitext-2-raw-v1"
+) -> Dataset:
     """Backward-compatible alias for load_dataset_by_name on wikitext."""
     ds_name = "wikitext2" if "wikitext-2" in subset else "wikitext103"
     return load_dataset_by_name(name=ds_name, tokenizer=tokenizer, max_length=max_length, split=split)

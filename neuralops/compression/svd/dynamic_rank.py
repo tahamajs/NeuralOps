@@ -12,7 +12,6 @@ Computes Von Neumann singular entropy across layer activation covariances to aut
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -66,9 +66,7 @@ def compute_singular_entropy(
         else:
             singular_values = torch.linalg.svdvals(spectrum_or_matrix)
     else:
-        raise ValueError(
-            f"compute_singular_entropy expects 1D or 2D tensor, got shape {spectrum_or_matrix.shape}"
-        )
+        raise ValueError(f"compute_singular_entropy expects 1D or 2D tensor, got shape {spectrum_or_matrix.shape}")
 
     valid_sv = singular_values[singular_values > eps]
     if valid_sv.numel() == 0:
@@ -171,9 +169,7 @@ def allocate_entropy_ranks(
         return best_ranks
 
     if total_rank_budget is None:
-        total_rank_budget = sum(
-            (per_layer_min[name] + per_layer_max[name]) // 2 for name in layer_names
-        )
+        total_rank_budget = sum((per_layer_min[name] + per_layer_max[name]) // 2 for name in layer_names)
 
     min_possible_sum = sum(per_layer_min.values())
     max_possible_sum = sum(per_layer_max.values())
@@ -294,10 +290,12 @@ class DynamicSVDLinear(nn.Module):
         y = (x @ V^T) @ U^T + bias
         """
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 return fused_down_up_gemm_bias_triton(x, self.V, self.U.t().contiguous(), bias=self.bias)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
@@ -363,14 +361,8 @@ class DynamicSVDLinear(nn.Module):
             try:
                 eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
                 eigvals_clamped = torch.clamp(eigvals, min=1e-4)
-                cov_sqrt = (
-                    eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.t().contiguous()
-                )
-                cov_inv_sqrt = (
-                    eigvecs
-                    @ torch.diag(1.0 / torch.sqrt(eigvals_clamped))
-                    @ eigvecs.t().contiguous()
-                )
+                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.t().contiguous()
+                cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.t().contiguous()
 
                 W_scaled = W @ cov_sqrt
                 U_svd_a, S_svd_a, Vh_svd_a = torch.linalg.svd(W_scaled, full_matrices=False)
@@ -390,8 +382,7 @@ class DynamicSVDLinear(nn.Module):
                 if err_act_aware < err_weight_only:
                     U_r, V_r = U_a, V_a
                     logger.debug(
-                        "from_linear: activation-aware SVD accepted "
-                        "(err_act=%.4f < err_weight=%.4f).",
+                        "from_linear: activation-aware SVD accepted " "(err_act=%.4f < err_weight=%.4f).",
                         err_act_aware,
                         err_weight_only,
                     )
@@ -456,9 +447,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         target_rank = _cfg_get(cfg_obj, "dynamic_rank", _cfg_get(cfg_obj, "rank", target_rank))
         total_rank_budget = _cfg_get(cfg_obj, "total_rank_budget", total_rank_budget)
         target_param_ratio = _cfg_get(cfg_obj, "target_param_ratio", target_param_ratio)
-        max_error = _cfg_get(
-            cfg_obj, "dynamic_max_error", _cfg_get(cfg_obj, "max_error", max_error)
-        )
+        max_error = _cfg_get(cfg_obj, "dynamic_max_error", _cfg_get(cfg_obj, "max_error", max_error))
         target_attention_only = _cfg_get(
             cfg_obj,
             "dynamic_target_attention_only",
@@ -478,15 +467,11 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
         self.min_rank = min_rank
         self.max_rank = max(min_rank, int(max_rank))
-        self.target_param_ratio = (
-            float(target_param_ratio) if target_param_ratio is not None else None
-        )
+        self.target_param_ratio = float(target_param_ratio) if target_param_ratio is not None else None
         self.total_rank_budget = int(total_rank_budget) if total_rank_budget is not None else None
         self.target_rank = int(target_rank) if target_rank is not None else None
         if max_error is None or max_error == 0.35:
-            max_error = adaptive_max_error(
-                self.target_rank or self.min_rank, 768, 768, "distilbert"
-            )
+            max_error = adaptive_max_error(self.target_rank or self.min_rank, 768, 768, "distilbert")
 
         self.max_error = float(max_error)
         self.target_attention_only = bool(target_attention_only)
@@ -496,9 +481,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         self.calibration_texts = calibration_texts
         self.target_modules = target_modules
         self.tokenizer = (
-            tokenizer
-            or getattr(model, "tokenizer", None)
-            or getattr(getattr(model, "config", None), "tokenizer", None)
+            tokenizer or getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
         )
 
         self.layer_entropies: dict[str, float] = {}
@@ -544,9 +527,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
         if self.target_attention_only:
             last_part = name.split(".")[-1]
-            is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention")
-            )
+            is_attn = (last_part in _ATTN_NAMES) or any(k in name_lower for k in ("attn", "attention"))
             if not is_attn:
                 return False
 
@@ -583,11 +564,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
             return hook_fn
 
-        target_layers = [
-            (name, mod)
-            for name, mod in self.model.named_modules()
-            if self._is_target_module(name, mod)
-        ]
+        target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
         if not target_layers:
             return {}
@@ -607,15 +584,10 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                     batch_count = 0
                     for batch in self.calibration_loader:
                         if isinstance(batch, dict):
-                            batch = {
-                                k: v.to(device) if isinstance(v, torch.Tensor) else v
-                                for k, v in batch.items()
-                            }
+                            batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
                             self.model(**batch)
                         elif isinstance(batch, (list, tuple)):
-                            batch = [
-                                v.to(device) if isinstance(v, torch.Tensor) else v for v in batch
-                            ]
+                            batch = [v.to(device) if isinstance(v, torch.Tensor) else v for v in batch]
                             self.model(*batch)
                         elif isinstance(batch, torch.Tensor):
                             self.model(batch.to(device))
@@ -841,14 +813,9 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         except Exception as e:
             logger.debug("DynamicEntropySVD forward check exception: %s", e)
 
-        effective_ratio = (
-            total_comp_decomp_params / total_orig_decomp_params
-            if total_orig_decomp_params > 0
-            else 1.0
-        )
+        effective_ratio = total_comp_decomp_params / total_orig_decomp_params if total_orig_decomp_params > 0 else 1.0
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -935,12 +902,8 @@ def dynamic_entropy_svd_factory(model: Any, comp_config: Any = None, **kwargs: A
                 _cfg_get(comp_config, "fallback_to_original", True),
             ),
         )
-        target_param_ratio = kwargs.pop(
-            "target_param_ratio", _cfg_get(comp_config, "target_param_ratio", None)
-        )
-        total_rank_budget = kwargs.pop(
-            "total_rank_budget", _cfg_get(comp_config, "total_rank_budget", None)
-        )
+        target_param_ratio = kwargs.pop("target_param_ratio", _cfg_get(comp_config, "target_param_ratio", None))
+        total_rank_budget = kwargs.pop("total_rank_budget", _cfg_get(comp_config, "total_rank_budget", None))
 
         compressor = DynamicEntropySVDCompressor(
             model,

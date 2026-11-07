@@ -2,10 +2,10 @@
 
 > **Canonical Notice**: This report is canonically maintained in [`docs/reports/MASTER_EMPIRICAL_BENCHMARK_REPORT.md`](../../reports/MASTER_EMPIRICAL_BENCHMARK_REPORT.md).
 
-**Authors**: Advanced AI Architecture & Systems Group  
-**Date**: August 2026  
-**Status**: Publication-Grade Empirical Summary  
-**Evaluation Scope**: 118 Attention Mechanisms, 80 Compression Engines, 15 Transformer Component Studios, 22 Benchmark Datasets  
+**Authors**: Advanced AI Architecture & Systems Group
+**Date**: August 2026
+**Status**: Publication-Grade Empirical Summary
+**Evaluation Scope**: 118 Attention Mechanisms, 80 Compression Engines, 15 Transformer Component Studios, 22 Benchmark Datasets
 
 ---
 

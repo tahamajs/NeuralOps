@@ -108,9 +108,7 @@ class FWSVDCompressor(BaseCompressor):
                 getattr(cfg, "target_attention_only", target_attention_only),
             )
             damping = getattr(cfg, "fwsvd_damping", getattr(cfg, "damping", damping))
-            use_gradients = getattr(
-                cfg, "fwsvd_use_gradients", getattr(cfg, "use_gradients", use_gradients)
-            )
+            use_gradients = getattr(cfg, "fwsvd_use_gradients", getattr(cfg, "use_gradients", use_gradients))
 
         target_attention_only = kwargs.get(
             "target_attention_only",
@@ -127,9 +125,7 @@ class FWSVDCompressor(BaseCompressor):
         self.use_gradients = bool(use_gradients)
         self.loss_fn = loss_fn or kwargs.get("loss_fn", None)
         self.gradients = gradients or kwargs.get("gradients", None)
-        self.device = (
-            torch.device(device) if device is not None else next(model.parameters()).device
-        )
+        self.device = torch.device(device) if device is not None else next(model.parameters()).device
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
         self.layer_errors: dict[str, float] = {}
@@ -140,9 +136,7 @@ class FWSVDCompressor(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLinear):
             return False
-        if any(
-            name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
-        ):
+        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]):
             return False
 
         target_mod = getattr(module, "base_layer", module)
@@ -230,10 +224,7 @@ class FWSVDCompressor(BaseCompressor):
             cls_name = layer.__class__.__name__.lower()
             target_cls = target_mod.__class__.__name__.lower()
             is_conv1d = (
-                "conv1d" in cls_name
-                or "conv1d" in target_cls
-                or hasattr(layer, "nf")
-                or hasattr(target_mod, "nf")
+                "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
             )
             weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
             if weight_tensor is None:
@@ -275,9 +266,7 @@ class FWSVDCompressor(BaseCompressor):
                 F_sym = 0.5 * (F_dev + F_dev.t())
                 tr_F = torch.trace(F_sym).item()
                 damp_val = max(1e-7, float(self.damping * tr_F / max(1, in_feat)))
-                F_damped = F_sym + damp_val * torch.eye(
-                    in_feat, device=F_dev.device, dtype=torch.float32
-                )
+                F_damped = F_sym + damp_val * torch.eye(in_feat, device=F_dev.device, dtype=torch.float32)
 
                 try:
                     eigvals, eigvecs = torch.linalg.eigh(F_damped)
@@ -293,17 +282,13 @@ class FWSVDCompressor(BaseCompressor):
                     U_r = U[:, :r] * sqrt_S.unsqueeze(0)
                     V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ F_inv_sqrt
                 except Exception as e:
-                    logger.debug(
-                        "Full Fisher whitening SVD failed (%s); falling back to unweighted SVD", e
-                    )
+                    logger.debug("Full Fisher whitening SVD failed (%s); falling back to unweighted SVD", e)
                     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                     sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
                     U_r = U[:, :r] * sqrt_S.unsqueeze(0)
                     V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
             elif fisher_diag is not None and fisher_diag.shape == (in_feat,):
-                f_clamped = fisher_diag.to(device=layer.weight.device, dtype=torch.float32).clamp(
-                    min=1e-8
-                )
+                f_clamped = fisher_diag.to(device=layer.weight.device, dtype=torch.float32).clamp(min=1e-8)
                 sqrt_f = torch.sqrt(f_clamped)
                 inv_sqrt_f = 1.0 / sqrt_f
                 W_weighted = W * sqrt_f.unsqueeze(0)
@@ -363,9 +348,7 @@ class FWSVDCompressor(BaseCompressor):
 
         user_grads = gradients or self.gradients
         target_layers = [
-            (name, module)
-            for name, module in self.model.named_modules()
-            if self._is_target_module(name, module)
+            (name, module) for name, module in self.model.named_modules() if self._is_target_module(name, module)
         ]
 
         if not target_layers:
@@ -381,10 +364,7 @@ class FWSVDCompressor(BaseCompressor):
                 cls_name = module.__class__.__name__.lower()
                 target_cls = target_mod.__class__.__name__.lower()
                 is_conv1d = (
-                    "conv1d" in cls_name
-                    or "conv1d" in target_cls
-                    or hasattr(module, "nf")
-                    or hasattr(target_mod, "nf")
+                    "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
                 )
                 weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
                 if weight_tensor is None:
@@ -443,9 +423,7 @@ class FWSVDCompressor(BaseCompressor):
                         or hasattr(module, "nf")
                         or hasattr(target_mod, "nf")
                     )
-                    weight_tensor = getattr(
-                        target_mod, "weight", getattr(module, "weight", None)
-                    )
+                    weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
                     if weight_tensor is None:
                         return
                     in_f = weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
@@ -504,11 +482,7 @@ class FWSVDCompressor(BaseCompressor):
                                 with torch.no_grad():
                                     self.model(b_dev)
                         elif isinstance(batch, dict):
-                            b_dev = {
-                                k: v.to(self.device)
-                                for k, v in batch.items()
-                                if isinstance(v, torch.Tensor)
-                            }
+                            b_dev = {k: v.to(self.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
                             if self.use_gradients:
                                 with torch.enable_grad():
                                     out = self.model(**b_dev)
@@ -527,11 +501,7 @@ class FWSVDCompressor(BaseCompressor):
                         for l_name, tensor_list in captured_inputs.items():
                             for x_t in tensor_list:
                                 if x_t.grad is not None:
-                                    g_flat = (
-                                        x_t.grad.detach()
-                                        .float()
-                                        .reshape(-1, x_t.grad.shape[-1])
-                                    )
+                                    g_flat = x_t.grad.detach().float().reshape(-1, x_t.grad.shape[-1])
                                     g_cov = (g_flat.t() @ g_flat).cpu()
                                     n_g = g_flat.shape[0]
                                     if l_name not in grad_cov:
@@ -555,19 +525,10 @@ class FWSVDCompressor(BaseCompressor):
                     if self.use_gradients:
                         with torch.enable_grad():
                             inputs_forward = dict(inputs)
-                            if (
-                                "input_ids" in inputs_forward
-                                and "labels" not in inputs_forward
-                            ):
-                                inputs_forward["labels"] = inputs_forward[
-                                    "input_ids"
-                                ].clone()
+                            if "input_ids" in inputs_forward and "labels" not in inputs_forward:
+                                inputs_forward["labels"] = inputs_forward["input_ids"].clone()
                             out = self.model(**inputs_forward)
-                            loss = (
-                                active_loss_fn(out)
-                                if active_loss_fn is not None
-                                else getattr(out, "loss", None)
-                            )
+                            loss = active_loss_fn(out) if active_loss_fn is not None else getattr(out, "loss", None)
                             if loss is not None and loss.requires_grad:
                                 loss.backward()
                     else:
@@ -577,11 +538,7 @@ class FWSVDCompressor(BaseCompressor):
                     for l_name, tensor_list in captured_inputs.items():
                         for x_t in tensor_list:
                             if x_t.grad is not None:
-                                g_flat = (
-                                    x_t.grad.detach()
-                                    .float()
-                                    .reshape(-1, x_t.grad.shape[-1])
-                                )
+                                g_flat = x_t.grad.detach().float().reshape(-1, x_t.grad.shape[-1])
                                 g_cov = (g_flat.t() @ g_flat).cpu()
                                 n_g = g_flat.shape[0]
                                 if l_name not in grad_cov:
@@ -603,10 +560,7 @@ class FWSVDCompressor(BaseCompressor):
                 cls_name = module.__class__.__name__.lower()
                 target_cls = target_mod.__class__.__name__.lower()
                 is_conv1d = (
-                    "conv1d" in cls_name
-                    or "conv1d" in target_cls
-                    or hasattr(module, "nf")
-                    or hasattr(target_mod, "nf")
+                    "conv1d" in cls_name or "conv1d" in target_cls or hasattr(module, "nf") or hasattr(target_mod, "nf")
                 )
                 weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
                 if weight_tensor is None:
@@ -623,9 +577,7 @@ class FWSVDCompressor(BaseCompressor):
                     F_sym = 0.5 * (F_raw + F_raw.t())
                     tr_F = torch.trace(F_sym).item()
                     damp_val = max(1e-7, float(self.damping * tr_F / max(1, in_f)))
-                    F_damped = F_sym + damp_val * torch.eye(
-                        in_f, device=F_sym.device, dtype=torch.float32
-                    )
+                    F_damped = F_sym + damp_val * torch.eye(in_f, device=F_sym.device, dtype=torch.float32)
                     self.fisher_matrices[name] = F_damped
                     self.fishers[name] = torch.diag(F_damped)
 
@@ -634,9 +586,7 @@ class FWSVDCompressor(BaseCompressor):
         for name, module in target_layers:
             f_mat = self.fisher_matrices.get(name)
             f_diag = self.fishers.get(name)
-            svd_layer, err, r = self.compress_linear(
-                module, rank=self.rank, fisher_matrix=f_mat, fisher_diag=f_diag
-            )
+            svd_layer, err, r = self.compress_linear(module, rank=self.rank, fisher_matrix=f_mat, fisher_diag=f_diag)
             self.layer_errors[name] = err
             self.layer_ranks[name] = r
 
@@ -662,9 +612,7 @@ class FWSVDCompressor(BaseCompressor):
             "compressed_layers": len(self.compressed_layers),
             "fallback_layers": len(self.fallback_layers),
             "avg_reconstruction_error": (
-                float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors)))
-                if self.layer_errors
-                else 0.0
+                float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors))) if self.layer_errors else 0.0
             ),
             "layer_ranks": self.layer_ranks,
         }

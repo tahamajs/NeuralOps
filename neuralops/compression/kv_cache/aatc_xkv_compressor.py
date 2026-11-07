@@ -415,8 +415,8 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
             device = U_k.device
             if device.type == "cuda":
                 try:
-                    from neuralops.ops.triton.paged_attention import paged_kv_evict_compact_triton
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+                    from neuralops.ops.triton.paged_attention import paged_kv_evict_compact_triton
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
                     pass
@@ -618,20 +618,10 @@ def _collect_calibration_data(
             model.train()
 
     return {
-        "k": {
-            i: torch.cat(k_by_layer[i], 0) if k_by_layer[i] else torch.empty(0) for i in k_by_layer
-        },
-        "v": {
-            i: torch.cat(v_by_layer[i], 0) if v_by_layer[i] else torch.empty(0) for i in v_by_layer
-        },
-        "gk": {
-            i: torch.cat(gk_by_layer[i], 0) if gk_by_layer[i] else torch.empty(0)
-            for i in gk_by_layer
-        },
-        "gv": {
-            i: torch.cat(gv_by_layer[i], 0) if gv_by_layer[i] else torch.empty(0)
-            for i in gv_by_layer
-        },
+        "k": {i: torch.cat(k_by_layer[i], 0) if k_by_layer[i] else torch.empty(0) for i in k_by_layer},
+        "v": {i: torch.cat(v_by_layer[i], 0) if v_by_layer[i] else torch.empty(0) for i in v_by_layer},
+        "gk": {i: torch.cat(gk_by_layer[i], 0) if gk_by_layer[i] else torch.empty(0) for i in gk_by_layer},
+        "gv": {i: torch.cat(gv_by_layer[i], 0) if gv_by_layer[i] else torch.empty(0) for i in gv_by_layer},
     }
 
 
@@ -702,6 +692,7 @@ class AATC_XKVCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
     IS_DYNAMIC_KV_CACHE = True
 
@@ -761,17 +752,9 @@ class AATC_XKVCompressor(BaseCompressor):
                 has_k = any(hasattr(mod, a) for a in k_names)
                 has_v = any(hasattr(mod, a) for a in v_names)
                 if has_k:
-                    has_k = any(
-                        isinstance(getattr(mod, a, None), nn.Module)
-                        for a in k_names
-                        if hasattr(mod, a)
-                    )
+                    has_k = any(isinstance(getattr(mod, a, None), nn.Module) for a in k_names if hasattr(mod, a))
                 if has_v:
-                    has_v = any(
-                        isinstance(getattr(mod, a, None), nn.Module)
-                        for a in v_names
-                        if hasattr(mod, a)
-                    )
+                    has_v = any(isinstance(getattr(mod, a, None), nn.Module) for a in v_names if hasattr(mod, a))
                 is_attn = has_k and has_v
 
             if not is_attn:
@@ -872,13 +855,18 @@ class AATC_XKVCompressor(BaseCompressor):
                 g_id = self.layer_to_group.get(idx)
                 if g_id is not None and g_id in self.subspaces:
                     sub = self.subspaces[g_id]
-                    for p_name, basis in [("k_proj", sub.V_k), ("v_proj", sub.V_v), ("key", sub.V_k), ("value", sub.V_v)]:
+                    for p_name, basis in [
+                        ("k_proj", sub.V_k),
+                        ("v_proj", sub.V_v),
+                        ("key", sub.V_k),
+                        ("value", sub.V_v),
+                    ]:
                         layer = getattr(mod, p_name, None)
                         if layer is not None and hasattr(layer, "weight"):
                             w = layer.weight.data
                             device_w, dtype_w = w.device, w.dtype
                             V_sub = basis.to(device=device_w, dtype=torch.float32)
-                            proj_op = (V_sub.t() @ V_sub)
+                            proj_op = V_sub.t() @ V_sub
                             w_proj = torch.matmul(proj_op, w.float()).to(dtype_w)
                             layer.weight.data.copy_(w_proj)
                     if hasattr(mod, "c_attn") and getattr(mod.c_attn, "weight", None) is not None:
@@ -891,8 +879,8 @@ class AATC_XKVCompressor(BaseCompressor):
                         V_v_sub = sub.V_v.to(device=device_w, dtype=torch.float32)
                         P_k = V_k_sub.t() @ V_k_sub
                         P_v = V_v_sub.t() @ V_v_sub
-                        W_mat[sz:2*sz, :] = torch.matmul(P_k, W_mat[sz:2*sz, :])
-                        W_mat[2*sz:, :] = torch.matmul(P_v, W_mat[2*sz:, :])
+                        W_mat[sz : 2 * sz, :] = torch.matmul(P_k, W_mat[sz : 2 * sz, :])
+                        W_mat[2 * sz :, :] = torch.matmul(P_v, W_mat[2 * sz :, :])
                         c_w_new = W_mat.t().contiguous().to(dtype_w) if is_transposed else W_mat.to(dtype_w)
                         mod.c_attn.weight.data.copy_(c_w_new)
 
@@ -915,9 +903,7 @@ class AATC_XKVCompressor(BaseCompressor):
             D = sub.V_k.size(1)
             n_layers = len(sub.layer_indices)
             total_orig_bits += 16 * (2 * D) * n_layers
-            total_comp_bits += (
-                int(sub.bit_alloc_k.sum().item()) + int(sub.bit_alloc_v.sum().item())
-            ) * n_layers
+            total_comp_bits += (int(sub.bit_alloc_k.sum().item()) + int(sub.bit_alloc_v.sum().item())) * n_layers
 
         ratio = total_orig_bits / max(1, total_comp_bits)
 

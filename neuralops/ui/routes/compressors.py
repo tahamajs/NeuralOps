@@ -14,11 +14,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
 from neuralops.ui.queries.ledger import get_compressor_results
-from neuralops.ui.queries.static_catalog import (
-    get_compressor_metadata,
-    list_compressors,
-    list_paradigms,
-)
+from neuralops.ui.queries.static_catalog import get_compressor_metadata, list_compressors, list_paradigms
 
 router = APIRouter()
 

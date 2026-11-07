@@ -105,7 +105,7 @@ Query-Key dot products ($k$ tokens): $2 B H k^2 d_h = 2 B k^2 D$ Furthermore, So
 $$\text{FLOPs}_{\text{total}} = 64 B N D + 16 B k D r + 4 B k^2 D$$
 
 ### 4.2 Memory Footprint & Bandwidth
-Specifically, regarding \textbf{Parameter Footprint}, 
+Specifically, regarding \textbf{Parameter Footprint},
 
   $$\Theta = 4 \times (D \cdot r) + \Theta_{\text{router}} + \Theta_{\text{vgate}} + \Theta_{\text{hgate}} = 4 D r + 33 D + 384 r + 33 D$$
 Specifically, regarding \textbf{Activation Footprint},  Furthermore, Routed token sequence $\widetilde{X}$: $\mathcal{O}(B k D)$ Concurrently, Routed attention logit matrix: $\mathcal{O}(B H k^2)$ In this setting, Total Activation Memory: $\mathcal{O}(B N D + B k D + B H k^2) \ll \mathcal{O}(B H N^2)$
@@ -186,4 +186,3 @@ The empirical evaluation of `vspec` across standard sequence lengths and languag
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

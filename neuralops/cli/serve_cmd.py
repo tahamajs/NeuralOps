@@ -116,9 +116,10 @@ def cmd_serve(args: Any) -> int:
     device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
 
     try:
-        from transformers import AutoTokenizer
-        from neuralops.integrations.serving import create_openai_serving_app
         import uvicorn
+        from transformers import AutoTokenizer
+
+        from neuralops.integrations.serving import create_openai_serving_app
     except ImportError as exc:
         raise RuntimeError(
             "Serving requires the optional dependencies FastAPI, Uvicorn, and Transformers. "

@@ -18,11 +18,7 @@ from typing import Any, Dict, Optional
 
 import torch
 
-from neuralops.benchmarks.core.data_loader import (
-    get_dataset_metadata,
-    load_dataset_by_name,
-    make_dataloader,
-)
+from neuralops.benchmarks.core.data_loader import get_dataset_metadata, load_dataset_by_name, make_dataloader
 from neuralops.benchmarks.core.evaluation import (
     evaluate_perplexity,
     measure_latency_and_throughput,
@@ -37,7 +33,6 @@ from neuralops.benchmarks.core.model_loader import (
     load_model_and_tokenizer,
 )
 from neuralops.benchmarks.result import DatasetMetadata, ModelMetadata
-
 
 logger = logging.getLogger(__name__)
 

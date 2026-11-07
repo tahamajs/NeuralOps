@@ -12,25 +12,46 @@ Accelerates autoregressive decoding via split-KV sequence chunking and multi-blo
 """
 
 from __future__ import annotations
+
 import math
+
 import torch
 import torch.nn.functional as F
 
-from neuralops.ops.triton._common import HAS_TRITON, triton, tl
+from neuralops.ops.triton._common import HAS_TRITON, tl, triton
 
 __all__ = ["flash_decoding_attention", "flash_decoding_pytorch", "flash_decode_kernel"]
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def flash_decoding_stage1_kernel(
-        Q_ptr, K_ptr, V_ptr, MidOut_ptr, MidLse_ptr,
-        stride_qb, stride_qh, stride_qd,
-        stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_mb, stride_mh, stride_mc, stride_md,
-        stride_lb, stride_lh, stride_lc,
-        H, N_kv,
+        Q_ptr,
+        K_ptr,
+        V_ptr,
+        MidOut_ptr,
+        MidLse_ptr,
+        stride_qb,
+        stride_qh,
+        stride_qd,
+        stride_kb,
+        stride_kh,
+        stride_kn,
+        stride_kd,
+        stride_vb,
+        stride_vh,
+        stride_vn,
+        stride_vd,
+        stride_mb,
+        stride_mh,
+        stride_mc,
+        stride_md,
+        stride_lb,
+        stride_lh,
+        stride_lc,
+        H,
+        N_kv,
         CHUNK_SIZE: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
@@ -120,13 +141,25 @@ def flash_decoding_pytorch(
 
 
 if HAS_TRITON and tl is not None:
+
     @triton.jit
     def flash_decoding_stage2_kernel(
-        MidOut_ptr, MidLse_ptr, FinalOut_ptr,
-        stride_mb, stride_mh, stride_mc, stride_md,
-        stride_lb, stride_lh, stride_lc,
-        stride_ob, stride_oh, stride_oq, stride_od,
-        H, num_chunks,
+        MidOut_ptr,
+        MidLse_ptr,
+        FinalOut_ptr,
+        stride_mb,
+        stride_mh,
+        stride_mc,
+        stride_md,
+        stride_lb,
+        stride_lh,
+        stride_lc,
+        stride_ob,
+        stride_oh,
+        stride_oq,
+        stride_od,
+        H,
+        num_chunks,
         BLOCK_C: tl.constexpr,
         BLOCK_D: tl.constexpr,
     ):
@@ -158,6 +191,7 @@ if HAS_TRITON and tl is not None:
 
         out_ptrs = FinalOut_ptr + i_b * stride_ob + i_h * stride_oh + 0 * stride_oq + offs_d * stride_od
         tl.store(out_ptrs, acc.to(FinalOut_ptr.dtype.element_ty))
+
 else:
     flash_decoding_stage1_kernel = None  # noqa: F811
     flash_decoding_stage2_kernel = None  # noqa: F811
@@ -170,7 +204,8 @@ def flash_decoding_attention(
     chunk_size: int = 128,
 ) -> torch.Tensor:
     """Dispatches split-KV flash decoding with Triton hardware acceleration."""
-    from neuralops.ops.triton._types import HAS_TRITON, FORCE_PYTORCH_FALLBACK, check_triton_suitability
+    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON, check_triton_suitability
+
     B, H, N_q, D = q.shape
     N_kv = k.shape[-2]
 
@@ -182,13 +217,31 @@ def flash_decoding_attention(
 
             grid1 = (num_chunks, B * H)
             flash_decoding_stage1_kernel[grid1](
-                q.squeeze(2), k, v, mid_out, mid_lse,
-                q.squeeze(2).stride(0), q.squeeze(2).stride(1), q.squeeze(2).stride(2),
-                k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-                v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-                mid_out.stride(0), mid_out.stride(1), mid_out.stride(2), mid_out.stride(3),
-                mid_lse.stride(0), mid_lse.stride(1), mid_lse.stride(2),
-                H, N_kv,
+                q.squeeze(2),
+                k,
+                v,
+                mid_out,
+                mid_lse,
+                q.squeeze(2).stride(0),
+                q.squeeze(2).stride(1),
+                q.squeeze(2).stride(2),
+                k.stride(0),
+                k.stride(1),
+                k.stride(2),
+                k.stride(3),
+                v.stride(0),
+                v.stride(1),
+                v.stride(2),
+                v.stride(3),
+                mid_out.stride(0),
+                mid_out.stride(1),
+                mid_out.stride(2),
+                mid_out.stride(3),
+                mid_lse.stride(0),
+                mid_lse.stride(1),
+                mid_lse.stride(2),
+                H,
+                N_kv,
                 CHUNK_SIZE=chunk_size,
                 BLOCK_D=D,
             )
@@ -197,11 +250,22 @@ def flash_decoding_attention(
             block_c = triton.next_power_of_2(max(16, num_chunks))
             grid2 = (B * H,)
             flash_decoding_stage2_kernel[grid2](
-                mid_out, mid_lse, final_out,
-                mid_out.stride(0), mid_out.stride(1), mid_out.stride(2), mid_out.stride(3),
-                mid_lse.stride(0), mid_lse.stride(1), mid_lse.stride(2),
-                final_out.stride(0), final_out.stride(1), final_out.stride(2), final_out.stride(3),
-                H, num_chunks,
+                mid_out,
+                mid_lse,
+                final_out,
+                mid_out.stride(0),
+                mid_out.stride(1),
+                mid_out.stride(2),
+                mid_out.stride(3),
+                mid_lse.stride(0),
+                mid_lse.stride(1),
+                mid_lse.stride(2),
+                final_out.stride(0),
+                final_out.stride(1),
+                final_out.stride(2),
+                final_out.stride(3),
+                H,
+                num_chunks,
                 BLOCK_C=block_c,
                 BLOCK_D=D,
             )

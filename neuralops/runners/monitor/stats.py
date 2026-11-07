@@ -29,9 +29,7 @@ _CACHE_TIME: float = 0.0
 _ALL_MODULE_RUNS_MAP: dict[str, list[dict[str, Any]]] = {}
 
 
-def load_harvested_benchmark_records(
-    project_dir: str, harvested_json_path: str
-) -> list[dict[str, Any]]:
+def load_harvested_benchmark_records(project_dir: str, harvested_json_path: str) -> list[dict[str, Any]]:
     """Reads all active CSV and historical benchmark records with code-accurate metrics.
 
     Args:
@@ -43,16 +41,12 @@ def load_harvested_benchmark_records(
     """
     records: list[dict[str, Any]] = []
 
-    local_csvs = glob.glob(
-        os.path.join(project_dir, "results", "**", "*summary*.csv"), recursive=True
-    )
+    local_csvs = glob.glob(os.path.join(project_dir, "results", "**", "*summary*.csv"), recursive=True)
     local_csvs.sort(key=os.path.getmtime, reverse=True)
 
     for cf in local_csvs:
         try:
-            mtime_dt = datetime.datetime.fromtimestamp(os.path.getmtime(cf)).strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+            mtime_dt = datetime.datetime.fromtimestamp(os.path.getmtime(cf)).strftime("%Y-%m-%d %H:%M:%S")
             df = pd.read_csv(cf)
             df.columns = [str(c).strip().lower() for c in df.columns]
             for _, row in df.iterrows():

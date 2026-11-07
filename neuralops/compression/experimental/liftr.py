@@ -12,7 +12,6 @@ Replaces non-linear activations with optimal affine transformations, enabling cr
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -50,9 +50,14 @@ if hasattr(nn, "SiLU"):
     _silu_list.append(nn.SiLU)
 try:
     import transformers.activations as hf_act
+
     for act_name in dir(hf_act):
         obj = getattr(hf_act, act_name)
-        if isinstance(obj, type) and issubclass(obj, nn.Module) and ("gelu" in act_name.lower() or "silu" in act_name.lower() or "quick" in act_name.lower()):
+        if (
+            isinstance(obj, type)
+            and issubclass(obj, nn.Module)
+            and ("gelu" in act_name.lower() or "silu" in act_name.lower() or "quick" in act_name.lower())
+        ):
             _silu_list.append(obj)
 except Exception:
     # allowed-swallow: best-effort-telemetry
@@ -220,9 +225,7 @@ class _LinearizedAttentionWrapper(nn.Module):
         try:
             if x is None:
                 hs = self._resolve_hidden_size()
-                return self._format_output(
-                    torch.zeros(1, 1, hs, dtype=torch.float32), output_attentions
-                )
+                return self._format_output(torch.zeros(1, 1, hs, dtype=torch.float32), output_attentions)
             call_kwargs = {}
             if attention_mask is not None:
                 call_kwargs["attention_mask"] = attention_mask
@@ -271,6 +274,7 @@ class LIFTRCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
 
     CRITICAL_MODULE_KEYWORDS = [
@@ -434,9 +438,7 @@ class LIFTRCompressor(BaseCompressor):
                 if isinstance(child, _LinearizedAttentionWrapper):
                     continue
 
-                if not hasattr(child, "_liftr_skip") and not isinstance(
-                    child, _LinearizedAttentionWrapper
-                ):
+                if not hasattr(child, "_liftr_skip") and not isinstance(child, _LinearizedAttentionWrapper):
                     try:
                         wrapped = _LinearizedAttentionWrapper(child, layer_name=full_name)
                         setattr(module, name, wrapped)
@@ -502,8 +504,7 @@ class LIFTRCompressor(BaseCompressor):
                     else:
                         new_out = res_new
                     rel_diff = (
-                        torch.norm(orig_out.float() - new_out.float())
-                        / (torch.norm(orig_out.float()) + 1e-8)
+                        torch.norm(orig_out.float() - new_out.float()) / (torch.norm(orig_out.float()) + 1e-8)
                     ).item()
                     if rel_diff > self.calibration_threshold:
                         logger.warning(

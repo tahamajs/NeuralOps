@@ -12,7 +12,6 @@ Converts dense linear and feedforward projections into sparse Mixture-of-Experts
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import inspect
 import logging
@@ -22,6 +21,9 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
+
+from neuralops.core.common import _cfg_get
+
 try:
     from sklearn.cluster import KMeans, MiniBatchKMeans
 except ImportError:
@@ -67,15 +69,11 @@ class ToMoELinear(nn.Module):
         if original is not None:
             base_layer = getattr(original, "base_layer", original)
             cls_name = base_layer.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or (
-                hasattr(base_layer, "nx") and hasattr(base_layer, "nf")
-            )
+            is_conv1d = "conv1d" in cls_name or (hasattr(base_layer, "nx") and hasattr(base_layer, "nf"))
             if is_conv1d:
                 in_feat = base_layer.weight.shape[0]
                 out_feat = base_layer.weight.shape[1]
-                orig_w = (
-                    base_layer.weight.data.t().contiguous().clone()
-                )
+                orig_w = base_layer.weight.data.t().contiguous().clone()
                 orig_b = base_layer.bias.data.clone() if base_layer.bias is not None else None
             elif isinstance(base_layer, nn.Linear):
                 in_feat = base_layer.in_features
@@ -86,11 +84,7 @@ class ToMoELinear(nn.Module):
                 in_feat = getattr(base_layer, "in_features", base_layer.weight.shape[1])
                 out_feat = getattr(base_layer, "out_features", base_layer.weight.shape[0])
                 orig_w = base_layer.weight.data.contiguous().clone()
-                orig_b = (
-                    base_layer.bias.data.clone()
-                    if getattr(base_layer, "bias", None) is not None
-                    else None
-                )
+                orig_b = base_layer.bias.data.clone() if getattr(base_layer, "bias", None) is not None else None
             else:
                 raise TypeError(f"Unsupported module type: {type(base_layer)}")
         else:
@@ -110,9 +104,7 @@ class ToMoELinear(nn.Module):
         self.num_experts = max(1, min(num_experts, out_feat))
         self.top_k = max(1, min(top_k, self.num_experts))
 
-        has_orig_lora = (
-            original is not None and hasattr(original, "lora_A") and hasattr(original, "lora_B")
-        )
+        has_orig_lora = original is not None and hasattr(original, "lora_A") and hasattr(original, "lora_B")
         if has_orig_lora and getattr(original, "r", 0) > 0:
             lora_r = getattr(original, "r", lora_r)
 
@@ -145,9 +137,7 @@ class ToMoELinear(nn.Module):
                 pred = km.fit_predict(W_fp32)
                 counts = np.bincount(pred, minlength=self.num_experts)
                 if (counts == 0).any():
-                    logger.warning(
-                        "ToMoE: KMeans produced empty cluster(s). Falling back to equal division."
-                    )
+                    logger.warning("ToMoE: KMeans produced empty cluster(s). Falling back to equal division.")
                     assignments = None
                 else:
                     target_size = self.out_features // self.num_experts
@@ -185,9 +175,7 @@ class ToMoELinear(nn.Module):
                 start = end
 
         self.experts = nn.ModuleList()
-        self.register_buffer(
-            "_masks", torch.zeros(self.num_experts, self.out_features, dtype=torch.bool)
-        )
+        self.register_buffer("_masks", torch.zeros(self.num_experts, self.out_features, dtype=torch.bool))
         expert_indices_list = []
         cluster_sizes = []
 
@@ -236,9 +224,7 @@ class ToMoELinear(nn.Module):
         else:
             self.expert_out_dim = -1
 
-        self.router = nn.Linear(
-            self.in_features, self.num_experts, device=device, dtype=torch.float32
-        )
+        self.router = nn.Linear(self.in_features, self.num_experts, device=device, dtype=torch.float32)
         nn.init.normal_(self.router.weight, std=0.02)
         if self.router.bias is not None:
             nn.init.zeros_(self.router.bias)
@@ -251,9 +237,7 @@ class ToMoELinear(nn.Module):
             self.expert_lora_B = nn.ParameterList()
             for e in range(self.num_experts):
                 n_neurons = cluster_sizes[e]
-                l_A = nn.Parameter(
-                    torch.empty(self.lora_r, self.in_features, device=device, dtype=dtype)
-                )
+                l_A = nn.Parameter(torch.empty(self.lora_r, self.in_features, device=device, dtype=dtype))
                 l_B = nn.Parameter(torch.zeros(n_neurons, self.lora_r, device=device, dtype=dtype))
                 nn.init.kaiming_uniform_(l_A, a=math.sqrt(5))
                 nn.init.zeros_(l_B)
@@ -305,9 +289,7 @@ class ToMoELinear(nn.Module):
 
         router_logits = self.router(x_flat.float())
         if self.lora_r > 0 and hasattr(self, "lora_A_router") and hasattr(self, "lora_B_router"):
-            router_lora = (
-                (x_flat.float() @ self.lora_A_router.t()) @ self.lora_B_router.t() * self.lora_scale
-            )
+            router_lora = (x_flat.float() @ self.lora_A_router.t()) @ self.lora_B_router.t() * self.lora_scale
             router_logits = router_logits + router_lora
 
         if torch.isnan(router_logits).any() or torch.isinf(router_logits).any():
@@ -326,9 +308,7 @@ class ToMoELinear(nn.Module):
 
         if self.equal_expert_size:
             D_exp = self.expert_out_dim
-            all_expert_outs = torch.stack(
-                [exp(x_flat) for exp in self.experts], dim=1
-            )
+            all_expert_outs = torch.stack([exp(x_flat) for exp in self.experts], dim=1)
 
             if self.lora_r > 0 and hasattr(self, "expert_lora_A"):
                 lora_outs = []
@@ -342,9 +322,7 @@ class ToMoELinear(nn.Module):
                 all_expert_outs = all_expert_outs + torch.stack(lora_outs, dim=1)
 
             expanded_idx = topk_idx.unsqueeze(-1).expand(N, self.top_k, D_exp)
-            selected_outs = torch.gather(
-                all_expert_outs, dim=1, index=expanded_idx
-            )
+            selected_outs = torch.gather(all_expert_outs, dim=1, index=expanded_idx)
             weighted_selected = selected_outs * topk_weights.unsqueeze(-1)
 
             col_map = self.expert_col_map
@@ -365,10 +343,7 @@ class ToMoELinear(nn.Module):
                 exp_out = self.experts[e](selected_tokens)
                 if self.lora_r > 0 and hasattr(self, "expert_lora_A"):
                     l_e = (
-                        (
-                            selected_tokens.to(self.expert_lora_A[e].dtype)
-                            @ self.expert_lora_A[e].t()
-                        )
+                        (selected_tokens.to(self.expert_lora_A[e].dtype) @ self.expert_lora_A[e].t())
                         @ self.expert_lora_B[e].t()
                         * self.lora_scale
                     )
@@ -434,13 +409,9 @@ class ToMoECompressor(BaseCompressor):
         self.stats: dict[str, Any] = getattr(self, "stats", {})
         cfg = kwargs.pop("comp_config", kwargs.pop("cfg", None))
         if cfg is not None:
-            num_experts = _cfg_get(
-                cfg, "num_experts", _cfg_get(cfg, "tomoe_num_experts", num_experts)
-            )
+            num_experts = _cfg_get(cfg, "num_experts", _cfg_get(cfg, "tomoe_num_experts", num_experts))
             top_k = _cfg_get(cfg, "top_k", _cfg_get(cfg, "tomoe_top_k", top_k))
-            max_error = _cfg_get(
-                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error_legacy", max_error)
-            )
+            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error_legacy", max_error))
             lora_r = _cfg_get(cfg, "lora_r", _cfg_get(cfg, "tomoe_lora_r", lora_r))
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             freeze_experts = _cfg_get(cfg, "freeze_experts", freeze_experts)
@@ -550,15 +521,9 @@ class ToMoECompressor(BaseCompressor):
             base_mod = getattr(module, "base_layer", module)
             cls_name = base_mod.__class__.__name__.lower()
             is_linear = isinstance(base_mod, nn.Linear)
-            is_conv1d = "conv1d" in cls_name or (
-                hasattr(base_mod, "nx") and hasattr(base_mod, "nf")
-            )
+            is_conv1d = "conv1d" in cls_name or (hasattr(base_mod, "nx") and hasattr(base_mod, "nf"))
 
-            if not (
-                is_linear
-                or is_conv1d
-                or (hasattr(base_mod, "weight") and base_mod.weight.ndim == 2)
-            ):
+            if not (is_linear or is_conv1d or (hasattr(base_mod, "weight") and base_mod.weight.ndim == 2)):
                 logger.warning(
                     "ToMoE: Skipping unsupported layer type %s for %s",
                     type(base_mod).__name__,
@@ -628,10 +593,7 @@ class ToMoECompressor(BaseCompressor):
                 calib_x = torch.randn(4, 16, in_f, device=device, dtype=dtype)
                 orig_out = module(calib_x)
                 moe_out = moe_layer(calib_x)
-                err = (
-                    torch.norm(moe_out.float() - orig_out.float())
-                    / (torch.norm(orig_out.float()) + 1e-8)
-                ).item()
+                err = (torch.norm(moe_out.float() - orig_out.float()) / (torch.norm(orig_out.float()) + 1e-8)).item()
 
             if err > self.max_error or np.isnan(err):
                 logger.warning(
@@ -650,18 +612,10 @@ class ToMoECompressor(BaseCompressor):
             if hasattr(module, "base_layer"):
                 module.base_layer = moe_layer
                 if hasattr(module, "lora_A") and module.lora_A is not None:
-                    for p in (
-                        module.lora_A.parameters()
-                        if hasattr(module.lora_A, "parameters")
-                        else [module.lora_A]
-                    ):
+                    for p in module.lora_A.parameters() if hasattr(module.lora_A, "parameters") else [module.lora_A]:
                         p.requires_grad = True
                 if hasattr(module, "lora_B") and module.lora_B is not None:
-                    for p in (
-                        module.lora_B.parameters()
-                        if hasattr(module.lora_B, "parameters")
-                        else [module.lora_B]
-                    ):
+                    for p in module.lora_B.parameters() if hasattr(module.lora_B, "parameters") else [module.lora_B]:
                         p.requires_grad = True
             else:
                 setattr(parent, child_name, moe_layer)
@@ -721,9 +675,7 @@ def tomoe_compressor_factory(
 ) -> Any:
     """Factory function for ToMoE compressor."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    target_attn = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     compressor = ToMoECompressor(
         model,
         num_experts=num_experts,

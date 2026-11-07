@@ -12,13 +12,6 @@ Integrates sliding-window, low-rank projection, and linear recurrent branches wi
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-from neuralops.core.common import FactorizedLinear
-from neuralops.core.common import _detect_decoder, _env_flag, _env_float
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-)
 
 import logging
 import math
@@ -29,16 +22,27 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core.attention_utils import repeat_kv
+from neuralops.core.attention_utils import apply_rotary_pos_emb, repeat_kv
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import FactorizedLinear, _detect_decoder, _env_flag, _env_float, _read_past_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
 
 _DECODER_PREFIXES = (
-    "gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt",
-    "bloom", "falcon", "olmo", "mpt", "stablelm",
+    "gpt",
+    "qwen",
+    "llama",
+    "mistral",
+    "gemma",
+    "phi",
+    "opt",
+    "bloom",
+    "falcon",
+    "olmo",
+    "mpt",
+    "stablelm",
 )
 
 
@@ -118,6 +122,7 @@ def _local_window_attention_chunked(
     if Q.is_cuda and past_len == 0 and N == N_kv and token_valid is None and D <= 256:
         try:
             from neuralops.ops.cuda.hybrid_local_kernel import hybrid_local_attn
+
             return hybrid_local_attn(Q, K, V, radius=radius, is_causal=is_decoder), None
         except Exception:
             # allowed-swallow: best-effort-telemetry
@@ -261,7 +266,7 @@ def _causal_linear_attention(
 
         if pad_len > 0:
             valid_mask = torch.ones(num_chunks, chunk_size, device=Q.device, dtype=torch.float32)
-            valid_mask[-1, chunk_size - pad_len:] = 0.0
+            valid_mask[-1, chunk_size - pad_len :] = 0.0
             v_m = valid_mask.view(1, 1, num_chunks, chunk_size, 1)
             q_c = q_c * v_m
             k_c = k_c * v_m
@@ -295,12 +300,8 @@ def _causal_linear_attention(
         return torch.nan_to_num(out.to(Q.dtype), nan=0.0, posinf=0.0, neginf=0.0)
 
 
-@ATTENTION_REGISTRY.register(
-    "tri_branch_hybrid", supports_causal=True, supports_gqa=True, supports_rope=True
-)
-@ATTENTION_REGISTRY.register(
-    "aegis_hybrid", is_alias=True, supports_causal=True, supports_gqa=True, supports_rope=True
-)
+@ATTENTION_REGISTRY.register("tri_branch_hybrid", supports_causal=True, supports_gqa=True, supports_rope=True)
+@ATTENTION_REGISTRY.register("aegis_hybrid", is_alias=True, supports_causal=True, supports_gqa=True, supports_rope=True)
 class TriBranchHybridAttention(BaseAttention):
     """TriBranchHybridAttention neural operator.
 
@@ -310,6 +311,7 @@ class TriBranchHybridAttention(BaseAttention):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
@@ -335,11 +337,10 @@ class TriBranchHybridAttention(BaseAttention):
         if not isinstance(config, AegisHybridConfig):
             cfg_src = config if config is not None else kwargs
             h_size = hidden_size or getattr(cfg_src, "hidden_size", 768)
-            n_heads = num_heads or getattr(
-                cfg_src, "num_attention_heads", getattr(cfg_src, "n_heads", 12)
-            )
+            n_heads = num_heads or getattr(cfg_src, "num_attention_heads", getattr(cfg_src, "n_heads", 12))
             n_kv = getattr(
-                cfg_src, "num_key_value_heads",
+                cfg_src,
+                "num_key_value_heads",
                 getattr(cfg_src, "num_kv_heads", n_heads),
             )
             h_dim = getattr(cfg_src, "head_dim", None) or (h_size // max(1, n_heads))
@@ -384,20 +385,32 @@ class TriBranchHybridAttention(BaseAttention):
         self.whitening = whitening or {}
 
         self.q_proj = FactorizedLinear(
-            self.hidden_size, self.all_head_size,
-            rank=self.rank, lora_rank=self.lora_rank, bias=True,
+            self.hidden_size,
+            self.all_head_size,
+            rank=self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
         )
         self.k_proj = FactorizedLinear(
-            self.hidden_size, self.all_kv_head_size,
-            rank=self.rank, lora_rank=self.lora_rank, bias=True,
+            self.hidden_size,
+            self.all_kv_head_size,
+            rank=self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
         )
         self.v_proj = FactorizedLinear(
-            self.hidden_size, self.all_kv_head_size,
-            rank=self.rank, lora_rank=self.lora_rank, bias=True,
+            self.hidden_size,
+            self.all_kv_head_size,
+            rank=self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
         )
         self.out_proj = FactorizedLinear(
-            self.all_head_size, self.hidden_size,
-            rank=self.rank, lora_rank=self.lora_rank, bias=True,
+            self.all_head_size,
+            self.hidden_size,
+            rank=self.rank,
+            lora_rank=self.lora_rank,
+            bias=True,
         )
 
         self.kernel_map = KernelFeatureMap(
@@ -407,9 +420,7 @@ class TriBranchHybridAttention(BaseAttention):
         )
 
         _beta_init = _env_float("AEGIS_FUSION_BETA", getattr(config, "gate_init_bias", 0.0))
-        self.fusion_gate = nn.Parameter(
-            torch.full((self.num_heads,), _beta_init), requires_grad=True
-        )
+        self.fusion_gate = nn.Parameter(torch.full((self.num_heads,), _beta_init), requires_grad=True)
 
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
@@ -428,30 +439,39 @@ class TriBranchHybridAttention(BaseAttention):
     @property
     def query(self):
         return self.q_proj
+
     @property
     def key(self):
         return self.k_proj
+
     @property
     def value(self):
         return self.v_proj
+
     @property
     def dense(self):
         return self.out_proj
+
     @property
     def q_lin(self):
         return self.q_proj
+
     @property
     def k_lin(self):
         return self.k_proj
+
     @property
     def v_lin(self):
         return self.v_proj
+
     @property
     def out_lin(self):
         return self.out_proj
+
     @property
     def o_proj(self):
         return self.out_proj
+
     @property
     def c_proj(self):
         return self.out_proj
@@ -493,6 +513,7 @@ class TriBranchHybridAttention(BaseAttention):
                     L = Lw + eps * torch.eye(target_in, device=W.device, dtype=W.dtype)
 
             dev = W.device
+
             def _calc_svd(mat):
                 try:
                     return torch.linalg.svd(mat, full_matrices=False)
@@ -550,7 +571,10 @@ class TriBranchHybridAttention(BaseAttention):
             UniversalAdapter = None
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         if UniversalAdapter is not None:
@@ -566,17 +590,15 @@ class TriBranchHybridAttention(BaseAttention):
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
             c = old_attn.c_attn
             c_w = c.weight.data.clone()
-            is_conv1d = (
-                c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]
-            ) or c.__class__.__name__ == "Conv1D"
+            is_conv1d = (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]) or c.__class__.__name__ == "Conv1D"
             if is_conv1d:
                 c_w = c_w.t().contiguous()
             split = c_w.size(0) // 3
             c_b = getattr(c, "bias", None)
             c_b = c_b.data.clone() if c_b is not None else None
             extracted["q"] = (c_w[:split], c_b[:split] if c_b is not None else None)
-            extracted["k"] = (c_w[split:2*split], c_b[split:2*split] if c_b is not None else None)
-            extracted["v"] = (c_w[2*split:], c_b[2*split:] if c_b is not None else None)
+            extracted["k"] = (c_w[split : 2 * split], c_b[split : 2 * split] if c_b is not None else None)
+            extracted["v"] = (c_w[2 * split :], c_b[2 * split :] if c_b is not None else None)
 
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
             c = old_attn.c_proj
@@ -594,14 +616,11 @@ class TriBranchHybridAttention(BaseAttention):
                     m = getattr(s, sub, None)
                     if m is not None and hasattr(m, "weight"):
                         b = getattr(m, "bias", None)
-                        extracted[key] = (m.weight.data.clone(),
-                                          b.data.clone() if b is not None else None)
-            if (extracted["o"][0] is None and hasattr(old_attn, "output")
-                    and hasattr(old_attn.output, "dense")):
+                        extracted[key] = (m.weight.data.clone(), b.data.clone() if b is not None else None)
+            if extracted["o"][0] is None and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
                 d = old_attn.output.dense
                 b = getattr(d, "bias", None)
-                extracted["o"] = (d.weight.data.clone(),
-                                  b.data.clone() if b is not None else None)
+                extracted["o"] = (d.weight.data.clone(), b.data.clone() if b is not None else None)
 
         named_map = {
             "q": ("q_proj", "q_lin", "query"),
@@ -616,8 +635,7 @@ class TriBranchHybridAttention(BaseAttention):
                         m = getattr(old_attn, n)
                         if m is not None and hasattr(m, "weight"):
                             b = getattr(m, "bias", None)
-                            extracted[key] = (m.weight.data.clone(),
-                                              b.data.clone() if b is not None else None)
+                            extracted[key] = (m.weight.data.clone(), b.data.clone() if b is not None else None)
                             break
 
         missing = [k for k in ("q", "k", "v") if extracted[k][0] is None]
@@ -625,8 +643,10 @@ class TriBranchHybridAttention(BaseAttention):
             raise RuntimeError(f"AegisHybridAttention: mandatory projections {missing} missing")
 
         for key, target in (
-            ("q", self.q_proj), ("k", self.k_proj),
-            ("v", self.v_proj), ("o", self.out_proj),
+            ("q", self.q_proj),
+            ("k", self.k_proj),
+            ("v", self.v_proj),
+            ("o", self.out_proj),
         ):
             w, b = extracted[key]
             if w is not None:
@@ -713,16 +733,8 @@ class TriBranchHybridAttention(BaseAttention):
         N_kv_new = kv_input.shape[1]
 
         Q = self.q_proj(hidden_states).view(B, N, self.num_heads, Dh).transpose(1, 2).contiguous()
-        K_new = (
-            self.k_proj(kv_input)
-            .view(B, N_kv_new, self.num_kv_heads, Dh)
-            .transpose(1, 2).contiguous()
-        )
-        V_new = (
-            self.v_proj(kv_input)
-            .view(B, N_kv_new, self.num_kv_heads, Dh)
-            .transpose(1, 2).contiguous()
-        )
+        K_new = self.k_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        V_new = self.v_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -754,7 +766,9 @@ class TriBranchHybridAttention(BaseAttention):
         token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
 
         local_out, attn_local = _local_window_attention_chunked(
-            Q, K_full, V_full,
+            Q,
+            K_full,
+            V_full,
             window=self.local_window,
             token_valid=token_valid,
             is_decoder=self.is_decoder and not is_cross,
@@ -766,19 +780,30 @@ class TriBranchHybridAttention(BaseAttention):
         if self.use_global:
             if self.is_decoder and not is_cross:
                 global_out = _causal_linear_attention(
-                    Q, K_full, V_full, self.kernel_map, token_valid,
+                    Q,
+                    K_full,
+                    V_full,
+                    self.kernel_map,
+                    token_valid,
                     chunk_size=getattr(self.config, "chunk_size", 64),
                 )
             else:
                 global_out = _global_linear_attention(
-                    Q, K_full, V_full, self.kernel_map, token_valid,
+                    Q,
+                    K_full,
+                    V_full,
+                    self.kernel_map,
+                    token_valid,
                 )
             clamped_gate = torch.clamp(self.fusion_gate, -10.0, 10.0)
             beta = torch.sigmoid(clamped_gate).view(1, self.num_heads, 1, 1)
             if local_out.is_cuda:
                 try:
                     from neuralops.ops.cuda.hybrid_local_kernel import hybrid_two_branch_blend
-                    fused = hybrid_two_branch_blend(local_out, global_out, beta.expand_as(local_out).to(local_out.dtype))
+
+                    fused = hybrid_two_branch_blend(
+                        local_out, global_out, beta.expand_as(local_out).to(local_out.dtype)
+                    )
                 except Exception:
                     fused = beta * local_out + (1.0 - beta) * global_out
             else:
@@ -802,14 +827,16 @@ class TriBranchHybridAttention(BaseAttention):
         if self.is_nested_encoder:
             final = fused
         else:
-            final = self.out_proj(fused.to(self.out_proj.lin1.weight.dtype if hasattr(self.out_proj, "lin1") else self.q_proj.lin1.weight.dtype))
+            final = self.out_proj(
+                fused.to(
+                    self.out_proj.lin1.weight.dtype if hasattr(self.out_proj, "lin1") else self.q_proj.lin1.weight.dtype
+                )
+            )
 
         final = torch.nan_to_num(final, nan=0.0, posinf=1e4, neginf=-1e4)
         final = final.to(hidden_states.dtype)
 
-        _use_cache = kwargs.get("use_cache", False) or (
-            past_key_value is not None and past_key_value is not False
-        )
+        _use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
         present = (K_new, V_new) if _use_cache and not is_cross else None
 
         if output_attentions:
@@ -824,8 +851,10 @@ class TriBranchHybridAttention(BaseAttention):
 
         out = {}
         for name, m in (
-            ("q_proj", self.q_proj), ("k_proj", self.k_proj),
-            ("v_proj", self.v_proj), ("out_proj", self.out_proj),
+            ("q_proj", self.q_proj),
+            ("k_proj", self.k_proj),
+            ("v_proj", self.v_proj),
+            ("out_proj", self.out_proj),
             ("kernel_map", self.kernel_map),
         ):
             out[name] = sum(_sz(p) for p in m.parameters())
@@ -883,8 +912,13 @@ def inject_aegis_hybrid(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_aegis_hybrid(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 n_injected += 1
@@ -915,8 +949,7 @@ def inject_aegis_hybrid(
 
     n_heads = getattr(cfg, "num_attention_heads", None) if cfg else None
     if n_heads is None:
-        n_heads = getattr(src, "num_attention_heads",
-                          getattr(src, "num_heads", kwargs.get("num_heads", 12)))
+        n_heads = getattr(src, "num_attention_heads", getattr(src, "num_heads", kwargs.get("num_heads", 12)))
     n_heads = int(n_heads)
 
     dec = _detect_decoder(cfg, kwargs.get("is_decoder"), src)
@@ -926,17 +959,12 @@ def inject_aegis_hybrid(
         num_attention_heads=n_heads,
         head_dim=kwargs.get("head_dim", h_size // max(1, n_heads)),
         num_key_value_heads=(getattr(cfg, "num_key_value_heads", n_heads) if cfg else n_heads),
-        local_window=kwargs.get("local_window",
-                                getattr(comp_config, "local_window", 256) if comp_config else 256),
-        rank=kwargs.pop("rank",
-                        getattr(comp_config, "rank", min(128, h_size)) if comp_config else min(128, h_size)),
-        lora_rank=kwargs.get("lora_rank",
-                             getattr(comp_config, "lora_rank", 32) if comp_config else 32),
-        dropout=kwargs.get("dropout",
-                           getattr(comp_config, "dropout", 0.1) if comp_config else 0.1),
+        local_window=kwargs.get("local_window", getattr(comp_config, "local_window", 256) if comp_config else 256),
+        rank=kwargs.pop("rank", getattr(comp_config, "rank", min(128, h_size)) if comp_config else min(128, h_size)),
+        lora_rank=kwargs.get("lora_rank", getattr(comp_config, "lora_rank", 32) if comp_config else 32),
+        dropout=kwargs.get("dropout", getattr(comp_config, "dropout", 0.1) if comp_config else 0.1),
         is_decoder=dec,
-        use_global=kwargs.get("use_global",
-                              getattr(comp_config, "use_global", True) if comp_config else True),
+        use_global=kwargs.get("use_global", getattr(comp_config, "use_global", True) if comp_config else True),
         gate_init_bias=kwargs.get("gate_init_bias", 0.0),
     )
 
@@ -977,8 +1005,7 @@ def inject_aegis_hybrid(
         spliced = True
 
     if not spliced:
-        logger.error("inject_aegis_hybrid: no writable attention attribute on %s",
-                     type(target).__name__)
+        logger.error("inject_aegis_hybrid: no writable attention attribute on %s", type(target).__name__)
         return None
 
     return new_attn

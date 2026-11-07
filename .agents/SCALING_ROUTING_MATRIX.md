@@ -126,4 +126,3 @@ path | read completely | caller/dependent search | intended edit | verification 
 ```
 
 Do not mark the task complete until every selected row has a result. If a file is inspected and intentionally unchanged, record `read-only — no ownership change`; do not modify it merely to create activity. The project’s source files, tests, manifests, and docs remain the authoritative implementation surface; `.agents` routes the work but does not replace those files.
-

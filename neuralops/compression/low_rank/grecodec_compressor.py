@@ -12,7 +12,6 @@ Employs greedy coordinate descent to iteratively compute rank-1 components that 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -23,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -98,12 +98,8 @@ class GreCoDeCLinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device))
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
             self.register_parameter("lora_A", None)
@@ -123,14 +119,24 @@ class GreCoDeCLinear(nn.Module):
         x_flat = x.reshape(-1, self.in_features)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
         suitable, _ = check_triton_suitability(x_flat, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
                 base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
                 out = fused_down_up_gemm_bias_triton(x_flat, self.V, self.U.t().contiguous(), bias=base_bias)
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-                    lora_out = fused_down_up_gemm_bias_triton(x_flat, self.lora_A.to(x_flat.dtype), self.lora_B.t().to(x_flat.dtype).contiguous(), bias=self.bias) * self.scaling
+                    lora_out = (
+                        fused_down_up_gemm_bias_triton(
+                            x_flat,
+                            self.lora_A.to(x_flat.dtype),
+                            self.lora_B.t().to(x_flat.dtype).contiguous(),
+                            bias=self.bias,
+                        )
+                        * self.scaling
+                    )
                     return (out + lora_out).view(*orig_shape[:-1], self.out_features)
                 return out.view(*orig_shape[:-1], self.out_features)
             except Exception:
@@ -141,9 +147,7 @@ class GreCoDeCLinear(nn.Module):
         out = F.linear(x_v, self.U, self.bias)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + self.scaling * F.linear(
-                F.linear(x_flat.float(), self.lora_A), self.lora_B
-            ).to(out.dtype)
+            out = out + self.scaling * F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B).to(out.dtype)
 
         return out.view(*orig_shape[:-1], self.out_features)
 
@@ -234,11 +238,7 @@ class GreCoDeCLinear(nn.Module):
         if bias is not None and grecodec_layer.bias is not None:
             grecodec_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
 
-        if (
-            existing_lora_A is not None
-            and existing_lora_B is not None
-            and grecodec_layer.lora_A is not None
-        ):
+        if existing_lora_A is not None and existing_lora_B is not None and grecodec_layer.lora_A is not None:
             w_A = getattr(existing_lora_A, "weight", existing_lora_A)
             w_B = getattr(existing_lora_B, "weight", existing_lora_B)
             if hasattr(w_A, "data") and hasattr(w_B, "data"):
@@ -473,11 +473,7 @@ class GreCoDeCCompressor(BaseCompressor):
                     self.model(dummy)
                 except Exception:
                     first_linear = next(
-                        (
-                            m
-                            for m in self.model.modules()
-                            if isinstance(m, (nn.Linear, GreCoDeCLinear))
-                        ),
+                        (m for m in self.model.modules() if isinstance(m, (nn.Linear, GreCoDeCLinear))),
                         None,
                     )
                     in_dim = getattr(first_linear, "in_features", 8)
@@ -489,9 +485,7 @@ class GreCoDeCCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
-        )
+        avg_err = (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         stats.update(
             {
                 "compressed_layers": self.compressed_layers,
@@ -531,9 +525,7 @@ def grecodec_compressor_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for GreCoDeC compressor."""
-    effective_rank = rank or _cfg_get(
-        comp_config, "grecodec_rank", _cfg_get(comp_config, "rank", 16)
-    )
+    effective_rank = rank or _cfg_get(comp_config, "grecodec_rank", _cfg_get(comp_config, "rank", 16))
     max_iter = _cfg_get(comp_config, "grecodec_max_iter", _cfg_get(comp_config, "max_iter", 15))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))

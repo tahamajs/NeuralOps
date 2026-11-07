@@ -114,6 +114,7 @@ def check_compatibility(
 
             try:
                 from transformers import AutoConfig
+
                 cfg = AutoConfig.from_pretrained(str(path), trust_remote_code=True, local_files_only=True)
                 report.results[eng] = EngineStatus(
                     engine=eng,
@@ -148,6 +149,7 @@ def check_compatibility(
             # Real vLLM initialization verification on GPU
             try:
                 import vllm
+
                 # Inspect model config compatibility
                 vllm_config = vllm.EngineArgs(model=str(path), trust_remote_code=True)
                 report.results[eng] = EngineStatus(
@@ -210,6 +212,7 @@ def check_compatibility(
             elif _is_package_installed("gguf"):
                 try:
                     import gguf
+
                     reader = gguf.GGUFReader(str(gguf_files[0]))
                     report.results[eng] = EngineStatus(
                         engine=eng,
@@ -230,6 +233,7 @@ def check_compatibility(
                         if magic != b"GGUF":
                             raise ValueError(f"Invalid GGUF magic bytes: {magic!r}")
                         import struct
+
                         version = struct.unpack("<I", gf.read(4))[0]
                         n_tensors = struct.unpack("<Q", gf.read(8))[0]
                         n_kv = struct.unpack("<Q", gf.read(8))[0]
@@ -263,6 +267,7 @@ def check_compatibility(
                 else:
                     try:
                         import onnx
+
                         onnx.checker.check_model(str(onnx_files[0]))
                         report.results[eng] = EngineStatus(
                             engine=eng,

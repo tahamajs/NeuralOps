@@ -21,29 +21,38 @@ import torch
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
+
     class _MockTriton:
         @staticmethod
         def jit(fn):
             return fn
+
         @staticmethod
         def autotune(*args, **kwargs):
             return lambda fn: fn
+
         @staticmethod
         def cdiv(a, b):
             return (a + b - 1) // b
+
         class Config:
             def __init__(self, *args, **kwargs):
                 pass
+
     triton = _MockTriton()
+
     class _MockTl:
         constexpr = int
+
     tl = _MockTl()
 
 
 if HAS_TRITON:
+
     @triton.autotune(
         configs=[
             triton.Config({"BLOCK_M": 32, "BLOCK_N": 32, "BLOCK_K": 32}, num_warps=4, num_stages=2),
@@ -56,11 +65,19 @@ if HAS_TRITON:
     )
     @triton.jit
     def _gemm_bias_kernel(
-        A_ptr, B_ptr, Bias_ptr, C_ptr,
-        M, N, K,
-        stride_am, stride_ak,
-        stride_bk, stride_bn,
-        stride_cm, stride_cn,
+        A_ptr,
+        B_ptr,
+        Bias_ptr,
+        C_ptr,
+        M,
+        N,
+        K,
+        stride_am,
+        stride_ak,
+        stride_bk,
+        stride_bn,
+        stride_cm,
+        stride_cn,
         HAS_BIAS: tl.constexpr,
         BLOCK_M: tl.constexpr,
         BLOCK_N: tl.constexpr,
@@ -104,7 +121,9 @@ if HAS_TRITON:
             acc.to(A_ptr.dtype.element_ty),
             mask=mask_m[:, None] & mask_n[None, :],
         )
+
 else:
+
     def _gemm_bias_kernel(*args, **kwargs):
         pass
 
@@ -164,11 +183,19 @@ class TritonCURLinearFunction(torch.autograd.Function):
 
         grid_1 = lambda META: (triton.cdiv(M, META["BLOCK_M"]), triton.cdiv(r, META["BLOCK_N"]))
         _gemm_bias_kernel[grid_1](
-            x_c, W_down_t, None, z,
-            M, r, K,
-            x_c.stride(0), x_c.stride(1),
-            W_down_t.stride(0), W_down_t.stride(1),
-            z.stride(0), z.stride(1),
+            x_c,
+            W_down_t,
+            None,
+            z,
+            M,
+            r,
+            K,
+            x_c.stride(0),
+            x_c.stride(1),
+            W_down_t.stride(0),
+            W_down_t.stride(1),
+            z.stride(0),
+            z.stride(1),
             HAS_BIAS=False,
         )
 
@@ -177,11 +204,19 @@ class TritonCURLinearFunction(torch.autograd.Function):
         out_2d = torch.empty((M, N), device=x.device, dtype=x.dtype)
         grid_2 = lambda META: (triton.cdiv(M, META["BLOCK_M"]), triton.cdiv(N, META["BLOCK_N"]))
         _gemm_bias_kernel[grid_2](
-            z, C_t, b_c, out_2d,
-            M, N, r,
-            z.stride(0), z.stride(1),
-            C_t.stride(0), C_t.stride(1),
-            out_2d.stride(0), out_2d.stride(1),
+            z,
+            C_t,
+            b_c,
+            out_2d,
+            M,
+            N,
+            r,
+            z.stride(0),
+            z.stride(1),
+            C_t.stride(0),
+            C_t.stride(1),
+            out_2d.stride(0),
+            out_2d.stride(1),
             HAS_BIAS=(bias is not None),
         )
 
@@ -222,9 +257,7 @@ def triton_cur_linear(
     bias: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """Dispatched CUR Matrix Decomposition Linear with full Autograd backward support."""
-    if torch.is_grad_enabled() and any(
-        t.requires_grad for t in (x, R, U, C, bias) if isinstance(t, torch.Tensor)
-    ):
+    if torch.is_grad_enabled() and any(t.requires_grad for t in (x, R, U, C, bias) if isinstance(t, torch.Tensor)):
         return TritonCURLinearFunction.apply(x, R, U, C, bias)
 
     orig_shape = x.shape
@@ -248,11 +281,19 @@ def triton_cur_linear(
 
     grid_1 = lambda META: (triton.cdiv(M, META["BLOCK_M"]), triton.cdiv(r, META["BLOCK_N"]))
     _gemm_bias_kernel[grid_1](
-        x_c, W_down_t, None, z,
-        M, r, K,
-        x_c.stride(0), x_c.stride(1),
-        W_down_t.stride(0), W_down_t.stride(1),
-        z.stride(0), z.stride(1),
+        x_c,
+        W_down_t,
+        None,
+        z,
+        M,
+        r,
+        K,
+        x_c.stride(0),
+        x_c.stride(1),
+        W_down_t.stride(0),
+        W_down_t.stride(1),
+        z.stride(0),
+        z.stride(1),
         HAS_BIAS=False,
     )
 
@@ -261,11 +302,19 @@ def triton_cur_linear(
     out_2d = torch.empty((M, N), device=x.device, dtype=x.dtype)
     grid_2 = lambda META: (triton.cdiv(M, META["BLOCK_M"]), triton.cdiv(N, META["BLOCK_N"]))
     _gemm_bias_kernel[grid_2](
-        z, C_t, b_c, out_2d,
-        M, N, r,
-        z.stride(0), z.stride(1),
-        C_t.stride(0), C_t.stride(1),
-        out_2d.stride(0), out_2d.stride(1),
+        z,
+        C_t,
+        b_c,
+        out_2d,
+        M,
+        N,
+        r,
+        z.stride(0),
+        z.stride(1),
+        C_t.stride(0),
+        C_t.stride(1),
+        out_2d.stride(0),
+        out_2d.stride(1),
         HAS_BIAS=(bias is not None),
     )
 

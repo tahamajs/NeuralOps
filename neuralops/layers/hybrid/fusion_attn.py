@@ -12,13 +12,6 @@ Multi-paradigm attention fusing local sliding-window attention with global low-r
 """
 
 from __future__ import annotations
-from neuralops.core.common import _read_past_kv
-from neuralops.core.common import repeat_kv
-
-from neuralops.core.attention_utils import (
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
 
 import logging
 import math
@@ -29,15 +22,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _read_past_kv, repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
 
-@ATTENTION_REGISTRY.register(
-    "fusion_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("fusion_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class FUSIONATTN(BaseAttention):
     """
     Hybrid sparse attention with block gating.
@@ -131,9 +124,7 @@ class FUSIONATTN(BaseAttention):
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
 
         cfg_hd = getattr(config, "head_dim", None) if config else None
-        self.head_dim = (
-            int(cfg_hd) if cfg_hd is not None else max(1, self.hidden_size // self.num_heads)
-        )
+        self.head_dim = int(cfg_hd) if cfg_hd is not None else max(1, self.hidden_size // self.num_heads)
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
@@ -144,11 +135,7 @@ class FUSIONATTN(BaseAttention):
         resolved_layer_id = (
             layer_id
             if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
+            else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
         )
         self.layer_idx = int(resolved_layer_id)
 
@@ -175,9 +162,7 @@ class FUSIONATTN(BaseAttention):
         model_type = str(getattr(config, "model_type", "") if config else "").lower()
         is_dec = False
         if config is not None:
-            is_dec = bool(
-                getattr(config, "is_decoder", False) or getattr(config, "is_causal", False)
-            )
+            is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
         _dec_prefixes = (
             "gpt",
             "qwen",
@@ -261,9 +246,7 @@ class FUSIONATTN(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
-        )
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config = comp_config
 
         if source_attn is not None:
@@ -363,11 +346,7 @@ class FUSIONATTN(BaseAttention):
 
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
-            if (
-                hasattr(c_attn_mod, "merge")
-                and callable(c_attn_mod.merge)
-                and not getattr(c_attn_mod, "merged", False)
-            ):
+            if hasattr(c_attn_mod, "merge") and callable(c_attn_mod.merge) and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -379,11 +358,7 @@ class FUSIONATTN(BaseAttention):
                 c_w = c_w.data.clone()
                 cls_c = c_attn_mod.__class__.__name__
                 base_cls_c = base_c.__class__.__name__
-                is_conv = (
-                    "Conv1D" in cls_c
-                    or "Conv1D" in base_cls_c
-                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
-                )
+                is_conv = "Conv1D" in cls_c or "Conv1D" in base_cls_c or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
                 if is_conv:
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
@@ -411,9 +386,7 @@ class FUSIONATTN(BaseAttention):
                     cls_o = c_proj_mod.__class__.__name__
                     base_cls_o = base_o.__class__.__name__
                     is_conv_o = (
-                        "Conv1D" in cls_o
-                        or "Conv1D" in base_cls_o
-                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                        "Conv1D" in cls_o or "Conv1D" in base_cls_o or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
                     )
                     if is_conv_o:
                         o_w = o_w.t().contiguous()
@@ -460,11 +433,7 @@ class FUSIONATTN(BaseAttention):
                             )
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
@@ -477,11 +446,7 @@ class FUSIONATTN(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
             logger.warning("FUSIONATTN copy_weights: missing %s from %s", missing_after, cls_name)
 
@@ -504,10 +469,7 @@ class FUSIONATTN(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
 
                 out_d = min(target_mod.weight.size(0), w.size(0))
@@ -518,9 +480,7 @@ class FUSIONATTN(BaseAttention):
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(target_mod.bias.device, target_mod.bias.dtype)
-                    )
+                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(target_mod.bias.device, target_mod.bias.dtype))
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
@@ -650,9 +610,7 @@ class FUSIONATTN(BaseAttention):
             q_pad = F.pad(q, (0, 0, 0, pad_len))
             k_pad = F.pad(k, (0, 0, 0, pad_len))
             v_pad = F.pad(v, (0, 0, 0, pad_len))
-            valid_pad = (
-                F.pad(valid_mask, (0, pad_len), value=False) if valid_mask is not None else None
-            )
+            valid_pad = F.pad(valid_mask, (0, pad_len), value=False) if valid_mask is not None else None
         else:
             q_pad, k_pad, v_pad, valid_pad = q, k, v, valid_mask
 
@@ -674,22 +632,19 @@ class FUSIONATTN(BaseAttention):
         k_gate = self.lora_attn_gate(k_feat).squeeze(-1)
 
         gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2))
-        gate_scores = (gate_scores + self.lora_gate_head_bias.view(1, H, 1, 1)) / (
-            self.lora_gate_temp.abs() + 1e-5
-        )
+        gate_scores = (gate_scores + self.lora_gate_head_bias.view(1, H, 1, 1)) / (self.lora_gate_temp.abs() + 1e-5)
 
         if is_causal:
             q_blk = torch.arange(num_blocks, device=device).unsqueeze(1)
             k_blk = torch.arange(num_blocks, device=device).unsqueeze(0)
             past_blocks = 0
             causal_blocks = k_blk <= (q_blk + past_blocks)
-            gate_scores = gate_scores.masked_fill(
-                ~causal_blocks.unsqueeze(0).unsqueeze(0), float("-inf")
-            )
+            gate_scores = gate_scores.masked_fill(~causal_blocks.unsqueeze(0).unsqueeze(0), float("-inf"))
 
         _, top_idx = torch.topk(gate_scores, top_k, dim=-1)
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
         if (
             HAS_TRITON
             and not FORCE_PYTORCH_FALLBACK
@@ -701,6 +656,7 @@ class FUSIONATTN(BaseAttention):
         ):
             try:
                 from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
+
                 block_mask = torch.zeros((B, H, num_blocks, num_blocks), device=device, dtype=torch.bool)
                 block_mask.scatter_(-1, top_idx, True)
                 out_triton = triton_block_sparse_attention(
@@ -723,22 +679,17 @@ class FUSIONATTN(BaseAttention):
             valid_blocks = valid_pad.reshape(B, 1, num_blocks, bs)
             valid_exp = valid_blocks.unsqueeze(2).expand(-1, H, num_blocks, -1, -1)
             top_idx_m = top_idx.unsqueeze(-1).expand(-1, -1, -1, -1, bs)
-            valid_sel = torch.gather(valid_exp, 3, top_idx_m).reshape(
-                B, H, num_blocks, top_k * bs
-            )
+            valid_sel = torch.gather(valid_exp, 3, top_idx_m).reshape(B, H, num_blocks, top_k * bs)
         else:
             valid_sel = None
 
         scale = 1.0 / math.sqrt(int(D))
-        scores = (
-            torch.matmul(q_blocks.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(q_blocks.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
-            q_pos = (
-                torch.arange(num_blocks, device=device).view(num_blocks, 1) * bs
-                + torch.arange(bs, device=device).view(1, bs)
-            )
+            q_pos = torch.arange(num_blocks, device=device).view(num_blocks, 1) * bs + torch.arange(
+                bs, device=device
+            ).view(1, bs)
             q_pos = q_pos.view(1, 1, num_blocks, bs, 1)
 
             k_base = top_idx.unsqueeze(-1) * bs
@@ -798,24 +749,9 @@ class FUSIONATTN(BaseAttention):
         kv_input = encoder_hidden_states if is_cross_attention else hidden_states
         kv_len_new = kv_input.shape[1]
 
-        q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k_new = (
-            self.k_proj(kv_input)
-            .view(B, kv_len_new, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v_new = (
-            self.v_proj(kv_input)
-            .view(B, kv_len_new, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k_new = self.k_proj(kv_input).view(B, kv_len_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v_new = self.v_proj(kv_input).view(B, kv_len_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if not is_cross_attention:
             past_k_probe, _, _ = self._read_past_kv(past_key_value, self.layer_idx)
@@ -848,11 +784,7 @@ class FUSIONATTN(BaseAttention):
         else:
             k_cat, v_cat = k_new, v_new
 
-        if (
-            past_key_value is not None
-            and hasattr(past_key_value, "update")
-            and not is_cross_attention
-        ):
+        if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross_attention:
             past_key_value.update(k_new, v_new, self.layer_idx)
 
         if self.num_kv_heads < self.num_heads:
@@ -979,9 +911,7 @@ def inject_fusion_attn(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-    if src_attn is not None and (
-        isinstance(src_attn, FUSIONATTN) or "FUSIONATTN" in src_attn.__class__.__name__
-    ):
+    if src_attn is not None and (isinstance(src_attn, FUSIONATTN) or "FUSIONATTN" in src_attn.__class__.__name__):
         return None
 
     try:

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-from transformers import PretrainedConfig, PreTrainedModel, GenerationMixin
+from transformers import GenerationMixin, PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from neuralops.layers.linear.gla_attention import GLAttention
@@ -124,9 +124,7 @@ class GLAModel(PreTrainedModel, GenerationMixin):
         if labels is not None:
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
-            loss = nn.functional.cross_entropy(
-                shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
-            )
+            loss = nn.functional.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
         return CausalLMOutputWithCrossAttentions(
             loss=loss,

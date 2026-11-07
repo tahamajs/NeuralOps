@@ -38,8 +38,7 @@ def load_benchmark_dataset(
     if info is None:
         if use_synthetic:
             samples = [
-                {"text": f"Synthetic sample {i} from {dataset_name}", "label": i % 2}
-                for i in range(max_samples or 100)
+                {"text": f"Synthetic sample {i} from {dataset_name}", "label": i % 2} for i in range(max_samples or 100)
             ]
             if return_dataloader:
                 return DataLoader(BenchmarkTorchDataset(samples), batch_size=1)

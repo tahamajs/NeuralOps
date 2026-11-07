@@ -12,8 +12,6 @@ Factorizes linear and convolutional weight matrices into compact Kronecker produ
 """
 
 from __future__ import annotations
-from neuralops.core.common import _get_device
-from neuralops.core.common import _cfg_get
 
 import logging
 import math
@@ -24,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get, _get_device
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -77,8 +76,7 @@ class KroneckerLinear(nn.Module):
         if m1 is not None and m2 is not None and n1 is not None and n2 is not None:
             if m1 * m2 != self.out_features or n1 * n2 != self.in_features:
                 raise ValueError(
-                    f"Factor dims mismatch: {m1}*{m2}!={self.out_features} "
-                    f"or {n1}*{n2}!={self.in_features}"
+                    f"Factor dims mismatch: {m1}*{m2}!={self.out_features} " f"or {n1}*{n2}!={self.in_features}"
                 )
             self.m1, self.m2 = int(m1), int(m2)
             self.n1, self.n2 = int(n1), int(n2)
@@ -106,15 +104,9 @@ class KroneckerLinear(nn.Module):
         )
 
         if self.lora_r > 0:
-            param_dtype = (
-                next(self.parameters()).dtype
-                if any(True for _ in self.parameters())
-                else torch.float32
-            )
+            param_dtype = next(self.parameters()).dtype if any(True for _ in self.parameters()) else torch.float32
             param_device = (
-                next(self.parameters()).device
-                if any(True for _ in self.parameters())
-                else torch.device("cpu")
+                next(self.parameters()).device if any(True for _ in self.parameters()) else torch.device("cpu")
             )
             self.lora_A = nn.Parameter(
                 torch.empty(
@@ -232,10 +224,12 @@ class KroneckerLinear(nn.Module):
         if x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import triton_fused_kronecker_matmul
+
                 return triton_fused_kronecker_matmul(x, self.A, self.B, bias=self.bias)
             except Exception:
                 try:
                     from neuralops.ops.triton.low_rank import fused_kronecker_batched_gemm_triton
+
                     return fused_kronecker_batched_gemm_triton(x, self.A, self.B, bias=self.bias)
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
@@ -251,19 +245,9 @@ class KroneckerLinear(nn.Module):
             x_flat.reshape(K * self.n1, self.n2),
             self.B.t().contiguous(),
         )
-        x_b = (
-            x_b.reshape(K, self.n1, self.m2)
-            .transpose(1, 2)
-            .contiguous()
-            .reshape(K * self.m2, self.n1)
-        )
+        x_b = x_b.reshape(K, self.n1, self.m2).transpose(1, 2).contiguous().reshape(K * self.m2, self.n1)
         x_a = torch.matmul(x_b, self.A.t().contiguous())
-        out = (
-            x_a.reshape(K, self.m2, self.m1)
-            .transpose(1, 2)
-            .contiguous()
-            .reshape(K, self.out_features)
-        )
+        out = x_a.reshape(K, self.m2, self.m1).transpose(1, 2).contiguous().reshape(K, self.out_features)
 
         if self.bias is not None:
             out = out + self.bias.to(out.dtype)
@@ -276,9 +260,11 @@ class KroneckerLinear(nn.Module):
         if x.is_cuda:
             try:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
                 suitable, _ = check_triton_suitability(x, "low_rank")
                 if not FORCE_PYTORCH_FALLBACK and suitable:
                     from neuralops.ops.triton.low_rank import _TritonLowRankAutogradFunction
+
                     return _TritonLowRankAutogradFunction.apply(x, u_w, v_w, b_w, None)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
@@ -328,9 +314,7 @@ class KroneckerLinear(nn.Module):
                 U_r = U[:, :cand_r] * torch.sqrt(S[:cand_r].unsqueeze(0))
                 V_r = torch.sqrt(S[:cand_r].unsqueeze(1)) * Vt[:cand_r, :]
                 W_cand = torch.matmul(U_r, V_r)
-                err = float(
-                    torch.norm(weight.float() - W_cand, p="fro").item() / max(W_norm, 1e-12)
-                )
+                err = float(torch.norm(weight.float() - W_cand, p="fro").item() / max(W_norm, 1e-12))
                 best_r = cand_r
                 best_U_r = U_r
                 best_V_r = V_r
@@ -427,13 +411,9 @@ class KroneckerLinear(nn.Module):
             w_A = getattr(existing_lora_A, "weight", existing_lora_A)
             w_B = getattr(existing_lora_B, "weight", existing_lora_B)
             if isinstance(w_A, torch.Tensor) and w_A.shape == kron_layer.lora_A.shape:
-                kron_layer.lora_A.data.copy_(
-                    w_A.to(kron_layer.lora_A.device, dtype=kron_layer.lora_A.dtype)
-                )
+                kron_layer.lora_A.data.copy_(w_A.to(kron_layer.lora_A.device, dtype=kron_layer.lora_A.dtype))
             if isinstance(w_B, torch.Tensor) and w_B.shape == kron_layer.lora_B.shape:
-                kron_layer.lora_B.data.copy_(
-                    w_B.to(kron_layer.lora_B.device, dtype=kron_layer.lora_B.dtype)
-                )
+                kron_layer.lora_B.data.copy_(w_B.to(kron_layer.lora_B.device, dtype=kron_layer.lora_B.dtype))
 
         W_norm = torch.norm(weight, p="fro").item()
         err = 1.0
@@ -452,21 +432,15 @@ class KroneckerLinear(nn.Module):
                 u1 = U[:, 0] * scale
                 v1 = Vt[0, :] * scale
 
-                kron_layer.A.data.copy_(
-                    u1.view(m1_, n1_).to(dtype=target_dtype, device=target_device)
-                )
-                kron_layer.B.data.copy_(
-                    v1.view(m2_, n2_).to(dtype=target_dtype, device=target_device)
-                )
+                kron_layer.A.data.copy_(u1.view(m1_, n1_).to(dtype=target_dtype, device=target_device))
+                kron_layer.B.data.copy_(v1.view(m2_, n2_).to(dtype=target_dtype, device=target_device))
 
                 W_recon = torch.kron(kron_layer.A, kron_layer.B).float()
                 err = float(torch.norm(weight - W_recon, p="fro").item() / max(W_norm, 1e-12))
             except Exception as e:
                 import logging
 
-                logging.getLogger(__name__).debug(
-                    "KroneckerLinear NKP failed: %s; falling back to SVD.", e
-                )
+                logging.getLogger(__name__).debug("KroneckerLinear NKP failed: %s; falling back to SVD.", e)
                 err = 1.0
 
             if err > max_error:
@@ -475,9 +449,7 @@ class KroneckerLinear(nn.Module):
             kron_layer._fit_svd(weight, bias, rank=rank, max_error=max_error)
 
         if bias is not None and kron_layer.bias is not None:
-            kron_layer.bias.data.copy_(
-                bias.to(dtype=kron_layer.bias.dtype, device=kron_layer.bias.device)
-            )
+            kron_layer.bias.data.copy_(bias.to(dtype=kron_layer.bias.dtype, device=kron_layer.bias.device))
 
         try:
             with torch.no_grad():
@@ -486,9 +458,7 @@ class KroneckerLinear(nn.Module):
         except Exception as e:
             import logging
 
-            logging.getLogger(__name__).warning(
-                "KroneckerLinear forward sanity check failed: %s", e
-            )
+            logging.getLogger(__name__).warning("KroneckerLinear forward sanity check failed: %s", e)
 
         return kron_layer
 
@@ -526,6 +496,7 @@ class KroneckerCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -728,21 +699,13 @@ class KroneckerCompressor(BaseCompressor):
             for name, module in self.model.named_modules():
                 target_mod = getattr(module, "base_layer", module)
                 cls_lower = target_mod.__class__.__name__.lower()
-                if (
-                    isinstance(target_mod, nn.Linear)
-                    or "conv1d" in cls_lower
-                    or hasattr(target_mod, "nf")
-                ):
+                if isinstance(target_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(target_mod, "nf"):
                     if not self._is_target_module(name, module):
                         for p in module.parameters():
                             p.requires_grad = False
                         self.skipped_layers.append(name)
 
-        targets = [
-            (name, mod)
-            for name, mod in list(self.model.named_modules())
-            if self._is_target_module(name, mod)
-        ]
+        targets = [(name, mod) for name, mod in list(self.model.named_modules()) if self._is_target_module(name, mod)]
 
         if not targets:
             logger.warning("KroneckerCompressor: no targets found. Diagnostic...")
@@ -855,13 +818,9 @@ class KroneckerCompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        compressed_errs = [
-            self.layer_errors[n] for n in self.compressed_layers if n in self.layer_errors
-        ]
+        compressed_errs = [self.layer_errors[n] for n in self.compressed_layers if n in self.layer_errors]
         avg_err = sum(compressed_errs) / len(compressed_errs) if compressed_errs else 0.0
-        param_ratio = (
-            total_comp_params / max(total_orig_params, 1) if total_orig_params > 0 else 1.0
-        )
+        param_ratio = total_comp_params / max(total_orig_params, 1) if total_orig_params > 0 else 1.0
 
         try:
             stats = self.get_compression_stats()

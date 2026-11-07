@@ -41,7 +41,6 @@ from neuralops.benchmarks.core.model_loader import (
 from neuralops.benchmarks.core.training import finetune_classification
 from neuralops.benchmarks.result import DatasetMetadata, ModelMetadata
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -203,6 +202,7 @@ class ClassificationAdapter:
             if training_type in ("kd", "distillation"):
                 teacher_name = self.extra_kwargs.get("kd_teacher", self.model_name)
                 from neuralops.benchmarks.core.model_loader import load_model_and_tokenizer
+
                 teacher_model, _, _ = load_model_and_tokenizer(
                     model_name=teacher_name,
                     device=self.device,
@@ -230,7 +230,6 @@ class ClassificationAdapter:
             train_duration_s = round(time.perf_counter() - train_t_start, 2)
             if teacher_model is not None:
                 del teacher_model
-
 
         eval_metrics = evaluate_classification(
             model=self.model,

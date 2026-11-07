@@ -18,10 +18,7 @@ from typing import Any
 import torch
 import torch.distributed as dist
 
-from neuralops.distributed.errors import (
-    DistributedError,
-    E_DIST_COMM_FAILED,
-)
+from neuralops.distributed.errors import E_DIST_COMM_FAILED, DistributedError
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +63,9 @@ class DistributedContext:
                     self.local_rank = int(os.environ.get("LOCAL_RANK", self.rank))
                     self.backend = chosen_backend
                 except Exception as e:
-                    logger.warning("Failed to initialize distributed process group: %s. Falling back to single-device mode.", e)
+                    logger.warning(
+                        "Failed to initialize distributed process group: %s. Falling back to single-device mode.", e
+                    )
             elif self.available_gpus > 1:
                 logger.warning(
                     "Multiple GPUs detected (%d), but distributed launcher environment variables (RANK, WORLD_SIZE) "

@@ -9,9 +9,6 @@
 Paged KV Cache Eviction Hardware Operators.
 """
 
-from neuralops.ops.cuda.paged_kv_evict.paged_kv_evict_autograd import (
-    paged_kv_evict,
-    paged_kv_compact_pytorch_ref,
-)
+from neuralops.ops.cuda.paged_kv_evict.paged_kv_evict_autograd import paged_kv_compact_pytorch_ref, paged_kv_evict
 
 __all__ = ["paged_kv_evict", "paged_kv_compact_pytorch_ref"]

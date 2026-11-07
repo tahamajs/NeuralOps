@@ -7,8 +7,8 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Run the fail-closed critical CUDA dispatch validation."""
 
-
 import warnings
+
 warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
 
 from __future__ import annotations
@@ -22,7 +22,5 @@ if _REPO_ROOT not in sys.path:
 
 from neuralops.benchmarks.legacy_scripts.validate_4_cuda_kernels import main
 
-
 if __name__ == "__main__":
     sys.exit(main())
-

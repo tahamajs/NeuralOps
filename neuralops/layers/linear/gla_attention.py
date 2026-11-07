@@ -13,8 +13,8 @@ Gated linear attention introducing data-dependent decay gates to associative sta
 
 from __future__ import annotations
 
-import math
 import logging
+import math
 from typing import Any, Optional
 
 import torch
@@ -70,9 +70,13 @@ class GLAttention(BaseAttention):
 
         if config is not None:
             if hidden_size is None:
-                hidden_size = getattr(config, "hidden_size", getattr(config, "n_embd", getattr(config, "d_model", None)))
+                hidden_size = getattr(
+                    config, "hidden_size", getattr(config, "n_embd", getattr(config, "d_model", None))
+                )
             if num_heads is None:
-                num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_head", None)))
+                num_heads = getattr(
+                    config, "num_attention_heads", getattr(config, "num_heads", getattr(config, "n_head", None))
+                )
             if head_dim is None and hasattr(config, "head_dim"):
                 head_dim = config.head_dim
 
@@ -92,18 +96,18 @@ class GLAttention(BaseAttention):
         self.gate_rank = gate_rank
         self.gate_tau = gate_tau
         self.use_fla = use_fla and FLA_AVAILABLE
-        self.compute_dtype = (
-            getattr(torch, compute_dtype)
-            if isinstance(compute_dtype, str)
-            else compute_dtype
-        )
+        self.compute_dtype = getattr(torch, compute_dtype) if isinstance(compute_dtype, str) else compute_dtype
 
         model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
         dec_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo")
         is_dec = False
         if config is not None:
             is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "is_causal", False))
-        if any(model_type.startswith(p) for p in dec_prefixes) or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
+        if (
+            any(model_type.startswith(p) for p in dec_prefixes)
+            or kwargs.get("is_decoder", False)
+            or kwargs.get("is_causal", False)
+        ):
             is_dec = True
         if old_attn is not None and (hasattr(old_attn, "c_attn") or getattr(old_attn, "is_decoder", False)):
             is_dec = True
@@ -188,11 +192,7 @@ class GLAttention(BaseAttention):
                                 g = target.weight.shape[0] // src_w.shape[0]
                                 target.weight.copy_(src_w.repeat_interleave(g, dim=0))
 
-                            if (
-                                hasattr(src_mod, "bias")
-                                and src_mod.bias is not None
-                                and target.bias is not None
-                            ):
+                            if hasattr(src_mod, "bias") and src_mod.bias is not None and target.bias is not None:
                                 src_b = src_mod.bias.data
                                 if src_b.shape == target.bias.shape:
                                     target.bias.copy_(src_b)
@@ -241,6 +241,7 @@ class GLAttention(BaseAttention):
                 out = out_raw.float()
             except (RuntimeError, NotImplementedError, ValueError) as e:
                 from neuralops.utils.logging_config import warn_once
+
                 warn_once("gla_fla_fallback", "FLA failed with %s; switching to Triton/PyTorch fallback", e)
 
         if out is None:
@@ -248,6 +249,7 @@ class GLAttention(BaseAttention):
             if Q.is_cuda and Q.dtype in (torch.float16, torch.bfloat16) and d <= 128:
                 try:
                     from neuralops.ops.cuda.gla_scan import gla_scan
+
                     q_t = Q.transpose(1, 2).contiguous()
                     k_t = K.transpose(1, 2).contiguous()
                     v_t = V.transpose(1, 2).contiguous()
@@ -263,6 +265,7 @@ class GLAttention(BaseAttention):
             # Level 2: Triton kda_hla_chunk_scan_triton fastpath
             try:
                 from neuralops.ops.triton.gla_scan import kda_hla_chunk_scan_triton
+
                 # Q, K, V are [B, N, H, d]; transpose to [B, H, N, d]
                 q_t = Q.transpose(1, 2).contiguous()
                 k_t = K.transpose(1, 2).contiguous()
@@ -288,8 +291,8 @@ class GLAttention(BaseAttention):
         out = out.contiguous().view(B, N, self.all_head_size)
         v_flat = V.contiguous().view(B, N, self.all_head_size).float()
         out_f = out.float()
-        v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
-        o_rms = torch.sqrt(torch.mean(out_f ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        v_rms = torch.sqrt(torch.mean(v_flat**2, dim=-1, keepdim=True).clamp_min(1e-8))
+        o_rms = torch.sqrt(torch.mean(out_f**2, dim=-1, keepdim=True).clamp_min(1e-8))
         scale = (v_rms / o_rms).clamp(0.25, 4.0).to(out.dtype)
         out = out * scale
         return self.out_proj(out), None
@@ -303,7 +306,7 @@ class GLAttention(BaseAttention):
         """Exact O(1) single-step autoregressive recurrent update for GLA."""
         from neuralops.ops.triton.state_update import fused_recurrent_gla_step
 
-        is_2d = (x.dim() == 2)
+        is_2d = x.dim() == 2
         if is_2d:
             x = x.unsqueeze(1)
 
@@ -329,9 +332,7 @@ class GLAttention(BaseAttention):
 
         kv_state = state["kv_state"]
 
-        out_t, kv_state = fused_recurrent_gla_step(
-            Q, K, V, g_in, kv_state, scale=self.scale
-        )
+        out_t, kv_state = fused_recurrent_gla_step(Q, K, V, g_in, kv_state, scale=self.scale)
         state["kv_state"] = kv_state
         state["step_idx"] = step_idx + 1
 
@@ -340,8 +341,8 @@ class GLAttention(BaseAttention):
 
         v_flat = V.unsqueeze(1).contiguous().view(B, 1, self.all_head_size).float()
         out_f = out_normed.float()
-        v_rms = torch.sqrt(torch.mean(v_flat ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
-        o_rms = torch.sqrt(torch.mean(out_f ** 2, dim=-1, keepdim=True).clamp_min(1e-8))
+        v_rms = torch.sqrt(torch.mean(v_flat**2, dim=-1, keepdim=True).clamp_min(1e-8))
+        o_rms = torch.sqrt(torch.mean(out_f**2, dim=-1, keepdim=True).clamp_min(1e-8))
         norm_scale = (v_rms / o_rms).clamp(0.25, 4.0).to(dtype)
         out_scaled = out_normed * norm_scale
 
@@ -376,9 +377,7 @@ class GLAttention(BaseAttention):
         compute_dtype = torch.float64 if dtype == torch.float64 else torch.float32
         state = torch.zeros(B, H, D, D, device=device, dtype=compute_dtype)
         outputs = []
-        causal_mask = torch.tril(
-            torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool)
-        )
+        causal_mask = torch.tril(torch.ones(chunk_size, chunk_size, device=device, dtype=torch.bool))
 
         for c in range(num_chunks):
             start = c * chunk_size
@@ -435,9 +434,7 @@ class GLAttention(BaseAttention):
         out = torch.zeros_like(Q, dtype=torch.float32)
         S = torch.zeros(B, H, d, d, device=Q.device, dtype=torch.float32)
 
-        causal_full = torch.tril(
-            torch.ones(chunk_size, chunk_size, device=Q.device, dtype=torch.bool)
-        )
+        causal_full = torch.tril(torch.ones(chunk_size, chunk_size, device=Q.device, dtype=torch.bool))
         out_chunks = []
 
         for i in range(num_chunks):

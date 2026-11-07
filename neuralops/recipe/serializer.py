@@ -27,6 +27,7 @@ def dumps_recipe(recipe: Recipe, format: str = "yaml") -> str:
     elif format.lower() in ("yaml", "yml"):
         try:
             import yaml
+
             return yaml.safe_dump(d, sort_keys=False, default_flow_style=False)
         except ImportError as exc:
             raise IntegrationNotImplementedError(

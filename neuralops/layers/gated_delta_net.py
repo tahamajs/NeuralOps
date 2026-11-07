@@ -8,4 +8,5 @@
 """
 Compatibility alias for neuralops.layers.gated.gated_delta_net.
 """
+
 from neuralops.layers.gated.gated_delta_net import *  # noqa: F401, F403

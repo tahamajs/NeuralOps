@@ -10,8 +10,8 @@ NeuralOps Benchmarks Data Subpackage.
 """
 
 from neuralops.benchmarks.data.loader import (
-    CSVDatasetLoader,
     DATASET_LOADER_REGISTRY,
+    CSVDatasetLoader,
     DatasetLoader,
     JSONDatasetLoader,
     ParquetDatasetLoader,

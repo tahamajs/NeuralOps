@@ -63,6 +63,7 @@ def based_taylor_attention_pytorch_ref(
 def _get_triton_impl():
     try:
         from neuralops.ops.triton.based_scan import based_taylor_scan
+
         return based_taylor_scan
     except (ImportError, AttributeError):
         return None
@@ -70,9 +71,14 @@ def _get_triton_impl():
 
 def _based_taylor_attention_dispatch(q, k, v, scale=None) -> torch.Tensor:
     """3-Level Dispatched Based Taylor Attention."""
+
     def cuda_fn(q, k, v, scale=None, **kwargs):
         mod = _get_module()
-        sc = scale if "scale" in kwargs or "scale" in locals() and locals().get("scale") is not None else 1.0 / math.sqrt(q.shape[-1])
+        sc = (
+            scale
+            if "scale" in kwargs or "scale" in locals() and locals().get("scale") is not None
+            else 1.0 / math.sqrt(q.shape[-1])
+        )
         return mod.based_taylor_attention_fwd(q.contiguous(), k.contiguous(), v.contiguous(), sc)
 
     triton_fn = _get_triton_impl()
@@ -81,7 +87,10 @@ def _based_taylor_attention_dispatch(q, k, v, scale=None) -> torch.Tensor:
         cuda_fn,
         triton_fn,
         based_taylor_attention_pytorch_ref,
-        q, k, v, scale,
+        q,
+        k,
+        v,
+        scale,
         kernel_name="based_taylor_attention",
     )
 

@@ -12,8 +12,6 @@ Accumulates streaming activation covariance matrices to perform whitening-based 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _orthogonal_init
-from neuralops.core.common import _cfg_get
 
 import contextlib
 import logging
@@ -25,6 +23,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get, _orthogonal_init
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import get_dynamic_compression_rank, should_compress_linear
@@ -90,6 +89,7 @@ class AASVDCompressor(BaseCompressor):
         supports_causal (bool): Whether causal autoregressive masking is supported.
         is_custom_attention (bool): Flag indicating specialized non-standard attention mechanics.
     """
+
     is_custom_attention: bool = False
 
     def __init__(
@@ -134,9 +134,7 @@ class AASVDCompressor(BaseCompressor):
             )
         )
         lora_rank = int(_cfg_get(cfg, "aasvd_lora_rank", _cfg_get(cfg, "lora_rank", lora_rank)))
-        lora_alpha = float(
-            _cfg_get(cfg, "aasvd_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha))
-        )
+        lora_alpha = float(_cfg_get(cfg, "aasvd_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha)))
         cov_dtype = str(_cfg_get(cfg, "cov_dtype", cov_dtype))
 
         lora_rank = int(kwargs.get("lora_rank", lora_rank))
@@ -147,7 +145,10 @@ class AASVDCompressor(BaseCompressor):
             "rank" in kwargs
             or "target_rank" in kwargs
             or rank != 288
-            or (cfg is not None and (_cfg_get(cfg, "rank", None) is not None or _cfg_get(cfg, "target_rank", None) is not None))
+            or (
+                cfg is not None
+                and (_cfg_get(cfg, "rank", None) is not None or _cfg_get(cfg, "target_rank", None) is not None)
+            )
         )
         force_rank = bool(
             force_rank
@@ -160,9 +161,7 @@ class AASVDCompressor(BaseCompressor):
         self.use_strs = bool(kwargs.get("use_strs", not force_rank)) and not force_rank
 
         if tokenizer is None:
-            tokenizer = getattr(model, "tokenizer", None) or getattr(
-                getattr(model, "config", None), "tokenizer", None
-            )
+            tokenizer = getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
         self.tokenizer = tokenizer
         if self.tokenizer is None:
             mp = getattr(getattr(model, "config", None), "_name_or_path", None)
@@ -193,11 +192,7 @@ class AASVDCompressor(BaseCompressor):
             self.cov_dtype_name = "float32"
         self.cov_dtype = torch.float32 if self.cov_dtype_name == "float32" else torch.float16
 
-        self.device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
-        )
+        self.device = torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -216,9 +211,7 @@ class AASVDCompressor(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLinear):
             return False
-        if any(
-            name.endswith(sfx) for sfx in (".base_layer", ".lora_A", ".lora_B", ".lora_dropout")
-        ):
+        if any(name.endswith(sfx) for sfx in (".base_layer", ".lora_A", ".lora_B", ".lora_dropout")):
             return False
 
         target_mod = getattr(module, "base_layer", module)
@@ -328,10 +321,7 @@ class AASVDCompressor(BaseCompressor):
             cls_name = layer.__class__.__name__.lower()
             target_cls = target_mod.__class__.__name__.lower()
             is_conv1d = (
-                "conv1d" in cls_name
-                or "conv1d" in target_cls
-                or hasattr(layer, "nf")
-                or hasattr(target_mod, "nf")
+                "conv1d" in cls_name or "conv1d" in target_cls or hasattr(layer, "nf") or hasattr(target_mod, "nf")
             )
             weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
             if weight_tensor is None:
@@ -395,9 +385,7 @@ class AASVDCompressor(BaseCompressor):
                 best_Vr = sqrt_S.unsqueeze(1) * Vt[:selected_r, :]
                 if cov_inv_sqrt is not None:
                     best_Vr = best_Vr @ cov_inv_sqrt
-                best_err = float(
-                    torch.norm(W - best_Ur @ best_Vr, p="fro").item() / max(W_norm, 1e-12)
-                )
+                best_err = float(torch.norm(W - best_Ur @ best_Vr, p="fro").item() / max(W_norm, 1e-12))
             else:
                 r_floor = int(max(1, min(int(r), int(max_allowed_rank), len(S))))
                 r_ceiling = max_allowed_rank
@@ -438,9 +426,7 @@ class AASVDCompressor(BaseCompressor):
                     best_Vr = sqrt_S.unsqueeze(1) * Vt[:be_r, :]
                     if cov_inv_sqrt is not None:
                         best_Vr = best_Vr @ cov_inv_sqrt
-                    best_err = float(
-                        torch.norm(W - best_Ur @ best_Vr, p="fro").item() / max(W_norm, 1e-12)
-                    )
+                    best_err = float(torch.norm(W - best_Ur @ best_Vr, p="fro").item() / max(W_norm, 1e-12))
 
             W_recon = best_Ur @ best_Vr
             orig_row_norms = torch.norm(W, dim=-1, keepdim=True)
@@ -529,9 +515,7 @@ class AASVDCompressor(BaseCompressor):
                             update_counts[layer_name] = 1
                         else:
                             beta = self.ema_beta
-                            covariances[layer_name] = (
-                                beta * covariances[layer_name] + (1.0 - beta) * batch_cov
-                            )
+                            covariances[layer_name] = beta * covariances[layer_name] + (1.0 - beta) * batch_cov
                             update_counts[layer_name] += 1
 
                 return hook
@@ -605,9 +589,7 @@ class AASVDCompressor(BaseCompressor):
                         self.max_error,
                     )
                     self.fallback_layers.append(name)
-                    self._comp_storage_bytes += (
-                        self._orig_storage_bytes
-                    )
+                    self._comp_storage_bytes += self._orig_storage_bytes
                     continue
                 logger.warning(
                     "AASVD: %s exceeds max_error but fallback is False.",
@@ -658,8 +640,7 @@ class AASVDCompressor(BaseCompressor):
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers)
-            / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
@@ -676,16 +657,8 @@ class AASVDCompressor(BaseCompressor):
                     pass
         self._comp_storage_bytes = comp_bytes_real
 
-        storage_ratio = (
-            self._orig_storage_bytes / self._comp_storage_bytes
-            if self._comp_storage_bytes > 0
-            else 1.0
-        )
-        effective_ratio = (
-            self._comp_storage_bytes / self._orig_storage_bytes
-            if self._orig_storage_bytes > 0
-            else 1.0
-        )
+        storage_ratio = self._orig_storage_bytes / self._comp_storage_bytes if self._comp_storage_bytes > 0 else 1.0
+        effective_ratio = self._comp_storage_bytes / self._orig_storage_bytes if self._orig_storage_bytes > 0 else 1.0
 
         stats = self.get_compression_stats()
         stats.update(
@@ -721,9 +694,7 @@ class AASVDCompressor(BaseCompressor):
 
 
 def aasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
-    rank = kwargs.pop(
-        "rank", _cfg_get(comp_config, "aasvd_rank", _cfg_get(comp_config, "rank", 64))
-    )
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "aasvd_rank", _cfg_get(comp_config, "rank", 64)))
     max_error = kwargs.pop(
         "max_error",
         _cfg_get(comp_config, "aasvd_max_error", _cfg_get(comp_config, "max_error", 0.20)),

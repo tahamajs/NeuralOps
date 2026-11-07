@@ -23,9 +23,7 @@ from .registry import register_method
 logger = logging.getLogger(__name__)
 
 
-def compute_fisher_importance(
-    model, dataset, tokenizer, task_keys, config, target_substrings=None
-) -> Any:
+def compute_fisher_importance(model, dataset, tokenizer, task_keys, config, target_substrings=None) -> Any:
     """Compute and return fisher importance."""
     if target_substrings is None:
         target_substrings = ["query", "key", "value", "dense"]
@@ -63,9 +61,7 @@ def compute_fisher_importance(
         enc["labels"] = torch.tensor(labels, dtype=torch.float if is_reg else torch.long)
         return enc
 
-    loader = DataLoader(
-        sampled, batch_size=config.per_device_train_batch_size, collate_fn=collate_fn
-    )
+    loader = DataLoader(sampled, batch_size=config.per_device_train_batch_size, collate_fn=collate_fn)
     fisher = {}
     model.eval()
     for param in model.parameters():

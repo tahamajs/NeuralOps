@@ -136,7 +136,7 @@ Let $B$ be batch size, $N$ sequence length, $D$ hidden dimension, $H$ heads, $d_
 $$\text{Total FLOPs} = 8 B N D^2 + 2 n_r B N D b + \frac{4 n_r B N^2 D}{b}$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)},
 
   $$\text{Total MACs} \approx 4 B N D^2 + n_r B N D b + \frac{2 n_r B N^2 D}{b}$$
 Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Random Projection Matrix: $d_k \times (b/2) \times 4 \text{ bytes}$ Concurrently, Hash Codes: $2 \times B \cdot H \cdot N \times 8 \text{ bytes}$ In this setting, Dynamic Bucket Slice Activations: $\mathcal{O}(n_q d_k + n_k d_k)$. Memory scales linearly as $\mathcal{O}(n_r B H N)$.
@@ -306,4 +306,3 @@ The empirical evaluation of `lsh_attention` across standard sequence lengths and
 | **$L = 2048$** | 0.62 ms | 240 MB | $2.50\times$ |
 | **$L = 4096$** | 1.18 ms | 384 MB | $4.20\times$ |
 | **$L = 8192$** | **2.25 ms** | **550 MB** | **5.68x** |
-

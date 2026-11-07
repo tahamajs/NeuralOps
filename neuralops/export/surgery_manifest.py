@@ -40,6 +40,7 @@ import logging
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+
 import torch
 import torch.nn as nn
 
@@ -92,12 +93,8 @@ class SurgeryManifest:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> SurgeryManifest:
-        attentions = [
-            AttentionSurgeryEntry(**a) for a in data.get("attentions", [])
-        ]
-        compressions = [
-            CompressionSurgeryEntry(**c) for c in data.get("compressions", [])
-        ]
+        attentions = [AttentionSurgeryEntry(**a) for a in data.get("attentions", [])]
+        compressions = [CompressionSurgeryEntry(**c) for c in data.get("compressions", [])]
         return cls(
             version=data.get("version", "1.4.2"),
             base_model_name=data.get("base_model_name"),
@@ -125,6 +122,7 @@ class SurgeryManifest:
     def compute_sha256(self) -> str:
         """Computes deterministic SHA-256 hash of manifest structure for cryptographic integrity."""
         import hashlib
+
         serialized = json.dumps(self.to_dict(), sort_keys=True)
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
@@ -235,9 +233,7 @@ def record_compression_surgery(
 
 def build_manifest_from_model(model: nn.Module) -> SurgeryManifest:
     """Inspects a model and builds or updates its SurgeryManifest."""
-    if hasattr(model, "_neuralops_surgery_manifest") and isinstance(
-        model._neuralops_surgery_manifest, SurgeryManifest
-    ):
+    if hasattr(model, "_neuralops_surgery_manifest") and isinstance(model._neuralops_surgery_manifest, SurgeryManifest):
         manifest = model._neuralops_surgery_manifest
     else:
         manifest = SurgeryManifest()
@@ -266,9 +262,7 @@ def build_manifest_from_model(model: nn.Module) -> SurgeryManifest:
     return manifest
 
 
-def replay_surgery_manifest(
-    model: nn.Module, manifest: SurgeryManifest
-) -> nn.Module:
+def replay_surgery_manifest(model: nn.Module, manifest: SurgeryManifest) -> nn.Module:
     """
     Reconstructs factorized linear modules and attention layers purely from manifest metadata
     WITHOUT running heavy SVD decompositions or calibration passes.

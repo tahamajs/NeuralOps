@@ -255,7 +255,7 @@ def _chunk_kda_fwd_kernel(
     # 2. Load log-space decay and compute causal masked intra-chunk scores
     g_ptrs = log_gamma_ptr + tl.cast(pid_b, tl.int64) * stride_gb + tl.cast(pid_h, tl.int64) * stride_gh + tl.cast(offs_t, tl.int64) * stride_gt
     log_g = tl.load(g_ptrs, mask=mask_t, other=0.0).to(tl.float32)
-    
+
     # Cumulative decay within chunk
     cum_g = tl.cumsum(log_g, axis=0)
     g_diff = cum_g[:, None] - cum_g[None, :]
@@ -350,12 +350,12 @@ def compress_kda_state_svd(
     """
     # SVD decomposition in FP32
     u, s_vals, vh = torch.linalg.svd(S.float(), full_matrices=False)
-    
+
     # Truncate to rank R
     u_r = u[..., :rank]
     s_r = torch.diag_embed(s_vals[..., :rank])
     v_r = vh[..., :rank, :].transpose(-1, -2)
-    
+
     return u_r.to(S.dtype), s_r.to(S.dtype), v_r.to(S.dtype)
 ```
 

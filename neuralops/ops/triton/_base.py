@@ -51,10 +51,10 @@ except ImportError:
 
 from neuralops.ops.triton._types import (
     BLOCK_SIZE,
+    FORCE_PYTORCH_FALLBACK,
+    FORWARD_ONLY_KERNELS,
     MAX_TRITON_SEQ_LEN,
     SUPPORTED_HEAD_DIMS,
-    FORWARD_ONLY_KERNELS,
-    FORCE_PYTORCH_FALLBACK,
     check_triton_suitability,
     log_fallback_reason,
 )

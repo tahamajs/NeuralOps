@@ -31,9 +31,7 @@ def get_loss_history(
     gpu = get_live_gpu_telemetry(project_dir, is_local_gpu)
     lp = gpu.get("live_progress")
     if lp and lp.get("loss_trajectory"):
-        hist = lp.get("history") or [
-            {"step": (i + 1) * 5, "loss": v} for i, v in enumerate(lp["loss_trajectory"])
-        ]
+        hist = lp.get("history") or [{"step": (i + 1) * 5, "loss": v} for i, v in enumerate(lp["loss_trajectory"])]
         return {
             "success": True,
             "module": lp.get("module_name", module or "active"),
@@ -125,9 +123,7 @@ def launch_new_run(params: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def get_module_detail(
-    docs_dir: str, project_dir: str, mod_query: str
-) -> dict[str, Any]:
+def get_module_detail(docs_dir: str, project_dir: str, mod_query: str) -> dict[str, Any]:
     """Return run details, loss history and documentation for a specific module."""
     doc_res = get_doc_content(docs_dir, project_dir, mod_query)
     q = (

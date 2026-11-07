@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+
 import torch
 from torch.autograd import Function
 
@@ -77,7 +78,9 @@ class LSHAttentionFunction(Function):
                     float(scale),
                 )
             except Exception as e:
-                logger.warning("Level 1 CUDA C++ lsh_attention_forward_cuda failed (%s); attempting Level 2 Triton fallback.", e)
+                logger.warning(
+                    "Level 1 CUDA C++ lsh_attention_forward_cuda failed (%s); attempting Level 2 Triton fallback.", e
+                )
         else:
             logger.debug("Level 1 CUDA C++ lsh_ops not available; proceeding to Level 2 Triton fallback.")
 

@@ -12,7 +12,6 @@ Compresses linear projection layers using per-layer activation covariance estima
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,6 +20,7 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -100,9 +100,7 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
@@ -124,21 +122,24 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         name_l = name.lower()
         if self.target_attention_only:
             attn_keywords = [
-                "attn", "attention",
-                "q_proj", "k_proj", "v_proj", "o_proj",
-                "c_attn", "c_proj",
-                "query", "key", "value",
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
             ]
             if not any(k in name_l for k in attn_keywords):
                 return False
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
         if SVDLinear is not None and isinstance(base_mod, SVDLinear):
@@ -183,6 +184,7 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                     else:
                         covariances[name] += batch_cov
                         counts[name] += batch_count
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -207,8 +209,7 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                     self.model(*calib_inputs)
         except Exception as e:
             logger.warning(
-                "Forward pass during calibration raised %s. "
-                "Covariances may be incomplete.",
+                "Forward pass during calibration raised %s. " "Covariances may be incomplete.",
                 e,
             )
         finally:
@@ -370,7 +371,9 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             if rel_err > self.max_error:
                 logger.warning(
                     "PCA-ASVD reconstruction error %.4f on %s exceeded threshold %.4f. Compressing anyway.",
-                    rel_err, name, self.max_error,
+                    rel_err,
+                    name,
+                    self.max_error,
                 )
                 if self.fallback_to_original:
                     for p in module.parameters():
@@ -386,7 +389,10 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             if factorized_params >= d_out * d_in and self.rank is None:
                 logger.info(
                     "PCA-ASVD: keep=%d on %s would not reduce params (%d >= %d). Keeping dense.",
-                    effective_keep, name, factorized_params, d_out * d_in,
+                    effective_keep,
+                    name,
+                    factorized_params,
+                    d_out * d_in,
                 )
                 total_params_after += d_out * d_in
                 continue
@@ -424,17 +430,9 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                     src_lb = getattr(module.lora_B, "weight", module.lora_B)
                     la_target = svd_layer.lora_A
                     lb_target = svd_layer.lora_B
-                    if (
-                        hasattr(src_la, "data")
-                        and la_target is not None
-                        and src_la.shape == la_target.shape
-                    ):
+                    if hasattr(src_la, "data") and la_target is not None and src_la.shape == la_target.shape:
                         la_target.data.copy_(src_la.data)
-                    if (
-                        hasattr(src_lb, "data")
-                        and lb_target is not None
-                        and src_lb.shape == lb_target.shape
-                    ):
+                    if hasattr(src_lb, "data") and lb_target is not None and src_lb.shape == lb_target.shape:
                         lb_target.data.copy_(src_lb.data)
                 except Exception as e_lora:
                     logger.debug("PCA-ASVD LoRA adapter copy skipped on %s: %s", name, e_lora)
@@ -459,16 +457,8 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
-        avg_err = (
-            sum(self.layer_errors.values()) / len(self.layer_errors)
-            if self.layer_errors
-            else 0.0
-        )
-        compression_rate = (
-            total_params_before / max(1, total_params_after)
-            if total_params_after > 0
-            else 1.0
-        )
+        avg_err = sum(self.layer_errors.values()) / len(self.layer_errors) if self.layer_errors else 0.0
+        compression_rate = total_params_before / max(1, total_params_after) if total_params_after > 0 else 1.0
 
         stats = self.get_compression_stats()
         stats.update(
@@ -491,9 +481,7 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
                 "forward_check_success": forward_check_success,
                 "is_noop": (total_params_after >= total_params_before),
                 "noop_reason": (
-                    "no_factorizable_layers_or_fallback_all"
-                    if total_params_after >= total_params_before
-                    else None
+                    "no_factorizable_layers_or_fallback_all" if total_params_after >= total_params_before else None
                 ),
                 "method": "pca_asvd_real_low_rank_factorization",
                 "activations_memory_mode": "online_covariance",
@@ -502,10 +490,12 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         self.stats = stats
 
         logger.info(
-            "PCA-ASVD: %d layers factorized, avg recon error %.4f, "
-            "params %d -> %d (%.2fx compression)",
-            sliced_layers_count, avg_err,
-            total_params_before, total_params_after, compression_rate,
+            "PCA-ASVD: %d layers factorized, avg recon error %.4f, " "params %d -> %d (%.2fx compression)",
+            sliced_layers_count,
+            avg_err,
+            total_params_before,
+            total_params_after,
+            compression_rate,
         )
         return self.model, stats
 

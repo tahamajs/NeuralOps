@@ -12,7 +12,6 @@ Employs exact second-order Hessian inversions to perform 50% unstructured and 2:
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
 
 import logging
 from typing import Any
@@ -21,11 +20,9 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
 from neuralops.core.model_utils import replace_module
-from neuralops.core.pruning_utils import (
-    compute_empirical_hessian,
-    get_calibration_tensors,
-)
+from neuralops.core.pruning_utils import compute_empirical_hessian, get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -83,7 +80,11 @@ class SparseGPTCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_attention_only = bool(target_attention_only)
-        self.rank = int(kwargs.get("target_rank", kwargs.get("rank"))) if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None) else None
+        self.rank = (
+            int(kwargs.get("target_rank", kwargs.get("rank")))
+            if (kwargs.get("target_rank") is not None or kwargs.get("rank") is not None)
+            else None
+        )
         if self.rank is not None:
             self.structured_24 = False
             self.prunen = 0
@@ -95,9 +96,7 @@ class SparseGPTCompressor(BaseCompressor):
                 self.prunen = 2
                 self.prunem = 4
         self.target_device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters(), torch.tensor(0.0)).device
+            torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
@@ -134,11 +133,7 @@ class SparseGPTCompressor(BaseCompressor):
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__
-        is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_name.lower()
-            or hasattr(base_mod, "nf")
-        )
+        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name.lower() or hasattr(base_mod, "nf")
         if not is_linear_like:
             return False
         if not should_compress_linear(self.model, name):
@@ -256,9 +251,7 @@ class SparseGPTCompressor(BaseCompressor):
                     if (j + 1) % M == 0 or (j + 1 == count):
                         start_c = (j // M) * M
                         sub_w = W_block[:, start_c : j + 1]
-                        sub_h_diag = torch.diagonal(
-                            H_inv_block[start_c : j + 1, start_c : j + 1]
-                        ).clamp(min=1e-8)
+                        sub_h_diag = torch.diagonal(H_inv_block[start_c : j + 1, start_c : j + 1]).clamp(min=1e-8)
                         sub_saliency = (sub_w**2) / (2.0 * sub_h_diag.unsqueeze(0))
                         k_keep = min(N, sub_w.shape[1])
                         _, top_idx = torch.topk(sub_saliency, k=k_keep, dim=1, largest=True)
@@ -320,10 +313,8 @@ class SparseGPTCompressor(BaseCompressor):
             return False
 
         final_w = W_pruned.t() if is_conv1d else W_pruned
-        base_mod.weight.data = final_w.to(
-            dtype=base_mod.weight.dtype, device=base_mod.weight.device
-        )
-        binary_mask = (final_w != 0.0)
+        base_mod.weight.data = final_w.to(dtype=base_mod.weight.dtype, device=base_mod.weight.device)
+        binary_mask = final_w != 0.0
         base_mod.register_buffer("pruning_mask", binary_mask)
         base_mod.register_buffer("mask", binary_mask.to(dtype=base_mod.weight.dtype))
         self.masks[name] = binary_mask
@@ -443,12 +434,8 @@ def sparsegpt_factory(
         ),
     )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.5))
-    fallback = kwargs.pop(
-        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    )
-    target_attention_only = kwargs.pop(
-        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
-    )
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
     tokenizer = kwargs.pop(
         "tokenizer",
         getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None),

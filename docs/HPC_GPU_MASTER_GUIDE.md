@@ -1,6 +1,6 @@
 # Sharif University HPC Cluster & RTX 3090 GPU Master Execution Guide
 
-> **Authoritative Operational Reference for NeuralOps AI Coding Agents and Human Engineers.**  
+> **Authoritative Operational Reference for NeuralOps AI Coding Agents and Human Engineers.**
 > Grounded in production-verified deployment on the **Sharif University HPC Center** (`hpc.itc.sharif.edu`).
 
 ---

@@ -25,9 +25,7 @@ class ModelSnapshot:
     """In-memory model snapshot facilitating rollback to known consistent states."""
 
     def __init__(self, model: nn.Module) -> None:
-        self.state_dict: Dict[str, torch.Tensor] = {
-            k: v.detach().clone().cpu() for k, v in model.state_dict().items()
-        }
+        self.state_dict: Dict[str, torch.Tensor] = {k: v.detach().clone().cpu() for k, v in model.state_dict().items()}
         # In case module architecture/classes mutated (e.g. Linear -> SVDLinear),
         # we preserve a deep copy of the module graph or architecture
         try:
@@ -45,7 +43,9 @@ class ModelSnapshot:
         """Restore the model to the snapshotted state and return restored model."""
         if self.model_copy is not None:
             # If architecture changed, return the restored deepcopy
-            device = next(current_model.parameters()).device if list(current_model.parameters()) else torch.device("cpu")
+            device = (
+                next(current_model.parameters()).device if list(current_model.parameters()) else torch.device("cpu")
+            )
             restored = copy.deepcopy(self.model_copy).to(device)
             return restored
 

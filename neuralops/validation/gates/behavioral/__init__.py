@@ -14,10 +14,7 @@ from __future__ import annotations
 from neuralops.validation.gates.behavioral.attention_patterns import AttentionPatternsGate
 from neuralops.validation.gates.behavioral.logit_kl import LogitKLGate
 from neuralops.validation.gates.behavioral.output_similarity import OutputSimilarityGate
-from neuralops.validation.gates.behavioral.perplexity import (
-    PerplexityDeltaGate,
-    PerplexityGate,
-)
+from neuralops.validation.gates.behavioral.perplexity import PerplexityDeltaGate, PerplexityGate
 
 __all__ = [
     "AttentionPatternsGate",

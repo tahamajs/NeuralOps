@@ -117,19 +117,19 @@ def _hla_chunk_scan_kernel(
     BLOCK_L: tl.constexpr
 ):
     pid_bh = tl.program_id(0)
-    
+
     # Persistent State Memory in SRAM [d_k, d_k]
     h_state = tl.zeros((d_k, d_k), dtype=tl.float32)
-    
+
     for t in range(L):
         q = tl.load(Q_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k))
         k = tl.load(K_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k))
         v = tl.load(V_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k))
-        
+
         # Accumulate outer product
         h_state += k[:, None] * v[None, :]
         out_t = tl.sum(q[:, None] * h_state, axis=0)
-        
+
         tl.store(Out_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k), out_t)
 ```
 
@@ -161,4 +161,3 @@ The empirical evaluation of `hla_attention` across standard sequence lengths and
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

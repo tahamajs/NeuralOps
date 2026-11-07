@@ -12,11 +12,6 @@ Uncertainty-penalized interpolated Mamba block stabilizing state updates across 
 """
 
 from __future__ import annotations
-from neuralops.core.common import _cfg_get
-
-from neuralops.core.attention_utils import (
-    LoRALinear,
-)
 
 import logging
 import math
@@ -28,13 +23,13 @@ import torch.nn.functional as F
 
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_utils import LoRALinear
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 try:
-    from neuralops.ops.triton.selective_scan import (
-        selective_scan_fn as triton_selective_scan,
-    )
+    from neuralops.ops.triton.selective_scan import selective_scan_fn as triton_selective_scan
 
     HAS_TRITON_UPI = True
 except Exception:
@@ -44,9 +39,7 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 
-@ATTENTION_REGISTRY.register(
-    "upi_stuffed_mamba", supports_causal=True, supports_bidirectional=True
-)
+@ATTENTION_REGISTRY.register("upi_stuffed_mamba", supports_causal=True, supports_bidirectional=True)
 class SelectiveMamba(BaseAttention):
     r"""
     Selective Mamba SSM block.
@@ -154,9 +147,7 @@ class SelectiveMamba(BaseAttention):
         self.dt_proj = nn.Linear(self.dt_rank, self.inner_dim, bias=True)
 
         dt_min, dt_max = 0.001, 0.1
-        dt_init = torch.exp(
-            torch.rand(self.inner_dim) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min)
-        )
+        dt_init = torch.exp(torch.rand(self.inner_dim) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min))
         dt_init_inv = dt_init + torch.log(-torch.expm1(-dt_init))
         with torch.no_grad():
             self.dt_proj.bias.copy_(dt_init_inv)
@@ -211,9 +202,7 @@ class SelectiveMamba(BaseAttention):
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-                hasattr(old_attn, "query")
-                and not hasattr(old_attn, "dense")
-                and not hasattr(old_attn, "out_proj")
+                hasattr(old_attn, "query") and not hasattr(old_attn, "dense") and not hasattr(old_attn, "out_proj")
             ):
                 self.is_nested_encoder = True
 
@@ -222,20 +211,14 @@ class SelectiveMamba(BaseAttention):
                 src = old_attn.self
                 if hasattr(old_attn.output, "dense"):
                     w_o = old_attn.output.dense.weight.detach()
-                    b_o = (
-                        old_attn.output.dense.bias.detach()
-                        if old_attn.output.dense.bias is not None
-                        else None
-                    )
+                    b_o = old_attn.output.dense.bias.detach() if old_attn.output.dense.bias is not None else None
             else:
                 src = old_attn
 
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 (src.c_attn.bias.detach() if src.c_attn.bias is not None else None)
-                if c_attn_w.dim() == 2 and (
-                    c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim
-                ):
+                if c_attn_w.dim() == 2 and (c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim):
                     c_attn_w = c_attn_w.t()
 
                 split_q = min(self.dim, c_attn_w.shape[0] // 3)
@@ -368,9 +351,7 @@ class SelectiveMamba(BaseAttention):
                 w_o_or = _orient(w_o, self.inner_dim)
                 min_o_out = min(self.dim, w_o_or.shape[0])
                 min_o_in = min(self.dim, w_o_or.shape[1])
-                self.out_proj.weight.data[:min_o_out, :min_o_in].copy_(
-                    w_o_or[:min_o_out, :min_o_in]
-                )
+                self.out_proj.weight.data[:min_o_out, :min_o_in].copy_(w_o_or[:min_o_out, :min_o_in])
                 if b_o is not None and self.out_proj.bias is not None:
                     b_val = b_o.data if isinstance(b_o, nn.Parameter) else b_o
                     self.out_proj.bias.data[: min(len(self.out_proj.bias), len(b_val))].copy_(
@@ -408,16 +389,12 @@ class SelectiveMamba(BaseAttention):
                         if hasattr(src_lA, "data") and self.in_proj.lora_A is not None:
                             r_min = min(self.in_proj.lora_A.shape[0], src_lA.shape[0])
                             in_min = min(self.in_proj.lora_A.shape[1], src_lA.shape[1])
-                            self.in_proj.lora_A.data[:r_min, :in_min].copy_(
-                                src_lA.data[:r_min, :in_min]
-                            )
+                            self.in_proj.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
                             self.in_proj.lora_A.requires_grad = True
                         if hasattr(src_lB, "data") and self.in_proj.lora_B is not None:
                             out_min = min(self.in_proj.lora_B.shape[0], src_lB.shape[0])
                             r_min = min(self.in_proj.lora_B.shape[1], src_lB.shape[1])
-                            self.in_proj.lora_B.data[:out_min, :r_min].copy_(
-                                src_lB.data[:out_min, :r_min]
-                            )
+                            self.in_proj.lora_B.data[:out_min, :r_min].copy_(src_lB.data[:out_min, :r_min])
                             self.in_proj.lora_B.requires_grad = True
                         if hasattr(sub, "lora_scaling"):
                             self.in_proj.scaling = sub.lora_scaling
@@ -437,16 +414,12 @@ class SelectiveMamba(BaseAttention):
                         if hasattr(src_lA, "data") and self.out_proj.lora_A is not None:
                             r_min = min(self.out_proj.lora_A.shape[0], src_lA.shape[0])
                             in_min = min(self.out_proj.lora_A.shape[1], src_lA.shape[1])
-                            self.out_proj.lora_A.data[:r_min, :in_min].copy_(
-                                src_lA.data[:r_min, :in_min]
-                            )
+                            self.out_proj.lora_A.data[:r_min, :in_min].copy_(src_lA.data[:r_min, :in_min])
                             self.out_proj.lora_A.requires_grad = True
                         if hasattr(src_lB, "data") and self.out_proj.lora_B is not None:
                             out_min = min(self.out_proj.lora_B.shape[0], src_lB.shape[0])
                             r_min = min(self.out_proj.lora_B.shape[1], src_lB.shape[1])
-                            self.out_proj.lora_B.data[:out_min, :r_min].copy_(
-                                src_lB.data[:out_min, :r_min]
-                            )
+                            self.out_proj.lora_B.data[:out_min, :r_min].copy_(src_lB.data[:out_min, :r_min])
                             self.out_proj.lora_B.requires_grad = True
                         if hasattr(sub, "lora_scaling"):
                             self.out_proj.scaling = sub.lora_scaling
@@ -557,9 +530,9 @@ class SelectiveMamba(BaseAttention):
 
         if head_mask is not None:
             from neuralops.utils.logging_config import warn_once
+
             warn_once(
-                "upi_head_mask_ignored",
-                "SelectiveMamba does not use head_mask (SSM has no heads). Ignoring head_mask."
+                "upi_head_mask_ignored", "SelectiveMamba does not use head_mask (SSM has no heads). Ignoring head_mask."
             )
 
         mask_bool = None
@@ -809,21 +782,9 @@ def inject_selective_mamba(
             or _cfg_get(cfg, "dim")
             or getattr(src, "hidden_size", None)
             or getattr(src, "embed_dim", None)
-            or (
-                src.q_proj.in_features
-                if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features")
-                else None
-            )
-            or (
-                src.q_lin.in_features
-                if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features")
-                else None
-            )
-            or (
-                src.query.in_features
-                if hasattr(src, "query") and hasattr(src.query, "in_features")
-                else None
-            )
+            or (src.q_proj.in_features if hasattr(src, "q_proj") and hasattr(src.q_proj, "in_features") else None)
+            or (src.q_lin.in_features if hasattr(src, "q_lin") and hasattr(src.q_lin, "in_features") else None)
+            or (src.query.in_features if hasattr(src, "query") and hasattr(src.query, "in_features") else None)
             or 768
         )
 

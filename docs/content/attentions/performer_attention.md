@@ -2,7 +2,7 @@
 
 ## 1. Executive Abstract & Architectural Motivation
 
-Standard Multi-Head Self-Attention (Vaswani et al., 2017) requires materializing an $L \times L$ attention matrix, leading to quadratic time and space complexity $\mathcal{O}(L^2)$. The Performer architecture (Choromanski et al., 2020) solves this fundamental bottleneck using the Fast Attention Via Positive Orthogonal Random Features (FAVOR+) framework. 
+Standard Multi-Head Self-Attention (Vaswani et al., 2017) requires materializing an $L \times L$ attention matrix, leading to quadratic time and space complexity $\mathcal{O}(L^2)$. The Performer architecture (Choromanski et al., 2020) solves this fundamental bottleneck using the Fast Attention Via Positive Orthogonal Random Features (FAVOR+) framework.
 
 FAVOR+ constructs an unbiased, positive kernel approximation of the exponential Softmax operator without computing the explicit attention matrix. By mapping Query and Key vectors into an $m$-dimensional random feature space via non-linear transformations $\phi(x) > 0$, FAVOR+ leverages the associativity of matrix multiplication to reorder computations from $(Q K^\top) V$ to $\phi(Q) (\phi(K)^\top V)$. This reduces the time and memory complexity to $\mathcal{O}(L \cdot m \cdot d)$, achieving true linear scaling with respect to sequence length $L$ while strictly preserving positivity and avoiding numerical divergence.
 
@@ -107,7 +107,7 @@ In terms of memory residency, the model maintains a compact footprint composed o
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
-The theoretical convergence and practical stability of the FAVOR+ estimator are intimately linked to the number of random feature projections $m$ and the underlying precision regime. When the random feature dimension is constrained such that $m \ll d_k$, the Monte Carlo variance of the positive feature mapping $\phi(x)$ increases substantially. This stochastic variance distorts the implicit attention weight distribution, introducing non-negligible gradient noise that roughens the optimization landscape and degrades retrieval precision on associative recall tasks. 
+The theoretical convergence and practical stability of the FAVOR+ estimator are intimately linked to the number of random feature projections $m$ and the underlying precision regime. When the random feature dimension is constrained such that $m \ll d_k$, the Monte Carlo variance of the positive feature mapping $\phi(x)$ increases substantially. This stochastic variance distorts the implicit attention weight distribution, introducing non-negligible gradient noise that roughens the optimization landscape and degrades retrieval precision on associative recall tasks.
 
 Furthermore, evaluating the exponential non-linearity $\exp(W x)$ introduces acute vulnerability to numerical overflow under standard IEEE half-precision (FP16) arithmetic. Subtracting maximum logit projections prior to exponentiation and executing feature mappings in high-precision formats (FP32 or BF16) is indispensable for preserving numerical conditioning. During causal autoregressive processing, continuous prefix accumulation in the recurrent state $KV_t = KV_{t-1} + \phi(K_t)^\top V_t$ can induce monotonic magnitude drift and eigenvalue explosion over extended context windows, necessitating periodic renormalization or decay factors. Finally, the effective expressivity of the linearized kernel operator is fundamentally constrained by an intrinsic rank bottleneck, wherein the rank of the implicit attention matrix cannot exceed $\min(L, m)$, thereby enforcing a structural upper bound on contextual capacity relative to dense full-rank attention.
 
@@ -130,30 +130,30 @@ def _performer_causal_scan_kernel(
     BLOCK_M: tl.constexpr
 ):
     pid_bh = tl.program_id(0)
-    
+
     # Initialize persistent state memory in SRAM
     kv_state = tl.zeros((m, d_k), dtype=tl.float32)
     k_sum = tl.zeros((m,), dtype=tl.float32)
-    
+
     for t in range(L):
         # Load single token Q_t, K_t, V_t
         q_t = tl.load(Q_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k))
         k_t = tl.load(K_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k))
         v_t = tl.load(V_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k))
-        
+
         # Fused Positive Feature Map phi(k_t)
         phi_k = tl.exp(tl.dot(k_t[None, :], W_ptr) - 0.5 * tl.sum(k_t * k_t))
         phi_q = tl.exp(tl.dot(q_t[None, :], W_ptr) - 0.5 * tl.sum(q_t * q_t))
-        
+
         # Accumulate state: kv_state += phi_k.T @ v_t
         kv_state += tl.dot(tl.trans(phi_k), v_t[None, :])
         k_sum += tl.sum(phi_k, axis=0)
-        
+
         # Compute output
         num = tl.dot(phi_q, kv_state)
         den = tl.sum(phi_q * k_sum) + 1e-6
         out_t = num / den
-        
+
         tl.store(Out_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k), out_t)
 ```
 
@@ -183,4 +183,3 @@ The empirical evaluation of `performer_attention` across standard sequence lengt
 | **$L = 2048$** | 1.45 ms | 512 MB | $2.50\times$ |
 | **$L = 4096$** | 2.75 ms | 819 MB | $4.20\times$ |
 | **$L = 8192$** | **12.80 ms** | **3,450 MB** | **1.00x (Baseline)** |
-

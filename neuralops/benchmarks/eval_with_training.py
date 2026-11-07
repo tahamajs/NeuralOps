@@ -20,8 +20,8 @@ import copy
 import logging
 import os
 import time
-from typing import Any, Dict, List, Optional, Union
 import uuid
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -62,11 +62,7 @@ class TrainAndBenchmarkPipeline:
         self.device = (
             torch.device(device)
             if device is not None
-            else (
-                torch.device("cuda")
-                if torch.cuda.is_available()
-                else torch.device("cpu")
-            )
+            else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
         )
         self.saver = saver or MultiFormatSaver(output_dir=self.output_dir)
 
@@ -189,11 +185,7 @@ class TrainAndBenchmarkPipeline:
 
         init_loss = step_losses[0] if step_losses else 0.0
         final_loss = step_losses[-1] if step_losses else 0.0
-        reduction = (
-            ((init_loss - final_loss) / init_loss * 100.0)
-            if init_loss > 0.0
-            else 0.0
-        )
+        reduction = ((init_loss - final_loss) / init_loss * 100.0) if init_loss > 0.0 else 0.0
 
         logger.info(
             "Micro-training complete: initial_loss=%.4f, final_loss=%.4f, reduction=%.2f%%",
@@ -233,10 +225,7 @@ class TrainAndBenchmarkPipeline:
         with torch.no_grad():
             for batch in calibration_data:
                 if isinstance(batch, dict):
-                    b_in = {
-                        k: v.to(self.device) if isinstance(v, torch.Tensor) else v
-                        for k, v in batch.items()
-                    }
+                    b_in = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
                     t_out = teacher(**b_in)
                     s_out = student(**b_in)
                 elif isinstance(batch, torch.Tensor):
