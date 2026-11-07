@@ -48,7 +48,7 @@ NeuralOps enforces strict mathematical and architectural invariants certified co
 - **110 canonical CUDA modules** housing **114 native kernel implementations**. The raw
   `neuralops/ops/cuda` tree also contains compatibility and support directories; those
   filesystem entries are not canonical registry modules.
-- **29 master demonstration notebooks** verified across compute platforms
+- **94 demonstration notebooks** present in checkout (29 foundational notebooks verified executed across physical GPU compute platforms; 65 ecosystem notebooks syntax-validated)
 
 ---
 

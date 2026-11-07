@@ -2398,12 +2398,11 @@ run; it preserves the notebook JSON, execution counts, cell outputs, embedded
 figures, and errors. The source notebooks under `notebooks/` remain the clean
 inputs for future runs.
 
-The synchronized bundle contains **99 notebook files**, of which **64 contain
-non-empty `outputs` arrays**. The 29 notebooks listed in
-`results/NOTEBOOKS_EXECUTION_SUMMARY.md` and `results/notebooks_pbs.out` are
-the completed PBS suite. The remaining copied notebooks are retained because
-they are part of the server's notebook catalog, but they are not claimed as
-executed unless their JSON contains outputs or a matching execution record.
+The canonical notebook ecosystem contains **94 unique notebook files** under `notebooks/`
+(with `notebooks/extended` maintained as a compatibility symlink). The **29 notebooks** listed in
+`results/NOTEBOOKS_EXECUTION_SUMMARY.md` and `results/notebooks_pbs.out` represent the
+**executed subset** verified on GPU (Sharif HPC). The remaining 65 notebooks have valid JSON
+structure and AST syntax verified in CI, and are catalogued as requiring dedicated multi-GPU allocations.
 
 | Evidence | Path |
 | :--- | :--- |

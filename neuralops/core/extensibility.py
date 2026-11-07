@@ -205,7 +205,7 @@ def validate_module_contract(
 
     from neuralops.api import create_attention, replace_attention
     from neuralops.core._attention_surgery import heal_replaced_model
-    from neuralops.core.inspector import inspect_architecture
+    from neuralops.analysis.inspector import inspect_architecture
     from neuralops.models.surgical_io import load_surgical_checkpoint, save_surgical_checkpoint
 
     target_dev = torch.device(device or ("cuda:0" if torch.cuda.is_available() else "cpu"))

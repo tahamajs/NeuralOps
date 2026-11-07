@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Notebook Suite Consolidation & Two-Level Execution Verification (F-75):**
+  - **Breaking Change / Consolidation:** Eliminated 94 duplicate divergent notebook files from `notebooks/extended/` (consolidating 188 files down to 94 unique notebooks in canonical `notebooks/`). Established `notebooks/extended -> .` as a directory symlink so legacy external links and scripts resolve without dual-mirror drift.
+  - Rewrote `tests/test_notebooks_execution.py` into a two-level test suite: Level (a) executes structural JSON validation and Python AST syntax checks across all 94 unique notebooks plus fast CPU smoke tests (97 passed); Level (b) parametrises over the 29 physically verified notebooks for GPU execution.
+  - Authored `tests/test_notebook_catalog.py` (4 passed in 0.07s) asserting exact 94-notebook count, symlink integrity, and master catalog indexing in `NOTEBOOKS_COMPREHENSIVE_CATALOG_AND_60_EXPANSION_ROADMAP.md`.
+  - Added `notebooks/README.md` documenting single source of truth and execution tiers; clarified in `README.md` that 29 notebooks represent the executed subset rather than the total suite.
 - **Changelog Synchronization, Missing Version History & Modernization Status (F-73, F-74):**
   - Reconciled missing version history in `CHANGELOG.md`: added detailed entries for released versions `[2.0.4]` and `[2.0.5]` verified against Git tags and commit logs, eliminating unexplained version jumps.
   - Implemented automatic changelog synchronization: authored `scripts/docs/sync_changelog.py` with `--check` mode for CI, synchronizing root `CHANGELOG.md` to `docs/changelog.md` for MkDocs publication.

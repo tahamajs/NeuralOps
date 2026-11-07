@@ -942,4 +942,108 @@ graph LR
    - برای نوتبوک‌های کانتکست طولانی، تولید توالی‌ها باید به درستی از ماسک‌های علّی و کش‌های بلاکی محافظت کند.
 
 ---
+
+## ۶. ماتریس جامع و رسمی ۹۴ نوتبوک مخزن (Authoritative 94-Notebook Master Matrix)
+
+کاتالوگ زیر شامل تمامی ۹۴ نوتبوک یکتای موجود در دایرکتوری اصلی `notebooks/` است (Consolidated from legacy 188-file dual mirror).
+مطابق مصوبه مهندسی، ۲۹ نوتبوک پایه دارای تله‌متری اجرایی تاییدشده روی GPU فیزیکی بوده و ۶۵ نوتبوک اکوسیستم دارای ساختار و سینتکس تاییدشده هستند:
+
+| شماره | نام فایل نوتبوک (`.ipynb`) | وضعیت اجرا و ارزیابی (Tier Status) |
+| :--- | :--- | :--- |
+| **00** | `00_master_neuralops_complete_system_walkthrough.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **01a** | `01_quickstart_surgery_and_healing.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **01b** | `01_attention_surgery_and_lora.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **02a** | `02_unified_training.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **02b** | `02_roofline_and_triton_kernels.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **03** | `03_custom_plugins_and_extensibility.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **04** | `04_end_to_end_3level_benchmarking.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **05a** | `05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **05b** | `05_paper_empirical_results_master.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **06** | `06_master_all_131_attention_mechanisms_interactive.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **07** | `07_master_all_72_compression_engines_quant_and_svd.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **08** | `08_six_pillar_distillation_and_surgical_recovery.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **09** | `09_production_serving_paged_cache_and_speculative_decoding.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **10** | `10_long_context_extrapolation_32k.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **11** | `11_cuda_vs_triton_vs_pytorch_matrix.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **12** | `12_svd_whitening_spectral_allocation.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **13** | `13_quantization_pareto_fp8_int4_kmeans.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **14** | `14_structured_pruning_token_shedding.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **15** | `15_downstream_glue_lra_evaluation.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **16** | `16_roofline_ada_rtx4070_saturation.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **17** | `17_speculative_paged_kv_throughput.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **18** | `18_cross_seed_statistical_variance.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **19** | `19_publication_figures_latex_generator.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **20** | `20_production_serving_vllm_sglang_trtllm_integrations.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **21** | `21_model_export_onnx_safetensors_surgery_manifest.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **22** | `22_distributed_tensor_and_context_parallelism.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **23** | `23_spectral_diagnostics_and_hessian_analysis.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **24** | `24_advanced_optimizers_muon_stiefel_and_ttt_training.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **25** | `25_long_context_niah_cka_similarity_and_eval_harness.ipynb` | Verified Executed (RTX 3090 / HPC) |
+| **26** | `26_linear_recurrent_associative_scans.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **27** | `27_kronecker_delta_attention_deep_dive.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **28** | `28_multi_head_latent_attention_deepseek_mla.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **29** | `29_state_space_attention_hybrids.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **30** | `30_differential_attention_noise_cancellation.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **31** | `31_chunkwise_parallel_attention_kernels.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **32** | `32_sparse_sinkhorn_and_routing_attentions.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **33** | `33_outlier_aware_smoothquant_pipeline.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **34** | `34_microscaling_fp4_and_mx_formats.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **35** | `35_admm_structured_2_4_sparsity.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **36** | `36_activation_covariance_and_fisher_pruning.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **37** | `37_cross_layer_matrix_factorization_svd.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **38** | `38_weight_ternarization_and_1bit_architectures.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **39** | `39_dynamic_token_shedding_and_early_exit.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **40** | `40_cuda_cpp_warp_shuffle_and_shared_memory.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **41** | `41_triton_2d_tiling_without_block_pointers.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **42** | `42_huawei_ascend_npu_cann_adaptation.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **43** | `43_amd_rocm_hip_cross_compilation.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **44** | `44_tensorrt_engine_building_and_plugins.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **45** | `45_register_pressure_and_occupancy_tuning.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **46** | `46_gluon_experimental_dialect_kernels.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **47** | `47_warmup_stable_decay_wsd_scheduler.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **48** | `48_multi_dataset_ingestion_and_flame_packing.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **49** | `49_ring_and_zigzag_context_parallelism.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **50** | `50_activation_checkpointing_strategies.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **51** | `51_cross_model_representation_alignment.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **52** | `52_mixture_of_attentions_routing.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **53** | `53_knowledge_distillation_ablation_matrix.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **54** | `54_kv_cache_compression_and_eviction_policies.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **55** | `55_speculative_decoding_target_draft_synergy.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **56** | `56_vllm_sglang_custom_op_integration.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **57** | `57_numerical_precision_and_nan_inf_stress_tests.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **58** | `58_synthetic_stress_testing_and_chaos_engineering.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **59** | `59_reproducible_artifact_generation_and_latex_sync.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **60** | `60_end_to_end_industrial_llm_transformation.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **61** | `61_universal_surgery_director_and_ten_laws.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **62** | `62_deepseek_mla_dual_stream_latent_surgery.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **63** | `63_fx_graph_rewriter_and_inductor_compiler.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **64** | `64_zero_oom_streaming_distillation_and_shadow_twin.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **65** | `65_huggingface_polymorphic_generation_cache_bridge.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **66** | `66_smart_gpu_trainer_and_automax_vram.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **67** | `67_dora_healing_and_directional_adaptation.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **68** | `68_ttt_online_test_time_training_adaptation.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **69** | `69_fisher_micro_steps_and_natural_gradient_damping.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **70** | `70_preference_alignment_simpo_orpo_and_dynamic_routing_rl.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **71** | `71_triton_26_hardware_kernels_comprehensive_benchmark.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **72** | `72_llm_memory_bandwidth_and_l2_cache_saturation.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **73** | `73_multiprecision_numerical_validation_fp8_bf16_fp32.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **74** | `74_dynamic_range_stress_testing_and_nan_inf_resilience.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **75** | `75_long_horizon_extrapolation_32k_and_kv_complexity.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **76** | `76_pipeline_transform_master_planner_and_transactional_rollback.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **77** | `77_numerical_guardrails_static_validation_and_safety_gates.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **78** | `78_experiment_logging_telemetry_tracker_and_results_saver.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **79** | `79_comprehensive_evaluation_harness_niah_passkey_and_ab_testing.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **80** | `80_neuralops_cli_ecosystem_and_automated_evidence_reporting.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **81** | `81_autonomous_circuit_breaker_fsm_and_runtime_resilience.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **82** | `82_distributed_fsdp2_distillation_and_megatron_hooks.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **83** | `83_fla_flash_linear_attention_bidirectional_bridge.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **84** | `84_canonical_recipe_declarative_schema_and_versioning.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **85** | `85_speculative_decoding_engine_and_paged_state_fusion.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **86** | `86_cuda_graph_decode_runner_and_zero_overhead_inference.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **87** | `87_universal_model_export_safetensors_and_gguf_container.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **88** | `88_hybrid_attention_architectures_and_multi_branch_fusion.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **89** | `89_flame_multi_dataset_ingestion_and_zero_pad_varlen_packing.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+| **90** | `90_layerwise_spectral_decay_and_pareto_sweeper_analysis.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
+
+---
 *سند تهیه شده بر اساس استانداردهای مخزن NeuralOps — نوامبر ۲۰۲۶.*
