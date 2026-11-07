@@ -31,7 +31,7 @@ Welcome to **NeuralOps** (`SVD_linear_Attention` **v1.6.0**), the unified accele
 ### Standard Installation via PyPI
 
 ```bash
-pip install neuralops
+pip install "neuralops[core]"
 ```
 
 ### Installation from Source (Recommended for Hardware Acceleration)

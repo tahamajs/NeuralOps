@@ -84,7 +84,7 @@ try:
 except importlib.metadata.PackageNotFoundError:
     from neuralops._version import __version__
 
-_TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__", "pipeline"})
+_TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__"})
 try:
     _TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
 except (ImportError, ValueError):
@@ -639,7 +639,76 @@ def compress(*args: Any, **kwargs: Any) -> Any:
     return _impl(*args, **kwargs)
 
 
-from neuralops.api import _PUBLIC_API
+_STATIC_API_NAMES = (
+    "load_model",
+    "replace_attention",
+    "transplant_attention",
+    "transplant",
+    "serve",
+    "compress",
+    "get_attention_module",
+    "quick_benchmark",
+    "export_model",
+    "export",
+    "push_to_hub",
+    "load_exported_model",
+    "collect_surgery_distillation_loss",
+    "set_surgery_alpha",
+    "set_surgery_stage",
+    "finalize_surgery",
+    "list_attentions",
+    "list_compressors",
+    "get_attention_class",
+    "get_compressor_class",
+    "create_attention",
+    "create_compressor",
+    "list_families",
+    "register_custom_attention",
+    "register_custom_compressor",
+    "unregister_custom_module",
+    "validate_module_contract",
+    "scaffold_module",
+    "compare_attentions_ablation",
+    "surgical_transplant_and_heal_pipeline",
+    "heal_distributed",
+    "train",
+    "distill",
+    "evaluate",
+    "load_and_prepare_dataset",
+    "train_grpo",
+    "benchmark",
+    "benchmark_all",
+    "info",
+    "available_backends",
+    "has_triton",
+    "validate",
+    "get_version",
+    "NeuralOpsStateCache",
+    "benchmark_autoregressive_decoding",
+    "select_optimal_triton_config",
+    "oneshot",
+    "recommend",
+    "summary",
+    "compare",
+    "patch_transformers",
+    "AutoNeuralOpsModel",
+    "AutoNeuralOpsForCausalLM",
+    "AutoNeuralOpsForSequenceClassification",
+    "merge_for_inference",
+    "NeuralOpsTrainer",
+    "save_attention_only",
+    "load_attention_from_hub",
+    "pipeline",
+    "TextGenerationPipeline",
+)
+
+if _TORCH_AVAILABLE:
+    try:
+        from neuralops.api import _PUBLIC_API
+    except Exception:
+        _PUBLIC_API = {name: "neuralops.api" for name in _STATIC_API_NAMES}
+else:
+    _PUBLIC_API = {name: "neuralops.api" for name in _STATIC_API_NAMES}
 
 _API_EXPORTS = {
     **_PUBLIC_API,

@@ -9,7 +9,7 @@ This tutorial walks through loading a pre-trained transformer model, executing d
 Install NeuralOps and its dependencies:
 
 ```bash
-pip install neuralops
+pip install "neuralops[core]"
 ```
 
 For GPU acceleration with Triton JIT and native CUDA extensions:

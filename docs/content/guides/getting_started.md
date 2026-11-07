@@ -42,7 +42,7 @@ All empirical benchmark records and raw telemetry traces are openly hosted on Hu
 ### Option A: Standard PyPI Installation
 
 ```bash
-pip install neuralops
+pip install "neuralops[core]"
 ```
 
 ### Option B: Editable Development Installation

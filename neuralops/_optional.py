@@ -40,8 +40,8 @@ def _require_torch(feature: str = "this operation") -> None:
     if not _torch_available():
         raise TorchNotInstalledError(
             f"PyTorch is required for {feature}. "
-            f"Install with: pip install 'neuralops[cpu]' "
-            f"or 'neuralops[cuda]' for GPU support."
+            f"Install with: pip install 'neuralops[core]' "
+            f"(or 'neuralops[cuda]' for GPU acceleration)."
         )
     try:
         import neuralops

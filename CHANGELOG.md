@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Documentation & Packaging (Honest Quickstart & Torch-Free Invariant, F-96):**
+  - Updated Quickstart in `README.md` and documentation guides to recommend `pip install "neuralops[core]"` for real model transformation workflows. Clarified that bare `pip install neuralops` is a lightweight install containing package metadata and torch-free utilities only.
+  - Removed `pipeline` from `_TORCH_FREE_SYMBOLS` in `neuralops/__init__.py`. Eagerly calling or importing `pipeline` in a torch-free environment now fails closed with an actionable error.
+  - Guarded `_PUBLIC_API` import in `neuralops/__init__.py` with `_TORCH_AVAILABLE`, ensuring `import neuralops` and `neuralops.__version__` succeed cleanly without PyTorch installed.
+  - Enhanced `torch_install_error` message in `neuralops.core.exceptions` to explicitly instruct users to run `pip install "neuralops[core]"` or select a hardware acceleration extra (`[cpu]`, `[cuda]`, `[mps]`, `[rocm]`).
 - **Breaking Change (Deterministic Seeding & Strict Benchmark Config Validation, F-94, F-95):**
   - Consolidated random seed helpers into a single canonical function in `neuralops.core.utils.general.set_seed(seed=42, *, deterministic=True)`. All other seed helpers (`neuralops.utils.seed.set_all_seeds`, `neuralops.utils.helpers.set_seed`) now re-export this canonical helper. CUDA manual seeding is safely guarded by `torch.cuda.is_available()`.
   - Added `seed: Optional[int] = 42` parameter to public API endpoints in `neuralops.api`: `train`, `distill`, `evaluate`, and `benchmark`. Seeds are deterministically initialized and threaded down to underlying training routines without being dropped.
