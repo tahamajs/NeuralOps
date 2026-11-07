@@ -32,7 +32,7 @@ def get_registry():
         return json.load(f)
 
 
-def main():
+def main(cli_args: list[str] | None = None):
     parser = argparse.ArgumentParser(description="Master runner for module sweeps.")
     parser.add_argument(
         "--module",
@@ -40,7 +40,7 @@ def main():
         required=True,
         help="The key of the module to sweep (e.g. 'cur_linear').",
     )
-    args, unknown_args = parser.parse_known_args()
+    args, unknown_args = parser.parse_known_args(cli_args)
 
     registry = get_registry()
     if args.module not in registry:
@@ -49,10 +49,8 @@ def main():
 
     default_args = registry[args.module]
 
-    sys.argv = [sys.argv[0]] + unknown_args
-
     logger.info(f"Running sweep for {args.module} with default args: {default_args}")
-    run_orchestrator(args.module, default_args)
+    run_orchestrator(args.module, default_args, extra_cli_args=unknown_args)
 
 
 if __name__ == "__main__":

@@ -37,10 +37,12 @@ logger = logging.getLogger("UnifiedOrchestrator")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 
-def run_orchestrator(module_key: str, default_args: list = None):
+def run_orchestrator(module_key: str, default_args: list = None, extra_cli_args: list = None):
     extra_args = list(default_args) if default_args else []
 
-    if len(sys.argv) > 1:
+    if extra_cli_args is not None:
+        extra_args.extend(extra_cli_args)
+    elif len(sys.argv) > 1:
         extra_args.extend(sys.argv[1:])
 
     RESULTS_BASE = PROJECT_ROOT / "results" / "01_unified_runs" / f"unified_{module_key}"
