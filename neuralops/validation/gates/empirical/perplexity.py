@@ -6,7 +6,10 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-L4 Empirical Perplexity Validation Gate.
+L4 Empirical Perplexity Validation Gate (F-57).
+
+Evaluates absolute empirical perplexity against dataset evaluation tokens (WikiText, C4).
+Distinct from L3 Behavioral relative delta gate in `neuralops.validation.gates.behavioral.perplexity`.
 """
 
 from __future__ import annotations
@@ -85,7 +88,20 @@ def _evaluate_perplexity(model: nn.Module, dataset: Any) -> float:
 
 
 class PerplexityGate(Gate):
-    """Measures empirical perplexity on evaluation tokens (WikiText, C4, etc.)."""
+    """L4 Empirical Perplexity Validation Gate.
+
+    Measures empirical perplexity on evaluation tokens (WikiText, C4, etc.)
+    or via a custom evaluation function (`eval_fn`), enforcing absolute
+    perplexity thresholds and fail-closed integrity under production sweeps.
+
+    Scope Distinction:
+        - L4 Empirical (`PerplexityGate` / `EmpiricalPerplexityGate`): Evaluates
+          absolute perplexity on real dataset corpora, failing closed if no empirical
+          dataset or eval_fn is provided in production mode.
+        - L3 Behavioral (`PerplexityDeltaGate` in `neuralops.validation.gates.behavioral`):
+          Specifically compares candidate models against baseline models to measure
+          relative perplexity degradation (delta) across synthetic or evaluation tokens.
+    """
 
     name = "perplexity"
     level = "L4"
@@ -223,4 +239,7 @@ class PerplexityGate(Gate):
         )
 
 
-__all__ = ["PerplexityGate", "_evaluate_perplexity"]
+# Distinctly named alias for architectural clarity
+EmpiricalPerplexityGate = PerplexityGate
+
+__all__ = ["EmpiricalPerplexityGate", "PerplexityGate", "_evaluate_perplexity"]

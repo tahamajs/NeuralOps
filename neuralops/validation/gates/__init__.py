@@ -14,12 +14,12 @@ from neuralops.validation.gates.behavioral import (
     LogitKLGate,
     OutputSimilarityGate,
     PerplexityDeltaGate,
-    PerplexityGate,
 )
 from neuralops.validation.gates.empirical import (
     AccuracyGate,
     LatencyGate,
     NeedleInAHaystackGate,
+    PerplexityGate,
     ThroughputGate,
     VRAMGate,
 )

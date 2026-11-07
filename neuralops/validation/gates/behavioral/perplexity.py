@@ -6,7 +6,10 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-L3 Behavioral Perplexity Validation Gate.
+L3 Behavioral Perplexity Delta Gate (F-57).
+
+Measures relative perplexity degradation ratio vs baseline pre-surgery model on test tokens.
+Distinct from L4 Empirical absolute dataset perplexity gate in `neuralops.validation.gates.empirical.perplexity`.
 """
 
 from __future__ import annotations
@@ -21,8 +24,21 @@ import torch.nn.functional as F
 from neuralops.validation.base import Gate, GateResult, GateSeverity
 
 
-class PerplexityGate(Gate):
-    """Measures relative perplexity increase vs baseline on evaluation tokens."""
+class PerplexityDeltaGate(Gate):
+    """L3 Behavioral Perplexity Delta Validation Gate.
+
+    Measures relative perplexity increase vs a baseline model on evaluation tokens:
+        relative_increase = (ppl_test - ppl_baseline) / max(1e-5, ppl_baseline)
+
+    Scope Distinction:
+        - L3 Behavioral (`PerplexityDeltaGate` / `PerplexityGate` alias): Assesses
+          behavioral degradation between candidate (`model` / `model_after`) and reference
+          (`baseline_model` / `model_before`), verifying that relative degradation stays
+          within `max_relative_increase`.
+        - L4 Empirical (`PerplexityGate` in `neuralops.validation.gates.empirical`):
+          Measures absolute cross-entropy perplexity against ground-truth corpora
+          (WikiText, C4) or via an explicit evaluation function (`eval_fn`).
+    """
 
     name = "perplexity_delta"
     level = "L3"
@@ -140,7 +156,8 @@ class PerplexityGate(Gate):
             )
 
 
-# Alias
-PerplexityDeltaGate = PerplexityGate
+# Distinctly named aliases for architectural clarity
+BehavioralPerplexityDeltaGate = PerplexityDeltaGate
+PerplexityGate = PerplexityDeltaGate
 
-__all__ = ["PerplexityDeltaGate", "PerplexityGate"]
+__all__ = ["BehavioralPerplexityDeltaGate", "PerplexityDeltaGate", "PerplexityGate"]
