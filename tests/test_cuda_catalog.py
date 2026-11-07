@@ -145,3 +145,24 @@ def test_no_duplicate_cu_files() -> None:
                 assert (cuda_dir / target_sub).exists(), f"Target folder {target_sub} for catalog entry {entry} missing"
         else:
             assert folder.exists(), f"Catalog folder {folder} does not exist on disk"
+
+
+def test_trt_plugin_referenced_in_build() -> None:
+    """Verify that TensorRT linear attention plugin is packaged in pyproject.cuda.toml and exists on disk (F-46)."""
+    import tomllib
+
+    root_dir = Path(__file__).resolve().parent.parent
+    plugin_file = root_dir / "neuralops" / "ops" / "cuda" / "plugins" / "trt_linear_attention_plugin.cpp"
+    assert plugin_file.exists(), f"TensorRT plugin source missing: {plugin_file}"
+
+    pyproject_cuda_path = root_dir / "pyproject.cuda.toml"
+    assert pyproject_cuda_path.exists(), "pyproject.cuda.toml not found"
+
+    data = tomllib.loads(pyproject_cuda_path.read_text(encoding="utf-8"))
+    pkg_data = data.get("tool", {}).get("setuptools", {}).get("package-data", {})
+
+    plugins_included = any(
+        "trt_linear_attention_plugin.cpp" in entries or "*.cpp" in entries
+        for entries in pkg_data.values()
+    )
+    assert plugins_included, f"trt_linear_attention_plugin.cpp not referenced in pyproject.cuda.toml package-data: {pkg_data}"
