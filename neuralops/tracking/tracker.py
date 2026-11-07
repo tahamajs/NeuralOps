@@ -243,7 +243,13 @@ class ExperimentTracker:
 
     def get_callback(self):
         """Return a transformers-compatible TrainerCallback for experiment tracking."""
-        from transformers import TrainerCallback
+        try:
+            from transformers import TrainerCallback
+        except (ImportError, RuntimeError) as exc:
+            raise ImportError(
+                "ExperimentTracker.get_callback() requires the 'transformers' package. "
+                'Install it using: pip install "neuralops[core]" or pip install transformers'
+            ) from exc
 
         class TrackingCallback(TrainerCallback):
             def __init__(self, tracker_instance: ExperimentTracker):

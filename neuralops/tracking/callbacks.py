@@ -11,7 +11,12 @@ Tracking Callbacks
 Training callbacks that stream metrics, parameters, and loss trajectories to experiment trackers.
 """
 
-from transformers import TrainerCallback
+try:
+    from transformers import TrainerCallback
+    _TRANSFORMERS_AVAILABLE = True
+except (ImportError, RuntimeError):
+    TrainerCallback = object  # type: ignore[assignment,misc]
+    _TRANSFORMERS_AVAILABLE = False
 
 from .tracker import ExperimentTracker
 
@@ -20,6 +25,12 @@ class TrackerCallback(TrainerCallback):
     """Automatically log training/evaluation metrics to the tracker."""
 
     def __init__(self, tracker: ExperimentTracker) -> None:
+        if not _TRANSFORMERS_AVAILABLE:
+            raise ImportError(
+                "TrackerCallback requires the 'transformers' package to integrate with HuggingFace Trainer. "
+                'Install it using: pip install "neuralops[core]" or pip install transformers'
+            )
+        super().__init__()
         self.tracker = tracker
 
     def on_log(self, args, state, control, logs=None, **kwargs) -> None:
