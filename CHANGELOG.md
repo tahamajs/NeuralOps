@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Removal of Non-Functional Sharding Placeholder & Explicit Tensor Parallel Documentation (F-62):**
+  - **Breaking Change:** Removed `shard_model_tensor_parallel` placeholder from public `neuralops.distributed.__all__` and `neuralops.distributed.tensor_parallel.__all__`. Direct imports from `neuralops.distributed` now raise `ImportError`.
+  - Converted `shard_model_tensor_parallel` to a private `_shard_model_tensor_parallel` helper with explicit docstrings warning that automatic sharding is intentionally unsupported.
+  - Documented explicit usage patterns in `neuralops.distributed.tensor_parallel` docstring with runnable code snippets showing manual instantiation of `ColumnParallelLinear` and `RowParallelLinear`.
+  - Added unit test suite `tests/distributed/test_shard_placeholder.py` verifying non-export in `__all__`, `ImportError` on direct import, and verified constructibility of real tensor parallel layers (11 passed across distributed suite in 13.03s).
 - **Results Ledger Single Persistence Owner & Canonical Serving Unification (F-59, F-60):**
   - Declared `neuralops.results_saver` (and `storage/sqlite_backend.py`) as the sole authoritative persistence owner for SQLite master ledger mutations. Positioned `neuralops.analysis.results_ledger` as an analytical query and reporting reader, and confirmed `neuralops.reporting` performs zero mutating SQLite operations.
   - Eliminated hardcoded `parents[3]` repository path in `neuralops/ui/queries/ledger.py`: master ledger path is resolved via `NEURALOPS_LEDGER_PATH`, local results directory, or `~/.cache/neuralops/master_ledger.sqlite`, raising actionable `FileNotFoundError` if absent.
