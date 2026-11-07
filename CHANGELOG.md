@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Breaking Change (Unified Exception Hierarchy & Registered Error Types, F-81):**
+  - Canonical exception hierarchy consolidated in `neuralops.core.exceptions`. `neuralops.core.errors` is now a 100% compatible re-export shim (`core.exceptions.NeuralOpsError is core.errors.NeuralOpsError`).
+  - Standardized unknown module errors: `create_attention`, `create_compressor`, and `replace_attention` now consistently raise `AttentionNotRegisteredError` and `CompressorNotRegisteredError` across all public paths (`neuralops`, `neuralops.api`, `neuralops.core.registry`).
+  - Backward compatibility preserved: `AttentionNotRegisteredError` subclasses `(RegistryError, ValueError, KeyError)` and `CompressorNotRegisteredError` subclasses `(RegistryError, KeyError)`, ensuring existing exception handlers catching `ValueError`, `KeyError`, or `NeuralOpsError` continue to catch these exceptions without modification.
 - **Breaking Change (Unified Public API Surface & Single Factory Implementation, F-79, F-80):**
   - Canonical factory single source of truth: `create_attention`, `create_compressor`, and `list_attentions` are now canonically implemented in `neuralops.core.registry`. `neuralops.__init__` and `neuralops.api` re-export them directly, ensuring object identity (`neuralops.create_attention is neuralops.api.create_attention is neuralops.core.registry.create_attention`).
   - Strict head divisibility check: `create_attention` now raises a clear `ValueError` if `num_heads` does not divide `dim` evenly, eliminating silent downward mutation of `num_heads` to arbitrary divisors (`[16, 12, 8, 4, 2, 1]`). Callers passing non-divisible dimensions must adjust `num_heads` or `dim`.
