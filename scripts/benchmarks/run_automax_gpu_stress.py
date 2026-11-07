@@ -149,7 +149,7 @@ def main() -> int:
     total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
 
     print("=" * 72)
-    print("  🚀 NeuralOps AutoMax Continuous GPU Saturation Engine")
+    print("  [AutoMax] NeuralOps Continuous GPU Saturation Engine")
     print("=" * 72)
     print(f"  Target Accelerator : {device_name} ({total_vram_gb:.2f} GB VRAM)")
     print(f"  Model Architecture : {args.layers}L x {args.d_model}D (seq_len={args.seq_len})")
@@ -287,7 +287,7 @@ def main() -> int:
 
     print("-" * 72)
     print("\n======================================================================")
-    print("  ✓ AutoMax GPU Stress & Saturation Completed Successfully")
+    print("  [OK] AutoMax GPU Stress & Saturation Completed Successfully")
     print("======================================================================")
     print(f"  Total Duration      : {total_time:.2f} s")
     print(f"  Average Throughput  : {avg_tflops:.2f} TFLOPs/sec ({avg_tok_s:,.1f} tokens/s)")
