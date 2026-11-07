@@ -273,7 +273,7 @@ def solve_optimal_rank_allocation(
     return allocated_ranks, pareto_info
 
 
-@COMPRESSOR_REGISTRY.register("auto_svd", is_alias=True)
+@COMPRESSOR_REGISTRY.register("auto_svd")
 class AutoSVDCompressor(BaseCompressor):
     """
     AutoSVD: Automated Fisher & Gram Sensitivity Profiler + Multi-Objective Pareto Rank Allocation.

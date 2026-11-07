@@ -150,7 +150,7 @@ def gdn2_chunk_scan(
     return y, S.to(dtype)
 
 
-@ATTENTION_REGISTRY.register("gdn2_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("gdn2_attention")
 @ATTENTION_REGISTRY.register("gdn2", is_alias=True)
 class GDN2Attention(BaseAttention):
     """
@@ -158,6 +158,7 @@ class GDN2Attention(BaseAttention):
     Formulation:
         S_t = S_{t-1} * alpha_t * (I - beta_erase_t * k_t k_t^T) + beta_write_t * k_t v_t^T
     """
+    FAMILY: str = "gated"
     supports_causal: bool = True
     supports_gqa: bool = True
 
@@ -326,7 +327,7 @@ def householder_reflection(
     return v - reflect
 
 
-@ATTENTION_REGISTRY.register("delta_product_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("delta_product_attention")
 @ATTENTION_REGISTRY.register("delta_product", is_alias=True)
 @ATTENTION_REGISTRY.register("deltaproduct", is_alias=True)
 @ATTENTION_REGISTRY.register("path_attention", is_alias=True)
@@ -336,6 +337,7 @@ class DeltaProductAttention(BaseAttention):
     Tracks state via sequence-accumulated Householder orthogonal reflections, ensuring
     strict isometry, bounded spectrum, and norm preservation along sequence dimensions.
     """
+    FAMILY: str = "gated"
     supports_causal: bool = True
     supports_gqa: bool = True
 
@@ -527,7 +529,7 @@ class DeltaProductAttention(BaseAttention):
         return out, state
 
 
-@ATTENTION_REGISTRY.register("preconditioned_gdn_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("preconditioned_gdn_attention")
 @ATTENTION_REGISTRY.register("preconditioned_gdn", is_alias=True)
 @ATTENTION_REGISTRY.register("pgdn_attention", is_alias=True)
 @ATTENTION_REGISTRY.register("pgdn", is_alias=True)
@@ -540,6 +542,7 @@ class PreconditionedGDNAttention(BaseAttention):
         S_t = alpha_t * S_{t-1}(I - beta_t * k_tilde_t k_tilde_t^T) + beta_t * k_tilde_t v_t^T
     Directly aligns with NeuralOps Whitened Covariance Preconditioner.
     """
+    FAMILY: str = "gated"
     supports_causal: bool = True
     supports_gqa: bool = True
 

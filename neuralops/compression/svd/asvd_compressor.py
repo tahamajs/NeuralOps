@@ -26,8 +26,8 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("asvd")
 @COMPRESSOR_REGISTRY.register("asvd_compressor", is_alias=True)
-@COMPRESSOR_REGISTRY.register("asvd", is_alias=True)
 class ASVDCompressor(AASVDCompressor):
     """ASVD Compressor with KV-cache compression hooks and compressed_tensors I/O format."""
 

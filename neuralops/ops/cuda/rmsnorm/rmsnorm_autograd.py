@@ -13,6 +13,7 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -20,6 +21,8 @@ import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -58,9 +61,10 @@ def rmsnorm_pytorch_ref(
 
 def _get_triton_impl():
     try:
-        from neuralops.ops.triton.elementwise import rmsnorm_triton
-        return rmsnorm_triton
+        from neuralops.ops.triton.elementwise import fused_rmsnorm
+        return fused_rmsnorm
     except (ImportError, AttributeError):
+        logger.debug("Failed to import Triton fused_rmsnorm implementation", exc_info=True)
         return None
 
 

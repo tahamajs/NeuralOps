@@ -32,6 +32,8 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+@COMPRESSOR_REGISTRY.register("sparsegpt")
+@COMPRESSOR_REGISTRY.register("sparsegpt_compressor", is_alias=True)
 class SparseGPTCompressor(BaseCompressor):
     """
     In-memory PyTorch SparseGPT Compressor.
@@ -420,8 +422,6 @@ class SparseGPTCompressor(BaseCompressor):
         return tensors
 
 
-@COMPRESSOR_REGISTRY.register("sparsegpt")
-@COMPRESSOR_REGISTRY.register("sparsegpt_compressor", is_alias=True)
 def sparsegpt_factory(
     model: Any,
     comp_config: Any = None,

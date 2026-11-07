@@ -68,7 +68,7 @@ def generate_completion_script(shell: str) -> str:
         "run", "benchmark", "resume", "plan", "list", "verify", "doctor", "info",
         "search", "compress", "generate", "niah", "benchmark-fused", "transplant",
         "surgery", "compose", "roofline", "recommend", "calibrate", "inspect",
-        "ui", "validate", "scaffold", "results", "ledger", "train", "eval",
+        "ui", "tui", "validate", "scaffold", "results", "ledger", "train", "eval",
         "evaluate", "serve", "monitor", "distill", "export", "test",
         "recipe", "evidence", "ops", "compat"
     ]
@@ -381,9 +381,12 @@ def _build_parser() -> argparse.ArgumentParser:
     inspect_p.add_argument("--code-only", action="store_true", help="Print only ready-to-copy Python quickstart snippets")
     inspect_p.add_argument("--roofline", action="store_true", help="Run live empirical Roofline benchmark and append results")
 
-    ui_p = subparsers.add_parser("ui", help="Launch interactive Terminal User Interface (TUI mode)")
-    ui_p.add_argument("--inspect", type=str, default=None, help="Inspect specific module directly in flat UI preview")
-    ui_p.add_argument("--snapshot", action="store_true", help="Print non-interactive snapshot of explorer and exit (CI-friendly)")
+    from neuralops.ui.cli import build_ui_parser
+    ui_p = build_ui_parser(subparsers.add_parser("ui", help="Launch NeuralOps Web UI dashboard (FastAPI + htmx)"))
+
+    tui_p = subparsers.add_parser("tui", help="Launch interactive Terminal User Interface (TUI mode)")
+    tui_p.add_argument("--inspect", type=str, default=None, help="Inspect specific module directly in flat UI preview")
+    tui_p.add_argument("--snapshot", action="store_true", help="Print non-interactive snapshot of explorer and exit (CI-friendly)")
 
     val_p = subparsers.add_parser("validate", help="Run automated 6-point contract diagnostics on any built-in or custom module")
     val_p.add_argument("name", type=str, help="Module identifier to validate against framework contracts")
@@ -535,6 +538,9 @@ def _build_parser() -> argparse.ArgumentParser:
     compat_chk_p.add_argument("path", help="Path to exported model directory")
 
     return parser
+
+
+build_parser = _build_parser
 
 
 def handle_list(args: argparse.Namespace) -> int:
@@ -1410,7 +1416,10 @@ def _dispatch(args: argparse.Namespace) -> int:
     elif args.subcommand == "compat":
         return handle_compat(args)
     elif args.subcommand == "ui":
-        from neuralops.cli.terminal_ui import run_interactive_ui
+        from neuralops.ui.cli import cmd_ui
+        return cmd_ui(args)
+    elif args.subcommand == "tui":
+        from neuralops.benchmarks.terminal_ui import run_interactive_ui
         run_interactive_ui(inspect_target=getattr(args, "inspect", None), snapshot=getattr(args, "snapshot", False))
         return 0
     elif args.subcommand == "inspect":

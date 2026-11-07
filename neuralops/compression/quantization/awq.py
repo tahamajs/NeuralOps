@@ -102,7 +102,7 @@ class AWQQuantizer:
         return W_dequant
 
 
-@COMPRESSOR_REGISTRY.register("awq", is_alias=True)
+@COMPRESSOR_REGISTRY.register("awq")
 @COMPRESSOR_REGISTRY.register("awq_real", is_alias=True)
 @COMPRESSOR_REGISTRY.register("awq_compressor", is_alias=True)
 class AWQCompressor(BaseCompressor):

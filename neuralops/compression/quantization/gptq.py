@@ -151,7 +151,7 @@ class GPTQQuantizer:
         return W
 
 
-@COMPRESSOR_REGISTRY.register("gptq", is_alias=True)
+@COMPRESSOR_REGISTRY.register("gptq")
 @COMPRESSOR_REGISTRY.register("gptq_real", is_alias=True)
 @COMPRESSOR_REGISTRY.register("gptq_compressor", is_alias=True)
 class GPTQCompressor(BaseCompressor):

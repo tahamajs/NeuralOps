@@ -180,5 +180,6 @@ def fp8_compressor_compress(
 
 
 fp8_compressor_compress_pytorch = _fp8_pytorch
+fp8_compress = fp8_compressor_compress
 
-__all__ = ["fp8_compressor_compress", "fp8_compressor_compress_pytorch"]
+__all__ = ["fp8_compress", "fp8_compressor_compress", "fp8_compressor_compress_pytorch"]

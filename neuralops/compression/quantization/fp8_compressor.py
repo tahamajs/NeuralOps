@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 __all__ = ["FP8Compressor", "fp8_compressor_factory"]
 
 
+@COMPRESSOR_REGISTRY.register("fp8")
 @COMPRESSOR_REGISTRY.register("fp8_compressor", is_alias=True)
-@COMPRESSOR_REGISTRY.register("fp8", is_alias=True)
 @COMPRESSOR_REGISTRY.register("fp8_quantizer", is_alias=True)
 class FP8Compressor(BaseCompressor):
     """

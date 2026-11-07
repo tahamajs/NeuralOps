@@ -777,6 +777,34 @@ def ternary_gemm_triton(
     return y.reshape(*orig_shape[:-1], N)
 
 
+def fp4_gemm_triton(
+    x: torch.Tensor,
+    w_packed: torch.Tensor,
+    scales: torch.Tensor,
+    bias: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """FP4 GEMM in GPU memory."""
+    orig_shape = x.shape
+    x_2d = x.reshape(-1, orig_shape[-1])
+    N, K_packed = w_packed.shape
+    K = K_packed * 2
+
+    lut = torch.tensor([
+        0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0,
+        -0.0, -0.5, -1.0, -1.5, -2.0, -3.0, -4.0, -6.0
+    ], device=x.device, dtype=torch.float32)
+
+    w_unpacked = torch.empty((N, K), dtype=torch.float32, device=x.device)
+    w_unpacked[:, 0::2] = lut[(w_packed & 0x0F).long()]
+    w_unpacked[:, 1::2] = lut[((w_packed >> 4) & 0x0F).long()]
+
+    w_scaled = w_unpacked * scales.unsqueeze(-1)
+    y = torch.matmul(x_2d, w_scaled.t().to(x.dtype))
+    if bias is not None:
+        y = y + bias
+    return y.reshape(*orig_shape[:-1], N)
+
+
 __all__ = [
     "FusedRMSNormLinear",
     "fused_norm_linear",
@@ -784,6 +812,7 @@ __all__ = [
     "fused_rmsnorm_linear",
     "fused_rmsnorm_gate",
     "fused_rmsnorm_gate_triton",
+    "fp4_gemm_triton",
     "ternary_gemm_triton",
     "triton_fused_hadamard_w4a16_gemm",
     "triton_fused_hadamard_w4a16_gemm_pytorch_ref",

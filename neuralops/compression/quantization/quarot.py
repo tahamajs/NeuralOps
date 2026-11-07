@@ -23,7 +23,7 @@ from neuralops.ops.triton.elementwise import fast_hadamard_transform
 __all__ = ["QuaRotCompressor", "quarot_factory"]
 
 
-@COMPRESSOR_REGISTRY.register("quarot", is_alias=True)
+@COMPRESSOR_REGISTRY.register("quarot")
 @COMPRESSOR_REGISTRY.register("quarot_compressor", is_alias=True)
 class QuaRotCompressor(BaseCompressor):
     """QuaRot: 4-bit / FP8 Quantization with randomized Walsh-Hadamard pre-rotation."""

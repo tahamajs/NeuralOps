@@ -436,11 +436,11 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "w4a16_gemm_pytorch_ref"
   ],
   "fp8_gemm": [
-    "quantized_gemm",
+    "fp8_gemm",
     "fp8_gemm"
   ],
   "fp8_gemm_pytorch_ref": [
-    "quantized_gemm",
+    "fp8_gemm",
     "fp8_gemm_pytorch_ref"
   ],
   "selective_scan": [
@@ -978,6 +978,342 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
   "retnet_retention_pytorch_ref": [
     "multi_scale_retention",
     "multi_scale_retention_pytorch_ref"
+  ],
+  "act_scale_gemm": [
+    "act_scale_gemm",
+    "act_scale_quant_gemm"
+  ],
+  "block_diag_gemm": [
+    "block_diag_gemm",
+    "block_diag_matmul"
+  ],
+  "cosformer": [
+    "cosformer",
+    "cosformer_linear_attention"
+  ],
+  "cosformer_attn": [
+    "cosformer",
+    "cosformer_linear_attention"
+  ],
+  "entropy_gate": [
+    "entropy_gate",
+    "spectral_entropy_svd_gate"
+  ],
+  "expert_dispatch": [
+    "moe_routing",
+    "moe_dispatch_gather"
+  ],
+  "flash_decoding": [
+    "flash_decoding",
+    "flash_decoding_attention"
+  ],
+  "fused_ce": [
+    "fused_ce",
+    "fused_cross_entropy"
+  ],
+  "fused_kd": [
+    "fused_kd",
+    "fused_kd_loss"
+  ],
+  "fused_rope": [
+    "fused_rope",
+    "fused_rotary_emb"
+  ],
+  "hadamard_gemm": [
+    "hadamard_gemm",
+    "hadamard_w4a16_gemm"
+  ],
+  "hgrn2_scan": [
+    "hgrn2_scan",
+    "hgrn2_fused_bwd_scan"
+  ],
+  "kronecker_gemm": [
+    "kronecker_gemm",
+    "kronecker_matmul"
+  ],
+  "kv_cache_copy": [
+    "paged_kv_cache",
+    "copy_blocks_cow"
+  ],
+  "latent_kv_attn": [
+    "latent_kv_attn",
+    "latent_kv_cache_attention"
+  ],
+  "linear_attn": [
+    "linear_attention",
+    "linear_attention"
+  ],
+  "lut_gemm": [
+    "lut_gemm",
+    "lut_codebook_dequant_gemm"
+  ],
+  "moe_router": [
+    "moe_routing",
+    "moe_dispatch_gather"
+  ],
+  "rpca_sparse_svd": [
+    "rpca_sparse_svd",
+    "rpca_sparse_svd_gemm"
+  ],
+  "sliding_window": [
+    "sliding_window",
+    "sliding_window_attn"
+  ],
+  "softplus": [
+    "softplus",
+    "fused_softplus"
+  ],
+  "sparse_attention": [
+    "sparse_attention",
+    "block_sparse_attn"
+  ],
+  "spectraformer_attention": [
+    "spectraformer_attention",
+    "spectraformer"
+  ],
+  "state_update": [
+    "state_update",
+    "recurrent_linear_step"
+  ],
+  "gdn_scan": [
+    "gdn_scan",
+    "chunked_delta_gate_scan"
+  ],
+  "low_rank_svd": [
+    "low_rank_svd",
+    "fused_lowrank_gated_gemm"
+  ],
+  "paged_kv_cache": [
+    "paged_kv_cache",
+    "copy_blocks_cow"
+  ],
+  "quantized_gemm": [
+    "quantized_gemm",
+    "w4a16_gemm"
+  ],
+  "adaptive_sparse": [
+    "adaptive_sparse",
+    "adaptive_sparse_attention_forward"
+  ],
+  "adaptive_sparse_attention_forward": [
+    "adaptive_sparse",
+    "adaptive_sparse_attention_forward"
+  ],
+  "admm": [
+    "admm",
+    "admm_pruner_compress"
+  ],
+  "admm_pruner_compress": [
+    "admm",
+    "admm_pruner_compress"
+  ],
+  "asvd": [
+    "asvd",
+    "asvd_compress"
+  ],
+  "asvd_compress": [
+    "asvd",
+    "asvd_compress"
+  ],
+  "awq": [
+    "awq",
+    "awq_compress"
+  ],
+  "awq_compress": [
+    "awq",
+    "awq_compress"
+  ],
+  "based_taylor_attention": [
+    "based_taylor_attention",
+    "based_taylor_attention"
+  ],
+  "based_taylor_attention_pytorch_ref": [
+    "based_taylor_attention",
+    "based_taylor_attention_pytorch_ref"
+  ],
+  "chela_slay": [
+    "chela_slay",
+    "chela_slay_attention_forward"
+  ],
+  "chela_slay_attention_forward": [
+    "chela_slay",
+    "chela_slay_attention_forward"
+  ],
+  "chela_slay_wide": [
+    "chela_slay_wide",
+    "chela_slay_wide_attention_forward"
+  ],
+  "chela_slay_wide_attention_forward": [
+    "chela_slay",
+    "chela_slay_wide_attention_forward"
+  ],
+  "direct_svd": [
+    "direct_svd",
+    "direct_svd_compress"
+  ],
+  "direct_svd_compress": [
+    "direct_svd",
+    "direct_svd_compress"
+  ],
+  "dynamic_conv": [
+    "dynamic_conv",
+    "dynamic_conv_attention_forward"
+  ],
+  "dynamic_conv_attention_forward": [
+    "dynamic_conv",
+    "dynamic_conv_attention_forward"
+  ],
+  "fp8_compressor": [
+    "fp8_compressor",
+    "fp8_compressor_compress"
+  ],
+  "fp8_compressor_compress": [
+    "fp8_compressor",
+    "fp8_compressor_compress"
+  ],
+  "fused_svd_projection": [
+    "fused_svd_projection",
+    "fused_svd_projection"
+  ],
+  "fused_svd_projection_pytorch_ref": [
+    "fused_svd_projection",
+    "fused_svd_projection_pytorch_ref"
+  ],
+  "fwsvd": [
+    "fwsvd",
+    "fwsvd_compress"
+  ],
+  "fwsvd_compress": [
+    "fwsvd",
+    "fwsvd_compress"
+  ],
+  "gated_deltanet": [
+    "gated_deltanet",
+    "gated_deltanet"
+  ],
+  "gated_deltanet_pytorch_ref": [
+    "gated_deltanet",
+    "gated_deltanet_pytorch_ref"
+  ],
+  "gla_chunk_attn": [
+    "gla_chunk_attn",
+    "gla_chunk_attn"
+  ],
+  "gla_chunk_attn_pytorch_ref": [
+    "gla_chunk_attn",
+    "gla_chunk_attn_pytorch_ref"
+  ],
+  "hnc_svd": [
+    "hnc_svd",
+    "hnc_svd_compress"
+  ],
+  "hnc_svd_compress": [
+    "hnc_svd",
+    "hnc_svd_compress"
+  ],
+  "hybrid_local_kernel": [
+    "hybrid_local_kernel",
+    "hybrid_local_attn"
+  ],
+  "hybrid_local_attn": [
+    "hybrid_local_kernel",
+    "hybrid_local_attn"
+  ],
+  "kmeans_quantize": [
+    "kmeans_quantize",
+    "kmeans_quantize_compress"
+  ],
+  "kmeans_quantize_compress": [
+    "kmeans_quantize",
+    "kmeans_quantize_compress"
+  ],
+  "lightning_attention": [
+    "lightning_attention",
+    "lightning_attention"
+  ],
+  "lightning_attention_pytorch_ref": [
+    "lightning_attention",
+    "lightning_attention_pytorch_ref"
+  ],
+  "lsh_attention": [
+    "lsh_attention",
+    "lsh_attention_forward"
+  ],
+  "lsh_attention_forward": [
+    "lsh_attention",
+    "lsh_attention_forward"
+  ],
+  "rala": [
+    "rala",
+    "rala_attention_forward"
+  ],
+  "rala_attention_forward": [
+    "rala",
+    "rala_attention_forward"
+  ],
+  "retnet_chunk_retention": [
+    "retnet_chunk_retention",
+    "retnet_chunk_retention"
+  ],
+  "retnet_chunk_retention_pytorch_ref": [
+    "retnet_chunk_retention",
+    "retnet_chunk_retention_pytorch_ref"
+  ],
+  "rwkv6_state_scan": [
+    "rwkv6_state_scan",
+    "rwkv6_state_scan"
+  ],
+  "rwkv6_state_scan_pytorch_ref": [
+    "rwkv6_state_scan",
+    "rwkv6_state_scan_pytorch_ref"
+  ],
+  "sparsegpt": [
+    "sparsegpt",
+    "sparsegpt_compress"
+  ],
+  "sparsegpt_compress": [
+    "sparsegpt",
+    "sparsegpt_compress"
+  ],
+  "svd_linear_decay": [
+    "svd_linear_decay",
+    "svd_linear_decay"
+  ],
+  "svd_linear_decay_pytorch_ref": [
+    "svd_linear_decay",
+    "svd_linear_decay_pytorch_ref"
+  ],
+  "svd_mamba_fused": [
+    "svd_mamba_fused",
+    "svd_mamba_fused"
+  ],
+  "svd_mamba_fused_pytorch_ref": [
+    "svd_mamba_fused",
+    "svd_mamba_fused_pytorch_ref"
+  ],
+  "token_compressed": [
+    "token_compressed",
+    "token_compressed_attention_forward"
+  ],
+  "token_compressed_attention_forward": [
+    "token_compressed",
+    "token_compressed_attention_forward"
+  ],
+  "ttt_linear_step": [
+    "ttt_linear_step",
+    "ttt_linear_step_attention_forward"
+  ],
+  "ttt_linear_step_attention_forward": [
+    "ttt_linear_step",
+    "ttt_linear_step_attention_forward"
+  ],
+  "wanda": [
+    "wanda",
+    "wanda_compress"
+  ],
+  "wanda_compress": [
+    "wanda",
+    "wanda_compress"
   ]
 }
 
@@ -985,14 +1321,21 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
 CUDA_KERNEL_CATALOG: list[str] = [
     "act_scale_gemm",
     "adaptive_span",
+    "adaptive_sparse",
+    "admm",
     "aegis_gate_norm",
     "alibi_attention",
+    "asvd",
+    "awq",
+    "based_taylor_attention",
     "bigbird",
     "bitonic_topk",
     "block_diag_gemm",
     "block_sparse_attn",
     "causal_conv1d",
     "channel_shuffle",
+    "chela_slay",
+    "chela_slay_wide",
     "chunked_delta_gate_scan",
     "cluster_attention",
     "cosformer",
@@ -1000,6 +1343,8 @@ CUDA_KERNEL_CATALOG: list[str] = [
     "cross_attention",
     "decay_linear_attention",
     "differential_attention",
+    "direct_svd",
+    "dynamic_conv",
     "dynamic_conv1d",
     "entmax_bisect",
     "entropy_gate",
@@ -1013,6 +1358,7 @@ CUDA_KERNEL_CATALOG: list[str] = [
     "flash_gqa",
     "fms_scan",
     "fp4_gemm",
+    "fp8_compressor",
     "fp8_gemm",
     "fused_ce",
     "fused_dropout_add",
@@ -1020,26 +1366,36 @@ CUDA_KERNEL_CATALOG: list[str] = [
     "fused_lowrank_gated_gemm",
     "fused_norm_linear",
     "fused_rope",
+    "fused_svd_projection",
     "fwht_transform",
+    "fwsvd",
     "galerkin_attention",
+    "gated_deltanet",
     "gdn_delta_rule",
+    "gdn_scan",
+    "gla_chunk_attn",
     "gla_scan",
     "gla_unnormalized_scan",
     "goldfinch_ahn",
-    "hla_attention",
     "griffin_ssd",
     "hadamard_gemm",
     "hgrn2_scan",
     "hgrn2_spatial_scan",
+    "hla_attention",
+    "hnc_svd",
     "hstu_attention",
+    "hybrid_local_kernel",
     "hydra_attention",
     "hymba_transx",
     "jamba",
     "jamba_info",
+    "kmeans_quantize",
     "kronecker_gemm",
     "kv_cache_copy",
     "latent_kv_attn",
     "layernorm",
+    "lightning_attention",
+    "linear_attention",
     "linear_attn",
     "linear_rnn_attention",
     "linformer_attention",
@@ -1047,24 +1403,30 @@ CUDA_KERNEL_CATALOG: list[str] = [
     "local_attention",
     "logcumsumexp",
     "longformer",
+    "low_rank_svd",
+    "lsh_attention",
     "lut_gemm",
     "mamba2_block",
     "mamba_block",
     "mamba_svd_flash",
     "moe_router",
+    "moe_routing",
     "multi_scale_retention",
     "nasc_attention",
     "nexus",
     "nystrom_attention",
     "orion",
     "paged_attention",
+    "paged_kv_cache",
     "paged_kv_evict",
     "paged_recurrent_step",
     "phantom",
-    "quantized_fp8_gemm",
+    "quantized_gemm",
+    "rala",
     "recurrent_gla_step",
     "recurrent_hgrn2_step",
     "reformer",
+    "retnet_chunk_retention",
     "rfa_attention",
     "rms_variance_match",
     "rmsnorm",
@@ -1072,6 +1434,7 @@ CUDA_KERNEL_CATALOG: list[str] = [
     "routing_attention",
     "rpca_sparse_svd",
     "rwkv6",
+    "rwkv6_state_scan",
     "samba_m3",
     "samba_moe",
     "selective_scan",
@@ -1081,6 +1444,7 @@ CUDA_KERNEL_CATALOG: list[str] = [
     "soa_attn",
     "softplus",
     "sparse_attention",
+    "sparsegpt",
     "spectra_v2",
     "spectraformer_attention",
     "spectral_mamba",
@@ -1088,14 +1452,19 @@ CUDA_KERNEL_CATALOG: list[str] = [
     "speculative_verify",
     "split_head_norm",
     "state_update",
+    "svd_linear_decay",
+    "svd_mamba_fused",
     "svd_prefix_scan",
     "swiglu",
     "ternary_gemm",
+    "token_compressed",
     "tpa_attention",
     "tt_contraction",
+    "ttt_linear_step",
     "unified_rope_offset",
     "upi_stuffed_mamba",
     "varlen_attention",
     "vspec",
     "w4a16_gemm",
+    "wanda"
 ]

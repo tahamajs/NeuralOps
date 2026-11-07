@@ -181,7 +181,7 @@ def smoothquant_model(
     return scales
 
 
-@COMPRESSOR_REGISTRY.register("smoothquant", is_alias=True)
+@COMPRESSOR_REGISTRY.register("smoothquant")
 @COMPRESSOR_REGISTRY.register("smoothquant_real", is_alias=True)
 @COMPRESSOR_REGISTRY.register("smoothquant_compressor", is_alias=True)
 class SmoothQuantCompressor(BaseCompressor):

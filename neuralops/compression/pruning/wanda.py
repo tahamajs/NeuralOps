@@ -12,10 +12,19 @@ Prunes weights according to the product of weight magnitudes and input activatio
 """
 
 from __future__ import annotations
+import logging
+from typing import Any
+
 import torch
 import torch.nn as nn
 
-__all__ = ["wanda_prune_layer", "wanda_prune_model"]
+from neuralops.core.base import BaseCompressor
+from neuralops.core.common import _cfg_get
+from neuralops.core.registry import COMPRESSOR_REGISTRY
+
+logger = logging.getLogger(__name__)
+
+__all__ = ["WandaCompressor", "wanda_prune_layer", "wanda_prune_model", "wanda_factory"]
 
 
 def wanda_prune_layer(
@@ -68,7 +77,7 @@ def wanda_prune_layer(
 
 def wanda_prune_model(
     model: nn.Module,
-    calib_data: list[torch.Tensor],
+    calib_data: list[torch.Tensor] | None = None,
     sparsity: float = 0.5,
 ) -> dict[str, torch.Tensor]:
     """Applies Wanda pruning to all eligible linear layers of model, protecting task heads."""
@@ -81,3 +90,55 @@ def wanda_prune_model(
             _, mask = wanda_prune_layer(module, sparsity=sparsity, calib_data=calib_data)
             masks[name] = mask
     return masks
+
+
+@COMPRESSOR_REGISTRY.register("wanda")
+@COMPRESSOR_REGISTRY.register("wanda_pruner", is_alias=True)
+@COMPRESSOR_REGISTRY.register("wanda_compressor", is_alias=True)
+class WandaCompressor(BaseCompressor):
+    """Wanda Compressor: Pruning by Weights and Activations.
+
+    Prunes weights according to the product of weight magnitudes and input activation norms.
+    """
+
+    FAMILY: str = "pruning"
+
+    def __init__(
+        self,
+        model: nn.Module,
+        sparsity: float = 0.5,
+        calib_data: list[torch.Tensor] | None = None,
+        comp_config: Any = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(model, name="wanda", **kwargs)
+        self.sparsity = _cfg_get(
+            comp_config, "wanda_sparsity", _cfg_get(comp_config, "sparsity", sparsity)
+        )
+        self.calib_data = calib_data
+        self.masks: dict[str, torch.Tensor] = {}
+
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
+        self.masks = wanda_prune_model(
+            self.model,
+            calib_data=self.calib_data,
+            sparsity=self.sparsity,
+        )
+        self.record_compression_check(status="success")
+        stats = self.get_compression_stats()
+        stats["num_pruned_layers"] = len(self.masks)
+        stats["sparsity"] = self.sparsity
+        self.stats = stats
+        return self.model, stats
+
+
+def wanda_factory(
+    model: nn.Module,
+    comp_config: Any = None,
+    sparsity: float = 0.5,
+    **kwargs: Any,
+) -> nn.Module:
+    """Factory function for Wanda compressor."""
+    compressor = WandaCompressor(model, comp_config=comp_config, sparsity=sparsity, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

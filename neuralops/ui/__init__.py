@@ -13,6 +13,7 @@ Minimal, publication-grade web dashboard and interactive exploration interface.
 
 from __future__ import annotations
 
-__all__ = ["build_ui_parser", "cmd_ui"]
+__all__ = ["build_ui_parser", "cmd_ui", "create_app"]
 
 from neuralops.ui.cli import build_ui_parser, cmd_ui
+from neuralops.ui.server import create_app

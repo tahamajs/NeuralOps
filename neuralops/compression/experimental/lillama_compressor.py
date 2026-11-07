@@ -49,6 +49,8 @@ _ATTN_NAMES = {
 }
 
 
+@COMPRESSOR_REGISTRY.register("lillama_compressor")
+@COMPRESSOR_REGISTRY.register("lillama", is_alias=True)
 class LiLLaMADistiller(BaseCompressor):
     """LiLLaMADistiller neural operator.
 

@@ -13,6 +13,7 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Optional, Any
 
@@ -20,6 +21,8 @@ import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -75,6 +78,7 @@ def _get_triton_impl():
         from neuralops.ops.triton.fused_norm_linear import fp4_gemm_triton
         return fp4_gemm_triton
     except (ImportError, AttributeError):
+        logger.debug("Failed to import Triton FP4 GEMM implementation", exc_info=True)
         return None
 
 

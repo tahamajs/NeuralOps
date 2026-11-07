@@ -192,5 +192,6 @@ def admm_pruner_compress(
 
 
 admm_pruner_compress_pytorch = _admm_pytorch
+admm_prune = admm_pruner_compress
 
-__all__ = ["admm_pruner_compress", "admm_pruner_compress_pytorch", "_admm_pytorch"]
+__all__ = ["admm_prune", "admm_pruner_compress", "admm_pruner_compress_pytorch", "_admm_pytorch"]
