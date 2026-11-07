@@ -26,6 +26,8 @@ import torch.nn as nn
 
 logger = logging.getLogger("NeuralOps.Export")
 
+SUPPORTED_EXPORT_FORMATS = {"aoti", "gguf", "onnx", "pt2", "safetensors", "torch_export", "torchscript"}
+
 
 def export_model(
     model: nn.Module,
@@ -47,12 +49,12 @@ def export_model(
     if fmt == "awq":
         raise NotImplementedError(
             "AWQ export is not implemented: writing a quantization config beside dense weights "
-            "does not quantize a model. Quantize the model with a supported AWQ tool first."
+            "does not quantize a model. Quantize the model with a supported AWQ tool first (e.g. export to safetensors and apply AutoAWQ separately)."
         )
 
-    supported_formats = {"safetensors", "onnx", "torchscript", "pt2", "torch_export", "aoti", "gguf"}
+    supported_formats = SUPPORTED_EXPORT_FORMATS
     if fmt not in supported_formats:
-        choices = "safetensors, onnx, torchscript, awq, pt2, gguf"
+        choices = ", ".join(sorted(supported_formats))
         raise ValueError(f"Unsupported export format {format!r}. Choose from: {choices}.")
     if fmt in {"torch_export", "aoti"}:
         fmt = "pt2"
@@ -349,9 +351,8 @@ def export_model(
         return gguf_target
 
     else:
-        raise ValueError(
-            f"Unsupported export format '{format}'. Choose from: 'safetensors', 'onnx', 'torchscript', 'gguf', 'awq', 'pt2'"
-        )
+        choices = ", ".join(sorted(SUPPORTED_EXPORT_FORMATS))
+        raise ValueError(f"Unsupported export format {format!r}. Choose from: {choices}.")
 
 
 def load_exported_model(
