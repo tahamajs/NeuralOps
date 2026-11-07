@@ -6,14 +6,34 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Serving Artifacts Facade
+Serving Subpackage.
 
-Direct interface to serving export utilities, runtime adapters, and configuration builders.
+Canonical interface for NeuralOps serving: OpenAI-compatible FastAPI serving engine,
+paged KV-cache management, and specialized export adapters.
 """
 
 from __future__ import annotations
 
-from neuralops.export.serving import *  # noqa: F403
-import neuralops.export.serving as _mod
+from neuralops.integrations.serving import (
+    create_openai_serving_app,
+)
+from neuralops.serving.paged_cache_manager import (
+    PagedKVCache,
+    PagedKVCacheManager,
+    PagedStateTable,
+)
+from neuralops.export.serving import (
+    VLLMAdapter,
+    TGIAdapter,
+    export_serving_bundle,
+)
 
-__all__ = [name for name in dir(_mod) if not name.startswith("_")]
+__all__ = [
+    "create_openai_serving_app",
+    "PagedKVCache",
+    "PagedKVCacheManager",
+    "PagedStateTable",
+    "VLLMAdapter",
+    "TGIAdapter",
+    "export_serving_bundle",
+]

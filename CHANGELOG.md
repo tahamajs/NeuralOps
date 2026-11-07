@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Breaking Change (Canonical Serving Implementation & Kwarg Validation, F-93):**
+  - Declared `neuralops.integrations.serving.create_openai_serving_app` the single canonical serving implementation.
+  - Re-pointed `neuralops.serving.__init__.py` to re-export `create_openai_serving_app` directly (`neuralops.serving.create_openai_serving_app is neuralops.integrations.serving.create_openai_serving_app`).
+  - Documented `neuralops.export.serving` as export-bundle-only (packaging checkpoints and configs for external runtimes) and `neuralops.benchmarks.serving` as a TTFT/ITL microbenchmark harness.
+  - Reconciled `PagedKVCacheManager` alias in `neuralops.inference.paged_cache`, `neuralops.serving.paged_cache_manager`, and `neuralops.serving.cache` (`PagedKVCacheManager is R` verified `True`).
+  - Strict serving argument validation: `create_openai_serving_app` and `api.serve` now validate `backend` and `kv_cache_budget_gb`. Live serving requests for external runtimes (`vllm`, `sglang`, `tgi`, `tensorrt_llm`) fail closed with `IntegrationNotImplementedError`; non-positive `kv_cache_budget_gb` raises `ValueError`; valid parameters are stored on `app.state`.
 - **Breaking Change (Canonical `replace_attention` & Unified Distillation, F-92):**
   - Declared `neuralops.api.replace_attention` the single canonical implementation of `replace_attention`.
   - Re-exported `replace_attention` from `neuralops.surgery.attention.replace`, `neuralops.surgery.attention_replace`, `neuralops.core.attention_utils`, `neuralops.core._attention_surgery`, and `neuralops.utils.replace_attention` ensuring exact pointer identity across all legacy import paths (`is` check passes across all 5 paths).

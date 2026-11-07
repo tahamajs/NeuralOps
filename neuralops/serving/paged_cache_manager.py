@@ -16,10 +16,8 @@ from __future__ import annotations
 
 from neuralops.inference.paged_cache import (
     PagedKVCache,
+    PagedKVCacheManager,
     PagedStateTable,
 )
-
-# Canonical alias for serving cache manager
-PagedKVCacheManager = PagedKVCache
 
 __all__ = ["PagedKVCache", "PagedKVCacheManager", "PagedStateTable"]

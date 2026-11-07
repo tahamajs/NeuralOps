@@ -6,9 +6,12 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Serving Artifact Exporter
+Serving Artifact Exporter (Export Bundle Only)
 
-Prepares model artifacts, configurations, and tokenizer files for production inference servers.
+Specialized module for packaging and serializing model checkpoints, configurations,
+and tokenizer artifacts for external inference engines (vLLM, TGI, TensorRT-LLM).
+This module is for export bundle creation and offline adapter generation only;
+live HTTP serving is provided exclusively by neuralops.integrations.serving:create_openai_serving_app.
 """
 
 from __future__ import annotations

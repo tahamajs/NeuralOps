@@ -197,6 +197,8 @@ def create_openai_serving_app(
     model_name: str = "neuralops-default",
     api_key: Optional[str] = None,
     rate_limit_rpm: int = 60,
+    backend: str = "fastapi",
+    kv_cache_budget_gb: float = 4.0,
     **kwargs: Any,
 ) -> Any:
     """Create an OpenAI-shaped API backed by the supplied model and tokenizer.
@@ -210,6 +212,22 @@ def create_openai_serving_app(
         - Enforces sliding-window rate limiting per client IP (default: 60 requests/minute).
         - Exceeding the rate limit returns HTTP 429 Too Many Requests.
     """
+    if backend not in ("auto", "neuralops_native", "fastapi"):
+        if backend in ("vllm", "sglang", "tgi", "tensorrt_llm"):
+            from neuralops.core.exceptions import IntegrationNotImplementedError
+            raise IntegrationNotImplementedError(
+                f"Serving backend '{backend}' is not implemented in live HTTP serving. "
+                "Only the OpenAI-compatible FastAPI engine ('fastapi' or 'neuralops_native') is currently supported."
+            )
+        from neuralops.core.exceptions import ConfigError
+        raise ConfigError(f"Unsupported serving backend '{backend}'.")
+
+    if kv_cache_budget_gb <= 0:
+        raise ValueError(f"kv_cache_budget_gb must be positive, got {kv_cache_budget_gb}")
+
+    if kwargs:
+        raise TypeError(f"create_openai_serving_app() got unexpected keyword argument(s): {list(kwargs.keys())}")
+
     try:
         from fastapi import FastAPI, Request, HTTPException
         from fastapi.responses import JSONResponse, StreamingResponse
@@ -231,6 +249,8 @@ def create_openai_serving_app(
     rate_limit_records: dict[str, list[float]] = defaultdict(list)
 
     app = FastAPI(title="NeuralOps Serving Engine", version="1.4.2")
+    app.state.backend = backend
+    app.state.kv_cache_budget_gb = float(kv_cache_budget_gb)
 
     @app.middleware("http")
     async def security_and_rate_limit_middleware(request: Request, call_next):

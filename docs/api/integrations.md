@@ -111,7 +111,19 @@ Automated C++ CUDA kernel generator and serialization manager for TensorRT-LLM:
 
 ---
 
-## 4. Hardware Verification & Telemetry
+## 4. Serving Engine Backend Execution Policy
+
+NeuralOps provides an OpenAI-compatible HTTP serving engine via `neuralops.serve()` and `neuralops.serving.create_openai_serving_app()`.
+
+- **Supported Live HTTP Serving Engines**:
+  - `fastapi` / `neuralops_native` / `auto`: Built-in FastAPI engine with sliding-window rate limiting, Bearer token authentication, and `/v1/chat/completions` + `/v1/completions` endpoints.
+- **Fail-Closed Policy for External Engines**:
+  - Direct live HTTP serving via external runtimes (`backend="vllm"`, `backend="sglang"`, `backend="tgi"`, `backend="tensorrt_llm"`) is intentionally not supported in `api.serve()` and fails closed by raising `IntegrationNotImplementedError`.
+  - For external deployments, use the export bundle utilities in `neuralops.export.serving:export_serving_bundle()` to package model checkpoints and configurations for external orchestrators.
+
+---
+
+## 5. Hardware Verification & Telemetry
 
 All serving adapters are benchmarked on:
 - **Physical Testbed**: **NVIDIA GeForce RTX 3090 (Ampere SM 8.6, GA102 silicon)**.

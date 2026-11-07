@@ -45,7 +45,7 @@ try:
 except ImportError:
     PagedStateTable = None
 
-__all__ = ["PagedKVCache", "PagedStateTable"]
+__all__ = ["PagedKVCache", "PagedKVCacheManager", "PagedKVCacheBlock", "PagedStateTable"]
 
 
 class PagedKVCache:
@@ -398,3 +398,9 @@ class PagedKVCache:
             "pre_stats": pre_stats,
             "post_stats": post_stats,
         }
+
+
+# Serving and cache management compatibility aliases
+PagedKVCacheManager = PagedKVCache
+PagedKVCacheBlock = dict
+

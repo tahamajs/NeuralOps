@@ -5,7 +5,13 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Small deterministic serving primitives for TTFT and inter-token latency."""
+"""
+Serving Benchmark Harness (Benchmark Only)
+
+Deterministic benchmark harness measuring Time-To-First-Token (TTFT) and Inter-Token Latency (ITL)
+using a lightweight physical page cache simulation. This module is a performance evaluation harness
+and does not host or launch an HTTP serving daemon.
+"""
 
 from __future__ import annotations
 
