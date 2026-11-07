@@ -120,7 +120,7 @@ nvidia-nvshmem-cu12==3.4.5
 nvidia-nvtx-cu12==12.8.90
 nvprobe==0.9.0
 onnx==1.23.2
-onnx-ir==1.0.0
+onnx-ir==1.1.0
 onnxscript==0.7.2
 opentelemetry-api==1.45.1
 packaging==26.3
