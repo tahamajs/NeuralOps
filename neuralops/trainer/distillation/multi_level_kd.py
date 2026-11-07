@@ -603,6 +603,80 @@ class MultiLevelKDTrainer:
         return losses_tracked
 
 
+def distill(
+    student: nn.Module,
+    teacher: nn.Module,
+    train_loader: Any,
+    epochs: int = 3,
+    lr: float = 2e-5,
+    device: Optional[Union[str, torch.device]] = None,
+    temperature: float = 2.0,
+    alpha: float = 0.5,
+    max_steps: Optional[int] = None,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    """Execute canonical knowledge distillation training using MultiLevelKDTrainer."""
+    dev = (
+        torch.device(device)
+        if device is not None
+        else (
+            torch.device("cuda")
+            if torch.cuda.is_available()
+            else torch.device("cpu")
+        )
+    )
+    kd_kwargs = {
+        k: v for k, v in kwargs.items() if k in {
+            "lambda_mse", "lambda_rel", "lambda_cka", "lambda_frob",
+            "lambda_stab", "lambda_feat", "use_streaming_cka",
+            "chunk_size", "memory_mode"
+        }
+    }
+    trainer = MultiLevelKDTrainer(
+        teacher=teacher,
+        student=student,
+        device=dev,
+        temperature=temperature,
+        lambda_kd=alpha,
+        **kd_kwargs,
+    )
+
+    optimizer = torch.optim.AdamW(
+        [p for p in student.parameters() if p.requires_grad],
+        lr=lr,
+    )
+
+    step = 0
+    epoch_losses = []
+    for epoch in range(epochs):
+        running_loss = 0.0
+        count = 0
+        for batch in train_loader:
+            optimizer.zero_grad()
+            step_losses = trainer.training_step(batch)
+            loss = step_losses.get("total_loss")
+            if isinstance(loss, torch.Tensor) and loss.requires_grad:
+                loss.backward()
+                optimizer.step()
+                running_loss += float(loss.detach().item())
+            count += 1
+            step += 1
+            if max_steps is not None and step >= max_steps:
+                break
+        avg_loss = running_loss / max(count, 1)
+        epoch_losses.append(avg_loss)
+        if max_steps is not None and step >= max_steps:
+            break
+
+    student.eval()
+    return {
+        "final_loss": epoch_losses[-1] if epoch_losses else 0.0,
+        "epochs_completed": len(epoch_losses),
+        "steps_completed": step,
+        "status": "success",
+    }
+
+
 StreamingCKALoss = None
 
 
@@ -614,6 +688,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "distill",
     "LogitDistillationLoss",
     "SoftKLDivergenceLoss",
     "AttentionStabilityReg",

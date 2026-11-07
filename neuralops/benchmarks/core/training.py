@@ -195,107 +195,26 @@ def train_kd(
     mixed_precision: str = "no",
     tracker: Any = None,
     log_interval: int = 10,
+    **kwargs: Any,
 ) -> dict[str, Any]:
-    """Execute Knowledge Distillation training loop from teacher to student with mixed precision & MLOps."""
-    from neuralops.benchmarks.core.kd import KDLoss, kd_train_step
+    """Execute Knowledge Distillation training loop (thin wrapper delegating to canonical trainer.distillation:distill)."""
+    from neuralops.trainer.distillation.multi_level_kd import distill as _canonical_distill
 
-    kd_loss_fn = KDLoss(temperature=temperature, alpha=alpha)
-
-    classifier_and_adapter_params = []
-    backbone_params = []
-    lr_adapter = max(lr * 2.0, 1e-4)
-
-    for name, p in student.named_parameters():
-        if not p.requires_grad:
-            continue
-        name_lower = name.lower()
-        if any(k in name_lower for k in (
-            "classifier", "head", "score", "lora", "gate", "alpha", "beta",
-            "delta", "ssm", "conv1d", "dt_proj", "x_proj", "a_log", "d_bwd",
-            "output_scale", "out_proj", "in_proj", "kernel"
-        )):
-            classifier_and_adapter_params.append(p)
-        else:
-            backbone_params.append(p)
-
-    param_groups = []
-    if classifier_and_adapter_params:
-        param_groups.append({"params": classifier_and_adapter_params, "lr": lr_adapter, "weight_decay": 0.01})
-    if backbone_params:
-        param_groups.append({"params": backbone_params, "lr": lr, "weight_decay": 0.01})
-    if not param_groups:
-        param_groups = [{"params": [p for p in student.parameters() if p.requires_grad], "lr": lr, "weight_decay": 0.01}]
-
-    optimizer = AdamW(param_groups, foreach=False)
-
-    use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
-    mp_type = (mixed_precision or "no").lower()
-    amp_enabled = mp_type in ("fp16", "bf16") and use_cuda
-    amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
-    scaler = torch.amp.GradScaler("cuda", enabled=(mp_type == "fp16" and use_cuda))
-
-    teacher_logits_cache = []
-    if teacher is not None:
-        teacher.eval()
-        LOG.info("Pre-caching teacher logits across %d training batches...", len(train_loader))
-        with torch.no_grad():
-            for batch in train_loader:
-                inp_ids = batch[0].to(device)
-                att_msk = batch[1].to(device)
-                if amp_enabled:
-                    with torch.amp.autocast(device_type="cuda", dtype=amp_dtype):
-                        t_out = teacher(input_ids=inp_ids, attention_mask=att_msk)
-                else:
-                    t_out = teacher(input_ids=inp_ids, attention_mask=att_msk)
-                teacher_logits_cache.append(t_out.logits.detach().cpu())
-        LOG.info("Teacher cache successfully built (%d batches in memory).", len(teacher_logits_cache))
-
-    step = 0
-    epoch_losses = []
-
-    for epoch in range(epochs):
-        running_loss = 0.0
-        count = 0
-        for batch_idx, batch in enumerate(train_loader):
-            cached_t_logits = teacher_logits_cache[batch_idx] if batch_idx < len(teacher_logits_cache) else None
-            step_loss = kd_train_step(
-                student=student,
-                teacher=None if cached_t_logits is not None else teacher,
-                batch=batch,
-                optimizer=optimizer,
-                kd_loss_fn=kd_loss_fn,
-                device=device,
-                mixed_precision=mixed_precision,
-                scaler=scaler,
-                teacher_logits=cached_t_logits,
-            )
-            running_loss += step_loss
-            count += 1
-            step += 1
-
-            if tracker is not None and step % log_interval == 0:
-                try:
-                    tracker.log_metrics({"kd/loss": step_loss, "kd/epoch": epoch + (count / max(len(train_loader), 1))}, step=step)
-                except Exception:
-                    # allowed-swallow: best-effort-telemetry
-                    pass
-
-            if max_steps is not None and step >= max_steps:
-                break
-        avg_loss = running_loss / max(count, 1)
-        epoch_losses.append(avg_loss)
-        LOG.info("KD Epoch %d/%d completed. Loss: %.4f", epoch + 1, epochs, avg_loss)
-        if max_steps is not None and step >= max_steps:
-            break
-
-    student.eval()
-    return {
-        "final_loss": epoch_losses[-1] if epoch_losses else 0.0,
-        "epochs_completed": len(epoch_losses),
-        "steps_completed": step,
-        "training_type": "kd",
-        "status": "success",
-    }
+    return _canonical_distill(
+        student=student,
+        teacher=teacher,
+        train_loader=train_loader,
+        epochs=epochs,
+        lr=lr,
+        device=device,
+        temperature=temperature,
+        alpha=alpha,
+        max_steps=max_steps,
+        mixed_precision=mixed_precision,
+        tracker=tracker,
+        log_interval=log_interval,
+        **kwargs,
+    )
 
 
 def recovery_finetune(

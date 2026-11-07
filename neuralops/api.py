@@ -1186,13 +1186,13 @@ def distill(
     Returns:
         Dictionary containing distillation metrics.
     """
-    from neuralops.benchmarks.core.training import train_kd
+    from neuralops.trainer.distillation.multi_level_kd import distill as _canonical_distill
     from torch.utils.data import DataLoader
 
     train_loader = dataset if isinstance(dataset, DataLoader) else DataLoader(dataset, batch_size=kwargs.pop("batch_size", 32), shuffle=True)
 
     dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    return train_kd(
+    return _canonical_distill(
         student=student,
         teacher=teacher,
         train_loader=train_loader,

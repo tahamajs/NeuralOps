@@ -153,7 +153,6 @@ from neuralops.surgery.recipe import (
     save_recipe_to_hub,
     validate_recipe_schema,
 )
-from neuralops.surgery.attention.replace import replace_attention
 from neuralops.surgery.mlp.shrink import shrink_mlp
 from neuralops.surgery.layers.prune import prune_layers
 from neuralops.surgery.weights.quantize import quantize_int4
@@ -230,7 +229,6 @@ __all__ = [
     "extract_surgical_manifest",
     "save_surgical_checkpoint",
     "load_surgical_checkpoint",
-    "replace_attention",
     "transplant_attention",
     "heal_replaced_model",
     "calibrate_attention_subspace",

@@ -13,11 +13,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from neuralops.api import replace_attention as _core_replace_attention
+from neuralops.api import replace_attention
 from neuralops.surgery.registry import register_surgery
 
-
-@register_surgery(
+register_surgery(
     name="replace_attention",
     category="attention",
     compat=["llama", "qwen", "gpt2", "mistral", "gemma", "phi"],
@@ -25,19 +24,6 @@ from neuralops.surgery.registry import register_surgery
     requires_calibration=False,
     reversibility="none",
     cost_estimate="low",
-)
-def replace_attention(
-    model: Any,
-    attention: str = "chunk_gla",
-    layers: str | list[int] = "all",
-    **kwargs: Any,
-) -> Any:
-    """Replace attention modules in target model with subquadratic attention variants."""
-    target_name = attention
-    if target_name in ("chunk_gla", "gla"):
-        target_name = "gla_attention"
-    target_layers = None if layers == "all" else (layers if isinstance(layers, list) else None)
-    return _core_replace_attention(model, attention=target_name, layers=target_layers, **kwargs)
-
+)(replace_attention)
 
 __all__ = ["replace_attention"]
