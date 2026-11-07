@@ -193,7 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change (Credential Protection / Token Leak Elimination):** Overrode `BenchmarkConfig.to_dict()` to exclude `hf_token`, preventing Hugging Face API tokens from being serialized into `config.json`, `summary.md`, and journal manifests. Redacted `hf_token` in `BenchmarkConfig.__repr__()`. Deprecated and refused `--hf-token` CLI argument in `neuralops.benchmarks run`; tokens are now read exclusively from environment variables (`HF_TOKEN`, `HUGGING_FACE_HUB_TOKEN`).
 - **Breaking Change (Security / Remote Code Execution by Default):** Changed `trust_remote_code` default from `True` to `False` across `BenchmarkConfig`, `model_loader.py`, `adapter.py`, and `harness.py`. Converted CLI `neuralops run` from opt-out to opt-in with `--trust-remote-code` (default off); deprecated `--no-trust-remote-code`. When `trust_remote_code=True` is explicitly requested, an explicit warning is logged and the setting is recorded in the benchmark run manifest.
 - **Breaking Change (Training Fail-Closed):** Eliminated `_FallbackLanguageModel` and silent random model substitution in `neuralops train`; missing checkpoints or invalid models now fail closed with `RuntimeError` rather than silently training a random 4-layer model.
-- **Directory Modernization:** Consolidated legacy duality directories: merged `validator/` into `validation/`, deprecated `operations/` in favor of `ops/` (scheduled for removal in 2.1.0), merged `experiment_logging/` into `tracking/`, and removed `training/` MetaPathFinder shim.
+- **Directory Modernization:** Consolidated legacy duality directories: operations/ deprecated, removal planned; validator/ merged at package level, its tests still live in tests/validator/; merged `experiment_logging/` into `tracking/`, and removed `training/` MetaPathFinder shim.
 - **Root Shim Elimination:** Deleted 7 unreferenced root compatibility shims (`server.py`, `checkpoint.py`, `qwen_compat.py`, `hub.py`, `architectures.py`, `lora.py`, `fastapi_app.py`) and migrated high-reference shims (`surgery.py`, `serving.py`, `replace_attention.py`, `registry.py`) via AST rewriting.
 - **HPC & Scripts Consolidation:** Relocated 19 PBS cluster job scripts into `scripts/hpc/` and centralized benchmark runners under `scripts/benchmarks/`.
 - **HFCacheBridge Dynamic Flexibility:** Enhanced `NeuralOpsHybridHFCache.update_recurrent_state()` to seamlessly support both keyword arguments (`layer_idx`, `state`, `recurrent_states`) and positional signatures, preserving fail-closed boundaries for external serving engines.
@@ -205,6 +205,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI Wheel & CLI Smoke Gate:** Added `wheel-cli-smoke` job to `.github/workflows/quality_gate.yml` and regression test suite `tests/test_packaging_wheel_cli.py` to continuously verify wheel contents and entry points on every run.
 - **DeepSeek MLA Surgery:** Calibrated dynamic head dimension fallbacks in `UniversalArchitectureScanner` and resolved Pareto solver decorator bindings in `MoARouter`.
 - **PyTorch 2.11+ Autograd Parameter Strictness:** Fixed explicit `requires_grad=False` handling on non-floating quantization tensors in mock test fixtures.
+
+
+## [2.0.5] - 2026-11-04
+
+### Added
+- **Hardware-Saturating Multi-Model Benchmarks:** Introduced high-TDP benchmark suite executing sustained multi-model sweeps under thermal and power saturation.
+- **GPU Layerwise Distillation Engine:** Streamlined pure GPU layerwise KD pipeline featuring real-time evaluation metrics, perplexity monitoring, and validation tracking.
+
+### Changed
+- **Documentation Reorganization:** Structured documentation hierarchy into `docs/` and archived previous benchmark results into `docs/archive_reports/`.
+
+### Fixed
+- **Low-Rank GEMM Dimension Handling:** Fixed `fused_lowrank_gated_gemm` dispatch to seamlessly support arbitrary 3D tensor batch and sequence shapes.
+
+
+## [2.0.4] - 2026-11-04
+
+### Added
+- **Neural Attention Surgery Pipeline:** Implemented 100-phase Neural Attention Surgery architecture with multi-worker orchestration and topological model surgery.
+- **Serving Engine Integration:** Integrated Triton vLLM Paged Linear Attention and TensorRT-LLM plugin support.
+- **DeepSeek MLA Kernels:** Authored DeepSeek MLA chunk-parallel scan and O(1) inference decoding attention kernels.
+- **Ecosystem Tutorials:** Expanded ecosystem demonstration suite with notebooks 61-90 covering surgery, learning dynamics, and distributed infrastructure.
+
+### Fixed
+- **Saturation Orchestrator VRAM Throttling:** Fixed VRAM throttle deadlock prevention in hardware batch saturation orchestrator.
+- **Kernel Compilation Include Paths:** Resolved CUDA compilation include paths for common shared headers across custom kernels.
 
 
 ## [2.0.3] - 2026-11-03
