@@ -82,8 +82,9 @@ The following empirical verification table records physical hardware execution o
 ### ⚡ 30-Second Quickstart
 
 ```python
-# 1. Install NeuralOps from PyPI
-pip install neuralops
+# 1. Install NeuralOps with PyTorch core runtime from PyPI
+pip install "neuralops[core]"
+# (Bare `pip install neuralops` is a lightweight install containing metadata and torch-free utilities only)
 
 # 2. High-Level Ergonomic Pipeline (One-line Hugging Face-compatible inference)
 import neuralops
@@ -212,7 +213,7 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 - **Kernel Inventory**: 141 canonical CUDA packages (housing 139 functional modules + extensions) in `neuralops.ops.cuda` and 58 Triton kernel modules (housing 52 unified JIT operators + core infrastructure) in `neuralops.ops.triton`.
 - **Hardware Fallback Hierarchy**: Level 1 (Native CUDA C++ / HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Vectorized PyTorch Reference on CPU/MPS).
 - **PEP 562 Lazy Loading**: Bare imports execute in `<30ms` (measured ~25–35 ms on Apple M-series / Linux x86_64; single-process import observation) with zero heavy dependencies loaded upfront.
-- **Serving Adapters**: Integration stubs for vLLM, SGLang, TensorRT-LLM, and TGI provide explicit interface boundaries and error messaging when running without optional acceleration engines.
+- **Serving Adapters**: Production-grade Dual-Engine bridges for vLLM (PagedAttention with Split-K FlashDecoding), SGLang (thread-safe RadixRecurrent trie prefix cache), and TGI (continuous iteration batcher with async SSE streaming), featuring strict fail-closed boundaries when running without optional acceleration engines.
 
 ---
 
@@ -715,41 +716,69 @@ input_ids = torch.tensor([[101, 2054, 2003]], device=device)
 
 ### 4.3 Serving Adapters (vLLM, SGLang, TGI & OpenAI Server)
 
-#### 1. vLLM PagedAttention Kernel Execution
-NeuralOps exposes the high-performance Triton decode kernel `paged_attention_kernel` through `VLLMAdapter`:
+#### 1. vLLM Production Dual-Engine Integration
+NeuralOps exposes production-grade PagedAttention and full ModelRunner integration through `neuralops.integrations.vllm`:
 ```python
 import torch
-from neuralops.export.serving import VLLMAdapter
+from neuralops.integrations.vllm import NeuralOpsvLLMImpl
+from neuralops.integrations.vllm.custom_ops import paged_attention_dispatch
 
-# Run direct paged attention decoding across non-contiguous page tables
-out = VLLMAdapter.paged_attention_forward(
+# 1. 3-level custom op dispatch (vLLM C++ ops -> Triton Split-K FlashDecoding -> Vectorized PyTorch)
+out = paged_attention_dispatch(
     query=query,              # [batch_size, num_heads, head_dim]
     key_cache=key_cache,      # [num_blocks, block_size, num_heads, head_dim]
     value_cache=value_cache,  # [num_blocks, block_size, num_heads, head_dim]
     block_tables=block_tables,# [batch_size, max_blocks]
     seq_lens=seq_lens,        # [batch_size]
+    scale=0.125,
     block_size=16,
 )
+
+# 2. Chunked prefill with causal masking & SafeTensors authentic weight loading
+impl = NeuralOpsvLLMImpl(block_size=16, num_heads=4, head_dim=64)
+prefill_out = impl.chunked_prefill(query=query_chunk, key_cache=key_cache, value_cache=value_cache, block_tables=block_tables, seq_lens=seq_lens)
 ```
 > [!NOTE]
-> **Zero-Fake Compliance Policy**: Standalone Triton `paged_attention_kernel` is fully certified. Deep in-tree integration with vLLM's internal C++ scheduler fails closed with `IntegrationNotImplementedError` rather than returning uncalibrated or mock outputs (§6.1).
+> **Dual-Engine Contract**: Native standalone execution uses Triton Split-K FlashDecoding with zero external dependencies. In-tree execution inside the vLLM scheduler seamlessly activates when `vllm>=0.6.0` is installed, or fails closed with `IntegrationNotImplementedError` per `AGENTS.md` §0.3.
 
 #### 2. SGLang Radix Tree Prefix Cache Adapter
-Shares prompt KV state across conversational turns, few-shot contexts, and parallel agents:
+Shares prompt KV and recurrent linear attention hidden states ($S_t = \gamma S_{t-1} + K_t^T V_t$) across conversational turns and parallel agents:
 ```python
 import torch
+from neuralops.integrations.sglang.radix_recurrent import RadixRecurrentTree
 from neuralops.integrations.radix_prefix_cache import SGLangRadixAdapter
 
-adapter = SGLangRadixAdapter(max_cached_tokens=8192, max_cached_prefixes=256)
+# Initialize thread-safe Radix tree with LRU eviction policy
+tree = RadixRecurrentTree(max_tokens=8192, lru_eviction=True)
 prompt_tokens = [101, 2054, 2003, 1037]
-dummy_kv = torch.randn(2, 4, len(prompt_tokens), 64)
+state_tensor = torch.randn(4, 64, 64)  # [H, Dk, Dv] recurrent state
 
 # Cache shared multi-turn prompt prefix into Radix tree
-adapter.insert_prefix(prompt_tokens, dummy_kv)
+tree.insert(prompt_tokens, state_tensor)
 
 # Query concurrent requests against cached prefix
-matched_len, cached_kv = adapter.match_prefix([101, 2054, 2003, 1037, 3245, 102])
-print(f"Matched {matched_len} prompt tokens directly from Radix cache; prefilling suffix only!")
+matched_node, matched_len = tree.match_prefix_node([101, 2054, 2003, 1037, 3245, 102])
+print(f"Matched {matched_len} prompt tokens directly from Radix cache; advancing linear recurrence from cached S_t!")
+```
+
+#### 3. TGI Continuous Batching & Asynchronous Streaming
+Dynamic sequence slotting with instant slot turnover and Server-Sent Events (SSE) streaming:
+```python
+import asyncio
+from neuralops.integrations.tgi import get_tgi_capabilities, register_neuralops_tgi_plugin
+from neuralops.serving.request_batcher import TGIServingAdapter
+
+# Check standardized TGI runtime capabilities
+caps = get_tgi_capabilities()
+print("TGI Capabilities:", caps["capabilities"])
+
+# Launch asynchronous SSE token generation with dynamic continuous batching
+async def generate():
+    adapter = TGIServingAdapter(model=model, tokenizer=tokenizer, max_batch_size=8)
+    async for sse_chunk in adapter.stream_generate(prompt="The future of subquadratic attention is", max_new_tokens=32, sse_format=True):
+        print(sse_chunk, end="", flush=True)
+
+asyncio.run(generate())
 ```
 
 #### 3. OpenAI-Compatible High-Throughput HTTP Server
@@ -1498,9 +1527,9 @@ To maintain complete engineering transparency, zero-fake integrity (§6.1), and 
 | **Megatron-LM** | Tensor Parallelism | `torch.distributed` | ✅ Active | ✅ **Supported** | `neuralops/distributed/megatron_hooks.py`<br>`neuralops/distributed/tensor_parallel.py` | Low-rank factored `ColumnParallelLinear` and `RowParallelLinear` partitioned across TP ranks with all-gather and all-reduce primitives. |
 | **SafeTensors** | Cryptographic Weights | `safetensors>=0.4.0` | ✅ Active | ✅ **Supported** | `neuralops/export/safetensors_exporter.py`<br>`neuralops/models/surgical_io.py` | Mandatory zero-fake serialization accompanied by immutable SHA-256 `SurgeryManifest`; strict `weights_only=True` loading enforcement. |
 | **ONNX Runtime** | Protobuf Export | `onnxruntime>=1.17` | ✅ Active | ✅ **Supported** | `neuralops/export/exporter.py` | Verified protobuf export via `torch.onnx.export` with atomic staging and immediate inference session verification. |
-| **vLLM** | High-Throughput Serving | `vllm>=0.6.0` | ⚠️ Stub | ⚠️ **Hybrid Status** | `neuralops/inference/paged_cache.py`<br>`neuralops/ops/triton/paged_attention.py`<br>`neuralops/integrations/vllm.py` | **Native Standalone**: Triton `paged_attention_kernel` and `PagedKVCache` are fully operational.<br>**In-Tree Engine**: Direct hooks into vLLM C++ scheduler fail closed with `IntegrationNotImplementedError` per §6.1. |
-| **SGLang** | Radix Prefix Caching | `sglang` | ⚠️ Stub | ⚠️ **Hybrid Status** | `neuralops/integrations/radix_prefix_cache.py`<br>`neuralops/integrations/sglang.py` | **Native Standalone**: `SGLangRadixAdapter` longest-prefix trie matching, node splitting, and LRU eviction are fully operational.<br>**In-Tree Engine**: Direct runtime scheduler hooks fail closed. |
-| **TGI** | Continuous Batching | `text-generation-server` | ⚠️ Stub | ⚠️ **Hybrid Status** | `neuralops/integrations/serving.py`<br>`neuralops/cli/serve_cmd.py` | **Native Standalone**: FastAPI continuous batching and OpenAI-compatible server (`create_openai_serving_app`).<br>**In-Tree Rust**: Native TGI server runner is Roadmap v2.1. |
+| **vLLM** | High-Throughput Serving | `vllm>=0.6.0` | ✅ Active | ✅ **Supported** | `neuralops/integrations/vllm.py`<br>`neuralops/integrations/vllm/custom_ops.py`<br>`neuralops/inference/paged_cache.py` | **Production Dual-Engine**: 3-level custom op dispatcher (`paged_attention_dispatch`: vLLM C++ ops -> Triton Split-K FlashDecoding -> PyTorch ref), chunked prefill with causal mask, physical block allocation (16/32), and SafeTensors anti-mock loader. Fail-closed when package absent. |
+| **SGLang** | Radix Prefix Caching | `sglang` | ✅ Active | ✅ **Supported** | `neuralops/integrations/sglang/radix_recurrent.py`<br>`neuralops/integrations/sglang.py`<br>`neuralops/integrations/radix_prefix_cache.py` | **Production Dual-Engine**: Thread-safe `RadixRecurrentTree` prefix caching for recurrent hidden states ($S_t = \gamma S_{t-1} + K_t^T V_t$), automated node splitting, and LRU memory eviction. Seamless integration via `SGLangRadixAdapter`. |
+| **TGI** | Continuous Batching | `text-generation-server` | ✅ Active | ✅ **Supported** | `neuralops/serving/request_batcher.py`<br>`neuralops/integrations/tgi.py`<br>`neuralops/cli/serve_cmd.py` | **Production Dual-Engine**: Iteration-level continuous batching with dynamic sequence slotting, instant slot eviction on EOS, async SSE streaming (`stream_generate`), and FastAPI/OpenAI endpoint bindings. |
 | **GGUF / GGML** | Quantized Edge Format | `llama.cpp` | ✅ Active | ✅ **Supported** | `neuralops/export/gguf_exporter.py`<br>`neuralops/export/exporter.py` | Native pure-Python GGUF v3 binary writer (F32, F16, Q8_0) with 32-byte alignment for direct deployment to `llama.cpp`. |
 
 ---
