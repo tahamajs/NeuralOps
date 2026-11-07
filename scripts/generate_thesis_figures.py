@@ -34,36 +34,41 @@ THESIS_IMG_DIR = Path("academic/thesis/img")
 THESIS_IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Publication Typography and Aesthetics (Nature & Colorblind-Safe Standard)
-mpl.rcParams.update({
-    "font.family": "DejaVu Sans",
-    "font.size": 10,
-    "axes.labelsize": 10,
-    "axes.titlesize": 11,
-    "axes.titleweight": "bold",
-    "axes.linewidth": 1.0,
-    "axes.edgecolor": "#333333",
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.fontsize": 8.5,
-    "legend.frameon": True,
-    "legend.facecolor": "#ffffff",
-    "legend.edgecolor": "#cccccc",
-    "figure.dpi": 300,
-    "savefig.dpi": 300,
-    "savefig.bbox": "tight",
-    "savefig.pad_inches": 0.05,
-    "grid.alpha": 0.35,
-    "grid.linestyle": "--",
-    "grid.linewidth": 0.6,
-    "lines.linewidth": 1.8,
-    "lines.markersize": 6,
-})
+mpl.rcParams.update(
+    {
+        "font.family": "DejaVu Sans",
+        "font.size": 10,
+        "axes.labelsize": 10,
+        "axes.titlesize": 11,
+        "axes.titleweight": "bold",
+        "axes.linewidth": 1.0,
+        "axes.edgecolor": "#333333",
+        "xtick.labelsize": 9,
+        "ytick.labelsize": 9,
+        "legend.fontsize": 8.5,
+        "legend.frameon": True,
+        "legend.facecolor": "#ffffff",
+        "legend.edgecolor": "#cccccc",
+        "figure.dpi": 300,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+        "savefig.pad_inches": 0.05,
+        "grid.alpha": 0.35,
+        "grid.linestyle": "--",
+        "grid.linewidth": 0.6,
+        "lines.linewidth": 1.8,
+        "lines.markersize": 6,
+    }
+)
 
 
 def validate_source(path_str: str) -> Path:
     """Validate empirical source file existence before plotting."""
     p = Path(path_str)
     if not p.exists():
+        docs_alt = Path("docs") / path_str
+        if docs_alt.exists():
+            return docs_alt
         raise FileNotFoundError(f"Empirical data source missing: {path_str}")
     return p
 
@@ -196,14 +201,16 @@ def fig03_6pillar_heatmap():
         "R5: 6-Pillar Suite",
     ]
 
-    matrix = np.array([
-        [0.5519, 0.2286, 0.9495, 0.9491, 0.9487, 0.9184],
-        [0.0994, 0.1578, 0.8293, 0.8197, 0.8265, 0.7871],
-        [0.3793, 0.2005, 0.9577, 0.9581, 0.9563, 0.9514],
-        [0.6808, 0.2129, 0.9851, 0.9848, 0.9850, 0.9781],
-        [0.8416, 0.2223, 0.9893, 0.9896, 0.9896, 0.9827],
-        [0.5713, 0.2258, 0.9691, 0.9691, 0.9694, 0.9432],
-    ])
+    matrix = np.array(
+        [
+            [0.5519, 0.2286, 0.9495, 0.9491, 0.9487, 0.9184],
+            [0.0994, 0.1578, 0.8293, 0.8197, 0.8265, 0.7871],
+            [0.3793, 0.2005, 0.9577, 0.9581, 0.9563, 0.9514],
+            [0.6808, 0.2129, 0.9851, 0.9848, 0.9850, 0.9781],
+            [0.8416, 0.2223, 0.9893, 0.9896, 0.9896, 0.9827],
+            [0.5713, 0.2258, 0.9691, 0.9691, 0.9694, 0.9432],
+        ]
+    )
 
     fig, ax = plt.subplots(figsize=(9.2, 5.2))
     im = ax.imshow(matrix, cmap="YlGnBu", vmin=0.0, vmax=1.0, aspect="auto")
@@ -565,10 +572,7 @@ def fig07_3level_speedups():
     sorted_pairs = sorted(zip(kernels, speedups), key=lambda x: x[1], reverse=True)
     sorted_kernels, sorted_speedups = zip(*sorted_pairs)
 
-    colors = [
-        "#27AE60" if s >= 10.0 else ("#2E75B6" if s >= 1.0 else "#D9534F")
-        for s in sorted_speedups
-    ]
+    colors = ["#27AE60" if s >= 10.0 else ("#2E75B6" if s >= 1.0 else "#D9534F") for s in sorted_speedups]
 
     fig, ax = plt.subplots(figsize=(10.5, 7.2))
     y = np.arange(len(sorted_kernels))
@@ -768,8 +772,8 @@ def fig11_roofline_hardware():
             .agents/skills/roofline-visualizer-generator/SKILL.md
     """
     # NVIDIA RTX 4070 Laptop (Ada Lovelace, SM 8.9) parameters:
-    p_peak = 70.6   # FP16 Tensor Core Compute Peak in TFLOP/s
-    b_peak = 0.2558 # Measured Sustained GDDR6 Bandwidth in TB/s (255.8 GB/s)
+    p_peak = 70.6  # FP16 Tensor Core Compute Peak in TFLOP/s
+    b_peak = 0.2558  # Measured Sustained GDDR6 Bandwidth in TB/s (255.8 GB/s)
     i_knee = p_peak / b_peak  # Balance knee point: 276.0 FLOP/Byte
 
     intensities = np.logspace(-1, 3.5, 600)
@@ -778,7 +782,9 @@ def fig11_roofline_hardware():
     fig, ax = plt.subplots(figsize=(9.2, 5.5))
 
     # Analytical Roofline Boundaries
-    ax.loglog(intensities, attainable, color="#1F4E79", linewidth=2.6, label="Hardware Performance Bound (SM 8.9 Attainable)")
+    ax.loglog(
+        intensities, attainable, color="#1F4E79", linewidth=2.6, label="Hardware Performance Bound (SM 8.9 Attainable)"
+    )
     ax.axhline(p_peak, color="#D9534F", linestyle="--", linewidth=1.3, label=f"Compute Peak ({p_peak} TFLOPS)")
     ax.axvline(183.1, color="#F0AD4E", linestyle=":", linewidth=1.5, label="Attention Operational Bound (183.1 FLOP/B)")
 
@@ -801,7 +807,9 @@ def fig11_roofline_hardware():
     ]
 
     for name, i_val, perf, col, mark in kernel_points:
-        ax.scatter([i_val], [perf], color=col, s=85, marker=mark, edgecolors="#222222", linewidth=1.0, zorder=6, label=name)
+        ax.scatter(
+            [i_val], [perf], color=col, s=85, marker=mark, edgecolors="#222222", linewidth=1.0, zorder=6, label=name
+        )
 
     ax.set_xlabel("Arithmetic Intensity (FLOP/Byte)")
     ax.set_ylabel("Attainable Performance (TFLOP/s)")
@@ -845,14 +853,22 @@ def fig12_pareto_accuracy_latency_vram():
 
     # --- Panel (a): Accuracy vs Peak VRAM ---
     # Pareto optimal envelope points (Higher Accuracy, Lower VRAM):
-    pareto_mem_points = sorted([p for p in points if p[0] in [
-        "dense_baseline (DistilBERT)",
-        "flash_attention3_fp8",
-        "adaptive_span_attn",
-        "nystrom_attention",
-        "nexus (multiscale)",
-        "dense_baseline (RoBERTa)",
-    ]], key=lambda x: x[3])
+    pareto_mem_points = sorted(
+        [
+            p
+            for p in points
+            if p[0]
+            in [
+                "dense_baseline (DistilBERT)",
+                "flash_attention3_fp8",
+                "adaptive_span_attn",
+                "nystrom_attention",
+                "nexus (multiscale)",
+                "dense_baseline (RoBERTa)",
+            ]
+        ],
+        key=lambda x: x[3],
+    )
 
     p_vrams = [p[3] for p in pareto_mem_points]
     p_accs = [p[1] for p in pareto_mem_points]
@@ -893,14 +909,22 @@ def fig12_pareto_accuracy_latency_vram():
     ax_mem.legend(loc="lower right", fontsize=8.5)
 
     # --- Panel (b): Accuracy vs Forward Latency ---
-    pareto_lat_points = sorted([p for p in points if p[0] in [
-        "dense_baseline (DistilBERT)",
-        "flash_attention3_fp8",
-        "flash_attention3",
-        "chunk_gla",
-        "nexus (multiscale)",
-        "dense_baseline (RoBERTa)",
-    ]], key=lambda x: x[2])
+    pareto_lat_points = sorted(
+        [
+            p
+            for p in points
+            if p[0]
+            in [
+                "dense_baseline (DistilBERT)",
+                "flash_attention3_fp8",
+                "flash_attention3",
+                "chunk_gla",
+                "nexus (multiscale)",
+                "dense_baseline (RoBERTa)",
+            ]
+        ],
+        key=lambda x: x[2],
+    )
 
     p_lats = [p[2] for p in pareto_lat_points]
     p_accs_lat = [p[1] for p in pareto_lat_points]
