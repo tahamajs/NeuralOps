@@ -507,9 +507,8 @@ class TextGenerationPipeline:
         if device is not None:
             try:
                 model = model.to(device)
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except Exception as e:
+                logger.warning("Failed to move model to target device '%s': %s", device, e)
         self.model = model
         self.tokenizer = tokenizer
         self.default_kwargs = dict(kwargs)
@@ -543,9 +542,8 @@ class TextGenerationPipeline:
 
                     tok = AutoTokenizer.from_pretrained(model_name)
                     self.tokenizer = tok
-                except Exception:
-                    # allowed-swallow: best-effort-telemetry
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to automatically load tokenizer for '%s': %s", model_name, e)
 
         # Handle torch.Tensor inputs directly
         if isinstance(prompt_input, torch.Tensor):
@@ -556,9 +554,8 @@ class TextGenerationPipeline:
             if target_dev is not None:
                 try:
                     input_ids = input_ids.to(target_dev)
-                except Exception:
-                    # allowed-swallow: best-effort-telemetry
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to transfer input_ids tensor to device '%s': %s", target_dev, e)
             output_ids = self._generate_tokens(input_ids, max_length, max_new_tokens, **kwargs)
             if tok is not None:
                 decoded = self._decode_tokens(tok, output_ids, **kwargs)
@@ -586,9 +583,8 @@ class TextGenerationPipeline:
                 input_ids = input_ids.to(target_dev)
                 if attention_mask is not None:
                     attention_mask = attention_mask.to(target_dev)
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except Exception as e:
+                logger.warning("Failed to transfer input batch to device '%s': %s", target_dev, e)
 
         output_ids = self._generate_tokens(
             input_ids=input_ids,
@@ -705,23 +701,32 @@ class TextGenerationPipeline:
         if hasattr(tok, "batch_decode"):
             try:
                 decoded = tok.batch_decode(output_ids_cpu, skip_special_tokens=True)
-            except Exception:
+            except Exception as e_batch:
                 try:
                     decoded = tok.batch_decode(output_ids_cpu)
-                except Exception:
-                    # allowed-swallow: best-effort-telemetry
-                    pass
+                except Exception as e_batch2:
+                    logger.warning(
+                        "Tokenizer batch_decode failed (skip_special: %s, unskipped: %s); falling back to per-sequence decode",
+                        e_batch,
+                        e_batch2,
+                    )
         if not decoded and hasattr(tok, "decode"):
             for seq in output_ids_cpu:
                 try:
                     decoded.append(tok.decode(seq, skip_special_tokens=True))
-                except Exception:
+                except Exception as e_skip:
                     try:
                         decoded.append(tok.decode(seq))
-                    except Exception:
-                        decoded.append(str(seq.tolist()))
+                    except Exception as e_seq:
+                        logger.error(
+                            "Tokenizer failed to decode sequence %s: %s (skip_special attempt: %s)",
+                            seq,
+                            e_seq,
+                            e_skip,
+                        )
+                        raise RuntimeError(f"Tokenizer failed to decode token IDs: {e_seq}") from e_seq
         if not decoded:
-            decoded = [str(seq.tolist()) for seq in output_ids_cpu]
+            raise RuntimeError("Tokenizer failed to decode generated tokens; no valid decoded output produced.")
 
         clean_spaces = kwargs.get("clean_up_tokenization_spaces", True)
         results: List[str] = []
@@ -775,17 +780,17 @@ def pipeline(
 def _ensure_registries_loaded() -> None:
     """Ensure all subpackages registering attentions and compressors are imported."""
     try:
-        import neuralops.attentions  # noqa: F401
+        import neuralops.layers  # noqa: F401
     except (ImportError, AttributeError) as exc:
-        logger.warning("Error loading neuralops.attentions: %s", exc)
+        logger.warning("Error loading neuralops.layers: %s", exc)
     try:
         import neuralops.trainer.ttt.test_time_trainer  # noqa: F401
     except (ImportError, AttributeError) as exc:
         logger.warning("Error loading neuralops.trainer.ttt: %s", exc)
     try:
-        import neuralops.compression_engine  # noqa: F401
+        import neuralops.compression  # noqa: F401
     except (ImportError, AttributeError) as exc:
-        logger.warning("Error loading neuralops.compression_engine: %s", exc)
+        logger.warning("Error loading neuralops.compression: %s", exc)
 
 
 def list_attentions(include_extensions: bool = False) -> List[str]:
@@ -799,9 +804,11 @@ def list_attentions(include_extensions: bool = False) -> List[str]:
             from neuralops.integrations.fla import list_fla_attentions
 
             canonical.extend(list_fla_attentions())
-        except Exception:
-            # allowed-swallow: best-effort-telemetry
-            pass
+        except ImportError as e:
+            logger.warning("Optional FLA integration unavailable when listing attentions: %s", e)
+        except Exception as e:
+            logger.error("Failed to query FLA extension attentions: %s", e)
+            raise
     return sorted(list(set(canonical)))
 
 
@@ -1147,10 +1154,11 @@ def heal_distributed(
                     **kwargs,
                 )
         except Exception as exc:
-            logger.warning(
-                "Parallel healing requested but encountered error (%s); falling back to single-device healing.",
+            logger.error(
+                "Parallel healing explicitly requested but failed: %s",
                 exc,
             )
+            raise RuntimeError(f"Parallel healing failed: {exc}") from exc
 
     from neuralops.core._attention_surgery import heal_replaced_model
 

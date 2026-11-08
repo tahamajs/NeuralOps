@@ -12,7 +12,11 @@ NeuralOps Core Modules.
 from __future__ import annotations
 
 # Compatibility shim for PyTorch < 2.0 with Setuptools >= 70 (pkg_resources removal)
+import logging as _logging
 import sys as _sys
+
+_logger = _logging.getLogger(__name__)
+
 if "pkg_resources" not in _sys.modules:
     try:
         import pkg_resources as _pkg_resources  # noqa: F401
@@ -24,8 +28,8 @@ if "pkg_resources" not in _sys.modules:
             _pr = _types.ModuleType("pkg_resources")
             _pr.packaging = _packaging
             _sys.modules["pkg_resources"] = _pr
-        except Exception:
-            pass
+        except Exception as exc:
+            _logger.debug("pkg_resources polyfill initialization failed: %s", exc)
 
 # Zero-dependency polyfill for pydantic if missing in runtime environment
 if "pydantic" not in _sys.modules:
@@ -381,9 +385,11 @@ class _ModuleAliasFinder(MetaPathFinder):
                 mod = importlib.import_module(canonical)
                 sys.modules[fullname] = mod
                 return getattr(mod, "__spec__", None)
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except (ModuleNotFoundError, ImportError) as exc:
+                _logger.debug("Alias import '%s' -> '%s' failed: %s", fullname, canonical, exc)
+            except Exception as exc:
+                _logger.warning("Unexpected error loading canonical module '%s' for alias '%s': %s", canonical, fullname, exc)
+                raise
         if fullname in self._ALIASES:
             canonical = self._ALIASES[fullname]
             try:
@@ -396,9 +402,11 @@ class _ModuleAliasFinder(MetaPathFinder):
                 mod = importlib.import_module(canonical)
                 sys.modules[fullname] = mod
                 return getattr(mod, "__spec__", None)
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except (ModuleNotFoundError, ImportError) as exc:
+                _logger.debug("Alias import '%s' -> '%s' failed: %s", fullname, canonical, exc)
+            except Exception as exc:
+                _logger.warning("Unexpected error loading canonical module '%s' for alias '%s': %s", canonical, fullname, exc)
+                raise
         return None
 
 
@@ -409,10 +417,7 @@ if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
 def _patch_torch_compat():
     """Install PyTorch 1.12 backward compatibility polyfills (SDPA, torch.compile, torch.amp)."""
     if "torch" not in sys.modules:
-        try:
-            import torch  # noqa: F401
-        except Exception:
-            return
+        return
     if "torch" in sys.modules:
         try:
             import contextlib
@@ -550,9 +555,8 @@ def _patch_torch_compat():
 
                 torch.cuda.OutOfMemoryError = _OutOfMemoryError
 
-        except Exception:
-            # allowed-swallow: best-effort-telemetry
-            pass
+        except Exception as exc:
+            _logger.debug("Failed to patch torch autocast/OutOfMemoryError compatibility: %s", exc)
 
 
 def _patch_pascal_svd_if_needed():
@@ -574,7 +578,7 @@ def _patch_pascal_svd_if_needed():
                             return original_svd(mat, full_matrices=full, driver=drv, out=ot)
                         return original_svd(mat, full_matrices=full, driver=drv)
                     except TypeError:
-                        pass
+                        _logger.debug("Driver argument not supported by torch.linalg.svd; falling back")
                 if ot is not None:
                     return original_svd(mat, full_matrices=full, out=ot)
                 return original_svd(mat, full_matrices=full)
@@ -593,7 +597,8 @@ def _patch_pascal_svd_if_needed():
                     if capability is None:
                         try:
                             capability = torch.cuda.get_device_capability(matrix.device)
-                        except Exception:
+                        except Exception as exc:
+                            _logger.debug("Failed to query device capability for %s: %s", matrix.device, exc)
                             return _call_orig_svd(matrix, full_matrices, driver, out)
                         capability_cache[device_index] = capability
 
@@ -616,9 +621,8 @@ def _patch_pascal_svd_if_needed():
 
             torch.linalg.svd = _safe_pascal_linalg_svd
             torch.linalg._pascal_patched = True
-        except Exception:
-            # allowed-swallow: best-effort-telemetry
-            pass
+        except Exception as exc:
+            _logger.debug("Failed to patch torch.linalg.svd for Pascal architecture: %s", exc)
 
 
 _patch_torch_compat()
@@ -809,13 +813,7 @@ _STATIC_API_NAMES = (
     "TextGenerationPipeline",
 )
 
-if _TORCH_AVAILABLE:
-    try:
-        from neuralops.api import _PUBLIC_API
-    except Exception:
-        _PUBLIC_API = {name: "neuralops.api" for name in _STATIC_API_NAMES}
-else:
-    _PUBLIC_API = {name: "neuralops.api" for name in _STATIC_API_NAMES}
+_PUBLIC_API = {name: "neuralops.api" for name in _STATIC_API_NAMES}
 
 _API_EXPORTS = {
     **_PUBLIC_API,
@@ -995,8 +993,8 @@ def __getattr__(name: str) -> Any:
             evaluation_package = importlib.import_module("neuralops.evaluation")
             globals()[name] = evaluation_package
             return evaluation_package
-        except ImportError:
-            pass
+        except ImportError as exc:
+            _logger.debug("Optional submodule evaluation not importable: %s", exc)
 
     if name in _COMPAT_SUBPACKAGES:
         target = _COMPAT_SUBPACKAGES[name]

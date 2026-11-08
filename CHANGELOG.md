@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Elimination of Deferred Silent Error Swallowing (AGT-55, F-84 completion):**
+  - **TextGenerationPipeline Decoded Output:** Replaced silent fallback to `str(seq.tolist())` with explicit `RuntimeError` raising when tokenizer decode fails, preventing integer token ID lists from masquerading as generated text. Replaced silent device transfer and tokenizer loading swallows with structured warning logs.
+  - **Parallel Healing Fail-Closed Policy:** Replaced silent fallback to single-device healing with explicit `RuntimeError` when `parallel_healing=True` is requested and distributed execution fails.
+  - **Extension Attention Discovery:** Narrowed FLA discovery error handling to `ImportError` (logged as warning), while propagating unexpected registry errors.
+  - **Offline Checkpoint / Model Fallback:** Replaced silent `local_files_only=True` retry loops in `neuralops/main.py` with explicit warning logging capturing the initial online connection failure before attempting local fallback.
+  - **Subpackage & Alias Discovery Logging:** Replaced silent swallows in `neuralops/__init__.py` (`_ModuleAliasFinder`, `_patch_torch_compat`, `_patch_pascal_svd_if_needed`) and `neuralops/compression/__init__.py` (`__dir__`) with structured debug logs.
+  - **CI Quality Gate:** Extended `scripts/utils/check_no_silent_swallow.py` to audit all seven core runtime files. Added comprehensive test suite `tests/test_silent_fallbacks_deferred.py` (6 passed).
 - **Benchmark Manifest Schema Key & Torch-Free `neuralops info` (AGT-63):**
   - **Manifest Schema Key:** In `neuralops.benchmarks.core.runner.BenchmarkRunner`, fixed the schema URL key from an empty string `""` to `"$schema"`, conforming to `telemetry.manifest.BenchmarkManifestBuilder` and the unified benchmark manifest JSON schema (`schemas/benchmark_manifest_v1.json`).
   - **Torch-Free `neuralops info`:** Made `torch` import lazy/guarded inside `cmd_info()` in `neuralops.cli.info`. The command now runs cleanly and exits 0 in environments where PyTorch is not installed (displaying `"PyTorch Version: not installed"`), while accurately reporting the installed PyTorch version and CUDA capability when PyTorch is present.

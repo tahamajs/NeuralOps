@@ -12,7 +12,10 @@ NeuralOps Unified Compression Engines (Tier 2).
 from __future__ import annotations
 
 import importlib
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.compression_pipeline import compress_model
@@ -64,9 +67,8 @@ def __dir__() -> list[str]:
         try:
             mod = importlib.import_module(f".{subpackage}", __package__)
             names.update(getattr(mod, "__all__", []))
-        except Exception:
-            # allowed-swallow: best-effort-telemetry
-            pass
+        except (ImportError, AttributeError) as exc:
+            logger.debug("Failed to inspect subpackage '%s' for __dir__: %s", subpackage, exc)
     return sorted(names)
 
 

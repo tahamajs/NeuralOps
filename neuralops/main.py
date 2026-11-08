@@ -189,7 +189,12 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     logger.info("Loading tokeniser: %s", cfg.model_name)
     try:
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True)
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "Online load for tokenizer '%s' failed (%s); attempting fallback with local_files_only=True",
+            cfg.model_name,
+            e,
+        )
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, use_fast=True, local_files_only=True)
 
     logger.info("Loading data for task: %s", cfg.task)
@@ -203,7 +208,12 @@ def run_train(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     logger.info("Loading model: %s  (num_labels=%d)", cfg.model_name, num_labels)
     try:
         model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name, num_labels=num_labels)
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "Online load for model '%s' failed (%s); attempting fallback with local_files_only=True",
+            cfg.model_name,
+            e,
+        )
         model = fw["AutoModelForSequenceClassification"].from_pretrained(
             cfg.model_name, num_labels=num_labels, local_files_only=True
         )
@@ -389,7 +399,12 @@ def run_compress(cfg: Any, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     try:
         model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name)
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name)
-    except Exception:
+    except Exception as e:
+        logger.warning(
+            "Online load for '%s' failed (%s); attempting fallback with local_files_only=True",
+            cfg.model_name,
+            e,
+        )
         model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name, local_files_only=True)
         tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, local_files_only=True)
     model.to(device)
