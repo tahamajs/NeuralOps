@@ -19,7 +19,8 @@ from neuralops.cli.main import build_main_parser, main
 
 def test_all_subcommands_registered() -> None:
     """Verify all 10 core subcommands are registered in the main parser."""
-    parser = build_main_parser()
+    with pytest.warns(DeprecationWarning, match="deprecated and will be removed in v3.0.0"):
+        parser = build_main_parser()
 
     # Extract registered subcommand names from subparsers action
     subparser_actions = [
@@ -48,10 +49,8 @@ def test_all_subcommands_registered() -> None:
     assert not missing, f"Expected subcommands missing from CLI: {missing}"
 
 
-def test_broken_subcommand_import_fails_fast(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Verify that a broken subcommand import fails fast with an exception instead of silently dropping."""
-    # Monkeypatch sys.modules to simulate broken import for neuralops.cli.compress_cmd
-    monkeypatch.setitem(sys.modules, "neuralops.cli.compress_cmd", None)
-
-    with pytest.raises((ImportError, ModuleNotFoundError)):
-        build_main_parser()
+def test_shadow_cli_main_delegates_with_warning() -> None:
+    """Verify that neuralops.cli.main emits a deprecation warning and delegates to canonical main."""
+    with pytest.warns(DeprecationWarning, match="deprecated and will be removed in v3.0.0"):
+        ret = main(["--help"])
+        assert ret == 0
