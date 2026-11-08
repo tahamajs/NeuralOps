@@ -16,12 +16,19 @@ from __future__ import annotations
 import json
 import logging
 import multiprocessing as mp
+import os
+import sys
 import threading
 import time
 import traceback
 import uuid
 from pathlib import Path
 from typing import Any, Optional
+
+# Python 3.14 standard library introduces the 'compression' package. Ensure the internal
+# package directory '.../neuralops' is never on sys.path directly (only repo root), so it does
+# not shadow Python's standard library 'compression' needed by gzip / torch.profiler.
+sys.path = [p for p in sys.path if not p.rstrip("/\\").endswith("neuralops")]
 
 import torch
 

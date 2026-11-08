@@ -39,11 +39,9 @@ from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 HERE = Path(__file__).resolve().parent
-CODES = HERE.parent
-ROOT = CODES.parent
-for p in [str(CODES), str(ROOT)]:
-    if p not in sys.path:
-        sys.path.insert(0, p)
+ROOT = HERE.parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.evaluation.eval_all_models_datasets import apply_module_to_model
