@@ -203,6 +203,14 @@ class BenchmarkConfig:
         d = dict(data)
         if "dtype" in d and "precision" not in d:
             d["precision"] = d.pop("dtype")
+        if "warmup_steps" in d and "warmup" not in d:
+            d["warmup"] = d.pop("warmup_steps")
+        if "benchmark_steps" in d and "iters" not in d:
+            d["iters"] = d.pop("benchmark_steps")
+        if "description" in d:
+            extra_dict = dict(d.get("extra", {}))
+            extra_dict["description"] = d.pop("description")
+            d["extra"] = extra_dict
         if "output_dir" in d and isinstance(d["output_dir"], (str, Path)):
             d["output_dir"] = Path(d["output_dir"])
         valid_fields = set(cls.__dataclass_fields__)
