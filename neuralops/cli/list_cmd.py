@@ -260,25 +260,45 @@ def cmd_list(args: Any) -> int:
             }
         )
 
+    from neuralops.benchmarks.registry import BENCHMARK_REGISTRY
+
+    cuda_records = [
+        {"name": k.split(":", 1)[1], "category": "cuda", "requires_cuda": True}
+        for k in sorted(BENCHMARK_REGISTRY.keys())
+        if k.startswith("cuda:")
+    ]
+    triton_records = [
+        {"name": k.split(":", 1)[1], "category": "triton", "requires_triton": True}
+        for k in sorted(BENCHMARK_REGISTRY.keys())
+        if k.startswith("triton:")
+    ]
+
     if output_json:
         data: Dict[str, Any] = {
             "canonical_counts": {
-                "attention_mechanisms": 131,
-                "compression_engines": 72,
-                "triton_kernel_modules": 26,
-                "cuda_kernel_implementations": 114,
+                "attention_mechanisms": len(attn_records),
+                "compression_engines": len(comp_records),
+                "triton_kernel_modules": len(triton_records),
+                "cuda_kernel_implementations": len(cuda_records),
+                "total_benchmarks": len(BENCHMARK_REGISTRY),
                 "version": __version__,
-            }
+            },
+            "total_count": len(BENCHMARK_REGISTRY),
+            "benchmarks": list(BENCHMARK_REGISTRY.keys()),
         }
         if req_type in ("attention", "all"):
             data["attentions"] = attn_records
         if req_type in ("compressor", "all"):
             data["compressors"] = comp_records
+        if req_type in ("kernels", "all"):
+            data["cuda_kernels"] = cuda_records
+            data["triton_kernels"] = triton_records
         print(json.dumps(data, indent=2))
         return 0
 
     show_attn = req_type in ("attention", "all")
     show_comp = req_type in ("compressor", "all")
+    show_kernels = req_type in ("kernels", "all")
 
     if HAS_RICH and console is not None:
         if show_attn:
@@ -342,10 +362,24 @@ def cmd_list(args: Any) -> int:
                 )
             console.print(table_comp)
 
+        if show_kernels and req_type == "kernels":
+            table_kern = Table(
+                title=f"NeuralOps Registry: Hardware Accelerated Kernels ({len(cuda_records)} CUDA + {len(triton_records)} Triton)",
+                header_style="bold yellow",
+            )
+            table_kern.add_column("Kernel Module", style="bold cyan", min_width=30)
+            table_kern.add_column("Backend Tier", style="magenta", width=16)
+            table_kern.add_column("Status", justify="center", width=10)
+            for r in triton_records:
+                table_kern.add_row(r["name"], "Triton JIT", "[bold cyan]Registered[/]")
+            for r in cuda_records:
+                table_kern.add_row(r["name"], "CUDA C++", "[bold yellow]Registered[/]")
+            console.print(table_kern)
+
         console.print(
-            "[bold white]Canonical Inventory:[/] [bold green]131 Attention Mechanisms[/] | "
-            "[bold yellow]72 Compression Engines[/] | [bold cyan]26 Modules (62 Unified Operators)[/] | "
-            f"[bold magenta]114 CUDA Kernel Implementations[/] | [dim]v{__version__}[/]\n"
+            f"[bold white]Canonical Inventory:[/] [bold green]{len(attn_records)} Attention Mechanisms[/] | "
+            f"[bold yellow]{len(comp_records)} Compression Engines[/] | [bold cyan]{len(triton_records)} Triton Kernel Modules[/] | "
+            f"[bold magenta]{len(cuda_records)} CUDA Kernel Modules[/] | [bold white]Total: {len(BENCHMARK_REGISTRY)} Benchmarks[/] | [dim]v{__version__}[/]\n"
         )
     else:
         print("=========================================================================================")

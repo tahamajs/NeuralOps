@@ -243,6 +243,7 @@ class BenchmarkRegistry:
                     category="cuda",
                     target_name=target_name,
                     requires_cuda=True,
+                    default_timeout_s=1800,
                     reference_backend="pytorch",
                 )
                 BENCHMARK_REGISTRY[canon_name] = spec
@@ -266,6 +267,7 @@ class BenchmarkRegistry:
                     category="triton",
                     target_name=target_name,
                     requires_triton=True,
+                    default_timeout_s=1800,
                     reference_backend="pytorch",
                 )
                 BENCHMARK_REGISTRY[canon_name] = spec
