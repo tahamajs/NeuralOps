@@ -73,6 +73,9 @@ def generate_completion_script(shell: str) -> str:
         "resume",
         "plan",
         "list",
+        "compare",
+        "matrix",
+        "multiseed",
         "verify",
         "doctor",
         "info",
@@ -490,6 +493,117 @@ def _add_resume_options(resume_p: argparse.ArgumentParser) -> None:
     resume_p.add_argument("--run-id", type=str, default=None, help="Run ID to resume")
 
 
+def _add_matrix_options(matrix_p: argparse.ArgumentParser) -> None:
+    """Populate multi-dimensional benchmark matrix flags."""
+    matrix_p.add_argument(
+        "--modules",
+        "--module",
+        dest="modules",
+        type=str,
+        default="attention:full_attention",
+        help="Comma-separated module names (e.g. attention:cosformer,attention:gated_delta_net)",
+    )
+    matrix_p.add_argument(
+        "--seq-lens", type=str, default="128,512,1024,2048", help="Comma-separated sequence lengths"
+    )
+    matrix_p.add_argument("--batch-sizes", type=str, default="1,2,4,8", help="Comma-separated batch sizes")
+    matrix_p.add_argument(
+        "--hidden-dims", type=str, default="64,128,256,512", help="Comma-separated hidden dimensions"
+    )
+    matrix_p.add_argument(
+        "--dtypes", type=str, default="float32", help="Comma-separated dtypes (fp32, fp16, bf16)"
+    )
+    matrix_p.add_argument(
+        "--causal", action="store_true", default=None, help="Force causal masking for all grid points"
+    )
+    matrix_p.add_argument(
+        "--no-causal", action="store_true", default=None, help="Force bidirectional (non-causal) masking"
+    )
+    matrix_p.add_argument(
+        "--causal-modes", type=str, default=None, help="Comma-separated boolean modes, e.g. 'true,false'"
+    )
+    matrix_p.add_argument("--device", type=str, default="cpu", help="Device (cpu, cuda, mps)")
+    matrix_p.add_argument("--warmup", type=int, default=5, help="Warmup iterations")
+    matrix_p.add_argument("--iters", type=int, default=20, help="Timed iterations")
+    matrix_p.add_argument(
+        "--flush-l2", action="store_true", default=True, help="Evict L2 cache before each timing cycle"
+    )
+    matrix_p.add_argument(
+        "--no-flush-l2", dest="flush_l2", action="store_false", help="Disable L2 cache eviction"
+    )
+    matrix_p.add_argument(
+        "--output-dir", type=str, default="results/matrix", help="Output directory for matrix runs"
+    )
+    matrix_p.add_argument(
+        "--plan",
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="Print grid parameter points without executing",
+    )
+    matrix_p.add_argument("--json", action="store_true", help="Output results in JSON format")
+
+
+def _add_multiseed_options(multiseed_p: argparse.ArgumentParser) -> None:
+    """Populate multi-seed statistical significance & cold-cache microbenchmarking flags."""
+    multiseed_p.add_argument(
+        "--modules",
+        "--module",
+        dest="modules",
+        type=str,
+        default="attention:full_attention",
+        help="Comma-separated module names (e.g. attention:cosformer,attention:gated_delta_net)",
+    )
+    multiseed_p.add_argument(
+        "--seeds",
+        type=str,
+        default=None,
+        help="Comma-separated integer seeds (e.g. '42,123,456')",
+    )
+    multiseed_p.add_argument(
+        "--preset",
+        type=str,
+        choices=["canonical3", "adversarial3", "dual_tier", "enterprise5", "canonical7"],
+        default=None,
+        help="Standard seed preset tier",
+    )
+    multiseed_p.add_argument(
+        "--baseline",
+        type=str,
+        default=None,
+        help="Baseline module for Welch's t-test and Cohen's d comparative analysis",
+    )
+    multiseed_p.add_argument("--seq-len", type=int, default=512, help="Sequence length")
+    multiseed_p.add_argument("--batch-size", type=int, default=1, help="Batch size")
+    multiseed_p.add_argument("--hidden-dim", type=int, default=64, help="Hidden dimension")
+    multiseed_p.add_argument("--dtype", type=str, default="float32", help="Precision/dtype")
+    multiseed_p.add_argument("--causal", action="store_true", default=False, help="Enable causal masking")
+    multiseed_p.add_argument("--device", type=str, default="cpu", help="Device (cpu, cuda:0, etc.)")
+    multiseed_p.add_argument("--warmup", type=int, default=5, help="Warmup iterations per seed")
+    multiseed_p.add_argument("--iters", type=int, default=20, help="Measured iterations per seed")
+    multiseed_p.add_argument(
+        "--flush-l2", action="store_true", default=False, help="Flush GPU L2 cache between runs"
+    )
+    multiseed_p.add_argument(
+        "--l2-size-mb", type=int, default=256, help="L2 eviction buffer size in MB"
+    )
+    multiseed_p.add_argument(
+        "--alpha", type=float, default=0.05, help="Significance level alpha (default: 0.05)"
+    )
+    multiseed_p.add_argument(
+        "--output-dir", type=str, default="results/multiseed", help="Output directory for reports"
+    )
+    multiseed_p.add_argument(
+        "--plan",
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="Print planned runs without executing",
+    )
+    multiseed_p.add_argument("--json", action="store_true", help="Output summary as JSON")
+    multiseed_p.add_argument("--latex", action="store_true", help="Print publication LaTeX table")
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="neuralops",
@@ -552,59 +666,28 @@ def _build_parser() -> argparse.ArgumentParser:
     bench_resume = bench_sub.add_parser("resume", help="Resume interrupted sweep")
     _add_resume_options(bench_resume)
 
+    bench_matrix = bench_sub.add_parser(
+        "matrix", help="Orchestrate multi-dimensional benchmark grid (B, T, D, dtypes, causal modes)"
+    )
+    _add_matrix_options(bench_matrix)
+
+    bench_multiseed = bench_sub.add_parser(
+        "multiseed", help="Multi-seed statistical significance & cold-cache microbenchmarking"
+    )
+    _add_multiseed_options(bench_multiseed)
+
     verify_p = subparsers.add_parser("verify", help="Check system hardware and package requirements")
     verify_p.add_argument("--json", action="store_true", help="Format output as JSON")
 
     matrix_p = subparsers.add_parser(
         "matrix", help="Orchestrate multi-dimensional benchmark grid (B, T, D, dtypes, causal modes)"
     )
-    matrix_p.add_argument(
-        "--modules",
-        "--module",
-        dest="modules",
-        type=str,
-        default="attention:full_attention",
-        help="Comma-separated module names (e.g. attention:cosformer,attention:gated_delta_net)",
+    _add_matrix_options(matrix_p)
+
+    multiseed_p = subparsers.add_parser(
+        "multiseed", help="Multi-seed statistical significance & cold-cache microbenchmarking"
     )
-    matrix_p.add_argument(
-        "--seq-lens", type=str, default="128,512,1024,2048", help="Comma-separated sequence lengths"
-    )
-    matrix_p.add_argument("--batch-sizes", type=str, default="1,2,4,8", help="Comma-separated batch sizes")
-    matrix_p.add_argument(
-        "--hidden-dims", type=str, default="64,128,256,512", help="Comma-separated hidden dimensions"
-    )
-    matrix_p.add_argument(
-        "--dtypes", type=str, default="float32", help="Comma-separated dtypes (fp32, fp16, bf16)"
-    )
-    matrix_p.add_argument(
-        "--causal", action="store_true", default=None, help="Force causal masking for all grid points"
-    )
-    matrix_p.add_argument(
-        "--no-causal", action="store_true", default=None, help="Force bidirectional (non-causal) masking"
-    )
-    matrix_p.add_argument(
-        "--causal-modes", type=str, default=None, help="Comma-separated boolean modes, e.g. 'true,false'"
-    )
-    matrix_p.add_argument("--device", type=str, default="cpu", help="Device (cpu, cuda, mps)")
-    matrix_p.add_argument("--warmup", type=int, default=5, help="Warmup iterations")
-    matrix_p.add_argument("--iters", type=int, default=20, help="Timed iterations")
-    matrix_p.add_argument(
-        "--flush-l2", action="store_true", default=True, help="Evict L2 cache before each timing cycle"
-    )
-    matrix_p.add_argument(
-        "--no-flush-l2", dest="flush_l2", action="store_false", help="Disable L2 cache eviction"
-    )
-    matrix_p.add_argument(
-        "--output-dir", type=str, default="results/matrix", help="Output directory for matrix runs"
-    )
-    matrix_p.add_argument(
-        "--plan",
-        "--dry-run",
-        dest="dry_run",
-        action="store_true",
-        help="Print grid parameter points without executing",
-    )
-    matrix_p.add_argument("--json", action="store_true", help="Output results in JSON format")
+    _add_multiseed_options(multiseed_p)
 
     exp_p = subparsers.add_parser("export", help="Export model to production artifact format")
     exp_p.add_argument("--model", type=str, required=True, help="Base model identifier or path")
@@ -1421,6 +1504,65 @@ def handle_matrix(args: argparse.Namespace) -> int:
             print(f"[✓] Benchmark Matrix Completed: {result['passed_cells']}/{result['total_cells']} passed.")
             if result.get("speedup_gate_failures", 0) > 0:
                 print(f"[!] Warning: {result['speedup_gate_failures']} speedup regression gate failure(s).")
+    return 0
+
+
+def handle_multiseed(args: argparse.Namespace) -> int:
+    """Handle 'neuralops benchmark multiseed' / 'neuralops multiseed' execution."""
+    import json
+    from neuralops.benchmarks.multi_seed import run_multiseed_benchmark
+
+    def _parse_ints(val: Optional[str]) -> Optional[List[int]]:
+        if not val:
+            return None
+        return [int(x.strip()) for x in val.split(",") if x.strip()]
+
+    def _parse_strs(val: Optional[str]) -> Optional[List[str]]:
+        if not val:
+            return None
+        return [x.strip() for x in val.split(",") if x.strip()]
+
+    modules = _parse_strs(args.modules) or ["attention:full_attention"]
+    seeds = _parse_ints(args.seeds)
+
+    result = run_multiseed_benchmark(
+        modules=modules,
+        seeds=seeds,
+        preset=args.preset,
+        baseline_module=args.baseline,
+        batch_size=args.batch_size,
+        seq_len=args.seq_len,
+        hidden_dim=args.hidden_dim,
+        dtype=args.dtype,
+        causal=args.causal,
+        device=args.device,
+        warmup=args.warmup,
+        iters=args.iters,
+        flush_l2=args.flush_l2,
+        l2_cache_size_mb=args.l2_size_mb,
+        alpha=args.alpha,
+        output_dir=args.output_dir,
+        dry_run=args.dry_run,
+    )
+
+    if args.json:
+        print(json.dumps(result.to_dict(), indent=2))
+    elif args.latex:
+        print(result.to_latex_table())
+    else:
+        if args.dry_run:
+            print(f"[✓] Multi-Seed Benchmark Plan: {len(modules)} module(s) across {len(result.config.seeds)} seed(s).")
+        else:
+            print(f"[✓] Multi-Seed Benchmark Completed: {len(result.module_results)} module(s) evaluated across {len(result.config.seeds)} seed(s).")
+            for mod, res in result.module_results.items():
+                lat = res.metrics.get("latency_ms")
+                lat_str = lat.latex_formatted if lat else "N/A"
+                print(f"  - {mod}: Latency {lat_str}")
+                if res.baseline_comparison:
+                    p = res.baseline_comparison.get("p_value", 1.0)
+                    d = res.baseline_comparison.get("cohens_d", 0.0)
+                    sig = res.baseline_comparison.get("significant", False)
+                    print(f"    vs baseline: p-value={p:.4f} (sig={sig}), Cohen's d={d:+.2f}")
     return 0
 
 
@@ -2288,6 +2430,8 @@ def _dispatch(args: argparse.Namespace) -> int:
         return handle_verify(args)
     elif args.subcommand == "matrix":
         return handle_matrix(args)
+    elif args.subcommand == "multiseed":
+        return handle_multiseed(args)
     elif args.subcommand == "compare":
         return handle_compare(args)
 
@@ -2315,9 +2459,13 @@ def _dispatch(args: argparse.Namespace) -> int:
             return handle_compare(args)
         elif action == "resume":
             return handle_resume(args)
+        elif action == "matrix":
+            return handle_matrix(args)
+        elif action == "multiseed":
+            return handle_multiseed(args)
         elif action in ("run", None):
             if action is None and getattr(args, "benchmark_subcommand", None) is None and getattr(args, "action", None) is None:
-                print("Usage: neuralops benchmark {run,plan,list,info,compare,resume} [options]")
+                print("Usage: neuralops benchmark {run,plan,list,info,compare,resume,matrix,multiseed} [options]")
                 return 0
             handle_run(args)
             return 0

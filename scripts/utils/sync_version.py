@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-CANONICAL_RELEASE_DATE = "2026-11-05"
+CANONICAL_RELEASE_DATE = "2026-11-08"
 
 
 def get_canonical_version() -> str:
@@ -107,15 +107,15 @@ def sync_security_md(version: str, check: bool) -> list[str]:
     if major_minor not in content:
         drifts.append(f"{path}: active version row missing '{expected_active_row}'")
         if not check:
-            # Reconstruct table with active 2.0.x and subsequent deprecation rows
+            # Reconstruct table with active major.minor.x and subsequent deprecation rows
             new_table = (
-                "| Version | Supported |\n"
-                "| :--- | :--- |\n"
-                f"| **{major_minor}** | :white_check_mark: Active |\n"
-                "| 1.9.x | :warning: Security fixes only |\n"
-                "| $\\le$ 1.8.x | :x: End of Life |\n"
+                "| Version | Supported | Notes |\n"
+                "| :--- | :---: | :--- |\n"
+                f"| **{major_minor}** | :white_check_mark: Active | Current active production release (Unified 3-level dispatch, 203 modules, AGT suite) |\n"
+                "| 2.0.x | :warning: Maintenance | Security fixes only |\n"
+                "| $\\le$ 1.9.x | :x: End of Life | Upgrade to latest `v2.x` recommended |\n"
             )
-            old_table_match = re.search(r"\| Version \| Supported \|\s*\n(?:\|[^\n]+\n)+", content)
+            old_table_match = re.search(r"\| Version \| Supported(?: \| Notes)? \|\s*\n(?:\|[^\n]+\n)+", content)
             if old_table_match:
                 content = content[: old_table_match.start()] + new_table + content[old_table_match.end() :]
                 path.write_text(content, encoding="utf-8")
