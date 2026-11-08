@@ -268,10 +268,9 @@ def main() -> None:
     args = parser.parse_args()
 
     here = Path(__file__).resolve().parent
-    codes = here.parent
-    for p in [str(codes), str(codes.parent)]:
-        if p not in sys.path:
-            sys.path.insert(0, p)
+    root = here.parent.parent
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
