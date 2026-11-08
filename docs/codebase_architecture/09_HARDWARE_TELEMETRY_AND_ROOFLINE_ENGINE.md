@@ -60,7 +60,7 @@ Part 09 documents the **Hardware Telemetry, Profiling & Roofline Subsystem** of 
 
 ### 3.1 Asynchronous CUDA Event Synchronization Protocol
 
-Implemented in [`neuralops/benchmarks/harness.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/benchmarks/harness.py) (`BenchmarkRunner.measure_callable`) and [`neuralops/analysis/roofline.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/analysis/roofline.py) (`profile_roofline`):
+Implemented in [`neuralops/benchmarks/harness.py`](neuralops/benchmarks/harness.py) (`BenchmarkRunner.measure_callable`) and [`neuralops/analysis/roofline.py`](neuralops/analysis/roofline.py) (`profile_roofline`):
 
 ```python
 # From neuralops/benchmarks/harness.py
@@ -119,7 +119,7 @@ To guarantee reproducible benchmarking unaffected by operating system interrupts
   $$\frac{\sigma}{\mu} < 0.05 \quad (\text{less than } 5\% \text{ noise})$$
 
 ### 3.3 VRAM Instrumentation & High-Water Tracking
-Implemented in [`neuralops/benchmarks/harness.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/benchmarks/harness.py) and [`neuralops/runners/monitor/telemetry.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/monitor/telemetry.py):
+Implemented in [`neuralops/benchmarks/harness.py`](neuralops/benchmarks/harness.py) and [`neuralops/runners/monitor/telemetry.py`](neuralops/runners/monitor/telemetry.py):
 - **Pre-execution cleanup**:
   ```python
   gc.collect()
@@ -137,7 +137,7 @@ Implemented in [`neuralops/benchmarks/harness.py`](file:///Users/tahamajs/Docume
 ## 4. SM 8.9 Hardware Roofline Model & Arithmetic Intensity
 
 ### 4.1 Theoretical & Operational Ceilings (NVIDIA RTX 4070 SM 8.9 AD104 Silicon)
-The hardware limits of the primary physical testbed (NVIDIA GeForce RTX 4070, AD104 silicon: 5,888 CUDA cores, 46 SMs, 184 4th Gen Tensor Cores) are formalized in [`neuralops/analysis/roofline.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/analysis/roofline.py) (`get_device_roofline_specs`):
+The hardware limits of the primary physical testbed (NVIDIA GeForce RTX 4070, AD104 silicon: 5,888 CUDA cores, 46 SMs, 184 4th Gen Tensor Cores) are formalized in [`neuralops/analysis/roofline.py`](neuralops/analysis/roofline.py) (`get_device_roofline_specs`):
 - **Peak FP16 Tensor Core Compute**: $P_{\text{peak}} = 160.2\,\text{TFLOPs/s}$ (Boost) / $141.6\,\text{TFLOPs/s}$ (Base)
 - **Peak DRAM Memory Bandwidth (GDDR6X)**: $B_{\text{peak}} = 504.0\,\text{GB/s}$
 - **Hardware Ridge Point (Inflection Intensity)**:
@@ -148,7 +148,7 @@ The hardware limits of the primary physical testbed (NVIDIA GeForce RTX 4070, AD
 $$\text{Performance}(I) = \min\left(P_{\text{peak}}, \; I \cdot B_{\text{peak}}\right)$$
 
 ### 4.3 Analytical FLOP and Byte Formulations
-Implemented in [`neuralops/analysis/roofline.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/analysis/roofline.py) (`estimate_module_flops_and_bytes`) and [`neuralops/analysis/flops_utils.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/analysis/flops_utils.py):
+Implemented in [`neuralops/analysis/roofline.py`](neuralops/analysis/roofline.py) (`estimate_module_flops_and_bytes`) and [`neuralops/analysis/flops_utils.py`](neuralops/analysis/flops_utils.py):
 
 | Mechanism Type | Core Forward FLOPs | Naive DRAM Traffic (Bytes) | SRAM-Fused DRAM Traffic (Bytes) |
 |---|---|---|---|
@@ -168,7 +168,7 @@ Based on operational arithmetic intensity $I_{\text{fused}} = \text{FLOPs} / \te
 ## 5. Real-Time Telemetry & WebSocket Streaming Engine
 
 ### 5.1 Architecture of `ConnectionManager`
-Implemented in [`neuralops/runners/monitor/fastapi_app.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/runners/monitor/fastapi_app.py):
+Implemented in [`neuralops/runners/monitor/fastapi_app.py`](neuralops/runners/monitor/fastapi_app.py):
 
 ```python
 class ConnectionManager:
@@ -239,7 +239,7 @@ The `/ws/telemetry` endpoint emits structured JSON telemetry ticks every 1.0 sec
 
 ## 6. Unified Experiment Tracking Facade
 
-Implemented in [`neuralops/tracking/tracker.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tracking/tracker.py) and [`neuralops/tracking/backends.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tracking/backends.py):
+Implemented in [`neuralops/tracking/tracker.py`](neuralops/tracking/tracker.py) and [`neuralops/tracking/backends.py`](neuralops/tracking/backends.py):
 - **Supported Backends**: `local` (JSONL format), `tensorboard`, `wandb`, and `mlflow`.
 - **Zero-Dependency Local Logging**: Automatically logs structured metric records and hyperparameter JSON files without external service dependencies:
   ```python
@@ -254,14 +254,14 @@ Implemented in [`neuralops/tracking/tracker.py`](file:///Users/tahamajs/Document
 ## 7. Audit & Verification Standards
 
 ### 7.1 Verified Test Suites
-1. **Monitor Server & WebSocket Suite**: [`tests/test_monitor_server.py`](file:///Users/tahamajs/Documents/uni/Project/tests/test_monitor_server.py)
+1. **Monitor Server & WebSocket Suite**: [`tests/test_monitor_server.py`](tests/test_monitor_server.py)
    - `test_gpu_telemetry_fallback`: Verifies graceful offline fallback when CUDA is absent.
    - `test_advanced_monitor_endpoints`: Verifies discovery of all 131 attentions, 72 compressors, PagedKV, and Speculative Decoding states.
    - `test_websocket_multi_client_concurrent_stress`: Connects multiple concurrent WebSocket clients, verifies receipt of `"telemetry_tick"` JSON payload, and ensures zero connection leak in `ConnectionManager`.
    - `test_websocket_resiliency_rapid_reconnect`: Verifies rapid connect/disconnect and ping/pong heartbeats without server degradation.
-2. **Attention Memory Profiler**: [`tests/test_attention_profiler.py`](file:///Users/tahamajs/Documents/uni/Project/tests/test_attention_profiler.py)
+2. **Attention Memory Profiler**: [`tests/test_attention_profiler.py`](tests/test_attention_profiler.py)
    - Verifies execution latency and peak memory tracking on attention layers.
-3. **Experiment Tracking Regressions**: [`tests/test_experiment_logging_tracker.py`](file:///Users/tahamajs/Documents/uni/Project/tests/test_experiment_logging_tracker.py)
+3. **Experiment Tracking Regressions**: [`tests/test_experiment_logging_tracker.py`](tests/test_experiment_logging_tracker.py)
    - Verifies metric logging across backends and local file persistence.
 
 ### 7.2 Static Verification & Quality Gates

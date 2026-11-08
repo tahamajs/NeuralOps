@@ -3,10 +3,10 @@
 This document formally specifies all data schemas used by the 3D Neural Architecture Visualizer (`Docs/visualizer`).
 The visualizer consumes three primary data files and a directory of modular JSON component topologies:
 
-1. [`spatial-data.json`](file:///Users/tahamajs/Documents/uni/Project/Docs/visualizer/spatial-data.json) (~3.1 MB)
-2. [`modules-catalog.json`](file:///Users/tahamajs/Documents/uni/Project/Docs/visualizer/modules-catalog.json) (~543 KB)
-3. [`modules_components.json`](file:///Users/tahamajs/Documents/uni/Project/Docs/visualizer/modules_components.json) (~1.4 MB)
-4. [`components/<module_id>.json`](file:///Users/tahamajs/Documents/uni/Project/Docs/visualizer/components) (240 files)
+1. [`spatial-data.json`](Docs/visualizer/spatial-data.json) (~3.1 MB)
+2. [`modules-catalog.json`](Docs/visualizer/modules-catalog.json) (~543 KB)
+3. [`modules_components.json`](Docs/visualizer/modules_components.json) (~1.4 MB)
+4. [`components/<module_id>.json`](Docs/visualizer/components) (240 files)
 
 ---
 

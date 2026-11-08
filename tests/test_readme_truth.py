@@ -61,10 +61,10 @@ def test_no_file_uri_in_documentation() -> None:
         if matches:
             violations.append(f"{path.relative_to(REPO_ROOT)}: {matches}")
 
-    assert not violations, f"Prohibited file:// URIs detected in documentation:\n" + "\n".join(violations)
+    assert not violations, "Prohibited file:// URIs detected in documentation:\n" + "\n".join(violations)
 
 
 def test_readme_section_numbering_continuous_and_deduplicated() -> None:
     """Verify that README.md has no duplicate section numbers and forms a continuous monotonic sequence."""
-    success, messages = check_readme_sections(REPO_ROOT / "README.md")
-    assert success, f"README section numbering defects:\n" + "\n".join(messages)
+    ret = check_readme_sections(REPO_ROOT / "README.md")
+    assert ret == 0, "check_readme_sections reported duplicate or malformed numbered sections in README.md"

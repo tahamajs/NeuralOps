@@ -10,7 +10,7 @@
 ## ۱. پاسخ مستقیم به سوال: وضعیت ذخیره‌سازی داده‌ها در دیتابیس
 
 **بله، دقیقاً تمام اطلاعات بنچمارک‌ها و ران‌ها در دیتابیس ذخیره است.**
-در حال حاضر فایل مرجع اصلی دیتابیس در مسیر [`results/master_ledger.sqlite`](file:///Users/tahamajs/Documents/uni/Project/results/master_ledger.sqlite) قرار دارد و شامل جداول زیر با رکوردهای واقعی و تاییدشده است:
+در حال حاضر فایل مرجع اصلی دیتابیس در مسیر [`results/master_ledger.sqlite`](results/master_ledger.sqlite) قرار دارد و شامل جداول زیر با رکوردهای واقعی و تاییدشده است:
 
 1. **جدول `results` (شامل ۲,۶۳۵ ردیف رکورد بنچمارک):**
    - دارای ۲۷ فیلد فرنسیک شامل: `record_id`, `module_name`, `category`, `family`, `version_tag`, `status`, `timestamp_utc`, `git_commit_sha`, `algorithm`, `backbone`, `dataset`, `rank`, `seq_len`, `batch_size`, `dtype`, `hardware`, `accuracy`, `retention_pct`, `ppl`, `latency_triton_ms`, `latency_pytorch_ms`, `speedup_x`, `peak_vram_mb`, `throughput_tok_s`, `cosine_sim`, `raw_json`.
@@ -136,7 +136,7 @@ results/
 ## ۵. نقشه راه استانداردسازی CLI و یکپارچه‌سازی با کانفیگ‌ها
 
 ### مرحله ۱: حذف پوشه موازی `benchmarks/` بیرونی
-تمام لاجیک‌ها و فایل‌های بنچمارک در پکیج درونی [`neuralops/benchmarks/`](file:///Users/tahamajs/Documents/uni/Project/neuralops/benchmarks/) وجود دارند. فایل‌های موجود در دایرکتوری بیرونی `benchmarks/` فقط رپرهای لاغر بودند.
+تمام لاجیک‌ها و فایل‌های بنچمارک در پکیج درونی [`neuralops/benchmarks/`](neuralops/benchmarks/) وجود دارند. فایل‌های موجود در دایرکتوری بیرونی `benchmarks/` فقط رپرهای لاغر بودند.
 - با حذف دایرکتوری بیرونی `benchmarks/`، ریشه پروژه تمیز شده و همه چیز از درون سورس پکیج و دستور CLI هدایت می‌شود.
 
 ### مرحله ۲: کانفیگ‌محور کردن بنچمارک‌ها از طریق `neuralops/config/`
@@ -204,7 +204,7 @@ neuralops benchmark run --benchmark qwen_wikitext_kd --modules cosformer,linear_
 
 ## ۱. تحلیل و بررسی تخصصی زیرسیستم `neuralops/tracking/`
 
-پکیج رهگیری در مسیر [`neuralops/tracking/`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tracking/) یکی از تمیزترین و ماژولارترین بخش‌های طراحی‌شده در NeuralOps است. ساختار این زیرسیستم شامل اجزای زیر است:
+پکیج رهگیری در مسیر [`neuralops/tracking/`](neuralops/tracking/) یکی از تمیزترین و ماژولارترین بخش‌های طراحی‌شده در NeuralOps است. ساختار این زیرسیستم شامل اجزای زیر است:
 - **`tracker.py` (`ExperimentTracker`):** الگوی طراحی Facade متمرکز که تمام فراخوانی‌ها برای ثبت پارامترها (`log_params`)، لاگ کردن پیوسته متریک‌ها در هر استپ (`log_metric` / `log_metrics`)، ذخیره فایل‌ها و نمودارها به عنوان آرتیفکت (`log_artifact`) و بستن رسمی ران (`finalize`) را مدیریت می‌کند. همچنین متد `get_callback()` آن یک Callback رسمی سازگار با Hugging Face Transformers ارائه می‌دهد.
 - **`backends.py` (`BaseTracker`, `LocalTracker`, `TensorBoardTracker`, `WandBTracker`, `MLflowTracker`):** چهار بک‌اند قدرتمند رهگیری:
   1. `LocalTracker`: ذخیره بی‌درنگ استپ‌به‌استپ متریک‌ها به صورت JSON Lines (`.jsonl`)، هایپرپارامترها (`params.json`) و کپی فیزیکی آرتیفکت‌ها.
@@ -282,7 +282,7 @@ results/benchmarks/qwen_wikitext_kd/runs/run_20261104_174444/
 
 ## ۵. نحوه پشتیبانی و سوییچ در CLI (`neuralops benchmark`)
 
-در سیستم CLI متمرکز [`neuralops/cli/bench_cmd.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/cli/bench_cmd.py)، آرگومان‌های مرتبط با `tracking` اضافه خواهند شد تا کاربر بتواند بدون تغییر حتی یک خط کد، بک‌اند رهگیری را تغییر دهد:
+در سیستم CLI متمرکز [`neuralops/cli/bench_cmd.py`](neuralops/cli/bench_cmd.py)، آرگومان‌های مرتبط با `tracking` اضافه خواهند شد تا کاربر بتواند بدون تغییر حتی یک خط کد، بک‌اند رهگیری را تغییر دهد:
 
 ```bash
 # ۱. اجرای پیش‌فرض محلی با رهگیری کامل (Local + TensorBoard):

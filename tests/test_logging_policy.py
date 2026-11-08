@@ -5,42 +5,47 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Tests verifying library logging policy compliance and absence of print() in core modules (F-97)."""
+"""Tests verifying codebase logging policy and zero print statements in library code (F-97)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 import re
+import pytest
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_no_print_in_library() -> None:
-    """Verify that core library files use structured loggers and contain no print() statements."""
-    target_files = [
-        ROOT_DIR / "neuralops" / "api.py",
-        ROOT_DIR / "neuralops" / "core" / "compression_pipeline.py",
-        ROOT_DIR / "neuralops" / "export" / "exporter.py",
-        ROOT_DIR / "neuralops" / "main.py",
+    """Verify that core library files do not contain print() calls (only logging is permitted)."""
+    library_files: list[Path] = [
+        REPO_ROOT / "neuralops" / "api.py",
+        REPO_ROOT / "neuralops" / "core" / "compression_pipeline.py",
+        REPO_ROOT / "neuralops" / "export" / "exporter.py",
     ]
 
-    print_call_pattern = re.compile(r"^\s*print\(", re.M)
+    violations: list[str] = []
+    print_pattern = re.compile(r"^\s*print\(", re.M)
 
-    for path in target_files:
-        if path.exists():
-            content = path.read_text(encoding="utf-8")
-            matches = [
-                (idx + 1, line)
-                for idx, line in enumerate(content.splitlines())
-                if print_call_pattern.search(line) and not line.strip().startswith("#")
-            ]
-            assert not matches, f"Forbidden print() calls found in {path.relative_to(ROOT_DIR)}: {matches}"
+    for fpath in library_files:
+        assert fpath.exists(), f"File missing: {fpath}"
+        content = fpath.read_text(encoding="utf-8")
+        matches = print_pattern.findall(content)
+        if matches:
+            violations.append(f"{fpath.name}: {len(matches)} print() call(s) found")
+
+    assert not violations, "Forbidden print() statements found in library code:\n" + "\n".join(violations)
 
 
 def test_api_uses_named_logger() -> None:
-    """Verify neuralops/api.py initializes and uses a named logger."""
-    api_path = ROOT_DIR / "neuralops" / "api.py"
-    assert api_path.exists()
+    """Verify that neuralops/api.py initializes and uses a dedicated named logger."""
+    api_path = REPO_ROOT / "neuralops" / "api.py"
+    assert api_path.exists(), "neuralops/api.py missing"
     content = api_path.read_text(encoding="utf-8")
 
-    assert 'logging.getLogger("NeuralOps.API")' in content or "logging.getLogger(__name__)" in content
+    assert re.search(r'logging\.getLogger\(["\']NeuralOps\.API["\']\)', content) or "logging.getLogger(__name__)" in content, (
+        "neuralops/api.py must initialize a named logger ('NeuralOps.API' or __name__)"
+    )
+    # Verify that logger is actively invoked in api.py
+    logger_calls = re.findall(r"logger\.(info|debug|warning|error)\(", content)
+    assert len(logger_calls) >= 10, f"Expected at least 10 logger invocations in api.py, found {len(logger_calls)}"

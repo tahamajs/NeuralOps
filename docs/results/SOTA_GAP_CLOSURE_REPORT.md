@@ -20,23 +20,23 @@ Overall Status: **100% PASSED** (5/5 Modules Exercised)
 ## 2. Mathematical Proofs Inventory
 
 1. **SVD-LLM v2 Truncation Optimality**:
-   [`docs/proofs/svd_llm_v2_activation_truncation.md`](file:///Users/tahamajs/Documents/uni/Project/docs/proofs/svd_llm_v2_activation_truncation.md)
+   [`docs/proofs/svd_llm_v2_activation_truncation.md`](docs/proofs/svd_llm_v2_activation_truncation.md)
    *Proves ||X(W - W_r)||_F^2 <= ||X(W - W_naive)||_F^2 via Cholesky-whitened Eckart-Young-Mirsky theorem.*
 
 2. **ASVD KV-Cache & Latent State Streaming**:
-   [`docs/proofs/asvd_kv_cache_streaming.md`](file:///Users/tahamajs/Documents/uni/Project/docs/proofs/asvd_kv_cache_streaming.md)
+   [`docs/proofs/asvd_kv_cache_streaming.md`](docs/proofs/asvd_kv_cache_streaming.md)
    *Proves ||K - K_r||_F <= epsilon and recurrent state compression from O(L * d) to O(L * r).*
 
 3. **FP8 e4m3fn Quantization Error**:
-   [`docs/proofs/fp8_e4m3_quantization_error.md`](file:///Users/tahamajs/Documents/uni/Project/docs/proofs/fp8_e4m3_quantization_error.md)
+   [`docs/proofs/fp8_e4m3_quantization_error.md`](docs/proofs/fp8_e4m3_quantization_error.md)
    *Proves uniform mantissa bounding and dynamic range stability on modern tensor architectures.*
 
 4. **DSA Learned Block-Sparse Routing Complexity**:
-   [`docs/proofs/dsa_learned_block_sparse.md`](file:///Users/tahamajs/Documents/uni/Project/docs/proofs/dsa_learned_block_sparse.md)
+   [`docs/proofs/dsa_learned_block_sparse.md`](docs/proofs/dsa_learned_block_sparse.md)
    *Proves complexity reduction to O(T * k * B * d) and >= 95% dense gradient alignment.*
 
 5. **REAP Distributed MoE Pruning Unbiasedness**:
-   [`docs/proofs/reap_distributed_moe_pruning.md`](file:///Users/tahamajs/Documents/uni/Project/docs/proofs/reap_distributed_moe_pruning.md)
+   [`docs/proofs/reap_distributed_moe_pruning.md`](docs/proofs/reap_distributed_moe_pruning.md)
    *Proves all-reducing router activation statistics across distributed ranks yields an unbiased estimator of global expert importance and minimizes representation drift.*
 
 ---

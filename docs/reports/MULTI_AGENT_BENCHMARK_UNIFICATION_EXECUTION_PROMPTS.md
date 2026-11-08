@@ -3,7 +3,7 @@
 **Author / Systems Orchestration Architect:** Taha Majlesi (`tahamaj4@gmail.com`)
 **Project:** NeuralOps Architecture & Optimization Framework (v1.5.0 / Branch: `main`)
 **Document Classification:** Multi-Agent Systems Execution Dossier & Production Prompt Matrix
-**Canonical Master Reference:** [`docs/reports/UNIFIED_BENCHMARK_CONFIG_TRACKING_ARCHITECTURE_SPEC.md`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/UNIFIED_BENCHMARK_CONFIG_TRACKING_ARCHITECTURE_SPEC.md)
+**Canonical Master Reference:** [`docs/reports/UNIFIED_BENCHMARK_CONFIG_TRACKING_ARCHITECTURE_SPEC.md`](docs/reports/UNIFIED_BENCHMARK_CONFIG_TRACKING_ARCHITECTURE_SPEC.md)
 **Date:** November 4, 2026
 **Status:** Production Ready / Authorized for Parallel Swarm Execution (5 Concurrent Agents)
 
@@ -23,7 +23,7 @@ To eliminate race conditions, file collisions, and merge conflicts during concur
 
 Each agent possesses an explicit mandate: **If you identify additional architectural abstractions, caching optimizations, or UX enhancements that streamline the developer experience, preserve numerical precision, or eliminate redundant code, you are explicitly authorized and expected to implement them proactively.**
 
-All agents must strictly cross-reference and comply with the canonical design contracts set forth in [`UNIFIED_BENCHMARK_CONFIG_TRACKING_ARCHITECTURE_SPEC.md`](file:///Users/tahamajs/Documents/uni/Project/docs/reports/UNIFIED_BENCHMARK_CONFIG_TRACKING_ARCHITECTURE_SPEC.md).
+All agents must strictly cross-reference and comply with the canonical design contracts set forth in [`UNIFIED_BENCHMARK_CONFIG_TRACKING_ARCHITECTURE_SPEC.md`](docs/reports/UNIFIED_BENCHMARK_CONFIG_TRACKING_ARCHITECTURE_SPEC.md).
 
 ---
 

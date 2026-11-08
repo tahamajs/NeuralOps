@@ -22,6 +22,17 @@ import torch.nn as nn
 logger = logging.getLogger("NeuralOps.Transformers")
 
 
+class TrainerCallback:
+    """Safe fallback callback stub when transformers package is shadowed or uninstalled."""
+    def on_log(self, *args, **kwargs):
+        pass
+    def on_step_end(self, *args, **kwargs):
+        pass
+    def on_train_end(self, *args, **kwargs):
+        pass
+
+
+
 class _BaseAutoNeuralOps:
     """Base factory wrapper loading HuggingFace models and immediately applying NeuralOps transformations."""
 
