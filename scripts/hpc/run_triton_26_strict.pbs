@@ -2,9 +2,9 @@
 #PBS -N triton_26_strict
 #PBS -q N3090
 #PBS -l nodes=1:ppn=1
-#PBS -l walltime=00:45:00
+#PBS -l walltime=01:00:00
 #PBS -j oe
-#PBS -o run_triton_26_strict.out
+#PBS -o results/screen_logs/run_triton_26_strict.log
 
 cd "$PBS_O_WORKDIR" || exit 1
 
@@ -13,7 +13,7 @@ export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/share/apps/gcc/gcc-8.2.
 export PYTHONPATH="${PWD}:${PYTHONPATH:-}"
 export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
 
-PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops/bin/python
+PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python3
 
 echo "======================================================================"
 echo "  STRICT 26 TRITON KERNELS BENCHMARK ON NVIDIA RTX 3090"
