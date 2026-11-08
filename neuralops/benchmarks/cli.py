@@ -27,7 +27,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from neuralops import __version__
+from neuralops._version import __version__
 from neuralops.core.diagnostics import diagnose_error
 
 try:

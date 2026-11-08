@@ -17,11 +17,11 @@ import sys
 from pathlib import Path
 
 # Ensure repository root is on sys.path when executed directly
-_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from scripts.benchmarks.benchmark_10_phases_speedup_vs_pytorch import main
+from neuralops.benchmarks.legacy_scripts.benchmark_10_phases_speedup_vs_pytorch import main
 
 if __name__ == "__main__":
     sys.exit(main())
