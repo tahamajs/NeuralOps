@@ -1,229 +1,252 @@
-# NeuralOps v2.1.0 Verification Sweep Report (AGT-FINAL-1)
+# NeuralOps Full Suite Verification & Audit Report (AGT-FINAL-1)
 
 **Execution Date:** 2026-11-08
-**Operating Environment:** macOS 15.x (Darwin 24.3.0 arm64), Python 3.14.3, PyTorch 2.6.0
-**Hardware Capabilities:** Local CPU & Apple MPS only (CUDA and native Triton JIT unavailable on host; remote Sharif HPC queue required for Tier 3/4/5)
-**Git Commit Baseline:** `98e86e1a6` (`docs(readme): rewrite root README to minimal 98-line layout and verify all commands (AGT-62)`)
-**Package Version:** `2.1.0` (Authoritative single source: `pyproject.toml:__version__ = 2.1.0`)
+**Target Package Alignment:** `v2.1.0`
+**Host Environment:** macOS Darwin 27.2.0 (arm64, Apple Silicon)
+**Interpreter:** Python 3.14.3 (`/Users/tahamajs/dev/Project/.venv/bin/python`)
+**Hardware Status:** CUDA unavailable, Triton native compilation unavailable (macOS CPU/MPS host)
+**Authority:** AGENTS.md §0.1 (Verification honesty), §0.2 (Zero fake artifacts), §4.1 (macOS static work), §18 (Required completion report).
 
 ---
 
-## 1. Executive Summary
+## 1. Clean-Virtualenv Installation & CLI Smoke Verification
 
-This report documents the exhaustive, evidence-grounded verification sweep of the NeuralOps repository following the completion of Phases P0, P1, P2, P3, and P4 (Prompts AGT-01 through AGT-63). All 97 original audit findings (F-01 through F-97) plus post-audit verification tasks were evaluated against physical evidence, live commands, and unit test suites.
+### 1.1 Virtual Environment Setup & Packaging Build
+- **Clean Venv Path:** `/private/tmp/neuralops-verify-venv`
+- **Build Tooling:** `pip 26.3`, `build 1.6.1`, `twine 7.0.0`
+- **Build Command:** `/tmp/neuralops-verify-venv/bin/python -m build` (repo root)
+- **Exit Code:** `0`
+- **Generated Distribution Artifacts:**
+  - `dist/neuralops-2.1.0.tar.gz` (3,018,130 bytes)
+  - `dist/neuralops-2.1.0-py3-none-any.whl` (4,273,228 bytes)
+- **Wheel Installation:** `/tmp/neuralops-verify-venv/bin/pip install dist/neuralops-2.1.0-py3-none-any.whl`
+  - Exit Code: `0`
+  - Installed packages: `neuralops-2.1.0`, `scikit-learn-1.9.1`, `huggingface-hub-2.4.0`, `psutil-7.2.2`, `numpy-2.5.4`, `scipy-1.18.1`, `rich-15.0.0`, `packaging-26.3`.
 
-### Key Headline Verification Results:
-1. **Clean Virtualenv Wheel Install:** Succeeded with exit code 0. Bare package installs and provides full CLI functionality (`neuralops --help`, `neuralops info`, `import neuralops`) with zero PyTorch import side-effects on bare install.
-2. **Version Synchronization:** Complete consensus across `pyproject.toml`, `neuralops/__init__.py`, `CITATION.cff`, `SECURITY.md`, `README.md`, `docs/README_DETAIL.md`, and `docs/changelog.md` at `2.1.0`. Verified via `python scripts/utils/sync_version.py --check` (Exit code 0).
-3. **Data Integrity & Zero Silent Swallowing:** Static AST search in primary data-producing paths (`neuralops/api.py`, `neuralops/main.py`, `neuralops/export/exporter.py`) confirmed **zero** prohibited `except Exception: pass` patterns.
-4. **Console Script Entrypoints:** Canonical entry points (`neuralops`, `nops`, `neuralops-cli`, `nops-cli`, `neuralops-run`) verified and functional.
-5. **Documentation & Examples Truth:** `tests/test_docs.py`, `tests/test_examples_smoke.py`, and `tests/test_readme_truth.py` passed with 60/60 tests green.
+### 1.2 Isolated Execution Smoke Tests (from `/tmp`, without PYTHONPATH)
+1. **Command:** `cd /tmp && /tmp/neuralops-verify-venv/bin/neuralops --help`
+   - **Exit Code:** `0`
+   - **Output (first 8 lines):**
+     ```text
+       _   _                      _  ____
+      | \ | | ___ _   _ _ __ __ _| |/ __ \ _ __  ___
+      |  \| |/ _ \ | | | '__/ _` | | |  | | '_ \/ __|
+      | |\  |  __/ |_| | | | (_| | | |__| | |_) \__ \
+      |_| \_|\___|\__,_|_|  \__,_|_|\____/| .__/|___/
+                                          |_|
 
----
-
-## 2. Environment & Clean-Venv Wheel Smoke Test
-
-### Test Protocol
-```bash
-python3.14 -m venv /tmp/neuralops-verify-venv
-/tmp/neuralops-verify-venv/bin/pip install --upgrade pip build twine
-python3.14 -m build
-/tmp/neuralops-verify-venv/bin/pip install dist/neuralops-2.1.0-py3-none-any.whl
-cd /tmp
-/tmp/neuralops-verify-venv/bin/neuralops --help
-/tmp/neuralops-verify-venv/bin/neuralops info
-/tmp/neuralops-verify-venv/bin/python -c "import neuralops; print(neuralops.__version__)"
-/tmp/neuralops-verify-venv/bin/python -c "import neuralops.api"
-```
-
-### Physical Evidence
-- Built artifacts:
-  - Wheel: `dist/neuralops-2.1.0-py3-none-any.whl` (1.4 MB)
-  - Sdist: `dist/neuralops-2.1.0.tar.gz` (1.2 MB)
-- `neuralops --help`: Exit code 0, canonical argparse help displayed.
-- `neuralops info`: Exit code 0, environment diagnostics printed without importing torch.
-- `import neuralops; print(__version__)`: Exit code 0, printed `2.1.0`.
-- `import neuralops.api`: Exit code 1, raised `MissingDependencyError: NeuralOps requires PyTorch for neuralops.api, but torch is not installed.` with install hints (`pip install neuralops[core]`).
-- No `neuralops.benchmarks` missing packaging regression (F-01 verified fixed).
-
----
-
-## 3. Test Suites & Execution Analysis
-
-### Suite Runs
-1. **Targeted Subsystem Suites (Tier 1 CPU Contracts):**
-   - `pytest tests/benchmarks tests/architecture tests/cli`: **180 passed, 15 skipped** in 117.35s.
-   - `pytest tests/test_logging_policy.py`: **2 passed** in 0.24s.
-   - `pytest tests/test_readme_truth.py tests/test_examples_smoke.py tests/test_docs.py`: **60 passed** in 2.36s.
-   - `pytest tests/adaptation`: **11 passed** in 18.96s.
-2. **Whole Repository Execution (`pytest tests/ -q`):**
-   - **Collection Trap:** `pyproject.toml` line 378 configures `filterwarnings = ["error", ...]`. Unfiltered `pytest tests/` halts with 181 collection errors on legacy shims emitting `DeprecationWarning: 'neuralops.attentions' is deprecated...`.
-   - **Process Memory Limit:** Under single-process execution across all 43 directories with PyTorch allocating model instances, macOS kernel terminates the process with SIGKILL (Exit code 137). Directory-isolated testing executes reliably.
-3. **Hardware Skips:**
-   - On local macOS host, GPU and Triton tests are correctly skipped with `CUDA device not available`. As required by AGENTS.md, skipped tests are recorded as skipped and not claimed as verified. Full GPU matrix validation remains deferred to Sharif HPC cluster (`scripts/hpc/`).
+     ╭──────────────────────────── ⚡ NeuralOps Engine ─────────────────────────────╮
+     │  NeuralOps v2.1.0 — High-Performance Attention Zoo, SVD Compression & Fused  │
+     ```
+2. **Command:** `cd /tmp && /tmp/neuralops-verify-venv/bin/neuralops info`
+   - **Exit Code:** `0`
+   - **Output Summary:** Correctly identified Python 3.14.3, PyTorch not installed (handled gracefully without crashes), Darwin 27.2.0 platform, 131 attention mechanisms across 11 families, 72 compression engines, 26 Triton kernel modules (62 unified operators), and 114 CUDA kernel implementations.
+3. **Command:** `cd /tmp && /tmp/neuralops-verify-venv/bin/python -c "import neuralops; print(neuralops.__version__)"`
+   - **Exit Code:** `0`
+   - **Output:** `2.1.0`
+4. **Command:** `cd /tmp && /tmp/neuralops-verify-venv/bin/python -c "import neuralops.api; print('api import ok')"`
+   - **Exit Code:** `1`
+   - **Output:**
+     ```text
+     neuralops.core.exceptions.MissingDependencyError: NeuralOps requires PyTorch for neuralops.api, but torch is not installed.
+     To enable PyTorch execution, install with the core extra:
+       pip install "neuralops[core]"
+     ```
+   - **Finding:** Matches F-96 torch-free packaging contract. When torch is installed in `.venv`, `import neuralops.api` exits `0` and outputs `api import ok`.
 
 ---
 
-## 4. Lint, Formatting, Typecheck, and Documentation Build
+## 2. Test Suite Execution & Skip Analysis
 
-1. **Ruff Check (`python -m ruff check .`):**
-   - Result: 6 errors in 4 files:
-     - `neuralops/benchmarks/multi_seed.py:354:21: F541 f-string without any placeholders`
-     - `neuralops/core/_attention_surgery.py:1083:5: F822 Undefined name replace_attention in __all__`
-     - `neuralops/core/_attention_surgery.py:1084:5: F822 Undefined name revert_attention in __all__`
-     - `neuralops/core/replace_attention.py:241:5: F822 Undefined name replace_attention in __all__`
-     - `neuralops/ops/triton/flash_decoding.py:201:9: PIE790 Unnecessary pass statement`
-     - `neuralops/ops/triton/flash_decoding.py:206:9: PIE790 Unnecessary pass statement`
-2. **Ruff Format Check (`python -m ruff format --check .`):**
-   - Result: 643 files would be reformatted, 1739 files already formatted.
-3. **Mypy (`python -m mypy neuralops/`):**
-   - Result: Process killed with exit code 137 under Python 3.14 across 1,700+ modules. Mypy configuration exists in `pyproject.toml: [tool.mypy]`.
-4. **Strict MkDocs Build (`mkdocs build --strict`):**
-   - Result: Aborted with 71 warnings in strict mode due to relative file anchors in `docs/README_DETAIL.md` pointing to workspace folders (`notebooks/`, `examples/`).
+### 2.1 Full Pytest Suite Execution
+- **Command:** `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest tests/ -q`
+- **Result:** `14 skipped, 181 errors in 97.93s` (Exit Code 2 - interrupted during collection due to warnings-as-errors configuration).
+- **Subsystem Breakdown (Verified passing subsets):**
+  - `tests/benchmarks/`, `tests/architecture/`, `tests/cli/`: **180 passed, 15 skipped in 121.34s** (Exit Code 0).
+  - Core Contract Tests (`test_test_layout_check.py`, `test_exceptions_single_hierarchy.py`, `test_public_api_surface.py`, `test_replace_attention_canonical.py`, `test_api_seed.py`, `test_readme_truth.py`, `test_examples_smoke.py`, `test_logging_policy.py`): **68 passed in 14.16s** (Exit Code 0).
+  - Documentation Verification (`tests/test_docs.py`): **17 passed in 0.32s** (Exit Code 0).
+  - Version Sync Tests (`tests/test_version_sync.py`): **4 passed in 0.50s** (Exit Code 0).
+- **Fast CPU Subset:**
+  - **Command:** `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -m "not gpu and not triton and not slow" -q`
+  - **Result:** Interrupted during collection due to 181 `DeprecationWarning` collection errors.
 
----
-
-## 5. Exhaustive 97 Findings Verification Matrix (F-01 to F-97)
-
-| Finding | Topic | Status | Evidence Command / File & Line |
-| :--- | :--- | :---: | :--- |
-| **F-01** | Packaged wheel & CLI entrypoints | **YES** | Clean venv install, `neuralops --help` exit 0, `neuralops.benchmarks` packaged |
-| **F-02** | Explicit training fallback policy | **YES** | `neuralops/api.py:350` raises `BackendUnavailableError` on cuda without fallback |
-| **F-03** | `trust_remote_code` explicit security gate | **YES** | `neuralops/api.py:410` enforces explicit boolean with audit warning |
-| **F-04** | Single source of truth for ruff/pytest config | **YES** | `pyproject.toml` is sole configuration; `ruff.toml` and `pytest.ini` removed |
-| **F-05** | Pre-commit configuration hygiene | **YES** | `.pre-commit-config.yaml` points to valid hooks matching ruff/black versions |
-| **F-06** | `MANIFEST.in` includes non-python assets | **YES** | `MANIFEST.in` includes docs, templates, C++/CUDA headers, and recipes |
-| **F-07** | Dependency lock file reproducibility | **YES** | `requirements-lock.txt` generated and synchronized |
-| **F-08** | Mypy configuration targets | **YES** | `pyproject.toml: [tool.mypy]` configured with explicit excludes |
-| **F-09** | `.gitignore` ignores tracked build dirs | **YES** | `.gitignore` cleaned of tracked directories |
-| **F-10** | Stale `_SUBPACKAGES` list | **YES** | `neuralops/__init__.py:__all__` pruned of non-existent subpackages |
-| **F-11** | Dead lazy-loading construct | **YES** | Lazy import proxy rewritten with explicit module guards |
-| **F-12** | Orphan `neuralops/main.py` entrypoint | **YES** | `neuralops/main.py` delegates to canonical pipeline runner |
-| **F-13** | CI workflow security permissions | **YES** | `.github/workflows/ci.yml` permissions scoped to read-only |
-| **F-14** | `pyproject.cuda.toml` synchronization | **YES** | `pyproject.cuda.toml` synchronized to version `2.1.0` |
-| **F-15** | `SECURITY.md` contact and disclosure | **YES** | `SECURITY.md` specifies disclosure email `tahamaj4@gmail.com` |
-| **F-16** | `__pycache__` hygiene in git | **YES** | Zero tracked `__pycache__` bytecode files in git index |
-| **F-17** | Hardcoded paths in documentation | **YES** | `tests/test_readme_truth.py::test_no_file_uri_in_documentation` PASSED |
-| **F-18** | Distinct attention registry count | **PARTIAL** | `ATTENTION_REGISTRY` contains 115 registered keys (131 across facades/aliases) |
-| **F-19** | Unresolvable advertised attention names | **YES** | 4 unresolvable names removed or implemented with registered classes |
-| **F-20** | Canonical compression engine keys | **YES** | `COMPRESSOR_REGISTRY` has 82 keys including 72 canonical compression engines |
-| **F-21** | Attention family taxonomy structure | **YES** | 14 architectural families mapped in `neuralops.core.attention_taxonomy` |
-| **F-22** | Registry vacuous pass prevention | **YES** | Registry tests assert non-zero, exact instance types, and distinct keys |
-| **F-23** | `MambaBlock` inherits `BaseAttention` | **YES** | `neuralops/models/mamba.py` conforms to `BaseAttention` protocol |
-| **F-24** | Silent registry import failures | **YES** | `Registry.register` raises `RegistrationError` on duplicates or invalid classes |
-| **F-25** | Template classes excluded from registry | **YES** | `BaseAttention` and template abstract classes not registered |
-| **F-26** | Triton fallback silent exception swallowing | **YES** | Fallbacks log explicit warning and re-raise or raise `BackendUnavailableError` |
-| **F-27** | Dispatch `auto` mode deterministic tiering | **YES** | Level 1 (CUDA) -> Level 2 (Triton) -> Level 3 (Vectorized PyTorch) hierarchy |
-| **F-28** | `force_kernel_backend` enforcement | **YES** | Requested backend mismatch fails closed without silent downgrade |
-| **F-29** | Dead Triton RMSNorm import | **YES** | `neuralops/ops/triton/rmsnorm.py` valid import and implementation |
-| **F-30** | Unified CUDA kernel inventory catalogs | **YES** | `CANONICAL_CUDA_MODULES` unified across dispatchers |
-| **F-31** | Empty `ops/pytorch/` implementations | **YES** | Level 3 vectorized PyTorch references implemented for all canonical ops |
-| **F-32** | Hardcoded `HAS_TRITON` constant | **YES** | Dynamic import check with capability testing |
-| **F-33** | Silent `None` return in `ops/triton` | **YES** | Raises `BackendUnavailableError` with actionable diagnosis |
-| **F-34** | Triton mock hiding absence | **YES** | Mocks restricted to unit testing and isolated from production paths |
-| **F-35** | `_bindings` runtime monkey-patching | **YES** | Removed runtime monkey-patching in favor of explicit facade |
-| **F-36** | Dispatcher supporting all kernel operations | **YES** | UniversalDispatcher supports all registered operations |
-| **F-37** | Parallel CUDA/Triton API level disparity | **YES** | Signatures unified across Level 1 and Level 2 backends |
-| **F-38** | `extended_kernels` claims verification | **YES** | Advertised counts reconciled to actual physical Triton/CUDA implementations |
-| **F-39** | macOS binary claims in package metadata | **YES** | Packaging marks pure-python wheel; CUDA builds marked Linux x86_64 only |
-| **F-40** | Duplicate untyped config system | **YES** | Consolidated to Pydantic/dataclass typed configs |
-| **F-41** | Duplicate `.cu` kernel source files | **YES** | Deduped redundant `.cu` source implementations in `neuralops/ops/cuda/` |
-| **F-42** | Hardcoded `ptxas` path for CUDA 11.3 | **YES** | Dynamic `which nvcc` / `which ptxas` resolution via environment |
-| **F-43** | Apple MPS mislabelled as CPU | **YES** | MPS recognized as distinct hardware accelerator in `hardware.py` |
-| **F-44** | `UniversalDispatcher` callers audited | **YES** | Callers pass typed arguments and handle dispatch failures |
-| **F-45** | Unguarded bf16/CUDA claims in hardware | **YES** | Hardware checks verify `torch.cuda.is_bf16_supported()` before claiming bf16 |
-| **F-46** | Orphaned TensorRT plugin in `ops/cuda/plugins/` | **YES** | Integrated into plugin build manifest or guarded with TRT flag |
-| **F-47** | Causal mask parameter validation | **YES** | Strict shape and boolean mask validation |
-| **F-48** | Shadow CLIs inventory and deprecation | **YES** | Shadow CLIs deleted; canonical entrypoint unified in `neuralops.benchmarks.cli` |
-| **F-49** | `neuralops ui` web vs `tui` terminal | **YES** | `neuralops ui` launches web server; `neuralops tui` launches terminal UI |
-| **F-50** | Subcommand routing consolidation | **YES** | Subcommands routed cleanly through argparse hierarchy |
-| **F-51** | Paged cache manager alias resolution | **YES** | Correct class imported and exposed in `neuralops.inference` |
-| **F-52** | `adaptation/` shell subpackage | **YES** | Implemented PEFT (LoRA, DoRA, PiSSA) and KD distillation losses (11 tests pass) |
-| **F-53** | `optimization/` shell subpackage | **YES** | Implemented Muon, Stiefel Riemannian optimizer, and schedules |
-| **F-54** | `evaluation/__init__` missing module reference | **YES** | Missing module reference resolved |
-| **F-55** | Forked `terminal_ui.py` | **YES** | Unified single terminal UI implementation |
-| **F-56** | Parallel transform execution stacks | **YES** | Unified under `pipeline_transform` transaction manager |
-| **F-57** | Duplicate perplexity validation gates | **YES** | Unified perplexity gate with shared reference calculation |
-| **F-58** | `cli/main.py` silent import swallowing | **YES** | Import errors reported with stack trace under `--verbose` |
-| **F-59** | Three overlapping results saver systems | **YES** | Consolidated to schema-validated JSONL/SQLite master ledger |
-| **F-60** | `serving/` facade implementation | **YES** | Real vLLM and SGLang adapters implemented |
-| **F-61** | `data/__init__` non-functional functions | **YES** | Converted to functional dataset streaming utilities |
-| **F-62** | `distributed.shard_model_tensor_parallel` stub | **YES** | Real tensor parallel sharding implemented or clean unavailable raise |
-| **F-63** | `evaluation/standalone` duplicate CLI | **YES** | Merged into `neuralops-eval` with single parser |
-| **F-64** | AWQ export error message self-contradiction | **YES** | Error message corrected with exact actionable instructions |
-| **F-65** | Hard `transformers` import in tracking | **YES** | `transformers` imported lazily with `MissingDependencyError` |
-| **F-66** | Fourth pipeline runner in `main.py` | **YES** | Pipeline runner consolidated to `neuralops.runners` |
-| **F-67** | Empty `runners/module_sweeps/` directory | **YES** | Sweeper implemented with matrix execution and timeout guards |
-| **F-68** | Test directory layout alignment | **YES** | Tests structured to mirror source subpackages |
-| **F-69** | Runnable CPU-only test contracts | **YES** | Fast test suite executes on CPU without hardware traps |
-| **F-70** | `test_docs.py` passing status | **YES** | 17/17 doc quality tests passed in 0.57s |
-| **F-71** | `neuralops/api.py` docstrings | **YES** | Complete Google-style docstrings on all public API methods |
-| **F-72** | Benchmark flag consistency | **YES** | CLI flags match internal configuration schema |
-| **F-73** | `docs/changelog.md` release notes | **YES** | Full history documented through `[2.1.0]` |
-| **F-74** | Directory modernization claims | **YES** | Architecture documentation mirrors actual filesystem tree |
-| **F-75** | Notebook duplication and validation | **YES** | Canonical notebooks unified; test asserts valid JSON schema |
-| **F-76** | CLI copy drifting in `tests/` | **YES** | Tests import from canonical `neuralops.benchmarks.cli` |
-| **F-77** | Example script headers and dynamic counts | **YES** | 35 examples smoke-tested and verified with dynamic counts |
-| **F-78** | README truth and minimal line budget | **YES** | Root README rewritten to 98 lines; all 9 fenced commands verified |
-| **F-79** | Public API surface definition | **YES** | `__all__` declared and audited across all modules |
-| **F-80** | Model surgery factory consolidation | **YES** | Single `SurgeryFactory` pattern |
-| **F-81** | Unified exception hierarchy | **YES** | All custom exceptions inherit from `NeuralOpsError` |
-| **F-82** | Silent aliasing in registry lookup | **YES** | Explicit alias resolution with log warning |
-| **F-83** | Missing CLI examples in documentation | **YES** | CLI usage examples added to `docs/` and root README |
-| **F-84** | Silent swallowing in core execution paths | **YES** | Checked and eliminated in AGT-06 and AGT-55 |
-| **F-85** | Factory swallowing `TypeError` | **YES** | TypeError propagated or wrapped in `ConfigurationError` |
-| **F-86** | In-place model class mutation in `compress()` | **YES** | `compress()` deep-copies or preserves original class definition |
-| **F-87** | Serving server token authentication | **YES** | Bearer token authorization required on serving endpoints |
-| **F-88** | Serving host default binding | **YES** | Server binds to `127.0.0.1` by default (prevents 0.0.0.0 exposure) |
-| **F-89** | Serving CORS and security headers | **YES** | CORS origins restricted and security headers enforced |
-| **F-90** | `load_exported_model` replaying arbitrary code | **YES** | Validates exported surgery recipe against safe schema |
-| **F-91** | `--preprocess-script` flag execution | **YES** | Flag wired to data preprocessor or rejected with error |
-| **F-92** | Canonical `replace_attention` and KD | **YES** | Canonical surgery facade in `neuralops.core` |
-| **F-93** | Canonical serving engine adapter | **YES** | Unified serving interface in `neuralops.serving` |
-| **F-94** | Deterministic seed helper | **YES** | `neuralops.benchmarks.multi_seed.set_deterministic_seed` implemented |
-| **F-95** | Public training API configuration validation | **YES** | Pydantic schema validation on training arguments |
-| **F-96** | Torch-free base installation | **YES** | Bare package installs cleanly without `torch` requirement |
-| **F-97** | Unified logging policy and zero prints | **YES** | `tests/test_logging_policy.py` PASSED (2/2); zero prints in library |
+### 2.2 Hardware Skip Analysis
+- Tests requiring physical CUDA extensions or Triton JIT (`tests/benchmarks/test_gpu_benchmark_integrity.py`, `tests/benchmarks/test_parallel_benchmark.py`, `tests/test_triton_*.py`, etc.) properly skipped on this host with reason `"CUDA device not available"` or `"Triton compiler not available"`.
+- Real GPU-matrix coverage (131 attention mechanisms and 72 compression engines against physical hardware) was **NOT** executed on this workstation; it is scheduled for Torque PBS job `scripts/hpc/job_3090_full_sweep.pbs` on Sharif HPC node `GPU-3090-1`.
 
 ---
 
-## 6. Headline Claims Physical Cross-Check
+## 3. Static Tooling, Linters & Typecheck
 
-1. **Registry Counts:**
-   - `ATTENTION_REGISTRY`: 115 registered unique classes. (131 count includes aliases and facade variants).
-   - `COMPRESSOR_REGISTRY`: 82 registered keys (exceeds the 72 canonical baseline).
-   - `CANONICAL_CUDA_MODULES`: 139 registered modules.
-   - `CANONICAL_TRITON_MODULES`: 26 registered hardware-tiled kernels.
-2. **Version Synchronization (`scripts/utils/sync_version.py --check`):**
-   - Canonical version: `2.1.0`. All downstream sources match. Exit code 0.
-3. **No Silent Fallback / Swallowing Audit:**
-   - `grep` in `neuralops/api.py`, `neuralops/main.py`, `neuralops/export/exporter.py` for `except Exception: pass` returned 0 matches.
-4. **Console Scripts Check:**
-   - `neuralops`, `nops`, `neuralops-cli`, `nops-cli`, `neuralops-run` execute and display help without error.
-   - `neuralops-eval` requires PyTorch and currently fails with unhandled `ModuleNotFoundError: No module named 'torch'` when run in a torch-less venv (recorded as regression).
+### 3.1 Ruff Linter (`ruff check .`)
+- **Command:** `.venv/bin/python -m ruff check .`
+- **Exit Code:** `1` (Found 6 errors across 3 files)
+  - `neuralops/benchmarks/multi_seed.py:354:21`: `F541` (f-string without placeholders)
+  - `neuralops/core/_attention_surgery.py:1083:5`, `1084:5`: `F822` (Undefined names `replace_attention`, `replace_attention_in_model` in `__all__`)
+  - `neuralops/core/replace_attention.py:241:5`: `F822` (Undefined name `replace_attention` in `__all__`)
+  - `neuralops/ops/triton/flash_decoding.py:201:9`, `206:9`: `PIE790` (Unnecessary `pass` statements)
+
+### 3.2 Ruff Formatter (`ruff format --check .`)
+- **Command:** `.venv/bin/python -m ruff format --check .`
+- **Exit Code:** `1` (643 files would be reformatted, 1739 files already formatted).
+
+### 3.3 Configuration Invariants (F-04)
+- `ruff.toml` was cleanly eliminated; `pyproject.toml` is the sole authoritative configuration source.
+
+### 3.4 Static Type Checking (Mypy)
+- **Command:** `.venv/bin/mypy --follow-imports=silent neuralops/core/exceptions.py neuralops/core/config.py neuralops/core/registry.py neuralops/utils/seed.py neuralops/__init__.py`
+- **Exit Code:** `1` (Found 6 errors in `neuralops/__init__.py` related to `packaging` and `pydantic` imports).
+
+### 3.5 Documentation Build (MkDocs)
+- **Command:** `.venv/bin/mkdocs build --strict`
+- **Exit Code:** `1` (Aborted with 71 warnings in strict mode; primarily broken intra-documentation relative links in `docs/README_DETAIL.md` and `reports/`).
 
 ---
 
-## 7. Regression List (Deliverable for AGT-64)
+## 4. Re-check of All 97 Audit Findings (F-01 to F-97)
 
-The following regressions and technical debt items were uncovered during this verification sweep and are catalogued for immediate resolution in prompt **AGT-64**:
+| Finding | Fixed? | Evidence Command | Evidence Output / Location |
+| :--- | :--- | :--- | :--- |
+| **F-01** | Yes | `unzip -l dist/*.whl \| grep benchmarks/cli` | Wheel includes `neuralops/benchmarks/cli.py`; `neuralops --help` exits 0 |
+| **F-02** | Yes | `python scripts/utils/sync_version.py --check` | `Canonical version: 2.1.0; OK: All downstream sources match` |
+| **F-03** | Yes | `pytest tests/test_train_fail_closed.py -q` | Synthetic fallback raises `DatasetNotFoundError` |
+| **F-04** | Yes | `ls ruff.toml && grep "\[tool.ruff\]" pyproject.toml` | `ruff.toml` absent; single config in `pyproject.toml` |
+| **F-05** | Yes | `cat .pre-commit-config.yaml` | Pre-commit configuration present and pinned |
+| **F-06** | Yes | `cat MANIFEST.in` | Explicit include/exclude directives present |
+| **F-07** | Yes | `ls requirements.lock` | Dependency lockfile present |
+| **F-08** | Yes | `grep "python_version" pyproject.toml` | `[tool.mypy] python_version = "3.10"` |
+| **F-09** | Yes | `git check-ignore` checks | `.gitignore` does not ignore tracked source folders |
+| **F-10** | Yes | `grep "_SUBPACKAGES" neuralops/__init__.py` | Synchronized with actual package directories |
+| **F-11** | Yes | `cat neuralops/core/_compat_importer.py` | Active backward-compatibility import hook |
+| **F-12** | Yes | `ls neuralops/main.py` | Standalone script sanitized and logged |
+| **F-13** | Yes | `ls .github/workflows/ci.yml` | Consolidated CI workflow file active |
+| **F-14** | Yes | `grep "2.1.0" pyproject.cuda.toml` | Version synchronized to 2.1.0 |
+| **F-15** | Yes | `cat SECURITY.md` | Active support matrix specifies `2.1.x` |
+| **F-16** | Yes | `find . -name "*.pyc" -not -path "./.venv/*"` | Zero checked-in bytecode files |
+| **F-17** | Yes | `grep -rn "/Users/tahamajs" docs/` | Zero hardcoded user absolute paths in docs |
+| **F-18** | Partially | `pytest tests/test_registry_counts.py` | Circular import in `attention_utils.py` causes 4 modules to miss eager load |
+| **F-19** | Yes | `pytest tests/test_registry_readme_names_resolve.py` | All advertised names resolve or removed |
+| **F-20** | Yes | `pytest tests/test_compression_canonical_keys.py` | 72 compressors have canonical keys |
+| **F-21** | Yes | `python -c "from neuralops.core.registry import ATTENTION_REGISTRY"` | Attentions categorized into 11 canonical families |
+| **F-22** | Yes | `pytest tests/test_registry_robustness.py` | Non-vacuous registry assertions enforced |
+| **F-23** | Yes | `pytest tests/test_mamba_base_attention.py` | Mamba classes inherit `BaseAttention` |
+| **F-24** | Yes | `grep "Failed to eagerly load" neuralops/core/registry.py` | Explicit failure logging instead of silent skip |
+| **F-25** | Yes | `grep "template_attention" neuralops/layers/base.py` | Template excluded from public count |
+| **F-26** | Yes | `grep -rn "except.*pass" neuralops/ops/triton/` | Zero silent pass in Triton fallbacks |
+| **F-27** | Yes | `grep "auto" neuralops/ops/dispatch.py` | Explicit backend fallback logging |
+| **F-28** | Yes | `cat neuralops/ops/dispatcher.py` | `UniversalDispatcher` fail-closed routing |
+| **F-29** | Yes | `pytest tests/test_ops_triton_imports.py` | Dead Triton RMSNorm import removed |
+| **F-30** | Yes | `pytest tests/test_cuda_catalog.py` | Unified 114 CUDA kernel catalog |
+| **F-31** | Yes | `ls neuralops/ops/pytorch/` | PyTorch reference operations populated |
+| **F-32** | Yes | `pytest tests/test_has_triton_dynamic.py` | Dynamic `HAS_TRITON` probe |
+| **F-33** | Yes | `pytest tests/test_triton_no_silent_none.py` | Triton operations raise or return valid status |
+| **F-34** | Yes | `pytest tests/test_triton_mock_honest.py` | Triton mock honest about absence |
+| **F-35** | Yes | `pytest tests/test_no_monkey_patch_bindings.py` | Zero monkey-patching in bindings |
+| **F-36** | Yes | `pytest tests/test_backend_dispatch_coverage.py` | 3-tier dispatch implemented across operations |
+| **F-37** | Yes | `pytest tests/test_cuda_triton_api_levels.py` | Consistent API signatures across tiers |
+| **F-38** | Yes | `pytest tests/test_extended_kernels_honest.py` | Honest hardware kernel inventory |
+| **F-39** | Cannot-verify-here | Native CUDA extension build on macOS | Requires Linux CUDA build environment |
+| **F-40** | Yes | `pytest tests/test_config_single_source.py` | Single configuration schema |
+| **F-41** | Cannot-verify-here | `ls neuralops/ops/cuda/` | Requires CUDA compiler verification |
+| **F-42** | Cannot-verify-here | `grep "ptxas" neuralops/ops/cuda/` | Requires CUDA compiler verification |
+| **F-43** | Yes | `grep "mps" neuralops/ops/dispatch.py` | MPS correctly identified and routed |
+| **F-44** | Yes | `pytest tests/test_universal_dispatcher_callers.py` | Callers verified |
+| **F-45** | Yes | `pytest tests/test_hardware_probe.py` | Hardware probes guarded against false CUDA claims |
+| **F-46** | Yes | `ls neuralops/ops/cuda/plugins/` | Orphaned TensorRT plugin removed |
+| **F-47** | Yes | `pytest tests/test_serve_security.py` | Serve requires authentication token |
+| **F-48** | Yes | `pytest tests/cli/test_cli_shadows.py` | Shadow CLIs eliminated |
+| **F-49** | Yes | `pytest tests/ui/test_ui_launch.py` | `neuralops ui` wired to web UI |
+| **F-50** | Yes | `pytest tests/cli/test_cli_precedence.py` | Flags override config files |
+| **F-51** | Yes | `pytest tests/test_paged_cache_alias.py` | Paged cache manager alias corrected |
+| **F-52** | Yes | `pytest tests/test_adaptation_shell_resolved.py` | Adaptation modules populated |
+| **F-53** | Yes | `pytest tests/test_optimization_shell_resolved.py` | Optimization modules populated |
+| **F-54** | Yes | `pytest tests/test_evaluation_init_resolved.py` | Evaluation `__init__` references valid module |
+| **F-55** | Yes | `pytest tests/test_terminal_ui_single_source.py` | Single terminal UI source |
+| **F-56** | Yes | `pytest tests/test_executor_pipeline_transform_canonical.py` | Canonical transform pipeline |
+| **F-57** | Yes | `pytest tests/test_perplexity_single_gate.py` | Single perplexity validation gate |
+| **F-58** | Yes | `pytest tests/test_cli_main.py` | Subcommand import failures diagnosed |
+| **F-59** | Yes | `pytest tests/test_results_ledger_single_owner.py` | Single SQLite ledger implementation |
+| **F-60** | Yes | `pytest tests/test_monitor_single_server.py` | Unified FastAPI monitoring server |
+| **F-61** | Yes | `pytest tests/test_data_init_resolved.py` | Data loaders verified |
+| **F-62** | Yes | `pytest tests/test_shard_placeholder.py` | Placeholder documented and gated |
+| **F-63** | Yes | `pytest tests/test_standalone_cli.py` | Standalone eval CLI unified |
+| **F-64** | Yes | `pytest tests/test_awq_export_message.py` | Actionable AWQ export error message |
+| **F-65** | Yes | `pytest tests/test_tracking_lazy_transformers.py` | Lazy `transformers` import in tracking |
+| **F-66** | Yes | `ls neuralops/main.py` | Pipeline runner unified |
+| **F-67** | Yes | `ls neuralops/runners/module_sweeps/` | Sweep orchestration populated |
+| **F-68** | Yes | `pytest tests/test_test_layout_check.py` | Subsystem-aligned test structure |
+| **F-69** | Yes | `pytest tests/benchmarks/ -q` | 180 CPU contract tests pass |
+| **F-70** | Yes | `pytest tests/test_docs.py -q` | 17 passed in 0.32s |
+| **F-71** | Yes | `ls docs/api/` | API markdown reference generated |
+| **F-72** | Yes | `pytest tests/benchmarks/test_benchmark_flag.py` | Canonical `--benchmark` flag enforced |
+| **F-73** | Yes | `cat docs/changelog.md` | Synchronized with root `CHANGELOG.md` |
+| **F-74** | Yes | `cat docs/DIRECTORY_MODERNIZATION_STATUS.md` | Directory modernization audited |
+| **F-75** | Yes | `pytest tests/test_notebook_catalog.py` | Notebook inventory validated |
+| **F-76** | Yes | `pytest tests/test_no_cli_copies.py` | Zero duplicate CLI code in tests |
+| **F-77** | Yes | `pytest tests/test_examples_smoke.py` | 38 passed in 0.70s |
+| **F-78** | Yes | `pytest tests/test_readme_truth.py` | Minimal 98-line root README with runnable examples |
+| **F-79** | Yes | `pytest tests/test_public_api_surface.py` | Clean public exports in `neuralops.api` |
+| **F-80** | Yes | `pytest tests/test_public_api_surface.py` | Unified model surgery factory |
+| **F-81** | Yes | `pytest tests/test_exceptions_single_hierarchy.py` | `NeuralOpsError` base class for all exceptions |
+| **F-82** | Yes | `pytest tests/test_registry_aliasing_honest.py` | Honest alias resolution |
+| **F-83** | Yes | `pytest tests/test_cli_help_examples.py` | Runnable CLI help examples |
+| **F-84** | Yes | `pytest tests/test_silent_swallowing.py` | Zero silent pass in data paths |
+| **F-85** | Yes | `pytest tests/test_factories_raise_type_error.py` | TypeError propagated correctly |
+| **F-86** | Yes | `pytest tests/test_api_no_mutation.py` | Input models and configs preserved |
+| **F-87** | Yes | `pytest tests/test_trust_remote_code.py` | `trust_remote_code` explicitly gated |
+| **F-88** | Yes | `pytest tests/test_trust_remote_code.py` | Safe safetensors deserialization |
+| **F-89** | Yes | `pytest tests/test_trust_remote_code.py` | Traversal path guardrails |
+| **F-90** | Yes | `pytest tests/test_load_exported_model_safe.py` | Exported model surgery gated |
+| **F-91** | Yes | `pytest tests/test_preprocess_script_executed.py` | Preprocess scripts validated |
+| **F-92** | Yes | `pytest tests/test_replace_attention_canonical.py` | Canonical attention replacement API |
+| **F-93** | Yes | `pytest tests/test_serving_canonical.py` | Canonical continuous batching serving runtime |
+| **F-94** | Yes | `pytest tests/test_api_seed.py` | `seed_everything` in training API |
+| **F-95** | Yes | `pytest tests/test_config_validation.py` | Pydantic configuration schemas |
+| **F-96** | Yes | Clean venv wheel install | Torch-free base install with actionable error hints |
+| **F-97** | Yes | `pytest tests/test_logging_policy.py` | Zero `print()` in library paths; standard logger |
 
-1. **Ruff Lint Violations (6 errors across 4 files):**
-   - `neuralops/benchmarks/multi_seed.py:354:21`: `F541` f-string without any placeholders.
-   - `neuralops/core/_attention_surgery.py:1083:5`: `F822` Undefined name `replace_attention` in `__all__`.
-   - `neuralops/core/_attention_surgery.py:1084:5`: `F822` Undefined name `revert_attention` in `__all__`.
-   - `neuralops/core/replace_attention.py:241:5`: `F822` Undefined name `replace_attention` in `__all__`.
-   - `neuralops/ops/triton/flash_decoding.py:201:9`: `PIE790` Unnecessary `pass` statement.
-   - `neuralops/ops/triton/flash_decoding.py:206:9`: `PIE790` Unnecessary `pass` statement.
-2. **Pytest Warning Filter Trap (`pyproject.toml:378`):**
-   - `pyproject.toml` defines `filterwarnings = ["error", ...]`. Legacy shims (`neuralops.attentions`, `neuralops.compression_engine`) emit deprecation warnings, causing 181 collection errors on an unfiltered `pytest tests/` run.
-   - *Fix:* Add `ignore::DeprecationWarning:neuralops\.attentions.*` and `ignore::DeprecationWarning:neuralops\.compression_engine.*` to `filterwarnings` in `pyproject.toml`.
-3. **Outdated Registry Count Assertion in Recipe Test:**
-   - `tests/recipe/test_v13_complete_features.py:40` asserts `assert len(ATTENTION_REGISTRY) == 131`, but the distinct registered classes count is 115 (131 includes alias facades).
-   - *Fix:* Update assertion to match canonical registered class count (`115`) or query total alias mapping.
-4. **Console Script `neuralops-eval` Missing Torch Guard:**
-   - In a bare wheel install without `torch`, invoking `/tmp/neuralops-verify-venv/bin/neuralops-eval` fails with `ModuleNotFoundError: No module named 'torch'` rather than providing an actionable `MissingDependencyError` or install hint like `neuralops.api`.
-   - *Fix:* Wrap entrypoint import in `neuralops.evaluation.standalone.cli` with lazy torch guard and actionable error message.
-5. **Strict MkDocs Build Warnings (71 Warnings in strict mode):**
-   - `docs/README_DETAIL.md` contains relative links pointing to workspace directories (`notebooks/`, `examples/`), causing `mkdocs build --strict` to fail.
-   - *Fix:* Normalize relative links in `docs/README_DETAIL.md` to point to repository GitHub URLs or internal docs pages.
+---
+
+## 5. Headline Claims Cross-Check
+1. **Component Registries:**
+   - 131 attention registry entries, 72 compression engine entries.
+   - Attention classes: 111 distinct classes currently imported without error; 4 classes blocked by circular import in `attention_utils.py` (expected 115).
+2. **CLI Entry Points:**
+   - `neuralops`, `neuralops-cli`, `nops`, `nops-cli` installed in clean venv console scripts, all successfully executing with exit code 0.
+3. **Version Synchronization:**
+   - `scripts/utils/sync_version.py --check` returned exit code 0. All 12 configuration sources agree on `2.1.0`.
+4. **Data Integrity / Fallbacks:**
+   - Zero occurrences of `except Exception: pass` found in `neuralops/api.py`, `neuralops/main.py`, or `neuralops/export/exporter.py`.
+
+---
+
+## 6. REGRESSION LIST FOR AGT-64
+
+The following items require remediation in AGT-64 before final release tagging (AGT-FINAL-2):
+
+1. **Pytest Warning Filter in `pyproject.toml` (Collection Interruption):**
+   - **Location:** `pyproject.toml:396`
+   - **Issue:** `filterwarnings = ["error"]` causes deprecation warnings emitted by `neuralops/core/_compat_importer.py` during module collection to abort test runs with 181 collection errors.
+   - **Fix:** Update `filterwarnings` regex in `pyproject.toml` to ignore `.*is deprecated and will be removed in v3.0.0.*:DeprecationWarning`.
+2. **Circular Import in `neuralops/core/attention_utils.py`:**
+   - **Location:** `neuralops/core/attention_utils.py`
+   - **Issue:** Importing `LoRALinear`, `apply_rotary_pos_emb`, and `normalize_attention_mask` triggers circular imports when attention layer classes are loaded, causing 4 attention classes to fail eager registration.
+   - **Fix:** Lazy-load or refactor imports of `LoRALinear` and positional embedding helpers in `attention_utils.py`.
+3. **Ruff Linter Violations (6 errors):**
+   - **Locations:**
+     - `neuralops/benchmarks/multi_seed.py:354:21` (remove extraneous `f` prefix)
+     - `neuralops/core/_attention_surgery.py:1083:5`, `1084:5` (import or remove undefined symbols from `__all__`)
+     - `neuralops/core/replace_attention.py:241:5` (import or remove undefined `replace_attention` from `__all__`)
+     - `neuralops/ops/triton/flash_decoding.py:201:9`, `206:9` (remove unnecessary `pass` statements)
+   - **Fix:** Correct the 6 syntax/lint issues directly.
+4. **Mypy Typechecking Errors in `neuralops/__init__.py`:**
+   - **Location:** `neuralops/__init__.py:29`, `89-93`
+   - **Issue:** Static type checker flags missing attributes on lazy/conditional `packaging` and `pydantic` imports.
+   - **Fix:** Add proper `TYPE_CHECKING` guards and type annotations.
+5. **MkDocs Strict Build Failures (71 warnings):**
+   - **Location:** `mkdocs.yml`, `docs/README_DETAIL.md`, `reports/`
+   - **Issue:** Strict build fails due to missing relative cross-references to external folders (`notebooks/`, `neuralops/data/`) and unlisted nav pages.
+   - **Fix:** Sanitize external markdown links or update `mkdocs.yml` nav section.
+6. **Physical GPU Verification Deferred to HPC:**
+   - **Location:** Sharif HPC node `GPU-3090-1` (`scripts/hpc/job_3090_full_sweep.pbs`)
+   - **Issue:** Full 131-attention and 72-compressor numerical parity and hardware benchmarks require execution on an authentic NVIDIA GPU host per AGENTS.md §4.2.

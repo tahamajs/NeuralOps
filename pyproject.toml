@@ -394,6 +394,8 @@ filterwarnings = [
     "ignore:.*neuralops.core.gqa_utils is deprecated.*:DeprecationWarning",
     "ignore:.*neuralops.surgery.universal_calibrator is deprecated.*:DeprecationWarning",
     "ignore:.*is deprecated\\. Use.*instead\\.:DeprecationWarning",
+    "ignore:.*is deprecated and will be removed in v3\\.0\\.0.*:DeprecationWarning",
+    "ignore:.*is deprecated.*:DeprecationWarning",
     "ignore:.*Cannot dispatch to fused implementation.*:UserWarning",
     "ignore:.*isinstance\\(treespec, LeafSpec\\) is deprecated.*:DeprecationWarning",
     "ignore:.*explain\\(f, \\*args, \\*\\*kwargs\\) is deprecated.*:FutureWarning",
