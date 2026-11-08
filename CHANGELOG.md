@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Benchmark Manifest Schema Key & Torch-Free `neuralops info` (AGT-63):**
+  - **Manifest Schema Key:** In `neuralops.benchmarks.core.runner.BenchmarkRunner`, fixed the schema URL key from an empty string `""` to `"$schema"`, conforming to `telemetry.manifest.BenchmarkManifestBuilder` and the unified benchmark manifest JSON schema (`schemas/benchmark_manifest_v1.json`).
+  - **Torch-Free `neuralops info`:** Made `torch` import lazy/guarded inside `cmd_info()` in `neuralops.cli.info`. The command now runs cleanly and exits 0 in environments where PyTorch is not installed (displaying `"PyTorch Version: not installed"`), while accurately reporting the installed PyTorch version and CUDA capability when PyTorch is present.
+  - **Regression Tests:** Added `tests/benchmarks/test_manifest_schema_key.py` and `tests/test_info_without_torch.py` (both 100% passed).
+
 ### Added
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 

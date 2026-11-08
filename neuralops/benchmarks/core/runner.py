@@ -124,7 +124,7 @@ class BenchmarkRunner:
         host_env = _get_host_environment(self.config.hardware.device)
 
         manifest_data: Dict[str, Any] = {
-            "": "https://raw.githubusercontent.com/tahamajs/NeuralOps/main/schemas/benchmark_manifest_v1.json",
+            "$schema": "https://raw.githubusercontent.com/tahamajs/NeuralOps/main/schemas/benchmark_manifest_v1.json",
             "run_id": self.paths.run_id,
             "benchmark_name": self.config.benchmark_suite,
             "timestamp_start_utc": start_iso,

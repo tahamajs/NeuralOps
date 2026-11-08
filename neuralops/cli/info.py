@@ -21,8 +21,6 @@ import platform
 import sys
 from typing import Any, Dict, Optional
 
-import torch
-
 import neuralops
 
 try:
@@ -41,10 +39,20 @@ def cmd_info(args: Any = None) -> int:
     """Display comprehensive hardware, framework, and NeuralOps component status."""
     ver = getattr(neuralops, "__version__", "2.0.6")
 
-    cuda_avail = torch.cuda.is_available()
-    device_count = torch.cuda.device_count() if cuda_avail else 0
-    device_name = torch.cuda.get_device_name(0) if cuda_avail else "N/A"
-    capability = torch.cuda.get_device_capability(0) if cuda_avail else (0, 0)
+    try:
+        import torch
+
+        torch_ver = getattr(torch, "__version__", "Available")
+        cuda_avail = torch.cuda.is_available()
+        device_count = torch.cuda.device_count() if cuda_avail else 0
+        device_name = torch.cuda.get_device_name(0) if cuda_avail else "N/A"
+        capability = torch.cuda.get_device_capability(0) if cuda_avail else (0, 0)
+    except (ImportError, ModuleNotFoundError, Exception):
+        torch_ver = "not installed"
+        cuda_avail = False
+        device_count = 0
+        device_name = "N/A"
+        capability = (0, 0)
 
     try:
         import triton
@@ -100,7 +108,7 @@ def cmd_info(args: Any = None) -> int:
         env_table.add_column("Property", style="cyan", width=25)
         env_table.add_column("Value", style="bold white", min_width=35)
         env_table.add_row("Python Version", sys.version.split()[0])
-        env_table.add_row("PyTorch Version", torch.__version__)
+        env_table.add_row("PyTorch Version", str(torch_ver))
         env_table.add_row("Triton JIT Version", str(triton_ver))
         env_table.add_row(
             "CUDA Acceleration", "[bold green]Available[/]" if cuda_avail else "[dim]Disabled (CPU only)[/]"
@@ -141,7 +149,7 @@ def cmd_info(args: Any = None) -> int:
         print(f"NeuralOps Unified CLI & Benchmark Suite (v{ver})")
         print("=================================================================")
         print(f"Python:       {sys.version.split()[0]}")
-        print(f"PyTorch:      {torch.__version__}")
+        print(f"PyTorch:      {torch_ver}")
         print(f"CUDA:         {'Available (' + device_name + ')' if cuda_avail else 'Disabled'}")
         print(f"Triton JIT:   {triton_ver}")
         print(f"Platform:     {platform.platform()}")
