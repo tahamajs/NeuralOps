@@ -28,9 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Workload Categorization & Gating:** Classifies cells into `prefill` ($T \ge 512$), `decode` ($B=1, T \ge 1024$), and `micro` regimes. Implements speedup regression gating flagging any prefill kernel with speedup $< 0.90\times$.
   - **CLI Command Wiring:** Added `neuralops matrix` subcommand to canonical CLI with options for `--modules`, `--seq-lens`, `--batch-sizes`, `--hidden-dims`, `--dtypes`, `--causal`, `--device`, `--warmup`, `--iters`, `--flush-l2`, `--output-dir`, `--plan/--dry-run`, and `--json`.
   - **Persistence & Regression Suite:** Implemented automatic output logging to `matrix_results.jsonl`, `summary.json`, and `matrix_summary.csv`. Added test suite `tests/benchmarks/test_matrix_runner.py` (5 passed).
-- **Compare CLI Subcommand (AGT-59, Roadmap Gap 6):**
-  - Added dedicated `compare` subcommand (`neuralops compare --baseline <path> --candidate <path> [--metric <metric>] [--max-regression-pct <pct>]`) interfacing directly with `neuralops.benchmarks.regression_gate:compare_results`.
-  - Exits with status code 0 when performance changes remain within tolerance, and status code 4 (`FAIL_NUMERICS`) when regression exceeds the specified threshold.
+- **Benchmark Command Group & Alias Collision Resolution (AGT-59, Roadmap Gaps 2 & 6):**
+  - **Dedicated Benchmark Command Group:** Removed the overloaded `aliases=["benchmark"]` from `run` subparser and established a clean, dedicated `benchmark` command group delegating to subcommands: `run`, `plan`, `list`, `info`, `compare`, and `resume`.
+  - **Breaking Change Migration:** Users running `neuralops benchmark [options]` expecting `run` must now use `neuralops benchmark run [options]` or `neuralops run [options]`.
+  - **Non-CUDA Execution Safety:** Guaranteed that `neuralops benchmark list`, `neuralops benchmark info <name>`, and `neuralops benchmark plan --benchmark <name> --device cpu` execute cleanly on CPU-only hosts without initializing CUDA or failing closed.
+  - **Compare Subcommand & Numerical Gate:** Wired `neuralops compare --baseline <path> --candidate <path> [--metric <metric>] [--max-regression-pct <pct>]` calling `neuralops.benchmarks.regression_gate:compare_results`. Exits 0 within tolerance and exits 4 (`FAIL_NUMERICS`) on regression.
+  - **Dry-Run Plan Inspection:** Added `--dry-run` to `neuralops run`, allowing dry-run grid estimation without allocating GPU tensors while preserving AGT-07 `--benchmark` single-module selection contracts.
+  - **Regression Test Suite:** Authored `tests/benchmarks/test_compare_cli.py` (4/4 passed) verifying non-CUDA benchmark listing, benchmark info routing without falling into `handle_run`, and compare 0/4 exit codes.
 - **Subprocess Isolation & Watchdog Runner (AGT-58, Roadmap Gap 5):**
   - **Subprocess Isolation:** Isolated benchmark execution into dedicated worker subprocesses using `multiprocessing.get_context("spawn")`, ensuring abnormal process termination (SIGSEGV, SIGABRT, hard exits) cannot terminate the master orchestrator sweep.
   - **Watchdog Timeout Enforcement:** Implemented strict per-benchmark timeout enforcement with SIGTERM/SIGKILL escalation in `neuralops.benchmarks.executor:execute_single`, cleanly recording `status="timeout"` and updating `timed_out=True` upon overrun.
