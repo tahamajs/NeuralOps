@@ -1071,10 +1071,20 @@ def heal_replaced_model(
             parameter.requires_grad_(was_trainable)
 
 
+def replace_attention(*args: Any, **kwargs: Any) -> Any:
+    """Canonical attention surgery replacement delegate."""
+    from neuralops.api import replace_attention as _replace_attention
+
+    return _replace_attention(*args, **kwargs)
+
+
+def replace_attention_in_model(*args: Any, **kwargs: Any) -> Any:
+    """Alias for replace_attention."""
+    return replace_attention(*args, **kwargs)
+
+
 def __getattr__(name: str) -> Any:
     if name in ("replace_attention", "replace_attention_in_model"):
-        from neuralops.api import replace_attention
-
         return replace_attention
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 

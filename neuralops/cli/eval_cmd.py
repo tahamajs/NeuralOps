@@ -23,7 +23,13 @@ import sys
 import time
 from typing import Any, Dict, List, Optional
 
-import torch
+try:
+    import torch
+except ModuleNotFoundError as _torch_exc:
+    if _torch_exc.name == "torch" or (_torch_exc.name and _torch_exc.name.startswith("torch.")):
+        torch = None  # type: ignore[assignment]
+    else:
+        raise
 
 try:
     from rich.console import Console
@@ -131,6 +137,11 @@ def build_eval_parser(subparser: Optional[argparse.ArgumentParser] = None) -> ar
 
 def cmd_eval(args: Any) -> int:
     """Execute model evaluation across perplexity, throughput, latency, and memory."""
+    if torch is None:
+        from neuralops.core.exceptions import torch_install_error
+
+        raise torch_install_error("neuralops eval")
+
     if isinstance(args, dict):
         args_ns = argparse.Namespace(**args)
     else:

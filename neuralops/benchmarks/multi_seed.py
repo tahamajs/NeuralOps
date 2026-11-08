@@ -351,7 +351,7 @@ class MultiSeedBenchmarkResult:
                 p_val = res.baseline_comparison.get("p_value", 1.0)
                 d = res.baseline_comparison.get("cohens_d", 0.0)
                 p_val_str = (
-                    f"$< 10^{{-4}}$" if p_val < 1e-4 else f"${p_val:.4f}$"
+                    "$< 10^{-4}$" if p_val < 1e-4 else f"${p_val:.4f}$"
                 )
                 if res.baseline_comparison.get("significant", False):
                     p_val_str += r"^\ast"

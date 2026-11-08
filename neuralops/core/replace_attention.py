@@ -229,10 +229,15 @@ inject_replace_attention = inject_replace
 inject_replace_attention_v2 = inject_replace
 
 
+def replace_attention(*args: Any, **kwargs: Any) -> Any:
+    """Canonical attention surgery replacement delegate."""
+    from neuralops.api import replace_attention as _replace_attention
+
+    return _replace_attention(*args, **kwargs)
+
+
 def __getattr__(name: str) -> Any:
     if name == "replace_attention":
-        from neuralops.api import replace_attention
-
         return replace_attention
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 

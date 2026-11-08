@@ -468,7 +468,7 @@ All compiled on Tesla T4 (SM 7.5), parity tested vs PyTorch reference (< 1e-3 FP
 - **Complete 20-Script Examples Suite (`examples/`)**:
   - Expanded examples from 8 to 20 comprehensive demonstration scripts covering all subsystems of NeuralOps.
   - Added shared test & benchmarking infrastructure (`examples/_shared/`): `mock_models.py`, `offline_data.py`, `benchmark.py`, `assertions.py`, `report.py`, and `device.py`.
-  - Added canonical template [`examples/_template.py`](examples/_template.py) for contributing new examples.
+  - Added canonical template [`examples/_template.py`](https://github.com/tahamajs/NeuralOps/blob/main/examples/_template.py) for contributing new examples.
   - Added new advanced and systems examples:
     - `09_multi_stage_model_surgery.py`: Multi-stage chained transformations (attention surgery $\to$ low-rank SVD $\to$ MLP surgery) with accumulated manifest tracking.
     - `10_advanced_compression_zoo.py`: Comparative benchmark across 4 SVD algorithms (Standard SVD, Whitened SVD, Fisher-Weighted SVD, HNC-SVD).

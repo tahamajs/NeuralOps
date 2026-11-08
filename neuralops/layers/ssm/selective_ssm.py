@@ -483,8 +483,6 @@ class SelectiveSSM(BaseAttention):
 
 
 SimpleSSM = SelectiveSSM
-if "simple_ssm" not in ATTENTION_REGISTRY:
-    ATTENTION_REGISTRY.register("simple_ssm")(SimpleSSM)
 
 
 def inject_selective_ssm(layer=None, model=None, model_config=None, old_attn=None, **kwargs):

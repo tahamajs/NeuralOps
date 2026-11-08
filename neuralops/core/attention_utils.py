@@ -34,19 +34,29 @@ from neuralops.core._attention_surgery import (
     split_and_set_qkv_weights,
 )
 from neuralops.core.common import softpick
-from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.peft.lora import LoRALinear
 from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.utils.rope import _rotate_half, apply_rope_after_up_projection
 
 logger = logging.getLogger(__name__)
 
-from neuralops.api import replace_attention
 
-inject_attention = replace_attention
+def replace_attention(*args: Any, **kwargs: Any) -> Any:
+    """Canonical attention surgery replacement delegate."""
+    from neuralops.api import replace_attention as _replace_attention
+
+    return _replace_attention(*args, **kwargs)
+
+
+def inject_attention(*args: Any, **kwargs: Any) -> Any:
+    """Alias for replace_attention."""
+    return replace_attention(*args, **kwargs)
 
 
 def available_attention_types() -> list[str]:
     """Return all registered attention mechanism identifiers."""
+    from neuralops.core.registry import ATTENTION_REGISTRY
+
     return sorted(list(ATTENTION_REGISTRY.keys()))
 
 
@@ -233,8 +243,6 @@ def apply_rotary_pos_emb(
     return q, k
 
 
-from neuralops.core.peft.lora import LoRALinear
-
 __all__ = [
     "replace_attention",
     "inject_attention",
@@ -261,13 +269,10 @@ __all__ = [
     "broadcast_cos_sin",
     "apply_rotary_pos_emb",
     "LoRALinear",
-    "replace_attention",
 ]
 
 
 def __getattr__(name: str) -> Any:
-    if name == "replace_attention":
-        from neuralops.api import replace_attention
-
+    if name in ("replace_attention", "inject_attention"):
         return replace_attention
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

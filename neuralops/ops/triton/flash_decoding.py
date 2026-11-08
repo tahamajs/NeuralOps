@@ -198,12 +198,10 @@ else:
     @triton.jit
     def flash_decoding_stage1_kernel(*args: Any, **kwargs: Any) -> Any:
         """Mock stage 1 kernel when Triton is absent."""
-        pass
 
     @triton.jit
     def flash_decoding_stage2_kernel(*args: Any, **kwargs: Any) -> Any:
         """Mock stage 2 kernel when Triton is absent."""
-        pass
 
 
 def flash_decoding_attention(

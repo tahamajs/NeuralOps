@@ -22,10 +22,11 @@ if "pkg_resources" not in _sys.modules:
         import pkg_resources as _pkg_resources  # noqa: F401
     except ImportError:
         try:
+            from typing import Any as _Any
             import packaging as _packaging
             import types as _types
 
-            _pr = _types.ModuleType("pkg_resources")
+            _pr: _Any = _types.ModuleType("pkg_resources")
             _pr.packaging = _packaging
             _sys.modules["pkg_resources"] = _pr
         except Exception as exc:
@@ -85,7 +86,9 @@ if "pydantic" not in _sys.modules:
         def _validator_func(*fields, **kwargs):
             return lambda fn: fn
 
-        _pydantic_mock = _types.ModuleType("pydantic")
+        from typing import Any as _Any
+
+        _pydantic_mock: _Any = _types.ModuleType("pydantic")
         _pydantic_mock.BaseModel = _BaseModel
         _pydantic_mock.Field = _field_func
         _pydantic_mock.ConfigDict = _config_dict
