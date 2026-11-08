@@ -24,7 +24,7 @@ export TRANSFORMERS_OFFLINE=1
 cd /home/tahamajlesi.ut/NeuralOps
 mkdir -p results/screen_logs results/multiseed results/tables
 
-PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops/bin/python
+PYTHON_EXEC=/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python3
 LOG_FILE="results/screen_logs/gpu_multiseed_rigor_3090.log"
 exec >> "$LOG_FILE" 2>&1
 
