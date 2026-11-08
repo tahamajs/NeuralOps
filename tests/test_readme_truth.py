@@ -68,3 +68,40 @@ def test_readme_section_numbering_continuous_and_deduplicated() -> None:
     """Verify that README.md has no duplicate section numbers and forms a continuous monotonic sequence."""
     ret = check_readme_sections(REPO_ROOT / "README.md")
     assert ret == 0, "check_readme_sections reported duplicate or malformed numbered sections in README.md"
+
+
+def test_readme_is_minimal() -> None:
+    """Verify root README.md is concise and minimal (<= 180 lines, target ~150 lines)."""
+    root_readme = REPO_ROOT / "README.md"
+    assert root_readme.exists(), "Root README.md missing"
+    lines = root_readme.read_text(encoding="utf-8").splitlines()
+    assert len(lines) <= 180, f"Root README.md has {len(lines)} lines; must be <= 180 lines"
+
+
+def test_readme_commands_run() -> None:
+    """Verify every fenced neuralops / pip command in README is in the verified allow-list manifest with exit code 0."""
+    import json
+
+    manifest_path = REPO_ROOT / "scripts" / "docs" / "readme_commands_verified.json"
+    assert manifest_path.exists(), "readme_commands_verified.json manifest missing"
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    verified_map = {item["command"]: item["exit_code"] for item in manifest.get("verified_commands", [])}
+
+    root_readme = REPO_ROOT / "README.md"
+    content = root_readme.read_text(encoding="utf-8")
+
+    # Extract all fenced bash/sh commands
+    fenced_commands: list[str] = []
+    for block in re.findall(r"```(?:bash|sh)\n(.*?)```", content, re.DOTALL):
+        for raw_line in block.strip().splitlines():
+            line = raw_line.strip()
+            if line and not line.startswith("#"):
+                fenced_commands.append(line)
+
+    assert len(fenced_commands) > 0, "No fenced commands found in README.md"
+
+    for cmd in fenced_commands:
+        assert cmd in verified_map, f"Fenced command '{cmd}' from README.md not found in verified manifest"
+        assert verified_map[cmd] == 0, f"Command '{cmd}' recorded non-zero exit code {verified_map[cmd]}"
+
