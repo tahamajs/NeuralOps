@@ -78,7 +78,7 @@ def handle_verify(args: argparse.Namespace) -> int:
 
 def handle_doctor(args: argparse.Namespace) -> int:
     """Diagnose environment setup, missing dependencies, and accelerator capabilities."""
-    from neuralops.cli.doctor_cmd import cmd_doctor
+    from neuralops.cli.doctor import cmd_doctor
 
     ret = cmd_doctor(args)
     return int(ret) if ret is not None else int(ExitCode.SUCCESS)
@@ -86,7 +86,7 @@ def handle_doctor(args: argparse.Namespace) -> int:
 
 def handle_info(args: argparse.Namespace) -> int:
     """Show detailed environment and runtime information."""
-    from neuralops.cli.info_cmd import cmd_info
+    from neuralops.cli.info import cmd_info
 
     ret = cmd_info(args)
     return int(ret) if ret is not None else int(ExitCode.SUCCESS)
@@ -94,7 +94,7 @@ def handle_info(args: argparse.Namespace) -> int:
 
 def handle_compat(args: argparse.Namespace) -> int:
     """Validate cross-hardware portability matrix and fallbacks."""
-    from neuralops.cli.compat_cmd import run_compat_suite
+    from neuralops.export.runtime_compat import check_compatibility as run_compat_suite
 
     reporter = CliReporter(
         quiet=getattr(args, "quiet", False),
