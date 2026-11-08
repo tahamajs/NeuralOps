@@ -20,7 +20,9 @@ import argparse
 import csv
 import json
 import logging
+import os
 import sqlite3
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -248,6 +250,9 @@ def main() -> None:
     parser.add_argument("--kd-weight", type=float, default=0.5, help="KD loss weight")
     parser.add_argument("--weight-decay", type=float, default=0.01, help="AdamW weight decay")
     parser.add_argument("--grad-clip", type=float, default=1.0, help="Maximum gradient norm")
+    parser.add_argument("--module", type=str, default=None, help="Run single module directly in this process")
+    parser.add_argument("--module-type", choices=["attention", "compressor"], default="attention")
+    parser.add_argument("--no-isolation", action="store_true", help="Run in-process without subprocess isolation")
     args = parser.parse_args()
 
     settings = {
@@ -276,22 +281,15 @@ def main() -> None:
 
     results: list[dict[str, Any]] = []
 
-    # 1. Attention Mechanisms
-    if args.category in ("attention", "all"):
-        ATTENTION_REGISTRY._load_all()
-        attn_keys = sorted(list(ATTENTION_REGISTRY._dict.keys()))
-        if args.limit:
-            attn_keys = attn_keys[: args.limit]
-        logger.info("Starting Knowledge Distillation runs for %d attention mechanisms...", len(attn_keys))
-
-        for idx, name in enumerate(attn_keys, 1):
-            logger.info(
-                "[%d/%d] Training Attention KD: %s (up to %.0fs)...", idx, len(attn_keys), name, args.max_duration
-            )
+    # Single-module mode for subprocess isolation
+    if args.module is not None:
+        rec = None
+        if args.module_type == "attention":
             try:
-                attn_layer = create_attention(name, embed_dim=128, num_heads=4)
+                ATTENTION_REGISTRY._load_all()
+                attn_layer = create_attention(args.module, embed_dim=128, num_heads=4)
                 rec = run_single_kd_session(
-                    name,
+                    args.module,
                     "attention",
                     attn_layer,
                     teacher_model,
@@ -307,7 +305,7 @@ def main() -> None:
                 )
             except Exception as e:
                 rec = {
-                    "module_name": name,
+                    "module_name": args.module,
                     "module_type": "attention",
                     "status": "ERROR",
                     "error": str(e),
@@ -320,6 +318,156 @@ def main() -> None:
                     "peak_vram_mb": 0.0,
                     "param_count": 0,
                 }
+        else:
+            try:
+                COMPRESSOR_REGISTRY._load_all()
+                cls = COMPRESSOR_REGISTRY.get(args.module)
+                from transformers import BertConfig, BertModel
+
+                cfg = BertConfig(num_hidden_layers=1, hidden_size=64, num_attention_heads=2, intermediate_size=128)
+                base_model = BertModel(cfg)
+                if hasattr(cls, "compress"):
+                    comp = cls(model=base_model, rank=8, fallback_to_original=False)
+                    res = comp.compress()
+                    comp_model = res[0] if isinstance(res, tuple) else res
+                elif callable(cls):
+                    try:
+                        res = cls(base_model, rank=8, fallback_to_original=False)
+                    except TypeError:
+                        res = cls(model=base_model, rank=8)
+                    comp_model = (
+                        res[0] if isinstance(res, tuple) else (res.compress()[0] if hasattr(res, "compress") else res)
+                    )
+                else:
+                    raise RuntimeError(f"Compressor {args.module} is not callable")
+
+                rec = run_single_kd_session(
+                    args.module,
+                    "compressor",
+                    comp_model,
+                    teacher_model,
+                    device,
+                    max_duration_sec=args.max_duration,
+                    batch_size=args.batch_size,
+                    seq_len=args.compressor_seq_len,
+                    learning_rate=args.learning_rate,
+                    kd_temperature=args.kd_temperature,
+                    kd_weight=args.kd_weight,
+                    weight_decay=args.weight_decay,
+                    grad_clip=args.grad_clip,
+                )
+            except Exception as e:
+                rec = {
+                    "module_name": args.module,
+                    "module_type": "compressor",
+                    "status": "ERROR",
+                    "error": str(e),
+                    "steps_completed": 0,
+                    "duration_sec": 0.0,
+                    "initial_loss": 0.0,
+                    "final_loss": 0.0,
+                    "loss_reduction": 0.0,
+                    "throughput_tok_s": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "param_count": 0,
+                }
+        print(f"__RESULT_JSON__:{json.dumps(rec)}")
+        return
+
+    def execute_module(mod_name: str, mod_type: str) -> dict[str, Any]:
+        if args.no_isolation:
+            if mod_type == "attention":
+                attn_layer = create_attention(mod_name, embed_dim=128, num_heads=4)
+                return run_single_kd_session(
+                    mod_name, mod_type, attn_layer, teacher_model, device,
+                    max_duration_sec=args.max_duration, batch_size=args.batch_size,
+                    seq_len=args.seq_len, learning_rate=args.learning_rate,
+                    kd_temperature=args.kd_temperature, kd_weight=args.kd_weight,
+                    weight_decay=args.weight_decay, grad_clip=args.grad_clip,
+                )
+            else:
+                cls = COMPRESSOR_REGISTRY.get(mod_name)
+                from transformers import BertConfig, BertModel
+                cfg = BertConfig(num_hidden_layers=1, hidden_size=64, num_attention_heads=2, intermediate_size=128)
+                base_model = BertModel(cfg)
+                res = cls(base_model, rank=8) if callable(cls) else base_model
+                comp_model = res[0] if isinstance(res, tuple) else res
+                return run_single_kd_session(
+                    mod_name, mod_type, comp_model, teacher_model, device,
+                    max_duration_sec=args.max_duration, batch_size=args.batch_size,
+                    seq_len=args.compressor_seq_len, learning_rate=args.learning_rate,
+                    kd_temperature=args.kd_temperature, kd_weight=args.kd_weight,
+                    weight_decay=args.weight_decay, grad_clip=args.grad_clip,
+                )
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--module", mod_name,
+            "--module-type", mod_type,
+            "--device", args.device,
+            "--max-duration", str(args.max_duration),
+            "--batch-size", str(args.batch_size),
+            "--seq-len", str(args.seq_len),
+            "--compressor-seq-len", str(args.compressor_seq_len),
+            "--learning-rate", str(args.learning_rate),
+            "--kd-temperature", str(args.kd_temperature),
+            "--kd-weight", str(args.kd_weight),
+            "--weight-decay", str(args.weight_decay),
+            "--grad-clip", str(args.grad_clip),
+        ]
+        sub_env = os.environ.copy()
+        sub_env["PYTHONPATH"] = f"{_REPO_ROOT}:{sub_env.get('PYTHONPATH', '')}"
+        try:
+            proc = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=args.max_duration + 45, env=sub_env
+            )
+            for line in proc.stdout.splitlines():
+                if line.startswith("__RESULT_JSON__:"):
+                    return json.loads(line[len("__RESULT_JSON__:"):])
+            err_line = proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else f"exit code {proc.returncode}"
+            return {
+                "module_name": mod_name,
+                "module_type": mod_type,
+                "status": "ERROR",
+                "error": f"Subprocess exited {proc.returncode}: {err_line}",
+                "steps_completed": 0,
+                "duration_sec": 0.0,
+                "initial_loss": 0.0,
+                "final_loss": 0.0,
+                "loss_reduction": 0.0,
+                "throughput_tok_s": 0.0,
+                "peak_vram_mb": 0.0,
+                "param_count": 0,
+            }
+        except subprocess.TimeoutExpired:
+            return {
+                "module_name": mod_name,
+                "module_type": mod_type,
+                "status": "TIMEOUT",
+                "error": f"Execution timed out after {args.max_duration + 45}s",
+                "steps_completed": 0,
+                "duration_sec": round(args.max_duration + 45, 2),
+                "initial_loss": 0.0,
+                "final_loss": 0.0,
+                "loss_reduction": 0.0,
+                "throughput_tok_s": 0.0,
+                "peak_vram_mb": 0.0,
+                "param_count": 0,
+            }
+
+    # 1. Attention Mechanisms
+    if args.category in ("attention", "all"):
+        ATTENTION_REGISTRY._load_all()
+        attn_keys = sorted(list(ATTENTION_REGISTRY._dict.keys()))
+        if args.limit:
+            attn_keys = attn_keys[: args.limit]
+        logger.info("Starting Knowledge Distillation runs for %d attention mechanisms...", len(attn_keys))
+
+        for idx, name in enumerate(attn_keys, 1):
+            logger.info(
+                "[%d/%d] Training Attention KD: %s (up to %.0fs)...", idx, len(attn_keys), name, args.max_duration
+            )
+            rec = execute_module(name, "attention")
             results.append(rec)
             logger.info(
                 "  -> Status: %s | Steps: %d | Loss: %.4f -> %.4f (%.1f%%) | Throughput: %.1f tok/s",
@@ -343,57 +491,7 @@ def main() -> None:
             logger.info(
                 "[%d/%d] Training Compressor KD: %s (up to %.0fs)...", idx, len(comp_keys), name, args.max_duration
             )
-            try:
-                cls = COMPRESSOR_REGISTRY.get(name)
-                from transformers import BertConfig, BertModel
-
-                cfg = BertConfig(num_hidden_layers=1, hidden_size=64, num_attention_heads=2, intermediate_size=128)
-                base_model = BertModel(cfg)
-                if hasattr(cls, "compress"):
-                    comp = cls(model=base_model, rank=8, fallback_to_original=False)
-                    res = comp.compress()
-                    comp_model = res[0] if isinstance(res, tuple) else res
-                elif callable(cls):
-                    try:
-                        res = cls(base_model, rank=8, fallback_to_original=False)
-                    except TypeError:
-                        res = cls(model=base_model, rank=8)
-                    comp_model = (
-                        res[0] if isinstance(res, tuple) else (res.compress()[0] if hasattr(res, "compress") else res)
-                    )
-                else:
-                    raise RuntimeError(f"Compressor {name} is not callable")
-
-                rec = run_single_kd_session(
-                    name,
-                    "compressor",
-                    comp_model,
-                    teacher_model,
-                    device,
-                    max_duration_sec=args.max_duration,
-                    batch_size=args.batch_size,
-                    seq_len=args.compressor_seq_len,
-                    learning_rate=args.learning_rate,
-                    kd_temperature=args.kd_temperature,
-                    kd_weight=args.kd_weight,
-                    weight_decay=args.weight_decay,
-                    grad_clip=args.grad_clip,
-                )
-            except Exception as e:
-                rec = {
-                    "module_name": name,
-                    "module_type": "compressor",
-                    "status": "ERROR",
-                    "error": str(e),
-                    "steps_completed": 0,
-                    "duration_sec": 0.0,
-                    "initial_loss": 0.0,
-                    "final_loss": 0.0,
-                    "loss_reduction": 0.0,
-                    "throughput_tok_s": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "param_count": 0,
-                }
+            rec = execute_module(name, "compressor")
             results.append(rec)
             logger.info(
                 "  -> Status: %s | Steps: %d | Loss: %.4f -> %.4f (%.1f%%) | Throughput: %.1f tok/s",
