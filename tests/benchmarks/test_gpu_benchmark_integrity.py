@@ -24,7 +24,7 @@ from neuralops.benchmarks.legacy_scripts.gpu_master_suite import _resolve_reques
 from neuralops.benchmarks.legacy_scripts.gpu_master_suite import benchmark_single_attention, benchmark_single_compressor
 from neuralops.benchmarks.adapters.compressor import CompressorModuleAdapter
 from neuralops.benchmarks.adapters.base import BaseBenchmarkAdapter
-from neuralops.benchmarks.results.schema import BenchmarkStatus
+from neuralops.benchmarks.results.schema import BenchmarkResult, BenchmarkStatus
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 
@@ -150,11 +150,12 @@ def test_compressor_module_adapter_lifecycle_and_metrics():
     assert result.metadata["relative_frob_error"] == adapter.relative_frob_error
     assert result.metadata["sqnr_db"] == adapter.sqnr_db
 
-    # Verify backwards-compatible dictionary interface
+    # Verify unified BenchmarkResult interface
     legacy_res = adapter.benchmark_module("direct_svd")
-    assert legacy_res["status"] == "PASS"
-    assert legacy_res["relative_frob_error"] == adapter.relative_frob_error
-    assert legacy_res["sqnr_db"] == adapter.sqnr_db
+    assert isinstance(legacy_res, BenchmarkResult)
+    assert legacy_res.status == BenchmarkStatus.SUCCESS.value
+    assert legacy_res.metadata["relative_frob_error"] == adapter.relative_frob_error
+    assert legacy_res.metadata["sqnr_db"] == adapter.sqnr_db
 
 
 def test_compressor_module_adapter_fail_closed_no_svd_substitution(monkeypatch):

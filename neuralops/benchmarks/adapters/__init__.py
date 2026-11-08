@@ -9,6 +9,7 @@
 NeuralOps Benchmarks Adapters Subpackage.
 """
 
+from neuralops.benchmarks.adapters.attention import AttentionBenchmarkAdapter
 from neuralops.benchmarks.adapters.classification import ClassificationAdapter
 from neuralops.benchmarks.adapters.compressor import CompressorModuleAdapter
 from neuralops.benchmarks.adapters.cuda_adapter import CANONICAL_CUDA_MODULES, CUDA_KERNEL_ALIASES, CUDAKernelAdapter
@@ -31,6 +32,7 @@ __all__ = [
     "BaseBenchmarkAdapter",
     "BenchmarkInputs",
     "NumericsReport",
+    "AttentionBenchmarkAdapter",
     "BaseModelAdapter",
     "HuggingFaceModelAdapter",
     "SurgerizedModelAdapter",

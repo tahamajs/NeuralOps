@@ -24,6 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Benchmark Adapter Modernization & Unified Return Type (AGT-56, Roadmap Gap 3):**
+  - **BaseBenchmarkAdapter Lifecycle Integration:** All concrete benchmark adapters (`CUDAKernelAdapter`, `TritonKernelAdapter`, `CompressorModuleAdapter`, and newly added `AttentionBenchmarkAdapter`) strictly inherit from `BaseBenchmarkAdapter` and execute the fail-closed 6-gate lifecycle (capability check -> input generation -> reference -> candidate -> numerics -> timing).
+  - **Unified Return Shape (`BenchmarkResult`):** Standardized all adapter execution returns to canonical `BenchmarkResult` instances with strongly-typed `BenchmarkStatus` values (`SUCCESS`, `FAILED`, `FAIL_NUMERICS`, `DEPENDENCY_ERROR`), eliminating all raw dictionary shapes and legacy `"PASS"`/`"FAIL"` status strings across adapters.
+  - **Real Batch Calibration:** Refactored `CompressorModuleAdapter` to compute relative Frobenius distortion and SQNR exclusively on real calibration batches (`calibration_batch`), strictly upholding AGENTS.md §0.2 zero fake metrics policy.
+  - **Attention Benchmark Adapter:** Authored `AttentionBenchmarkAdapter` in `neuralops.benchmarks.adapters.attention` wrapping `ATTENTION_REGISTRY` modules with causal/non-causal invariance verification and autograd backward gradient checking.
+  - **Regression & Unified Tests:** Added `tests/benchmarks/test_adapters_unified.py` and updated `tests/benchmarks/test_gpu_benchmark_integrity.py` to assert unified `BenchmarkResult` return shapes across all adapters.
 - **Canonical CLI Unification & Shadow CLI Deprecation (AGT-54, Decision 3, F-48, F-50):**
   - **Canonical Parser:** `neuralops.benchmarks.cli:main` is established as the sole canonical entry point for all CLI console scripts (`neuralops`, `neuralops-cli`, `nops`, `nops-cli`) and `python -m neuralops`.
   - **Shadow Entry Points:** Converted `neuralops/cli/main.py` and `neuralops/cli/core/app.py` into thin backward-compatibility shims that emit `DeprecationWarning` and delegate directly to `neuralops.benchmarks.cli:main`.

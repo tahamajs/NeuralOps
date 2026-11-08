@@ -68,6 +68,7 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
         hidden_size: int = 128,
         rank: int = 16,
         model: Optional[nn.Module] = None,
+        calibration_batch: Optional[torch.Tensor] = None,
         **kwargs: Any,
     ) -> None:
         dev_str = str(device) if device is not None else ("cuda" if torch.cuda.is_available() else "cpu")
@@ -86,6 +87,7 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
         self.hidden_size = hidden_size
         self.rank = rank
         self.user_model = model
+        self.calibration_batch = calibration_batch
         self.extra_kwargs = kwargs
 
         # Snapshot and candidate storage
@@ -160,8 +162,13 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
         # Record original linear layer weights from snapshot
         self._original_weights = self._extract_linear_weights(self._snapshot_model)
 
-        # Build calibration input tensor
-        calib_x = torch.randn(2, 32, self.hidden_size, device=self.torch_device, dtype=self.dtype)
+        # Build calibration input tensor (using real calibration batch when provided)
+        if self.calibration_batch is not None:
+            calib_x = self.calibration_batch.to(self.torch_device, dtype=self.dtype)
+            is_real_calib = True
+        else:
+            calib_x = torch.randn(2, 32, self.hidden_size, device=self.torch_device, dtype=self.dtype)
+            is_real_calib = False
 
         return BenchmarkInputs(
             tensors={"calibration_input": calib_x, "x": calib_x},
@@ -169,6 +176,7 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
                 "hidden_size": self.hidden_size,
                 "rank": self.rank,
                 "compressor_name": self.compressor_name,
+                "is_real_calibration": is_real_calib,
             },
             seed=self.seed,
             dtype=self.dtype,
@@ -415,6 +423,7 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
             "sqnr_db": self.sqnr_db,
             "max_abs_diff": self.max_abs_diff,
             "peak_vram_mb": peak_vram,
+            "is_real_calibration": bool(inputs.metadata.get("is_real_calibration", self.calibration_batch is not None)),
         }
 
     # ------------------------------------------------------------------
@@ -487,28 +496,11 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
             )
         raise ValueError(f"Unsupported PEFT method: {name}")
 
-    def benchmark_module(self, module_name: str) -> dict[str, Any]:
-        """Backwards-compatible interface returning benchmark dictionary."""
+    def benchmark_module(self, module_name: str) -> BenchmarkResult:
+        """Execute benchmark for module and return canonical BenchmarkResult."""
         self.compressor_name = module_name
         self.benchmark_name = module_name
-        result = self.execute()
-        meta = result.metadata or {}
-        return {
-            "module": module_name,
-            "category": "peft" if module_name in self.METHODS else "compressor",
-            "cuda_latency_ms": meta.get("latency_ms_mean", 0.0),
-            "pytorch_latency_ms": meta.get("baseline_latency_ms", 0.0),
-            "speedup": meta.get("speedup", 0.0),
-            "param_reduction_pct": meta.get("param_reduction_pct", 0.0),
-            "compression_ratio": meta.get("compression_ratio", 1.0),
-            "trainable_params": int(meta.get("trainable_params", 0)),
-            "relative_frob_error": meta.get("relative_frob_error", 0.0),
-            "sqnr_db": meta.get("sqnr_db", 0.0),
-            "peak_vram_mb": meta.get("peak_vram_mb", 0.0),
-            "status": "PASS" if result.status == BenchmarkStatus.SUCCESS.value else "FAIL",
-            "benchmark_status": result.status,
-            "error": result.error,
-        }
+        return self.execute()
 
 
 __all__ = ["CompressorModuleAdapter"]
