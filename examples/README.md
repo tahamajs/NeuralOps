@@ -6,13 +6,16 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 #
-# NeuralOps examples suite (v2.0.3)
+# NeuralOps examples suite (v2.0.6)
 
 # NeuralOps Examples Suite
 
 The NeuralOps examples suite provides **35 self-contained, reproducible, offline-friendly demonstration scripts** covering all subsystems of the framework: model surgery, low-rank compression, quantization, distillation, distributed training, high-throughput serving, kernel dispatch, compiler graphs, and runtime resilience.
 
 All scripts are engineered to execute reliably on CPU (macOS/Linux) without external network calls or GPU requirements, while fully supporting GPU acceleration via `--device cuda` when available (with strict fail-closed verification).
+
+> [!NOTE]
+> **Mock-Based Demonstration Notice**: The scripts in this examples suite use synthetic inputs and lightweight mock models (`examples/_shared/mock_models.py`, `examples/_shared/offline_data.py`) to demonstrate API usage patterns offline without requiring multi-gigabyte Hugging Face weight downloads. They illustrate framework mechanics and syntactical flows, but they do NOT constitute empirical verification of real-model accuracy, perplexity, or hardware performance. For rigorous physical verification gates, see `tests/` and benchmark suites under `neuralops/benchmarks/`.
 
 ---
 
@@ -52,7 +55,7 @@ All scripts are engineered to execute reliably on CPU (macOS/Linux) without exte
 | [`30_ttt_online_test_time_training.py`](30_ttt_online_test_time_training.py) | Online Test-Time Training (TTT) | Adaptive self-supervised sequence fine-tuning with instant transactional rollback | CPU / MPS / CUDA | `python examples/30_ttt_online_test_time_training.py` |
 | [`31_fisher_damping_natural_gradient.py`](31_fisher_damping_natural_gradient.py) | Fisher Natural Gradient Damping | Empirical Fisher diagonal damping for ill-conditioned surgical layers | CPU / MPS / CUDA | `python examples/31_fisher_damping_natural_gradient.py` |
 | [`32_simpo_orpo_preference_alignment.py`](32_simpo_orpo_preference_alignment.py) | Preference Alignment (SimPO/ORPO) | Reference-free policy alignment cutting 50% training VRAM overhead | CPU / MPS / CUDA | `python examples/32_simpo_orpo_preference_alignment.py` |
-| [`33_triton_26_hardware_kernels.py`](33_triton_26_hardware_kernels.py) | Unified Triton 26 Kernels | Hardware profiling across 62 registered unified Triton operators with zero-fake fallbacks | CPU / MPS / CUDA | `python examples/33_triton_26_hardware_kernels.py` |
+| [`33_triton_26_hardware_kernels.py`](33_triton_26_hardware_kernels.py) | Unified Triton Hardware Kernels | Hardware profiling across dynamic registered unified Triton operators with zero-fake fallbacks | CPU / MPS / CUDA | `python examples/33_triton_26_hardware_kernels.py` |
 | [`34_circuit_breaker_runtime_resilience.py`](34_circuit_breaker_runtime_resilience.py) | Circuit Breaker Runtime FSM | Autonomous 3-state failure mitigation FSM with automatic 25ms cooldown recovery | CPU / MPS / CUDA | `python examples/34_circuit_breaker_runtime_resilience.py` |
 | [`35_cuda_graph_decode_runner.py`](35_cuda_graph_decode_runner.py) | CUDA Graph Decode Runner | Static 1-token decode graph runner eliminating host launch overhead | CPU / MPS / CUDA | `python examples/35_cuda_graph_decode_runner.py` |
 

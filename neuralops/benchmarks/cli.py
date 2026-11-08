@@ -2393,6 +2393,14 @@ def _dispatch(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Canonical CLI main entrypoint and template for NeuralOps command-line tools.
+
+    Design Pattern & Logging Policy (F-97):
+      - Formatted error messages to stderr (or Rich console) with actionable hints.
+      - Stable exit codes: 0 for success, 1 for benchmark/execution errors, 130 for SIGINT.
+      - Full traceback is suppressed by default for clean UX; printed only when --verbose is active.
+      - Library modules must use named loggers; user-facing terminal CLI output uses print/console.
+    """
     parser = _build_parser()
 
     raw_args = sys.argv[1:] if argv is None else argv

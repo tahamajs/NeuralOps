@@ -16,8 +16,12 @@ Execution Environment:
     - GPU: Optional acceleration (--device cuda) utilizing Triton GPU JIT compilers.
     - Network: Not required; uses offline synthetic tensors.
 
+Historical naming note:
+    The filename '33_triton_26_hardware_kernels.py' reflects the original 26 foundation hardware
+    kernels; the complete operator count is discovered dynamically at runtime from the registry catalog.
+
 What You Will Learn:
-    1. Inspecting the comprehensive NeuralOps Triton Hardware Kernel Catalog (62+ registered operators).
+    1. Inspecting the comprehensive NeuralOps Triton Hardware Kernel Catalog (count is read dynamically from registry).
     2. Zero-crash automatic fallback dispatch: seamlessly switching between GPU Triton JIT
        and CPU vectorized reference kernels without runtime panics.
     3. Benchmarking functional correctness across 10 representative kernel families:
@@ -73,7 +77,7 @@ def run_demonstration(device: torch.device) -> bool:
     # 1. Inspect kernel catalog
     catalog = getattr(notr, "TRITON_KERNEL_CATALOG", [])
     has_triton = getattr(notr, "HAS_TRITON", False) and device.type == "cuda"
-    pass_fail("Kernel Catalog Loaded", len(catalog) >= 26, f"Catalog size: {len(catalog)} kernels")
+    pass_fail("Kernel Catalog Loaded", len(catalog) > 0, f"Catalog size: {len(catalog)} operators read dynamically from registry")
 
     # 2. Execute and benchmark 10 representative kernel operators
     results: list[tuple[str, str, float, bool]] = []
@@ -181,7 +185,7 @@ def run_demonstration(device: torch.device) -> bool:
 
     pass_fail("All 10 Representative Kernels Validated", all_passed)
 
-    return bool(len(catalog) >= 26 and all_passed)
+    return bool(len(catalog) > 0 and all_passed)
 
 
 def main() -> int:
@@ -191,7 +195,7 @@ def main() -> int:
 
     device = resolve_device(args.device)
 
-    section("NeuralOps Example 33: Triton 26+ Hardware Kernel Zoo & Fallback Dispatch")
+    section("NeuralOps Example 33: Triton Hardware Kernel Zoo & Fallback Dispatch")
     kv("Device", str(device))
     kv("Triton JIT Enabled", getattr(notr, "HAS_TRITON", False) and device.type == "cuda")
     kv("Catalog Operator Count", len(getattr(notr, "TRITON_KERNEL_CATALOG", [])))

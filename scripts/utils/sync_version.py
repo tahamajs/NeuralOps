@@ -175,14 +175,56 @@ def sync_neuralops_readme(version: str, check: bool) -> list[str]:
         return drifts
     content = path.read_text(encoding="utf-8")
     new_content = re.sub(
-        r"## 🏛️ Comprehensive Architecture & Subsystem Map \(v[0-9\.]+ Tier Structure\)",
-        f"## 🏛️ Comprehensive Architecture & Subsystem Map (v{version} Tier Structure)",
+        r"NeuralOps v[0-9\.]+",
+        f"NeuralOps v{version}",
         content,
     )
     if new_content != content:
-        drifts.append(f"{path}: tier structure header out of sync with {version}")
+        drifts.append(f"{path}: version reference out of sync with {version}")
         if not check:
             path.write_text(new_content, encoding="utf-8")
+    return drifts
+
+
+def sync_examples_readme(version: str, check: bool) -> list[str]:
+    path = ROOT_DIR / "examples" / "README.md"
+    drifts: list[str] = []
+    if not path.exists():
+        return drifts
+    content = path.read_text(encoding="utf-8")
+    new_content = re.sub(
+        r"# NeuralOps examples suite \(v[0-9\.]+\)",
+        f"# NeuralOps examples suite (v{version})",
+        content,
+    )
+    if new_content != content:
+        drifts.append(f"{path}: examples suite version header out of sync with {version}")
+        if not check:
+            path.write_text(new_content, encoding="utf-8")
+    return drifts
+
+
+def sync_docs_api(version: str, check: bool) -> list[str]:
+    api_dir = ROOT_DIR / "docs" / "api"
+    drifts: list[str] = []
+    if not api_dir.exists():
+        return drifts
+    for path in sorted(api_dir.glob("*.md")):
+        content = path.read_text(encoding="utf-8")
+        new_content = re.sub(
+            r"badge/release-v\d+\.\d+\.\d+-blue\.svg",
+            f"badge/release-v{version}-blue.svg",
+            content,
+        )
+        new_content = re.sub(
+            r"releases/tag/v\d+\.\d+\.\d+",
+            f"releases/tag/v{version}",
+            new_content,
+        )
+        if new_content != content:
+            drifts.append(f"{path}: release badge/tag out of sync with {version}")
+            if not check:
+                path.write_text(new_content, encoding="utf-8")
     return drifts
 
 
@@ -203,6 +245,8 @@ def main() -> None:
     all_drifts.extend(sync_security_md(version, check=args.check))
     all_drifts.extend(sync_readme(version, check=args.check))
     all_drifts.extend(sync_neuralops_readme(version, check=args.check))
+    all_drifts.extend(sync_examples_readme(version, check=args.check))
+    all_drifts.extend(sync_docs_api(version, check=args.check))
 
     if args.check:
         if all_drifts:

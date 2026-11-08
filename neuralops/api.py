@@ -72,6 +72,8 @@ def replace_attention(
         target_mod = attention
         attention = None
 
+    logger.info("Replacing attention with '%s' (copy_weights=%s)", attention or (type(target_mod).__name__ if target_mod else "custom"), copy_weights)
+
     layers = layers or kwargs.pop("layer_indices", None)
     if layers == "all":
         layers = None
@@ -143,6 +145,7 @@ def replace_attention(
 
     from neuralops.core._attention_injectors import _inject_attention_loop as inject_attention
 
+    logger.info("Replacing attention with '%s' (rank=%s, copy_weights=%s)", attn_name, rank, copy_weights)
     out_model = inject_attention(
         model=model,
         attention_type=attn_name,
@@ -225,6 +228,7 @@ def compress(
     """
     from neuralops.core.compression_pipeline import compress_model
 
+    logger.info("Starting model compression '%s' (rank=%s)", method, rank)
     comp_step: Dict[str, Any] = {
         "method": method,
         "rank": rank,
@@ -238,6 +242,7 @@ def compress(
     }
 
     out_model = compress_model(model=model, config=config)
+    logger.info("Model compression completed successfully: %s", method)
 
     meta_entry: Dict[str, Any] = {
         "op": "compress",
@@ -397,6 +402,7 @@ def export_model(
     Returns:
         Path to output directory or exported artifact file.
     """
+    logger.info("Exporting model to format '%s' at %s", format, output_dir)
     return _export_model(model=model, output_dir=output_dir, format=format, **kwargs)
 
 
@@ -457,6 +463,7 @@ def load_model(
     Returns:
         The reconstructed neuralops model.
     """
+    logger.info("Loading exported model from '%s'", export_dir)
     return _load_model(export_dir=export_dir, base_model=base_model)
 
 
@@ -1189,6 +1196,7 @@ def train(
 
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
+    logger.info("Starting training run (epochs=%d, lr=%s, seed=%s)", epochs, lr, resolved_seed)
 
     train_loader = (
         dataset
@@ -1250,6 +1258,7 @@ def distill(
 
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
+    logger.info("Starting knowledge distillation run (epochs=%d, lr=%s, alpha=%s, seed=%s)", epochs, lr, alpha, resolved_seed)
 
     train_loader = (
         dataset
@@ -1303,6 +1312,7 @@ def evaluate(
 
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
+    logger.info("Starting evaluation on device %s (batch_size=%d, seq_len=%d)", dev, batch_size, seq_len)
     if not isinstance(dataset, str):
         from torch.utils.data import DataLoader
 
@@ -1486,6 +1496,7 @@ def benchmark(
 
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
+    logger.info("Executing benchmark for module='%s' on model='%s' (dataset='%s')", module, model, dataset)
     from neuralops.benchmarks.api import benchmark as _bm
 
     return _bm(

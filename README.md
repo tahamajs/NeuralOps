@@ -267,12 +267,13 @@ NeuralOps v2.0.6 delivers declarative model transformation, transactional execut
 21. [Reproducibility Guide & Benchmark Methodology](#21-reproducibility-guide-benchmark-methodology)
 22. [Empirical Benchmark Data Sources & Telemetry](#22-empirical-benchmark-data-sources-telemetry)
 23. [Hugging Face Model Zoo Audit](#23-hugging-face-model-zoo-audit)
-24. [Examples Suite (20 Scripts)](#24-examples-suite-20-scripts)
+24. [Examples Suite (35 Production Scripts)](#24-examples-suite-35-production-scripts)
 25. [PyPI Package Quality Checklist](#25-pypi-package-quality-checklist)
 26. [Full Version Compatibility Matrix](#26-full-version-compatibility-matrix)
 27. [How to Contribute & Engineering Standards](#27-how-to-contribute-engineering-standards)
 28. [Citation & License](#28-citation--license)
 29. [Contributors & Community](#29-contributors--community)
+30. [References & Prior Art](#30-references--prior-art)
 
 ---
 
@@ -781,7 +782,7 @@ async def generate():
 asyncio.run(generate())
 ```
 
-#### 3. OpenAI-Compatible High-Throughput HTTP Server
+#### 4. OpenAI-Compatible High-Throughput HTTP Server
 Launch a production-grade OpenAI-compatible generation server backed by FastAPI:
 ```bash
 # Launch OpenAI-compatible API server on port 8000
@@ -929,7 +930,7 @@ reloaded_model, manifest = neuralops.load_surgical_checkpoint(teacher, "./checkp
 print("Transplanted and restored successfully!")
 ```
 
-### 6.3 O(1) Constant-Memory Autoregressive Decoding
+### 6.4 O(1) Constant-Memory Autoregressive Decoding
 
 Decode arbitrary sequence lengths with strictly flat GPU memory:
 
@@ -954,7 +955,7 @@ for step in range(1000):
 print(f"Total Cache Memory Footprint after 1,000 steps: {cache.memory_mb():.2f} MB (strictly flat!)")
 ```
 
-### 6.4 Automated Deep Model Compression (FWSVD & AdaSVD)
+### 6.5 Automated Deep Model Compression (FWSVD & AdaSVD)
 
 ```python
 import torch
@@ -970,7 +971,7 @@ compressed_model, stats = compressor.compress()
 print(f"Compressed Parameters: {sum(p.numel() for p in compressed_model.parameters()) / 1e6:.1f}M")
 ```
 
-### 6.5 Command-Line Interface (CLI) Guide
+### 6.6 Command-Line Interface (CLI) Guide
 
 NeuralOps installs canonical binary commands (`neuralops`, `nops`, `nops-cli`, and `neuralops-cli`) offering an industrial, unified sub-command interface for benchmarking, surgery, training, evaluation, serving, and system audits:
 
@@ -1033,19 +1034,19 @@ neuralops recipe plan recipe.yaml
 neuralops recipe execute recipe.yaml
 neuralops transplant --model gpt2 --attention gated_delta_net --rank 32 --calibrate --heal --heal-steps 20
 
-# 2. Verify Canonical Invariant Counts (131 Attentions, 72 Compressors, 26 Triton Modules / 62 Unified Operators)
+# 4. Verify Canonical Invariant Counts (131 Attentions, 72 Compressors, 26 Triton Modules / 62 Unified Operators)
 neuralops verify
 
-# 3. Explore Complete Registry (Filter by mathematical family, hardware backend, or JSON output)
+# 5. Explore Complete Registry (Filter by mathematical family, hardware backend, or JSON output)
 neuralops list --type attention --backend triton
 neuralops list --type compressor --family svd
 neuralops list --json
 
-# 4. Fast Diagnostic Test Suite (Health gates, kernel capabilities, surgery verification)
+# 6. Fast Diagnostic Test Suite (Health gates, kernel capabilities, surgery verification)
 neuralops test --all
 neuralops test --health --kernels
 
-# 5. Multi-Dataset Streaming, Variable-Length Packing & WSD Scheduling
+# 7. Multi-Dataset Streaming, Variable-Length Packing & WSD Scheduling
 neuralops train \
   --model gpt2 \
   --dataset HuggingFaceFW/fineweb-edu,opencsg/Fineweb-Edu-Chinese-V2 \
@@ -1058,45 +1059,45 @@ neuralops train \
   --lr-scheduler wsd \
   --decay-ratio 0.2
 
-# 6. Multi-Metric Evaluation (Perplexity, Token Throughput, Latency, Peak VRAM)
+# 8. Multi-Metric Evaluation (Perplexity, Token Throughput, Latency, Peak VRAM)
 neuralops eval --model gpt2 --dataset wikitext --batch-size 16 --seq-len 512 --json
 
-# 7. High-Throughput Serving Engine with PagedKVCache & Speculative Decoding
+# 9. High-Throughput Serving Engine with PagedKVCache & Speculative Decoding
 neuralops serve --model gpt2 --port 8000 --engine fastapi
 
-# 8. Deep Compression CLI (Fisher-Weighted SVD, Hadamard Incoherent, W4A16, INT4)
+# 10. Deep Compression CLI (Fisher-Weighted SVD, Hadamard Incoherent, W4A16, INT4)
 neuralops compress --model gpt2 --compressor fwsvd_compressor --rank 32 --save-dir ./compressed_gpt2
 neuralops compress --model roberta-base --compressor svd_truncated --rank 32
 
-# 9. Fast Model Surgery & Transplantation CLI (with Closed-Form Ridge & Micro-Healing)
+# 11. Fast Model Surgery & Transplantation CLI (with Closed-Form Ridge & Micro-Healing)
 neuralops surgery --model distilbert-base-uncased --attention cosformer --rank 64 --heal --heal-steps 25
 neuralops transplant --model gpt2 --attention svd_linear_attention --rank 32 --calibrate
 
-# 10. Interactive Hardware Roofline Analysis (FLOPs/byte & memory bandwidth saturation)
+# 12. Interactive Hardware Roofline Analysis (FLOPs/byte & memory bandwidth saturation)
 neuralops roofline --module gated_delta_net --device cuda --seq-len 4096 --latex
 
-# 11. Production Model Export (Safetensors, ONNX Runtime, TorchScript)
+# 13. Production Model Export (Safetensors, ONNX Runtime, TorchScript)
 neuralops export --model gpt2 --attn cosformer --rank 64 --format safetensors --output-dir exported_gpt2
 neuralops export --model distilbert-base-uncased --comp direct_svd --rank 32 --format onnx
 
-# 10. High-Throughput Production Serving Runner (PagedKVCache + FastAPI + WebSockets)
+# 14. High-Throughput Production Serving Runner (PagedKVCache + FastAPI + WebSockets)
 neuralops serve --host 127.0.0.1 --port 8080 --model ./checkpoints/healed_gdn_gpt2
 
-# 11. Self-Speculative Draft-and-Verify Accelerated Generation (Draft-K = 4)
+# 15. Self-Speculative Draft-and-Verify Accelerated Generation (Draft-K = 4)
 neuralops generate --model gpt2 --speculative --draft-k 4 --max-new-tokens 64
 
-# 12. Automated Rank Allocation via AutoSVD Pareto Search
+# 16. Automated Rank Allocation via AutoSVD Pareto Search
 neuralops search --model distilbert-base-uncased --target-param-ratio 0.5 --output-json ranks.json
 
-# 13. Needle-In-A-Haystack (NIAH) Long-Context Passkey Retrieval
+# 17. Needle-In-A-Haystack (NIAH) Long-Context Passkey Retrieval
 neuralops niah --model gpt2 --context-lengths 1024,2048,4096 --output-plot niah.png
 
-# 14. NeuralOps Modern Web UI Dashboard (FastAPI + HTMX + Observable Plot)
+# 18. NeuralOps Modern Web UI Dashboard (FastAPI + HTMX + Observable Plot)
 neuralops ui start --port 8080               # Launch Web UI dashboard
 neuralops ui start --share --auth admin      # Secure public Cloudflare tunnel
 neuralops ui --static ./dist                 # Export static bundle for Hugging Face Spaces
 
-# 15. Interactive Two-Pane UNIX TUI Inspector
+# 19. Interactive Two-Pane UNIX TUI Inspector
 neuralops tui         # Launch interactive Terminal User Interface (TUI mode)
 neuralops tui --snapshot
 ```
@@ -2297,7 +2298,7 @@ must also be identified explicitly: `$HOME/NeuralOps` is not a
 Git checkout in the current audit, so it must not be treated as the canonical
 source tree.
 
-### 22.1 Results layout, synchronization, and provenance
+### 22.2 Results layout, synchronization, and provenance
 
 All benchmark outputs are collected under `results/`. This directory is
 machine-generated and intentionally ignored by Git: it contains PBS/screen
@@ -2337,7 +2338,7 @@ future HPC sync, compare manifests and checksums, copy server evidence into
 `results/`, and never use a destructive `rsync --delete` until both sides have
 been reviewed.
 
-### 22.2 Notebook execution index
+### 22.3 Notebook execution index
 
 The authoritative notebook run is the PBS execution recorded in
 `results/notebooks_pbs.out`, with the machine-readable summary in
@@ -2387,7 +2388,7 @@ attention-module discovery warnings. These warnings do not change the PBS
 exit status, but they must be considered before claiming that every notebook
 used a native Triton/CUDA path.
 
-### 22.2 Executed notebooks copied from HPC
+### 22.4 Executed notebooks copied from HPC
 
 The executed notebook files are preserved separately from the source notebooks
 under `results/notebooks_executed/`. This directory is a direct, non-
@@ -2482,7 +2483,7 @@ NeuralOps enforces `pyproject.toml` as the single canonical source of truth for 
 
 ---
 
-## 25. Full Version Compatibility Matrix
+## 26. Full Version Compatibility Matrix
 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
@@ -2495,7 +2496,7 @@ NeuralOps enforces `pyproject.toml` as the single canonical source of truth for 
 
 ---
 
-## 26. How to Contribute & Engineering Standards
+## 27. How to Contribute & Engineering Standards
 
 NeuralOps welcomes open-source contributions. All pull requests must satisfy our formal engineering invariants:
 
@@ -2531,7 +2532,7 @@ All Python modules contributed to NeuralOps must strictly satisfy:
 
 ---
 
-## 27. Citation & License
+## 28. Citation & License
 
 If you use NeuralOps, its subquadratic attention kernels, or model compression engines in your research or production systems, please cite the project:
 
@@ -2551,7 +2552,7 @@ NeuralOps is open-source software licensed under the [MIT License](LICENSE).
 
 ---
 
-## 28. Contributors & Community
+## 29. Contributors & Community
 
 NeuralOps is continuously developed and maintained with contributions from researchers, systems engineers, and open-source practitioners. For a complete, real-time list of all contributors, visit:
 👉 **[https://github.com/tahamajs/NeuralOps/graphs/contributors](https://github.com/tahamajs/NeuralOps/graphs/contributors)**
@@ -2561,7 +2562,7 @@ We thank the open-source community and the creators of Hugging Face Transformers
 
 ---
 
-## 29. References & Prior Art
+## 30. References & Prior Art
 
 1. **Attention Is All You Need**: Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin. *NeurIPS 2017*. [arXiv:1706.03762](https://arxiv.org/abs/1706.03762)
 2. **RoBERTa: A Robustly Optimized BERT Pretraining Approach**: Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer Levy, Mike Lewis, Luke Zettlemoyer, Veselin Stoyanov. *arXiv 2019*. [arXiv:1907.11692](https://arxiv.org/abs/1907.11692)

@@ -22,6 +22,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+logger = logging.getLogger("neuralops.main")
+
 try:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -587,18 +589,15 @@ def run_list(fw: dict | None = None) -> None:
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     from neuralops.eval_all_models_datasets import TRACK_MODULES
 
-    print(f"\n=== ATTENTION MODULES ({len(ATTENTION_REGISTRY)} total) ===")
+    logger.info("=== ATTENTION MODULES (%d total) ===", len(ATTENTION_REGISTRY))
     for track, data in TRACK_MODULES.items():
         attns = data.get("attentions", [])
         if attns:
-            print(f"\n  {track}:")
-            for i, a in enumerate(attns):
-                print(f"    {a}", end="\n" if (i + 1) % 5 == 0 else "  ")
-            print()
+            logger.info("  %s: %s", track, ", ".join(attns))
 
-    print(f"\n=== COMPRESSION ENGINES ({len(COMPRESSOR_REGISTRY)} total) ===")
+    logger.info("=== COMPRESSION ENGINES (%d total) ===", len(COMPRESSOR_REGISTRY))
     for key in sorted(COMPRESSOR_REGISTRY.keys()):
-        print(f"  {key}")
+        logger.info("  %s", key)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -713,19 +712,19 @@ def main() -> None:
     try:
         if args.command == "train":
             result = run_train(cfg, fw, logger)
-            print(f"\n✅ Training complete → {result['output_dir']}")
+            logger.info("Training complete → %s", result["output_dir"])
 
         elif args.command == "eval":
             result = run_eval(cfg, fw, logger, args.model_path)
-            print(f"\n✅ Evaluation: {result}")
+            logger.info("Evaluation: %s", result)
 
         elif args.command == "compress":
             result = run_compress(cfg, fw, logger)
-            print(f"\n✅ Compression: {result}")
+            logger.info("Compression: %s", result)
 
         elif args.command == "sweep":
             results = run_sweep(args, fw, logger)
-            print(f"\n✅ Sweep complete — {len(results)} runs finished")
+            logger.info("Sweep complete — %d runs finished", len(results))
 
     except KeyboardInterrupt:
         logger.warning("Interrupted by user.")
