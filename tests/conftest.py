@@ -20,7 +20,7 @@ _TESTS_DIR = Path(__file__).resolve().parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 if str(_TESTS_DIR) not in sys.path:
-    sys.path.insert(0, str(_TESTS_DIR))
+    sys.path.append(str(_TESTS_DIR))
 
 if "numpy" in sys.modules:
     import numpy  # noqa: F401
