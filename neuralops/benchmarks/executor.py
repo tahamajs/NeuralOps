@@ -13,11 +13,14 @@ Implements executor functionality for NeuralOps.
 
 from __future__ import annotations
 
+import json
 import logging
+import multiprocessing as mp
 import threading
 import time
 import traceback
 import uuid
+from pathlib import Path
 from typing import Any, Optional
 
 import torch
@@ -137,6 +140,74 @@ def _select_adapter(
 
 
 route_task_adapter = _select_adapter
+
+
+def _record_event(
+    output_dir: Path | str,
+    run_id: str,
+    module: str,
+    status: str,
+    error: str = "",
+    traceback_str: str = "",
+    exitcode: Optional[int] = None,
+) -> None:
+    """Append structured execution event to events.jsonl."""
+    events_path = Path(output_dir) / "events.jsonl"
+    events_path.parent.mkdir(parents=True, exist_ok=True)
+    event_data = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "run_id": run_id,
+        "module": module,
+        "status": status,
+        "exitcode": exitcode,
+        "error": error,
+        "traceback": traceback_str,
+    }
+    with open(events_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(event_data) + "\n")
+
+
+def _isolated_worker_fn(pipe: Any, adapter_kwargs: dict[str, Any]) -> None:
+    """Dedicated worker process entrypoint executing benchmark adapter."""
+    try:
+        test_behavior = adapter_kwargs.pop(
+            "_test_behavior", os.environ.get("_NEURALOPS_BENCHMARK_TEST_BEHAVIOR")
+        )
+        if test_behavior == "crash":
+            os._exit(134)
+        elif test_behavior == "sleep":
+            time.sleep(15.0)
+            pipe.send(("success", {"eval_metrics": {}}))
+            return
+        elif test_behavior == "fail":
+            raise RuntimeError("Deliberate internal kernel test error")
+        elif test_behavior == "success":
+            pipe.send(("success", {"eval_metrics": {"accuracy": 0.95}}))
+            return
+
+        tracker_type = adapter_kwargs.pop("tracker_type", "none")
+        project_name = adapter_kwargs.pop("project_name", "neuralops")
+        tracker_instance = None
+        if tracker_type and tracker_type != "none":
+            try:
+                from neuralops.benchmarks.loggers import create_tracker
+
+                tracker_instance = create_tracker(
+                    tracker_type=tracker_type,
+                    project_name=project_name,
+                    run_name=f"{adapter_kwargs.get('module_name')}_{adapter_kwargs.get('model')}_{adapter_kwargs.get('dataset')}",
+                    output_dir=adapter_kwargs.get("output_dir", "results"),
+                    config=adapter_kwargs,
+                )
+            except Exception:
+                pass
+
+        adapter = _select_adapter(tracker_instance=tracker_instance, **adapter_kwargs)
+        output = adapter.run()
+        pipe.send(("success", output))
+    except BaseException as exc:
+        tb = "".join(traceback.format_exception(exc))
+        pipe.send(("error", (str(exc), tb)))
 
 
 def execute_single(
@@ -352,7 +423,34 @@ def execute_single(
             run_logger.debug("MLOps tracker initialization failed: %s", tracker_init_err)
 
     try:
-        adapter = _select_adapter(
+        mp_ctx = mp.get_context("spawn")
+        parent_conn, child_conn = mp_ctx.Pipe(duplex=False)
+
+        extra_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k
+            not in (
+                "output_dir",
+                "project_name",
+                "module_name",
+                "module_type",
+                "model",
+                "dataset",
+                "rank",
+                "device",
+                "dtype",
+                "batch_size",
+                "max_length",
+                "epochs",
+                "lr",
+                "seed",
+                "eval_only",
+                "task",
+                "tracker_type",
+            )
+        }
+        worker_kwargs = dict(
             module_name=module_name,
             module_type=module_type,
             model=model,
@@ -367,34 +465,30 @@ def execute_single(
             seed=seed,
             eval_only=eval_only,
             task=task,
-            tracker_instance=tracker_instance,
-            **kwargs,
+            tracker_type=tracker_type,
+            project_name=kwargs.get("project_name", "neuralops"),
+            output_dir=out_dir,
+            **extra_kwargs,
         )
 
-        run_output: dict[str, Any] = {}
-        exec_error: list[BaseException] = []
+        worker_proc = mp_ctx.Process(
+            target=_isolated_worker_fn,
+            args=(child_conn, worker_kwargs),
+            name=f"benchmark-worker-{run_id[:8]}",
+        )
+        worker_proc.start()
+        child_conn.close()
 
-        def target_worker():
-            try:
-                nonlocal run_output
-                run_output = adapter.run()
-            except BaseException as ex:
-                exec_error.append(ex)
+        worker_proc.join(timeout=effective_timeout)
 
-        worker_thread = threading.Thread(target=target_worker, daemon=True)
-        worker_thread.start()
-        worker_thread.join(timeout=effective_timeout)
+        # 1. Timeout Check
+        if worker_proc.is_alive():
+            worker_proc.terminate()
+            worker_proc.join(timeout=1.0)
+            if worker_proc.is_alive():
+                worker_proc.kill()
+                worker_proc.join(timeout=1.0)
 
-        if worker_thread.is_alive():
-            if adapter is not None:
-                try:
-                    adapter.cleanup()
-                except Exception:
-                    # allowed-swallow: best-effort-telemetry
-                    pass
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
             duration_s = time.perf_counter() - start_t
             end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             timeout_msg = (
@@ -402,6 +496,15 @@ def execute_single(
                 f"on {model}/{dataset}."
             )
             run_logger.error(timeout_msg)
+            _record_event(
+                output_dir=out_dir,
+                run_id=run_id,
+                module=module_name,
+                status="timeout",
+                error=timeout_msg,
+                traceback_str=f"TimeoutError: Execution exceeded {effective_timeout} seconds limit.",
+                exitcode=-15,
+            )
             return BenchmarkResult(
                 run_id=run_id,
                 run_name=f"{module}_{model}_{dataset}",
@@ -411,33 +514,107 @@ def execute_single(
                 model={"name": model},
                 dataset={"name": dataset},
                 config=config_dict,
-                status="failed",
+                status="timeout",
                 error=timeout_msg,
                 traceback=f"TimeoutError: Execution exceeded {effective_timeout} seconds limit.",
                 timeout_s=effective_timeout,
                 timed_out=True,
             )
 
-        if exec_error:
-            error = exec_error[0]
-            error_text = str(error)
-            if any(token in error_text.lower() for token in ("dataset", "tokenizer", "wikitext", "glue")):
-                end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-                return BenchmarkResult(
-                    run_id=run_id,
-                    run_name=f"{module}_{model}_{dataset}",
-                    timestamp_start=start_time_iso,
-                    timestamp_end=end_time_iso,
-                    module=mod_dict,
-                    model={"name": model},
-                    dataset={"name": dataset},
-                    config=config_dict,
-                    status="DATASET_ERROR",
-                    error=error_text,
-                    traceback="".join(traceback.format_exception(error)),
-                    timeout_s=effective_timeout,
-                )
-            raise error
+        # 2. Crash / Non-zero exit check
+        if worker_proc.exitcode != 0:
+            duration_s = time.perf_counter() - start_t
+            end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            exitcode = worker_proc.exitcode
+            is_hardware_or_signal = (exitcode < 0) or (exitcode in (134, 139, 135, 136, 137))
+            status_val = "hardware_error" if is_hardware_or_signal else "failed"
+
+            err_msg = f"Process terminated abnormally with exit code {exitcode} ({status_val})"
+            tb_str = ""
+            if parent_conn.poll(0.1):
+                try:
+                    msg_type, payload = parent_conn.recv()
+                    if msg_type == "error":
+                        err_msg, tb_str = payload
+                except Exception:
+                    pass
+
+            run_logger.error("Run %s failed with %s: %s", run_id, status_val, err_msg)
+            _record_event(
+                output_dir=out_dir,
+                run_id=run_id,
+                module=module_name,
+                status=status_val,
+                error=err_msg,
+                traceback_str=tb_str,
+                exitcode=exitcode,
+            )
+            return BenchmarkResult(
+                run_id=run_id,
+                run_name=f"{module}_{model}_{dataset}",
+                timestamp_start=start_time_iso,
+                timestamp_end=end_time_iso,
+                module=mod_dict,
+                model={"name": model},
+                dataset={"name": dataset},
+                config=config_dict,
+                status=status_val,
+                error=err_msg,
+                traceback=tb_str,
+                timeout_s=effective_timeout,
+                timed_out=False,
+            )
+
+        # 3. Clean exit (exitcode == 0)
+        try:
+            msg_type, payload = parent_conn.recv()
+        except EOFError:
+            msg_type, payload = "error", ("Worker process closed without sending output", "")
+
+        if msg_type == "error":
+            duration_s = time.perf_counter() - start_t
+            end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            err_msg, tb_str = payload
+            status_val = (
+                "DATASET_ERROR"
+                if any(t in err_msg.lower() for t in ("dataset", "tokenizer", "wikitext", "glue"))
+                else "failed"
+            )
+            _record_event(
+                output_dir=out_dir,
+                run_id=run_id,
+                module=module_name,
+                status=status_val,
+                error=err_msg,
+                traceback_str=tb_str,
+                exitcode=0,
+            )
+            return BenchmarkResult(
+                run_id=run_id,
+                run_name=f"{module}_{model}_{dataset}",
+                timestamp_start=start_time_iso,
+                timestamp_end=end_time_iso,
+                module=mod_dict,
+                model={"name": model},
+                dataset={"name": dataset},
+                config=config_dict,
+                status=status_val,
+                error=err_msg,
+                traceback=tb_str,
+                timeout_s=effective_timeout,
+                timed_out=False,
+            )
+
+        run_output = payload
+        _record_event(
+            output_dir=out_dir,
+            run_id=run_id,
+            module=module_name,
+            status="success",
+            error="",
+            traceback_str="",
+            exitcode=0,
+        )
 
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
